@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
+
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
 // injectAll injects code into all existing files that have markers.
@@ -520,7 +522,11 @@ func injectInline(filePath, marker, code string) error {
 		break
 	}
 
-	return os.WriteFile(filePath, []byte(newContent), 0644)
+	if err := os.WriteFile(filePath, []byte(newContent), 0644); err != nil {
+		return err
+	}
+	manifest.Refresh(filePath)
+	return nil
 }
 
 // injectBefore finds a marker in a file and inserts code on the line before it.
@@ -567,7 +573,11 @@ func injectBefore(filePath, marker, code string) error {
 	// Insert the code before the marker line.
 	newContent := content[:lineStart] + code + "\n" + content[lineStart:]
 
-	return os.WriteFile(filePath, []byte(newContent), 0644)
+	if err := os.WriteFile(filePath, []byte(newContent), 0644); err != nil {
+		return err
+	}
+	manifest.Refresh(filePath)
+	return nil
 }
 
 // guessLucideIcon returns a Lucide icon name based on the resource name.

@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.146.0"
+var version = "3.147.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -1195,11 +1195,13 @@ func findAPIDir() (string, error) {
 
 func upgradeCmd() *cobra.Command {
 	var force bool
+	var showDiff bool
 
 	cmd := &cobra.Command{
 		Use:   "upgrade",
 		Short: "Upgrade an existing Grit project to the latest scaffold templates",
-		Long:  "Regenerates framework components (admin panel, web app, configs) while preserving your resource definitions and API code.",
+		Long: "Regenerates framework components (admin panel, web app, configs) while preserving your resource definitions and API code.\n\n" +
+			"Files you have edited since Grit wrote them are left alone. Use --diff to see what the new version would change in them, or --force to take it anyway.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
 
@@ -1207,12 +1209,15 @@ func upgradeCmd() *cobra.Command {
 			purple.Printf("\n  Upgrading project to Grit v%s\n\n", version)
 
 			return scaffold.Upgrade(scaffold.UpgradeOptions{
-				Force: force,
+				Force:    force,
+				ShowDiff: showDiff,
+				Version:  version,
 			})
 		},
 	}
 
-	cmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite all files without prompting")
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite every file, including ones you have edited")
+	cmd.Flags().BoolVar(&showDiff, "diff", false, "Show what the upgrade would change in the files it leaves alone")
 
 	return cmd
 }

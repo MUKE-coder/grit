@@ -546,7 +546,14 @@ SENTINEL_SECRET_KEY=generate-a-random-string-here
 }
 
 func rootGitignore() string {
-	return `# Dependencies
+	return `# Grit local state.
+# .grit/manifest.json is deliberately NOT ignored: it records which files Grit
+# generated and what it wrote, which is how grit upgrade knows to leave your
+# edits alone. Commit it so the whole team gets that. The rest is local.
+.grit/backups/
+.grit/slots.json
+
+# Dependencies
 node_modules/
 .pnpm-store/
 

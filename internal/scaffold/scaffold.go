@@ -11,6 +11,8 @@ import (
 	"github.com/fatih/color"
 
 	"github.com/MUKE-coder/grit/v3/internal/codefmt"
+
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
 // Architecture represents the project architecture mode.
@@ -60,7 +62,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.146.0"
+const DefaultVersion = "3.147.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -301,6 +303,18 @@ func Run(opts Options) error {
 		}
 	}
 
+	// Record what this scaffold writes, so a later upgrade can tell an
+	// untouched framework file from one the developer has edited.
+	release, err := manifest.Start(root, opts.Version, "scaffold")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if saveErr := release(); saveErr != nil {
+			color.New(color.FgHiBlack).Printf("  Could not write .grit/manifest.json: %v\n", saveErr)
+		}
+	}()
+
 	spinner := color.New(color.FgHiBlack)
 
 	// Create directory structure
@@ -477,6 +491,18 @@ func RunSingle(opts Options) error {
 			return fmt.Errorf("directory %q already exists", root)
 		}
 	}
+
+	// Record what this scaffold writes, so a later upgrade can tell an
+	// untouched framework file from one the developer has edited.
+	release, err := manifest.Start(root, opts.Version, "scaffold")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if saveErr := release(); saveErr != nil {
+			color.New(color.FgHiBlack).Printf("  Could not write .grit/manifest.json: %v\n", saveErr)
+		}
+	}()
 
 	spinner := color.New(color.FgHiBlack)
 
@@ -804,9 +830,12 @@ func createDirectories(root string, opts Options) error {
 // way out (see internal/codefmt) so the templates only have to be correct, not
 // aligned; anything else is written byte-for-byte.
 func writeFile(path, content string) error {
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return fmt.Errorf("creating directory for %s: %w", path, err)
+	// Record what actually lands on disk, not what the template produced:
+	// codefmt reformats Go on the way out, and a hash of the pre-gofmt text
+	// would read as an edit the moment anyone looked at the file.
+	final := codefmt.File(path, content)
+	if _, err := guardedWrite(path, final); err != nil {
+		return fmt.Errorf("writing %s: %w", path, err)
 	}
-	return os.WriteFile(path, []byte(codefmt.File(path, content)), 0644)
+	return nil
 }

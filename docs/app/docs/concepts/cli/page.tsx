@@ -460,6 +460,56 @@ grit rm resource <Name>`} />
                 </p>
               </div>
 
+              {/* grit upgrade */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  grit upgrade
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Bring a project&apos;s framework files up to the CLI&apos;s version: admin
+                  components, the web app shell, Docker and root config, the migrate and seed
+                  tools. Your resource definitions, handlers, models and{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.env</code>{' '}
+                  are not touched.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Since v3.147.0 it also does not touch framework files{' '}
+                  <em>you</em> have edited. Grit records what it wrote and its hash in{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.grit/manifest.json</code>,
+                  so an upgrade can tell a file nobody has opened from one you have customised.
+                  Untouched files are replaced. Edited ones are listed and left exactly as they
+                  are.
+                </p>
+                <CodeBlock language="bash" code={`grit upgrade
+
+  ✓ Upgrade complete. Updated 87 files.
+
+  ⚠ Left alone, because you have edited these files since Grit wrote them:
+      apps/admin/components/data-table.tsx
+      apps/admin/components/app-sidebar.tsx
+
+    grit upgrade --diff     # see what the new version would change
+    grit upgrade --force    # take the new version and lose your edits`} />
+                <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--diff</code>{' '}
+                  prints a unified diff of your version against the new one, so you can port the
+                  parts you want by hand.{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--force</code>{' '}
+                  overwrites everything, which is what upgrade did unconditionally before this
+                  release.
+                </p>
+                <div className="rounded-lg border border-border/20 bg-accent/20 p-3">
+                  <p className="text-sm text-muted-foreground/70">
+                    <strong className="text-foreground/80">A project created before v3.147.0</strong>{' '}
+                    has no manifest, so nothing can be said about what has been edited in it, and
+                    the first upgrade behaves exactly as it always did. That upgrade writes the
+                    manifest, and every one after it is protected. Commit{' '}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.grit/manifest.json</code>{' '}
+                    so the protection applies to everyone on the team.
+                  </p>
+                </div>
+              </div>
+
               {/* grit update */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">

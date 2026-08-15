@@ -690,6 +690,110 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 
 ---
 
+## Phase 7 — Beyond Filament parity (in progress)
+
+Two independent reviews landed in August 2026: a gap analysis against Filament
+(17 items, `grit-framework-gap-analysis.md`) and a product/engineering review
+(31 recommendations, `grit-framework-product-engineering-review.md`). This is
+the merged list, ordered by what unblocks what. Where the two reviews agreed
+without talking to each other, the item is marked **[both]**.
+
+Both reviews were partly out of date, because they read the public site. Fixing
+that is item 7.1 for exactly that reason.
+
+### 7.0 Shipped
+
+- [x] **MySQL support** (gap 3.6) - v3.146.0. DSN branch, `parseTime` default,
+      `jsonb` tags removed, RETURNING made runtime-conditional via
+      `internal/database/dialect.go`, boolean query filters coerced against the
+      model schema. Verified against MySQL 8.4.
+
+### 7.1 Credibility (days)
+
+- [ ] Correct the public docs and README. Email verification and API keys
+      shipped long ago and the homepage still lists them as missing, which is
+      why a reviewer filed them as gaps (3.11).
+- [ ] `grit doctor` **[both]** (new 4.4 / rec 23): Go and Node versions, DB,
+      Redis, storage, mail, route and type sync, plugin integrity, weak JWT
+      secret, wildcard CORS in production.
+
+### 7.2 The generator engine **[both]** (gap 4.1 / recs 21, 22)
+
+Ranked above the plugin registry, against the gap analysis's own sequencing.
+Three bugs in one week came from its absence: `grit upgrade` wrote 31 files
+nothing imports, `/bulk` 404'd on every existing project because upgrade never
+regenerates API code, and a generated handler referenced a `dialect.go` the
+project had never been given. A plugin ecosystem on top of a generator that
+cannot upgrade its own output multiplies that by the number of plugins.
+
+- [x] `.grit/manifest.json` provenance: which generator wrote which file, at
+      which version, and its content hash (`internal/manifest`).
+- [x] `grit upgrade` stops overwriting files you have edited. Before this it
+      overwrote everything unconditionally: `writeUpgradeFiles` took a `force`
+      parameter and never read it.
+- [x] `grit upgrade --diff` shows what the new version would change in the
+      files it left alone; `--force` keeps the old behaviour.
+- [ ] `grit upgrade --resource Product`: regenerate one resource's files
+      through the same three-way logic.
+- [ ] Per-resource generated tests (rec 19), so a generator change is provably
+      safe before it ships.
+
+### 7.3 Ecosystem **[both]** (gaps 3.1, 3.2, 4.4 / recs 19, 20)
+
+- [ ] `grit plugin add github.com/you/grit-x` from a git ref.
+- [ ] A JSON plugin index and `grit plugin search`.
+- [ ] `grit plugin info <module>`: compatibility, last-tested Grit version,
+      known issues, shown at install time rather than buried in a README.
+- [ ] Fix the `uint` vs UUID `user_id` mismatch in the official `grit-plugins`
+      packages before any tutorial promotes them.
+
+### 7.4 The application layer (product review, section 4)
+
+The review's real contribution: Grit has webhooks, asynq, realtime and audit as
+four separate consumers with no shared bus.
+
+- [ ] **Domain events** (rec 7). The substrate everything else hangs off.
+- [ ] **Workflows / state machines** **[both]** (gap 3.3 / recs 6, 30):
+      `status:enum:draft,sent,paid:workflow` generating transition guards, an
+      admin badge and timeline, and transition events.
+- [ ] **Notifications and inbox** (recs 8, 9), a consumer of domain events.
+- [ ] **Settings registry** (rec 29): `setting.Define("invoice.prefix")` with
+      typed access, admin UI and env fallback.
+- [ ] **Application-wide search** (rec 10) with provider adapters: Postgres FTS
+      first, Meilisearch and Typesense as plugins.
+
+### 7.5 SaaS (recs 14, 15, 27, 31)
+
+Billing, entitlements, payment adapters, invitations, usage limits, automation
+rules. A plugin bundle, not core, exactly as the review's own section 36 argues.
+
+- [ ] Payments abstraction with adapters (Stripe, Paystack, Flutterwave, MTN).
+- [ ] Subscriptions, plans, entitlements.
+- [ ] Automation rules (when / if / then) on top of domain events.
+- [ ] Starter kits per vertical **[both]** (gap 4.2 / rec 18).
+
+### 7.6 Reach
+
+- [ ] i18n at the generator, so every new resource emits keys rather than
+      English (gap 3.7).
+- [ ] Extract the offline-sync engine out of `apps/desktop` **[both]**
+      (gap 3.10 / rec 26).
+- [ ] Media abstraction over storage (rec 16).
+- [ ] `grit audit a11y` against the generated admin (gap 4.3).
+- [ ] GraphQL as a plugin over the generated handlers (gap 3.5).
+- [ ] Preview environments per branch (gap 3.12).
+- [ ] Visual application explorer, read/write against the same
+      `defineResource` files, not a separate runtime **[both]**
+      (gap 3.4 / rec 20).
+
+### 7.7 Not a feature (gap 3.9)
+
+- [ ] Co-maintainers with commit access, an RFC process for community plugins,
+      and named sponsors. One maintainer is the adoption blocker no feature
+      fixes.
+
+---
+
 ## Phase Summary
 
 | Phase | Duration | Focus | Key Deliverable |

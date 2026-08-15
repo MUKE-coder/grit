@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
+
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
 // SyncAdminResource walks one Go struct → its admin resource file and
@@ -69,6 +71,7 @@ func SyncAdminResource(root string, s GoStruct) (added int, warnings []string, e
 		if err := os.WriteFile(path, []byte(wired), 0644); err != nil {
 			return 0, warnings, fmt.Errorf("writing %s: %w", path, err)
 		}
+		manifest.Refresh(path)
 		content = wired
 	}
 
