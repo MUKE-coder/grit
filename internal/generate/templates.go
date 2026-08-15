@@ -619,14 +619,19 @@ func (g *Generator) writeGoHandler(names Names) error {
 	createReload := reloadLine
 	updateReload := reloadLine
 	clauseImport := ""
+	databaseImport := ""
 	if singleStatementWrite {
-		createCall = "h.DB.Session(&gorm.Session{SkipDefaultTransaction: true})." +
-			"Clauses(clause.Returning{}).Create(&item)"
-		updateCall = "h.DB.Session(&gorm.Session{SkipDefaultTransaction: true})." +
-			"Model(&item).Clauses(clause.Returning{}).Updates(updates)"
-		createReload = ""
-		updateReload = ""
-		clauseImport = "\n\t\"gorm.io/gorm/clause\""
+		// database.Write applies RETURNING only where the dialect has it, so
+		// the reload has to stay for the dialects that do not. It is guarded
+		// rather than dropped: on Postgres and SQLite this costs one boolean,
+		// and on MySQL it is the difference between a complete record and a
+		// half-empty one.
+		createCall = "database.Write(h.DB).Create(&item)"
+		updateCall = "database.Write(h.DB).Model(&item).Updates(updates)"
+		guard := "\tif !database.SupportsReturning(h.DB) {\n\t"
+		createReload = guard + reloadLine + "\n\t}"
+		updateReload = guard + reloadLine + "\n\t}"
+		databaseImport = "\n\t\"" + g.Module + "/internal/database\""
 	}
 
 	// Build allowed sort columns (skip relationship fields)
@@ -847,6 +852,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{CREATE_RELOAD}}", createReload,
 		"{{UPDATE_RELOAD}}", updateReload,
 		"{{CLAUSE_IMPORT}}", clauseImport,
+		"{{DATABASE_IMPORT}}", databaseImport,
 		"{{TIME_IMPORT}}", timeImport,
 		"{{DATATYPES_IMPORT}}", datatypesImport,
 		"{{FILES_IMPORT}}", filesImport,
@@ -865,7 +871,7 @@ import (
 	"github.com/gin-gonic/gin"{{DATATYPES_IMPORT}}
 	"gorm.io/gorm"{{CLAUSE_IMPORT}}
 
-	"{{MODULE}}/internal/export"{{FILES_IMPORT}}
+	"{{MODULE}}/internal/export"{{FILES_IMPORT}}{{DATABASE_IMPORT}}
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
 	"{{MODULE}}/internal/pdf"

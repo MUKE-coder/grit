@@ -146,6 +146,75 @@ export default function DatabasePage() {
                 </div>
               </div>
 
+              {/* Supported dialects */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Supported Databases
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Grit reads the scheme off the front of{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">DATABASE_URL</code> and
+                  opens the matching GORM dialector. Three are supported:
+                </p>
+                <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-4">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/30 bg-accent/20">
+                        <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Database</th>
+                        <th className="text-left px-4 py-2.5 font-medium text-foreground/80">DSN</th>
+                        <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Use it for</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-muted-foreground">
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">PostgreSQL</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">postgres://user:pass@host:5432/db</td>
+                        <td className="px-4 py-2.5">The default, and what Docker Compose starts</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">MySQL 8+ / MariaDB</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">mysql://user:pass@tcp(host:3306)/db</td>
+                        <td className="px-4 py-2.5">Existing MySQL infrastructure and shared hosting</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2.5 font-mono text-xs">SQLite</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">sqlite:./data.db</td>
+                        <td className="px-4 py-2.5">Dev, tests, and the desktop app&apos;s local mirror</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The MySQL DSN is the driver&apos;s own format with a scheme bolted on the front, so the
+                  host goes inside{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">tcp(...)</code> rather
+                  than after an <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">@</code>.
+                  Grit appends{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">parseTime=true&amp;loc=UTC</code>{' '}
+                  when you have not set it: without it MySQL hands back{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">DATETIME</code> columns as
+                  raw bytes and every{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">time.Time</code> field on
+                  every model fails to scan.
+                </p>
+                <CodeBlock language="bash" filename=".env" code={`# Postgres (default)
+DATABASE_URL=postgres://grit:grit@localhost:5434/myapp?sslmode=disable
+
+# MySQL
+DATABASE_URL=mysql://grit:grit@tcp(localhost:3306)/myapp
+
+# SQLite
+DATABASE_URL=sqlite:./myapp.db`} />
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  Nothing else in your project changes. Models, migrations, handlers, and the admin
+                  panel are dialect-agnostic, and the one place the difference leaks (Postgres and
+                  SQLite can return a written row with{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">RETURNING</code>,
+                  MySQL cannot) is handled for you in{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">internal/database/dialect.go</code>.
+                </p>
+              </div>
+
               {/* GORM Connection Code */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">

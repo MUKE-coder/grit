@@ -16,6 +16,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "cmd", "server", "main.go"):                 apiMainGo(opts),
 		filepath.Join(apiRoot, "internal", "config", "config.go"):          apiConfigGo(),
 		filepath.Join(apiRoot, "internal", "database", "database.go"):      apiDatabaseGo(),
+		filepath.Join(apiRoot, "internal", "database", "dialect.go"):       apiDialectGo(),
 		filepath.Join(apiRoot, "internal", "models", "user.go"):            apiUserModelGo(),
 		filepath.Join(apiRoot, "internal", "models", "upload.go"):          apiUploadModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "auth.go"):          apiAuthServiceGo(),
@@ -272,6 +273,7 @@ require (
 	// than as a 403 weeks later. Do not downgrade below v2.1.1.
 	github.com/MUKE-coder/sentinel/v2 v2.2.1
 	gorm.io/datatypes v1.2.7
+	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )
@@ -1115,6 +1117,52 @@ func splitCSV(s string) []string {
 `
 }
 
+// apiDialectGo emits internal/database/dialect.go.
+// APIDialectGo is exported so grit generate resource can add this file to a
+// project that predates it. The generated handlers depend on it.
+func APIDialectGo() string { return apiDialectGo() }
+
+func apiDialectGo() string {
+	return `package database
+
+import (
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+// SupportsReturning reports whether the connected dialect can hand back the
+// written row from an INSERT or UPDATE.
+//
+// Postgres and SQLite can. MySQL cannot, and this is the important part: it
+// does not error when asked. The write succeeds, the RETURNING clause is
+// dropped, and the struct comes back with every database-assigned default
+// still at its zero value. A handler that skipped its reload on the strength
+// of RETURNING would then answer 201 with a half-empty record.
+func SupportsReturning(db *gorm.DB) bool {
+	switch db.Dialector.Name() {
+	case "postgres", "sqlite":
+		return true
+	default:
+		return false
+	}
+}
+
+// Write returns a session for a single-statement write: no wrapping
+// transaction, and RETURNING where the dialect has it.
+//
+// Skipping the transaction is safe only because the caller has already
+// established there is exactly one statement. The generator decides that from
+// the resource definition, where it can be known rather than assumed.
+func Write(db *gorm.DB) *gorm.DB {
+	tx := db.Session(&gorm.Session{SkipDefaultTransaction: true})
+	if SupportsReturning(db) {
+		tx = tx.Clauses(clause.Returning{})
+	}
+	return tx
+}
+`
+}
+
 func apiDatabaseGo() string {
 	return `package database
 
@@ -1127,6 +1175,7 @@ import (
 	"time"
 
 	"github.com/glebarez/sqlite"
+	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -1200,6 +1249,20 @@ func Connect(dsn string) (*gorm.DB, error) {
 		db, err = gorm.Open(sqlite.Open(strings.TrimPrefix(dsn, "sqlite://")), gormCfg)
 	case strings.HasPrefix(dsn, "sqlite:"):
 		db, err = gorm.Open(sqlite.Open(strings.TrimPrefix(dsn, "sqlite:")), gormCfg)
+	case strings.HasPrefix(dsn, "mysql://"), strings.HasPrefix(dsn, "mysql:"):
+		// go-sql-driver wants "user:pass@tcp(host:port)/db", not a URL, so the
+		// scheme is stripped rather than parsed. parseTime is not optional:
+		// without it DATETIME columns arrive as []byte and every time.Time
+		// field on every model fails to scan.
+		my := strings.TrimPrefix(strings.TrimPrefix(dsn, "mysql://"), "mysql:")
+		if !strings.Contains(my, "parseTime=") {
+			sep := "?"
+			if strings.Contains(my, "?") {
+				sep = "&"
+			}
+			my += sep + "parseTime=true&loc=UTC"
+		}
+		db, err = gorm.Open(mysql.Open(my), gormCfg)
 	default:
 		db, err = gorm.Open(postgres.New(postgres.Config{
 			DSN:                  dsn,
@@ -3778,6 +3841,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 // Defaults applied when the request query is empty or out of range.
@@ -3890,6 +3954,31 @@ type Result[T any] struct {
 	Data []T  ` + "`" + `json:"data"` + "`" + `
 	Meta Meta ` + "`" + `json:"meta"` + "`" + `
 }
+
+// coerceFilterValue turns a query-string value into something the column can
+// actually be compared against.
+//
+// Only booleans need this, and only because the two databases disagree about
+// what to do with a string. Postgres reads WHERE active = 'true' as a boolean
+// and answers correctly; MySQL stores the column as tinyint(1), coerces the
+// non-numeric string to 0, and quietly returns nothing. Neither errors, so the
+// bug is a filter that silently matches no rows.
+//
+// Numbers stay strings on purpose: both databases coerce those identically,
+// and a varchar column holding "12" would break if this second-guessed it.
+func coerceFilterValue(val string, dataType schema.DataType) any {
+	if dataType != schema.Bool {
+		return val
+	}
+	switch strings.ToLower(val) {
+	case "true", "1", "yes", "on":
+		return true
+	case "false", "0", "no", "off":
+		return false
+	}
+	return val
+}
+
 
 // Bind reads page / page_size / search / sort_by / sort_order from the Gin
 // context, clamps them, and returns a normalized Params.
@@ -4089,9 +4178,24 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 	// This is what makes the admin's filter dropdowns and tab strips work:
 	// before it existed, Bind never collected them and the comment above
 	// promised a feature the code did not have.
-	for col, val := range p.QueryFilters {
-		if cfg.Filterable[col] {
-			query = query.Where(col+" = ?", val)
+	if len(p.QueryFilters) > 0 {
+		// The model's schema is parsed once so each value can be bound as the
+		// column's real type. See coerceFilterValue for why that matters.
+		var zero T
+		stmt := &gorm.Statement{DB: query}
+		parsed := stmt.Parse(&zero) == nil
+
+		for col, val := range p.QueryFilters {
+			if !cfg.Filterable[col] {
+				continue
+			}
+			var bound any = val
+			if parsed && stmt.Schema != nil {
+				if f := stmt.Schema.LookUpField(col); f != nil {
+					bound = coerceFilterValue(val, f.DataType)
+				}
+			}
+			query = query.Where(col+" = ?", bound)
 		}
 	}
 
@@ -5155,7 +5259,10 @@ type WebhookEvent struct {
 	Provider     string         ` + "`" + `gorm:"size:50;index;not null" json:"provider"` + "`" + `
 	EventType    string         ` + "`" + `gorm:"size:100;index" json:"event_type"` + "`" + `
 	ExternalID   string         ` + "`" + `gorm:"size:255;index" json:"external_id"` + "`" + ` // provider's event id
-	Payload      datatypes.JSON ` + "`" + `gorm:"type:jsonb" json:"payload"` + "`" + `
+	// No explicit type: datatypes.JSON maps to jsonb on Postgres and json on
+	// MySQL by itself. Naming jsonb here fails AutoMigrate on MySQL, which has
+	// no such type.
+	Payload      datatypes.JSON ` + "`" + `json:"payload"` + "`" + `
 	Status       string         ` + "`" + `gorm:"size:20;index;not null;default:pending" json:"status"` + "`" + `
 	HandlerError string         ` + "`" + `gorm:"type:text" json:"handler_error,omitempty"` + "`" + `
 	RetryCount   int            ` + "`" + `gorm:"not null;default:0" json:"retry_count"` + "`" + `
@@ -5759,7 +5866,7 @@ type FeatureFlag struct {
 	Name        string         ` + "`" + `gorm:"size:100;uniqueIndex;not null" json:"name"` + "`" + ` // e.g. "new_dashboard"
 	Description string         ` + "`" + `gorm:"type:text" json:"description"` + "`" + `
 	Enabled     bool           ` + "`" + `gorm:"not null;default:false" json:"enabled"` + "`" + ` // master switch — false short-circuits all rules
-	Rules       datatypes.JSON ` + "`" + `gorm:"type:jsonb" json:"rules"` + "`" + `
+	Rules       datatypes.JSON ` + "`" + `json:"rules"` + "`" + `
 	CreatedAt   time.Time      ` + "`" + `json:"created_at"` + "`" + `
 	UpdatedAt   time.Time      ` + "`" + `json:"updated_at"` + "`" + `
 	Version     int            ` + "`" + `gorm:"not null;default:1" json:"version"` + "`" + `
