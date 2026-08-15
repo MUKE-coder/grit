@@ -434,10 +434,12 @@ DATABASE_URL=sqlite::memory:        # ephemeral, used by tests`}
                     q: 'Can I use MySQL?',
                     a: (
                       <>
-                        Grit officially supports <strong>PostgreSQL</strong> (production) and{' '}
-                        <strong>SQLite</strong> (dev, desktop, tests). GORM can talk to MySQL, but the
-                        scaffolds, DSN builder, and defaults are tuned for Postgres and SQLite &mdash;
-                        those are the supported paths.
+                        Yes, since v3.146.0. Grit supports <strong>PostgreSQL</strong> (the default),{' '}
+                        <strong>MySQL</strong> 8+ / MariaDB, and <strong>SQLite</strong> (dev, desktop,
+                        tests). Point <code>DATABASE_URL</code> at{' '}
+                        <code>mysql://user:pass@tcp(host:3306)/db</code> and everything else is
+                        unchanged. See{' '}
+                        <Link href="/docs/infrastructure/database">Database</Link> for the DSN format.
                       </>
                     ),
                   },

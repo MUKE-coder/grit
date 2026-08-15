@@ -9,6 +9,8 @@ import (
 	"unicode"
 
 	"github.com/MUKE-coder/grit/v3/internal/codefmt"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // Generator holds context for generating a resource.
@@ -133,6 +135,15 @@ func (g *Generator) Run() error {
 		return fmt.Errorf("writing Go service: %w", err)
 	}
 	fmt.Printf("  ✓ %sinternal/services/%s.go\n", apiPrefix, names.Snake)
+
+	// The generated handler calls database.Write, so the file that defines it
+	// has to be there. grit upgrade does not refresh API code, so a project
+	// generated before v3.146.0 would otherwise get a handler referring to a
+	// function it has never seen. Written only when absent: it is framework
+	// code, but it is in the user's tree and may have been edited.
+	if err := g.ensureDialectHelper(); err != nil {
+		return err
+	}
 
 	if err := g.writeGoHandler(names); err != nil {
 		return fmt.Errorf("writing Go handler: %w", err)
@@ -610,4 +621,22 @@ func writeFileWithDirs(path, content string) error {
 		return fmt.Errorf("creating directory %s: %w", dir, err)
 	}
 	return os.WriteFile(path, []byte(codefmt.File(path, content)), 0644)
+}
+
+// ensureDialectHelper writes internal/database/dialect.go when it is missing.
+//
+// database.Write and database.SupportsReturning are what let a generated
+// handler use RETURNING on Postgres and SQLite while still reloading on MySQL,
+// which has no such clause and does not say so.
+func (g *Generator) ensureDialectHelper() error {
+	path := filepath.Join(g.APIRoot(), "internal", "database", "dialect.go")
+	if fileExists(path) {
+		return nil
+	}
+	body := strings.ReplaceAll(scaffold.APIDialectGo(), "{{MODULE}}", g.Module)
+	if err := writeFileWithDirs(path, body); err != nil {
+		return fmt.Errorf("writing dialect helper: %w", err)
+	}
+	fmt.Println("  ✓ Added internal/database/dialect.go")
+	return nil
 }

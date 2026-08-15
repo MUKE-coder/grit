@@ -28,6 +28,66 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.146.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.146.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>MySQL is a supported database.</strong>
+                </p>
+                <p>
+                  Point <code>DATABASE_URL</code> at{' '}
+                  <code>mysql://user:pass@tcp(host:3306)/db</code> and the API connects. The scheme
+                  is stripped rather than parsed, because the driver wants its own DSN format and
+                  not a URL, and <code>parseTime=true&amp;loc=UTC</code> is appended when absent:
+                  without it MySQL returns <code>DATETIME</code> columns as raw bytes and every{' '}
+                  <code>time.Time</code> field on every model fails to scan.
+                </p>
+                <p>
+                  Three things had to change behind that. The two{' '}
+                  <code>type:jsonb</code> column tags are gone, since{' '}
+                  <code>datatypes.JSON</code> already picks <code>jsonb</code> on Postgres and{' '}
+                  <code>json</code> on MySQL by itself, and naming a Postgres type explicitly failed
+                  AutoMigrate on a database that has no such type.
+                </p>
+                <p>
+                  The second was the dangerous one. Generated handlers skip the reload after a write
+                  when the generator can see the write is a single statement, on the strength of{' '}
+                  <code>RETURNING</code> filling the struct. MySQL has no{' '}
+                  <code>RETURNING</code>, and it does not say so: the write succeeds, the clause is
+                  dropped, and the record comes back with id, created_at and version all at zero. A
+                  create would have answered 201 with a half-empty body and no error anywhere. The
+                  optimisation is now decided at build time and applied at run time, through{' '}
+                  <code>database.Write</code> and <code>database.SupportsReturning</code> in the new{' '}
+                  <code>internal/database/dialect.go</code>. On Postgres and SQLite this costs one
+                  boolean.
+                </p>
+                <p>
+                  The third: <code>?active=true</code> arrives as a string. Postgres reads it as a
+                  boolean; MySQL stores the column as <code>tinyint(1)</code>, coerces a non-numeric
+                  string to 0, and quietly matches nothing. Query filters now read the model schema
+                  and convert boolean columns only, because &quot;true&quot; is a legitimate thing
+                  for a varchar to contain.
+                </p>
+                <p>
+                  <code>grit generate resource</code> writes{' '}
+                  <code>internal/database/dialect.go</code> if your project predates it, so a
+                  resource generated in an older project still builds.
+                </p>
+                <p>
+                  Verified against MySQL 8.4: 33 tables migrated, both JSON columns landed as native{' '}
+                  <code>json</code>, create returns a complete record, and{' '}
+                  <code>?active=true</code> returns rows where it previously returned none.
+                </p>
+              </div>
+            </div>
+
             {/* v3.145.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
