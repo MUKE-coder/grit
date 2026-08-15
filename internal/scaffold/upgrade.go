@@ -9,12 +9,21 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
 // UpgradeOptions holds the configuration for upgrading a project.
 type UpgradeOptions struct {
-	// Force overwrites files without prompting
+	// Force overwrites every file, including ones you have edited. This is
+	// what upgrade did unconditionally before v3.147.0.
 	Force bool
+	// ShowDiff prints what the upgrade would have changed in the files it
+	// left alone.
+	ShowDiff bool
+	// Version is the Grit version performing the upgrade, recorded against
+	// every file it rewrites.
+	Version string
 }
 
 // Upgrade regenerates generic scaffold files in an existing Grit project.
@@ -38,7 +47,30 @@ func Upgrade(uOpts UpgradeOptions) error {
 	opts := Options{
 		ProjectName: projectName,
 		Style:       readProjectStyle(root),
+		Version:     uOpts.Version,
 	}
+	opts.Normalize()
+
+	// Two pieces of machinery, both process-wide for the length of the
+	// upgrade. The guard decides what may be overwritten; the recorder notes
+	// what was, so the next upgrade knows.
+	if err := startGuard(root, uOpts.Force); err != nil {
+		return err
+	}
+	release, err := manifest.Start(root, opts.Version, "scaffold")
+	if err != nil {
+		return err
+	}
+	// Every step below can return early. Without this, a failure halfway
+	// through would leave the files it had already written unrecorded, and the
+	// next upgrade would treat all of them as hand-edited.
+	finished := false
+	defer func() {
+		if !finished {
+			stopGuard()
+			_ = release()
+		}
+	}()
 
 	// Detect which apps exist
 	hasWeb := dirExists(filepath.Join(root, "apps", "web"))
@@ -156,8 +188,37 @@ func Upgrade(uOpts UpgradeOptions) error {
 		updated += 10
 	}
 
+	written, skipped := stopGuard()
+	if saveErr := release(); saveErr != nil {
+		spinner.Printf("  Could not write .grit/manifest.json: %v\n", saveErr)
+	}
+	finished = true
+	_ = updated // superseded by the guard's count, which counts actual writes
+
 	fmt.Println()
-	green.Printf("  ✓ Upgrade complete! Updated %d files.\n", updated)
+	green.Printf("  ✓ Upgrade complete. Updated %d files.\n", written)
+
+	if len(skipped) > 0 {
+		fmt.Println()
+		yellow := color.New(color.FgHiYellow)
+		yellow.Printf("  ⚠ Left alone, because you have edited %s since Grit wrote %s:\n",
+			plural(len(skipped), "this file", "these files"),
+			plural(len(skipped), "it", "them"))
+		for _, s := range skipped {
+			fmt.Printf("      %s\n", s.Rel)
+		}
+		fmt.Println()
+		if uOpts.ShowDiff {
+			for _, s := range skipped {
+				cyan.Printf("  ── %s ──\n", s.Rel)
+				fmt.Println(diffIndent(s.Diff()))
+			}
+		} else {
+			cyan.Println("    grit upgrade --diff     # see what the new version would change")
+		}
+		cyan.Println("    grit upgrade --force    # take the new version and lose your edits")
+	}
+
 	fmt.Println()
 	cyan.Println("  Next steps:")
 	if hasWeb || hasAdmin {
@@ -171,6 +232,25 @@ func Upgrade(uOpts UpgradeOptions) error {
 	fmt.Println()
 
 	return nil
+}
+
+// plural picks a word based on a count, so the summary reads as English rather
+// than as "1 file(s)".
+func plural(n int, one, many string) string {
+	if n == 1 {
+		return one
+	}
+	return many
+}
+
+// diffIndent pads a unified diff so it lines up with the rest of the CLI
+// output without disturbing the leading +/- that makes it readable.
+func diffIndent(diff string) string {
+	lines := strings.Split(strings.TrimRight(diff, "\n"), "\n")
+	for i, line := range lines {
+		lines[i] = "  " + line
+	}
+	return strings.Join(lines, "\n")
 }
 
 // migrateResourceFolders gives every resource its own folder, for both the

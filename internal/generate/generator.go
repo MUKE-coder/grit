@@ -11,6 +11,8 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/codefmt"
 
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
+
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
 // Generator holds context for generating a resource.
@@ -88,6 +90,19 @@ func (g *Generator) Run() error {
 	}
 
 	fmt.Printf("\n  Generating resource: %s\n\n", names.Pascal)
+
+	// Everything this resource writes is attributed to the resource, not to the
+	// scaffold, so `grit upgrade --resource Product` knows what it owns. Nested
+	// for an inline child: Start relabels rather than restarting.
+	release, err := manifest.Start(g.Root, scaffold.DefaultVersion, "resource:"+names.Pascal)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if saveErr := release(); saveErr != nil {
+			fmt.Printf("  Could not write .grit/manifest.json: %v\n", saveErr)
+		}
+	}()
 
 	// Inline child (from --items): generate it as its own full resource FIRST,
 	// so the parent's has-many + handler can reference models.<Child>, and so
@@ -605,7 +620,11 @@ func (g *Generator) injectDesktopSyncTable(names Names) error {
 	lineStart := strings.LastIndexByte(content[:markerIdx], '\n') + 1
 	insertion := "\t" + entryQuoted + ",\n"
 	updated := content[:lineStart] + insertion + content[lineStart:]
-	return os.WriteFile(path, []byte(updated), 0o644)
+	if err := os.WriteFile(path, []byte(updated), 0o644); err != nil {
+		return err
+	}
+	manifest.Refresh(path)
+	return nil
 }
 
 func dirExists(path string) bool {
@@ -620,7 +639,12 @@ func writeFileWithDirs(path, content string) error {
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("creating directory %s: %w", dir, err)
 	}
-	return os.WriteFile(path, []byte(codefmt.File(path, content)), 0644)
+	final := codefmt.File(path, content)
+	if err := os.WriteFile(path, []byte(final), 0644); err != nil {
+		return err
+	}
+	manifest.Note(path, final)
+	return nil
 }
 
 // ensureDialectHelper writes internal/database/dialect.go when it is missing.
