@@ -16,7 +16,7 @@ func syncReactTS() string {
 import type { ReactNode } from "react";
 
 import { SyncEngine } from "./engine";
-import type { OutboxEntry, SyncStatus } from "./types";
+import type { OutboxEntry, SyncHealth, SyncStatus } from "./types";
 
 const SyncContext = createContext<SyncEngine | null>(null);
 
@@ -180,6 +180,31 @@ export function useOfflineResource<T extends { id: string }>(
     () => ({ data, loading, error, create, update, remove, refresh }),
     [data, loading, error, create, update, remove, refresh],
   );
+}
+
+/**
+ * The diagnostics panel's data.
+ *
+ * Separate from useSyncStatus because health reads every mirrored model to
+ * count rows. That is fine on a settings screen and wasteful on every repaint
+ * of a badge in the chrome.
+ */
+export function useSyncHealth(): {
+  health: SyncHealth | null;
+  refresh: () => Promise<void>;
+} {
+  const engine = useSyncEngine();
+  const [health, setHealth] = useState<SyncHealth | null>(null);
+
+  const refresh = useCallback(async () => {
+    setHealth(await engine.health());
+  }, [engine]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  return { health, refresh };
 }
 
 /** One row from the mirror. */

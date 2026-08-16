@@ -49,7 +49,14 @@ func (g *Generator) injectAll(names Names) error {
 	// can push/pull it via /api/sync. Tolerant of older projects that
 	// don't have the // grit:sync marker yet.
 	if fileExists(routesFile) {
+		// A resource with no declared policy keeps the plain Register call it
+		// has always had, so a project without policies produces byte-identical
+		// routes.go to one generated before they existed.
 		register := fmt.Sprintf("\tsyncRegistry.Register(\"%s\", &models.%s{})", names.PluralSnake, names.Pascal)
+		if literal := g.Definition.Sync.GoLiteral(); literal != "" {
+			register = fmt.Sprintf("\tsyncRegistry.RegisterWithPolicy(\"%s\", &models.%s{}, %s)",
+				names.PluralSnake, names.Pascal, literal)
+		}
 		if err := injectBefore(routesFile, "// grit:sync", register); err == nil {
 			fmt.Println("  ✓ Registered model with sync registry")
 		}

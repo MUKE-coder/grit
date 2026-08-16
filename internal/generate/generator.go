@@ -160,6 +160,13 @@ func (g *Generator) Run() error {
 		return err
 	}
 
+	// A declared sync policy needs code that can honour it. Checked before
+	// routes.go is injected, so the project is never left declaring a policy
+	// nothing enforces.
+	if err := g.ensureSyncPolicySupport(); err != nil {
+		return err
+	}
+
 	if err := g.writeGoHandler(names); err != nil {
 		return fmt.Errorf("writing Go handler: %w", err)
 	}

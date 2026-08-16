@@ -121,6 +121,141 @@ return conflicts.map((c) => (
   />
 ));`} />
 
+              <h2 id="policy">Declaring how a resource behaves offline</h2>
+              <p>
+                Every mirrored model has offline semantics whether or not anyone chose
+                them. Left alone they are: mirror everything, ask a human about every
+                conflict, no age limit, nothing kept off the wire. Those are reasonable
+                defaults, and they are also exactly the kind of thing that should be
+                stated rather than assumed, because offline products fail quietly and an
+                assumption is invisible.
+              </p>
+              <p>A <code>sync:</code> block in the resource definition states them:</p>
+              <CodeBlock language="yaml" filename="sale.yaml" code={`name: Sale
+fields:
+  - name: reference
+    type: string
+  - name: total
+    type: float
+  - name: payment_method
+    type: string
+  - name: draft_note
+    type: text
+
+sync:
+  mode: offline_first          # or online_only, to keep it off devices entirely
+  conflict: server_wins        # manual (default) | server_wins | client_wins
+  fields: [reference, total, payment_method]
+  local_only: [draft_note]     # never leaves the device
+  max_offline_age: 72h`} />
+              <CodeBlock language="bash" code={`grit generate resource Sale --from sale.yaml`} />
+              <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden my-6 not-prose">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/30 bg-accent/20">
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Conflict</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">What happens on a version mismatch</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-muted-foreground">
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs">manual</td>
+                      <td className="px-4 py-2.5">The change is parked with both versions attached and a human decides. The default, because silently discarding somebody&apos;s work should be opt-in.</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs">server_wins</td>
+                      <td className="px-4 py-2.5">The client&apos;s change is discarded and the server row replaces it locally. Nobody is prompted. For records a back office owns: stock, prices.</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-mono text-xs">client_wins</td>
+                      <td className="px-4 py-2.5">The client&apos;s change overwrites the server&apos;s. For records with a single author, where the version check protects nothing.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>
+                The policy is enforced on the <strong>server</strong>. Clients read it
+                from <code>GET /api/sync/policy</code> to render the right UI, but a
+                rule an old build can ignore is not a rule, so the decision is made
+                where a request cannot argue with it. A client that cannot reach the
+                server falls back to the defaults rather than refusing to open, since
+                being unreachable is the case this whole feature exists for.
+              </p>
+              <p>
+                <code>local_only</code> is stripped on both sides: the client does not
+                send it and the server would drop it anyway, which is what makes it a
+                promise rather than a convention. <code>max_offline_age</code> is
+                advisory by necessity, because a client that has not synced is by
+                definition not talking to the server. What it buys is a client that can
+                say so, through its own <code>stale</code> badge state, instead of
+                showing three-day-old stock levels in green.
+              </p>
+
+              <h2 id="doctor">grit sync doctor</h2>
+              <p>
+                Everything this checks fails silently. A field allowlist naming a column
+                that does not exist errors nowhere: it excludes the real column, and
+                every client mirrors rows with the value missing. A model with no{' '}
+                <code>Version</code> field cannot detect a conflict at all, so it takes
+                whichever write landed last and nobody is told.
+              </p>
+              <CodeBlock language="bash" code={`grit sync doctor
+
+  Sync configuration: 5 model(s) registered
+    blogs, invoices, sales, uploads, users
+
+  error  sales: sync fields allowlist names "totl", which the model does not have
+         Fix the name. An allowlist entry that matches nothing silently drops
+         the real column from every mirror.
+
+  info   sales: server_wins: an offline edit is discarded if the server moved on
+         The user is not asked. Make sure the screen says so before they type.`} />
+              <p>
+                It also reports a policy that is declared but not enforced, which
+                happens when a project&apos;s sync handler predates policies. That is
+                the worst state to be in: <code>routes.go</code> says{' '}
+                <code>server_wins</code>, the handler keeps prompting, and the
+                declaration reads as though it took effect.
+              </p>
+
+              <h2 id="diagnostics">Diagnostics in the app</h2>
+              <p>
+                An outbox that stopped draining three days ago looks exactly like an
+                outbox with nothing in it. <code>useSyncHealth</code> is the difference:
+                pending count, conflict count, the age of the oldest queued change, time
+                since the last successful sync, and per-model row counts.
+              </p>
+              <CodeBlock filename="apps/web/app/settings/sync/page.tsx" code={`const { health } = useSyncHealth();
+
+if (!health) return <Spinner />;
+
+return (
+  <dl>
+    <Stat label="Queued changes" value={health.pending} />
+    <Stat label="Awaiting a decision" value={health.conflicts} />
+    <Stat label="Oldest queued" value={health.oldestPendingAgeSeconds} unit="s" />
+    <Stat label="Last synced" value={health.lastSyncAgeSeconds ?? "never"} />
+    {health.stale && <Warning>Past the declared offline age limit</Warning>}
+  </dl>
+);`} />
+
+              <h2 id="encryption">Encryption at rest</h2>
+              <p>
+                On mobile and desktop this is real, and it belongs to the caller:{' '}
+                <code>SQLiteAdapter</code> takes an already-open database, so hand it an
+                SQLCipher connection whose key came from the OS keystore and the mirror
+                is encrypted with no change on this side.
+              </p>
+              <p>
+                In a browser it is not offered, because it could not be honest. There is
+                no keystore, so any key the page holds sits in JavaScript beside the data
+                it is meant to protect, and anything with script access to the origin has
+                both. An &ldquo;encrypted IndexedDB&rdquo; option would defend against a
+                threat nobody has while implying it defends against the one people
+                picture. Keep genuinely sensitive fields off the device with{' '}
+                <code>local_only</code>, or mark the resource <code>online_only</code>.
+              </p>
+
               <h2 id="storage">Where the mirror lives</h2>
               <p>
                 The engine holds no storage-specific code. It talks to a{' '}

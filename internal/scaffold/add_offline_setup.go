@@ -6,8 +6,15 @@ import (
 )
 
 // syncRegisterRe matches the registration the resource generator injects into
-// routes.go: syncRegistry.Register("products", &models.Product{}).
-var syncRegisterRe = regexp.MustCompile(`syncRegistry\.Register\(\s*"([a-z0-9_]+)"`)
+// routes.go, in either form:
+//
+//	syncRegistry.Register("products", &models.Product{})
+//	syncRegistry.RegisterWithPolicy("sales", &models.Sale{}, sync.Policy{...})
+//
+// The second alternative is not optional. Matching only Register left the one
+// resource with a deliberately declared offline policy out of the mirror,
+// which is the exact opposite of what declaring it asked for.
+var syncRegisterRe = regexp.MustCompile(`syncRegistry\.Register(?:WithPolicy)?\(\s*"([a-z0-9_]+)"`)
 
 // quotedList renders a TS string array literal from a slice of model names.
 func quotedList(models []string) string {

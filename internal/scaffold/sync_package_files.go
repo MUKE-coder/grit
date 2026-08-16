@@ -166,8 +166,35 @@ export interface OutboxEntry {
   conflictMessage: string;
 }
 
-/** What the UI shows: a badge, a pending count, a conflict list. */
-export type SyncState = "synced" | "syncing" | "offline" | "conflict";
+/**
+ * How one model behaves offline, as declared on the server.
+ *
+ * Fetched from GET /api/sync/policy rather than compiled in, because a copy
+ * is a second thing to keep in sync and an offline client running last
+ * month's conflict rules is the exact silent failure this prevents.
+ */
+export interface SyncPolicy {
+  mode: "offline_first" | "online_only";
+  conflict: "manual" | "server_wins" | "client_wins";
+  fields?: string[];
+  local_only?: string[];
+  max_offline_age_seconds?: number;
+}
+
+/**
+ * What the UI shows.
+ *
+ * "stale" is its own state and not a flavour of offline: an app that has been
+ * offline for ten seconds and one that has been offline past its declared
+ * max_offline_age are telling the user different things. The second is
+ * showing data nobody should act on.
+ */
+export type SyncState =
+  | "synced"
+  | "syncing"
+  | "offline"
+  | "conflict"
+  | "stale";
 
 export interface SyncStatus {
   state: SyncState;
@@ -178,12 +205,37 @@ export interface SyncStatus {
   conflicts: number;
   lastSyncedAt: number | null;
   lastError: string | null;
+  /** Past the strictest max_offline_age of any mirrored model. */
+  stale: boolean;
+}
+
+/**
+ * The numbers that tell you an offline app is in trouble.
+ *
+ * Offline products fail quietly. An outbox that stopped draining three days
+ * ago looks exactly like an outbox with nothing in it, and the only
+ * difference visible from inside the app is these figures.
+ */
+export interface SyncHealth {
+  pending: number;
+  conflicts: number;
+  /** Seconds since the oldest queued change was made. Zero when empty. */
+  oldestPendingAgeSeconds: number;
+  /** Seconds since the last successful sync, or null if there has never been one. */
+  lastSyncAgeSeconds: number | null;
+  stale: boolean;
+  maxOfflineAgeSeconds: number | null;
+  lastError: string | null;
+  /** Per model: how many rows are mirrored and how many are queued. */
+  models: Array<{ model: string; mirrored: number; pending: number }>;
 }
 
 export interface SyncResult {
   pulled: number;
   pushed: number;
   conflicts: number;
+  /** Changes the server discarded under a server_wins policy. */
+  overridden: number;
 }
 
 /**
@@ -226,6 +278,11 @@ export interface SyncEngineOptions {
   /** Rows per pull page. The server caps this at 5000. */
   pullLimit?: number;
   fetchImpl?: typeof fetch;
+  /**
+   * Skip fetching policies from the server and use these instead. For tests,
+   * and for a client that must work before it has ever reached the API.
+   */
+  policies?: Record<string, SyncPolicy>;
 }
 `
 }
