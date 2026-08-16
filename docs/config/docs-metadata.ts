@@ -141,6 +141,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Complete reference for Grit CLI commands: grit new, grit generate resource, grit sync, grit add role, grit start, and grit remove.',
   },
+  '/docs/concepts/offline-sync': {
+    title: 'Offline Sync',
+    description:
+      'Local mirror, outbox and version-checked conflict handling shared by the web, admin, mobile and desktop clients. Installed with grit add offline.',
+  },
   '/docs/concepts/code-generation': {
     title: 'Code Generation',
     description:

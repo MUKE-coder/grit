@@ -206,7 +206,7 @@ grit upgrade                           # Upgrade project templates
 | Backend | Go 1.21+ · Gin · GORM |
 | Frontend | Next.js 14+ (App Router) **or** TanStack Router (Vite) |
 | Styling | Tailwind CSS · shadcn/ui |
-| Database | PostgreSQL (dev: Docker) · SQLite (desktop/single) |
+| Database | PostgreSQL (dev: Docker) · MySQL 8+ / MariaDB · SQLite (desktop/single) |
 | Cache / Queue | Redis · asynq |
 | File Storage | S3-compatible (MinIO / Cloudflare R2 / AWS S3) |
 | Email | Resend |

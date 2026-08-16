@@ -28,6 +28,77 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.148.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.148.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Offline sync is a property of a resource, not of the desktop app.</strong>
+                </p>
+                <p>
+                  The API has served <code>/api/sync/pull</code> and{' '}
+                  <code>/api/sync/push</code> since v3.60, and every generated resource
+                  registers itself with the sync registry. The server side was already
+                  complete. What was missing was a client anywhere except{' '}
+                  <code>apps/desktop</code>, where the engine is written in Go and cannot be
+                  imported by a browser or a phone.
+                </p>
+                <p>
+                  <code>grit add offline</code> installs <code>packages/sync</code>: the same
+                  mirror, the same outbox with the same squash rules, and the same
+                  version-checked conflict handling, in TypeScript, over a storage interface.
+                  Three adapters ship: IndexedDB for web and PWA, expo-sqlite for mobile, and
+                  an in-memory one for tests and server rendering. It wires itself into
+                  whichever of <code>apps/web</code>, <code>apps/admin</code> and{' '}
+                  <code>apps/expo</code> your project has, and mirrors every model the API
+                  registered, read out of <code>routes.go</code> rather than from a list that
+                  can go stale.
+                </p>
+                <p>
+                  <code>useOfflineResource(&quot;products&quot;)</code> is the whole
+                  interface. It returns rows from the mirror and writes through the outbox,
+                  and the screen calling it does not branch on connectivity anywhere.{' '}
+                  <code>useSyncStatus</code> gives you the badge,{' '}
+                  <code>useSyncConflicts</code> gives you both sides of a conflict and the two
+                  ways to end it.
+                </p>
+                <p>
+                  The parts worth knowing about are the ones where doing the obvious thing
+                  loses data. A conflicted change is parked rather than retried, because
+                  replaying it would overwrite exactly the state the user is being asked
+                  about. Concurrent syncs share one run, because two of them draining the same
+                  outbox send every change twice and the second copy conflicts with the first.
+                  Creating a row and then deleting it while offline cancels both ends instead
+                  of sending a delete for something the server has never seen. A pull follows
+                  full pages, because stopping after one would leave the mirror quietly behind
+                  after any bulk change.
+                </p>
+                <p>
+                  Verified by running it: 45 checks against a mock server covering the squash
+                  rules, tombstones, cursor pagination, conflict parking, resolve, revert,
+                  retry after a transient error, and concurrent syncs. Typechecking proves a
+                  file is well-formed and says nothing about whether an offline app loses your
+                  work.
+                </p>
+                <p>
+                  Also in this release, three documentation corrections. Email verification
+                  and API keys have shipped for a while and the docs never mentioned either,
+                  which is why an outside review filed both as missing features. They are now
+                  in{' '}
+                  <a href="/docs/backend/authentication">Authentication</a>, with the endpoints,
+                  the key format, and why the secret is hashed with SHA-256 rather than bcrypt.
+                  MySQL is named in the README stack table. And the mobile offline page no
+                  longer says that offline writes are a desktop-only feature.
+                </p>
+              </div>
+            </div>
+
             {/* v3.147.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

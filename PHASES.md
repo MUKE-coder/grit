@@ -710,9 +710,10 @@ that is item 7.1 for exactly that reason.
 
 ### 7.1 Credibility (days)
 
-- [ ] Correct the public docs and README. Email verification and API keys
-      shipped long ago and the homepage still lists them as missing, which is
-      why a reviewer filed them as gaps (3.11).
+- [x] Correct the public docs and README (gap 3.11) - v3.148.0. Email
+      verification and API keys documented in Authentication, MySQL named in the
+      README stack table, and the mobile offline page no longer claims offline
+      writes are desktop-only.
 - [ ] `grit doctor` **[both]** (new 4.4 / rec 23): Go and Node versions, DB,
       Redis, storage, mail, route and type sync, plugin integrity, weak JWT
       secret, wildcard CORS in production.
@@ -776,8 +777,11 @@ rules. A plugin bundle, not core, exactly as the review's own section 36 argues.
 
 - [ ] i18n at the generator, so every new resource emits keys rather than
       English (gap 3.7).
-- [ ] Extract the offline-sync engine out of `apps/desktop` **[both]**
-      (gap 3.10 / rec 26).
+- [x] Extract the offline-sync engine out of `apps/desktop` **[both]**
+      (gap 3.10 / rec 26) - v3.148.0. `grit add offline` installs
+      `packages/sync`: the same mirror, outbox and version-checked conflicts in
+      TypeScript, over a storage interface with IndexedDB, expo-sqlite and
+      in-memory adapters. Verified by running 45 checks against a mock server.
 - [ ] Media abstraction over storage (rec 16).
 - [ ] `grit audit a11y` against the generated admin (gap 4.3).
 - [ ] GraphQL as a plugin over the generated handlers (gap 3.5).
