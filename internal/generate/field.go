@@ -56,6 +56,11 @@ type Field struct {
 	// from the third position of name:select:v1=L1|v2=L2.
 	Options []FieldOption `yaml:"options,omitempty"`
 
+	// Workflow, when set on a select field, turns it from a column that
+	// accepts any of its options into a state machine with guarded
+	// transitions. Nil for an ordinary select.
+	Workflow *WorkflowSpec `yaml:"workflow,omitempty"`
+
 	// Auto marks a string field that is auto-generated from a sequence in the
 	// model's BeforeCreate hook (declared name:string:auto or name:string:auto:PREFIX).
 	// The generator wires the sequence infra + BeforeCreate call, makes the field
@@ -543,3 +548,6 @@ func isMoneyField(name string) bool {
 	}
 	return false
 }
+
+// HasWorkflow reports whether this field is a state machine.
+func (f Field) HasWorkflow() bool { return f.Workflow != nil }

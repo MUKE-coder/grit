@@ -26,17 +26,41 @@ func (g *Generator) ensureEventsSupport() error {
 	for _, f := range []struct {
 		path string
 		body string
+		// needs is a symbol the generated code depends on. A file from an
+		// earlier release can exist and still be missing it, which fails the
+		// build with an undefined reference rather than anything explanatory.
+		needs string
 	}{
-		{filepath.Join(apiRoot, "internal", "events", "events.go"), scaffold.APIEventsGo()},
-		{filepath.Join(apiRoot, "internal", "events", "subscribers.go"), scaffold.APIEventsSubscribersGo()},
+		{filepath.Join(apiRoot, "internal", "events", "events.go"), scaffold.APIEventsGo(), "func Emitted("},
+		{filepath.Join(apiRoot, "internal", "services", "event_subscribers.go"), scaffold.APIEventsSubscribersGo(), "func RegisterEventSubscribers("},
 	} {
-		if fileExists(f.path) {
+		body := strings.ReplaceAll(f.body, "{{MODULE}}", g.Module)
+		rel := strings.TrimPrefix(filepath.ToSlash(f.path), filepath.ToSlash(apiRoot)+"/")
+
+		if !fileExists(f.path) {
+			if err := writeFileWithDirs(f.path, body); err != nil {
+				return fmt.Errorf("writing event bus: %w", err)
+			}
+			fmt.Printf("  ✓ Added %s\n", rel)
 			continue
 		}
-		if err := writeFileWithDirs(f.path, strings.ReplaceAll(f.body, "{{MODULE}}", g.Module)); err != nil {
-			return fmt.Errorf("writing event bus: %w", err)
+
+		current, err := os.ReadFile(f.path)
+		if err != nil || strings.Contains(string(current), f.needs) {
+			continue
 		}
-		fmt.Printf("  ✓ Added internal/events/%s\n", filepath.Base(f.path))
+
+		// Present but too old. Refreshed only when the manifest proves nobody
+		// has edited it, on the same rule the upgrade guard follows: no
+		// evidence is not permission.
+		if !g.refreshIfUnchanged(f.path, body) {
+			color.New(color.FgHiYellow).Printf("\n  ⚠ %s is from an earlier release and is missing %s\n", rel, strings.TrimSuffix(f.needs, "("))
+			fmt.Println("    The build will fail with an undefined reference. Replace that file")
+			fmt.Println("    with the current template, or delete it and generate again.")
+			fmt.Println()
+			continue
+		}
+		fmt.Printf("  ✓ Updated %s\n", rel)
 	}
 
 	return g.ensureEventsBoot()
@@ -68,7 +92,7 @@ func (g *Generator) ensureEventsBoot() error {
 		fmt.Println("    and activity-feed rows will stop appearing. Add this after the hub:")
 		fmt.Println()
 		fmt.Println("      events.Init(4)")
-		fmt.Println("      events.RegisterDefaults(db, realtimeHub, nil)")
+		fmt.Println("      services.RegisterEventSubscribers(db, realtimeHub, nil)")
 		fmt.Println()
 		return nil
 	}
@@ -77,7 +101,7 @@ func (g *Generator) ensureEventsBoot() error {
 	boot := "\n\n\t// Domain event bus: generated handlers emit here, and the audit log,\n" +
 		"\t// realtime and (when installed) webhooks subscribe.\n" +
 		"\tevents.Init(4)\n" +
-		"\tevents.RegisterDefaults(db, realtimeHub, nil)"
+		"\tservices.RegisterEventSubscribers(db, realtimeHub, nil)"
 	content = content[:insertAt] + boot + content[insertAt:]
 
 	// The import has to come with it, or the file stops compiling.

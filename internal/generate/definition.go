@@ -70,6 +70,14 @@ func LoadFromYAML(path string) (*ResourceDefinition, error) {
 	if err := def.Sync.Validate(def.Name); err != nil {
 		return nil, err
 	}
+
+	// Same for workflows. A state nothing can leave is invisible until a
+	// record lands there in production, so it is caught here.
+	for _, f := range def.Fields {
+		if err := f.Workflow.Validate(def.Name, f.Name, f.OptionValues()); err != nil {
+			return nil, err
+		}
+	}
 	if unknown := def.Sync.CheckAgainstFields(def.Name, def.Fields); len(unknown) > 0 {
 		return nil, fmt.Errorf(
 			"sync policy on %s names field(s) the resource does not have: %s",

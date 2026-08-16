@@ -67,14 +67,23 @@ func (g *Generator) ensureSyncPolicySupport() error {
 	return nil
 }
 
-// refreshSyncHandler rewrites the sync handler when the manifest shows it is
+// refreshSyncHandler brings the sync handler forward so it enforces policies.
+func (g *Generator) refreshSyncHandler(path string) bool {
+	body := strings.ReplaceAll(scaffold.APISyncHandlerGo(), "{{MODULE}}", g.Module)
+	if !g.refreshIfUnchanged(path, body) {
+		return false
+	}
+	fmt.Println("  ✓ Updated internal/handlers/sync.go so it enforces sync policies")
+	return true
+}
+
+// refreshIfUnchanged rewrites a file only when the manifest shows it is
 // exactly what Grit last wrote there. Reports whether it did.
 //
 // An untracked file is not overwritten either. Untracked means the project
-// predates the manifest, so there is no evidence about it in any direction,
-// and the rule shipped with the manifest was that no evidence is not
-// permission.
-func (g *Generator) refreshSyncHandler(path string) bool {
+// predates the manifest, so there is no evidence in either direction, and the
+// rule that shipped with the manifest was that no evidence is not permission.
+func (g *Generator) refreshIfUnchanged(path, body string) bool {
 	m, err := manifest.Load(g.Root)
 	if err != nil {
 		return false
@@ -83,12 +92,7 @@ func (g *Generator) refreshSyncHandler(path string) bool {
 	if !inside || m.StatusOf(g.Root, rel) != manifest.Unchanged {
 		return false
 	}
-	body := strings.ReplaceAll(scaffold.APISyncHandlerGo(), "{{MODULE}}", g.Module)
-	if err := writeFileWithDirs(path, body); err != nil {
-		return false
-	}
-	fmt.Println("  ✓ Updated internal/handlers/sync.go so it enforces sync policies")
-	return true
+	return writeFileWithDirs(path, body) == nil
 }
 
 // ensurePolicyRoute mounts GET /sync/policy in a project whose routes.go

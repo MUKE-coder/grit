@@ -757,9 +757,13 @@ four separate consumers with no shared bus.
       webhooks are subscribers. Before this a generated handler called the
       audit log and nothing else, and no handler in a scaffolded project
       ever dispatched a webhook or broadcast a change.
-- [ ] **Workflows / state machines** **[both]** (gap 3.3 / recs 6, 30):
-      `status:enum:draft,sent,paid:workflow` generating transition guards, an
-      admin badge and timeline, and transition events.
+- [x] **Workflows / state machines** **[both]** (gap 3.3 / recs 6, 30) -
+      v3.151.0. A `workflow:` block on a select field generates the definition,
+      a guarded transition service, `POST /:id/transitions/:action` and a
+      per-transition event. States come from the field's own options so the two
+      cannot drift.
+- [ ] Admin rendering for workflows: state badges and the transitions legal
+      from the current state, as buttons rather than a dropdown of everything.
 - [ ] **Notifications and inbox** (recs 8, 9), a consumer of domain events.
 - [ ] **Settings registry** (rec 29): `setting.Define("invoice.prefix")` with
       typed access, admin UI and env fallback.

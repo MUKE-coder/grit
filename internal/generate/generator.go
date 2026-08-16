@@ -173,6 +173,12 @@ func (g *Generator) Run() error {
 		return err
 	}
 
+	// A workflow field turns the status column into a state machine: a
+	// definition, a guarded transition service and a transition endpoint.
+	if err := g.writeWorkflow(names); err != nil {
+		return err
+	}
+
 	if err := g.writeGoHandler(names); err != nil {
 		return fmt.Errorf("writing Go handler: %w", err)
 	}
@@ -297,6 +303,13 @@ func (g *Generator) Run() error {
 
 	if err := g.injectAll(names); err != nil {
 		return fmt.Errorf("injecting code: %w", err)
+	}
+
+	// After injectAll, always. It decides a resource is already wired by
+	// finding its handler in routes.go, and a transition route mounted first
+	// makes it skip every CRUD route for that resource.
+	if err := g.ensureWorkflowRoutes(names); err != nil {
+		return err
 	}
 
 	// Resolve new Go dependencies if needed
