@@ -42,6 +42,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "realtime", "hub.go"):           apiRealtimeHubGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):      apiRealtimeHandlerGo(),
 		filepath.Join(apiRoot, "internal", "sync", "registry.go"):          apiSyncRegistryGo(),
+		filepath.Join(apiRoot, "internal", "sync", "policy.go"):            apiSyncPolicyGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "sync.go"):          apiSyncHandlerGo(),
 		filepath.Join(apiRoot, "internal", "models", "activity_log.go"):    apiActivityLogModelGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "activity.go"):    apiActivityMiddlewareGo(),
@@ -4702,6 +4703,11 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 	if err != nil {
 		return PushResult{OK: false, Code: "UNKNOWN_MODEL", Message: err.Error()}
 	}
+	policy := h.Registry.PolicyFor(ch.Model)
+	// Enforced before the payload reaches a decoder: a field declared
+	// local_only is a promise it never leaves the device, and a promise kept
+	// only by well-behaved clients is not one.
+	ch.Data = policy.StripLocalOnly(ch.Data)
 	// The Go struct name (e.g. "Category") is the nicest entity label for the
 	// activity feed — offline edits should read the same as online ones.
 	entityType := reflect.TypeOf(proto).Elem().Name()
@@ -4735,15 +4741,35 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 		}
 		serverVersion := getIntField(current, "Version")
 		if serverVersion != ch.Version {
-			return PushResult{
-				OK:            false,
-				Code:          "VERSION_CONFLICT",
-				Message:       fmt.Sprintf("client had v%d, server has v%d", ch.Version, serverVersion),
-				ServerVersion: serverVersion,
-				ServerData:    current,
+			// The versions disagree. What happens next is the resource's
+			// declared policy, decided here rather than in the client, because
+			// a rule an old build can ignore is not a rule.
+			switch policy.Conflict {
+			case sync.ConflictServerWins:
+				// The client's change is dropped and it is told to take the
+				// server row. Reported distinctly from a conflict so the
+				// client can apply it without asking anyone.
+				return PushResult{
+					OK:            false,
+					Code:          "SERVER_WINS",
+					Message:       fmt.Sprintf("server v%d kept over client v%d", serverVersion, ch.Version),
+					ServerVersion: serverVersion,
+					ServerData:    current,
+				}
+			case sync.ConflictClientWins:
+				// Fall through and overwrite. The version check was protecting
+				// nothing for this resource, and the author said so.
+			default:
+				return PushResult{
+					OK:            false,
+					Code:          "VERSION_CONFLICT",
+					Message:       fmt.Sprintf("client had v%d, server has v%d", ch.Version, serverVersion),
+					ServerVersion: serverVersion,
+					ServerData:    current,
+				}
 			}
 		}
-		// Versions match — apply the update.
+		// Apply the update.
 		//
 		// Decode the client payload into a fresh, typed model struct rather than
 		// calling .Updates(ch.Data) directly. A raw map[string]interface{} hands
@@ -4800,6 +4826,21 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 	}
 }
 
+// SyncPolicyResponse is what GET /api/sync/policy answers with.
+type SyncPolicyResponse struct {
+	Models map[string]sync.Policy ` + "`" + `json:"models"` + "`" + `
+}
+
+// Policy handles GET /api/sync/policy.
+//
+// Clients configure themselves from this rather than from a generated copy.
+// A copy is a second thing to keep in sync, and an offline client running
+// last month's build against this month's conflict rules is exactly the
+// silent failure this whole feature exists to prevent.
+func (h *SyncHandler) Policy(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"data": SyncPolicyResponse{Models: h.Registry.Policies()}})
+}
+
 // Pull handles GET /api/sync/pull?since=<rfc3339>&model=<table>. Returns
 // every row in the requested table with UpdatedAt > since. The client
 // uses the response's cursor as the next ?since value.
@@ -4818,6 +4859,16 @@ func (h *SyncHandler) Pull(c *gin.Context) {
 	proto, err := h.Registry.New(model)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "UNKNOWN_MODEL", "message": err.Error()}})
+		return
+	}
+	policy := h.Registry.PolicyFor(model)
+	if policy.Mode == sync.ModeOnlineOnly {
+		// Answering with an empty page would look like "nothing has changed",
+		// and the client would mirror an empty table forever.
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
+			"code":    "NOT_SYNCABLE",
+			"message": model + " is registered online_only and is not mirrored",
+		}})
 		return
 	}
 
@@ -4865,7 +4916,7 @@ func (h *SyncHandler) Pull(c *gin.Context) {
 			continue
 		}
 		m["_deleted"] = isSyncDeleted(item)
-		rows = append(rows, m)
+		rows = append(rows, policy.Projects(m))
 		if eff, ok := effectiveSyncTime(item); ok && eff.After(maxEff) {
 			maxEff = eff
 		}
@@ -8529,6 +8580,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		Summary("Send changes made while offline").
 		RequestBody(handlers.SyncPushRequest{}).
 		Response(200, handlers.MessageResponse{}, "Per-change accepted or conflicted, with the winning row")
+	docs.Route("GET /api/v1/sync/policy").
+		Summary("How each model behaves offline").
+		Response(200, handlers.SyncPolicyResponse{}, "Sync mode, conflict strategy, synced fields and offline age limit per model")
 
 	// ── Public form sharing ────────────────────────────────────────
 	docs.Route("GET /api/v1/public/forms/:token").
@@ -9093,6 +9147,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// local outbox and pull server-side updates.
 		protected.POST("/sync/push", syncHandler.Push)
 		protected.GET("/sync/pull", syncHandler.Pull)
+		protected.GET("/sync/policy", syncHandler.Policy)
 
 		// AI — only mounted when the module is enabled, so an app that
 		// doesn't use it exposes no AI surface at all (MODULE_AI=false).

@@ -14,7 +14,9 @@ func syncEngineTS() string {
   PushResult,
   StorageAdapter,
   SyncEngineOptions,
+  SyncHealth,
   SyncOp,
+  SyncPolicy,
   SyncResult,
   SyncStatus,
 } from "./types";
@@ -50,6 +52,8 @@ export class SyncEngine {
   private conflicts = 0;
   private lastSyncedAt: number | null = null;
   private lastError: string | null = null;
+  private policies: Record<string, SyncPolicy> = {};
+  private policiesLoaded = false;
 
   constructor(options: SyncEngineOptions) {
     this.apiUrl = options.apiUrl.replace(/\/+$/, "");
@@ -59,6 +63,75 @@ export class SyncEngine {
     this.autoSyncIntervalMs = options.autoSyncIntervalMs ?? 30000;
     this.pullLimit = options.pullLimit ?? 500;
     this.fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
+    if (options.policies) {
+      this.policies = options.policies;
+      this.policiesLoaded = true;
+    }
+  }
+
+  // --------------------------------------------------------------- policies
+
+  /**
+   * The declared behaviour for a model, or the defaults for one with none.
+   *
+   * Defaults match what every project had before policies existed, so a
+   * client that has never reached the server behaves exactly as it used to
+   * rather than refusing to work.
+   */
+  policyFor(model: string): SyncPolicy {
+    return this.policies[model] ?? { mode: "offline_first", conflict: "manual" };
+  }
+
+  /**
+   * Loads the policies the server declares.
+   *
+   * Failure is not fatal. A client that cannot reach the server is the case
+   * this whole feature exists for, and it should fall back to the defaults
+   * rather than refuse to open.
+   */
+  async loadPolicies(): Promise<void> {
+    try {
+      const response = await this.request(this.apiUrl + "/sync/policy", {
+        method: "GET",
+      });
+      const body = (await response.json()) as {
+        data?: { models?: Record<string, SyncPolicy> };
+      };
+      if (body.data?.models) {
+        this.policies = body.data.models;
+        this.policiesLoaded = true;
+        this.emit();
+      }
+    } catch {
+      // Keep whatever we had. Stored policies would be better still; that is
+      // worth adding once there is a reason to believe they change often.
+    }
+  }
+
+  /**
+   * The strictest max_offline_age across mirrored models, in seconds.
+   *
+   * Strictest rather than per-model on purpose: the badge answers one
+   * question, and if any table on the screen is too old to act on, the honest
+   * answer for the screen is stale.
+   */
+  private strictestMaxAge(): number | null {
+    let strictest: number | null = null;
+    for (const model of this.models) {
+      const seconds = this.policyFor(model).max_offline_age_seconds;
+      if (!seconds) continue;
+      if (strictest === null || seconds < strictest) strictest = seconds;
+    }
+    return strictest;
+  }
+
+  /** Whether the mirror is past its declared age limit. */
+  isStale(): boolean {
+    const limit = this.strictestMaxAge();
+    if (limit === null) return false;
+    // Never synced and a limit declared is the worst case, not an exemption.
+    if (this.lastSyncedAt === null) return true;
+    return (Date.now() - this.lastSyncedAt) / 1000 > limit;
   }
 
   // --------------------------------------------------------------- lifecycle
@@ -72,6 +145,11 @@ export class SyncEngine {
     this.lastSyncedAt = last ? Number(last) : null;
     await this.refreshCounts();
     this.emit();
+    if (!this.policiesLoaded) {
+      // Not awaited: the app should render from the mirror immediately, and
+      // the defaults are correct until this lands.
+      void this.loadPolicies();
+    }
   }
 
   async close(): Promise<void> {
@@ -123,8 +201,15 @@ export class SyncEngine {
   }
 
   status(): SyncStatus {
+    const stale = this.isStale();
+
+    // Ordered by what the user most needs to know. Stale outranks offline
+    // because "your data is too old to act on" is a different message from
+    // "you are offline", and only the first one should stop somebody
+    // shipping against a three-day-old stock level.
     let state: SyncStatus["state"] = "synced";
     if (this.conflicts > 0) state = "conflict";
+    else if (stale) state = "stale";
     else if (this.syncing) state = "syncing";
     else if (this.forceOffline || !this.online) state = "offline";
 
@@ -137,6 +222,49 @@ export class SyncEngine {
       conflicts: this.conflicts,
       lastSyncedAt: this.lastSyncedAt,
       lastError: this.lastError,
+      stale,
+    };
+  }
+
+  /**
+   * The figures that show whether the mirror is healthy.
+   *
+   * Worth having as its own call rather than folding into status: this reads
+   * every mirrored model to count rows, which is fine for a diagnostics panel
+   * and wasteful on every badge repaint.
+   */
+  async health(): Promise<SyncHealth> {
+    const entries = await this.adapter.listOutbox();
+    const now = nowSeconds();
+
+    let oldest = 0;
+    for (const entry of entries) {
+      const age = now - entry.createdAt;
+      if (age > oldest) oldest = age;
+    }
+
+    const models = [];
+    for (const model of this.models) {
+      const records = await this.adapter.listRecords(model);
+      models.push({
+        model,
+        mirrored: records.filter((r) => !r.deleted).length,
+        pending: entries.filter((e) => e.model === model).length,
+      });
+    }
+
+    return {
+      pending: entries.length,
+      conflicts: entries.filter((e) => e.hasConflict).length,
+      oldestPendingAgeSeconds: oldest,
+      lastSyncAgeSeconds:
+        this.lastSyncedAt === null
+          ? null
+          : Math.floor((Date.now() - this.lastSyncedAt) / 1000),
+      stale: this.isStale(),
+      maxOfflineAgeSeconds: this.strictestMaxAge(),
+      lastError: this.lastError,
+      models,
     };
   }
 
@@ -347,6 +475,7 @@ export class SyncEngine {
         pulled,
         pushed: pushResult.pushed,
         conflicts: pushResult.conflicts,
+        overridden: pushResult.overridden,
       };
     } catch (error) {
       this.lastError = error instanceof Error ? error.message : String(error);
@@ -367,6 +496,7 @@ export class SyncEngine {
    * wrong.
    */
   async pull(model: string): Promise<number> {
+    if (this.policyFor(model).mode === "online_only") return 0;
     let total = 0;
     for (;;) {
       const since = await this.adapter.getMeta("cursor:" + model);
@@ -419,19 +549,27 @@ export class SyncEngine {
    * produce the same conflict and overwrite the server state the merge UI is
    * currently showing the user.
    */
-  async push(): Promise<{ pushed: number; conflicts: number }> {
+  async push(): Promise<{
+    pushed: number;
+    conflicts: number;
+    overridden: number;
+  }> {
     const all = await this.adapter.listOutbox();
     const entries = all
       .filter((e) => !e.hasConflict)
       .sort((a, b) => a.createdAt - b.createdAt);
-    if (entries.length === 0) return { pushed: 0, conflicts: 0 };
+    if (entries.length === 0) return { pushed: 0, conflicts: 0, overridden: 0 };
 
     const changes: PushChange[] = entries.map((e) => ({
       op: e.op,
       model: e.model,
       id: e.entityId,
       version: e.version,
-      data: e.data,
+      // Stripped here as well as on the server. The server enforces it,
+      // because a promise kept only by well-behaved clients is not one; the
+      // client strips it too so a local_only field is not sitting in a
+      // request body on the wire waiting to be enforced away.
+      data: this.stripLocalOnly(e.model, e.data),
     }));
 
     const response = await this.request(this.apiUrl + "/sync/push", {
@@ -453,6 +591,7 @@ export class SyncEngine {
 
     let pushed = 0;
     let conflicts = 0;
+    let overridden = 0;
     for (let i = 0; i < results.length; i += 1) {
       const result = results[i];
       const entry = entries[i];
@@ -471,6 +610,25 @@ export class SyncEngine {
           }
         }
         pushed += 1;
+        continue;
+      }
+
+      if (result.code === "SERVER_WINS") {
+        // The resource declared server_wins, so the server discarded this
+        // change and sent its row. Nobody is asked anything: the point of
+        // declaring server_wins is that there is no decision to make.
+        await this.adapter.deleteOutbox(entry.model, entry.entityId);
+        if (result.server_data) {
+          await this.adapter.putRecord({
+            model: entry.model,
+            id: entry.entityId,
+            data: result.server_data,
+            version: result.server_version ?? 0,
+            updatedAt: nowSeconds(),
+            deleted: false,
+          });
+        }
+        overridden += 1;
         continue;
       }
 
@@ -499,7 +657,27 @@ export class SyncEngine {
     }
 
     await this.refreshCounts();
-    return { pushed, conflicts };
+    return { pushed, conflicts, overridden };
+  }
+
+  /**
+   * Removes a model's local_only fields from an outgoing payload.
+   *
+   * The values stay in the mirror. That is the whole point: a draft note or a
+   * scratch flag lives on the device and is readable by the screen that wrote
+   * it, and the server never learns it exists.
+   */
+  private stripLocalOnly(
+    model: string,
+    data: Record<string, unknown> | null,
+  ): Record<string, unknown> | null {
+    const localOnly = this.policyFor(model).local_only;
+    if (!localOnly || localOnly.length === 0 || data === null) return data;
+    const out: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (!localOnly.includes(key)) out[key] = value;
+    }
+    return out;
   }
 
   // --------------------------------------------------------------- conflicts

@@ -25,6 +25,12 @@ type ResourceDefinition struct {
 	// admin sidebar (set on inline `--items` children — you manage them through
 	// the parent's form + detail page, not a top-level nav entry).
 	Hidden bool `yaml:"-"`
+
+	// Sync, when set, declares how the resource behaves offline: mirrored or
+	// not, what happens on a version conflict, which fields cross the wire,
+	// and how stale the mirror may get. Nil means the defaults every project
+	// had before policies existed.
+	Sync *SyncPolicy `yaml:"sync,omitempty"`
 }
 
 // LoadFromYAML reads a resource definition from a YAML file.
@@ -56,6 +62,18 @@ func LoadFromYAML(path string) (*ResourceDefinition, error) {
 		if !isValidType(f.Type) {
 			return nil, fmt.Errorf("field %q: invalid type %q (valid: %s)", f.Name, f.Type, strings.Join(ValidFieldTypes(), ", "))
 		}
+	}
+
+	// Validated here rather than at generation time, so a bad policy is a
+	// message naming the resource and the allowed values, and no code with
+	// the mistake baked in is ever written.
+	if err := def.Sync.Validate(def.Name); err != nil {
+		return nil, err
+	}
+	if unknown := def.Sync.CheckAgainstFields(def.Name, def.Fields); len(unknown) > 0 {
+		return nil, fmt.Errorf(
+			"sync policy on %s names field(s) the resource does not have: %s",
+			def.Name, strings.Join(unknown, ", "))
 	}
 
 	return &def, nil

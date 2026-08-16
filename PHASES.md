@@ -763,6 +763,50 @@ four separate consumers with no shared bus.
 - [ ] **Application-wide search** (rec 10) with provider adapters: Postgres FTS
       first, Meilisearch and Typesense as plugins.
 
+### 7.4b Offline as a formal consistency platform (product review 12)
+
+- [x] Sync policy in the resource definition: mode, conflict strategy, synced
+      fields, `local_only`, `max_offline_age` - v3.149.0. Enforced on the
+      server and published at `GET /api/sync/policy`, so a client renders the
+      right UI without keeping a copy that drifts.
+- [x] `grit sync doctor` and `useSyncHealth`, because every mistake in this
+      area is silent: an allowlist typo drops a real column from every mirror,
+      and an outbox that stopped draining looks like an empty one.
+- [x] Encryption at rest: supported on mobile and desktop by passing an
+      SQLCipher connection to `SQLiteAdapter`. Deliberately not offered in the
+      browser, where there is no keystore to hold the key.
+- [ ] Replay and recovery tooling for a mirror that has gone wrong.
+
+### 7.4c Realtime collaboration (product review 6-9)
+
+Agreed shape: soft locks only. Advisory presence, never blocking, with the
+`Version` column still preventing silent clobbering. No lock TTL, no
+break-lock permission, no crash recovery to design.
+
+- [ ] Rooms in the realtime hub. Today it is keyed by user id only, so there
+      is no concept of who is looking at invoice 42, and every other primitive
+      here needs that.
+- [ ] Redis pub/sub backplane. The hub is in-memory, so presence is silently
+      wrong the moment a second API instance exists.
+- [ ] Presence with heartbeat and TTL, plus live record events.
+- [ ] Live stale-version detection, reusing the merge surface built for
+      offline conflicts. Same `Version` column, same decision, two latencies.
+- [ ] Comments and mentions, as an official module rather than core.
+
+### 7.4d Surfaces beyond tables (product review 21)
+
+Components over the existing resource controller, preserving pagination,
+filters, permissions, URL state, actions and cache invalidation. A kanban that
+quietly ignores the filter tabs is worse than no kanban.
+
+- [ ] Kanban. Nearly free: a `select` field already supplies the columns and
+      dragging a card is a PATCH the controller already does.
+- [ ] Calendar, non-recurring first. Recurrence and timezones are their own
+      project.
+- [ ] Inbox/list and timeline.
+- [ ] Map, as a plugin: a tile provider, an API key and attribution
+      requirements are not core dependencies.
+
 ### 7.5 SaaS (recs 14, 15, 27, 31)
 
 Billing, entitlements, payment adapters, invitations, usage limits, automation

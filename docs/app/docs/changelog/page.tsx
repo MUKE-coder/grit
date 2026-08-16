@@ -28,6 +28,111 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.149.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.149.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Offline behaviour is declared, enforced and diagnosable.</strong>
+                </p>
+                <p>
+                  Yesterday&apos;s release gave every client a sync engine. It mirrored
+                  every registered model, asked a human about every conflict, kept
+                  nothing off the wire and had no age limit. Those are reasonable
+                  defaults and nobody chose them, which is the difference between a
+                  feature and magic. A developer shipping a point-of-sale app had no way
+                  to state what they needed and no way to find out what they had.
+                </p>
+                <p>
+                  A <code>sync:</code> block in the resource definition now states it:
+                  mode, conflict strategy, which fields cross the wire, which never
+                  leave the device, and how stale the mirror may get before the app
+                  should say so.
+                </p>
+                <p>
+                  Three conflict strategies. <code>manual</code> parks the change with
+                  both versions attached and a human decides, which is what every
+                  project had and stays the default, because silently discarding
+                  somebody&apos;s work should be opt-in. <code>server_wins</code>{' '}
+                  discards the client&apos;s change and hands back the server row, for
+                  records a back office owns. <code>client_wins</code> overwrites, for
+                  records with a single author where the version check protects nothing.
+                </p>
+                <p>
+                  Enforced on the server, not the client. A rule an old build can ignore
+                  is not a rule, so the decision is made where a request cannot argue
+                  with it, and <code>GET /api/sync/policy</code> publishes the
+                  declaration so clients render the right UI rather than keeping their
+                  own copy to drift.{' '}
+                  <code>local_only</code> is stripped on both sides, which is what makes
+                  it a promise rather than a convention.
+                </p>
+                <p>
+                  <code>max_offline_age</code> is advisory by necessity, because a
+                  client that has not synced is by definition not talking to the server.
+                  What it buys is a client that can say so: <code>stale</code> is its
+                  own badge state, ranked above <code>offline</code>, because &ldquo;you
+                  are offline&rdquo; and &ldquo;this data is too old to act on&rdquo; are
+                  different messages and only one of them should stop somebody shipping
+                  against a three-day-old stock level.
+                </p>
+                <p>
+                  <code>grit sync doctor</code> exists because every mistake here is
+                  silent. A field allowlist naming a column that does not exist errors
+                  nowhere: it excludes the real column, and every client mirrors rows
+                  with the value missing. A model with no <code>Version</code> field
+                  cannot detect a conflict at all, so it takes whichever write landed
+                  last and nobody is told. It also catches a policy that is declared but
+                  not enforced, which is the worst state of the three.
+                </p>
+                <p>
+                  <code>useSyncHealth</code> covers the same ground inside the app.
+                  An outbox that stopped draining three days ago looks exactly like an
+                  outbox with nothing in it, and the only difference visible from inside
+                  is the pending count, the age of the oldest queued change, and the time
+                  since the last successful sync.
+                </p>
+                <p>
+                  On encryption: <code>SQLiteAdapter</code> takes an already-open
+                  database, so an SQLCipher connection keyed from the OS keystore
+                  encrypts the mirror on mobile and desktop with no change on our side.
+                  The browser gets nothing, deliberately. There is no keystore, so any
+                  key the page holds sits in JavaScript beside the data it protects, and
+                  an encrypted-IndexedDB option would defend against a threat nobody has
+                  while implying it defends against the one people picture.
+                </p>
+                <p>
+                  Verified by running it. Twenty-four checks against a live server: the
+                  policy is published, <code>local_only</code> never reaches the
+                  database, pull sends only the allowlisted columns plus the bookkeeping
+                  ones a client cannot work without, <code>server_wins</code> comes back
+                  as its own code with the server row attached, and a model with no
+                  declared policy still parks conflicts for a human. Then twenty-three
+                  more against the client: it reads the policy, falls back to defaults
+                  when the server is unreachable rather than refusing to open, strips
+                  local-only fields before sending, applies a server_wins override
+                  without prompting, skips online_only models entirely, and reports
+                  stale.
+                </p>
+                <p>
+                  Two upgrade-path bugs fixed along the way. Everything policy-related
+                  lives in a new <code>internal/sync/policy.go</code> rather than as an
+                  edit to <code>registry.go</code>, so{' '}
+                  <code>grit generate resource</code> can add it to a project generated
+                  before policies existed. And the model discovery behind{' '}
+                  <code>grit add offline</code> matched only <code>Register</code>, so
+                  the one resource with a deliberately declared offline policy was the
+                  one left out of the mirror.
+                </p>
+              </div>
+            </div>
+
             {/* v3.148.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

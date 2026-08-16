@@ -20,6 +20,7 @@ func Setup() {
 	syncRegistry.Register("users", &models.User{})
 	syncRegistry.Register("blog_posts", &models.BlogPost{})
 	syncRegistry.Register( "products", &models.Product{})
+	syncRegistry.RegisterWithPolicy("sales", &models.Sale{}, sync.Policy{Conflict: sync.ConflictServerWins})
 	// grit:sync
 }
 `
@@ -28,7 +29,10 @@ func Setup() {
 	}
 
 	got := discoverSyncModels(root)
-	want := []string{"blog_posts", "products", "users"}
+	// sales is registered via RegisterWithPolicy. Leaving it out of the mirror
+	// would exclude precisely the resource whose offline behaviour was
+	// deliberately declared.
+	want := []string{"blog_posts", "products", "sales", "users"}
 	if len(got) != len(want) {
 		t.Fatalf("got %v, want %v", got, want)
 	}

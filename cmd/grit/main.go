@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.148.0"
+var version = "3.149.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -1785,13 +1785,85 @@ func startServerCmd() *cobra.Command {
 }
 
 func syncCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "sync",
 		Short: "Sync Go types to TypeScript types and Zod schemas",
 		Long:  "Parse Go model files and regenerate TypeScript types and Zod schemas in packages/shared.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
 			return generate.Sync()
+		},
+	}
+	cmd.AddCommand(syncDoctorCmd())
+	return cmd
+}
+
+// syncDoctorCmd is `grit sync doctor`.
+//
+// Everything it checks is something that fails silently. A field allowlist
+// naming a column that does not exist does not error: it excludes the real
+// column, and clients mirror rows with the value missing. A model without a
+// Version field cannot detect a conflict, so it takes whichever write landed
+// last and nobody is told. None of that appears in a build or a request log,
+// which is exactly why it needs a command.
+func syncDoctorCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "doctor",
+		Short: "Check the project's offline sync configuration",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			root, err := scaffold.FindProjectRoot()
+			if err != nil {
+				return err
+			}
+
+			report, err := generate.SyncDoctor(root)
+			if err != nil {
+				return err
+			}
+
+			red := color.New(color.FgHiRed)
+			yellow := color.New(color.FgHiYellow)
+			cyan := color.New(color.FgHiCyan)
+			green := color.New(color.FgHiGreen)
+			gray := color.New(color.FgHiBlack)
+
+			fmt.Println()
+			cyan.Printf("  Sync configuration: %d model(s) registered\n", len(report.Registered))
+			if len(report.Registered) > 0 {
+				gray.Printf("    %s\n", strings.Join(report.Registered, ", "))
+			}
+			fmt.Println()
+
+			for _, f := range report.Findings {
+				label, printer := "info", gray
+				switch f.Level {
+				case "error":
+					label, printer = "error", red
+				case "warning":
+					label, printer = "warning", yellow
+				}
+				if f.Model != "" {
+					printer.Printf("  %s  %s: %s\n", label, f.Model, f.Message)
+				} else {
+					printer.Printf("  %s  %s\n", label, f.Message)
+				}
+				if f.Fix != "" {
+					gray.Printf("         %s\n", f.Fix)
+				}
+			}
+
+			if len(report.Findings) == 0 {
+				green.Println("  Everything checks out.")
+			}
+			fmt.Println()
+
+			if report.Errors() > 0 {
+				return fmt.Errorf("%d problem(s) will stop sync working correctly", report.Errors())
+			}
+			if report.Warnings() > 0 {
+				yellow.Printf("  %d warning(s). Nothing is broken, but read them.\n\n", report.Warnings())
+			}
+			return nil
 		},
 	}
 }
