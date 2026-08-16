@@ -167,6 +167,12 @@ func (g *Generator) Run() error {
 		return err
 	}
 
+	// Generated handlers emit domain events rather than calling the audit log
+	// directly, so the bus and its default subscribers have to exist.
+	if err := g.ensureEventsSupport(); err != nil {
+		return err
+	}
+
 	if err := g.writeGoHandler(names); err != nil {
 		return fmt.Errorf("writing Go handler: %w", err)
 	}

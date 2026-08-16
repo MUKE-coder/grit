@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/changelog')
@@ -26,6 +27,87 @@ export default function ChangelogPage() {
                 All notable changes to Grit are documented here. Each release includes new features,
                 bug fixes, and any breaking changes you need to be aware of.
               </p>
+            </div>
+
+            {/* v3.150.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.150.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Domain events: webhooks and realtime now actually fire.</strong>
+                </p>
+                <p>
+                  Grit shipped four systems that want to know when something happens:
+                  the activity log, outbound webhooks, realtime websockets and
+                  background jobs. A generated handler told exactly one of them. I
+                  checked a scaffolded project and no handler anywhere called{' '}
+                  <code>DispatchWebhook</code>, and none broadcast a resource change.
+                  Both features were complete, documented, and fired by nothing.
+                </p>
+                <p>
+                  Making them work meant hand-writing the call in every handler, for
+                  every operation, on every resource. Forgetting one produced no error:
+                  just a webhook subscription that never heard anything.
+                </p>
+                <p>
+                  There is one bus now. A handler says what happened, once:
+                </p>
+                <CodeBlock filename="apps/api/internal/handlers/invoice.go" code={`events.Emitted(c, "invoices", "Invoice", "created", item.ID, item.Number, "", nil, item)`} />
+                <p>
+                  and the audit log, realtime and webhooks are subscribers. The
+                  generator emits that line in place of the{' '}
+                  <code>services.LogCreate</code> it used to write, so every resource
+                  has <code>created</code>, <code>updated</code>, <code>deleted</code>{' '}
+                  and <code>bulk</code> events from the moment it is generated, with no
+                  per-resource wiring.
+                </p>
+                <p>
+                  Two delivery modes, and which one a subscriber gets is a real
+                  decision rather than a setting. Audit is <strong>synchronous</strong>:
+                  the activity row exists before the caller is told the write
+                  succeeded, and it is the one subscriber that legitimately needs the
+                  request context, because the feed records IP and user agent.
+                  Everything with a network call is <strong>asynchronous</strong>: a
+                  webhook endpoint that takes four seconds must not make the API take
+                  four seconds.
+                </p>
+                <p>
+                  The async copy of an event carries a nil request context, on purpose.
+                  A gin context is cancelled and recycled once the handler returns, so
+                  an async subscriber reading it would be looking at somebody
+                  else&apos;s request. Nil turns a subtle data race into an obvious nil
+                  pointer the first time anyone tries.
+                </p>
+                <p>
+                  The queue is bounded at 1024 and drops when full rather than growing.
+                  An unbounded queue turns a slow subscriber into memory exhaustion,
+                  which fails later and worse. Drops are counted and reported on{' '}
+                  <code>/api/health</code> alongside the subscriber count and queue
+                  depth, because &ldquo;did my webhook fire&rdquo; deserves a better
+                  answer than reading logs. A subscriber that panics is logged and the
+                  others still run: a webhook formatter falling over is not a reason to
+                  fail a write that already happened.
+                </p>
+                <p>
+                  Verified by running it. The activity feed is unchanged and the row
+                  exists with no sleep in the test, which is the assertion that proves
+                  audit is genuinely synchronous. And a <code>ledgers.created</code>{' '}
+                  event reached a connected websocket client, which had never happened
+                  in a generated Grit project.
+                </p>
+                <p>
+                  This is the substrate the next few features sit on. Workflows emit
+                  transitions rather than inventing their own hooks, notifications
+                  subscribe rather than needing their own trigger, and automation rules
+                  become a subscriber with a condition attached.
+                </p>
+              </div>
             </div>
 
             {/* v3.149.0 */}
