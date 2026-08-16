@@ -7998,7 +7998,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
                 <p>
                   The user spun up a fresh ecom-app, hit the
                   form-share dispatch syntax error on
-                  <code>grit dev</code>, then noticed the web
+                  <code>grit start</code>, then noticed the web
                   shipping auth they didn&apos;t want. Both shipped
                   fixed in v3.31.48 within a few hours.
                 </p>
