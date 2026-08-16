@@ -29,6 +29,88 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.152.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.152.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>A settings registry, so configuration is not a choice between
+                  a deploy and a code change.</strong>
+                </p>
+                <p>
+                  Every application needs values that are configuration but not
+                  environment variables: company name, invoice prefix, default
+                  currency, whether to email on a new order. Those had three homes in
+                  Grit and all of them were bad. In <code>.env</code>, which needs a
+                  deploy to change and which no admin can touch. Hardcoded. Or a
+                  hand-rolled settings table with a hand-rolled admin page, written
+                  again in every project.
+                </p>
+                <p>Declare it next to the code that reads it:</p>
+                <CodeBlock filename="apps/api/internal/billing/settings.go" code={`settings.Define(settings.Setting{
+    Key:      "invoice.prefix",
+    Type:     settings.TypeString,
+    Default:  "INV-",
+    Label:    "Invoice number prefix",
+    Help:     "Appears before the sequential number on every invoice.",
+    Group:    "Billing",
+    Validate: settings.MaxLen(8),
+})`} />
+                <p>and read it, typed, anywhere:</p>
+                <CodeBlock code={`prefix := settings.String(ctx, "invoice.prefix")
+notify := settings.Bool(ctx, "notifications.email_enabled")`} />
+                <p>
+                  From the declaration you get the admin page, grouped and with the
+                  right control per type, validation at write time, a cache, and a
+                  resolution order that is stated rather than assumed: user override,
+                  then tenant override, then the stored global, then the environment,
+                  then the declared default. That order is what lets a per-user
+                  timezone and a per-tenant currency work without either knowing the
+                  other exists, and it is why this is quietly load-bearing for the
+                  billing and entitlements work later.
+                </p>
+                <p>
+                  A setting declared <code>global</code> refuses a per-user override
+                  rather than storing a row nothing will ever read. Silently accepting
+                  it would be worse: the change appears to save and then does nothing,
+                  and there is no way to find out why.
+                </p>
+                <p>
+                  A batch save validates everything before writing anything, because a
+                  half-applied save leaves the page showing a mix of stored and
+                  rejected values with no way to tell which is which. Changes go
+                  through the event bus, so they land in the activity feed: a settings
+                  change alters behaviour everywhere and otherwise leaves no trace.
+                </p>
+                <p>
+                  Where the environment sits took a correction during testing. The
+                  store resolved stored-over-env while the handler refused to write
+                  whenever an env var existed, which made <code>app.name</code>{' '}
+                  permanently read-only in every scaffolded project, because the
+                  scaffold sets <code>APP_NAME</code>. Two precedences in one feature.
+                  The store&apos;s is the right one: the admin page is the point, and a
+                  value somebody sets there has to take effect. The environment
+                  supplies what the application boots with. Something that genuinely
+                  must not be changeable belongs in config, not here.
+                </p>
+                <p>
+                  <code>TypeSecret</code> is a string the API never returns once set.
+                  An SMTP password belongs there: an admin can replace it and cannot
+                  read it, which is what people expect and rarely get.
+                </p>
+                <p>
+                  Verified against a fresh project across 24 checks, run twice to prove
+                  the suite is not depending on a clean database.
+                </p>
+              </div>
+            </div>
+
             {/* v3.151.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
