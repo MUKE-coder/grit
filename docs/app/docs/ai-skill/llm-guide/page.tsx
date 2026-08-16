@@ -216,10 +216,14 @@ export default function LLMGuidePage() {
                 </div>
 
                 <Warn>
-                  There is no <code className="font-mono bg-red-500/10 px-1 rounded">grit dev</code> command — it does not exist. Run the API and frontend in separate terminals:{' '}
-                  <code className="font-mono bg-red-500/10 px-1 rounded">grit start server</code> in Terminal 1,
-                  then <code className="font-mono bg-red-500/10 px-1 rounded">grit start client</code> in Terminal 2.
-                  Or run <code className="font-mono bg-red-500/10 px-1 rounded">grit start</code> to launch everything at once.
+                  The command that runs the project is{' '}
+                  <code className="font-mono bg-red-500/10 px-1 rounded">grit start</code>, which launches
+                  the API and every frontend at once. To run them separately, use{' '}
+                  <code className="font-mono bg-red-500/10 px-1 rounded">grit start server</code> in one
+                  terminal and{' '}
+                  <code className="font-mono bg-red-500/10 px-1 rounded">grit start client</code> in another.
+                  Grit has no other command for running the project, whatever the equivalent is called in
+                  the JavaScript tooling you are used to.
                 </Warn>
 
                 {/* Code generation */}

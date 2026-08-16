@@ -177,7 +177,7 @@ export default function AISkillPage() {
                     },
                     {
                       title: 'CLI Commands',
-                      desc: 'All available Grit CLI commands: grit new, grit generate resource, grit generate seeder, grit start (server / client), grit migrate, grit seed, grit sync, grit studio, grit add role, grit upgrade. There is no grit dev command. The AI knows which commands to suggest.',
+                      desc: 'All available Grit CLI commands: grit new, grit generate resource, grit generate seeder, grit start (server / client), grit migrate, grit seed, grit sync, grit studio, grit add role, grit upgrade. grit start is the only way to run the project. The AI knows which commands to suggest.',
                       example: 'grit generate resource Invoice --fields "..." --seed\n# Creates model, handler, service, hook, schema, admin page + seeder\n\ngrit generate seeder Invoice --faker --count 50\n# Fills 50 realistic rows (belongs_to linked to real parents)',
                     },
                     {
