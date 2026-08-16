@@ -753,7 +753,10 @@ cannot upgrade its own output multiplies that by the number of plugins.
 The review's real contribution: Grit has webhooks, asynq, realtime and audit as
 four separate consumers with no shared bus.
 
-- [ ] **Domain events** (rec 7). The substrate everything else hangs off.
+- [x] **Domain events** (rec 7) - v3.150.0. One bus; audit, realtime and
+      webhooks are subscribers. Before this a generated handler called the
+      audit log and nothing else, and no handler in a scaffolded project
+      ever dispatched a webhook or broadcast a change.
 - [ ] **Workflows / state machines** **[both]** (gap 3.3 / recs 6, 30):
       `status:enum:draft,sent,paid:workflow` generating transition guards, an
       admin badge and timeline, and transition events.

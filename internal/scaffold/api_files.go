@@ -43,6 +43,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):      apiRealtimeHandlerGo(),
 		filepath.Join(apiRoot, "internal", "sync", "registry.go"):          apiSyncRegistryGo(),
 		filepath.Join(apiRoot, "internal", "sync", "policy.go"):            apiSyncPolicyGo(),
+		filepath.Join(apiRoot, "internal", "events", "events.go"):          apiEventsGo(),
+		filepath.Join(apiRoot, "internal", "events", "subscribers.go"):     apiEventsSubscribersGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "sync.go"):          apiSyncHandlerGo(),
 		filepath.Join(apiRoot, "internal", "models", "activity_log.go"):    apiActivityLogModelGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "activity.go"):    apiActivityMiddlewareGo(),
@@ -8014,6 +8016,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/ai"
 	"` + "{{MODULE}}" + `/internal/cache"
 	"` + "{{MODULE}}" + `/internal/config"
+	"` + "{{MODULE}}" + `/internal/events"
 	"` + "{{MODULE}}" + `/internal/handlers"
 	"` + "{{MODULE}}" + `/internal/mail"
 	"` + "{{MODULE}}" + `/internal/middleware"
@@ -8026,6 +8029,26 @@ import (
 	"` + "{{MODULE}}" + `/internal/sync"
 	"` + "{{MODULE}}" + `/internal/webhooks"
 )
+
+// eventBusStatus summarises the domain event bus for /api/health.
+//
+// Nil-safe so a project whose routes.go predates events.Init still answers
+// the health check rather than panicking on it.
+func eventBusStatus() interface{} {
+	bus := events.Default()
+	if bus == nil {
+		return map[string]interface{}{"ok": false, "configured": false}
+	}
+	s := bus.Stats()
+	return map[string]interface{}{
+		"ok":          s.Dropped == 0,
+		"configured":  true,
+		"subscribers": s.Subscribers,
+		"queued":      s.Queued,
+		"capacity":    s.Capacity,
+		"dropped":     s.Dropped,
+	}
+}
 
 // APIVersion is the version segment every /api route is served under, so the
 // public surface is /api/v1/... rather than /api/....
@@ -8846,6 +8869,12 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	webhookHandler := handlers.NewWebhookHandler(db)
 	webhooks.Setup(db)
 	realtimeHub := realtime.NewHub()
+
+	// The domain event bus. Created before any handler so an emit during
+	// startup has somewhere to go, and wired to the audit log, realtime and
+	// (when the plugin is installed) outbound webhooks.
+	events.Init(4)
+	events.RegisterDefaults(db, realtimeHub, nil)
 	flagsEngine := flags.New(db, realtimeHub)
 	featureFlagHandler := handlers.NewFeatureFlagHandler(db, flagsEngine)
 	realtimeHandler := handlers.NewRealtimeHandler(realtimeHub, authService)
@@ -9005,6 +9034,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			"api":      compStatus{OK: true},
 			"jobs":     jobsStatus,
 			"email":    mailStatus,
+			// The event bus reports itself. Dropped rising is the only signal
+			// from outside that a subscriber is too slow or the queue too
+			// small, and "did my webhook fire" deserves a better answer than
+			// reading logs.
+			"events": eventBusStatus(),
 		})
 	})
 

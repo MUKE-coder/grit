@@ -871,6 +871,7 @@ import (
 	"github.com/gin-gonic/gin"{{DATATYPES_IMPORT}}
 	"gorm.io/gorm"{{CLAUSE_IMPORT}}
 
+	"{{MODULE}}/internal/events"
 	"{{MODULE}}/internal/export"{{FILES_IMPORT}}{{DATABASE_IMPORT}}
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
@@ -1138,7 +1139,7 @@ func (h *{{Pascal}}Handler) Create(c *gin.Context) {
 {{M2M_CREATE}}
 {{CREATE_RELOAD}}{{CREATE_CLAIM}}
 
-	services.LogCreate(h.DB, c, "{{Pascal}}", {{IDENT_EXPR}}, item.ID, "")
+	events.Emitted(c, "{{plural}}", "{{Pascal}}", "created", item.ID, {{IDENT_EXPR}}, "", nil, item)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"data":    item,
@@ -1187,7 +1188,7 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 {{M2M_UPDATE}}{{ITEMS_UPDATE}}
 {{UPDATE_RELOAD}}{{UPDATE_CLEANUP}}
 
-	services.LogUpdate(h.DB, c, "{{Pascal}}", {{IDENT_EXPR}}, item.ID, services.DiffSummary(updates))
+	events.Emitted(c, "{{plural}}", "{{Pascal}}", "updated", item.ID, {{IDENT_EXPR}}, services.DiffSummary(updates), nil, item)
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":    item,
@@ -1256,7 +1257,7 @@ func (h *{{Pascal}}Handler) Patch(c *gin.Context) {
 	}
 {{RELOAD}}
 
-	services.LogUpdate(h.DB, c, "{{Pascal}}", {{IDENT_EXPR}}, item.ID, services.DiffSummary(updates))
+	events.Emitted(c, "{{plural}}", "{{Pascal}}", "updated", item.ID, {{IDENT_EXPR}}, services.DiffSummary(updates), nil, item)
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":    item,
@@ -1289,7 +1290,7 @@ func (h *{{Pascal}}Handler) Delete(c *gin.Context) {
 		return
 	}
 
-	services.LogDelete(h.DB, c, "{{Pascal}}", {{IDENT_EXPR}}, item.ID)
+	events.Emitted(c, "{{plural}}", "{{Pascal}}", "deleted", item.ID, {{IDENT_EXPR}}, "", item, nil)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "{{Pascal}} deleted successfully",
@@ -1427,7 +1428,7 @@ func (h *{{Pascal}}Handler) Bulk(c *gin.Context) {
 	// resourceID holds ONE id, not all of them: it is a lookup key, and joining
 	// five hundred UUIDs into it makes the column unusable for the thing it is
 	// for. The count lives in the summary, where it can be read.
-	services.LogUpdate(h.DB, c, "{{Pascal}}", summary, ids[0], summary)
+	events.Emitted(c, "{{plural}}", "{{Pascal}}", "bulk", ids[0], summary, summary, nil, nil)
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":    gin.H{"affected": len(ids), "requested": len(req.IDs)},
