@@ -85,6 +85,7 @@ const navItems: NavItem[] = [
       { title: 'Mobile (API+Expo)', href: '/docs/concepts/architecture-modes/mobile' },
       { title: 'Multi-Client (+ Desktop)', href: '/docs/concepts/architecture-modes/multi-client' },
       { title: 'CLI Commands', href: '/docs/concepts/cli' },
+      { title: 'Offline Sync', href: '/docs/concepts/offline-sync' },
       { title: 'Code Generation', href: '/docs/concepts/code-generation' },
       { title: 'Generated File Map', href: '/docs/concepts/generated-files' },
       { title: 'Type System', href: '/docs/concepts/type-system' },

@@ -52,15 +52,19 @@ export default function MobileOfflinePage() {
             {/* Honest framing */}
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-5 mb-10">
               <h4 className="text-sm font-semibold text-foreground mb-2">The short version</h4>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                Out of the box the Expo scaffold is <strong>online-first</strong>: React
+                Query&apos;s in-memory cache keeps recently viewed data instant and survives brief
+                blips, and tokens persist across restarts. Writes go straight to the API and fail
+                when it is not there.
+              </p>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                The Expo scaffold does <strong>not</strong> ship a local-mirror / outbox sync
-                engine — that is a{' '}
-                <Link href="/docs/desktop/offline" className="text-primary hover:underline">Grit Desktop</Link>{' '}
-                feature (local SQLite mirror + versioned outbox). On mobile, data lives on the Go
-                API. What you get out of the box is React Query&apos;s in-memory cache (so recently
-                viewed data stays instant and survives brief blips), fast-fail networking, and
-                token persistence across restarts. Full offline writes are something you add
-                deliberately.
+                Offline writes are one command away.{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit add offline</code>{' '}
+                installs the local mirror, the outbox and the version-checked conflict handling
+                that <Link href="/docs/desktop/offline" className="text-primary hover:underline">Grit Desktop</Link>{' '}
+                has had since v3.60, as a package the mobile, web and admin apps share. See{' '}
+                <Link href="/docs/concepts/offline-sync" className="text-primary hover:underline">Offline Sync</Link>.
               </p>
             </div>
 

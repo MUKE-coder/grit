@@ -217,15 +217,121 @@ JWT_REFRESH_EXPIRY=168h`} />
                       <td className="px-4 py-2.5">No</td>
                       <td className="px-4 py-2.5">Request a password reset link</td>
                     </tr>
-                    <tr>
+                    <tr className="border-b border-border/20">
                       <td className="px-4 py-2.5 font-mono text-xs">POST</td>
                       <td className="px-4 py-2.5 font-mono text-xs">/api/auth/reset-password</td>
                       <td className="px-4 py-2.5">No</td>
                       <td className="px-4 py-2.5">Reset password with token</td>
                     </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs">POST</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">/api/auth/verify-email/send</td>
+                      <td className="px-4 py-2.5">Yes</td>
+                      <td className="px-4 py-2.5">Send (or resend) a verification email</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-mono text-xs">POST</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">/api/auth/verify-email</td>
+                      <td className="px-4 py-2.5">No</td>
+                      <td className="px-4 py-2.5">Verify an address with the emailed token</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
+
+              {/* ── Email verification ───────────────────── */}
+              <h2 id="email-verification">Email Verification</h2>
+              <p>
+                Registration sends a verification email and the admin shows a banner until
+                the address is confirmed. Both endpoints are in the table above.
+              </p>
+              <p>
+                It is modelled on password reset on purpose: the same single-use token,
+                stored only as a SHA-256 hash, invalidating any earlier one for that user.
+                The token also records the address it was issued for, so changing your email
+                before clicking the link does not verify the new one.
+              </p>
+              <CodeBlock filename="POST /api/auth/verify-email" code={`// Request
+{
+    "token": "the token from the emailed link"
+}
+
+// Response 200
+{
+    "data": { "email_verified_at": "2026-08-16T09:30:00Z" },
+    "message": "Email verified"
+}`} />
+              <p>
+                Verification is not a gate by default. Turning it into one is a middleware
+                decision you make per route, not a switch, because the right answer differs
+                between an internal tool and a public signup, and a framework that guessed
+                would lock out the first admin account it ever created.
+              </p>
+
+              {/* ── API keys ─────────────────────────────── */}
+              <h2 id="api-keys">API Keys</h2>
+              <p>
+                The JWT flow is built for a person at a browser: short-lived access tokens,
+                a refresh cookie, rotation, revocation on password change. A cron job on
+                someone else&apos;s server wants none of that. It wants one long-lived
+                credential it can put in a header, which is what an API key is.
+              </p>
+              <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden my-6">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/30 bg-accent/20">
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Method</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Endpoint</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-muted-foreground">
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs">GET</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">/api/api-keys</td>
+                      <td className="px-4 py-2.5">List your keys (prefix and metadata only)</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs">POST</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">/api/api-keys</td>
+                      <td className="px-4 py-2.5">Issue a key. The secret is returned once</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-mono text-xs">DELETE</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">/api/api-keys/:id</td>
+                      <td className="px-4 py-2.5">Revoke a key</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>
+                Manage them at <strong>Settings, API Keys</strong> in the admin. Present a key
+                on either header:
+              </p>
+              <CodeBlock language="bash" code={`curl https://api.example.com/api/v1/products \\
+  -H "X-API-Key: grit_a1b2c3d4_9f8e..."
+
+# Authorization: Bearer works too, for OpenAPI clients that only speak that
+curl https://api.example.com/api/v1/products \\
+  -H "Authorization: Bearer grit_a1b2c3d4_9f8e..."`} />
+              <p>
+                A key is <code>grit_&lt;prefix&gt;_&lt;secret&gt;</code>. The prefix is stored
+                in clear and indexed, so verifying a key is one indexed lookup rather than a
+                scan comparing hashes against every row. Only the secret&apos;s SHA-256 is
+                stored, which is why the full key is shown exactly once and cannot be
+                recovered afterwards.
+              </p>
+              <p>
+                SHA-256 rather than bcrypt, deliberately. This is a 256-bit random secret,
+                not a human password, so there is nothing to brute-force, and bcrypt&apos;s
+                cost would land on every single API request rather than on a login.
+              </p>
+              <p>
+                Keys carry <strong>scopes</strong>, which are the same permission strings
+                roles grant. Authorisation has one vocabulary rather than two, so a key
+                scoped to <code>products.read</code> is checked by the same middleware that
+                checks a user with that permission.
+              </p>
 
               {/* ── Register ─────────────────────────────── */}
               <h3 id="register">Register</h3>

@@ -42,6 +42,56 @@ export default function PhilosophyPage() {
               </p>
             </div>
 
+            {/* The one-line answer to "what exactly is Grit?". Everything on
+                this page and in the framework fits under one of these three. */}
+            <div className="mb-10">
+              <h2 className="text-2xl font-semibold tracking-tight mb-3">What Grit is</h2>
+              <p className="text-muted-foreground leading-relaxed mb-6">
+                Grit does enough things that the honest answer needs three parts rather
+                than one. Everything in the framework fits under one of them, and anything
+                that does not fit under any of them probably should not be in the core.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-lg border border-border/40 bg-card/40 p-5">
+                  <div className="text-sm font-semibold text-foreground mb-2">
+                    Application Infrastructure
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Auth, RBAC, sessions, jobs, cron, cache, storage, mail, realtime,
+                    observability, backups, security. The three weeks you spend before you
+                    have written any of your own product.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border/40 bg-card/40 p-5">
+                  <div className="text-sm font-semibold text-foreground mb-2">
+                    Application UI
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    An admin panel with tables, forms, filters, bulk actions and widgets,
+                    plus a component library. Not a theme: components that understand what a
+                    resource is.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border/40 bg-card/40 p-5">
+                  <div className="text-sm font-semibold text-foreground mb-2">
+                    Application Generation
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Describe a resource once and get the Go model, service, API, migrations,
+                    OpenAPI, Zod schemas, TypeScript types, React hooks and admin screens.
+                    Code you own, not runtime magic.
+                  </p>
+                </div>
+              </div>
+              <p className="text-muted-foreground leading-relaxed mt-6">
+                The third is what connects the first two. A framework with good
+                infrastructure and a good admin panel still leaves you wiring one to the
+                other by hand for every entity in your domain. Grit&apos;s bet is that the
+                wiring is the boilerplate worth eliminating, and that eliminating it is only
+                worth anything if the result is code you can read, edit and take over.
+              </p>
+            </div>
+
             <div className="prose-grit">
               {/* ============================================================ */}
               <h2>Why Grit exists</h2>
