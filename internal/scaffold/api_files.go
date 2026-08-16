@@ -45,6 +45,11 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "sync", "policy.go"):                apiSyncPolicyGo(),
 		filepath.Join(apiRoot, "internal", "events", "events.go"):              apiEventsGo(),
 		filepath.Join(apiRoot, "internal", "workflow", "workflow.go"):          apiWorkflowGo(),
+		filepath.Join(apiRoot, "internal", "settings", "settings.go"):          apiSettingsRegistryGo(),
+		filepath.Join(apiRoot, "internal", "settings", "store.go"):             apiSettingsStoreGo(),
+		filepath.Join(apiRoot, "internal", "settings", "defaults.go"):          apiSettingsDefaultsGo(),
+		filepath.Join(apiRoot, "internal", "models", "setting.go"):             apiSettingsModelGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "settings.go"):          apiSettingsHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "event_subscribers.go"): apiEventsSubscribersGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "sync.go"):              apiSyncHandlerGo(),
 		filepath.Join(apiRoot, "internal", "models", "activity_log.go"):        apiActivityLogModelGo(),
@@ -121,6 +126,9 @@ func writeAPIFiles(root string, opts Options) error {
 	for path, content := range files {
 		// Replace module placeholder
 		content = strings.ReplaceAll(content, "{{MODULE}}", module)
+		// And the project name, which the settings defaults use so app.name
+		// starts as something recognisable rather than a placeholder.
+		content = strings.ReplaceAll(content, "{{PROJECT}}", opts.ProjectName)
 		if err := writeFile(path, content); err != nil {
 			return fmt.Errorf("writing %s: %w", path, err)
 		}
@@ -1483,6 +1491,7 @@ func Models() []interface{} {
 		&UserIdentity{},
 		// the service provider's own signing keypair, generated on first use
 		&SAMLKeypair{},
+		&Setting{},
 		// grit:models
 	}
 }
@@ -8019,6 +8028,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/config"
 	"` + "{{MODULE}}" + `/internal/events"
 	"` + "{{MODULE}}" + `/internal/handlers"
+	"` + "{{MODULE}}" + `/internal/settings"
 	"` + "{{MODULE}}" + `/internal/mail"
 	"` + "{{MODULE}}" + `/internal/middleware"
 	"` + "{{MODULE}}" + `/internal/models"
@@ -8876,6 +8886,12 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// (when the plugin is installed) outbound webhooks.
 	events.Init(4)
 	services.RegisterEventSubscribers(db, realtimeHub, nil)
+
+	// Settings: declare, then open the store. Declaring after Init would mean
+	// a setting the first cache load never saw.
+	settings.RegisterDefaults()
+	settings.Init(db)
+	settingsHandler := &handlers.SettingsHandler{DB: db}
 	flagsEngine := flags.New(db, realtimeHub)
 	featureFlagHandler := handlers.NewFeatureFlagHandler(db, flagsEngine)
 	realtimeHandler := handlers.NewRealtimeHandler(realtimeHub, authService)
@@ -9184,6 +9200,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		protected.GET("/sync/pull", syncHandler.Pull)
 		protected.GET("/sync/policy", syncHandler.Policy)
 
+		// Reading settings is open to any authenticated caller, because a
+		// screen needs app.name to render its header. Writing is admin-only
+		// and mounted with the other admin routes below.
+		protected.GET("/settings", settingsHandler.List)
+
 		// AI — only mounted when the module is enabled, so an app that
 		// doesn't use it exposes no AI surface at all (MODULE_AI=false).
 		if cfg.Modules.AI {
@@ -9352,6 +9373,12 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		admin.DELETE("/roles/:id", middleware.RequireRole("ADMIN", "perm:roles.delete"), roleHandler.Delete)
 		admin.PUT("/users/:id/roles", middleware.RequireRole("ADMIN", "perm:users.edit"), roleHandler.AssignUserRoles)
 		admin.POST("/users/:id/unlock", middleware.RequireRole("ADMIN", "perm:users.edit"), userHandler.Unlock)
+
+		// Writing settings. Per-setting permissions are checked inside the
+		// handler, because which permission applies depends on which setting
+		// is being changed and a route can only know one.
+		admin.PUT("/settings", settingsHandler.Update)
+		admin.DELETE("/settings/:key", settingsHandler.Reset)
 
 		// grit:routes:admin
 	}

@@ -765,8 +765,9 @@ four separate consumers with no shared bus.
 - [ ] Admin rendering for workflows: state badges and the transitions legal
       from the current state, as buttons rather than a dropdown of everything.
 - [ ] **Notifications and inbox** (recs 8, 9), a consumer of domain events.
-- [ ] **Settings registry** (rec 29): `setting.Define("invoice.prefix")` with
-      typed access, admin UI and env fallback.
+- [x] **Settings registry** (rec 29) - v3.152.0. `settings.Define` with typed
+      access, a generated admin page, validation, a cache, and a resolution
+      order of user, tenant, stored global, environment, declared default.
 - [ ] **Application-wide search** (rec 10) with provider adapters: Postgres FTS
       first, Meilisearch and Typesense as plugins.
 

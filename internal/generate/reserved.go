@@ -25,6 +25,7 @@ var reservedModels = map[string]string{
 	// Core identity and storage.
 	"User":                   "authentication",
 	"Session":                "authentication",
+	"Setting":                "the settings registry",
 	"UserIdentity":           "authentication",
 	"UserRole":               "authorization",
 	"Role":                   "authorization",
