@@ -8,6 +8,9 @@ readingTime: "28 min"
 author: "Muke JohnBaptist"
 tags: [grit, ecommerce, stripe, tutorial, beginner, workflows, events, settings]
 canonical: "https://gritframework.dev/blog/build-a-storefront-with-grit"
+# Explicit, because the file is not named after the slug. Without this the
+# slug-matched lookup finds nothing and the card falls back to a gradient.
+thumbnail: "/blog/from-grit-new.webp"
 ---
 
 You have run `grit new`, generated a resource, clicked around the admin, and thought: right, could I build a real shop with this. Something with a catalogue, a cart, a card payment, an order a customer can follow, and a back office where somebody who is not a developer marks things as shipped.
