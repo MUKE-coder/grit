@@ -83,7 +83,7 @@ type Component struct {
 	// compile until components/ui/button.tsx exists in the project.
 	RegistryDependencies []string `json:"registryDependencies"`
 	Files                []File   `json:"files"`
-	CSSVars      struct {
+	CSSVars              struct {
 		Theme map[string]string `json:"theme"`
 	} `json:"cssVars"`
 }

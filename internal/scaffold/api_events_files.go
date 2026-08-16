@@ -350,5 +350,23 @@ func On(pattern string, delivery Delivery, name string, h Handler) {
 	}
 	defaultBus.On(pattern, delivery, name, h)
 }
+
+// Emitted is the common case: a CRUD or transition event on a resource.
+//
+// Generated handlers call this rather than building an Event literal, so the
+// name and the resource cannot drift apart and every resource emits the same
+// shape.
+func Emitted(c *gin.Context, resource, entity, action, id, label, detail string, before, after interface{}) {
+	Emit(c, Event{
+		Name:     resource + "." + action,
+		Resource: resource,
+		Entity:   entity,
+		ID:       id,
+		Label:    label,
+		Detail:   detail,
+		Before:   before,
+		After:    after,
+	})
+}
 `
 }

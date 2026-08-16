@@ -1,7 +1,7 @@
 package scaffold
 
-// apiEventsSubscribersGo emits internal/events/subscribers.go: the default
-// wiring that turns three built-but-unfired systems into subscribers.
+// apiEventsSubscribersGo emits internal/services/event_subscribers.go: the
+// default wiring that turns three built-but-unfired systems into subscribers.
 //
 // Audit was already called directly by every generated handler, so it keeps
 // working exactly as before, just from the other side of the bus. Webhooks and
@@ -10,14 +10,13 @@ package scaffold
 // forgetting one produced no error, just a subscription that never heard
 // anything.
 func apiEventsSubscribersGo() string {
-	return `package events
+	return `package services
 
 import (
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/events"
 	"{{MODULE}}/internal/realtime"
-	"{{MODULE}}/internal/services"
 )
 
 // WebhookDispatcher is the shape the webhooks plugin's DispatchWebhook has.
@@ -26,11 +25,11 @@ import (
 // simply never sets it.
 type WebhookDispatcher func(eventType string, payload interface{}) error
 
-// RegisterDefaults wires the subscribers every project gets.
+// RegisterEventSubscribers wires the subscribers every project gets.
 //
 // Called once from routes.Setup, after Init. hub and dispatch may be nil, for
 // a project that has no realtime or has not installed the webhooks plugin.
-func RegisterDefaults(db *gorm.DB, hub *realtime.Hub, dispatch WebhookDispatcher) {
+func RegisterEventSubscribers(db *gorm.DB, hub *realtime.Hub, dispatch WebhookDispatcher) {
 	registerAudit(db)
 	registerRealtime(hub)
 	registerWebhooks(dispatch)
@@ -45,20 +44,20 @@ func registerAudit(db *gorm.DB) {
 	if db == nil {
 		return
 	}
-	On("*", Sync, "audit", func(e Event) error {
+	events.On("*", events.Sync, "audit", func(e events.Event) error {
 		if e.C == nil {
 			return nil // emitted outside a request; nothing to attribute it to
 		}
 		switch verb(e.Name) {
 		case "created":
-			services.LogCreate(db, e.C, e.Entity, e.Label, e.ID, e.Detail)
+			LogCreate(db, e.C, e.Entity, e.Label, e.ID, e.Detail)
 		case "deleted":
-			services.LogDelete(db, e.C, e.Entity, e.Label, e.ID)
+			LogDelete(db, e.C, e.Entity, e.Label, e.ID)
 		default:
 			// Everything else reads as a change to the record, including
 			// workflow transitions, which is what you want in a feed: "Maria
 			// sent invoice INV-0007" rather than a row saying "updated".
-			services.LogUpdate(db, e.C, e.Entity, e.Label, e.ID, e.Detail)
+			LogUpdate(db, e.C, e.Entity, e.Label, e.ID, e.Detail)
 		}
 		return nil
 	})
@@ -76,7 +75,7 @@ func registerRealtime(hub *realtime.Hub) {
 	if hub == nil {
 		return
 	}
-	On("*", Async, "realtime", func(e Event) error {
+	events.On("*", events.Async, "realtime", func(e events.Event) error {
 		hub.Broadcast(realtime.Event{
 			Type: e.Name,
 			Payload: map[string]interface{}{
@@ -100,7 +99,7 @@ func registerWebhooks(dispatch WebhookDispatcher) {
 	if dispatch == nil {
 		return
 	}
-	On("*", Async, "webhooks", func(e Event) error {
+	events.On("*", events.Async, "webhooks", func(e events.Event) error {
 		return dispatch(e.Name, map[string]interface{}{
 			"resource": e.Resource,
 			"id":       e.ID,
@@ -121,24 +120,6 @@ func verb(name string) string {
 		}
 	}
 	return name
-}
-
-// Emitted is a small helper for the common case: a CRUD event on a resource.
-//
-// Generated handlers call this rather than building an Event literal, so the
-// name and resource cannot drift apart and every resource emits the same
-// shape.
-func Emitted(c *gin.Context, resource, entity, action, id, label, detail string, before, after interface{}) {
-	Emit(c, Event{
-		Name:     resource + "." + action,
-		Resource: resource,
-		Entity:   entity,
-		ID:       id,
-		Label:    label,
-		Detail:   detail,
-		Before:   before,
-		After:    after,
-	})
 }
 `
 }

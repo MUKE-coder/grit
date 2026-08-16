@@ -29,6 +29,97 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.151.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.151.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Workflows: a status field can be a process, not just a column.</strong>
+                </p>
+                <p>
+                  A select field accepts every one of its options on every record.
+                  draft can jump straight to shipped, a shipped order can go back to
+                  draft, and a support agent can mark an invoice collected. Any rule
+                  about which of those is allowed lived in the author&apos;s head, or in
+                  a check they had to remember to write in every place the field was
+                  touched.
+                </p>
+                <p>
+                  A <code>workflow:</code> block on the field states the rules once:
+                </p>
+                <CodeBlock language="yaml" filename="order.yaml" code={`- name: status
+  type: select
+  options: [draft, submitted, approved, shipped, cancelled]
+  workflow:
+    initial: draft
+    terminal: [shipped, cancelled]
+    transitions:
+      - action: submit
+        from: [draft]
+        to: submitted
+      - action: approve
+        from: [submitted]
+        to: approved
+        permission: orders.approve
+      - action: cancel
+        from: [draft, submitted, approved]
+        to: cancelled
+        confirm: true`} />
+                <p>
+                  The states come from the field&apos;s own options rather than being
+                  repeated under <code>workflow:</code>. Two lists of the same thing
+                  drift, and the drift is silent: a transition to a state the dropdown
+                  never offers.
+                </p>
+                <p>
+                  From that, <code>grit generate resource</code> writes a definition in{' '}
+                  <code>internal/workflow/</code>, a guarded transition service, and{' '}
+                  <code>POST /api/orders/:id/transitions/:action</code>. An illegal move
+                  is a 422 that names the state the record is in and lists what is
+                  allowed from there, rather than a successful write leaving a record
+                  somewhere the business rules say cannot exist.
+                </p>
+                <p>
+                  The guard is in the service, not the handler, because a handler is
+                  one caller. A job, a CLI command, an importer and an offline sync push
+                  all reach the service, and a rule enforced at one entrance is not
+                  enforced. The write is also conditioned on the current state, so two
+                  people pressing Approve at the same moment do not both succeed: the
+                  second affects no rows and gets the same 422.
+                </p>
+                <p>
+                  Every transition emits its own event rather than a generic{' '}
+                  <code>updated</code>. A subscriber that cares about orders shipping
+                  should not have to diff two versions of a record to work out that is
+                  what happened, and the activity feed reads &ldquo;Ship: approved to
+                  shipped&rdquo; against the order&apos;s reference. This is the first
+                  thing built on the event bus from v3.150.0, and it is why that came
+                  first: without it a workflow engine would have grown its own hook
+                  mechanism and become a fifth disconnected system.
+                </p>
+                <p>
+                  Validation runs when the definition is parsed, so a broken machine is
+                  a CLI error rather than a panic at boot. The check worth having is the
+                  one for a state nothing can leave: it is invisible until a record
+                  lands there in production and cannot be moved, and the message says
+                  both ways to fix it.
+                </p>
+                <p>
+                  Verified against a live server: an order starts in its declared
+                  initial state, a legal move works, draft to shipped is refused with
+                  the allowed actions named, an unknown action is refused, a terminal
+                  state has no way out, and the full path submit to approve to ship
+                  works with each step in the activity feed under its own label.
+                </p>
+              </div>
+            </div>
+
             {/* v3.150.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

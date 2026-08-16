@@ -51,8 +51,8 @@ func savedViewsFiles(ctx Context) map[string]string {
 	}
 
 	files := map[string]string{
-		p("internal/models/saved_view.go"):     savedViewModelGo(ctx),
-		p("internal/handlers/saved_view.go"):    savedViewHandlerGo(ctx),
+		p("internal/models/saved_view.go"):   savedViewModelGo(ctx),
+		p("internal/handlers/saved_view.go"): savedViewHandlerGo(ctx),
 	}
 
 	if ctx.Architecture == "triple" || ctx.Architecture == "full" {

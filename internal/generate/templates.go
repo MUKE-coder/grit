@@ -118,6 +118,20 @@ func (g *Generator) writeGoModel(names Names) error {
 `, goName, names.Snake+"_"+toSnakeCase(f.Name), prefix, goName)
 	}
 
+	// A workflow's initial state, applied in the same hook.
+	//
+	// The declaration says the record starts in draft; without this it starts
+	// in the empty string, which is not one of the states, so the first
+	// transition is refused and the record is unusable from birth. A GORM
+	// column default would not do it either: the field is present and empty in
+	// the INSERT, so the default never applies.
+	if wf := g.Definition.WorkflowField(); wf != nil && wf.Workflow.Initial != "" {
+		autoHook += fmt.Sprintf(`	if m.%s == "" {
+		m.%s = %q
+	}
+`, toPascalCase(wf.Name), toPascalCase(wf.Name), wf.Workflow.Initial)
+	}
+
 	structFields := ""
 	for _, f := range fields {
 		// belongs_to: emit FK column + association struct
@@ -620,6 +634,18 @@ func (g *Generator) writeGoHandler(names Names) error {
 	updateReload := reloadLine
 	clauseImport := ""
 	databaseImport := ""
+
+	// Only a resource whose status field is a state machine imports these.
+	// An unused import is a build failure, so an ordinary resource must not
+	// get them.
+	workflowImport := ""
+	if g.Definition.WorkflowField() != nil {
+		// g.Module directly, not a {{MODULE}} placeholder: NewReplacer is
+		// single-pass, so a placeholder inside an inserted value is never
+		// expanded and lands in the file verbatim.
+		workflowImport = "\n\t\"" + g.Module + "/internal/authz\"" +
+			"\n\t\"" + g.Module + "/internal/workflow\""
+	}
 	if singleStatementWrite {
 		// database.Write applies RETURNING only where the dialect has it, so
 		// the reload has to stay for the dialects that do not. It is guarded
@@ -853,6 +879,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{UPDATE_RELOAD}}", updateReload,
 		"{{CLAUSE_IMPORT}}", clauseImport,
 		"{{DATABASE_IMPORT}}", databaseImport,
+		"{{WORKFLOW_IMPORT}}", workflowImport,
 		"{{TIME_IMPORT}}", timeImport,
 		"{{DATATYPES_IMPORT}}", datatypesImport,
 		"{{FILES_IMPORT}}", filesImport,
@@ -872,7 +899,7 @@ import (
 	"gorm.io/gorm"{{CLAUSE_IMPORT}}
 
 	"{{MODULE}}/internal/events"
-	"{{MODULE}}/internal/export"{{FILES_IMPORT}}{{DATABASE_IMPORT}}
+	"{{MODULE}}/internal/export"{{FILES_IMPORT}}{{DATABASE_IMPORT}}{{WORKFLOW_IMPORT}}
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
 	"{{MODULE}}/internal/pdf"
@@ -1437,8 +1464,87 @@ func (h *{{Pascal}}Handler) Bulk(c *gin.Context) {
 }
 `)
 
+	// The transition endpoint, only for a resource whose status field is a
+	// state machine. Appended rather than templated in, so an ordinary
+	// resource's handler is byte-identical to what it was.
+	content += g.workflowHandlerMethod(names)
+
 	path := filepath.Join(g.APIRoot(), "internal", "handlers", names.Snake+".go")
 	return writeFileWithDirs(path, content)
+}
+
+// workflowHandlerMethod returns the Transition handler, or "" for a resource
+// with no workflow.
+//
+// It is thin on purpose: parse, delegate, translate the error. The guard lives
+// in the service, because a handler is only one of the ways in.
+func (g *Generator) workflowHandlerMethod(names Names) string {
+	if g.Definition.WorkflowField() == nil {
+		return ""
+	}
+	return `
+
+// Transition moves a ` + names.Lower + ` through its workflow.
+//
+// POST /api/` + names.Plural + `/:id/transitions/:action
+func (h *` + names.Pascal + `Handler) Transition(c *gin.Context) {
+	id := c.Param("id")
+	action := c.Param("action")
+
+	// The same grants RequireRole reads, checked per transition rather than
+	// per route: which permission applies depends on which move is being
+	// made, and a route can only know one.
+	can := func(perm string) bool {
+		grants, ok := c.Get("user_grants")
+		if !ok {
+			return false
+		}
+		list, ok := grants.([]string)
+		if !ok {
+			return false
+		}
+		return authz.Granted(list, perm)
+	}
+
+	item, err := services.Transition` + names.Pascal + `(h.DB, c, id, action, can)
+	if err != nil {
+		switch err.(type) {
+		case workflow.ErrInvalidTransition, workflow.ErrUnknownAction:
+			// 422, not 400 and not 500. The request was well-formed and the
+			// server is fine; the process does not allow this move, and the
+			// message says which moves it does allow.
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
+				"code":    "INVALID_TRANSITION",
+				"message": err.Error(),
+			}})
+		default:
+			if err == gorm.ErrRecordNotFound {
+				c.JSON(http.StatusNotFound, gin.H{"error": gin.H{
+					"code": "NOT_FOUND", "message": "` + names.Pascal + ` not found",
+				}})
+				return
+			}
+			c.JSON(http.StatusForbidden, gin.H{"error": gin.H{
+				"code": "FORBIDDEN", "message": err.Error(),
+			}})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":    item,
+		"message": "` + names.Pascal + ` " + action,
+	})
+}
+
+// Workflow returns the state machine, so a client can render badges and the
+// moves legal from where a record currently is.
+//
+// GET /api/` + names.Plural + `/workflow
+func (h *` + names.Pascal + `Handler) Workflow(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"data": workflow.` + names.Pascal + `Workflow})
+}
+`
 }
 
 // v3.31.39: pickIdentifierExpr returns the Go expression to use as
