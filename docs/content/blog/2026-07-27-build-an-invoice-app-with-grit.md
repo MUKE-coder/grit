@@ -313,7 +313,7 @@ Bring the schema up and start everything:
 
 ```bash
 grit migrate
-grit dev
+grit start
 ```
 
 Open the admin panel, add a customer, then create an invoice: pick the customer

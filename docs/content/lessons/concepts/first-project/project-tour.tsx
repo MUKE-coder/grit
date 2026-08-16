@@ -277,7 +277,7 @@ export default function Lesson() {
       <ul>
         <li>
           <code>grit.config.ts</code> — ports, paths, project name. The CLI
-          reads this when you run <code>grit dev</code>, <code>grit deploy</code>, etc.
+          reads this when you run <code>grit start</code>, <code>grit deploy</code>, etc.
         </li>
         <li>
           <code>grit.json</code> — architecture mode + frontend + the Grit

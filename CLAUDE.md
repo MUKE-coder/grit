@@ -266,7 +266,7 @@ style: format code with gofmt
 
 ```bash
 # Development
-grit dev                          # Start all services
+grit start                        # Start all services
 grit generate resource <n>     # Generate full-stack resource
 grit migrate                      # Run DB migrations
 grit sync                         # Sync Go types → TypeScript
