@@ -357,26 +357,76 @@ myapp/
 
 ## CLI Commands
 
+> Checked against `grit --help` on 2026-08-16. Everything below exists. If you
+> add a command, add it here; if you read a command here and it does not run,
+> this table is the bug.
+
+**Creating and generating**
+
 | Command | Description |
 |---------|-------------|
-| `grit new <name>` | Scaffold a new Grit project (Go API + Next.js + Admin) |
-| `grit new <name> --api` | Scaffold only the Go API |
-| `grit new <name> --full` | Scaffold with Expo mobile app included |
-| `grit generate resource <Name>` | Generate full-stack resource (model, handler, hooks, schema, admin page) |
-| `grit generate model <Name>` | Generate only a Go model |
-| `grit generate handler <Name>` | Generate only a Go handler |
-| `grit migrate` | Run database migrations |
-| `grit migrate:fresh` | Drop all tables and re-migrate |
-| `grit seed` | Run database seeders |
-| `grit sync` | Sync Go types → TypeScript types + Zod schemas |
-| `grit add queue` | Add Redis queue support |
-| `grit add cache` | Add Redis caching |
-| `grit add cron` | Add cron job scheduler |
-| `grit add mobile` | Add Expo app to the monorepo |
-| `grit dev` | Start all services in development mode |
-| `grit build` | Build all apps for production |
-| `grit deploy` | Deploy to production (Docker-based) |
-| `grit studio` | Open GORM Studio in browser |
+| `grit new <name>` | Scaffold a new project (Go API + Next.js web + admin) |
+| `grit new <name> --api` | API only |
+| `grit new <name> --single` | One binary: Go API with an embedded React SPA |
+| `grit new <name> --desktop` | Include a Wails desktop app |
+| `grit new <name> --full` | Everything: API, web, admin, desktop, Expo, docs |
+| `grit new-desktop <name>` | A standalone offline-first desktop app |
+| `grit init` | Add Grit to an existing directory |
+| `grit generate resource <Name>` | Full-stack resource: model, service, handler, routes, Zod, TS types, hooks, admin pages |
+| `grit generate field <Resource>` | Add a field to an existing resource |
+| `grit generate seeder <Name>` | A seeder for one resource |
+| `grit generate sequence <Name>` | An auto-numbering sequence |
+| `grit generate perf` | Performance test scaffolding |
+| `grit remove resource <Name>` | Remove a resource and everything it injected |
+
+**Running and building**
+
+| Command | Description |
+|---------|-------------|
+| `grit start` | Run everything: API, web, admin, and desktop when present |
+| `grit start server` | The Go API only |
+| `grit start client` | The frontends only |
+| `grit compile` | Cross-compile the API binary |
+| `grit package` | Build distributable desktop installers |
+| `grit up` / `grit down` | Start and stop the Docker infrastructure |
+| `grit studio` | Open GORM Studio |
+| `grit expose` | Expose the local API through a public tunnel |
+| `grit test` | Run the project's test suites |
+| `grit routes` | List every registered route |
+
+**Data**
+
+| Command | Description |
+|---------|-------------|
+| `grit migrate` | Run migrations |
+| `grit migrate --fresh` | Drop every table, then migrate |
+| `grit seed` | Run seeders |
+| `grit sync` | Go types to TypeScript types and Zod schemas |
+| `grit backup` / `grit restore` | Database backup and restore |
+
+**Adding to a project**
+
+| Command | Description |
+|---------|-------------|
+| `grit add role <NAME>` | A new role |
+| `grit add i18n` | Internationalisation (next-intl plus translated API messages) |
+| `grit add offline` | Offline-first sync for web, admin and mobile |
+| `grit add web-auth` | Page protection helpers for `apps/web` |
+| `grit plugin add <name>` | Install a plugin |
+| `grit plugin list` | Available and installed plugins |
+| `grit ui add <block>` | Install a Grit UI block |
+
+**Maintenance and shipping**
+
+| Command | Description |
+|---------|-------------|
+| `grit upgrade` | Bring the project's framework files up to the CLI's version |
+| `grit upgrade --diff` | Show what an upgrade would change in files you have edited |
+| `grit update` | Update the CLI itself |
+| `grit deploy` | Cross-compile, upload, and configure systemd and Caddy with TLS |
+| `grit swap` | Swap between generated variants |
+| `grit mcp` | Run the MCP server for AI tooling |
+| `grit version` | Print the CLI version |
 
 ---
 
