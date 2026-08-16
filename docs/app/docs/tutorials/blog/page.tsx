@@ -738,7 +738,7 @@ export default function BlogPostPage() {
                   concurrently.
                 </p>
 
-                <CodeBlock terminal code="grit dev" className="glow-purple-sm mb-4" />
+                <CodeBlock terminal code="grit start" className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
                   Open these URLs in your browser:

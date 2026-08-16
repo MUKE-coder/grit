@@ -767,7 +767,7 @@ admin.Use(middleware.RequireRole("ADMIN"))
               <li>
                 <strong>401 on the public page.</strong> The route
                 still lives in <code>protected</code>. Restart{' '}
-                <code>grit dev</code> after editing the routes
+                <code>grit start</code> after editing the routes
                 file -- the API doesn&apos;t HMR.
               </li>
               <li>
