@@ -11,6 +11,16 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
+// paginateRequirements lists the paginate.Config fields a generated public
+// handler references.
+//
+// Add to this list whenever the public handler starts using a new paginate
+// feature. Miss it, and regenerating in an older project emits a handler its own
+// paginate package cannot compile, which is exactly how the first version of
+// this check failed: it looked only for RangeFilterable, so a project that had
+// that but not InFilterable was declared up to date and then would not build.
+var paginateRequirements = []string{"RangeFilterable", "InFilterable"}
+
 // ensurePaginateSupport brings an older project's paginate package forward
 // before a handler that depends on it is written.
 //
@@ -39,22 +49,30 @@ func (g *Generator) ensurePaginateSupport() error {
 		// anything --public can help with.
 		return nil
 	}
-	if strings.Contains(string(data), "RangeFilterable") {
+	missing := ""
+	for _, symbol := range paginateRequirements {
+		if !strings.Contains(string(data), symbol) {
+			missing = symbol
+			break
+		}
+	}
+	if missing == "" {
 		return nil
 	}
 
 	body := scaffold.APIPaginateGo()
 	if g.refreshIfUnchanged(path, body) {
-		fmt.Println("  ✓ Updated internal/paginate/paginate.go with range filters")
+		fmt.Println("  ✓ Updated internal/paginate/paginate.go (range and id-list filters)")
 		return nil
 	}
 
 	yellow := color.New(color.FgHiYellow)
-	yellow.Printf("\n  ⚠ %s predates range filters and the new handler will not compile.\n",
-		filepath.Join("internal", "paginate", "paginate.go"))
+	yellow.Printf("\n  ⚠ %s has no %s, so the new handler will not compile.\n",
+		filepath.Join("internal", "paginate", "paginate.go"), missing)
 	fmt.Println("    That file has local edits, so it was left alone.")
-	fmt.Println("    Add a RangeFilterable map[string]bool field to paginate.Config and")
-	fmt.Println("    apply it in List() as a >= / <= pair on ?<col>_min / ?<col>_max.")
+	fmt.Println("    Add these to paginate.Config and apply them in List():")
+	fmt.Println("      RangeFilterable map[string]bool  // >= / <= on ?<col>_min and ?<col>_max")
+	fmt.Println("      InFilterable    map[string]bool  // IN on a comma-separated ?<col>")
 	fmt.Println()
 	return nil
 }

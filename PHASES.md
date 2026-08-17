@@ -881,6 +881,73 @@ quietly ignores the filter tabs is worse than no kanban.
       generator to know the parent has a slug column, so it pairs with the
       tree work below.
 
+### 7.4g Category trees (`--tree`)
+
+Electronics above Cameras above Lenses, which a storefront needs for browse and
+which nothing in Grit supported: a self-referential `belongs_to` did not even
+compile.
+
+- [x] Self-referential `belongs_to` compiles - v3.159.0. The association is a
+      pointer (Go rejects a struct containing itself by value) and the FK is not
+      required (every tree has a root). Absent stays `""` rather than NULL, which
+      is what every other `belongs_to` in Grit already means by absent.
+- [x] `--tree` adds `parent_id`, `path`, `depth` and `position` - v3.159.0.
+      **Materialized path, not a recursive CTE**: Grit supports Postgres, MySQL
+      and SQLite, the CTE story differs across all three, and
+      `WHERE path LIKE '/1/2/%'` is identical everywhere and indexable. Also
+      made the FK optional in the model, the request struct, the Zod schema and
+      the admin form: all four refused the empty parent a root has.
+- [x] Cycle guard - v3.159.0. One string comparison, because the parent's path
+      contains every id above it. Refused over HTTP with 422 INVALID_MOVE, and
+      the refused move leaves the row untouched.
+- [x] Subtree moves - v3.159.0. `REPLACE(path, old, new)` plus one depth delta,
+      in a transaction. Verified: moving a middle node carries its children and
+      the old parent is left holding only itself.
+- [x] Generated tree service - v3.159.0. `Tree`, `Roots`, `Children`,
+      `Descendants`, `DescendantIDs`, `Breadcrumbs`, `Move`, `Reorder`,
+      `RebuildPaths`, five endpoints, and eight tests that ship into the project
+      so they run against its own dialect. Those tests caught RebuildPaths
+      rewriting every row on every pass.
+- [x] Public surface - v3.159.0. `descendant_ids` on the detail response,
+      `InFilterable` for comma-separated FK lists, and `/public/<plural>/tree`
+      for a nav menu. Verified end to end: Electronics alone returns 0 products,
+      Electronics with its descendants returns the one filed under Lenses.
+- [ ] Admin: a drag-and-drop tree for reparenting and reordering, with
+      breadcrumbs on the detail page.
+
+### 7.4h Product variants, normalised
+
+Options and values as their own tables, because the requirement is not just
+"a variant has a price": selecting Red must show the Red photo, some options
+change the price and others do not (laptop memory does, colour does not), and
+the selection has to survive in the URL.
+
+- [ ] `Option` (name, kind: select/swatch/size, `affects_price`, position) and
+      `OptionValue` (label, swatch colour, image, `price_delta`, position),
+      shared across resources because Colour is Colour.
+- [ ] `<Resource>Variant` (sku, `price_override`, stock, images, position) joined
+      to its option values through `variant_option_values`, plus
+      `<resource>_options` for which options a given product uses.
+- [ ] Price resolution: `price_override` when set, otherwise the product price
+      plus the deltas of the value's options that declare `affects_price`. That
+      is what makes "XXL costs more, red does not" expressible without typing a
+      price into every combination.
+- [ ] Stock and images stay per combination, because Red/XXL selling out while
+      Blue/XXL is in stock is the normal case, and the Red photo has to come
+      from somewhere.
+- [ ] Public payload: options with their values and swatches, and variants with
+      resolved price, `in_stock` and images, so a storefront can resolve a
+      selection without a round trip.
+- [ ] `?color=red&size=xxl` on a public list, filtered through the variant join.
+      Declared like every other public filter, so it is not an arbitrary column
+      filter in disguise.
+- [ ] The cart contract changes: a line carries `variant_id`, and price comes
+      from the variant. Checkout has to re-resolve it server-side, exactly as it
+      already re-prices products.
+- [ ] Admin: an option manager with swatches, and a variant matrix that
+      generates the combinations with per-row price, stock, sku and image, plus
+      bulk edit.
+
 ### 7.5 SaaS (recs 14, 15, 27, 31)
 
 Billing, entitlements, payment adapters, invitations, usage limits, automation

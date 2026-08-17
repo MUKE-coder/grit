@@ -4013,6 +4013,20 @@ type Config struct {
 	// result set instead of an error page.
 	RangeFilterable map[string]bool
 
+	// InFilterable whitelists columns that accept a comma-separated list:
+	// ?category_id=a,b,c becomes WHERE category_id IN (a,b,c).
+	//
+	// Only for id columns, and that is a deliberate restriction rather than an
+	// accident of naming. Splitting on commas is wrong for anything a person
+	// types, because "Smith, John" is one value; it is safe for ids, where a
+	// comma never appears. So this is opt-in per column and never inferred from
+	// the value.
+	//
+	// The case it exists for: a category tree. "Products in Electronics" means
+	// Electronics and every category under it, which is a list of ids the client
+	// already has from the category it fetched.
+	InFilterable map[string]bool
+
 	DefaultSort  string // fallback sort column (defaults to "created_at")
 	DefaultOrder string // fallback sort order (defaults to "desc")
 
@@ -4291,6 +4305,25 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 				}
 			}
 			query = query.Where(col+" = ?", bound)
+		}
+
+		// Id lists. Same untrusted map, same whitelist rule.
+		for col := range cfg.InFilterable {
+			raw, ok := p.QueryFilters[col]
+			if !ok || raw == "" {
+				continue
+			}
+			parts := strings.Split(raw, ",")
+			values := make([]string, 0, len(parts))
+			for _, part := range parts {
+				if trimmed := strings.TrimSpace(part); trimmed != "" {
+					values = append(values, trimmed)
+				}
+			}
+			if len(values) == 0 {
+				continue
+			}
+			query = query.Where(col+" IN ?", values)
 		}
 
 		// Range windows. Read from the same untrusted QueryFilters map, so a

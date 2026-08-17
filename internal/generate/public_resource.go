@@ -114,6 +114,14 @@ func (g *Generator) writePublicResource(names Names) error {
 	if fileExists(path) {
 		fmt.Printf("  • %sinternal/handlers/%s_public.go exists, left alone\n",
 			g.apiPrefix(), names.Snake)
+		// The other half of that promise, which is easy to be bitten by: the
+		// file keeps the allowlist you edited AND the generator features it was
+		// written with. A handler from before filters existed does not gain
+		// them, and the symptom is a query parameter that quietly does nothing.
+		fmt.Println("    Your allowlist is kept, and so is everything else in there:")
+		fmt.Println("    newer generator features do not reach an existing file.")
+		fmt.Println("    Delete it and regenerate to pick them up, then re-add any")
+		fmt.Println("    columns you had published by hand.")
 		return nil
 	}
 
@@ -158,6 +166,21 @@ func (g *Generator) publicHandlerSource(names Names, included []Field) string {
 
 	viewFields = append(viewFields, "\tID string `json:\"id\"`")
 	assignments = append(assignments, "\t\tID: m.ID,")
+
+	// A tree publishes its shape, because a storefront needs it to render a menu
+	// and to ask for "this category and everything under it".
+	if g.Definition.Tree {
+		viewFields = append(viewFields,
+			"\tParentID string `json:\"parent_id\"`",
+			"\tDepth int `json:\"depth\"`",
+			// Filled by GetPublic rather than by the mapper, because it costs a
+			// query and a list of a hundred categories should not run a hundred
+			// of them.
+			"\tDescendantIDs []string `json:\"descendant_ids,omitempty\"`")
+		assignments = append(assignments,
+			"\t\tParentID: m.ParentID,",
+			"\t\tDepth: m.Depth,")
+	}
 
 	for _, f := range included {
 		goName := toPascalCase(f.Name)
@@ -204,9 +227,14 @@ func (g *Generator) publicHandlerSource(names Names, included []Field) string {
 	// Filtering by an id is not the same as publishing the relation. The id
 	// identifies a row the endpoint was already willing to return, and it
 	// reveals nothing about the parent beyond the fact that it exists.
+	var inFilterable []string
 	for _, f := range g.Definition.Fields {
 		if f.IsBelongsTo() {
-			filterable = append(filterable, strconvQuote(f.FKColumnName())+": true")
+			// IN rather than equality, because a category page filtered on a
+			// tree wants "Electronics and everything under it", which is a list
+			// of ids. IN with one value is the same query equality would have
+			// been, so nothing is lost for the flat case.
+			inFilterable = append(inFilterable, strconvQuote(f.FKColumnName())+": true")
 		}
 	}
 
@@ -283,6 +311,9 @@ func (h *` + names.Pascal + `Handler) ListPublic(c *gin.Context) {
 			// never an error.
 			Filterable:      map[string]bool{` + strings.Join(filterable, ", ") + `},
 			RangeFilterable: map[string]bool{` + strings.Join(rangeFilterable, ", ") + `},
+			// Foreign keys accept a comma-separated list, so one request can
+			// ask for a whole category subtree.
+			InFilterable: map[string]bool{` + strings.Join(inFilterable, ", ") + `},
 		},
 	)
 	if err != nil {
@@ -313,9 +344,9 @@ func (h *` + names.Pascal + `Handler) GetPublic(c *gin.Context) {
 		}})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": toPublic` + names.Pascal + `(item)})
+` + treeGetPublicPrelude(names, g.Definition) + `	c.JSON(http.StatusOK, gin.H{"data": ` + detailPayload(names, g.Definition) + `})
 }
-` + relatedPublic(names, g.Definition, slugField)
+` + treePublic(names, g.Definition) + relatedPublic(names, g.Definition, slugField)
 }
 
 // hasParent reports whether the resource has a belongs_to for the related
@@ -497,6 +528,12 @@ func (g *Generator) ensurePublicRoutes(names Names) error {
 	}
 	content := string(data)
 
+	treeRoute := ""
+	if g.Definition.Tree {
+		treeRoute = fmt.Sprintf("		publicAPI.GET(\"/%s/tree\", %sHandler.TreePublic)",
+			names.Plural, names.Camel)
+	}
+
 	relatedRoute := ""
 	if hasParent(g.Definition) {
 		relatedRoute = fmt.Sprintf("\t\tpublicAPI.GET(\"/%s/:key/related\", %sHandler.RelatedPublic)",
@@ -507,6 +544,15 @@ func (g *Generator) ensurePublicRoutes(names Names) error {
 	// related endpoint existed has the first two routes and not the third, and
 	// returning here would leave a handler nothing ever calls.
 	if strings.Contains(content, names.Camel+"Handler.ListPublic") {
+		// A project generated before the tree endpoint existed has the first two
+		// routes and not this one, so returning early here would leave a handler
+		// nothing ever calls.
+		if treeRoute != "" && !strings.Contains(content, names.Camel+"Handler.TreePublic") {
+			if err := injectBefore(path, "// grit:routes:public", treeRoute); err == nil {
+				manifest.Refresh(path)
+				fmt.Printf("  ✓ GET /api/v1/public/%s/tree (API key required)\n", names.Plural)
+			}
+		}
 		if relatedRoute == "" || strings.Contains(content, names.Camel+"Handler.RelatedPublic") {
 			return nil
 		}
@@ -526,6 +572,12 @@ func (g *Generator) ensurePublicRoutes(names Names) error {
 	if relatedRoute != "" {
 		route += "\n" + relatedRoute
 	}
+	// First in the block. Gin routes a static segment ahead of a parameter
+	// whatever the order, but reading /tree before /:key makes that obvious to
+	// the next person, who will otherwise wonder why it works.
+	if treeRoute != "" {
+		route = treeRoute + "\n" + route
+	}
 
 	if err := injectBefore(path, "// grit:routes:public", route); err != nil {
 		fmt.Printf("  Could not mount the public routes: %v\n", err)
@@ -542,4 +594,91 @@ func (g *Generator) ensurePublicRoutes(names Names) error {
 		fmt.Printf("  ✓ GET /api/v1/public/%s/:key/related (similar items)\n", names.Plural)
 	}
 	return nil
+}
+
+// detailPayload is the expression GetPublic hands back.
+//
+// A tree resource resolves its subtree ids on the way out. That is the one
+// question a storefront cannot answer for itself: it holds a slug, the products
+// endpoint filters on ids, and walking the tree client-side would be a request
+// per level.
+func detailPayload(names Names, def *ResourceDefinition) string {
+	if !def.Tree {
+		return "toPublic" + names.Pascal + "(item)"
+	}
+	return "out"
+}
+
+// treeGetPublicPrelude is the code GetPublic runs before answering, for a tree.
+func treeGetPublicPrelude(names Names, def *ResourceDefinition) string {
+	if !def.Tree {
+		return ""
+	}
+	return `
+	// This node and everything under it, which is what "products in Electronics"
+	// means to a customer. One indexed LIKE on the materialized path.
+	out := toPublic` + names.Pascal + `(item)
+	var descendantIDs []string
+	h.DB.Model(&models.` + names.Pascal + `{}).
+		Where("path LIKE ? AND archived_at IS NULL", item.Path+"%").
+		Pluck("id", &descendantIDs)
+	out.DescendantIDs = descendantIDs
+`
+}
+
+// treePublic emits GET /api/v1/public/<plural>/tree, or nothing.
+//
+// A storefront's category menu is a tree, and assembling it from a flat list on
+// the client means either a request per level or a client that knows how paths
+// work. Neither belongs in a template somebody copies.
+func treePublic(names Names, def *ResourceDefinition) string {
+	if !def.Tree {
+		return ""
+	}
+	return `
+// public` + names.Pascal + `Node is a published node with its children attached.
+//
+// The embedded struct flattens in JSON, so a node reads as its own fields plus
+// "children" rather than nesting one level deeper for no reason.
+type public` + names.Pascal + `Node struct {
+	public` + names.Pascal + `
+	Children []*public` + names.Pascal + `Node ` + "`" + `json:"children"` + "`" + `
+}
+
+// TreePublic handles GET /api/v1/public/` + names.Plural + `/tree.
+//
+// The whole published hierarchy in ONE query, assembled in Go. Ordered by depth
+// so a parent is always in the map before its children arrive, then by position
+// and name so the order matches what the admin arranged.
+func (h *` + names.Pascal + `Handler) TreePublic(c *gin.Context) {
+	var rows []models.` + names.Pascal + `
+	err := h.DB.Where("archived_at IS NULL").
+		Order("depth asc, position asc, name asc").
+		Find(&rows).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
+			"code": "INTERNAL_ERROR", "message": "Failed to load the tree",
+		}})
+		return
+	}
+
+	byID := make(map[string]*public` + names.Pascal + `Node, len(rows))
+	roots := make([]*public` + names.Pascal + `Node, 0)
+	for i := range rows {
+		byID[rows[i].ID] = &public` + names.Pascal + `Node{public` + names.Pascal + `: toPublic` + names.Pascal + `(rows[i])}
+	}
+	for i := range rows {
+		node := byID[rows[i].ID]
+		// A node whose parent is archived is promoted to a root rather than
+		// dropped: a menu missing a whole branch is worse than one with a branch
+		// in the wrong place.
+		if parent, ok := byID[rows[i].ParentID]; ok && rows[i].ParentID != "" {
+			parent.Children = append(parent.Children, node)
+			continue
+		}
+		roots = append(roots, node)
+	}
+	c.JSON(http.StatusOK, gin.H{"data": roots})
+}
+`
 }

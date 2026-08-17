@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.158.0"
+var version = "3.159.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -767,6 +767,7 @@ func generateResourceCmd() *cobra.Command {
 	var items string
 	var force bool
 	var publicRead bool
+	var tree bool
 
 	cmd := &cobra.Command{
 		Use:   "resource <Name>",
@@ -855,6 +856,20 @@ func generateResourceCmd() *cobra.Command {
 			}
 
 			gen.Definition.Public = publicRead
+			gen.Definition.Tree = tree
+
+			// --tree without a self-referential parent field adds one, because
+			// requiring both --tree and --fields "parent:belongs_to:Category" is
+			// asking for the same fact twice, with one spelling that quietly
+			// produces a flat list.
+			if tree && gen.Definition.TreeParentField() == nil {
+				gen.Definition.Fields = append(gen.Definition.Fields, generate.Field{
+					Name:         "parent",
+					Type:         "belongs_to",
+					RelatedModel: gen.Names().Pascal,
+				})
+				fmt.Println("  • --tree added parent:belongs_to:" + gen.Names().Pascal)
+			}
 
 			if err := gen.Run(); err != nil {
 				return err
@@ -879,6 +894,8 @@ func generateResourceCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&faker, "faker", false, "Also generate a seeder that fills many rows with gofakeit (implies --seed)")
 	cmd.Flags().BoolVar(&publicRead, "public", false,
 		"Also expose read-only list and detail endpoints under /api/v1/public/, guarded by an API key")
+	cmd.Flags().BoolVar(&tree, "tree", false,
+		"Make the resource hierarchical: a self-referential parent, a materialized path, depth and sibling order, plus the tree queries and a move endpoint")
 	cmd.Flags().IntVar(&seedCount, "count", 10, "Number of rows for the faker seeder")
 	cmd.Flags().BoolVar(&force, "force", false, "Generate even when the name collides with a built-in model (overwrites it)")
 

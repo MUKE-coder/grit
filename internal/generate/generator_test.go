@@ -3,6 +3,7 @@ package generate
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -681,5 +682,43 @@ func assertContains(t *testing.T, label, content string, wants ...string) {
 		if !strings.Contains(content, want) {
 			t.Errorf("[%s] missing %q:\n%s", label, want, content)
 		}
+	}
+}
+
+// A relation pointing at its own model is how a category tree is spelled:
+// Electronics above Cameras. Go rejects a struct that contains itself by value,
+// so the association has to be a pointer, and a root has no parent, so the FK
+// cannot be required. Before both, a generated project with a self-reference
+// did not compile: "invalid recursive type".
+func TestWriteGoModel_SelfReferentialBelongsTo(t *testing.T) {
+	root := t.TempDir()
+
+	def, err := ParseInlineFields("Category", "name:string,parent:belongs_to:Category,owner:belongs_to:User")
+	if err != nil {
+		t.Fatalf("ParseInlineFields: %v", err)
+	}
+
+	g := newTestGenerator(root, "testapp/apps/api", def)
+	if err := g.writeGoModel(g.Names()); err != nil {
+		t.Fatalf("writeGoModel: %v", err)
+	}
+	got := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "models", "category.go"))
+
+	// Matched with regexps because gofmt aligns struct tags, so the run of
+	// spaces between a field, its type and its tag is not fixed.
+	selfRef := regexp.MustCompile("Parent\\s+\\*Category\\s+`gorm:\"foreignKey:ParentID\"")
+	if !selfRef.MatchString(got) {
+		t.Errorf("the self-reference must be a pointer:\n%s", got)
+	}
+	if strings.Contains(got, `json:"parent_id" binding:"required"`) {
+		t.Error(`a self-referential FK must not be required: the root has no parent`)
+	}
+	// An ordinary relation keeps both properties it always had.
+	ordinary := regexp.MustCompile("Owner\\s+User\\s+`gorm:\"foreignKey:OwnerID\"")
+	if !ordinary.MatchString(got) {
+		t.Errorf("an ordinary belongs_to should still be a value:\n%s", got)
+	}
+	if !strings.Contains(got, `json:"owner_id" binding:"required"`) {
+		t.Error("an ordinary FK should still be required")
 	}
 }
