@@ -29,6 +29,87 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.154.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.154.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 17, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Four bugs found by building the storefront guide instead of
+                  reading it.</strong>
+                </p>
+                <p>
+                  I followed the ecommerce guide command by command in a fresh project.
+                  Everything below is something that walkthrough hit, and three of the
+                  four would have stopped a beginner cold.
+                </p>
+
+                <h3>A public handler that did not compile</h3>
+                <p>
+                  <code>--public</code>, shipped yesterday, emitted{' '}
+                  <code>models.FileRefs</code> for a files field. The real type is{' '}
+                  <code>files.FileRefs</code> from <code>internal/files</code>. So any
+                  resource with an image on it produced a public handler that failed to
+                  build, which is most of the resources anyone would want public. The type
+                  map now returns what the model actually declares, and the import block
+                  is computed from the fields rather than guessed, so a resource of plain
+                  strings does not get an unused import instead.
+                </p>
+
+                <h3>Faker colliding on unique columns</h3>
+                <p>
+                  <code>sku:string:unique</code> plus <code>--faker --count 40</code>{' '}
+                  logged a constraint failure and seeded 39 rows.{' '}
+                  <code>gofakeit.Word()</code> draws from a finite word list, so forty
+                  rows on a unique column collide, and the seeder had no notion of{' '}
+                  <code>unique</code> at all. A unique string column now gets a readable
+                  prefix plus entropy, so a SKU seeds as <code>SKU-APEJ0818</code>. Forty
+                  of forty, forty distinct.
+                </p>
+
+                <h3>Seeded products with no category</h3>
+                <p>
+                  The seeder does link a <code>belongs_to</code> properly: it plucks the
+                  parent ids once and picks one per row. But if no parent rows exist the
+                  foreign key is silently left empty, and generating{' '}
+                  <code>Category</code> without <code>--faker</code> means there are none.
+                  Forty products, zero categories, no error anywhere.
+                </p>
+                <p>
+                  That one is a documentation bug rather than a code bug, and it is fixed
+                  in the guide: generate the parent with its own seed data first. Worth
+                  knowing as a rule, because it applies to every relation you seed.
+                </p>
+
+                <h3>The docs reference moved out of routes.go</h3>
+                <p>
+                  141 route overrides and 28KB of descriptions sat in the middle of the
+                  file you open to find out how the application is wired: 38% of{' '}
+                  <code>routes.go</code>, none of it about routing. They now live in{' '}
+                  <code>internal/routes/apidocs.go</code>, and routes.go went from 1482
+                  lines to 897.
+                </p>
+                <p>
+                  The generator injects into the new file and falls back to{' '}
+                  <code>routes.go</code> for projects that predate the split, so an older
+                  project keeps documenting its endpoints rather than silently stopping.
+                </p>
+
+                <h3>Also</h3>
+                <p>
+                  Every scaffolded home page linked to{' '}
+                  <code>grit-vert.vercel.app/docs</code>, a preview deployment rather than
+                  the docs site. Six links across two templates now point at{' '}
+                  <code>gritframework.dev</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.153.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

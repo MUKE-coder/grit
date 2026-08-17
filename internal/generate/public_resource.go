@@ -189,7 +189,7 @@ func (g *Generator) publicHandlerSource(names Names, included []Field) string {
 
 import (
 	"net/http"
-
+` + publicImports(g.Module, included) + `
 	"github.com/gin-gonic/gin"
 
 	"` + g.Module + `/internal/models"
@@ -271,6 +271,11 @@ func (h *` + names.Pascal + `Handler) GetPublic(c *gin.Context) {
 }
 
 // publicGoType maps a field to the Go type the view struct uses.
+//
+// These have to be the types the model actually declares, not plausible
+// guesses at them. Getting FileRefs wrong produced a public handler that did
+// not compile for any resource with an image on it, which is most of the
+// resources anyone would want public.
 func publicGoType(f Field) string {
 	switch FieldType(f.Type) {
 	case FieldInt:
@@ -282,13 +287,51 @@ func publicGoType(f Field) string {
 	case FieldDate, FieldDatetime:
 		return "time.Time"
 	case FieldFile:
-		return "models.FileRef"
+		return "*files.FileRef"
 	case FieldFiles:
-		return "models.FileRefs"
+		return "files.FileRefs"
 	case FieldStringArray:
 		return "datatypes.JSONSlice[string]"
 	}
 	return "string"
+}
+
+// publicImports returns the extra imports the view struct needs.
+//
+// Computed from the fields rather than always emitted, because an unused
+// import is a build failure and a resource of plain strings needs none of
+// these.
+func publicImports(module string, included []Field) string {
+	var needTime, needFiles, needDatatypes bool
+	for _, f := range included {
+		switch FieldType(f.Type) {
+		case FieldDate, FieldDatetime:
+			needTime = true
+		case FieldFile, FieldFiles:
+			needFiles = true
+		case FieldStringArray:
+			needDatatypes = true
+		}
+	}
+
+	var std, third, local []string
+	if needTime {
+		std = append(std, "	\"time\"")
+	}
+	if needDatatypes {
+		third = append(third, "	\"gorm.io/datatypes\"")
+	}
+	if needFiles {
+		local = append(local, "	\""+module+"/internal/files\"")
+	}
+
+	out := ""
+	for _, group := range [][]string{std, third, local} {
+		for _, line := range group {
+			out += line + "\n"
+		}
+	}
+	return out
 }
 
 func strconvQuote(s string) string { return "\"" + s + "\"" }
