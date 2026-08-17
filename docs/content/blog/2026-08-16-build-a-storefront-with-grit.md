@@ -316,6 +316,10 @@ That is the opposite default to the admin surface, and it is the right one when 
 
 If you want `stock` published, add it. If you want "in stock" instead of a count, add a bool and set it in `toPublicProduct`. That is the file to edit.
 
+That "never overwritten" promise has a consequence worth knowing before you hit it. Add a field to the model later and it does **not** appear on the public endpoint, because the file that decides is the one the generator will not touch. Add it to `publicProduct` and `toPublicProduct` yourself, or delete the file and regenerate the resource to get a fresh allowlist including the new field.
+
+And on adding fields at all: `grit generate field` handles ordinary columns, but it declines relationship, file, slug and array fields with a message telling you to regenerate the resource instead. Those four write more than a column: a foreign key and a preload, an upload pipeline, a hook that fills the value on save. Regenerating is the honest answer rather than half-wiring them.
+
 ### Why it could not just be the same endpoint without auth
 
 Two reasons, and the second one fails at boot.
@@ -427,7 +431,10 @@ interface Page<T> {
   meta: { total: number; page: number; page_size: number; pages: number };
 }
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
+// NEXT_PUBLIC_API_URL is an ORIGIN, not a base path. The generated
+// apps/web/lib/api.ts reads the same variable, and the CSP in next.config.ts is
+// derived from it, so putting "/api/v1" in the value breaks both.
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 const KEY = process.env.NEXT_PUBLIC_API_KEY ?? "";
 
 export function useCatalogue(params: { page?: number; search?: string } = {}) {
@@ -441,7 +448,7 @@ export function useCatalogue(params: { page?: number; search?: string } = {}) {
     queryKey: ["catalogue", params],
     queryFn: async () => {
       // The publishable key, not a bearer token. There is no user here.
-      const res = await fetch(`${API}/public/products?${query}`, {
+      const res = await fetch(`${API}/api/v1/public/products?${query}`, {
         headers: { "X-API-Key": KEY },
       });
       if (!res.ok) throw new Error("Could not load products");
@@ -451,13 +458,14 @@ export function useCatalogue(params: { page?: number; search?: string } = {}) {
 }
 ```
 
-And the grid:
+And the grid, images and all:
 
 ```tsx
 // apps/web/app/products/page.tsx
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCatalogue } from "@/hooks/use-catalogue";
 
 export default function ProductsPage() {
@@ -469,7 +477,17 @@ export default function ProductsPage() {
     <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
       {data?.data.map((product) => (
         <Link key={product.id} href={`/products/${product.slug}`}>
-          <img src={product.images?.[0]?.url} alt={product.name} />
+          {product.images?.[0]?.url ? (
+            <Image
+              src={product.images[0].url}
+              alt={product.name}
+              width={600}
+              height={400}
+              className="aspect-[3/2] w-full rounded object-cover"
+            />
+          ) : (
+            <div className="aspect-[3/2] w-full rounded bg-neutral-200" />
+          )}
           <h3>{product.name}</h3>
           <p>{product.price} AED</p>
           {product.compare_at_price > product.price && (
@@ -481,6 +499,14 @@ export default function ProductsPage() {
   );
 }
 ```
+
+Two things about those images that will bite you elsewhere, so they are worth knowing now.
+
+`next/image` refuses to load a remote host it was not told about, and it **throws** rather than falling back to a plain `<img>`, so one product photo takes the whole page down with "hostname is not configured". Your uploads live on the storage origin, not on the app's own, so that host has to be declared. Grit already declares it in `apps/web/next.config.ts`, derived from the same `NEXT_PUBLIC_STORAGE_URL` the CSP uses, along with `picsum.photos` in development because that is where `--faker` points its placeholder images. Move storage to a CDN and you set one env var, not two lists.
+
+The guard around `product.images?.[0]` is not defensive padding either. `images` is a JSON column, so a product created before you added the field, or through an API call that omitted it, has `null` there rather than an empty array. Render `images[0].url` unguarded and that one row throws.
+
+Also: faker fills `price` and `compare_at_price` independently, so on roughly half the seeded rows the "compare at" price is *lower*, and your strikethrough vanishes. Nothing is broken. If you want the discount to read convincingly in a demo, set the two by hand in the admin for a few products, or edit the seeder to derive one from the other.
 
 `data.data` and `data.meta` are Grit's [response format](/docs/backend/response-format), the same shape on every endpoint, so pagination code you write once works everywhere.
 

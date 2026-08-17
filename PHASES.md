@@ -841,6 +841,22 @@ quietly ignores the filter tabs is worse than no kanban.
       endpoints and origins as textareas with the guidance beside the field, and
       a publishable key shown in full with a copy button while a secret one
       shows only its prefix.
+- [x] Browser pass over a storefront built from the guide - v3.157.0. Catalogue
+      to cart in a real browser, watching the console and the network rather
+      than curl. Four bugs that had survived a full curl sweep:
+      - The CSP put `NEXT_PUBLIC_API_URL` into `connect-src` verbatim, and a
+        source expression matches paths exactly unless it ends in a slash, so a
+        value carrying `/api/v1` blocked every request in the app. Both the
+        Next.js and Vite configs now reduce it to an origin.
+      - `next/image` threw on the project's own uploads, because no host was
+        declared and it does not degrade to `<img>`. Now derived from
+        `NEXT_PUBLIC_STORAGE_URL`, plus picsum.photos in dev for `--faker`.
+      - Regenerating a resource that had gained a file field declared the
+        handler twice and stopped the API compiling. The guard is now the
+        declaration rather than the block, and Storage is wired into the
+        existing one.
+      - The health endpoint's table count was Postgres-only: a red SQL error on
+        every poll under SQLite, silently zero under MySQL.
 
 ### 7.5 SaaS (recs 14, 15, 27, 31)
 

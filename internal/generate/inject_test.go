@@ -8,6 +8,104 @@ import (
 	"testing"
 )
 
+// ── ensureHandlerInit ────────────────────────────────────────────────────────
+
+// The regression this function exists for: regenerating a resource after it
+// gained a file field used to append a second "xHandler :=" block, because the
+// guard compared the whole block and the new one carried Storage. The project
+// then failed to compile with "no new variables on left side of :=".
+func TestEnsureHandlerInit(t *testing.T) {
+	const routes = `package routes
+
+func Setup(db *gorm.DB, svc *Services) {
+	productHandler := &handlers.ProductHandler{
+		DB: db,
+	}
+	// grit:handlers
+}
+`
+
+	t.Run("adds the handler when it is absent", func(t *testing.T) {
+		f := writeTempFile(t, "routes.go", `package routes
+
+func Setup(db *gorm.DB, svc *Services) {
+	// grit:handlers
+}
+`)
+		what, err := ensureHandlerInit(f, "product", "Product", false)
+		if err != nil {
+			t.Fatalf("ensureHandlerInit: %v", err)
+		}
+		if !strings.Contains(what, "Injected") {
+			t.Errorf("expected an injection, reported %q", what)
+		}
+		got := readFile(t, f)
+		if !strings.Contains(got, "productHandler := &handlers.ProductHandler{") {
+			t.Errorf("handler not written:\n%s", got)
+		}
+		if strings.Contains(got, "Storage:") {
+			t.Error("a resource with no file fields must not ask for Storage")
+		}
+	})
+
+	t.Run("does not declare the same handler twice", func(t *testing.T) {
+		f := writeTempFile(t, "routes.go", routes)
+		// The file field is the case that used to slip past the guard.
+		if _, err := ensureHandlerInit(f, "product", "Product", true); err != nil {
+			t.Fatalf("ensureHandlerInit: %v", err)
+		}
+		got := readFile(t, f)
+		if n := strings.Count(got, "productHandler := &handlers.ProductHandler{"); n != 1 {
+			t.Fatalf("handler declared %d times, want 1:\n%s", n, got)
+		}
+		// And the reason it is only once: Storage was added to the block that
+		// was already there, not written as a second one.
+		if !strings.Contains(got, "Storage: svc.Storage,") {
+			t.Errorf("a resource that gained a file field must get Storage wired:\n%s", got)
+		}
+		if _, err := format.Source([]byte(got)); err != nil {
+			t.Errorf("result does not parse as Go: %v\n%s", err, got)
+		}
+	})
+
+	t.Run("is idempotent", func(t *testing.T) {
+		f := writeTempFile(t, "routes.go", routes)
+		for i := 0; i < 3; i++ {
+			if _, err := ensureHandlerInit(f, "product", "Product", true); err != nil {
+				t.Fatalf("run %d: %v", i, err)
+			}
+		}
+		got := readFile(t, f)
+		if n := strings.Count(got, "Storage: svc.Storage,"); n != 1 {
+			t.Errorf("Storage wired %d times, want 1:\n%s", n, got)
+		}
+	})
+
+	t.Run("leaves a hand-edited block alone", func(t *testing.T) {
+		f := writeTempFile(t, "routes.go", `package routes
+
+func Setup(db *gorm.DB, svc *Services) {
+	productHandler := &handlers.ProductHandler{
+		DB:      db,
+		Storage: svc.Storage,
+		Pricing: pricingService,
+	}
+	// grit:handlers
+}
+`)
+		what, err := ensureHandlerInit(f, "product", "Product", true)
+		if err != nil {
+			t.Fatalf("ensureHandlerInit: %v", err)
+		}
+		if !strings.Contains(what, "leaving it alone") {
+			t.Errorf("expected to leave the block alone, reported %q", what)
+		}
+		if !strings.Contains(readFile(t, f), "Pricing: pricingService,") {
+			t.Error("a hand-added field was removed")
+		}
+	})
+}
+
 // ── injectBefore ─────────────────────────────────────────────────────────────
 
 func TestInjectBefore(t *testing.T) {

@@ -185,16 +185,18 @@ func (g *Generator) publicHandlerSource(names Names, included []Field) string {
 		}
 	}
 
+	std, third, local := publicImports(g.Module, included)
+
 	return `package handlers
 
 import (
 	"net/http"
-` + publicImports(g.Module, included) + `
+` + std + `
 	"github.com/gin-gonic/gin"
-
+` + third + `
 	"` + g.Module + `/internal/models"
 	"` + g.Module + `/internal/paginate"
-)
+` + local + `)
 
 // The public ` + names.Plural + ` surface.
 //
@@ -296,12 +298,15 @@ func publicGoType(f Field) string {
 	return "string"
 }
 
-// publicImports returns the extra imports the view struct needs.
+// publicImports returns the extra imports the view struct needs, one string
+// per group: stdlib, third party, this module.
 //
 // Computed from the fields rather than always emitted, because an unused
 // import is a build failure and a resource of plain strings needs none of
-// these.
-func publicImports(module string, included []Field) string {
+// these. Returned per group because gofmt sorts inside a group but never moves
+// a line between them, so a local import emitted next to "net/http" stays
+// there, wrong, forever.
+func publicImports(module string, included []Field) (string, string, string) {
 	var needTime, needFiles, needDatatypes bool
 	for _, f := range included {
 		switch FieldType(f.Type) {
@@ -325,13 +330,14 @@ func publicImports(module string, included []Field) string {
 		local = append(local, "	\""+module+"/internal/files\"")
 	}
 
-	out := ""
-	for _, group := range [][]string{std, third, local} {
-		for _, line := range group {
+	join := func(lines []string) string {
+		out := ""
+		for _, line := range lines {
 			out += line + "\n"
 		}
+		return out
 	}
-	return out
+	return join(std), join(third), join(local)
 }
 
 func strconvQuote(s string) string { return "\"" + s + "\"" }
