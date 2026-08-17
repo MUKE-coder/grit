@@ -215,23 +215,205 @@ The states come from the field's own `options`. You do not list them twice. If y
 
 ---
 
-## Step 4: the storefront
+## Step 4: the storefront, and the first thing that will stop you
 
 Time to build the shop your customers see. It lives in `apps/web/`.
 
-The generator already wrote you typed data hooks. Look at `apps/web/hooks/use-products.ts`: `useProducts()`, `useProduct(id)`, `useCreateProduct()` and so on, all React Query, all typed from the Go model through the shared package. You do not write fetch calls. [Frontend hooks](/docs/frontend/hooks) explains the pattern; [the shared package](/docs/frontend/shared-package) explains how the types got there.
+The generator wrote you typed data hooks. Look at `apps/web/hooks/use-products.ts`: `useProducts()`, `useProduct(id)`, `useCreateProduct()`, all React Query, all typed from the Go model through the shared package. You do not write fetch calls. [Frontend hooks](/docs/frontend/hooks) explains the pattern; [the shared package](/docs/frontend/shared-package) explains how the types got there.
 
-A product grid:
+Reach for `useProducts()` on a public page and you get this:
+
+```json
+{"error":{"code":"UNAUTHORIZED","message":"Authentication required"}}
+```
+
+**Generated CRUD is mounted behind auth.** Look at what the generator injected into `apps/api/internal/routes/routes.go`:
+
+```go
+protected.GET("/products", productHandler.List)
+protected.GET("/products/:id", productHandler.GetByID)
+admin.DELETE("/products/:id", productHandler.Delete)
+```
+
+That is the correct default. A generated resource is an admin resource: it exposes every column, it accepts filters on all of them, and it has a write side. Making that public by default would be a security bug shipped to everyone.
+
+But a shop is customer-facing, and your customers are not logged in. So you write the public half yourself. It is about sixty lines and you only do it for the one or two resources the storefront actually reads.
+
+### Why you cannot just remove the auth
+
+Two reasons, and the second one bites at boot.
+
+Your **admin panel calls those exact routes**. Move them and the admin stops working.
+
+And you cannot add a public `GET /products` alongside the protected one, because gin panics at startup with `handlers are already registered for path`. One method plus one path is one handler.
+
+So the public catalogue gets its own namespace. Grit's own built-in Blog resource does the same thing: public reads at `/api/v1/blogs`, admin CRUD at `/api/v1/admin/blogs`.
+
+### The public handler
+
+```go
+// apps/api/internal/handlers/product_public.go
+package handlers
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+
+	"shopfront/apps/api/internal/models"
+	"shopfront/apps/api/internal/paginate"
+)
+
+// publicProduct is what an anonymous visitor is allowed to see.
+//
+// An allowlist rather than the model. A column you add next month (a cost
+// price, a supplier note, an internal margin) is then private by default,
+// instead of being published to the world the moment somebody runs
+// grit generate field.
+type publicProduct struct {
+	ID    string  `json:"id"`
+	Name  string  `json:"name"`
+	Slug  string  `json:"slug"`
+	Price float64 `json:"price"`
+	// InStock rather than the count. How many units are left is a business
+	// fact your competitors would enjoy; whether a customer can buy one is
+	// all the page needs.
+	InStock bool `json:"in_stock"`
+}
+
+func toPublicProduct(p models.Product) publicProduct {
+	return publicProduct{
+		ID: p.ID, Name: p.Name, Slug: p.Slug,
+		Price: p.Price, InStock: p.Stock > 0,
+	}
+}
+
+// ListPublic handles GET /api/v1/shop/products.
+func (h *ProductHandler) ListPublic(c *gin.Context) {
+	// The scope goes on the query, before paginate sees it. Not in Filterable:
+	// a column listed there can be set from the query string, and
+	// ?active=false would put deliberately hidden products back in front of
+	// customers.
+	query := h.DB.Model(&models.Product{}).
+		Where("active = ?", true).
+		Where("archived_at IS NULL")
+
+	res, err := paginate.List[models.Product](
+		query,
+		paginate.Bind(c),
+		paginate.Config{
+			Searchable: []string{"name"},
+			Sortable:   map[string]bool{"name": true, "price": true, "created_at": true},
+			// No Filterable at all. Every filter a customer needs is one you
+			// chose to offer.
+		},
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
+			"code": "INTERNAL_ERROR", "message": "Failed to fetch products",
+		}})
+		return
+	}
+
+	out := make([]publicProduct, 0, len(res.Data))
+	for _, p := range res.Data {
+		out = append(out, toPublicProduct(p))
+	}
+	c.JSON(http.StatusOK, gin.H{"data": out, "meta": res.Meta})
+}
+
+// GetPublicBySlug handles GET /api/v1/shop/products/:slug.
+//
+// By slug, not id: a storefront URL should read /products/blue-running-shoes
+// rather than a UUID, for customers and for search engines alike.
+func (h *ProductHandler) GetPublicBySlug(c *gin.Context) {
+	var product models.Product
+	err := h.DB.Where("slug = ? AND active = ? AND archived_at IS NULL",
+		c.Param("slug"), true).First(&product).Error
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{
+			"code": "NOT_FOUND", "message": "Product not found",
+		}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": toPublicProduct(product)})
+}
+```
+
+Mount it beside the other public groups, above where `protected` is declared:
+
+```go
+// apps/api/internal/routes/routes.go
+
+// Public shop routes (no auth required).
+shop := v1.Group("/shop")
+{
+	shop.GET("/products", productHandler.ListPublic)
+	shop.GET("/products/:slug", productHandler.GetPublicBySlug)
+}
+```
+
+Check it before writing any frontend, because a curl is faster than a browser:
+
+```bash
+curl localhost:8080/api/v1/shop/products          # 200, no token
+curl localhost:8080/api/v1/products               # 401, still protected
+```
+
+### The storefront hook
+
+The generated hook points at the protected endpoint, and it is regenerated whenever you run `grit generate resource` again, so do not edit it. Write a small one next to it:
+
+```ts
+// apps/web/hooks/use-catalogue.ts
+import { useQuery } from "@tanstack/react-query";
+
+export interface CatalogueProduct {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  in_stock: boolean;
+}
+
+interface Page<T> {
+  data: T[];
+  meta: { total: number; page: number; page_size: number; pages: number };
+}
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
+
+export function useCatalogue(params: { page?: number; search?: string } = {}) {
+  const query = new URLSearchParams({
+    page: String(params.page ?? 1),
+    page_size: "24",
+    ...(params.search ? { search: params.search } : {}),
+  });
+
+  return useQuery<Page<CatalogueProduct>>({
+    queryKey: ["catalogue", params],
+    // No Authorization header, deliberately. This endpoint is public and the
+    // storefront has no user to get a token from.
+    queryFn: async () => {
+      const res = await fetch(`${API}/shop/products?${query}`);
+      if (!res.ok) throw new Error("Could not load products");
+      return res.json();
+    },
+  });
+}
+```
+
+And the grid:
 
 ```tsx
 // apps/web/app/products/page.tsx
 "use client";
 
 import Link from "next/link";
-import { useProducts } from "@/hooks/use-products";
+import { useCatalogue } from "@/hooks/use-catalogue";
 
 export default function ProductsPage() {
-  const { data, isLoading } = useProducts({ page_size: 24, active: true });
+  const { data, isLoading } = useCatalogue();
 
   if (isLoading) return <ProductGridSkeleton />;
 
@@ -239,9 +421,9 @@ export default function ProductsPage() {
     <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
       {data?.data.map((product) => (
         <Link key={product.id} href={`/products/${product.slug}`}>
-          <img src={product.images?.[0]?.url} alt={product.name} />
           <h3>{product.name}</h3>
           <p>{product.price} AED</p>
+          {!product.in_stock && <span>Out of stock</span>}
         </Link>
       ))}
     </div>
@@ -249,7 +431,9 @@ export default function ProductsPage() {
 }
 ```
 
-`data.data` and `data.meta` come from Grit's [response format](/docs/backend/response-format), which is the same shape on every endpoint, so pagination code you write once works everywhere.
+`data.data` and `data.meta` are Grit's [response format](/docs/backend/response-format), the same shape on every endpoint, so pagination code you write once works everywhere.
+
+Do the same for categories when you need them. Two resources is usually the whole public surface of a shop: everything else the customer touches goes through checkout or order tracking, and both of those are endpoints you are writing anyway.
 
 ---
 
