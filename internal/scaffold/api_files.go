@@ -119,7 +119,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "services", "api_key_test.go"):            apiAPIKeyTestGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "api_key.go"):               apiAPIKeyMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "api_key.go"):                 apiAPIKeyHandlerGo(),
-		filepath.Join(apiRoot, "internal", "database", "api_keys_seeder.go"):        apiAPIKeySeederGo(),
+		filepath.Join(apiRoot, "internal", "database", "api_keys_seeder.go"):         apiAPIKeySeederGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user_test.go"):               apiUserTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "bench_test.go"):              apiBenchTestGo(),
 	}
