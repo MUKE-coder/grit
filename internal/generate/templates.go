@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
@@ -65,11 +66,21 @@ func (g *Generator) writeGoModel(names Names) error {
 
 	// Build imports
 	hasSlug := slugField != nil
+	isTree := g.Definition.Tree
 	var imports string
-	stdImports := `"time"`
-	if hasSlug {
-		stdImports = "\"fmt\"\n\t\"time\""
+	// A tree needs fmt for wrapped errors and strings for path work, and a slug
+	// already needs fmt. Built as a sorted list rather than by appending to a
+	// string, because "fmt" has to come before "strings" before "time" and
+	// nothing downstream reorders them.
+	std := []string{`"time"`}
+	if hasSlug || isTree {
+		std = append(std, `"fmt"`)
 	}
+	if isTree {
+		std = append(std, `"strings"`)
+	}
+	sort.Strings(std)
+	stdImports := strings.Join(std, "\n\t")
 	// uuid is no longer imported here: primary keys come from internal/ids
 	// (UUIDv7), so GORM is the only external dependency a model needs.
 	extImports := "\"gorm.io/gorm\""
@@ -132,6 +143,14 @@ func (g *Generator) writeGoModel(names Names) error {
 `, toPascalCase(wf.Name), toPascalCase(wf.Name), wf.Workflow.Initial)
 	}
 
+	// A tree's path is derived from its parent's, and it ends in this row's own
+	// id, so it cannot be computed until the id is assigned. That happens at the
+	// top of BeforeCreate, a few lines above where this lands, which is the only
+	// reason the tree work is not a hook of its own.
+	if g.Definition.Tree {
+		autoHook += treeCreateHook()
+	}
+
 	structFields := ""
 	for _, f := range fields {
 		// belongs_to: emit FK column + association struct
@@ -141,11 +160,41 @@ func (g *Generator) writeGoModel(names Names) error {
 			fkGoName := toPascalCase(baseName) + "ID"     // e.g., CategoryID
 			fkJson := toSnakeCase(baseName) + "_id"       // e.g., category_id
 			assocName := toPascalCase(baseName)           // e.g., Category
+
+			// A relation pointing at its own model is how you spell a tree:
+			// Category with parent:belongs_to:Category is Electronics above
+			// Cameras. Two things about it differ from an ordinary relation.
+			//
+			// The association must be a pointer, because Go rejects a struct
+			// containing itself by value outright: "invalid recursive type".
+			// A generated project with a self-reference did not compile at all
+			// before this.
+			//
+			// And the FK cannot be required. Every tree has a root, the root
+			// has no parent, and binding:"required" makes it impossible to
+			// create one.
+			//
+			// The FK stays a plain string, so absent is "" rather than NULL.
+			// That is what every other belongs_to in Grit already means by
+			// absent (the seeder leaves the column empty when there are no
+			// parents to pick from), and matching it keeps the handler, the
+			// importer and the admin form working unchanged. Roots are
+			// WHERE parent_id = '' rather than IS NULL.
+			selfRef := relModel == toPascalCase(g.Definition.Name)
+
 			// FK column
-			structFields += fmt.Sprintf("\t%s string `gorm:\"size:36;index\" json:\"%s\" binding:\"required\"`\n", fkGoName, fkJson)
+			if selfRef {
+				structFields += fmt.Sprintf("\t%s string `gorm:\"size:36;index\" json:\"%s\"`\n", fkGoName, fkJson)
+			} else {
+				structFields += fmt.Sprintf("\t%s string `gorm:\"size:36;index\" json:\"%s\" binding:\"required\"`\n", fkGoName, fkJson)
+			}
 			// Association struct
+			assocType := relModel
+			if selfRef {
+				assocType = "*" + relModel
+			}
 			structFields += fmt.Sprintf("\t%s %s `gorm:\"foreignKey:%s\" json:\"%s\"`\n",
-				assocName, relModel, fkGoName, toSnakeCase(assocName))
+				assocName, assocType, fkGoName, toSnakeCase(assocName))
 			continue
 		}
 
@@ -183,6 +232,12 @@ func (g *Generator) writeGoModel(names Names) error {
 	if g.Definition.Items != nil {
 		childNames := BuildNames(g.Definition.Items)
 		structFields += fmt.Sprintf("\tItems []%s `gorm:\"foreignKey:%sID\" json:\"items\"`\n", childNames.Pascal, names.Pascal)
+	}
+
+	// --tree: the hierarchy columns. The parent FK itself is an ordinary
+	// self-referential belongs_to, emitted above with the other fields.
+	if isTree {
+		structFields += treeFields(names)
 	}
 
 	content := fmt.Sprintf(`package models
@@ -271,6 +326,13 @@ func (m *%s) BeforeUpdate(tx *gorm.DB) error {
 	return nil
 }
 `, names.Pascal)
+
+	// Path resolution, the cycle refusal, and the two accessors a breadcrumb
+	// needs. Reparenting lives in the tree service instead: a move rewrites a
+	// whole subtree, and that belongs somewhere it can be a transaction.
+	if isTree {
+		content += treeModelMethods(names)
+	}
 
 	path := filepath.Join(g.APIRoot(), "internal", "models", names.Snake+".go")
 	return writeFileWithDirs(path, content)
@@ -495,7 +557,15 @@ func (g *Generator) writeGoHandler(names Names) error {
 			assocName := toPascalCase(baseName)
 			preloads = append(preloads, assocName)
 
-			createFields += fmt.Sprintf("\t\t%s string `json:\"%s\" binding:\"required\"`\n", fkGoName, fkJson)
+			// A self-reference is optional, because the root of a tree has no
+			// parent. Required here and the API refuses to create the first row
+			// with a validation error about a field the caller correctly left
+			// empty, which is where this was first noticed.
+			if f.RelatedModelName() == toPascalCase(g.Definition.Name) {
+				createFields += fmt.Sprintf("\t\t%s string `json:\"%s\"`\n", fkGoName, fkJson)
+			} else {
+				createFields += fmt.Sprintf("\t\t%s string `json:\"%s\" binding:\"required\"`\n", fkGoName, fkJson)
+			}
 			createAssignments += fmt.Sprintf("\t\t%s: req.%s,\n", fkGoName, fkGoName)
 
 			updateFields += fmt.Sprintf("\t\t%s *string `json:\"%s\"`\n", fkGoName, fkJson)
@@ -1607,8 +1677,16 @@ func (g *Generator) writeZodSchema(names Names) error {
 			// The Go API decodes with ShouldBindJSON using `json:"foo_id"` tags,
 			// so the Zod payload must send snake_case keys too.
 			fkName := f.FKColumnName()
-			createFields += fmt.Sprintf("  %s: %s,\n", fkName, f.ZodType())
-			updateFields += fmt.Sprintf("  %s: %s,\n", fkName, f.ZodType()+".optional()")
+			zod := f.ZodType()
+			// A self-reference has to accept the empty string, because that is
+			// how "this is a root" is spelled. Without it the admin form refuses
+			// to save the first node: .uuid() rejects "" with "Invalid ID" on a
+			// field the person correctly left blank.
+			if f.RelatedModelName() == toPascalCase(g.Definition.Name) {
+				zod += `.or(z.literal(""))`
+			}
+			createFields += fmt.Sprintf("  %s: %s,\n", fkName, zod)
+			updateFields += fmt.Sprintf("  %s: %s,\n", fkName, zod+".optional()")
 			continue
 		}
 
@@ -1993,8 +2071,15 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 			fieldLabel := strings.Join(splitPascal(toPascalCase(baseName)), " ")
 			relSnake := toSnakeCase(f.RelatedModelName())
 			relPlural := Pluralize(relSnake)
-			formFields += fmt.Sprintf("\n    { key: \"%s\", label: \"%s\", type: \"relationship-select\", required: true, relatedEndpoint: \"/api/%s\", displayField: \"name\" },",
-				fkKey, fieldLabel, relPlural)
+			// A self-reference is optional in the form, because the top of a
+			// tree has no parent and a required select gives the person no way
+			// to say so.
+			required := "required: true, "
+			if f.RelatedModelName() == toPascalCase(g.Definition.Name) {
+				required = ""
+			}
+			formFields += fmt.Sprintf("\n    { key: \"%s\", label: \"%s\", type: \"relationship-select\", %srelatedEndpoint: \"/api/%s\", displayField: \"name\" },",
+				fkKey, fieldLabel, required, relPlural)
 			continue
 		}
 

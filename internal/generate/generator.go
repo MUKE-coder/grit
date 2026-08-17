@@ -197,6 +197,12 @@ func (g *Generator) Run() error {
 
 	fmt.Printf("  ✓ %sinternal/handlers/%s_import.go\n", apiPrefix, names.Snake)
 
+	// --tree: the hierarchy queries. Written before the public surface so a
+	// public tree endpoint has a service to call.
+	if err := g.writeTreeService(names); err != nil {
+		return err
+	}
+
 	// --public: a narrow read-only surface for callers with no user.
 	if err := g.writePublicResource(names); err != nil {
 		return err
@@ -327,6 +333,7 @@ func (g *Generator) Run() error {
 	if err := g.ensurePublicRoutes(names); err != nil {
 		return err
 	}
+	g.ensureTreeRoutes(names)
 
 	// Resolve new Go dependencies if needed
 	needsDatatypes := false

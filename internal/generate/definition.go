@@ -38,6 +38,36 @@ type ResourceDefinition struct {
 	// and how stale the mirror may get. Nil means the defaults every project
 	// had before policies existed.
 	Sync *SyncPolicy `yaml:"sync,omitempty"`
+
+	// Tree makes the resource hierarchical: Electronics above Cameras above
+	// Lenses. Set by --tree.
+	//
+	// It adds parent_id, a materialized path, a depth and a sibling position,
+	// and generates the queries a hierarchy actually needs: the roots, the
+	// whole tree in one query, a node's descendants, its breadcrumbs, and a
+	// move that carries its subtree with it.
+	//
+	// A materialized path rather than a recursive CTE because Grit supports
+	// Postgres, MySQL and SQLite: WHERE path LIKE '/1/2/%' is one indexable
+	// comparison that behaves identically on all three, where CTE support and
+	// syntax do not.
+	Tree bool `yaml:"tree,omitempty"`
+}
+
+// TreeParentField returns the field the tree hangs from, adding it if --tree was
+// passed without one.
+//
+// A tree needs a self-referential belongs_to, and asking somebody to write
+// --fields "parent:belongs_to:Category" *and* --tree is asking them to say the
+// same thing twice, with one spelling that silently produces a flat list.
+func (d *ResourceDefinition) TreeParentField() *Field {
+	for i := range d.Fields {
+		f := &d.Fields[i]
+		if f.IsBelongsTo() && f.RelatedModelName() == toPascalCase(d.Name) {
+			return f
+		}
+	}
+	return nil
 }
 
 // LoadFromYAML reads a resource definition from a YAML file.

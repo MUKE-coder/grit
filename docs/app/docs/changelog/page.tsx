@@ -29,6 +29,125 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.159.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.159.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 17, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Category trees: <code>--tree</code>, and the reason a
+                  self-referential relation never worked before.</strong>
+                </p>
+                <p>
+                  Electronics above Cameras above Lenses is the shape every shop needs,
+                  and Grit could not express it. A self-referential{' '}
+                  <code>belongs_to</code> did not compile:
+                </p>
+                <CodeBlock language="text" code={`invalid recursive type: Category refers to itself`} />
+                <p>
+                  Go rejects a struct that contains itself by value, so the association has
+                  to be a pointer. And the foreign key was marked{' '}
+                  <code>binding:&quot;required&quot;</code> in the model, the request
+                  struct, the Zod schema and the admin form, which meant that even once it
+                  compiled there was no way to create a root: every one of those four
+                  refused the empty parent the top of a tree has. All four are now optional
+                  for a self-reference and unchanged for an ordinary relation.
+                </p>
+
+                <h3>Materialized paths, and why not a recursive CTE</h3>
+                <p>
+                  <code>--tree</code> adds <code>parent_id</code>, <code>path</code>,{' '}
+                  <code>depth</code> and <code>position</code>. The path is{' '}
+                  <code>/id/id/id/</code>, delimited on both sides so a prefix cannot
+                  half-match an id.
+                </p>
+                <CodeBlock language="bash" code={`grit g resource Category --fields "name:string,slug:slug:name" --tree
+
+name         parent_id  path         depth
+Electronics  ""         /1/          0
+Cameras      1          /1/2/        1
+Lenses       2          /1/2/3/      2
+
+# everything under Electronics, one indexed comparison
+WHERE path LIKE '/1/%'`} />
+                <p>
+                  A recursive CTE reads better and is the wrong choice here: Grit supports
+                  Postgres, MySQL and SQLite, and CTE support, syntax and performance
+                  differ across all three. A generator emitting one query per dialect is a
+                  generator with three bugs. Nested sets give one range query and rewrite
+                  half the table on every insert, which is miserable for a tree somebody
+                  reorders in the admin. A materialized path is identical everywhere, and a
+                  move rewrites only the subtree that moved.
+                </p>
+                <p>
+                  <code>depth</code> is stored rather than counted from the path, because
+                  counting separators in SQL is three different expressions across three
+                  dialects for something a move keeps correct with a single delta.
+                </p>
+
+                <h3>What gets generated</h3>
+                <p>
+                  A tree service with the queries a hierarchy actually needs, each one a
+                  single round trip: <code>Tree</code> (the whole thing in one query,
+                  assembled in Go, no N+1), <code>Roots</code>, <code>Children</code>,{' '}
+                  <code>Descendants</code>, <code>DescendantIDs</code>,{' '}
+                  <code>Breadcrumbs</code> (ids read from the stored path, one IN query
+                  however deep), <code>Move</code>, <code>Reorder</code> and{' '}
+                  <code>RebuildPaths</code>. Plus five endpoints, and eight tests that ship
+                  into the project so they run against the dialect it actually uses.
+                </p>
+                <p>
+                  <code>Move</code> is a transaction because three things have to happen
+                  together: the node takes its new parent, every descendant&rsquo;s path is
+                  rewritten with <code>REPLACE</code> (one UPDATE, present on all three
+                  dialects, and it cannot race the way read-modify-write can), and every
+                  descendant&rsquo;s depth shifts by the same delta.
+                </p>
+                <p>
+                  It refuses a move that would put a node inside its own subtree, which is
+                  one string comparison because the parent&rsquo;s path already contains
+                  every id above it. Without that check the subtree is detached from the
+                  tree and no query ever finds it again.
+                </p>
+                <p>
+                  The generated tests earned their place before shipping: they caught{' '}
+                  <code>RebuildPaths</code> rewriting every row on every pass and leaving
+                  the table worse than it found it. That function is now deliberately not
+                  SQL, for the same dialect reasons as everything else here.
+                </p>
+
+                <h3>The storefront half</h3>
+                <p>
+                  A public tree resource answers two more questions. Its detail response
+                  carries <code>descendant_ids</code>, and public foreign-key filters now
+                  accept a list, so &ldquo;products in Electronics&rdquo; means Electronics
+                  and everything under it in one request:
+                </p>
+                <CodeBlock language="bash" code={`GET /public/categories/electronics   -> { ..., "descendant_ids": [1,2,3] }
+GET /public/products?category_id=1,2,3
+
+GET /public/categories/tree          -> the nested menu, one query`} />
+                <p>
+                  Splitting on commas is safe for ids and wrong for anything a person
+                  types, since &ldquo;Smith, John&rdquo; is one value, so{' '}
+                  <code>InFilterable</code> is opt-in per column and never inferred from
+                  the value. It is one more reason the filter lists are declared rather
+                  than guessed.
+                </p>
+                <p>
+                  Adding <code>--tree</code> to a resource that already has rows leaves
+                  them with a NULL path, so the root queries treat NULL as no parent, and{' '}
+                  <code>POST /&lt;plural&gt;/rebuild-tree</code> reconstructs every path
+                  from <code>parent_id</code> alone.
+                </p>
+              </div>
+            </div>
+
             {/* v3.158.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
