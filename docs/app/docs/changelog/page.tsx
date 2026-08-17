@@ -29,6 +29,85 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.156.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.156.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 17, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Per-key rate limits, and an admin that teaches the difference
+                  between the two kinds of key.</strong>
+                </p>
+
+                <h3>A limit per key</h3>
+                <p>
+                  A key can now carry its own requests-per-minute figure. Sentinel already
+                  limits by IP, and these answer different questions: an IP limit protects
+                  the server from a flood, a key limit protects you from one client. A
+                  partner integration polling every second, or a storefront with a render
+                  loop, throttled without touching the limit that applies to everybody
+                  else.
+                </p>
+                <CodeBlock language="bash" code={`curl -X POST .../api/api-keys -d '{"name":"storefront","kind":"publishable","rate_limit":3}'
+
+# then, against a limit of 3
+1 -> 200   X-RateLimit-Remaining: 2
+2 -> 200   X-RateLimit-Remaining: 1
+3 -> 200   X-RateLimit-Remaining: 0
+4 -> 429   Retry-After: 60`} />
+                <p>
+                  A fixed window in Redis: one INCR against a key carrying the current
+                  minute, with a two minute expiry so the bucket cleans itself up. A
+                  sliding window would be fairer at the boundary and costs a sorted set
+                  per key; a fixed window is one round trip, which is the right trade for
+                  throttling a misbehaving client rather than metering billing.
+                </p>
+                <p>
+                  Two deliberate choices worth naming. No Redis means no per-key limiting,
+                  rather than falling back to an in-process counter: an in-memory count is
+                  per instance, so the effective limit would silently multiply by however
+                  many API containers happen to be running. And a Redis error fails open,
+                  because refusing every request when a counter is unreachable turns a
+                  cache outage into an outage, and the IP limit still applies.
+                </p>
+
+                <h3>The admin page</h3>
+                <p>
+                  Creating a key now starts with choosing its kind, as two cards that say
+                  what each one is for, because that choice decides everything else.
+                </p>
+                <p>
+                  A publishable key is <strong>shown in full in the table, with a copy
+                  button</strong>. A secret key shows only its prefix. That difference is
+                  the whole design made visible: the publishable one is already in every
+                  copy of your app, so hiding it here would protect nothing and cost you
+                  the ability to read it when setting up a new environment. The secret one
+                  exists only as a hash.
+                </p>
+                <p>
+                  For the same reason, creating a publishable key does not open the
+                  &ldquo;copy this now or lose it&rdquo; panel. Putting it behind that
+                  panel would teach exactly the wrong lesson about what it is.
+                </p>
+                <p>
+                  Endpoints and origins get a textarea each, with the guidance next to the
+                  field rather than in documentation somebody has to find: a trailing{' '}
+                  <code>*</code> matches a prefix, and origins should be left empty for a
+                  mobile app, because native clients send no Origin header and an
+                  allowlist would reject every request they make.
+                </p>
+                <p>
+                  Each row shows its kind, its limit, and how many endpoint and origin
+                  restrictions it carries, with the full lists on hover.
+                </p>
+              </div>
+            </div>
+
             {/* v3.155.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
