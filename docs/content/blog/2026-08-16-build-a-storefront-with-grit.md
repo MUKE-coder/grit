@@ -516,6 +516,184 @@ Do the same for categories when you need them. Two resources is usually the enti
 
 ---
 
+## Step 4c: the detail page, and similar products
+
+A grid is not a shop. Clicking a card has to land somewhere, and the endpoint for it is already mounted: `GET /api/v1/public/products/:key` looks up by slug, so your URL reads `/products/blue-running-shoes` rather than a UUID.
+
+The other half of a detail page is the strip at the bottom. `--public` mounts that too, when the resource has a `belongs_to`:
+
+```
+GET /api/v1/public/products/:key/related
+```
+
+Products sharing this one's category, newest first, this one excluded, capped at 24 however large `?limit=` asks. Three deliberate choices in that sentence, and each one is a decision you would otherwise be making yourself at 1am:
+
+**Which relation defines "similar" is the generator's, not the caller's.** There is no `?similar_by=` parameter. If the caller chose the column, this endpoint would be a filter, and an open filter on a public route is what the allowlist exists to prevent.
+
+**A product with no category still returns something.** It falls back to the newest rows, because an empty strip reads as broken to a customer, and a weak recommendation beats a hole in the layout.
+
+**The cap is not negotiable from outside.** `?limit=1000` gets you 24. An uncapped limit on an unauthenticated route is a free way to make somebody else's database work.
+
+Two more hooks beside the one you wrote:
+
+```ts
+// apps/web/hooks/use-catalogue.ts, continued
+export function useProduct(slug: string) {
+  return useQuery({
+    queryKey: ["catalogue", "product", slug],
+    queryFn: () => get<{ data: CatalogueProduct }>(`products/${slug}`),
+    enabled: Boolean(slug),
+  });
+}
+
+export function useRelatedProducts(slug: string) {
+  return useQuery({
+    queryKey: ["catalogue", "product", slug, "related"],
+    queryFn: () => get<{ data: CatalogueProduct[] }>(`products/${slug}/related`),
+    enabled: Boolean(slug),
+  });
+}
+```
+
+`enabled: Boolean(slug)` matters more than it looks. Without it the first render of a dynamic route fires a request for `products/undefined`, which is a 404 in your logs on every single page load.
+
+The page itself is unremarkable, which is the point:
+
+```tsx
+// apps/web/app/products/[slug]/page.tsx
+"use client";
+
+import { use } from "react";
+import { useProduct, useRelatedProducts } from "@/hooks/use-catalogue";
+import { ProductCard } from "@/components/shop/product-card";
+import { addToCart } from "@/lib/cart";
+
+export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
+  const { data, isLoading, error } = useProduct(slug);
+  const { data: related } = useRelatedProducts(slug);
+
+  if (isLoading) return <p>Loading...</p>;
+  if (error) return <p>Product not found</p>;
+  const product = data!.data;
+
+  return (
+    <div>
+      <h1>{product.name}</h1>
+      <p>{product.price.toFixed(2)}</p>
+      <button onClick={() => addToCart(product)}>Add to cart</button>
+
+      {related && related.data.length > 0 && (
+        <>
+          <h2>Similar products</h2>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {related.data.map((item) => (
+              <ProductCard key={item.id} product={item} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+```
+
+Pull the card into `components/shop/product-card.tsx` with its own Add to cart button, and one component serves the grid, the similar strip, and anywhere else you show a product. The cart is a module-level store, so a card added from the similar strip updates the badge in the header with nothing passed down between them.
+
+---
+
+## Step 4d: browse by category, with filters that are not a security hole
+
+Now the part that separates a demo from a shop: a `/categories` page, and a category page with sorting, a price filter and pagination.
+
+First, publish the category surface. Same flag:
+
+```bash
+grit g resource Category \
+  --fields "name:string,slug:slug:name,description:text,image:file:image,featured:bool" \
+  --public
+```
+
+Regenerating is safe here. It will not overwrite `category_public.go` if you already have one, and it prints what it left alone.
+
+### The filters, and the one rule behind them
+
+A public list accepts filters on **the published columns, and nothing else**. That single rule is what lets the endpoint be useful without being a leak:
+
+```bash
+# published, so filterable
+?name=Kettle
+?price_min=400&price_max=800
+?category_id=<id>
+?sort_by=price&sort_order=asc
+?page=2&page_size=8
+
+# held back from the response, so ignored rather than applied
+?stock=0
+?cost_price=0
+?archived_at=anything
+```
+
+Read the second group again, because "ignored" is the load-bearing word. Those do not error, and they do not filter. They come back as the full result set, exactly as if you had not sent them. A column you chose not to publish cannot be interrogated through the query string either, and that matters: `?cost_price=12` returning exactly one row tells somebody the cost price of that product just as surely as printing it would have.
+
+Foreign keys are the one addition to the published set, because a category page cannot exist without `?category_id=`. Filtering by an id is not the same as publishing the relation: the id identifies a row the endpoint was already going to hand over.
+
+`price_min` and `price_max` come from a separate whitelist to the equality filters, and only numeric fields get them. Equality on a price is almost never the question a storefront is asking, and a range on a status means nothing. A bound that does not parse as a number **widens** the window rather than failing the request, because `?price_min=cheap` is a typo, and an error page is a worse answer than results.
+
+### The category page
+
+The API filters by id and your URL carries a slug, so the page fetches the category first and hands its id to the products query. One extra round trip, and the page needs the category record for its heading anyway. React Query caches it, so moving between categories does not refetch what you already hold.
+
+```tsx
+// apps/web/app/categories/[slug]/page.tsx (the parts that matter)
+const { data: category } = useCategory(slug);
+const [page, setPage] = useState(1);
+const [priceMin, setPriceMin] = useState("");
+const [sort, setSort] = useState(0);
+
+const { data } = useCatalogue(
+  category?.data.id
+    ? {
+        page,
+        pageSize: 8,
+        categoryId: category.data.id,
+        priceMin,
+        sortBy: SORTS[sort].sortBy,
+        sortOrder: SORTS[sort].sortOrder,
+      }
+    : {},
+);
+```
+
+And the one bug every filter UI ships at least once:
+
+```tsx
+function apply(next: Partial<{ min: string; sort: number }>) {
+  if (next.min !== undefined) setPriceMin(next.min);
+  if (next.sort !== undefined) setSort(next.sort);
+  setPage(1); // a new filter set starts at page one
+}
+```
+
+Without that `setPage(1)`, a customer on page 3 who narrows the price range stays on page 3 of a now one-page result and sees an empty grid. It looks exactly like a broken API call, and it is the most common bug in a filtered listing.
+
+Build the sort options as a list rather than free text, since `sort_by` is checked against a whitelist on the server and an unrecognised value falls back to the default sort silently:
+
+```tsx
+const SORTS = [
+  { label: "Newest", sortBy: "created_at", sortOrder: "desc" },
+  { label: "Price: low to high", sortBy: "price", sortOrder: "asc" },
+  { label: "Price: high to low", sortBy: "price", sortOrder: "desc" },
+  { label: "Name", sortBy: "name", sortOrder: "asc" },
+];
+```
+
+Finish the page with the other categories as chips at the bottom, the current one filtered out. Customers browse sideways far more than they browse down.
+
+Brand works exactly the same way, and you have a choice to make. `brand:string` on the product gives you `?brand=Philips` for free. `brand:belongs_to:Brand` gives you a brand table with its own page, its own logo, and `?brand_id=`. If a brand is a thing in your shop with a page of its own, make it a resource. If it is a word on a label, a string is enough.
+
+---
+
 ## Step 5: the cart
 
 Here is a decision you have to make, and the guide would be doing you a disservice to make it silently.
