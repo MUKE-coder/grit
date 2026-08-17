@@ -52,7 +52,7 @@ func (g *Generator) seederContent(names Names, opts SeederOptions) string {
 	if opts.Faker {
 		mode = "faker"
 	}
-	fieldLines, relPreamble, needsTime, needsFiles := g.seederFieldLines(mode)
+	fieldLines, relPreamble, needsTime, needsFiles, needsStrings := g.seederFieldLines(mode)
 	if relPreamble != "" {
 		relPreamble = "\t// Link each row to an existing parent (loaded once).\n" + relPreamble + "\n"
 	}
@@ -60,6 +60,9 @@ func (g *Generator) seederContent(names Names, opts SeederOptions) string {
 	// Assemble imports — only what the record actually references.
 	var imports strings.Builder
 	imports.WriteString("\t\"log\"\n")
+	if needsStrings {
+		imports.WriteString("\t\"strings\"\n")
+	}
 	if needsTime {
 		imports.WriteString("\t\"time\"\n")
 	}
@@ -214,7 +217,7 @@ func goTypeToFieldType(t string) string {
 // row links to a real parent), and whether the time/files packages are needed.
 // Slug (auto), m2m and string-array fields are skipped — the user wires those
 // up by hand.
-func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needsTime, needsFiles bool) {
+func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needsTime, needsFiles, needsStrings bool) {
 	var b, pre strings.Builder
 	seenRel := map[string]bool{}
 	for _, f := range g.Definition.Fields {
@@ -318,6 +321,19 @@ func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needs
 		default: // string
 			if faker {
 				switch {
+				// A unique column comes first, before any of the nicer
+				// generators below.
+				//
+				// gofakeit.Word() returns a real word from a finite list, so
+				// forty rows on a unique column collide and the seeder logs a
+				// constraint failure for the ones that lose. A SKU or a
+				// reference number is exactly the field people mark unique, and
+				// it is the one where a readable prefix plus entropy is more
+				// useful than a plausible word anyway.
+				case f.Unique:
+					val = "strings.ToUpper(" + strconv.Quote(skuPrefix(f.Name)+"-") +
+						" + gofakeit.LetterN(4) + gofakeit.DigitN(4))"
+					needsStrings = true
 				case strings.Contains(lower, "email"):
 					val = "gofakeit.Email()"
 				case strings.Contains(lower, "name"):
@@ -349,5 +365,19 @@ func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needs
 		}
 		b.WriteString("\t\t\t" + goField + ": " + val + ",\n")
 	}
-	return b.String(), pre.String(), needsTime, needsFiles
+	return b.String(), pre.String(), needsTime, needsFiles, needsStrings
+}
+
+// skuPrefix builds a short readable prefix from a field name, so a faked
+// unique value reads as SKU-AB1234 rather than as pure noise.
+func skuPrefix(fieldName string) string {
+	name := strings.ToUpper(toSnakeCase(fieldName))
+	name = strings.ReplaceAll(name, "_", "")
+	if len(name) > 3 {
+		name = name[:3]
+	}
+	if name == "" {
+		name = "REF"
+	}
+	return name
 }

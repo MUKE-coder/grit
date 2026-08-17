@@ -580,7 +580,7 @@ import Link from "next/link";
 import { usePublicBlogs } from "@/hooks/use-blogs";
 import { DevLinks } from "@/components/dev-links";
 
-const DOCS_URL = "https://grit-vert.vercel.app/docs";
+const DOCS_URL = "https://gritframework.dev/docs";
 
 export default function HomePage() {
   // grit:home:blog-hook-start
@@ -759,7 +759,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, Github, Shield } from "lucide-react";
 
-const DOCS_URL = "https://grit-vert.vercel.app/docs";
+const DOCS_URL = "https://gritframework.dev/docs";
 const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
 
 const navLinks = [
@@ -902,7 +902,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X, Github, Shield } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 
-const DOCS_URL = "https://grit-vert.vercel.app/docs";
+const DOCS_URL = "https://gritframework.dev/docs";
 const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
 
 const navLinks = [
@@ -1032,7 +1032,7 @@ export function Navbar() {
 
 func webFooter(opts Options) string {
 	return `
-const DOCS_URL = "https://grit-vert.vercel.app/docs";
+const DOCS_URL = "https://gritframework.dev/docs";
 
 export function Footer() {
   return (

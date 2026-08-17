@@ -190,8 +190,17 @@ func (g *Generator) injectAll(names Names) error {
 	// Tolerated silently on older projects: a scaffold from before v3.116 has
 	// no grit:docs markers, and failing the whole generate over a missing
 	// reference entry would be a poor trade.
-	if fileExists(routesFile) {
-		if err := injectInline(routesFile, "/* grit:docs:models */",
+	// The reference moved out of routes.go into apidocs.go in v3.154.0, taking
+	// its markers with it. A project generated before that still has them in
+	// routes.go, so try the new home and fall back to the old one rather than
+	// silently documenting nothing.
+	docsFile := filepath.Join(apiRoot, "internal", "routes", "apidocs.go")
+	if !fileExists(docsFile) {
+		docsFile = routesFile
+	}
+
+	if fileExists(docsFile) {
+		if err := injectInline(docsFile, "/* grit:docs:models */",
 			fmt.Sprintf("&models.%s{}, ", names.Pascal)); err == nil {
 			fmt.Println("  ✓ Registered model with the API reference")
 		}
@@ -224,7 +233,7 @@ func (g *Generator) injectAll(names Names) error {
 			base, names.Lower, names.Pascal, names.Pascal,
 			base, names.Lower)
 
-		if err := injectBefore(routesFile, "// grit:docs:routes:end", docsRoutes); err == nil {
+		if err := injectBefore(docsFile, "// grit:docs:routes:end", docsRoutes); err == nil {
 			fmt.Println("  ✓ Documented the endpoints at /docs")
 		}
 	}

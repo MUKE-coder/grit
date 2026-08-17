@@ -23,7 +23,7 @@ func singleViteNavbar(opts Options) string {
 import { Link, useRouterState } from "@tanstack/react-router"
 import { Menu, X, Github } from "lucide-react"
 
-const DOCS_URL = "https://grit-vert.vercel.app/docs"
+const DOCS_URL = "https://gritframework.dev/docs"
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -131,7 +131,7 @@ export function Navbar() {
 
 // singleViteFooter emits components/footer.tsx for the Vite scaffold.
 func singleViteFooter(opts Options) string {
-	return `const DOCS_URL = "https://grit-vert.vercel.app/docs"
+	return `const DOCS_URL = "https://gritframework.dev/docs"
 
 export function Footer() {
   return (
