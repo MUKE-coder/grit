@@ -518,6 +518,8 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		// Resource components
 		filepath.Join(adminRoot, "src", "components", "resource", "resource-page.tsx"):        nextToTanStack(adminResourcePage()),
 		filepath.Join(adminRoot, "src", "components", "resource", "resource-detail-page.tsx"): nextToTanStack(adminResourceDetailPage()),
+		filepath.Join(adminRoot, "src", "components", "resource", "resource-tree.tsx"):        nextToTanStack(adminResourceTree()),
+		filepath.Join(adminRoot, "src", "components", "resource", "tree-breadcrumbs.tsx"):     nextToTanStack(adminTreeBreadcrumbs()),
 		filepath.Join(adminRoot, "src", "components", "resource", "view-modal.tsx"):           nextToTanStack(adminViewModal()),
 
 		// Resource definitions (same as Next.js)

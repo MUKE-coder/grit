@@ -394,8 +394,7 @@ export default function APIKeysPage() {
                           {k.endpoints && k.endpoints.length > 0 && (
                             <span
                               className="rounded-full bg-bg-tertiary px-2 py-0.5 text-[11px] text-text-muted"
-                              title={k.endpoints.join("
-")}
+                              title={k.endpoints.join("\n")}
                             >
                               {k.endpoints.length} endpoint
                               {k.endpoints.length === 1 ? "" : "s"}
@@ -404,8 +403,7 @@ export default function APIKeysPage() {
                           {k.origins && k.origins.length > 0 && (
                             <span
                               className="rounded-full bg-bg-tertiary px-2 py-0.5 text-[11px] text-text-muted"
-                              title={k.origins.join("
-")}
+                              title={k.origins.join("\n")}
                             >
                               {k.origins.length} origin
                               {k.origins.length === 1 ? "" : "s"}

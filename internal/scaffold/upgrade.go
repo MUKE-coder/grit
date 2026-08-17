@@ -282,106 +282,22 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 	adminRoot := filepath.Join(root, "apps", "admin")
 	green := color.New(color.FgHiGreen)
 
-	// These are all framework-generated files that are safe to overwrite.
-	// User-created files (resources/*.ts, app/(dashboard)/resources/*/page.tsx) are NOT touched.
-	files := map[string]string{
-		// Config files
-		filepath.Join(adminRoot, "package.json"):       adminPackageJSON(opts),
-		filepath.Join(adminRoot, "tailwind.config.ts"): adminTailwindConfig(),
-		filepath.Join(adminRoot, "postcss.config.js"):  adminPostCSSConfig(),
-		filepath.Join(adminRoot, "next.config.ts"):     adminNextConfig(),
-		filepath.Join(adminRoot, "tsconfig.json"):      adminTSConfig(),
-
-		// App core
-		filepath.Join(adminRoot, "app", "globals.css"):                                   adminGlobalCSS(),
-		filepath.Join(adminRoot, "app", "layout.tsx"):                                    adminRootLayout(opts),
-		filepath.Join(adminRoot, "app", "page.tsx"):                                      adminRedirectPage(),
-		filepath.Join(adminRoot, "app", "(auth)", "login", "page.tsx"):                   adminLoginPageForStyle(opts.Style),
-		filepath.Join(adminRoot, "app", "(auth)", "sign-up", "page.tsx"):                 adminSignUpPageForStyle(opts.Style),
-		filepath.Join(adminRoot, "app", "(auth)", "forgot-password", "page.tsx"):         adminForgotPasswordPageForStyle(opts.Style),
-		filepath.Join(adminRoot, "app", "(auth)", "reset-password", "page.tsx"):          adminThemedResetPasswordPage(),
-		filepath.Join(adminRoot, "app", "(auth)", "callback", "page.tsx"):                adminAuthCallbackPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"):                     adminDashboardLayout(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):          adminDashboardPageForStyle(opts.Style),
-		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"): adminUsersPage(),
-
-		// System pages
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "jobs", "page.tsx"):          adminJobsPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "files", "page.tsx"):         adminFilesPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "cron", "page.tsx"):          adminCronPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "mail", "page.tsx"):          adminMailPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "security", "page.tsx"):      adminSecurityPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "observability", "page.tsx"): adminObservabilityPage(),
-
-		// Lib
-		filepath.Join(adminRoot, "lib", "api-client.ts"):   adminAPIClient(),
-		filepath.Join(adminRoot, "lib", "query-client.ts"): adminQueryClient(),
-		filepath.Join(adminRoot, "lib", "utils.ts"):        adminUtils(),
-		filepath.Join(adminRoot, "lib", "resource.ts"):     adminResourceTypes(),
-		filepath.Join(adminRoot, "lib", "icons.ts"):        adminIconMap(),
-
-		// Hooks
-		filepath.Join(adminRoot, "hooks", "use-auth.ts"):                       adminUseAuth(),
-		filepath.Join(adminRoot, "hooks", "use-resource.ts"):                   adminUseResource(),
-		filepath.Join(adminRoot, "hooks", "use-resource-controller.ts"):        adminUseResourceController(),
-		filepath.Join(adminRoot, "hooks", "use-resource-detail-controller.ts"): adminUseResourceDetailController(),
-		filepath.Join(adminRoot, "hooks", "use-system.ts"):                     adminUseSystem(),
-
-		// Layout components
-		filepath.Join(adminRoot, "components", "layout", "admin-layout.tsx"):   adminLayoutComponent(),
-		filepath.Join(adminRoot, "components", "layout", "sidebar.tsx"):        adminSidebar(),
-		filepath.Join(adminRoot, "components", "layout", "navbar.tsx"):         adminNavbar(),
-		filepath.Join(adminRoot, "components", "shared", "theme-provider.tsx"): adminThemeProvider(),
-		filepath.Join(adminRoot, "components", "shared", "providers.tsx"):      adminProviders(),
-
-		// Table components
-		filepath.Join(adminRoot, "components", "tables", "data-table.tsx"):        adminDataTable(),
-		filepath.Join(adminRoot, "components", "tables", "column-header.tsx"):     adminColumnHeader(),
-		filepath.Join(adminRoot, "components", "tables", "cell-renderers.tsx"):    adminCellRenderers(),
-		filepath.Join(adminRoot, "components", "tables", "table-filters.tsx"):     adminTableFilters(),
-		filepath.Join(adminRoot, "components", "tables", "bulk-action-bar.tsx"):   adminBulkActionBar(),
-		filepath.Join(adminRoot, "components", "tables", "table-tabs.tsx"):        adminTableTabs(),
-		filepath.Join(adminRoot, "components", "tables", "bulk-edit-modal.tsx"):   adminBulkEditModal(),
-		filepath.Join(adminRoot, "components", "tables", "table-toolbar.tsx"):     adminTableToolbar(),
-		filepath.Join(adminRoot, "components", "tables", "table-pagination.tsx"):  adminTablePagination(),
-		filepath.Join(adminRoot, "components", "tables", "table-skeleton.tsx"):    adminTableSkeleton(),
-		filepath.Join(adminRoot, "components", "tables", "table-empty-state.tsx"): adminTableEmptyState(),
-		filepath.Join(adminRoot, "lib", "formatters.ts"):                          adminFormatters(),
-
-		// Form components
-		filepath.Join(adminRoot, "components", "forms", "form-builder.tsx"):             adminFormBuilder(),
-		filepath.Join(adminRoot, "components", "forms", "form-modal.tsx"):               adminFormModal(),
-		filepath.Join(adminRoot, "components", "forms", "form-page.tsx"):                adminFormPage(),
-		filepath.Join(adminRoot, "components", "forms", "form-sheet.tsx"):               adminFormSheet(),
-		filepath.Join(adminRoot, "components", "forms", "form-modal-steps.tsx"):         adminFormModalSteps(),
-		filepath.Join(adminRoot, "components", "forms", "form-page-steps.tsx"):          adminFormPageSteps(),
-		filepath.Join(adminRoot, "components", "forms", "update-groups.tsx"):            adminUpdateGroups(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "text-field.tsx"):     adminTextField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "textarea-field.tsx"): adminTextareaField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "number-field.tsx"):   adminNumberField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "select-field.tsx"):   adminSelectField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "date-field.tsx"):     adminDateField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "toggle-field.tsx"):   adminToggleField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "checkbox-field.tsx"): adminCheckboxField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "radio-field.tsx"):    adminRadioField(),
-
-		// Widget components
-		filepath.Join(adminRoot, "components", "widgets", "stats-card.tsx"):      adminStatsCard(),
-		filepath.Join(adminRoot, "components", "widgets", "chart-widget.tsx"):    adminChartWidget(),
-		filepath.Join(adminRoot, "components", "widgets", "activity-widget.tsx"): adminActivityWidget(),
-		filepath.Join(adminRoot, "components", "widgets", "widget-grid.tsx"):     adminWidgetGrid(),
-
-		// Resource components
-		filepath.Join(adminRoot, "components", "resource", "resource-page.tsx"):        adminResourcePage(),
-		filepath.Join(adminRoot, "components", "resource", "view-modal.tsx"):           adminViewModal(),
-		filepath.Join(adminRoot, "components", "resource", "resource-detail-page.tsx"): adminResourceDetailPage(),
-		filepath.Join(adminRoot, "components", "ui", "confirm-modal.tsx"):              adminConfirmModal(),
-
-		// Dropzone
-		filepath.Join(adminRoot, "components", "ui", "dropzone.tsx"): adminDropzone(),
-
-		// Resource definitions (only the built-in users one)
-		filepath.Join(adminRoot, "resources", "users", "users.ts"): adminUsersResource(),
+	// One list, shared with the scaffold. Keeping a second copy here is what
+	// left 59 files unreachable by upgrade, including a page that shipped
+	// broken: the fix went out, and upgrade had no idea the file existed.
+	//
+	// Everything framework-owned is refreshed. Two things protect the reader's
+	// work. The manifest guard at writeFile refuses to overwrite a file whose
+	// contents are not exactly what Grit last wrote there, so local edits
+	// survive whatever is in this map. And userOwnedAdminFiles below excludes
+	// the handful of files a person is *expected* to edit, so they are not even
+	// offered as conflicts on every upgrade.
+	files := map[string]string{}
+	for path, body := range adminFileMap(root, opts) {
+		if isUserOwnedAdminFile(adminRoot, path) {
+			continue
+		}
+		files[path] = body
 	}
 
 	n, err := writeUpgradeFiles(files, uOpts.Force)
@@ -691,4 +607,42 @@ func dirExists(path string) bool {
 		return false
 	}
 	return info.IsDir()
+}
+
+// isUserOwnedAdminFile reports whether a path is one the reader owns.
+//
+// These are excluded from upgrade even though the scaffold writes them, because
+// they exist to be edited: a resource definition is where columns, filters and
+// form fields are configured, and a .custom overlay is a promise that Grit will
+// never touch it.
+//
+// The users resource definition is the one exception and is refreshed
+// deliberately: it is the built-in one, it gains fields as the framework does,
+// and the manifest guard still refuses to touch it if it has been edited.
+func isUserOwnedAdminFile(adminRoot, path string) bool {
+	rel, err := filepath.Rel(adminRoot, path)
+	if err != nil {
+		return false
+	}
+	rel = filepath.ToSlash(rel)
+
+	if rel == "resources/users/users.ts" {
+		return false
+	}
+	// Every .custom overlay, whatever the resource.
+	if strings.HasSuffix(rel, ".custom.tsx") {
+		return true
+	}
+	// Resource definitions and their generated pages.
+	if strings.HasPrefix(rel, "resources/") {
+		return true
+	}
+	if strings.HasPrefix(rel, "app/(dashboard)/resources/") {
+		return true
+	}
+	// The demo Blog resource, which people delete or rewrite.
+	if strings.Contains(rel, "/blogs/") {
+		return true
+	}
+	return false
 }

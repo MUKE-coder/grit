@@ -2212,6 +2212,12 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 	if g.Definition.Hidden {
 		hiddenLine = "\n  hidden: true,"
 	}
+	// --tree turns on the Table / Tree toggle on the list page. The flag and the
+	// endpoints the tree view calls are generated together, so one can never
+	// arrive without the other.
+	if g.Definition.Tree {
+		hiddenLine += "\n  tree: true,"
+	}
 
 	// v3.31.19: conditionally pull in the StackedCell helper. Only
 	// emitted when the column-pack heuristic actually fires — keeps
