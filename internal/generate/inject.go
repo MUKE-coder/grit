@@ -74,17 +74,11 @@ func (g *Generator) injectAll(names Names) error {
 				break
 			}
 		}
-		extraField := ""
-		if hasFileFields {
-			extraField = "\n\t\tStorage: svc.Storage,"
+		what, err := ensureHandlerInit(routesFile, names.Camel, names.Pascal, hasFileFields)
+		if err != nil {
+			return err
 		}
-		handlerInit := fmt.Sprintf(`	%sHandler := &handlers.%sHandler{
-		DB: db,%s
-	}`, names.Camel, names.Pascal, extraField)
-		if err := injectBefore(routesFile, "// grit:handlers", handlerInit); err != nil {
-			return fmt.Errorf("injecting handler: %w", err)
-		}
-		fmt.Println("  ✓ Injected handler initialization")
+		fmt.Println("  " + what)
 	}
 
 	// 4. Inject routes (role-restricted or default split)
@@ -543,6 +537,63 @@ func injectInline(filePath, marker, code string) error {
 	}
 	manifest.Refresh(filePath)
 	return nil
+}
+
+// ensureHandlerInit wires a resource's handler into routes.go, and is safe to
+// run over a project that already has one.
+//
+// It exists because injectBefore's guard compares the whole block it is about
+// to write. Regenerating a resource that has since gained a file field emits a
+// block carrying "Storage: svc.Storage", which does not match the block already
+// in the file, so a second "productHandler :=" was appended and the API stopped
+// compiling with "no new variables on left side of :=" — a generator command
+// leaving a project that does not build.
+//
+// So the guard is the declaration, not the body. A handler already declared is
+// left as it is, because those few lines are somewhere a person may reasonably
+// have added a field. The single exception is Storage: a resource that has just
+// gained its first file field needs it, and without it the Create and Update
+// flows skip the S3 cleanup on replace and never mark uploads claimed, silently.
+//
+// Returns a one-line description of what it did, for the caller to print.
+func ensureHandlerInit(filePath, camel, pascal string, wantStorage bool) (string, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", fmt.Errorf("reading %s: %w", filePath, err)
+	}
+	content := string(data)
+
+	decl := "\t" + camel + "Handler := &handlers." + pascal + "Handler{"
+	at := strings.Index(content, decl)
+	if at < 0 {
+		extra := ""
+		if wantStorage {
+			extra = "\n\t\tStorage: svc.Storage,"
+		}
+		block := fmt.Sprintf("\t%sHandler := &handlers.%sHandler{\n\t\tDB: db,%s\n\t}", camel, pascal, extra)
+		if err := injectBefore(filePath, "// grit:handlers", block); err != nil {
+			return "", fmt.Errorf("injecting handler: %w", err)
+		}
+		return "✓ Injected handler initialization", nil
+	}
+
+	// Already declared. The only edit worth making is adding Storage.
+	end := strings.Index(content[at:], "\n\t}")
+	if end < 0 {
+		return "• Handler initialization already present, leaving it alone", nil
+	}
+	body := content[at : at+end]
+	if !wantStorage || strings.Contains(body, "Storage:") {
+		return "• Handler initialization already present, leaving it alone", nil
+	}
+
+	lineEnd := at + len(decl)
+	updated := content[:lineEnd] + "\n\t\tStorage: svc.Storage," + content[lineEnd:]
+	if err := os.WriteFile(filePath, []byte(updated), 0644); err != nil {
+		return "", fmt.Errorf("writing %s: %w", filePath, err)
+	}
+	manifest.Refresh(filePath)
+	return "✓ Wired Storage into the existing handler initialization", nil
 }
 
 // injectBefore finds a marker in a file and inserts code on the line before it.

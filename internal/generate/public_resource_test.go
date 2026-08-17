@@ -135,6 +135,31 @@ func TestPublicHandlerSource(t *testing.T) {
 	}
 }
 
+// A file field pulls in an extra import, and it has to land in the right group.
+// gofmt sorts inside a group but never moves a line between them, so a local
+// import emitted beside "net/http" sorts above it and stays there.
+func TestPublicHandlerGroupsItsImports(t *testing.T) {
+	g := &Generator{
+		Module:     "shopfront/apps/api",
+		Definition: &ResourceDefinition{Name: "Product", Public: true},
+	}
+	src := g.publicHandlerSource(g.Names(), []Field{
+		{Name: "name", Type: "string"},
+		{Name: "images", Type: "files"},
+	})
+
+	files := strings.Index(src, `"shopfront/apps/api/internal/files"`)
+	paginate := strings.Index(src, `"shopfront/apps/api/internal/paginate"`)
+	http := strings.Index(src, `"net/http"`)
+	if files < 0 {
+		t.Fatal("a files field must import the files package")
+	}
+	if files < http || files < paginate {
+		t.Errorf("the local import must sit in the local group, after net/http (%d) and paginate (%d), got %d",
+			http, paginate, files)
+	}
+}
+
 // A resource whose every field is held back would publish an endpoint that
 // returns nothing but ids, which is worse than refusing.
 func TestPublicRefusesAResourceWithNothingToPublish(t *testing.T) {

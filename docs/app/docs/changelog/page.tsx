@@ -29,6 +29,92 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.157.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.157.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 17, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Four bugs a browser found that a compiler could not.</strong>
+                </p>
+                <p>
+                  Every endpoint in the new public API surface was verified with curl,
+                  and every one of these survived that. They came out of loading a
+                  storefront in a real browser instead.
+                </p>
+
+                <h3>The CSP blocked the API</h3>
+                <p>
+                  A CSP source expression matches paths <em>exactly</em> unless it ends in
+                  a slash, so{' '}
+                  <code>connect-src http://localhost:8080/api/v1</code> allows that one
+                  path and blocks every route under it. The Next.js and Vite configs put{' '}
+                  <code>NEXT_PUBLIC_API_URL</code> straight into the policy, so a value
+                  carrying a path silently broke every request in the app. Both configs
+                  now reduce it to an origin.
+                </p>
+                <p>
+                  Silently is the operative word: there is no HTTP status, no server log,
+                  just a console violation and a fetch that never happened.
+                </p>
+
+                <h3>next/image threw on your own uploads</h3>
+                <p>
+                  <code>next/image</code> refuses any remote host it was not told about,
+                  and it throws instead of falling back to a plain{' '}
+                  <code>&lt;img&gt;</code>, so a single product photo took the whole page
+                  down with &ldquo;hostname is not configured&rdquo;. Stored files live on
+                  the storage origin, never the app&rsquo;s own, so this hit anybody who
+                  rendered an upload. The scaffolded config now declares that host,
+                  derived from the same <code>NEXT_PUBLIC_STORAGE_URL</code> the CSP uses,
+                  plus <code>picsum.photos</code> in development because that is where{' '}
+                  <code>--faker</code> points its placeholder images.
+                </p>
+
+                <h3>Regenerating a resource could stop the build</h3>
+                <p>
+                  Adding a file field to an existing resource and regenerating declared
+                  the handler twice, and the API stopped compiling with{' '}
+                  <code>no new variables on left side of :=</code>. The injection guard
+                  compared the whole block it was about to write, and the new block
+                  carried <code>Storage: svc.Storage</code>, so it did not match the one
+                  already there.
+                </p>
+                <CodeBlock language="go" code={`productHandler := &handlers.ProductHandler{
+	DB: db,
+}
+productHandler := &handlers.ProductHandler{   // the generator wrote this second one
+	DB: db,
+	Storage: svc.Storage,
+}`} />
+                <p>
+                  The guard is now the declaration rather than the body, and a handler
+                  already declared is left as it is, because those lines are somewhere a
+                  person may reasonably have added a field. With one exception: a resource
+                  that has just gained its first file field gets <code>Storage</code>{' '}
+                  wired into the existing block, since without it the create and update
+                  flows skip the S3 cleanup on replace and never mark uploads claimed.
+                </p>
+
+                <h3>A Postgres-only query on every health check</h3>
+                <p>
+                  The health endpoint counted tables with{' '}
+                  <code>information_schema.tables WHERE table_schema = current_schema()</code>,
+                  which is Postgres. On SQLite that logged a red SQL error on every poll of
+                  the System Health page, and on MySQL it returned nothing, because{' '}
+                  <code>current_schema()</code> does not exist there either. Now three
+                  dialects get three questions, with the logger silenced on failure: a
+                  missing tooltip figure is not worth a stack of alarming log lines on a
+                  healthy server.
+                </p>
+              </div>
+            </div>
+
             {/* v3.156.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

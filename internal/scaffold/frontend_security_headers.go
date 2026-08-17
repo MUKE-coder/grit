@@ -41,14 +41,28 @@ func nextSecurityHeaders() string {
 //   * connect-src must include the API origin — in double/triple mode the
 //     browser calls the Go API cross-origin, and a missing entry breaks every
 //     fetch with a CSP violation.
-const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+// A CSP source expression matches paths EXACTLY unless it ends in "/", so
+// "http://api.example.com/api/v1" allows that one path and blocks every route
+// under it. Setting NEXT_PUBLIC_API_URL with a path is a natural mistake and
+// the failure is silent (a console violation, never an HTTP status), so reduce
+// whatever is configured to its origin. A value we cannot parse is passed
+// through unchanged rather than dropped, which would break every fetch.
+function toOrigin(value: string): string {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return value;
+  }
+}
+
+const API_ORIGIN = toOrigin(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080");
 // Browser-facing origin of stored files. Uploads are presigned PUTs made
 // directly from the browser to object storage, and stored images are served
 // from the same host — both are blocked unless this origin is in connect-src
 // and img-src. Defaults to the local MinIO endpoint; in production set
 // NEXT_PUBLIC_STORAGE_URL to your S3/R2/B2 public origin
 // (e.g. https://cdn.example.com or https://<bucket>.s3.<region>.amazonaws.com).
-const STORAGE_ORIGIN = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:9002";
+const STORAGE_ORIGIN = toOrigin(process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:9002");
 const isDev = process.env.NODE_ENV !== "production";
 
 const csp = [
@@ -67,6 +81,23 @@ const csp = [
   "form-action 'self'",
   "object-src 'none'",
 ].join("; ");
+
+// Hosts next/image is allowed to fetch from. Same source as the CSP above:
+// stored uploads come from the storage origin, and picsum.photos is where
+// "grit generate resource --faker" points its placeholder images, which is why
+// it is here in development and not in production.
+const storageURL = new URL(STORAGE_ORIGIN);
+const nextImageHosts = [
+  {
+    protocol: storageURL.protocol.replace(":", "") as "http" | "https",
+    hostname: storageURL.hostname,
+    port: storageURL.port,
+    pathname: "/**",
+  },
+  ...(isDev
+    ? [{ protocol: "https" as const, hostname: "picsum.photos", pathname: "/**" }]
+    : []),
+];
 
 const securityHeaders = [
   { key: "Content-Security-Policy", value: csp },
@@ -92,6 +123,16 @@ const securityHeaders = [
 func nextSecurityHeadersConfig() string {
 	return `  // Don't advertise the framework + version to attackers.
   poweredByHeader: false,
+  // next/image refuses any remote host it was not told about, and it THROWS
+  // rather than falling back to a plain <img>, so one uploaded image takes the
+  // whole page down with "hostname is not configured". Stored files live on the
+  // storage origin, not this one, so that host has to be named here.
+  //
+  // Derived from the same STORAGE_ORIGIN the CSP uses, so moving storage to a
+  // CDN is one env var rather than two places that drift.
+  images: {
+    remotePatterns: nextImageHosts,
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
@@ -134,11 +175,24 @@ func viteSecurityHeaders() string {
 // then blocked every request for anyone who moved the API.
 const viteMode = process.env.NODE_ENV || 'development'
 const viteEnv = loadEnv(viteMode, process.cwd(), '')
-const API_ORIGIN = viteEnv.VITE_API_URL || 'http://localhost:8080'
+// A CSP source expression matches paths EXACTLY unless it ends in '/', so a
+// value carrying a path ('http://host/api/v1') allows that one path and blocks
+// every route under it, silently, as a console violation rather than an HTTP
+// status. Reduce whatever is configured to its origin, and pass a value we
+// cannot parse through unchanged rather than dropping it.
+function toOrigin(value: string): string {
+  try {
+    return new URL(value).origin
+  } catch {
+    return value
+  }
+}
+
+const API_ORIGIN = toOrigin(viteEnv.VITE_API_URL || 'http://localhost:8080')
 // Browser-facing storage origin — presigned uploads PUT here directly and
 // stored images load from it. Defaults to local MinIO; set VITE_STORAGE_URL
 // to your S3/R2/B2 public origin in production.
-const STORAGE_ORIGIN = viteEnv.VITE_STORAGE_URL || 'http://localhost:9002'
+const STORAGE_ORIGIN = toOrigin(viteEnv.VITE_STORAGE_URL || 'http://localhost:9002')
 const isDev = viteMode !== 'production'
 
 const csp = [
