@@ -90,12 +90,18 @@ Categories first, because products belong to one:
 ```bash
 grit g resource Category \
   --fields "name:string,slug:slug:name,description:text,image:file:image,featured:bool" \
-  --faker --count 6
+  --tree --public --faker --count 6
 ```
 
 Read that field list once, because the syntax is doing real work. `slug:slug:name` means "a slug field, generated from the name field". `image:file:image` means "a single file, restricted to images". `featured:bool` becomes a toggle in the admin and a boolean column in Postgres.
 
-**`--faker --count 6` on the categories is not decoration, and this is the one thing in this guide most likely to waste your afternoon if you skip it.** More on why in a moment.
+Three flags, and each one earns its place:
+
+**`--tree`** makes categories hierarchical: Electronics above Cameras above Lenses. It adds the parent link and the machinery that makes a hierarchy queryable, and you get a drag-and-drop tree in the admin. Step 4e is about what that gives you and what it costs. Skip it if your shop is one flat list of departments, and know that adding it later is one regenerate plus one click.
+
+**`--public`** exposes a read-only catalogue surface your storefront can call without a logged-in user. It is the flag this whole guide turns on, and Step 4 explains why generated CRUD cannot simply be made public instead.
+
+**`--faker --count 6` is not decoration, and it is the one thing in this guide most likely to waste your afternoon if you skip it.** More on why in a moment.
 
 Now products:
 
@@ -606,15 +612,9 @@ Pull the card into `components/shop/product-card.tsx` with its own Add to cart b
 
 Now the part that separates a demo from a shop: a `/categories` page, and a category page with sorting, a price filter and pagination.
 
-First, publish the category surface. Same flag:
+The category surface is already public: that was the `--public` on the Category command back in Step 1. So `/api/v1/public/categories` and `/api/v1/public/categories/:slug` are mounted and waiting.
 
-```bash
-grit g resource Category \
-  --fields "name:string,slug:slug:name,description:text,image:file:image,featured:bool" \
-  --public
-```
-
-Regenerating is safe here. It will not overwrite `category_public.go` if you already have one, and it prints what it left alone.
+If you left the flag off and want it now, run the same generate command again with `--public` added. It is safe: an existing `category_public.go` is never overwritten, and the generator prints what it left alone.
 
 ### The filters, and the one rule behind them
 
@@ -641,6 +641,36 @@ Foreign keys are the one addition to the published set, because a category page 
 `price_min` and `price_max` come from a separate whitelist to the equality filters, and only numeric fields get them. Equality on a price is almost never the question a storefront is asking, and a range on a status means nothing. A bound that does not parse as a number **widens** the window rather than failing the request, because `?price_min=cheap` is a typo, and an error page is a worse answer than results.
 
 ### The category page
+
+Two more hooks first, the same shape as the product ones:
+
+```ts
+// apps/web/hooks/use-catalogue.ts, continued
+export interface CatalogueCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  featured: boolean;
+  // Present on a tree, which Step 4e is about. Undefined on a flat one.
+  descendant_ids?: string[];
+}
+
+export function useCategories() {
+  return useQuery({
+    queryKey: ["catalogue", "categories"],
+    queryFn: () => get<Page<CatalogueCategory>>("categories", { page_size: "50" }),
+  });
+}
+
+export function useCategory(slug: string) {
+  return useQuery({
+    queryKey: ["catalogue", "category", slug],
+    queryFn: () => get<{ data: CatalogueCategory }>(`categories/${slug}`),
+    enabled: Boolean(slug),
+  });
+}
+```
 
 The API filters by id and your URL carries a slug, so the page fetches the category first and hands its id to the products query. One extra round trip, and the page needs the category record for its heading anyway. React Query caches it, so moving between categories does not refetch what you already hold.
 
@@ -691,6 +721,119 @@ const SORTS = [
 Finish the page with the other categories as chips at the bottom, the current one filtered out. Customers browse sideways far more than they browse down.
 
 Brand works exactly the same way, and you have a choice to make. `brand:string` on the product gives you `?brand=Philips` for free. `brand:belongs_to:Brand` gives you a brand table with its own page, its own logo, and `?brand_id=`. If a brand is a thing in your shop with a page of its own, make it a resource. If it is a word on a label, a string is enough.
+
+---
+
+## Step 4e: Electronics above Cameras above Lenses
+
+Real shops are not one flat row of departments. Electronics contains Cameras contains Lenses, and a customer clicking Electronics expects to see the lenses too. That is what `--tree` on the Category command in Step 1 was for.
+
+It added four columns and a service to go with them:
+
+```
+parent_id   the link upwards, empty for a root
+path        "/id/id/id/", this row's id last
+depth       0 for a root
+position    the order among siblings
+```
+
+`path` is the one worth understanding, because every useful query about a hierarchy is a string comparison on it. "Everything under Electronics" is `WHERE path LIKE '/electronics-id/%'`: one indexed comparison, no recursion, no joins, at any depth.
+
+The alternative is a recursive CTE, and it is the wrong tool here for a reason that has nothing to do with elegance: Grit runs on Postgres, MySQL and SQLite, and CTE support and syntax differ across all three. A path is identical everywhere. The cost is that moving a node has to rewrite its subtree, which the generated `Move` does in one UPDATE inside a transaction.
+
+### The admin
+
+Open Categories in the admin and there is now a **Tree / Table** toggle. The tree opens by default.
+
+Drag a row **onto** another to nest it. Drag it **between** two rows to reorder. Drag it to the **bar at the very top** to promote it back to a root, which is the only way back out once a node has a parent.
+
+Try dragging Electronics onto Lenses, which is inside it. The cursor turns to no-drop, the row dims, and nothing happens. That is not politeness: a node moved inside its own subtree detaches the whole branch from the tree, and no query ever finds it again. The server refuses it too, with a 422, in case a stale browser tab tries anyway.
+
+There is no "add a child here" button on a row, deliberately. Create from the New Category button and then drag the row into place. A per-row button would have to open the create form with the parent pre-filled, and the form does not take starting values, so it would have quietly created a root and looked broken.
+
+### Your seeded categories are flat, and that is fine
+
+`--faker` fills categories before any of them have parents, so all six come out as roots. Nest them by dragging, which takes about ten seconds and is also the fastest way to see that the tree works.
+
+If you add `--tree` to a resource that **already has rows**, those rows have no path at all and the tree renders flat forever. That is what the **Rebuild paths** button on the tree is for: it recomputes every path and depth from `parent_id` alone. One click, safe to run any time.
+
+### The storefront half: showing a whole branch
+
+Here is the question that makes trees worth having, and the answer needs one thing from the API.
+
+A customer clicks Electronics. Your products are filed under Cameras and Lenses, not under Electronics itself. Filtering by `category_id=<electronics>` returns nothing, and the page looks broken while the data is perfect.
+
+So a public category detail response carries its subtree:
+
+```json
+GET /api/v1/public/categories/electronics
+{
+  "data": {
+    "name": "Electronics",
+    "slug": "electronics",
+    "depth": 0,
+    "descendant_ids": ["<electronics>", "<cameras>", "<lenses>"]
+  }
+}
+```
+
+And a public foreign-key filter accepts a list:
+
+```
+GET /api/v1/public/products?category_id=<electronics>,<cameras>,<lenses>
+```
+
+So the hook's `categoryId` becomes `categoryIds`, and the page sends a list where it used to send one:
+
+```ts
+// apps/web/hooks/use-catalogue.ts
+// was: if (filters.categoryId) params.category_id = filters.categoryId;
+if (filters.categoryIds?.length) {
+  params.category_id = filters.categoryIds.join(",");
+}
+```
+
+and the category page from Step 4d becomes:
+
+```tsx
+const { data: category } = useCategory(slug);
+
+const { data } = useCatalogue(
+  category?.data
+    ? {
+        page,
+        pageSize: 8,
+        // The category AND everything under it, which is what a customer
+        // means by "Electronics". Falls back to the category alone for a
+        // leaf, where descendant_ids is just its own id.
+        categoryIds: category.data.descendant_ids ?? [category.data.id],
+        priceMin,
+        sortBy: SORTS[sort].sortBy,
+        sortOrder: SORTS[sort].sortOrder,
+      }
+    : {},
+);
+```
+
+The comma-separated list is opt-in per column on the server and only ever enabled for id columns, because splitting on commas is right for ids and wrong for anything a person types: "Smith, John" is one value, not two.
+
+For a navigation menu, there is one more endpoint that saves you assembling a tree in the browser:
+
+```
+GET /api/v1/public/categories/tree
+```
+
+The whole published hierarchy, nested, in a single query. Each node carries its own fields plus `children`, so a mega-menu is a recursive component over the response and nothing else.
+
+### Breadcrumbs
+
+The generated service reads ancestors straight out of the stored path, so breadcrumbs cost one query however deep the tree is:
+
+```
+GET /api/v1/categories/:id/breadcrumbs   ->   Electronics / Cameras / Lenses
+```
+
+The admin has a `TreeBreadcrumbs` component wired to it. On the storefront, build the same thing from the ids in `path`, which the public detail response already gives you.
 
 ---
 

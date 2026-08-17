@@ -29,6 +29,68 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.161.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.161.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 18, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Moving a category could add one to the depth of every row in
+                  the table.</strong>
+                </p>
+                <p>
+                  A subtree move rewrites descendants with a prefix match on the path:
+                </p>
+                <CodeBlock language="sql" code={`WHERE path LIKE '<old path>%' AND id <> '<moved id>'`} />
+                <p>
+                  When the moved row has no path, that prefix is empty, and{' '}
+                  <code>LIKE &apos;%&apos;</code> matches <strong>every row in the
+                  table</strong>. The depth increment that follows then lands on all of
+                  them.
+                </p>
+                <p>
+                  A row with no path is not exotic. It is exactly what{' '}
+                  <code>--tree</code> leaves behind when added to a table that already has
+                  rows, so this fired the first time somebody dragged one of those rows in
+                  the admin, which is the most likely first thing to do. Nothing looked
+                  wrong: the tree redrew correctly, and the damage was only visible by
+                  reading the rows.
+                </p>
+                <p>
+                  A move now leaves the subtree rewrite alone when there is no old path,
+                  because a row without one has no descendants by path anyway. The moved
+                  row still gets a correct path, and <strong>Rebuild paths</strong> on the
+                  tree repairs anything already affected. Both the fix and the repair were
+                  verified against a database with the damage in it.
+                </p>
+                <p>
+                  Found by reading the rows after driving the admin tree in a browser, and
+                  now pinned down by a generated test that moves a pathless node and
+                  asserts every other row is untouched. That suite ships into your project
+                  and is up to nine tests.
+                </p>
+
+                <h3>The storefront guide</h3>
+                <p>
+                  The Category resource is generated once, with{' '}
+                  <code>--tree --public</code> in Step 1, rather than being generated
+                  plain and regenerated with <code>--public</code> four steps later.
+                </p>
+                <p>
+                  Step 4e is new: multi-level categories end to end. What the path column
+                  is for, dragging in the admin, why seeded categories come out flat, and
+                  the piece that makes a tree worth having on a storefront, which is
+                  showing everything under Electronics rather than only what is filed
+                  directly in it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.160.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
