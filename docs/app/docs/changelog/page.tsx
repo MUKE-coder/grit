@@ -29,6 +29,95 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.160.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.160.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 17, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>A drag-and-drop tree in the admin, and a broken page that
+                  could not be fixed.</strong>
+                </p>
+
+                <h3>Fix this first</h3>
+                <p>
+                  The API keys page has shipped since v3.156.0 with a literal newline
+                  inside a TypeScript string, so <strong>the admin app failed to compile in
+                  every scaffolded project</strong>. Run <code>grit upgrade</code>.
+                </p>
+                <p>
+                  Worse than the typo was the reason it stayed: the page was in the
+                  scaffold&rsquo;s file list and not in <code>grit upgrade</code>&rsquo;s,
+                  so the fix had nowhere to go. Those two lists had drifted by{' '}
+                  <strong>59 files</strong>, every one of them unfixable in an existing
+                  project. They are now one list, built once and shared, with the files a
+                  person is expected to edit excluded by name and the manifest guard still
+                  refusing to touch anything with local changes.
+                </p>
+
+                <h3>The tree view</h3>
+                <p>
+                  A resource generated with <code>--tree</code> now gets a Table / Tree
+                  toggle on its list page. The tree opens by default, because somebody who
+                  asked for a hierarchy is looking for the hierarchy, and the table keeps
+                  every filter, tab and bulk action it had.
+                </p>
+                <p>
+                  Drag a row onto another to nest it. Drag it between two rows to reorder.
+                  Drag it to the bar at the very top to promote it back to a root. Those
+                  three targets are the whole interaction, and a tree with fewer of them is
+                  a tree you cannot rearrange: without the sibling bars there is no way to
+                  reorder within a parent and no way to get a node back out to the top
+                  level.
+                </p>
+                <p>
+                  Native HTML5 drag and drop, no library. dnd-kit would be nicer to write
+                  against and would put a dependency in every scaffolded admin for one
+                  screen, and a tree is the case the native API handles: one item, no
+                  sorting animation, no multi-select.
+                </p>
+                <p>
+                  Dropping a node inside its own subtree is refused twice. The row shows a
+                  no-drop cursor and dims before you release, and the server refuses the
+                  move with 422 if a stale client tries anyway. A toast after a failed
+                  request is a worse answer than a cursor that says no.
+                </p>
+                <p>
+                  There is deliberately no &ldquo;add a child here&rdquo; button. The
+                  obvious version calls the page&rsquo;s create form, which takes no
+                  starting values, so the new record would be born at the root with the
+                  parent silently dropped.
+                </p>
+
+                <h3>Rows that predate the tree</h3>
+                <p>
+                  Adding <code>--tree</code> to a table that already has rows leaves every
+                  one of them with a NULL <code>parent_id</code>, because that is what
+                  AutoMigrate fills a new column with. Any query spelling &ldquo;is a
+                  root&rdquo; as <code>parent_id = &apos;&apos;</code> matches none of
+                  them.
+                </p>
+                <p>
+                  That bit twice. <code>Roots</code> returned nothing, which was at least
+                  visible. <code>Reorder</code> updated zero rows and answered 200, which
+                  is the worse kind: the tree redrew in the old order and nothing said why.
+                  Both treat NULL as no parent now, reorder normalises it on the way past,
+                  and the generated tests cover the migrated-rows case explicitly. There is
+                  a Rebuild paths button on the tree for the same situation.
+                </p>
+                <p>
+                  Also: <code>GripVertical</code> is exported from the admin&rsquo;s icon
+                  module. An icon in the map is not automatically a named export, and the
+                  drag handle is the first thing to need this one.
+                </p>
+              </div>
+            </div>
+
             {/* v3.159.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

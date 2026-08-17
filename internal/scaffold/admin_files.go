@@ -202,6 +202,26 @@ function CallbackSpinner() {
 }
 
 func writeAdminFiles(root string, opts Options) error {
+	for path, content := range adminFileMap(root, opts) {
+		if err := writeFile(path, content); err != nil {
+			return fmt.Errorf("writing %s: %w", path, err)
+		}
+	}
+	return writeAdminExtras(root, opts)
+}
+
+// adminFileMap is every framework-owned file in apps/admin.
+//
+// One map, shared by the scaffold and by grit upgrade. It used to be two, and
+// the second one was missing 59 entries, which meant a bug in any of those files
+// could not be fixed in an existing project: the fix shipped, and upgrade had no
+// idea the file existed. The api-keys page shipped with a literal newline inside
+// a TS string, so every scaffolded admin failed to compile, and that was the
+// bug that made the duplication too expensive to keep.
+//
+// Files a person is expected to edit are excluded by upgrade rather than left
+// out here. See userOwnedAdminFiles.
+func adminFileMap(root string, opts Options) map[string]string {
 	adminRoot := filepath.Join(root, "apps", "admin")
 
 	files := map[string]string{
@@ -385,6 +405,8 @@ func writeAdminFiles(root string, opts Options) error {
 		// Resource components
 		filepath.Join(adminRoot, "components", "resource", "resource-page.tsx"):        adminResourcePage(),
 		filepath.Join(adminRoot, "components", "resource", "resource-detail-page.tsx"): adminResourceDetailPage(),
+		filepath.Join(adminRoot, "components", "resource", "resource-tree.tsx"):        adminResourceTree(),
+		filepath.Join(adminRoot, "components", "resource", "tree-breadcrumbs.tsx"):     adminTreeBreadcrumbs(),
 		filepath.Join(adminRoot, "components", "resource", "view-modal.tsx"):           adminViewModal(),
 
 		// Resource definitions
@@ -443,11 +465,13 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "support", "[id]", "page.tsx"): adminTicketThreadPage(),
 	}
 
-	for path, content := range files {
-		if err := writeFile(path, content); err != nil {
-			return fmt.Errorf("writing %s: %w", path, err)
-		}
-	}
+	return files
+}
+
+// writeAdminExtras writes the pieces that are generated per-resource or in
+// groups rather than as one entry in the map above.
+func writeAdminExtras(root string, opts Options) error {
+	adminRoot := filepath.Join(root, "apps", "admin")
 
 	// v3.31.44 — per-resource dashboard widgets (Total + sparkline,
 	// Latest N). Lives in its own scaffold file so the widget files

@@ -637,6 +637,13 @@ export interface ResourceDefinition {
   // relationships). Set on inline --items children — you manage them through
   // the parent's form and detail page, not a top-level nav entry.
   hidden?: boolean;
+  // Set by "grit generate resource --tree". Adds a Table / Tree toggle to the
+  // list page, where the tree view can reparent and reorder by dragging.
+  //
+  // It needs the endpoints --tree generates (/tree, /:id/move, /reorder,
+  // /rebuild-tree), so setting it by hand on a resource that has no parent
+  // column gives you a view that cannot load.
+  tree?: boolean;
 }
 
 // Stats cards shown above the data table on every resource page.
@@ -999,6 +1006,7 @@ export const usersResource = defineResource({
 func adminResourcePage() string {
 	return `"use client";
 
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { ResourceDefinition } from "@/lib/resource";
@@ -1006,6 +1014,11 @@ import { useResourceController } from "@/hooks/use-resource-controller";
 import type { ResourceController } from "@/hooks/use-resource-controller";
 import { PageHeader } from "@/components/layout/page-header";
 import { DataTable } from "@/components/tables/data-table";
+// Lazy: only resources declaring tree: true ever render this, and an eager
+// import would put the drag-and-drop tree in every admin page's bundle.
+const ResourceTree = dynamic(() =>
+  import("@/components/resource/resource-tree").then((m) => m.ResourceTree)
+);
 import { TableToolbar } from "@/components/tables/table-toolbar";
 import { TablePagination } from "@/components/tables/table-pagination";
 import { TableFilters } from "@/components/tables/table-filters";
@@ -1107,6 +1120,10 @@ function exportSelection(c: ResourceController) {
 // line, and replace the JSX.
 function ResourceListView({ resource }: ResourcePageProps) {
   const c = useResourceController(resource);
+  // Tree resources open on the tree, because somebody who asked for a
+  // hierarchy is looking for the hierarchy. The table is one click away and
+  // keeps every filter, tab and bulk action it had.
+  const [view, setView] = useState<"tree" | "table">(resource.tree ? "tree" : "table");
 
   // Slots, each falling back to the stock component. The props handed to a
   // custom Table are exactly DataTable's, so a replacement can also wrap the
@@ -1206,6 +1223,27 @@ function ResourceListView({ resource }: ResourcePageProps) {
           />
         )}
 
+        {resource.tree && (
+          <div className="mb-3 inline-flex rounded-lg border border-border p-0.5">
+            {(["tree", "table"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setView(option)}
+                aria-pressed={view === option}
+                className={
+                  "rounded-md px-3 py-1 text-xs font-medium capitalize transition-colors " +
+                  (view === option
+                    ? "bg-accent text-white"
+                    : "text-text-muted hover:text-foreground")
+                }
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* The tabs control this region, so it is their panel. Without the
             pairing a reader hears a tablist and never learns what it filters. */}
         <div
@@ -1213,7 +1251,19 @@ function ResourceListView({ resource }: ResourcePageProps) {
           role={c.tabs.length > 0 ? "tabpanel" : undefined}
           aria-labelledby={c.activeTab ? "table-tab-" + c.activeTab : undefined}
         >
-        {showEmptyState && EmptyState ? (
+        {resource.tree && view === "tree" ? (
+          <ResourceTree
+            resource={resource}
+            // The page's own edit handler, so a node edited from the tree opens
+            // the form that is already here rather than a second one that
+            // drifts from it. It takes the row, and a tree node is the row.
+            onEdit={
+              c.can("edit")
+                ? (node) => c.edit(node as unknown as Record<string, unknown>)
+                : undefined
+            }
+          />
+        ) : showEmptyState && EmptyState ? (
           <EmptyState resource={resource} />
         ) : (
           <Table

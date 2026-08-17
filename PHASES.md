@@ -912,8 +912,14 @@ compile.
       `InFilterable` for comma-separated FK lists, and `/public/<plural>/tree`
       for a nav menu. Verified end to end: Electronics alone returns 0 products,
       Electronics with its descendants returns the one filed under Lenses.
-- [ ] Admin: a drag-and-drop tree for reparenting and reordering, with
-      breadcrumbs on the detail page.
+- [x] Admin drag-and-drop tree - v3.160.0. A Table / Tree toggle on the list
+      page, three drop targets per row (onto = nest, between = reorder, the top
+      bar = promote to root), the cycle refused with a no-drop cursor before the
+      request is made, a Rebuild paths button, and a breadcrumbs component for
+      detail pages. Native HTML5 drag and drop, no new dependency.
+- [x] NULL-parent tolerance - v3.160.0. Rows that predate `--tree` carry a NULL
+      parent_id, so `Roots` returned nothing and `Reorder` updated nothing while
+      answering 200. Both fixed, with a generated test for the migrated case.
 
 ### 7.4h Product variants, normalised
 

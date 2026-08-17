@@ -351,13 +351,29 @@ func (s *%[1]sTreeService) Move(id, newParentID string, position int) error {
 
 // Reorder writes a new sibling order in one transaction, which is what a
 // drag-and-drop tree sends: the ids of one parent's children, in order.
+//
+// The parent is part of the WHERE on purpose, so a stale client cannot reorder
+// a node into a parent it no longer belongs to. It has to treat NULL as no
+// parent, though: rows that predate --tree have a NULL parent_id, and
+// "parent_id = ''" matched none of them. The reorder then returned 200 having
+// updated nothing, which is the worst kind of bug, the one that looks like it
+// worked.
 func (s *%[1]sTreeService) Reorder(parentID string, orderedIDs []string) error {
 	return s.DB.Transaction(func(tx *gorm.DB) error {
 		for position, id := range orderedIDs {
-			err := tx.Model(&models.%[1]s{}).
-				Where("id = ? AND parent_id = ?", id, parentID).
-				Update("position", position).Error
-			if err != nil {
+			q := tx.Model(&models.%[1]s{}).Where("id = ?", id)
+			if parentID == "" {
+				q = q.Where("(parent_id = '' OR parent_id IS NULL)")
+			} else {
+				q = q.Where("parent_id = ?", parentID)
+			}
+			// parent_id is normalised on the way past, so the next reorder of
+			// this row has one thing to compare rather than two.
+			updates := map[string]any{"position": position}
+			if parentID == "" {
+				updates["parent_id"] = ""
+			}
+			if err := q.Updates(updates).Error; err != nil {
 				return fmt.Errorf("reordering %%s: %%w", id, err)
 			}
 		}
@@ -886,6 +902,40 @@ func Test%[1]sTreeRefusesACycle(t *testing.T) {
 	db.Where("id = ?", top.ID).First(&check)
 	if check.ParentID != "" || check.Depth != 0 {
 		t.Errorf("a refused move must leave the row untouched: parent=%%q depth=%%d", check.ParentID, check.Depth)
+	}
+}
+
+// Rows that predate --tree arrive with a NULL parent_id, because AutoMigrate
+// fills a new column with NULL. Every query that means "is a root" has to say so
+// in a way that matches those rows: "parent_id = ''" alone silently matches none
+// of them, and a reorder that updates nothing still answers 200.
+func Test%[1]sTreeToleratesNullParents(t *testing.T) {
+	db := %[1]sTreeTestDB(t)
+	svc := services.New%[1]sTreeService(db)
+
+	a := make%[1]s(t, db, "A", "")
+	b := make%[1]s(t, db, "B", "")
+	// Exactly what adding --tree to an existing table leaves behind.
+	db.Exec("UPDATE %[3]s SET parent_id = NULL")
+
+	roots, err := svc.Roots()
+	if err != nil {
+		t.Fatalf("Roots: %%v", err)
+	}
+	if len(roots) != 2 {
+		t.Errorf("Roots with NULL parents = %%d, want 2", len(roots))
+	}
+
+	if err := svc.Reorder("", []string{b.ID, a.ID}); err != nil {
+		t.Fatalf("Reorder: %%v", err)
+	}
+	ordered, _ := svc.Roots()
+	if len(ordered) != 2 || ordered[0].Name != "B" {
+		names := []string{}
+		for _, r := range ordered {
+			names = append(names, r.Name)
+		}
+		t.Errorf("order = %%v, want [B A]", names)
 	}
 }
 
