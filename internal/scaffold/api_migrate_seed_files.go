@@ -177,6 +177,10 @@ func Seed(db *gorm.DB) error {
 		return fmt.Errorf("seeding users: %w", err)
 	}
 
+	if err := SeedAPIKeys(db); err != nil {
+		return fmt.Errorf("seeding api keys: %w", err)
+	}
+
 	if err := SeedBlogs(db); err != nil {
 		return fmt.Errorf("seeding blogs: %w", err)
 	}

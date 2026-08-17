@@ -119,6 +119,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "services", "api_key_test.go"):            apiAPIKeyTestGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "api_key.go"):               apiAPIKeyMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "api_key.go"):                 apiAPIKeyHandlerGo(),
+		filepath.Join(apiRoot, "internal", "database", "api_keys_seeder.go"):        apiAPIKeySeederGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user_test.go"):               apiUserTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "bench_test.go"):              apiBenchTestGo(),
 	}
@@ -9086,6 +9087,21 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	{
 		blogs.GET("", blogHandler.ListPublished)
 		blogs.GET("/:slug", blogHandler.GetBySlug)
+	}
+
+	// Public API surface, for clients with no logged-in user: a storefront, a
+	// mobile app, a public directory.
+	//
+	// Guarded by an API key rather than open. That is not secrecy, because a
+	// publishable key ships inside your app where anyone can read it. It buys
+	// identification, a rate-limit bucket per key, per-endpoint and per-origin
+	// narrowing, and the ability to turn one client off without a deploy.
+	//
+	// Resources land here through: grit generate resource <Name> --public
+	publicAPI := v1.Group("/public")
+	publicAPI.Use(middleware.RequireAPIKey(db))
+	{
+		// grit:routes:public
 	}
 
 	// Public auth routes

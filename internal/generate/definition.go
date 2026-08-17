@@ -26,6 +26,13 @@ type ResourceDefinition struct {
 	// the parent's form + detail page, not a top-level nav entry).
 	Hidden bool `yaml:"-"`
 
+	// Public adds a read-only surface outside the auth middleware, guarded by
+	// an API key, for clients with no logged-in user. Set by --public.
+	//
+	// It does not change the protected routes: the admin panel calls those,
+	// and gin panics at boot on two handlers for one method and path.
+	Public bool `yaml:"public,omitempty"`
+
 	// Sync, when set, declares how the resource behaves offline: mirrored or
 	// not, what happens on a version conflict, which fields cross the wire,
 	// and how stale the mirror may get. Nil means the defaults every project

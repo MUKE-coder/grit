@@ -29,6 +29,107 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.153.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.153.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 17, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Publishable API keys, and --public on the generator.</strong>
+                </p>
+                <p>
+                  Generated CRUD sits behind auth, which is right for an admin resource
+                  and wrong for anything a customer reads. A storefront has no logged-in
+                  user, so calling the generated list endpoint returns a 401. That is the
+                  first wall anyone building a public-facing app walks into, and until now
+                  Grit had no answer for it.
+                </p>
+                <CodeBlock language="bash" code={`grit generate resource Product --fields "name:string,slug:slug:name,price:float,cost_price:float,stock:int" --public
+
+  ✓ apps/api/internal/handlers/product_public.go (3 field(s) published)
+    Held back: cost_price, stock
+    Add any of those to the publicProduct struct in that file to publish them.
+  ✓ GET /api/v1/public/products and /api/v1/public/products/:key (API key required)`} />
+                <p>
+                  Note what it held back without being asked.{' '}
+                  <code>cost_price</code> because a name containing cost, margin, profit,
+                  internal, supplier or wholesale is never published whatever its type.{' '}
+                  <code>stock</code> because a raw count is a business fact your
+                  competitors enjoy and a page almost always wants &ldquo;in stock&rdquo;
+                  instead. Relations are held back too: publishing one would publish a
+                  whole related record nobody vetted.
+                </p>
+                <p>
+                  The response is an allowlist struct, never the model, which is the
+                  opposite default to the admin surface and the right one when the
+                  audience is the internet. A column you add next month is private until
+                  somebody adds it to that struct. The file is written once and never
+                  overwritten on a regenerate, because the allowlist in it is yours.
+                </p>
+
+                <h3>Two kinds of API key</h3>
+                <p>
+                  A key your storefront holds is not a secret. It ships inside your
+                  JavaScript bundle or your mobile binary, where anyone can read it, and
+                  an APK is a zip file. Calling it a secret and hoping is how an admin
+                  credential ends up in a JavaScript file.
+                </p>
+                <p>
+                  So a key now declares what it is.{' '}
+                  <code>grit_pk_...</code> is publishable: safe in a browser or a phone,
+                  and structurally incapable of reaching a route that was not marked
+                  public. Not because it lacks a permission, but because the middleware
+                  for protected routes refuses the kind outright, before permissions are
+                  consulted. No combination of scopes talks its way past that, and a
+                  publishable key never inherits its owner&apos;s permissions at all.
+                </p>
+                <p>
+                  <code>grit_sk_...</code> is secret: server side only, reaches whatever
+                  its owner can. It is hashed and shown exactly once. A publishable key is
+                  stored in clear and readable from the admin forever, because it was
+                  never a secret and pretending otherwise costs the one thing that makes
+                  it pleasant, which is reading it again when you set up a new
+                  environment.
+                </p>
+                <p>
+                  Keys also carry two new restrictions, which are different axes rather
+                  than alternatives. <code>endpoints</code> narrows a key to specific
+                  routes as method plus path with an optional trailing wildcard.{' '}
+                  <code>origins</code> restricts browser use to named sites. Worth having
+                  and worth not overestimating: an origin check stops another site&apos;s
+                  page using your key from a customer&apos;s browser, and stops nothing
+                  that is not a browser. Leave it empty for a mobile app, which sends no
+                  Origin header at all.
+                </p>
+
+                <h3>Two keys in every new project</h3>
+                <p>
+                  The seeder now issues a publishable and a secret key, prints both, and
+                  writes the publishable one into{' '}
+                  <code>apps/web/.env.local</code> so a fresh storefront can call the API
+                  without anyone copying anything. Idempotent by name: seeding twice does
+                  not mint a second pair you cannot tell apart.
+                </p>
+                <p>
+                  Verified against a fresh project. A publishable key on a public endpoint
+                  returns 200; the same key on a protected endpoint returns 403 with a
+                  message naming the fix; a secret key on that protected endpoint returns
+                  200; and the public response contained exactly id, name, price and slug,
+                  with cost_price, stock, internal_note and active all absent.
+                </p>
+                <p>
+                  Backward compatible: keys issued before kinds existed have no{' '}
+                  <code>pk</code> or <code>sk</code> segment and are still read as secret
+                  keys, exactly as they were.
+                </p>
+              </div>
+            </div>
+
             {/* v3.152.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
