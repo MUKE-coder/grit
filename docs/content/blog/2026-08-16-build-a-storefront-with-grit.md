@@ -4,7 +4,7 @@ subtitle: "A complete ecommerce build for someone who learned Grit last week: ca
 series: "The Daily Grit"
 edition: 15
 date: 2026-08-16
-readingTime: "28 min"
+readingTime: "32 min"
 author: "Muke JohnBaptist"
 tags: [grit, ecommerce, stripe, tutorial, beginner, workflows, events, settings]
 canonical: "https://gritframework.dev/blog/build-a-storefront-with-grit"
@@ -48,56 +48,108 @@ grit new shopfront --triple --frontend next
 cd shopfront
 ```
 
-`--triple` gives you three apps: a Go API, a customer-facing Next.js site, and a separate admin panel. That separation matters for a shop. Your storefront is public, indexed by Google, and optimised for people who have never logged in. Your admin is behind auth and optimised for people who use it eight hours a day. Trying to be both in one app is how you end up with neither.
+Two flags there, and both are worth understanding rather than copying.
 
-If you want to understand the other layouts before committing, [Architecture modes](/docs/concepts/architecture-modes) walks through all five. For a shop, triple is almost always right.
+**`--triple`** gives you three apps: a Go API, a customer-facing Next.js site, and a separate admin panel. That separation matters for a shop. Your storefront is public, indexed by Google, and optimised for people who have never logged in. Your admin is behind auth and optimised for people who use it eight hours a day. Trying to be both in one app is how you end up with neither. The other four layouts are in [Architecture modes](/docs/concepts/architecture-modes), and [Triple](/docs/concepts/architecture-modes/triple) covers this one in detail.
 
-Start the infrastructure and the apps:
+**`--frontend next`** picks which React setup the frontends use, and it is a real fork in the road:
+
+| Value | What you get | Pick it when |
+|---|---|---|
+| `next` | Next.js with the App Router. Server rendering, file-based routing, SEO out of the box | You want Google to index your product pages. For a shop, almost always this |
+| `vite` (or `tanstack`) | Vite plus TanStack Router. A pure single-page app, no server | An internal tool, a dashboard, anything behind a login where SEO is irrelevant |
+
+For a storefront, `next`. A shop that search engines cannot read is a shop with one marketing channel. [Web app](/docs/frontend/web-app) covers the Next.js side; [TanStack Router](/docs/frontend/tanstack-router) covers the other one if you are curious.
+
+### Install and start
 
 ```bash
-docker compose up -d      # Postgres, Redis, MinIO, Mailhog
-grit start                # API + web + admin, all with hot reload
+pnpm install               # the scaffold does not do this for you
+docker compose up -d       # Postgres, Redis, MinIO, Mailhog
+grit start                 # API + web + admin, all with hot reload
 ```
 
-You now have a working application at `localhost:3000` (storefront), `localhost:3001` (admin) and `localhost:8080` (API). Log into the admin with the seeded account printed in your terminal.
+`pnpm install` is not optional and it is easy to skip: `grit new` writes the workspace but does not install into it, so `grit start` will fail on a missing module if you go straight there.
 
-Worth five minutes now: [Project structure](/docs/getting-started/project-structure), so the folder names below mean something to you.
+> **If another Grit project is already running, this is where it bites.** Every Grit project uses the same default ports, so a second one silently collides: Postgres on 5434, the API on 8080, web on 3000, admin on 3001. Stop the other project's containers with `docker compose down` in its directory, and free a stuck port with `npx kill-port 3001`. The symptom is not always obvious. Sometimes it is a clear "port already in use", and sometimes your new admin quietly loads the *other* project's API and you spend twenty minutes wondering why your products are somebody else's.
+
+You now have a working application at `localhost:3000` (storefront), `localhost:3001` (admin) and `localhost:8080` (API). The API also serves [an OpenAPI reference at `/docs`](/docs/backend/api-docs), which is genuinely useful while you build: it lists every endpoint with a real request and response body.
+
+Worth five minutes now: [Project structure](/docs/getting-started/project-structure), so the folder names below mean something.
 
 ---
 
 ## Step 1: model the catalogue
 
-A shop is four things: categories, products, orders, and the lines on an order. Let us generate them.
+A shop is four things: categories, products, orders, and the lines on an order.
 
-Start with categories, because products belong to one:
+`grit generate resource` is the command you will use most, so it is worth reading [Code generation](/docs/concepts/code-generation) once to see everything it writes from one line, and [Field types](/docs/concepts/field-types) for the full list of types. There are types in there you would otherwise hand-roll.
+
+Categories first, because products belong to one:
 
 ```bash
-grit g resource Category --fields "name:string,slug:slug:name,description:text,image:file:image,featured:bool"
+grit g resource Category \
+  --fields "name:string,slug:slug:name,description:text,image:file:image,featured:bool" \
+  --faker --count 6
 ```
 
-Read that field list once, because the syntax is doing real work. `slug:slug:name` means "a slug field, generated from the name field". `image:file:image` means "a single file, restricted to images". `featured:bool` becomes a toggle in the admin and a boolean column in Postgres. The full list is in [Field types](/docs/concepts/field-types), and it is worth skimming before you design your own resources: there are types there you would otherwise hand-roll.
+Read that field list once, because the syntax is doing real work. `slug:slug:name` means "a slug field, generated from the name field". `image:file:image` means "a single file, restricted to images". `featured:bool` becomes a toggle in the admin and a boolean column in Postgres.
+
+**`--faker --count 6` on the categories is not decoration, and this is the one thing in this guide most likely to waste your afternoon if you skip it.** More on why in a moment.
 
 Now products:
 
 ```bash
-grit g resource Product --fields "name:string,slug:slug:name,sku:string:unique,description:richtext,price:float,compare_at_price:float,stock:int,images:files:image,category:belongs_to:Category,active:bool" --faker --count 40
+grit g resource Product \
+  --fields "name:string,slug:slug:name,sku:string:unique,description:richtext,price:float,compare_at_price:float,stock:int,images:files:image,category:belongs_to:Category,active:bool" \
+  --public --faker --count 40
 ```
 
-Three things happened there worth naming.
+Three things in there worth naming.
 
-`sku:string:unique` put a unique index on the column, so two products cannot share a SKU, and the API returns a clean validation error instead of a database constraint violation leaking to the user.
+`sku:string:unique` puts a unique index on the column, so two products cannot share a SKU and the API returns a clean validation error rather than a database constraint leaking to the user.
 
-`category:belongs_to:Category` generated the foreign key, the GORM association, the preload in the list query, a dropdown in the admin form, and a filter on the products table. One field declaration, five pieces of wiring. [Relationships](/docs/admin/relationships) covers what else that gets you.
+`category:belongs_to:Category` generates the foreign key, the GORM association, the preload in the list query, a dropdown in the admin form, and a filter on the products table. One field declaration, five pieces of wiring. [Relationships](/docs/admin/relationships) covers the rest.
 
-`--faker --count 40` seeded forty plausible products so you have something to look at. You do not have to design a UI against an empty table, which is one of those small things that changes how fast the rest of the build feels. See [Seeders](/docs/backend/seeders).
+`--public` is the flag that makes a storefront possible at all, and it gets its own section below because there is something important to understand about it.
 
-Restart the API so the migration runs:
+### Migrate, then seed
 
 ```bash
-grit migrate
+grit migrate    # creates the tables
+grit seed       # fills them
 ```
 
-Open the admin. Products and Categories are in the sidebar, both with a working table, filters, search, sorting, pagination, a create form, an edit form and a detail page. You have written no frontend code.
+**Both.** `grit migrate` builds the schema; `grit seed` runs the seeders that `--faker` generated. Running only the first leaves you with an empty database and a storefront that renders nothing, which looks exactly like a broken API call.
+
+### Why the categories needed their own seed data
+
+This is the part that will bite you, and it fails silently.
+
+When you generate a resource with a `belongs_to`, the seeder does the right thing: it loads the parent ids once and picks one at random per row.
+
+```go
+// apps/api/internal/database/products_seeder.go, generated
+var categoryIDs []string
+db.Model(&models.Category{}).Pluck("id", &categoryIDs)
+// ...
+CategoryID: pickID(categoryIDs),
+```
+
+Read what happens when `categoryIDs` is empty. `pickID` returns an empty string, the product is inserted with no category, and **nothing errors**. You get forty products, zero of them categorised, a green seed log, and a category filter in the admin that matches nothing.
+
+I know because that is exactly what the first version of this guide produced.
+
+So the rule, and it applies to every relation you seed: **generate the parent with its own seed data before the child.** Seeders run in the order they were registered, which is the order you generated the resources, so Category before Product is both the modelling order and the seeding order.
+
+Check it rather than trusting it:
+
+```bash
+# Should be 40 and 40, not 40 and 0
+grit studio    # open the products table and look at category_id
+```
+
+Open the admin now. Products and Categories are in the sidebar, both with a working table, filters, search, sorting, pagination, create and edit forms, and a detail page. You have written no frontend code.
 
 ---
 
@@ -215,154 +267,145 @@ The states come from the field's own `options`. You do not list them twice. If y
 
 ---
 
-## Step 4: the storefront, and the first thing that will stop you
+## Step 4: the storefront, and the auth boundary
 
 Time to build the shop your customers see. It lives in `apps/web/`.
 
-The generator wrote you typed data hooks. Look at `apps/web/hooks/use-products.ts`: `useProducts()`, `useProduct(id)`, `useCreateProduct()`, all React Query, all typed from the Go model through the shared package. You do not write fetch calls. [Frontend hooks](/docs/frontend/hooks) explains the pattern; [the shared package](/docs/frontend/shared-package) explains how the types got there.
+Here is the wall everyone hits first, and it is worth understanding rather than working around.
 
-Reach for `useProducts()` on a public page and you get this:
+The generator wrote you typed data hooks: look at `apps/web/hooks/use-products.ts` for `useProducts()`, `useProduct(id)` and friends, all React Query, all typed from the Go model through the shared package ([Frontend hooks](/docs/frontend/hooks) explains the pattern). Call `useProducts()` from a public page and you get:
 
 ```json
 {"error":{"code":"UNAUTHORIZED","message":"Authentication required"}}
 ```
 
-**Generated CRUD is mounted behind auth.** Look at what the generator injected into `apps/api/internal/routes/routes.go`:
+**Generated CRUD is mounted behind auth.** That is the correct default: a generated resource is an *admin* resource. It exposes every column, accepts filters on all of them, and has a write side. Public-by-default would be a security bug shipped to everyone.
 
-```go
-protected.GET("/products", productHandler.List)
-protected.GET("/products/:id", productHandler.GetByID)
-admin.DELETE("/products/:id", productHandler.Delete)
+Your customers are not logged in. So a storefront needs a second, narrower surface, which is what `--public` in Step 1 built for you:
+
+```
+✓ apps/api/internal/handlers/product_public.go (7 field(s) published)
+  Held back: stock, category, active
+  Add any of those to the publicProduct struct in that file to publish them.
+✓ GET /api/v1/public/products and /api/v1/public/products/:key (API key required)
 ```
 
-That is the correct default. A generated resource is an admin resource: it exposes every column, it accepts filters on all of them, and it has a write side. Making that public by default would be a security bug shipped to everyone.
+Look at what it held back without being asked.
 
-But a shop is customer-facing, and your customers are not logged in. So you write the public half yourself. It is about sixty lines and you only do it for the one or two resources the storefront actually reads.
+`stock` because a raw count is a business fact your competitors enjoy, and a page almost always wants "in stock" rather than "we have four left". `category` because publishing a relation publishes a whole related record nobody vetted. `active` because the endpoint already filters on it, so the value is identical on every row it will ever return.
 
-### Why you cannot just remove the auth
+Names containing cost, margin, profit, internal, note, secret, supplier or wholesale are held back too, whatever their type. If your product had a `cost_price`, it is not on the internet.
 
-Two reasons, and the second one bites at boot.
+The generated response is an **allowlist struct**, not the model:
+
+```go
+// apps/api/internal/handlers/product_public.go, generated
+type publicProduct struct {
+	ID            string         `json:"id"`
+	Name          string         `json:"name"`
+	Slug          string         `json:"slug"`
+	SKU           string         `json:"sku"`
+	Description   string         `json:"description"`
+	Price         float64        `json:"price"`
+	CompareAtPrice float64       `json:"compare_at_price"`
+	Images        files.FileRefs `json:"images"`
+}
+```
+
+That is the opposite default to the admin surface, and it is the right one when the audience is the internet: a column you add next month is private until somebody adds it here. **This file is written once and never overwritten on a regenerate**, because the allowlist in it is yours to edit.
+
+If you want `stock` published, add it. If you want "in stock" instead of a count, add a bool and set it in `toPublicProduct`. That is the file to edit.
+
+### Why it could not just be the same endpoint without auth
+
+Two reasons, and the second one fails at boot.
 
 Your **admin panel calls those exact routes**. Move them and the admin stops working.
 
-And you cannot add a public `GET /products` alongside the protected one, because gin panics at startup with `handlers are already registered for path`. One method plus one path is one handler.
+And you cannot mount a public `GET /products` alongside the protected one: gin panics at startup with `handlers are already registered for path`. One method plus one path is one handler. So the public surface lives under `/api/v1/public/`.
 
-So the public catalogue gets its own namespace. Grit's own built-in Blog resource does the same thing: public reads at `/api/v1/blogs`, admin CRUD at `/api/v1/admin/blogs`.
+---
 
-### The public handler
+## The API keys, and what they are actually for
 
-```go
-// apps/api/internal/handlers/product_public.go
-package handlers
+`--public` said "API key required", which sounds like the endpoint is protected. It is not, quite, and the distinction matters.
 
-import (
-	"net/http"
+When you seeded the project, this happened:
 
-	"github.com/gin-gonic/gin"
-
-	"shopfront/apps/api/internal/models"
-	"shopfront/apps/api/internal/paginate"
-)
-
-// publicProduct is what an anonymous visitor is allowed to see.
-//
-// An allowlist rather than the model. A column you add next month (a cost
-// price, a supplier note, an internal margin) is then private by default,
-// instead of being published to the world the moment somebody runs
-// grit generate field.
-type publicProduct struct {
-	ID    string  `json:"id"`
-	Name  string  `json:"name"`
-	Slug  string  `json:"slug"`
-	Price float64 `json:"price"`
-	// InStock rather than the count. How many units are left is a business
-	// fact your competitors would enjoy; whether a customer can buy one is
-	// all the page needs.
-	InStock bool `json:"in_stock"`
-}
-
-func toPublicProduct(p models.Product) publicProduct {
-	return publicProduct{
-		ID: p.ID, Name: p.Name, Slug: p.Slug,
-		Price: p.Price, InStock: p.Stock > 0,
-	}
-}
-
-// ListPublic handles GET /api/v1/shop/products.
-func (h *ProductHandler) ListPublic(c *gin.Context) {
-	// The scope goes on the query, before paginate sees it. Not in Filterable:
-	// a column listed there can be set from the query string, and
-	// ?active=false would put deliberately hidden products back in front of
-	// customers.
-	query := h.DB.Model(&models.Product{}).
-		Where("active = ?", true).
-		Where("archived_at IS NULL")
-
-	res, err := paginate.List[models.Product](
-		query,
-		paginate.Bind(c),
-		paginate.Config{
-			Searchable: []string{"name"},
-			Sortable:   map[string]bool{"name": true, "price": true, "created_at": true},
-			// No Filterable at all. Every filter a customer needs is one you
-			// chose to offer.
-		},
-	)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to fetch products",
-		}})
-		return
-	}
-
-	out := make([]publicProduct, 0, len(res.Data))
-	for _, p := range res.Data {
-		out = append(out, toPublicProduct(p))
-	}
-	c.JSON(http.StatusOK, gin.H{"data": out, "meta": res.Meta})
-}
-
-// GetPublicBySlug handles GET /api/v1/shop/products/:slug.
-//
-// By slug, not id: a storefront URL should read /products/blue-running-shoes
-// rather than a UUID, for customers and for search engines alike.
-func (h *ProductHandler) GetPublicBySlug(c *gin.Context) {
-	var product models.Product
-	err := h.DB.Where("slug = ? AND active = ? AND archived_at IS NULL",
-		c.Param("slug"), true).First(&product).Error
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{
-			"code": "NOT_FOUND", "message": "Product not found",
-		}})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"data": toPublicProduct(product)})
-}
+```
+API keys
+  Publishable  grit_pk_705c173e_...
+               Safe in a browser or a mobile app. Reaches
+               endpoints marked public, and nothing else.
+  Secret       grit_sk_a1b2c3d4_...
+               Server side only. Shown once, right now.
+  Wrote ..\web\.env.local
 ```
 
-Mount it beside the other public groups, above where `protected` is declared:
+The publishable key is already in `apps/web/.env.local` as `NEXT_PUBLIC_API_KEY`, so your storefront can call the API without you copying anything.
 
-```go
-// apps/api/internal/routes/routes.go
+### A key in a browser is not a secret
 
-// Public shop routes (no auth required).
-shop := v1.Group("/shop")
-{
-	shop.GET("/products", productHandler.ListPublic)
-	shop.GET("/products/:slug", productHandler.GetPublicBySlug)
-}
-```
+This is the whole idea, so it is worth being blunt about.
 
-Check it before writing any frontend, because a curl is faster than a browser:
+`NEXT_PUBLIC_` means the value is compiled into your JavaScript bundle. Anyone can read it from the network tab. A mobile app is worse: an `.apk` is a zip file, and `strings` on it finds anything you put there. **There is no way to ship a secret to a client.**
+
+So a publishable key does not pretend to be one. What it actually gives you is four things:
+
+- **Identification.** You know which app made a request.
+- **Scoping.** It reaches endpoints marked public. Nothing else, ever.
+- **A rate-limit bucket.** One client misbehaving is one client you can see.
+- **A revocation handle.** Turn a client off without deploying anything.
+
+That is exactly Stripe's publishable key, and it is a genuinely useful thing. It is just not authentication.
+
+### What the two kinds can reach
+
+| Credential | Reaches | Held by |
+|---|---|---|
+| `grit_pk_...` | Public endpoints only | Browsers, phones. Safe in a bundle |
+| `grit_sk_...` | Everything its owner can | Servers only. Hashed, shown once |
+| A JWT | Everything that user can | A logged-in person |
+
+The property that makes this safe is not a permission check. A publishable key on a protected route is refused **on the kind**, before permissions are consulted:
 
 ```bash
-curl localhost:8080/api/v1/shop/products          # 200, no token
-curl localhost:8080/api/v1/products               # 401, still protected
+curl localhost:8080/api/v1/public/products -H "X-API-Key: grit_pk_..."   # 200
+curl localhost:8080/api/v1/products        -H "X-API-Key: grit_pk_..."   # 403
+curl localhost:8080/api/v1/products        -H "X-API-Key: grit_sk_..."   # 200
 ```
 
-### The storefront hook
+No combination of scopes talks a `pk` past that, and a publishable key never inherits its owner's permissions. If yours leaks, and it will, the worst it opens is what you already chose to publish.
 
-The generated hook points at the protected endpoint, and it is regenerated whenever you run `grit generate resource` again, so do not edit it. Write a small one next to it:
+### Which client gets which
+
+Grit's three frontends are all **client-side**, because they use React Query hooks. So all three get the publishable key:
+
+| App | Key | Why |
+|---|---|---|
+| `apps/web` (Next.js) | `pk` | Runs in the browser |
+| `apps/expo` | `pk` | A mobile binary cannot hold a secret |
+| Vite/TanStack | `pk` | Pure client |
+| `apps/admin` | **neither** | Staff log in; it uses JWTs and roles |
+
+Use a **secret** key only where code runs on a server you control: a Next.js Server Component or Route Handler if you opt into server fetching, a cron job, a partner integration, a warehouse system pulling orders.
+
+### Managing them
+
+The admin has an API Keys page under Settings. You can issue more, and each one takes two restrictions worth knowing about:
+
+- **`endpoints`**: narrow a key to specific routes, as method plus path with an optional trailing wildcard. `["GET /api/v1/public/products", "GET /api/v1/public/products/*"]`
+- **`origins`**: restrict browser use to named sites, checked against the `Origin` header.
+
+On origins: worth having, worth not overestimating. It stops another site's page using your key from a customer's browser. It stops nothing that is not a browser, because `curl` sends whatever `Origin` it likes. And leave it **empty for a mobile app**: native clients send no `Origin` at all, so an allowlist would reject every request they make.
+
+A publishable key stays readable in the admin forever, because it was never a secret and being able to read it again when you set up a new environment is the point. A secret key is hashed and shown exactly once.
+
+---
+
+## Step 4b: the storefront hook
+
+The generated `use-products.ts` points at the protected endpoint, and it is regenerated whenever you run `grit generate resource` again. Do not edit it. Write a small one beside it:
 
 ```ts
 // apps/web/hooks/use-catalogue.ts
@@ -372,8 +415,11 @@ export interface CatalogueProduct {
   id: string;
   name: string;
   slug: string;
+  sku: string;
+  description: string;
   price: number;
-  in_stock: boolean;
+  compare_at_price: number;
+  images: Array<{ url: string; name: string }>;
 }
 
 interface Page<T> {
@@ -382,6 +428,7 @@ interface Page<T> {
 }
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
+const KEY = process.env.NEXT_PUBLIC_API_KEY ?? "";
 
 export function useCatalogue(params: { page?: number; search?: string } = {}) {
   const query = new URLSearchParams({
@@ -392,10 +439,11 @@ export function useCatalogue(params: { page?: number; search?: string } = {}) {
 
   return useQuery<Page<CatalogueProduct>>({
     queryKey: ["catalogue", params],
-    // No Authorization header, deliberately. This endpoint is public and the
-    // storefront has no user to get a token from.
     queryFn: async () => {
-      const res = await fetch(`${API}/shop/products?${query}`);
+      // The publishable key, not a bearer token. There is no user here.
+      const res = await fetch(`${API}/public/products?${query}`, {
+        headers: { "X-API-Key": KEY },
+      });
       if (!res.ok) throw new Error("Could not load products");
       return res.json();
     },
@@ -421,9 +469,12 @@ export default function ProductsPage() {
     <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
       {data?.data.map((product) => (
         <Link key={product.id} href={`/products/${product.slug}`}>
+          <img src={product.images?.[0]?.url} alt={product.name} />
           <h3>{product.name}</h3>
           <p>{product.price} AED</p>
-          {!product.in_stock && <span>Out of stock</span>}
+          {product.compare_at_price > product.price && (
+            <s>{product.compare_at_price} AED</s>
+          )}
         </Link>
       ))}
     </div>
@@ -433,7 +484,9 @@ export default function ProductsPage() {
 
 `data.data` and `data.meta` are Grit's [response format](/docs/backend/response-format), the same shape on every endpoint, so pagination code you write once works everywhere.
 
-Do the same for categories when you need them. Two resources is usually the whole public surface of a shop: everything else the customer touches goes through checkout or order tracking, and both of those are endpoints you are writing anyway.
+The detail page uses the slug route the generator mounted: `GET /api/v1/public/products/:key` looks up by slug, so your URL reads `/products/blue-running-shoes` rather than a UUID.
+
+Do the same for categories when you need them. Two resources is usually the entire public surface of a shop: everything else a customer touches goes through checkout or order tracking, and both of those are endpoints you are writing anyway.
 
 ---
 
@@ -1220,10 +1273,13 @@ Cross-compiles the Go binary, uploads it, configures systemd and Caddy with auto
 
 Roughly:
 
-- Four `grit g resource` commands and one YAML file
-- A cart provider, a product grid, a checkout form, a tracking page
+- Three `grit g resource` commands and one YAML file
+- A cart store, a product grid, a checkout form, a tracking page
 - A checkout handler, a Stripe service, a webhook handler, a stock release function
 - Two event subscribers and two settings
+
+The public catalogue endpoint, the order state machine, the transition
+endpoints, the admin, the API keys and the settings page were all generated.
 
 Everything else came with the framework: the database schema, migrations, the whole REST API with pagination and filtering, auth, roles, file uploads to S3, the admin panel, typed hooks, email, jobs, deployment.
 
