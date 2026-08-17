@@ -263,11 +263,17 @@ Here is a decision you have to make, and the guide would be doing you a disservi
 
 Start with the client-side one. Moving later is a contained change, and building the server-side one first is how projects spend three weeks not shipping.
 
-```tsx
-// apps/web/lib/cart.tsx
-"use client";
+For the state itself we are using [Simple Store](https://jb.desishub.com/blog/simple-store). A cart is read by the header badge, the cart drawer, the cart page and the checkout form, which is four unrelated places in the tree. That is the shape that normally pushes you into Context, and Context is a lot of ceremony for what is really one array: a provider component, a context object, a hook that throws if you forgot the provider, and a wrapper in the layout that has to sit above everything.
 
-import { createContext, useContext, useEffect, useState } from "react";
+Simple Store has none of that. You create a store in a file and import it where you need it.
+
+```bash
+cd apps/web && pnpm add @simplestack/store
+```
+
+```tsx
+// apps/web/lib/cart.ts
+import { store } from "@simplestack/store";
 import type { Product } from "@shopfront/shared";
 
 export interface CartLine {
@@ -278,98 +284,206 @@ export interface CartLine {
   quantity: number;
 }
 
-const CartContext = createContext<{
-  lines: CartLine[];
-  add: (product: Product, quantity?: number) => void;
-  setQuantity: (productId: string, quantity: number) => void;
-  remove: (productId: string) => void;
-  clear: () => void;
-  subtotal: number;
-} | null>(null);
-
 const STORAGE_KEY = "shopfront.cart";
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [lines, setLines] = useState<CartLine[]>([]);
+// Starts empty, on the server and on the client's first render alike.
+//
+// The tempting version reads localStorage right here, and it fails twice over
+// in an App Router app. This module is evaluated during server rendering,
+// where localStorage does not exist, so it throws. And if you guard the throw,
+// the server renders a cart badge saying 0 while the browser's first render
+// says 3, which is a hydration mismatch: React keeps the server's markup and
+// your badge stays wrong until something else re-renders it.
+//
+// So: empty everywhere, then hydrate after mount. See hydrateCart below.
+export const cartStore = store<CartLine[]>([]);
 
-  // Loaded in an effect rather than in useState's initialiser: this component
-  // renders on the server too, where localStorage does not exist, and reading
-  // it during the first render is a hydration mismatch rather than an error
-  // you would notice.
-  useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) setLines(JSON.parse(raw));
-  }, []);
+export function addToCart(product: Product, quantity = 1) {
+  cartStore.set((lines) => {
+    const existing = lines.find((l) => l.productId === product.id);
+    if (existing) {
+      return lines.map((l) =>
+        l.productId === product.id ? { ...l, quantity: l.quantity + quantity } : l,
+      );
+    }
+    return [
+      ...lines,
+      {
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.images?.[0]?.url,
+        quantity,
+      },
+    ];
+  });
+}
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
-  }, [lines]);
-
-  function add(product: Product, quantity = 1) {
-    setLines((current) => {
-      const existing = current.find((l) => l.productId === product.id);
-      if (existing) {
-        return current.map((l) =>
-          l.productId === product.id ? { ...l, quantity: l.quantity + quantity } : l,
-        );
-      }
-      return [
-        ...current,
-        {
-          productId: product.id,
-          name: product.name,
-          price: product.price,
-          image: product.images?.[0]?.url,
-          quantity,
-        },
-      ];
-    });
-  }
-
-  const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
-
-  return (
-    <CartContext.Provider
-      value={{
-        lines,
-        add,
-        setQuantity: (id, q) =>
-          setLines((c) =>
-            q <= 0 ? c.filter((l) => l.productId !== id)
-                   : c.map((l) => (l.productId === id ? { ...l, quantity: q } : l)),
-          ),
-        remove: (id) => setLines((c) => c.filter((l) => l.productId !== id)),
-        clear: () => setLines([]),
-        subtotal,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
+export function setQuantity(productId: string, quantity: number) {
+  cartStore.set((lines) =>
+    quantity <= 0
+      ? lines.filter((l) => l.productId !== productId)
+      : lines.map((l) => (l.productId === productId ? { ...l, quantity } : l)),
   );
 }
 
-export function useCart() {
-  const ctx = useContext(CartContext);
-  if (!ctx) throw new Error("useCart must be used inside <CartProvider>");
-  return ctx;
+export function removeFromCart(productId: string) {
+  cartStore.set((lines) => lines.filter((l) => l.productId !== productId));
+}
+
+export function clearCart() {
+  cartStore.set([]);
+}
+
+// Reads the saved cart and starts persisting. Call once, after mount.
+//
+// Returns an unsubscribe, so a fast refresh in development does not leave two
+// subscriptions writing the same key.
+export function hydrateCart(): () => void {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw) cartStore.set(JSON.parse(raw) as CartLine[]);
+  } catch {
+    // A corrupt or unreadable cart is not worth breaking the page over. The
+    // customer gets an empty one and can carry on shopping, which is the
+    // failure mode you want in a shop.
+    window.localStorage.removeItem(STORAGE_KEY);
+  }
+
+  return cartStore.subscribe((lines) => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
+  });
+}
+
+// Derived values are plain functions, because they are plain functions.
+export function subtotalOf(lines: CartLine[]) {
+  return lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
+}
+
+export function countOf(lines: CartLine[]) {
+  return lines.reduce((sum, l) => sum + l.quantity, 0);
 }
 ```
 
-Wrap the app:
+One component to start the hydration, mounted once:
+
+```tsx
+// apps/web/components/cart-hydrator.tsx
+"use client";
+
+import { useEffect } from "react";
+import { hydrateCart } from "@/lib/cart";
+
+export function CartHydrator() {
+  useEffect(() => hydrateCart(), []);
+  return null;
+}
+```
 
 ```tsx
 // apps/web/app/layout.tsx
-import { CartProvider } from "@/lib/cart";
+import { CartHydrator } from "@/components/cart-hydrator";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <CartProvider>{children}</CartProvider>
+        <CartHydrator />
+        {children}
       </body>
     </html>
   );
 }
+```
+
+Note what that is not. It is not a provider. Nothing below it needs to be inside it, nothing breaks if it is mounted in the wrong place, and no component throws because it was rendered outside a tree it did not know it needed. It is one effect that runs once, and the store exists whether or not it ran.
+
+Reading the cart is an import and a hook:
+
+```tsx
+// apps/web/components/cart-badge.tsx
+"use client";
+
+import { useStoreValue } from "@simplestack/store/react";
+import { cartStore, countOf } from "@/lib/cart";
+
+export function CartBadge() {
+  const lines = useStoreValue(cartStore);
+  const count = countOf(lines);
+
+  if (count === 0) return null;
+  return <span className="cart-badge">{count}</span>;
+}
+```
+
+And writing to it does not need a hook at all, which is the part that changes how the rest of the storefront is written:
+
+```tsx
+// apps/web/components/add-to-cart-button.tsx
+"use client";
+
+import { addToCart } from "@/lib/cart";
+import type { Product } from "@shopfront/shared";
+
+export function AddToCartButton({ product }: { product: Product }) {
+  return (
+    <button onClick={() => addToCart(product)}>
+      Add to cart
+    </button>
+  );
+}
+```
+
+`addToCart` is an ordinary function. It is callable from an event handler, from a hook, from a route handler on the client, from a test with no renderer at all. With Context the same button needs `useCart()`, which means it needs to be inside the provider, which means the test needs the provider too.
+
+The cart page pulls the whole thing together:
+
+```tsx
+// apps/web/app/cart/page.tsx
+"use client";
+
+import Link from "next/link";
+import { useStoreValue } from "@simplestack/store/react";
+import { cartStore, setQuantity, removeFromCart, subtotalOf } from "@/lib/cart";
+
+export default function CartPage() {
+  const lines = useStoreValue(cartStore);
+
+  if (lines.length === 0) {
+    return <EmptyCart />;
+  }
+
+  return (
+    <div>
+      {lines.map((line) => (
+        <div key={line.productId}>
+          <img src={line.image} alt={line.name} />
+          <span>{line.name}</span>
+          <input
+            type="number"
+            min={0}
+            value={line.quantity}
+            onChange={(e) => setQuantity(line.productId, Number(e.target.value))}
+          />
+          <span>{line.price * line.quantity}</span>
+          <button onClick={() => removeFromCart(line.productId)}>Remove</button>
+        </div>
+      ))}
+
+      <footer>
+        <strong>Subtotal: {subtotalOf(lines)}</strong>
+        <Link href="/checkout">Checkout</Link>
+      </footer>
+    </div>
+  );
+}
+```
+
+If your cart grows past an array (a saved-for-later list, a promo code, a chosen delivery slot), Simple Store's `select` narrows a subscription to one branch so a component watching the promo code does not re-render every time somebody changes a quantity:
+
+```tsx
+const promoStore = checkoutStore.select("promoCode");
+const promo = useStoreValue(promoStore); // re-renders on promo changes only
 ```
 
 Note that the cart stores the price it saw. That is not the price the server will charge. We are coming to that.
