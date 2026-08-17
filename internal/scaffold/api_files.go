@@ -3599,17 +3599,36 @@ func isWailsOrigin(origin string) bool {
 	return u.Hostname() == "wails.localhost"
 }
 
-// CORS creates a CORS middleware with the given allowed origins.
+// CORS creates a CORS middleware with a fixed allowlist.
+//
+// Kept for callers that genuinely have a static list. Anything user-facing
+// should use CORSDynamic, so adding a domain does not need a redeploy.
 func CORS(allowedOrigins []string) gin.HandlerFunc {
-	originsMap := make(map[string]bool)
-	for _, origin := range allowedOrigins {
-		originsMap[origin] = true
-	}
+	return CORSDynamic(func() []string { return allowedOrigins })
+}
 
+// CORSDynamic resolves the allowlist per request.
+//
+// Per request rather than at construction, because the point of putting
+// origins in settings is that somebody adds a domain at 9pm and it works.
+// Capturing the slice at boot would mean the setting existed and did nothing
+// until the next deploy, which is worse than not offering it.
+//
+// The cost is a map build per request over a list with single digits of
+// entries, against a settings store that is already cached in memory. That is
+// not the thing to optimise.
+func CORSDynamic(resolve func() []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
 
-		if originsMap[origin] || isWailsOrigin(origin) {
+		allowed := false
+		for _, candidate := range resolve() {
+			if candidate == origin && origin != "" {
+				allowed = true
+				break
+			}
+		}
+		if allowed || isWailsOrigin(origin) {
 			c.Header("Access-Control-Allow-Origin", origin)
 		}
 
@@ -3619,7 +3638,12 @@ func CORS(allowedOrigins []string) gin.HandlerFunc {
 		// list, the browser's preflight strips the headers and the request
 		// either fails the AutoCSRF check or replays without an idempotency
 		// guarantee. Authorization stays for native bearer clients.
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, X-CSRF-Token, Idempotency-Key, X-Public-IP-Hint")
+		// X-API-Key is not optional here. A storefront calls the public
+		// endpoints with it, cross-origin, and a header missing from this list
+		// is stripped by the browser during preflight: the request fails in
+		// every browser and works perfectly under curl, which is the worst
+		// shape a bug can have.
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, X-API-Key, X-CSRF-Token, Idempotency-Key, X-Public-IP-Hint")
 		c.Header("Access-Control-Allow-Credentials", "true")
 		c.Header("Access-Control-Max-Age", "86400")
 
@@ -8017,6 +8041,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/MUKE-coder/gorm-studio/studio"
 	"github.com/MUKE-coder/pulse/pulse"
@@ -8041,6 +8066,27 @@ import (
 	"` + "{{MODULE}}" + `/internal/sync"
 	"` + "{{MODULE}}" + `/internal/webhooks"
 )
+
+// splitOrigins parses the cors.origins setting.
+//
+// Newlines or commas, because the admin renders a textarea and people type
+// both. Blank lines and stray whitespace are dropped rather than becoming an
+// origin nothing can ever match.
+func splitOrigins(raw string) []string {
+	fields := strings.FieldsFunc(raw, func(r rune) bool {
+		// No escapes here on purpose. unicode.IsSpace covers newline, carriage
+		// return, tab and space in one call, rather than four rune literals a
+		// shell heredoc can eat on the way in.
+		return r == ',' || unicode.IsSpace(r)
+	})
+	out := make([]string, 0, len(fields))
+	for _, f := range fields {
+		if f != "" {
+			out = append(out, f)
+		}
+	}
+	return out
+}
 
 // eventBusStatus summarises the domain event bus for /api/health.
 //
@@ -8107,7 +8153,15 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	r.Use(middleware.RequestID())
 	r.Use(middleware.Logger())
 	r.Use(gin.Recovery())
-	r.Use(middleware.CORS(cfg.CORSOrigins))
+	// Origins come from the cors.origins setting when it has a value, and from
+	// CORS_ORIGINS otherwise. Resolved per request, so adding a domain in the
+	// admin takes effect immediately rather than at the next deploy.
+	r.Use(middleware.CORSDynamic(func() []string {
+		if stored := settings.String(context.Background(), "cors.origins"); strings.TrimSpace(stored) != "" {
+			return splitOrigins(stored)
+		}
+		return cfg.CORSOrigins
+	}))
 	r.Use(middleware.Gzip())
 
 	// CSRF defence — only enforces on cookie-authenticated mutations.
@@ -8553,6 +8607,26 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// Resources land here through: grit generate resource <Name> --public
 	publicAPI := v1.Group("/public")
 	publicAPI.Use(middleware.RequireAPIKey(db))
+	// Response caching, and only here.
+	//
+	// The cache key is the URL, nothing else. On a public endpoint that is
+	// exactly right: every caller gets the same answer, so one cached copy
+	// serves all of them and a catalogue page stops hitting Postgres on every
+	// visit. On a protected endpoint the same key would serve one user's data
+	// to another, which is why this middleware is mounted on this group and
+	// nowhere else.
+	//
+	// The TTL is read once at boot rather than per request. A cache lifetime is
+	// not something anybody changes at 9pm, and re-reading it on the hot path
+	// of a cached response would cost more than it saves.
+	if svc.Cache != nil {
+		ttl := time.Duration(settings.Int(context.Background(), "cache.public_ttl_seconds")) * time.Second
+		if ttl <= 0 {
+			ttl = 60 * time.Second
+		}
+		publicAPI.Use(middleware.CacheResponse(svc.Cache, ttl))
+		log.Printf("Public endpoints cached for %s", ttl)
+	}
 	{
 		// grit:routes:public
 	}

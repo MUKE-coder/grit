@@ -329,6 +329,35 @@ func RegisterDefaults() {
 	})
 
 	Define(Setting{
+		Key:   "cors.origins",
+		Type:  TypeText,
+		Label: "Allowed browser origins",
+		Help: "One per line. Sites whose browser JavaScript may call this API. " +
+			"Add your storefront's domain here. Does not affect servers, mobile " +
+			"apps or curl, none of which enforce CORS.",
+		Group: "Security",
+		// Empty by default, because the value that ships is whatever
+		// CORS_ORIGINS says and the resolution order already prefers a stored
+		// value over the environment. Writing the env value in as a default
+		// here would mean a fresh install had a stored copy that then stopped
+		// tracking the environment.
+		Default: "",
+		Order:   1,
+	})
+
+	Define(Setting{
+		Key:   "cache.public_ttl_seconds",
+		Type:  TypeNumber,
+		Label: "Public response cache (seconds)",
+		Help: "How long a public endpoint's response is reused. Read at startup, " +
+			"so a change here needs a restart. 0 uses the 60 second default.",
+		Group:    "Performance",
+		Default:  "60",
+		Validate: Between(0, 86400),
+		Order:    1,
+	})
+
+	Define(Setting{
 		Key:     "notifications.email_enabled",
 		Type:    TypeBool,
 		Label:   "Send notification emails",
