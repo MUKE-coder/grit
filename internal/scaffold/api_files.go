@@ -8606,7 +8606,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	//
 	// Resources land here through: grit generate resource <Name> --public
 	publicAPI := v1.Group("/public")
-	publicAPI.Use(middleware.RequireAPIKey(db))
+	publicAPI.Use(middleware.RequireAPIKey(db, svc.Cache))
 	// Response caching, and only here.
 	//
 	// The cache key is the URL, nothing else. On a public endpoint that is

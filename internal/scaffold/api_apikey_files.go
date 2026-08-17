@@ -99,6 +99,16 @@ type APIKey struct {
 	// allowlist would reject every request they make.
 	Origins datatypes.JSONSlice[string] ` + "`" + `json:"origins"` + "`" + `
 
+	// RateLimit is requests per minute for this key alone. Zero means no
+	// per-key limit, and the global Sentinel IP limit still applies either way.
+	//
+	// Per key rather than per IP, because those answer different questions. An
+	// IP limit protects the server from a flood. A key limit protects you from
+	// one client: a partner integration polling every second, or a storefront
+	// with a render loop, throttled without touching the limit that applies to
+	// everybody else.
+	RateLimit int ` + "`" + `gorm:"default:0" json:"rate_limit"` + "`" + `
+
 	LastUsedAt *time.Time ` + "`" + `json:"last_used_at,omitempty"` + "`" + `
 	ExpiresAt  *time.Time ` + "`" + `gorm:"index" json:"expires_at,omitempty"` + "`" + `
 	RevokedAt  *time.Time ` + "`" + `gorm:"index" json:"revoked_at,omitempty"` + "`" + `
@@ -229,6 +239,7 @@ type KeyOptions struct {
 	Scopes    []string
 	Endpoints []string
 	Origins   []string
+	RateLimit int
 	ExpiresAt *time.Time
 }
 
@@ -280,6 +291,7 @@ func GenerateAPIKey(db *gorm.DB, opts KeyOptions) (*IssuedKey, error) {
 		Scopes:     scopes,
 		Endpoints:  opts.Endpoints,
 		Origins:    opts.Origins,
+		RateLimit:  opts.RateLimit,
 		ExpiresAt:  opts.ExpiresAt,
 	}
 	if kind == models.KindPublishable {
@@ -497,12 +509,15 @@ func apiAPIKeyMiddlewareGo() string {
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/authz"
+	"{{MODULE}}/internal/cache"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
 )
@@ -626,7 +641,7 @@ func APIKeyOrAuth(db *gorm.DB, jwtAuth gin.HandlerFunc) gin.HandlerFunc {
 // depended on c.Get("user_id") would then behave differently depending on
 // which credential turned up, which is the kind of difference nobody notices
 // until it is a data leak.
-func RequireAPIKey(db *gorm.DB) gin.HandlerFunc {
+func RequireAPIKey(db *gorm.DB, limiter *cache.Cache) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := extractAPIKey(c)
 		if token == "" {
@@ -668,12 +683,71 @@ func RequireAPIKey(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
+		if !allowKeyRequest(c, limiter, key) {
+			return
+		}
+
 		services.TouchAPIKey(db, key.ID)
 		c.Set("api_key_id", key.ID)
 		c.Set("api_key_kind", key.Kind)
 		c.Set("auth_via", "api_key")
 		c.Next()
 	}
+}
+
+// allowKeyRequest enforces a key's own rate limit. Reports whether the request
+// may continue; writes the 429 itself when it may not.
+//
+// A fixed window in Redis: one INCR per request against a key that carries the
+// current minute, with a two minute expiry so the bucket cleans itself up. A
+// sliding window would be fairer at the boundary and needs a sorted set per
+// key; a fixed window is one round trip and is the right trade for throttling
+// a misbehaving client rather than metering billing.
+//
+// No Redis means no per-key limiting, and that is deliberate rather than a
+// fallback to something in-process: an in-memory counter would be per-instance,
+// so the effective limit would silently multiply by however many API
+// containers happen to be running.
+func allowKeyRequest(c *gin.Context, limiter *cache.Cache, key *models.APIKey) bool {
+	if key.RateLimit <= 0 || limiter == nil {
+		return true
+	}
+
+	window := time.Now().UTC().Format("200601021504")
+	bucket := "apikey:rl:" + key.ID + ":" + window
+
+	ctx := c.Request.Context()
+	count, err := limiter.Client().Incr(ctx, bucket).Result()
+	if err != nil {
+		// Redis being unreachable must not close the API. Failing open on a
+		// throttle is the right direction: the global IP limit still applies,
+		// and refusing every request because a counter is down would turn a
+		// cache outage into an outage.
+		return true
+	}
+	if count == 1 {
+		limiter.Client().Expire(ctx, bucket, 2*time.Minute)
+	}
+
+	remaining := key.RateLimit - int(count)
+	if remaining < 0 {
+		remaining = 0
+	}
+	c.Header("X-RateLimit-Limit", strconv.Itoa(key.RateLimit))
+	c.Header("X-RateLimit-Remaining", strconv.Itoa(remaining))
+
+	if int(count) > key.RateLimit {
+		c.Header("Retry-After", "60")
+		c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+			"error": gin.H{
+				"code": "RATE_LIMITED",
+				"message": "This API key is limited to " +
+					strconv.Itoa(key.RateLimit) + " requests per minute",
+			},
+		})
+		return false
+	}
+	return true
 }
 
 func extractAPIKey(c *gin.Context) string {
@@ -741,6 +815,7 @@ type CreateAPIKeyRequest struct {
 	Scopes    []string ` + "`" + `json:"scopes"` + "`" + `
 	Endpoints []string ` + "`" + `json:"endpoints"` + "`" + `
 	Origins   []string ` + "`" + `json:"origins"` + "`" + `
+	RateLimit int      ` + "`" + `json:"rate_limit"` + "`" + `
 	ExpiresIn int      ` + "`" + `json:"expires_in_days"` + "`" + `
 }
 
@@ -770,6 +845,7 @@ func (h *APIKeyHandler) Create(c *gin.Context) {
 		Scopes:    req.Scopes,
 		Endpoints: req.Endpoints,
 		Origins:   req.Origins,
+		RateLimit: req.RateLimit,
 		ExpiresAt: expiresAt,
 	})
 	if err != nil {

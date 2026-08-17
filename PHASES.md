@@ -834,10 +834,13 @@ quietly ignores the filter tabs is worse than no kanban.
 - [x] Mount `CacheResponse` on public reads - v3.155.0. On the public group
       only, because the cache key is the URL and on a protected endpoint that
       would serve one user's data to another. TTL is a setting, read at boot.
-- [ ] Per-key rate limits, so one misbehaving client can be throttled without
-      touching the global Sentinel limit.
-- [ ] Admin UI for the new key fields: kind, endpoint and origin allowlists,
-      and a copy button that only appears for publishable keys.
+- [x] Per-key rate limits - v3.156.0. A requests-per-minute figure on the key,
+      enforced as a fixed window in Redis. No Redis means no per-key limit
+      rather than an in-process counter that would multiply by instance count.
+- [x] Admin UI for the key fields - v3.156.0. Kind as two explanatory cards,
+      endpoints and origins as textareas with the guidance beside the field, and
+      a publishable key shown in full with a copy button while a secret one
+      shows only its prefix.
 
 ### 7.5 SaaS (recs 14, 15, 27, 31)
 
