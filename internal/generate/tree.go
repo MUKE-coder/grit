@@ -337,6 +337,18 @@ func (s *%[1]sTreeService) Move(id, newParentID string, position int) error {
 		if oldPath == newPath {
 			return nil // reordered among its siblings, nothing below it moved
 		}
+		// A node with no path has no subtree to rewrite, and asking anyway is
+		// destructive rather than merely pointless: "" as a LIKE prefix matches
+		// every row in the table, so the depth increment below lands on all of
+		// them. That is not hypothetical. Dragging a category that predated
+		// --tree added one to the depth of every category in the database, and
+		// nothing looked wrong until somebody read the rows.
+		//
+		// A row without a path is a row that predates --tree. RebuildPaths is
+		// what fixes those, and this row now has a correct path either way.
+		if oldPath == "" {
+			return nil
+		}
 
 		// The subtree. Excludes the node itself, which is already written.
 		delta := newDepth - oldDepth
@@ -936,6 +948,50 @@ func Test%[1]sTreeToleratesNullParents(t *testing.T) {
 			names = append(names, r.Name)
 		}
 		t.Errorf("order = %%v, want [B A]", names)
+	}
+}
+
+// Moving a node that has no path must not touch any other row.
+//
+// The bug this pins down: "" as a LIKE prefix matches every row in the table, so
+// the subtree rewrite that follows a move landed on all of them and added one to
+// every depth in the database. A node with no path is one that predates --tree,
+// which makes this the normal case the first time somebody drags a row after
+// adding the flag to an existing table.
+func Test%[1]sTreeMoveOfAPathlessNodeLeavesOthersAlone(t *testing.T) {
+	db := %[1]sTreeTestDB(t)
+	svc := services.New%[1]sTreeService(db)
+
+	top := make%[1]s(t, db, "Top", "")
+	middle := make%[1]s(t, db, "Middle", top.ID)
+	bottom := make%[1]s(t, db, "Bottom", middle.ID)
+
+	// A row as AutoMigrate leaves it when --tree is added to an existing table.
+	stray := make%[1]s(t, db, "Stray", "")
+	db.Model(&models.%[1]s{}).Where("id = ?", stray.ID).
+		Updates(map[string]any{"path": "", "depth": 0})
+
+	if err := svc.Move(stray.ID, top.ID, 0); err != nil {
+		t.Fatalf("Move: %%v", err)
+	}
+
+	var movedStray, checkTop, checkMiddle, checkBottom models.%[1]s
+	db.Where("id = ?", stray.ID).First(&movedStray)
+	db.Where("id = ?", top.ID).First(&checkTop)
+	db.Where("id = ?", middle.ID).First(&checkMiddle)
+	db.Where("id = ?", bottom.ID).First(&checkBottom)
+
+	// The moved row is repaired.
+	if movedStray.Depth != 1 || movedStray.Path != top.Path+stray.ID+"/" {
+		t.Errorf("moved node: path=%%q depth=%%d", movedStray.Path, movedStray.Depth)
+	}
+	// And nothing else moved an inch.
+	if checkTop.Depth != 0 || checkMiddle.Depth != 1 || checkBottom.Depth != 2 {
+		t.Errorf("depths of untouched rows changed: %%d %%d %%d, want 0 1 2",
+			checkTop.Depth, checkMiddle.Depth, checkBottom.Depth)
+	}
+	if checkBottom.Path != checkMiddle.Path+bottom.ID+"/" {
+		t.Errorf("an untouched path was rewritten: %%q", checkBottom.Path)
 	}
 }
 
