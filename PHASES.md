@@ -826,10 +826,14 @@ quietly ignores the filter tabs is worse than no kanban.
       server-side and hashed. Per-key endpoint and origin allowlists. Two keys
       seeded into every new project, the publishable one written into
       `apps/web/.env.local`.
-- [ ] CORS origins in the settings registry, so a domain can be whitelisted
-      without a redeploy. Currently `CORS_ORIGINS` in env only.
-- [ ] Mount `CacheResponse` on public read endpoints. It exists in
-      `internal/middleware/cache.go` and is currently used by nothing.
+- [x] CORS origins in the settings registry - v3.155.0. Resolved per request,
+      so a domain added in the admin works immediately. `CORS_ORIGINS` still
+      applies when the setting is empty. Also added `X-API-Key` to the
+      preflight allowlist, without which every browser request to a public
+      endpoint failed while curl worked.
+- [x] Mount `CacheResponse` on public reads - v3.155.0. On the public group
+      only, because the cache key is the URL and on a protected endpoint that
+      would serve one user's data to another. TTL is a setting, read at boot.
 - [ ] Per-key rate limits, so one misbehaving client can be throttled without
       touching the global Sentinel limit.
 - [ ] Admin UI for the new key fields: kind, endpoint and origin allowlists,

@@ -29,6 +29,84 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.155.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.155.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 17, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>CORS from settings, and the preflight header that made every
+                  storefront request fail in a browser.</strong>
+                </p>
+                <p>
+                  The second one first, because it is the bug.{' '}
+                  <code>X-API-Key</code> was missing from{' '}
+                  <code>Access-Control-Allow-Headers</code>. A storefront calls the public
+                  endpoints with that header, cross-origin, and a header absent from that
+                  list is stripped by the browser during preflight. So every public
+                  request failed in every browser and worked perfectly under curl, which
+                  is the worst shape a bug can have. Found by sending a real OPTIONS
+                  request rather than by reading the middleware.
+                </p>
+                <p>
+                  CORS origins now come from a <code>cors.origins</code> setting, resolved
+                  per request:
+                </p>
+                <CodeBlock language="bash" code={`# before whitelisting
+curl -X OPTIONS .../api/v1/public/products -H "Origin: https://myshop.com"
+  (no Access-Control-Allow-Origin)
+
+# whitelist it in the admin, no restart
+curl -X PUT .../api/v1/settings -d '{"values":{"cors.origins":"https://myshop.com"}}'
+
+# immediately
+  Access-Control-Allow-Origin: https://myshop.com`} />
+                <p>
+                  Per request rather than captured at boot, because the point of putting
+                  origins in settings is that somebody adds a domain at 9pm and it works.
+                  A setting that existed and did nothing until the next deploy would be
+                  worse than not offering one. The cost is a comparison against a
+                  single-digit list, on a store already cached in memory.
+                </p>
+                <p>
+                  <code>CORS_ORIGINS</code> still applies when the setting is empty, which
+                  is the default, so nothing changes for an existing project until
+                  somebody types a domain into the admin.
+                </p>
+
+                <h3>Public responses are cached now</h3>
+                <p>
+                  <code>CacheResponse</code> has been in{' '}
+                  <code>internal/middleware/cache.go</code> for a long time and was mounted
+                  on nothing at all. It is now on the public group, and only there.
+                </p>
+                <p>
+                  Only there for a specific reason. The cache key is the URL and nothing
+                  else. On a public endpoint that is exactly right: every caller gets the
+                  same answer, so one copy serves all of them and a catalogue page stops
+                  hitting Postgres on every visit. On a protected endpoint the same key
+                  would serve one user&apos;s data to another.
+                </p>
+                <p>
+                  The TTL is a <code>cache.public_ttl_seconds</code> setting, default 60,
+                  read once at boot. Unlike the origins, a cache lifetime is not something
+                  anybody changes at 9pm, and re-reading it on the hot path of a cached
+                  response would cost more than it saves. The docs say it needs a restart
+                  rather than implying otherwise.
+                </p>
+                <p>
+                  Verified: two identical public requests return{' '}
+                  <code>X-Cache: MISS</code> then <code>X-Cache: HIT</code>, and a
+                  protected endpoint returns no <code>X-Cache</code> header at all.
+                </p>
+              </div>
+            </div>
+
             {/* v3.154.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
