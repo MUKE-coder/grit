@@ -173,6 +173,13 @@ func (g *Generator) Run() error {
 		return err
 	}
 
+	// A public handler asks paginate for a price window, which a paginate.go
+	// from before range filters cannot give it. Checked before the handler is
+	// written, so the project is never left with code its own helpers reject.
+	if err := g.ensurePaginateSupport(); err != nil {
+		return err
+	}
+
 	// A workflow field turns the status column into a state machine: a
 	// definition, a guarded transition service and a transition endpoint.
 	if err := g.writeWorkflow(names); err != nil {
