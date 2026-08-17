@@ -187,7 +187,13 @@ func (g *Generator) Run() error {
 	if err := g.writeGoImportHandler(names); err != nil {
 		return fmt.Errorf("writing Go import handler: %w", err)
 	}
+
 	fmt.Printf("  ✓ %sinternal/handlers/%s_import.go\n", apiPrefix, names.Snake)
+
+	// --public: a narrow read-only surface for callers with no user.
+	if err := g.writePublicResource(names); err != nil {
+		return err
+	}
 
 	// Shared types (monorepo only)
 	sharedDir := filepath.Join(g.Root, "packages", "shared")
@@ -309,6 +315,9 @@ func (g *Generator) Run() error {
 	// finding its handler in routes.go, and a transition route mounted first
 	// makes it skip every CRUD route for that resource.
 	if err := g.ensureWorkflowRoutes(names); err != nil {
+		return err
+	}
+	if err := g.ensurePublicRoutes(names); err != nil {
 		return err
 	}
 

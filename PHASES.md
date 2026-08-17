@@ -815,6 +815,26 @@ quietly ignores the filter tabs is worse than no kanban.
 - [ ] Map, as a plugin: a tile provider, an API key and attribution
       requirements are not core dependencies.
 
+### 7.4e Public API surface and API keys
+
+- [x] `--public` on `grit generate resource` - v3.153.0. A read-only list and
+      detail endpoint under `/api/v1/public/`, guarded by an API key, with an
+      allowlist response struct that holds back cost-like names, stock counts,
+      visibility flags and relations by default.
+- [x] Publishable and secret API keys - v3.153.0. `grit_pk_` is safe in a
+      browser and structurally cannot reach a protected route; `grit_sk_` is
+      server-side and hashed. Per-key endpoint and origin allowlists. Two keys
+      seeded into every new project, the publishable one written into
+      `apps/web/.env.local`.
+- [ ] CORS origins in the settings registry, so a domain can be whitelisted
+      without a redeploy. Currently `CORS_ORIGINS` in env only.
+- [ ] Mount `CacheResponse` on public read endpoints. It exists in
+      `internal/middleware/cache.go` and is currently used by nothing.
+- [ ] Per-key rate limits, so one misbehaving client can be throttled without
+      touching the global Sentinel limit.
+- [ ] Admin UI for the new key fields: kind, endpoint and origin allowlists,
+      and a copy button that only appears for publishable keys.
+
 ### 7.5 SaaS (recs 14, 15, 27, 31)
 
 Billing, entitlements, payment adapters, invitations, usage limits, automation

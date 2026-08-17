@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.152.0"
+var version = "3.153.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -766,6 +766,7 @@ func generateResourceCmd() *cobra.Command {
 	var seedCount int
 	var items string
 	var force bool
+	var publicRead bool
 
 	cmd := &cobra.Command{
 		Use:   "resource <Name>",
@@ -853,6 +854,8 @@ func generateResourceCmd() *cobra.Command {
 				}
 			}
 
+			gen.Definition.Public = publicRead
+
 			if err := gen.Run(); err != nil {
 				return err
 			}
@@ -874,6 +877,8 @@ func generateResourceCmd() *cobra.Command {
 	cmd.Flags().StringVar(&roles, "roles", "", "Restrict routes to specific roles (comma-separated, e.g., \"ADMIN,EDITOR\")")
 	cmd.Flags().BoolVar(&seed, "seed", false, "Also generate a seeder file with one example record")
 	cmd.Flags().BoolVar(&faker, "faker", false, "Also generate a seeder that fills many rows with gofakeit (implies --seed)")
+	cmd.Flags().BoolVar(&publicRead, "public", false,
+		"Also expose read-only list and detail endpoints under /api/v1/public/, guarded by an API key")
 	cmd.Flags().IntVar(&seedCount, "count", 10, "Number of rows for the faker seeder")
 	cmd.Flags().BoolVar(&force, "force", false, "Generate even when the name collides with a built-in model (overwrites it)")
 
