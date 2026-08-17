@@ -177,6 +177,39 @@ func (g *Generator) publicHandlerSource(names Names, included []Field) string {
 	}
 	sortable = append(sortable, strconvQuote("created_at")+": true")
 
+	// Filters, built from the published fields and nothing else. That is the
+	// whole rule, and it is what keeps the two lists honest as fields come and
+	// go: a column safe to show is safe to filter on, and a column held back
+	// from the response must not be reachable through a query string either.
+	//
+	// Text and richtext are left out because equality on a description is
+	// never what a caller means, and search already covers them.
+	var filterable, rangeFilterable []string
+	for _, f := range included {
+		col := strconvQuote(toSnakeCase(f.Name)) + ": true"
+		switch FieldType(f.Type) {
+		case FieldString, FieldSlug, FieldBool, FieldToggle, FieldSelect, FieldRadio:
+			filterable = append(filterable, col)
+		case FieldInt, FieldFloat:
+			// Both: ?year=2024 is an equality question, ?price_min=50 a window.
+			filterable = append(filterable, col)
+			rangeFilterable = append(rangeFilterable, col)
+		}
+	}
+
+	// Foreign keys, which the response holds back on purpose (publishing a
+	// relation publishes a whole related record nobody vetted) but which a
+	// storefront cannot do without: a category page is ?category_id=<id>.
+	//
+	// Filtering by an id is not the same as publishing the relation. The id
+	// identifies a row the endpoint was already willing to return, and it
+	// reveals nothing about the parent beyond the fact that it exists.
+	for _, f := range g.Definition.Fields {
+		if f.IsBelongsTo() {
+			filterable = append(filterable, strconvQuote(f.FKColumnName())+": true")
+		}
+	}
+
 	slugField := "id"
 	for _, f := range included {
 		if FieldType(f.Type) == FieldSlug {
@@ -186,6 +219,11 @@ func (g *Generator) publicHandlerSource(names Names, included []Field) string {
 	}
 
 	std, third, local := publicImports(g.Module, included)
+	// The related endpoint clamps ?limit, which needs strconv. Only emitted
+	// when that endpoint is, because an unused import is a build failure.
+	if hasParent(g.Definition) {
+		std += "\t\"strconv\"\n"
+	}
 
 	return `package handlers
 
@@ -223,10 +261,15 @@ func toPublic` + names.Pascal + `(m models.` + names.Pascal + `) public` + names
 }
 
 // ListPublic handles GET /api/v1/public/` + names.Plural + `.
+//
+// Supports ?search=, ?sort_by= and ?sort_order=, ?page= and ?page_size=,
+// equality filters on the published columns, and a ?x_min= / ?x_max= window on
+// the numeric ones.
 func (h *` + names.Pascal + `Handler) ListPublic(c *gin.Context) {
-	// Scoped before paginate sees it, and deliberately not in the Filterable
-	// list. A column listed there is settable from the query string, so
-	// ?archived=true would hand back rows somebody took down on purpose.
+	// Scoped before paginate sees it, and archived_at is deliberately absent
+	// from the filter lists below: a column listed there is settable from the
+	// query string, so ?archived=true would hand back rows somebody took down
+	// on purpose.
 	query := h.DB.Model(&models.` + names.Pascal + `{}).Where("archived_at IS NULL")
 
 	res, err := paginate.List[models.` + names.Pascal + `](
@@ -235,8 +278,11 @@ func (h *` + names.Pascal + `Handler) ListPublic(c *gin.Context) {
 		paginate.Config{
 			Searchable: []string{` + strings.Join(searchable, ", ") + `},
 			Sortable:   map[string]bool{` + strings.Join(sortable, ", ") + `},
-			// No Filterable. Every filter a public caller gets is one you chose
-			// to offer, rather than every column being queryable by default.
+			// Published columns only, plus foreign keys. Anything not listed
+			// is ignored rather than rejected, so an unknown query param is
+			// never an error.
+			Filterable:      map[string]bool{` + strings.Join(filterable, ", ") + `},
+			RangeFilterable: map[string]bool{` + strings.Join(rangeFilterable, ", ") + `},
 		},
 	)
 	if err != nil {
@@ -268,6 +314,99 @@ func (h *` + names.Pascal + `Handler) GetPublic(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": toPublic` + names.Pascal + `(item)})
+}
+` + relatedPublic(names, g.Definition, slugField)
+}
+
+// hasParent reports whether the resource has a belongs_to for the related
+// endpoint to key on.
+func hasParent(def *ResourceDefinition) bool {
+	for _, f := range def.Fields {
+		if f.IsBelongsTo() {
+			return true
+		}
+	}
+	return false
+}
+
+// relatedPublic emits the "similar items" endpoint, or nothing.
+//
+// It needs a parent to define similarity, so a resource with no belongs_to
+// gets no endpoint rather than one that returns an arbitrary set. Which
+// relation defines "similar" is the generator's choice and not the caller's:
+// that keeps it a single bounded query, and stops the endpoint becoming a way
+// to filter on a column nobody published.
+func relatedPublic(names Names, def *ResourceDefinition, slugField string) string {
+	var parent *Field
+	for i := range def.Fields {
+		if def.Fields[i].IsBelongsTo() {
+			parent = &def.Fields[i]
+			break
+		}
+	}
+	if parent == nil {
+		return ""
+	}
+
+	// Derived the same way the model does it, from the same base name, rather
+	// than by PascalCasing the column: toPascalCase("category_id") gives
+	// CategoryId, and the model field is CategoryID.
+	base := strings.TrimSuffix(parent.Name, "_id")
+	fk := toSnakeCase(base) + "_id"
+	fkField := toPascalCase(base) + "ID"
+
+	return `
+// RelatedPublic handles GET /api/v1/public/` + names.Plural + `/:key/related.
+//
+// The "similar items" strip on a detail page: others sharing this one's
+// ` + parent.Name + `, newest first, this one excluded.
+//
+// Capped at 24 however large ?limit= asks, because this endpoint exists to
+// fill a row of cards and an uncapped limit on a public route is a free way
+// to make the database do work.
+func (h *` + names.Pascal + `Handler) RelatedPublic(c *gin.Context) {
+	var item models.` + names.Pascal + `
+	err := h.DB.Where("` + slugField + ` = ? AND archived_at IS NULL", c.Param("key")).
+		First(&item).Error
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{
+			"code": "NOT_FOUND", "message": "` + names.Pascal + ` not found",
+		}})
+		return
+	}
+
+	limit := 8
+	if raw := c.Query("limit"); raw != "" {
+		if n, convErr := strconv.Atoi(raw); convErr == nil && n > 0 {
+			limit = n
+		}
+	}
+	if limit > 24 {
+		limit = 24
+	}
+
+	query := h.DB.Model(&models.` + names.Pascal + `{}).
+		Where("id <> ? AND archived_at IS NULL", item.ID)
+	// A row with no ` + parent.Name + ` has no siblings, and an empty strip on
+	// a detail page looks broken. Falling back to the newest rows is a worse
+	// recommendation than a real match and a better one than nothing.
+	if item.` + fkField + ` != "" {
+		query = query.Where("` + fk + ` = ?", item.` + fkField + `)
+	}
+
+	var rows []models.` + names.Pascal + `
+	if err := query.Order("created_at desc").Limit(limit).Find(&rows).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
+			"code": "INTERNAL_ERROR", "message": "Failed to fetch related ` + names.Plural + `",
+		}})
+		return
+	}
+
+	out := make([]public` + names.Pascal + `, 0, len(rows))
+	for _, m := range rows {
+		out = append(out, toPublic` + names.Pascal + `(m))
+	}
+	c.JSON(http.StatusOK, gin.H{"data": out})
 }
 `
 }
@@ -357,7 +496,26 @@ func (g *Generator) ensurePublicRoutes(names Names) error {
 		return nil
 	}
 	content := string(data)
+
+	relatedRoute := ""
+	if hasParent(g.Definition) {
+		relatedRoute = fmt.Sprintf("\t\tpublicAPI.GET(\"/%s/:key/related\", %sHandler.RelatedPublic)",
+			names.Plural, names.Camel)
+	}
+
+	// Already mounted. Not a no-op though: a project generated before the
+	// related endpoint existed has the first two routes and not the third, and
+	// returning here would leave a handler nothing ever calls.
 	if strings.Contains(content, names.Camel+"Handler.ListPublic") {
+		if relatedRoute == "" || strings.Contains(content, names.Camel+"Handler.RelatedPublic") {
+			return nil
+		}
+		if err := injectBefore(path, "// grit:routes:public", relatedRoute); err != nil {
+			fmt.Printf("  Could not mount the related route: %v\n", err)
+			return nil
+		}
+		manifest.Refresh(path)
+		fmt.Printf("  ✓ GET /api/v1/public/%s/:key/related (API key required)\n", names.Plural)
 		return nil
 	}
 
@@ -365,6 +523,9 @@ func (g *Generator) ensurePublicRoutes(names Names) error {
 		"\t\tpublicAPI.GET(\"/%s\", %sHandler.ListPublic)\n"+
 			"\t\tpublicAPI.GET(\"/%s/:key\", %sHandler.GetPublic)",
 		names.Plural, names.Camel, names.Plural, names.Camel)
+	if relatedRoute != "" {
+		route += "\n" + relatedRoute
+	}
 
 	if err := injectBefore(path, "// grit:routes:public", route); err != nil {
 		fmt.Printf("  Could not mount the public routes: %v\n", err)
@@ -377,5 +538,8 @@ func (g *Generator) ensurePublicRoutes(names Names) error {
 	manifest.Refresh(path)
 	fmt.Printf("  ✓ GET /api/v1/public/%s and /api/v1/public/%s/:key (API key required)\n",
 		names.Plural, names.Plural)
+	if relatedRoute != "" {
+		fmt.Printf("  ✓ GET /api/v1/public/%s/:key/related (similar items)\n", names.Plural)
+	}
 	return nil
 }

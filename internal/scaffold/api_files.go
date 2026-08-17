@@ -3876,6 +3876,12 @@ func Logger() gin.HandlerFunc {
 // Every generated resource's List endpoint uses paginate.List so that
 // page-clamping, sort whitelisting, and search-clause construction live
 // in exactly one place. Addresses issue #14.
+// APIPaginateGo is exported so grit generate resource can bring an older
+// project's paginate package forward. A generated public handler declares
+// RangeFilterable, which a paginate.Config that predates it does not have, and
+// the project then fails to compile on a field name.
+func APIPaginateGo() string { return apiPaginateGo() }
+
 func apiPaginateGo() string {
 	return `// Package paginate provides a generic list/sort/search/paginate helper
 // used by every resource's List endpoint. The goal: one source of truth
@@ -3991,8 +3997,24 @@ type Config struct {
 	// the caller wrote. Anything not listed here is ignored rather than
 	// rejected, so an unknown param is never an error.
 	Filterable map[string]bool
-	DefaultSort  string          // fallback sort column (defaults to "created_at")
-	DefaultOrder string          // fallback sort order (defaults to "desc")
+
+	// RangeFilterable whitelists numeric columns that accept a window from
+	// the query string: ?price_min=50&price_max=200 becomes
+	// WHERE price >= 50 AND price <= 200.
+	//
+	// Separate from Filterable because the two answer different questions and
+	// a column often wants one and not the other. Equality on a price is
+	// almost never what a caller means; a range on a status is meaningless.
+	// Same whitelist reasoning as above: the column name reaches the WHERE
+	// clause, and the bound is parameterised.
+	//
+	// Either bound may be omitted. A bound that does not parse as a number is
+	// ignored rather than rejected, so a hand-typed URL degrades to a wider
+	// result set instead of an error page.
+	RangeFilterable map[string]bool
+
+	DefaultSort  string // fallback sort column (defaults to "created_at")
+	DefaultOrder string // fallback sort order (defaults to "desc")
 
 	// CursorMode opts into cursor-based pagination (default is offset/page).
 	// When true, the response carries Meta.NextCursor + Meta.HasMore instead
@@ -4269,6 +4291,26 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 				}
 			}
 			query = query.Where(col+" = ?", bound)
+		}
+
+		// Range windows. Read from the same untrusted QueryFilters map, so a
+		// column has to be declared RangeFilterable before "price_min" can
+		// become a WHERE on price.
+		for col := range cfg.RangeFilterable {
+			for suffix, op := range map[string]string{"_min": ">=", "_max": "<="} {
+				raw, ok := p.QueryFilters[col+suffix]
+				if !ok || raw == "" {
+					continue
+				}
+				bound, err := strconv.ParseFloat(raw, 64)
+				if err != nil {
+					// A bound nobody can parse widens the window rather than
+					// failing the request. ?price_min=cheap is a typo, not an
+					// attack, and an error page is a worse answer than results.
+					continue
+				}
+				query = query.Where(col+" "+op+" ?", bound)
+			}
 		}
 	}
 

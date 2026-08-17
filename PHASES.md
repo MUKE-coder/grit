@@ -858,6 +858,29 @@ quietly ignores the filter tabs is worse than no kanban.
       - The health endpoint's table count was Postgres-only: a red SQL error on
         every poll under SQLite, silently zero under MySQL.
 
+### 7.4f Storefront surfaces on the public API
+
+- [x] Declared filters on a public list - v3.158.0. Filterable is built from the
+      published fields and nothing else, so a storefront can filter on anything
+      it can see and on nothing it cannot. Foreign keys included, because a
+      category page cannot exist without `?category_id=`, and filtering by an id
+      is not publishing the relation.
+- [x] `RangeFilterable` in paginate - v3.158.0. `?price_min=&price_max=` as a
+      separate whitelist from equality, since equality on a price is never the
+      question. An unparseable bound widens the window rather than erroring.
+- [x] Similar items - v3.158.0. `--public` on a resource with a `belongs_to`
+      mounts `/public/:key/related`: same parent, newest first, self excluded,
+      capped at 24. No parent means no endpoint rather than an arbitrary set.
+- [x] `ensurePaginateSupport` - v3.158.0. A handler declaring RangeFilterable
+      does not compile against an older paginate.go, so the generator brings it
+      forward before writing the handler, manifest-guarded.
+- [ ] Facet counts (`?facets=category,price`) so a filter sidebar can show how
+      many rows each option would return without N queries from the client.
+- [ ] Relation filtering by slug (`?category=cameras`) instead of by id, which
+      removes the round trip a category page currently makes. Needs the
+      generator to know the parent has a slug column, so it pairs with the
+      tree work below.
+
 ### 7.5 SaaS (recs 14, 15, 27, 31)
 
 Billing, entitlements, payment adapters, invitations, usage limits, automation

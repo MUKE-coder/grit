@@ -119,19 +119,125 @@ func TestPublicHandlerSource(t *testing.T) {
 		}
 	}
 
-	// The two properties that make this endpoint safe rather than just public.
-	// "Filterable:" with the colon, because the generated file explains in a
-	// comment why it has no Filterable, and matching the bare word finds that.
-	if strings.Contains(src, "Filterable:") {
-		t.Error("a public endpoint must not accept arbitrary column filters")
-	}
 	if !strings.Contains(src, "archived_at IS NULL") {
 		t.Error("a public list must exclude archived rows")
+	}
+	// archived_at is scoped in Go and must never become a query parameter, or
+	// ?archived_at= hands back rows somebody took down on purpose.
+	if strings.Contains(src, `"archived_at": true`) {
+		t.Error("archived_at must not be filterable from the query string")
 	}
 	// It is an allowlist struct, never the model, so a column added next month
 	// is private until somebody says otherwise.
 	if strings.Contains(src, "res.Data\n") && !strings.Contains(src, "toPublicProduct(m)") {
 		t.Error("the list must map through the allowlist, not return models")
+	}
+}
+
+// The filter lists are built from the published fields, which is the property
+// that keeps them honest: a storefront can filter on anything it can see, and
+// on nothing it cannot. A held-back column reachable through ?cost_price= would
+// leak by comparison what the allowlist refused to leak directly.
+func TestPublicFiltersOnlyPublishedColumns(t *testing.T) {
+	g := &Generator{
+		Module: "shopfront/apps/api",
+		Definition: &ResourceDefinition{
+			Name:   "Product",
+			Public: true,
+			Fields: []Field{
+				{Name: "name", Type: "string"},
+				{Name: "price", Type: "float"},
+				{Name: "cost_price", Type: "float"},
+				{Name: "stock", Type: "int"},
+				{Name: "active", Type: "bool"},
+				{Name: "category", Type: "belongs_to", RelatedModel: "Category"},
+			},
+		},
+	}
+	included, _ := PublicFields(g.Definition.Fields)
+	src := g.publicHandlerSource(g.Names(), included)
+
+	filters := src[strings.Index(src, "Filterable:"):]
+	filters = filters[:strings.Index(filters, "},\n\t\t},")+1]
+
+	for _, want := range []string{
+		`"name": true`,
+		`"price": true`,
+		// The foreign key, which the response holds back but a category page
+		// cannot do without.
+		`"category_id": true`,
+	} {
+		if !strings.Contains(filters, want) {
+			t.Errorf("expected %s in the filter lists, got:\n%s", want, filters)
+		}
+	}
+
+	// Held back from the response, so held back from the query string.
+	for _, forbidden := range []string{"cost_price", "stock", "active"} {
+		if strings.Contains(filters, `"`+forbidden+`": true`) {
+			t.Errorf("%q is not published, so it must not be filterable:\n%s", forbidden, filters)
+		}
+	}
+
+	// A window on the numbers, because equality on a price is never the
+	// question a storefront is asking.
+	if !strings.Contains(src, "RangeFilterable: map[string]bool{\"price\": true}") {
+		t.Errorf("price should accept a min/max window:\n%s", filters)
+	}
+}
+
+// The similar-items strip. Keyed on a relation the generator picks, so it
+// cannot be turned into a filter on something unpublished.
+func TestPublicRelatedEndpoint(t *testing.T) {
+	withParent := &Generator{
+		Module: "shopfront/apps/api",
+		Definition: &ResourceDefinition{
+			Name:   "Product",
+			Public: true,
+			Fields: []Field{
+				{Name: "name", Type: "string"},
+				{Name: "slug", Type: "slug"},
+				{Name: "category", Type: "belongs_to", RelatedModel: "Category"},
+			},
+		},
+	}
+	included, _ := PublicFields(withParent.Definition.Fields)
+	src := withParent.publicHandlerSource(withParent.Names(), included)
+
+	for _, want := range []string{
+		"func (h *ProductHandler) RelatedPublic(",
+		// The model spells it CategoryID, not CategoryId.
+		"item.CategoryID",
+		`Where("category_id = ?"`,
+		// Excludes itself, or the strip shows the page you are already on.
+		`Where("id <> ? AND archived_at IS NULL"`,
+		// Uncapped limits on a public route are a free way to make the
+		// database work.
+		"if limit > 24 {",
+		`"strconv"`,
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("related endpoint missing %q", want)
+		}
+	}
+
+	// No parent, no endpoint: similarity would be arbitrary. And then strconv
+	// must not be imported either, or the file does not build.
+	noParent := &Generator{
+		Module: "shopfront/apps/api",
+		Definition: &ResourceDefinition{
+			Name:   "Page",
+			Public: true,
+			Fields: []Field{{Name: "title", Type: "string"}, {Name: "slug", Type: "slug"}},
+		},
+	}
+	noParentIncluded, _ := PublicFields(noParent.Definition.Fields)
+	src = noParent.publicHandlerSource(noParent.Names(), noParentIncluded)
+	if strings.Contains(src, "RelatedPublic") {
+		t.Error("a resource with no parent must not get a related endpoint")
+	}
+	if strings.Contains(src, `"strconv"`) {
+		t.Error("strconv is only needed by the related endpoint, and an unused import will not build")
 	}
 }
 

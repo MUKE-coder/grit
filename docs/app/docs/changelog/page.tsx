@@ -29,6 +29,99 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.158.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.158.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 17, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>A public endpoint you can actually filter, and a similar-items
+                  strip.</strong>
+                </p>
+                <p>
+                  A category page needs three things a read-only list did not offer:
+                  products narrowed to one category, a price window, and a sort order.
+                  The first version of <code>--public</code> shipped with no filters at
+                  all, which was the safe default and not a usable one.
+                </p>
+
+                <h3>Filters, derived from the allowlist</h3>
+                <p>
+                  A generated public handler now declares its filterable columns, and the
+                  rule for which ones is the whole design: <strong>the published
+                  ones</strong>. A column safe to show is safe to filter on. A column held
+                  back from the response stays unreachable from the query string, because
+                  otherwise <code>?cost_price=12</code> leaks by comparison exactly what
+                  the allowlist refused to leak directly.
+                </p>
+                <CodeBlock language="bash" code={`# published, so filterable
+GET /public/products?name=Kettle
+GET /public/products?price_min=400&price_max=800
+GET /public/products?category_id=<id>&sort_by=price&sort_order=asc
+
+# held back, so ignored rather than applied
+GET /public/products?stock=0          -> all 24 rows
+GET /public/products?cost_price=0     -> all 24 rows
+GET /public/products?archived_at=x    -> all 24 rows`} />
+                <p>
+                  Foreign keys are the one addition: a category page cannot exist without{' '}
+                  <code>?category_id=</code>, and filtering by an id is not publishing the
+                  relation. The id identifies a row the endpoint was already willing to
+                  return.
+                </p>
+                <p>
+                  Text and richtext are left out, because equality on a description is
+                  never the question, and search already covers them.
+                </p>
+
+                <h3>Price windows</h3>
+                <p>
+                  <code>paginate.Config</code> gains <code>RangeFilterable</code>, a
+                  separate whitelist from <code>Filterable</code> because the two answer
+                  different questions: equality on a price is almost never what a caller
+                  means, and a range on a status is meaningless. Numeric published columns
+                  get both. A bound that does not parse widens the window instead of
+                  failing the request, since <code>?price_min=cheap</code> is a typo and an
+                  error page is a worse answer than results.
+                </p>
+
+                <h3>Similar items</h3>
+                <p>
+                  <code>--public</code> on a resource with a <code>belongs_to</code> also
+                  mounts <code>GET /public/products/:key/related</code>: others sharing
+                  this one&rsquo;s category, newest first, itself excluded, capped at 24
+                  however large <code>?limit=</code> asks. A resource with no parent gets
+                  no endpoint rather than one returning an arbitrary set.
+                </p>
+                <p>
+                  Which relation defines similarity is the generator&rsquo;s choice and not
+                  the caller&rsquo;s. That keeps it one bounded query and stops the
+                  endpoint becoming a back door to filtering on something unpublished.
+                </p>
+
+                <h3>And the upgrade path, which is where this nearly went wrong</h3>
+                <p>
+                  A handler declaring <code>RangeFilterable</code> does not compile against
+                  a <code>paginate.go</code> written before that field existed, so
+                  regenerating in an older project would have reported success and left a
+                  broken build. <code>grit generate resource --public</code> now brings
+                  paginate forward first, and only when the manifest proves nobody has
+                  edited it; a modified copy is left alone with a warning naming the one
+                  field to add.
+                </p>
+                <p>
+                  Same for the route: a project that already had the two public routes gets
+                  just the related one added, rather than the generator seeing
+                  &ldquo;already wired&rdquo; and leaving a handler nothing ever calls.
+                </p>
+              </div>
+            </div>
+
             {/* v3.157.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
