@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { CodeBlock } from '@/components/code-block'
@@ -7,6 +8,36 @@ import { CodeBlock } from '@/components/code-block'
 // Renders a blog post's markdown body. Fenced code blocks are routed through the
 // shared <CodeBlock> so they get Prism syntax highlighting + a copy button; the
 // rest (headings, paragraphs, lists, tables, inline code) is styled by prose-grit.
+
+// Heading anchors.
+//
+// react-markdown emits headings with no id, so a "[Step 4f](#step-4f-...)"
+// written inside a post scrolls nowhere. That is not hypothetical: the invoice
+// guide has carried a dead one since it was published. rehype-slug would do
+// this, and it is a dependency and a lockfile change for ten lines.
+//
+// Same rule as the docs sidebar's table of contents, so a heading gets the same
+// id whichever surface renders it.
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+}
+
+// A heading's text, flattened out of whatever react-markdown handed us. The
+// children of "## Step 4f: `Product` variants" are a string, an element and
+// another string, and only the strings carry the words.
+function headingText(node: React.ReactNode): string {
+  if (typeof node === 'string' || typeof node === 'number') return String(node)
+  if (Array.isArray(node)) return node.map(headingText).join('')
+  if (React.isValidElement(node)) {
+    return headingText((node.props as { children?: React.ReactNode }).children)
+  }
+  return ''
+}
 
 const LANG_ALIAS: Record<string, string> = {
   ts: 'typescript',
@@ -22,6 +53,10 @@ export function BlogContent({ content }: { content: string }) {
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
+          // Anchor targets, so a cross-reference inside a post lands on the
+          // section it names.
+          h2: ({ children }) => <h2 id={slugify(headingText(children))}>{children}</h2>,
+          h3: ({ children }) => <h3 id={slugify(headingText(children))}>{children}</h3>,
           // <CodeBlock> renders its own <pre>, so unwrap react-markdown's.
           pre: ({ children }) => <>{children}</>,
           code({ className, children, node }) {

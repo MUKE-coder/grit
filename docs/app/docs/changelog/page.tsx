@@ -29,6 +29,72 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.168.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.168.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong><code>grit generate field</code> and{' '}
+                  <code>grit generate seeder</code> could not find any resource whose
+                  name is more than one word.</strong>
+                </p>
+                <CodeBlock language="bash" code={`grit generate field OrderItem variant_id:string
+
+resource "OrderItem" not found (generate it first): no model found
+for "OrderItem": generate the resource first (looked in
+apps/api/internal/models and internal/models)`} />
+                <p>
+                  The model was sitting in that exact directory. Every generator in Grit
+                  writes a model to <code>models/&lt;snake&gt;.go</code>, so OrderItem
+                  lands in <code>order_item.go</code>, and these two commands looked it up
+                  as <code>&lt;lower&gt;.go</code> instead. For a one-word resource those
+                  are the same string, which is why Product worked and nothing looked
+                  wrong; for BlogPost, OrderItem, AccessReview or anything else with two
+                  words in it, the command reported a file that was plainly on disk as
+                  missing. Both now resolve the snake-cased name, and fall back to the
+                  flat one for a model somebody wrote by hand.
+                </p>
+
+                <h3>Variants in the storefront guide</h3>
+                <p>
+                  <a href="/blog/build-a-storefront-with-grit">Build a storefront with
+                  Grit</a> gains a step for them, between the category pages and the cart.
+                  It covers why the schema is five tables rather than a colour column and
+                  a size column, the three decisions inside it that each have an obvious
+                  worse alternative, and why a variant{"'"}s price is resolved rather than
+                  stored.
+                </p>
+                <p>
+                  Then the parts you write: a hook on the public payload, the two
+                  functions that match a selection to a variant (both of which have a
+                  wrong version that sells the wrong thing), a picker that greys out the
+                  colour you cannot have in the size you picked, and what changes in the
+                  cart and the checkout. The cart line stops being about a product and
+                  starts being about a combination, and keying it on the product id alone
+                  merges the black shirt into the navy one.
+                </p>
+                <p>
+                  The guide previously ended by suggesting you build all of that yourself,
+                  which was true when it was written and stopped being true in v3.167.0.
+                </p>
+
+                <h3>Blog headings are anchors now</h3>
+                <p>
+                  A cross-reference written inside a post scrolled nowhere, because the
+                  markdown renderer emitted headings with no id. The invoice guide had
+                  carried a dead one since it was published. Headings now take the same
+                  slug the docs table of contents uses, so the same heading gets the same
+                  id whichever surface renders it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.167.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
