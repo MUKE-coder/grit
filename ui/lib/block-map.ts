@@ -19,6 +19,8 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "application-ui-stats-metric-tiles-with-trend": dynamic(() => import('@/registry/application-ui/stats/metric-tiles-with-trend').then((m) => ({ default: m.default }))),
   "application-ui-tables-product-table-with-bulk-actions": dynamic(() => import('@/registry/application-ui/tables/product-table-with-bulk-actions').then((m) => ({ default: m.default }))),
   "application-ui-tables-sortable-table-with-selection": dynamic(() => import('@/registry/application-ui/tables/sortable-table-with-selection').then((m) => ({ default: m.default }))),
+  "ecommerce-checkout-cart-review-with-payment-picker": dynamic(() => import('@/registry/ecommerce/checkout/cart-review-with-payment-picker').then((m) => ({ default: m.default }))),
+  "ecommerce-checkout-checkout-stepper-with-payment-methods": dynamic(() => import('@/registry/ecommerce/checkout/checkout-stepper-with-payment-methods').then((m) => ({ default: m.default }))),
   "ecommerce-product-details-bundle-picker-with-sticky-buy-bar": dynamic(() => import('@/registry/ecommerce/product-details/bundle-picker-with-sticky-buy-bar').then((m) => ({ default: m.default }))),
   "ecommerce-product-details-digital-product-with-plans": dynamic(() => import('@/registry/ecommerce/product-details/digital-product-with-plans').then((m) => ({ default: m.default }))),
   "ecommerce-product-details-physical-product-with-variants": dynamic(() => import('@/registry/ecommerce/product-details/physical-product-with-variants').then((m) => ({ default: m.default }))),
@@ -29,6 +31,7 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "ecommerce-product-grids-grid-with-ratings": dynamic(() => import('@/registry/ecommerce/product-grids/grid-with-ratings').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-grid-with-wishlist": dynamic(() => import('@/registry/ecommerce/product-grids/grid-with-wishlist').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-listing-with-sort-and-view-toggle": dynamic(() => import('@/registry/ecommerce/product-grids/listing-with-sort-and-view-toggle').then((m) => ({ default: m.default }))),
+  "ecommerce-product-grids-marketplace-listing-with-facets": dynamic(() => import('@/registry/ecommerce/product-grids/marketplace-listing-with-facets').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-marketplace-with-filter-tabs": dynamic(() => import('@/registry/ecommerce/product-grids/marketplace-with-filter-tabs').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-scrolling-product-carousel": dynamic(() => import('@/registry/ecommerce/product-grids/scrolling-product-carousel').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-shop-with-cart-panel": dynamic(() => import('@/registry/ecommerce/product-grids/shop-with-cart-panel').then((m) => ({ default: m.default }))),
@@ -42,8 +45,11 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "ecommerce-store-categories-bento-category-grid": dynamic(() => import('@/registry/ecommerce/store-categories/bento-category-grid').then((m) => ({ default: m.default }))),
   "ecommerce-store-categories-circular-category-rail": dynamic(() => import('@/registry/ecommerce/store-categories/circular-category-rail').then((m) => ({ default: m.default }))),
   "ecommerce-store-categories-classifieds-directory-with-counts": dynamic(() => import('@/registry/ecommerce/store-categories/classifieds-directory-with-counts').then((m) => ({ default: m.default }))),
+  "ecommerce-store-categories-hot-category-grid": dynamic(() => import('@/registry/ecommerce/store-categories/hot-category-grid').then((m) => ({ default: m.default }))),
   "ecommerce-store-categories-icon-card-grid-with-counts": dynamic(() => import('@/registry/ecommerce/store-categories/icon-card-grid-with-counts').then((m) => ({ default: m.default }))),
+  "ecommerce-store-categories-merchandised-category-cards": dynamic(() => import('@/registry/ecommerce/store-categories/merchandised-category-cards').then((m) => ({ default: m.default }))),
   "ecommerce-store-categories-tile-grid-with-overlays": dynamic(() => import('@/registry/ecommerce/store-categories/tile-grid-with-overlays').then((m) => ({ default: m.default }))),
+  "ecommerce-store-categories-two-row-category-rail": dynamic(() => import('@/registry/ecommerce/store-categories/two-row-category-rail').then((m) => ({ default: m.default }))),
   "ecommerce-store-navigation-header-with-cart-drawer": dynamic(() => import('@/registry/ecommerce/store-navigation/header-with-cart-drawer').then((m) => ({ default: m.default }))),
   "ecommerce-store-navigation-sticky-header-with-drawer": dynamic(() => import('@/registry/ecommerce/store-navigation/sticky-header-with-drawer').then((m) => ({ default: m.default }))),
   "ecommerce-store-navigation-three-tier-storefront-header": dynamic(() => import('@/registry/ecommerce/store-navigation/three-tier-storefront-header').then((m) => ({ default: m.default }))),
@@ -142,5 +148,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 134 blocks at generation time. */
-export const BLOCK_COUNT: number = 134
+/** 140 blocks at generation time. */
+export const BLOCK_COUNT: number = 140
