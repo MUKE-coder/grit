@@ -951,14 +951,17 @@ the selection has to survive in the URL.
       from the variant. Checkout has to re-resolve it server-side, exactly as it
       already re-prices products.
 - [x] Admin: an option manager with swatches, and a variant matrix that
-      generates the combinations with per-row price, stock, sku and image, plus
-      bulk edit. v3.166.0 shipped the schema, the resolver and the endpoints;
+      generates the combinations with per-row price, stock, sku and image.
+      v3.166.0 shipped the schema, the resolver and the endpoints;
       v3.167.0 added the matrix editor on the record's detail page, the shared
       option library in the sidebar, the public payload and the seed data, and
       fixed three v3.166.0 bugs: the tables were never registered for
       AutoMigrate, changing a product's options left the stale matrix behind,
       and a second resource with variants panicked gin at boot on duplicate
       /options routes.
+- [ ] Bulk edit across the matrix: "set every XL to 40". Editing every row and
+      saving them in one request is there; setting a column in one action is
+      not, and a sixteen-row matrix is where somebody first wants it.
 
 ### 7.5 SaaS (recs 14, 15, 27, 31)
 
