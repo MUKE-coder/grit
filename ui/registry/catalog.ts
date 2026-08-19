@@ -1038,6 +1038,28 @@ export const CATALOG: Category[] = [
                 previewHeight: 900,
                 dependencies: ['lucide-react'],
               },
+              {
+                slug: 'hot-category-grid',
+                name: 'Hot category grid',
+                description:
+                  'Eighteen departments as cut-out product photos, three across on a phone and nine on a desktop. The images are contained rather than cropped, so a kettle and a bed keep their own shapes inside a uniform box.',
+                previewHeight: 620,
+              },
+              {
+                slug: 'two-row-category-rail',
+                name: 'Two row category rail',
+                description:
+                  'Circular departments in two rows that scroll as one. A single grid with grid-flow-col rather than two scrollers, which is what stops the rows drifting out of step the moment either is touched.',
+                previewHeight: 460,
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'merchandised-category-cards',
+                name: 'Merchandised category cards',
+                description:
+                  'The card wall under a retail hero: a heading, four labelled pictures and a link into the department. One tile renders large and four render as a quad, decided by the data rather than a prop that can contradict it.',
+                previewHeight: 780,
+              },
             ],
           },
           {
@@ -1185,6 +1207,38 @@ export const CATALOG: Category[] = [
                 description:
                   'The cart open beside the grid, and it works: quantities, line selection and totals all move. Every stepper button names its product instead of being one of six identical plus signs.',
                 previewHeight: 1100,
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'marketplace-listing-with-facets',
+                name: 'Marketplace listing with facets',
+                description:
+                  'A whole listing page: breadcrumb, price bands, searchable brands with counts, and cards carrying seller, fulfilment and a discount computed from the prices rather than passed in as text that can contradict them.',
+                previewHeight: 1400,
+                dependencies: ['lucide-react'],
+              },
+            ],
+          },
+          {
+            slug: 'checkout',
+            name: 'Checkout',
+            description:
+              'Baskets, payment pickers and the steps between a full cart and a placed order.',
+            blocks: [
+              {
+                slug: 'cart-review-with-payment-picker',
+                name: 'Cart review with payment picker',
+                description:
+                  'One page: basket, card, discount code and totals. Every figure is derived on render rather than accumulated in state, and store credit that does not cover the order says what is still owed instead of hiding it.',
+                previewHeight: 1200,
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'checkout-stepper-with-payment-methods',
+                name: 'Checkout stepper with payment methods',
+                description:
+                  'A four-step checkout on its payment step. The stepper is an ordered list whose steps state their own state in text, and the card fieldset appears only for the method that needs it.',
+                previewHeight: 1000,
                 dependencies: ['lucide-react'],
               },
             ],
