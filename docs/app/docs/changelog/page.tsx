@@ -29,6 +29,92 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.162.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.162.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>A tree could not be seeded or created on Postgres, and the
+                  tests said it could.</strong>
+                </p>
+                <CodeBlock language="text" code={`ERROR: insert or update on table "categories" violates foreign key
+constraint "fk_categories_children" (SQLSTATE 23503)`} />
+                <p>
+                  A root has no parent, and <code>--tree</code> wrote that as an empty
+                  string. GORM creates a real foreign key constraint for the self
+                  association, and no constraint accepts <code>&quot;&quot;</code> as a
+                  reference: it is neither a key nor NULL. Every seeded category failed,
+                  and so did creating one by hand in the admin.
+                </p>
+                <p>
+                  Products then failed too, for the same reason one step removed: with no
+                  categories to point at, the products seeder wrote{' '}
+                  <code>category_id = &quot;&quot;</code> and hit the identical error.
+                </p>
+
+                <h3>Why the tests passed</h3>
+                <p>
+                  The generated tree tests run on SQLite, which <strong>does not enforce
+                  foreign keys unless asked</strong>. Postgres always does. Nine tests
+                  covering paths, moves, cycles and rebuilds all passed against a database
+                  that was quietly accepting a reference to a row that did not exist.
+                </p>
+                <p>
+                  Those tests now open with:
+                </p>
+                <CodeBlock language="go" code={`db.Exec("PRAGMA foreign_keys = ON")`} />
+                <p>
+                  which caught two more writers of the same bad value the moment it was
+                  added: <code>Reorder</code> normalised NULL to <code>&quot;&quot;</code>{' '}
+                  on every root it touched, and <code>RebuildPaths</code> did the same.
+                  Both now normalise the other way.
+                </p>
+
+                <h3>What changed</h3>
+                <p>
+                  A self-referential foreign key is a nullable <code>*string</code>, and
+                  NULL is the one value that means &ldquo;no parent&rdquo; everywhere: in
+                  the model, the tree service, the move endpoint, the importer and the
+                  public payload. An empty string arriving from a form select is converted
+                  at the edge by a generated <code>optionalID</code> helper, because an
+                  empty select is exactly how an admin creates a root.
+                </p>
+                <p>
+                  The seeder changed in two ways. A self-reference is no longer given a
+                  parent at all, so seeded rows are roots you arrange by dragging, rather
+                  than a random hierarchy nobody asked for that can put a row above
+                  itself. And a required foreign key with no rows to point at now says so:
+                </p>
+                <CodeBlock language="text" code={`cannot seed product: no category rows exist yet. Seed Category first
+(generate it with --faker, or add rows in the admin), then run grit seed again`} />
+                <p>
+                  which is the sentence somebody needed, in place of SQLSTATE 23503.
+                </p>
+                <p>
+                  Verified end to end against a real Postgres database this time, not
+                  SQLite: 6 categories and 40 products seeded with no warnings, roots
+                  created from the admin form, a drag to root, a reorder, a rebuild, and
+                  zero rows left holding an empty parent.
+                </p>
+
+                <h3>Upgrading a project that already has a tree</h3>
+                <p>
+                  Run <code>grit update</code>, regenerate the resource, then{' '}
+                  <code>grit migrate</code> to make the column nullable. If you generated
+                  with <code>--public</code>, delete{' '}
+                  <code>internal/handlers/&lt;resource&gt;_public.go</code> first and let
+                  it be rewritten: that file is never overwritten on purpose, and it
+                  compares the parent column as a string, which no longer compiles.
+                </p>
+              </div>
+            </div>
+
             {/* v3.161.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -170,21 +170,26 @@ func (g *Generator) writeGoModel(names Names) error {
 			// A generated project with a self-reference did not compile at all
 			// before this.
 			//
-			// And the FK cannot be required. Every tree has a root, the root
-			// has no parent, and binding:"required" makes it impossible to
-			// create one.
+			// And the FK must be a NULLABLE pointer, not a plain string. GORM
+			// creates a real foreign key constraint for the association, and a
+			// root has no parent, so the column has to hold something the
+			// constraint accepts. SQL has exactly one such value and it is NULL.
 			//
-			// The FK stays a plain string, so absent is "" rather than NULL.
-			// That is what every other belongs_to in Grit already means by
-			// absent (the seeder leaves the column empty when there are no
-			// parents to pick from), and matching it keeps the handler, the
-			// importer and the admin form working unchanged. Roots are
-			// WHERE parent_id = '' rather than IS NULL.
+			// An earlier version used "" for absent, matching what other
+			// belongs_to fields do. It passed every test and failed on the
+			// first real project, because the tests ran on SQLite, which does
+			// not enforce foreign keys unless asked, and Postgres does:
+			//
+			//   ERROR: insert or update on table "categories" violates foreign
+			//   key constraint "fk_categories_children" (SQLSTATE 23503)
+			//
+			// The generated tests now switch foreign keys on so SQLite cannot
+			// hide this again.
 			selfRef := relModel == toPascalCase(g.Definition.Name)
 
 			// FK column
 			if selfRef {
-				structFields += fmt.Sprintf("\t%s string `gorm:\"size:36;index\" json:\"%s\"`\n", fkGoName, fkJson)
+				structFields += fmt.Sprintf("\t%s *string `gorm:\"size:36;index\" json:\"%s\"`\n", fkGoName, fkJson)
 			} else {
 				structFields += fmt.Sprintf("\t%s string `gorm:\"size:36;index\" json:\"%s\" binding:\"required\"`\n", fkGoName, fkJson)
 			}
@@ -561,15 +566,30 @@ func (g *Generator) writeGoHandler(names Names) error {
 			// parent. Required here and the API refuses to create the first row
 			// with a validation error about a field the caller correctly left
 			// empty, which is where this was first noticed.
-			if f.RelatedModelName() == toPascalCase(g.Definition.Name) {
+			selfRef := f.RelatedModelName() == toPascalCase(g.Definition.Name)
+			if selfRef {
 				createFields += fmt.Sprintf("\t\t%s string `json:\"%s\"`\n", fkGoName, fkJson)
 			} else {
 				createFields += fmt.Sprintf("\t\t%s string `json:\"%s\" binding:\"required\"`\n", fkGoName, fkJson)
 			}
-			createAssignments += fmt.Sprintf("\t\t%s: req.%s,\n", fkGoName, fkGoName)
+
+			if selfRef {
+				// The column is nullable, so "" from an empty form select has to
+				// become nil rather than reaching the database. An empty string
+				// is not a row any foreign key constraint can point at, and
+				// Postgres says so with SQLSTATE 23503 while SQLite quietly
+				// stores a dangling reference.
+				createAssignments += fmt.Sprintf("\t\t%s: optionalID(req.%s),\n", fkGoName, fkGoName)
+			} else {
+				createAssignments += fmt.Sprintf("\t\t%s: req.%s,\n", fkGoName, fkGoName)
+			}
 
 			updateFields += fmt.Sprintf("\t\t%s *string `json:\"%s\"`\n", fkGoName, fkJson)
-			updateMap += fmt.Sprintf("	if req.%s != nil {\n\t\tupdates[\"%s\"] = *req.%s\n\t}\n", fkGoName, fkJson, fkGoName)
+			if selfRef {
+				updateMap += fmt.Sprintf("	if req.%s != nil {\n\t\tupdates[\"%s\"] = optionalID(*req.%s)\n\t}\n", fkGoName, fkJson, fkGoName)
+			} else {
+				updateMap += fmt.Sprintf("	if req.%s != nil {\n\t\tupdates[\"%s\"] = *req.%s\n\t}\n", fkGoName, fkJson, fkGoName)
+			}
 			patchAllowed += fmt.Sprintf("\t\t\"%s\": true,\n", fkJson)
 			continue
 		}
@@ -914,7 +934,19 @@ func (g *Generator) writeGoHandler(names Names) error {
 			strings.TrimSuffix(headers, ", "), strings.TrimSuffix(aligns, ", "))
 	}
 
+	// optionalID is emitted only for a resource with a self-reference, because
+	// that is the only nullable foreign key the generator produces, and an
+	// unused function is a compile error.
+	optionalIDHelper := ""
+	for _, f := range g.Definition.Fields {
+		if f.IsBelongsTo() && f.RelatedModelName() == toPascalCase(g.Definition.Name) {
+			optionalIDHelper = OPTIONAL_ID_HELPER_SRC
+			break
+		}
+	}
+
 	r := strings.NewReplacer(
+		"{{OPTIONAL_ID_HELPER}}", optionalIDHelper,
 		"{{FK_FILTERS}}", fkFilters,
 		"{{UPPER_LABEL}}", strings.ToUpper(strings.Join(splitPascal(names.Pascal), " ")),
 		"{{PDF_SUBTITLE}}", "pdf.Value("+identExpr+")",
@@ -980,6 +1012,7 @@ import (
 type {{Pascal}}Handler struct {
 	DB *gorm.DB{{HANDLER_STORAGE_FIELD}}
 }
+{{OPTIONAL_ID_HELPER}}
 
 // List returns a paginated list of {{plural}}.
 //

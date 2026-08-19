@@ -59,6 +59,13 @@ func (g *Generator) seederContent(names Names, opts SeederOptions) string {
 
 	// Assemble imports — only what the record actually references.
 	var imports strings.Builder
+	// fmt is needed by the "no parent rows exist yet" guard, which only appears
+	// when the resource has a belongs_to. Keyed off the preamble rather than a
+	// separate flag, because that guard is the only thing in a seeder that uses
+	// it and an unused import will not compile.
+	if relPreamble != "" {
+		imports.WriteString("\t\"fmt\"\n")
+	}
 	imports.WriteString("\t\"log\"\n")
 	if needsStrings {
 		imports.WriteString("\t\"strings\"\n")
@@ -231,9 +238,32 @@ func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needs
 			rel := MakeNames(f.RelatedModelName())
 			fkGo := toPascalCase(f.FKColumnName())
 			idsVar := lowerCamel(rel.Lower) + "IDs"
+
+			// A self-reference is left unset, so every seeded row is a root.
+			//
+			// Picking a random parent out of the table currently being seeded
+			// builds a hierarchy nobody asked for, and can pick a row that ends
+			// up being its own ancestor. Roots are the honest default: arrange
+			// them by dragging in the admin, which is what the tree view is for.
+			if rel.Pascal == toPascalCase(g.Definition.Name) {
+				continue
+			}
+
 			if !seenRel[idsVar] {
 				pre.WriteString("\tvar " + idsVar + " []string\n")
 				pre.WriteString("\tdb.Model(&models." + rel.Pascal + "{}).Pluck(\"id\", &" + idsVar + ")\n")
+
+				// A required foreign key with no parent rows to point at cannot
+				// be seeded at all. Saying so beats writing "" and letting the
+				// database answer with SQLSTATE 23503, which is what used to
+				// happen and reads as a bug in Grit rather than a seed order
+				// the project has not set up yet.
+				pre.WriteString("\tif len(" + idsVar + ") == 0 {\n")
+				pre.WriteString("\t\treturn fmt.Errorf(\"cannot seed " + g.Names().Lower +
+					": no " + rel.Lower + " rows exist yet. Seed " + rel.Pascal +
+					" first (generate it with --faker, or add rows in the admin), then run grit seed again\")\n")
+				pre.WriteString("\t}\n")
+
 				seenRel[idsVar] = true
 			}
 			if mode == "faker" {
