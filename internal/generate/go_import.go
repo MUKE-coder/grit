@@ -101,6 +101,13 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 			fkGo := toPascalCase(base) + "ID"
 			lookup := g.resolveBelongsToLookup(relModel)
 
+			// A self-reference is a nullable column, so the importer assigns a
+			// pointer to it. Every other foreign key is a plain string.
+			assignExpr := "rel.ID"
+			if relModel == toPascalCase(g.Definition.Name) {
+				assignExpr = "&rel.ID"
+			}
+
 			if lookup.ByName {
 				// The related model has a usable string column — resolve by
 				// that natural key and create the record if it's missing.
@@ -112,7 +119,7 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 					"\t\t\t\trel = models.%s{%s: v}\n"+
 					"\t\t\t\th.DB.Create(&rel)\n"+
 					"\t\t\t}\n"+
-					"\t\t\titem.%s = rel.ID\n"+
+					"\t\t\titem.%s = "+assignExpr+"\n"+
 					"\t\t}\n", base, relModel, lookup.NaturalKeyJSON+" = ?", relModel, lookup.NaturalKeyGo, fkGo))
 			} else {
 				// No natural-key string column (e.g. belongs_to:User) —

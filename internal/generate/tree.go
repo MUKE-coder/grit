@@ -82,12 +82,18 @@ func treeModelMethods(names Names) string {
 // its own descendant. Without the check, that move detaches a whole subtree
 // from the tree and no query ever finds it again.
 func (m *%[1]s) resolveTreePath(tx *gorm.DB) error {
-	if m.ParentID == "" {
+	// Absent is NULL, never "". A foreign key constraint accepts NULL and
+	// rejects "", so an empty string here is an insert that fails on Postgres
+	// and silently dangles on a database with constraints switched off.
+	if m.ParentID != nil && *m.ParentID == "" {
+		m.ParentID = nil
+	}
+	if m.ParentID == nil {
 		m.Path = "/" + m.ID + "/"
 		m.Depth = 0
 		return nil
 	}
-	if m.ParentID == m.ID {
+	if *m.ParentID == m.ID {
 		return fmt.Errorf("a %[2]s cannot be its own parent")
 	}
 
@@ -96,10 +102,10 @@ func (m *%[1]s) resolveTreePath(tx *gorm.DB) error {
 	// being built, which would silently scope it to the row being written.
 	err := tx.Session(&gorm.Session{NewDB: true}).
 		Select("id", "path", "depth").
-		Where("id = ?", m.ParentID).
+		Where("id = ?", *m.ParentID).
 		First(&parent).Error
 	if err != nil {
-		return fmt.Errorf("parent %%s does not exist: %%w", m.ParentID, err)
+		return fmt.Errorf("parent %%s does not exist: %%w", *m.ParentID, err)
 	}
 	if m.ID != "" && strings.Contains(parent.Path, "/"+m.ID+"/") {
 		return fmt.Errorf("cannot move a %[2]s under its own descendant")
@@ -111,7 +117,7 @@ func (m *%[1]s) resolveTreePath(tx *gorm.DB) error {
 }
 
 // IsRoot reports whether this node sits at the top of the tree.
-func (m *%[1]s) IsRoot() bool { return m.ParentID == "" }
+func (m *%[1]s) IsRoot() bool { return m.ParentID == nil || *m.ParentID == "" }
 
 // AncestorIDs returns the ids above this node, outermost first, read straight
 // from the path. No query: that is the point of storing it.
@@ -154,6 +160,17 @@ func New%[1]sTreeService(db *gorm.DB) *%[1]sTreeService {
 	return &%[1]sTreeService{DB: db}
 }
 
+// parentOf looks a row's parent up in the node map, treating NULL and "" alike
+// as "no parent". Both appear in real data: NULL from a root written today, ""
+// from a row written before the column was nullable.
+func parentOf(byID map[string]*%[1]sNode, parentID *string) (*%[1]sNode, bool) {
+	if parentID == nil || *parentID == "" {
+		return nil, false
+	}
+	node, ok := byID[*parentID]
+	return node, ok
+}
+
 // %[1]sNode is a %[3]s with its children attached, for rendering a tree.
 type %[1]sNode struct {
 	models.%[1]s
@@ -185,7 +202,7 @@ func (s *%[1]sTreeService) Tree() ([]*%[1]sNode, error) {
 	// is worse than showing it slightly out of place.
 	for i := range rows {
 		node := byID[rows[i].ID]
-		if parent, ok := byID[rows[i].ParentID]; ok && rows[i].ParentID != "" {
+		if parent, ok := parentOf(byID, rows[i].ParentID); ok {
 			parent.Children = append(parent.Children, node)
 			continue
 		}
@@ -324,8 +341,13 @@ func (s *%[1]sTreeService) Move(id, newParentID string, position int) error {
 			newDepth = parent.Depth + 1
 		}
 
+		// nil, not "": the FK constraint accepts one and rejects the other.
+		var parentValue any
+		if newParentID != "" {
+			parentValue = newParentID
+		}
 		err := tx.Model(&models.%[1]s{}).Where("id = ?", id).Updates(map[string]any{
-			"parent_id": newParentID,
+			"parent_id": parentValue,
 			"path":      newPath,
 			"depth":     newDepth,
 			"position":  position,
@@ -381,9 +403,15 @@ func (s *%[1]sTreeService) Reorder(parentID string, orderedIDs []string) error {
 			}
 			// parent_id is normalised on the way past, so the next reorder of
 			// this row has one thing to compare rather than two.
+			//
+			// Normalised to NULL, not to "". A foreign key constraint accepts
+			// NULL for "no parent" and rejects an empty string, so normalising
+			// the other way turned a reorder of root rows into
+			// "FOREIGN KEY constraint failed" on every database that enforces
+			// them.
 			updates := map[string]any{"position": position}
 			if parentID == "" {
-				updates["parent_id"] = ""
+				updates["parent_id"] = nil
 			}
 			if err := q.Updates(updates).Error; err != nil {
 				return fmt.Errorf("reordering %%s: %%w", id, err)
@@ -430,15 +458,15 @@ func (s *%[1]sTreeService) rebuildPathsInGo(tx *gorm.DB) error {
 			if _, done := paths[r.ID]; done {
 				continue
 			}
-			if r.ParentID == "" {
+			if r.ParentID == nil || *r.ParentID == "" {
 				paths[r.ID] = "/" + r.ID + "/"
 				depths[r.ID] = 0
 				progress = true
 				continue
 			}
-			if parentPath, ok := paths[r.ParentID]; ok {
+			if parentPath, ok := paths[*r.ParentID]; ok {
 				paths[r.ID] = parentPath + r.ID + "/"
-				depths[r.ID] = depths[r.ParentID] + 1
+				depths[r.ID] = depths[*r.ParentID] + 1
 				progress = true
 			}
 		}
@@ -449,10 +477,12 @@ func (s *%[1]sTreeService) rebuildPathsInGo(tx *gorm.DB) error {
 
 	for id, path := range paths {
 		fields := map[string]any{"path": path, "depth": depths[id]}
-		// Normalise NULL to '' while we are here, so nothing downstream has to
-		// keep asking about both. A row migrated into a tree arrives with NULL.
+		// Normalise "" to NULL while we are here, so nothing downstream has to
+		// keep asking about both. A row migrated into a tree arrives with NULL
+		// already; a row written before the column was nullable holds "", which
+		// no foreign key constraint accepts.
 		if depths[id] == 0 {
-			fields["parent_id"] = ""
+			fields["parent_id"] = nil
 		}
 		if err := tx.Model(&models.%[1]s{}).Where("id = ?", id).Updates(fields).Error; err != nil {
 			return err
@@ -734,15 +764,28 @@ func %[1]sTreeTestDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("open: %%v", err)
 	}
+	// SQLite does not enforce foreign keys unless asked, and Postgres always
+	// does. Without this line these tests pass while the same code fails on the
+	// first real project, which is exactly what happened: a root written with
+	// parent_id = "" satisfied SQLite and violated the FK constraint on
+	// Postgres.
+	db.Exec("PRAGMA foreign_keys = ON")
 	if err := db.AutoMigrate(&models.%[1]s{}); err != nil {
 		t.Fatalf("migrate: %%v", err)
 	}
 	return db
 }
 
+// make%[1]s creates a row, taking the parent as a plain string for readability
+// at the call site. An empty string means a root, and reaches the database as
+// NULL: the column is nullable because a foreign key constraint accepts NULL
+// for "no parent" and rejects "".
 func make%[1]s(t *testing.T, db *gorm.DB, name, parentID string) models.%[1]s {
 	t.Helper()
-	row := models.%[1]s{Name: name, ParentID: parentID}
+	row := models.%[1]s{Name: name}
+	if parentID != "" {
+		row.ParentID = &parentID
+	}
 	if err := db.Create(&row).Error; err != nil {
 		t.Fatalf("create %%s: %%v", name, err)
 	}
@@ -777,7 +820,8 @@ func Test%[1]sTreePathsAndDepths(t *testing.T) {
 
 func Test%[1]sTreeRefusesAMissingParent(t *testing.T) {
 	db := %[1]sTreeTestDB(t)
-	row := models.%[1]s{Name: "Orphan", ParentID: "does-not-exist"}
+	missing := "does-not-exist"
+	row := models.%[1]s{Name: "Orphan", ParentID: &missing}
 	if err := db.Create(&row).Error; err == nil {
 		t.Error("a child of a parent that does not exist must be refused")
 	}
@@ -861,8 +905,9 @@ func Test%[1]sTreeMoveCarriesTheSubtree(t *testing.T) {
 	db.Where("id = ?", bottom.ID).First(&movedBottom)
 
 	wantMiddle := "/" + other.ID + "/" + middle.ID + "/"
-	if movedMiddle.Path != wantMiddle || movedMiddle.Depth != 1 || movedMiddle.ParentID != other.ID {
-		t.Errorf("moved node: path=%%q depth=%%d parent=%%q", movedMiddle.Path, movedMiddle.Depth, movedMiddle.ParentID)
+	if movedMiddle.Path != wantMiddle || movedMiddle.Depth != 1 ||
+		movedMiddle.ParentID == nil || *movedMiddle.ParentID != other.ID {
+		t.Errorf("moved node: path=%%q depth=%%d root=%%v", movedMiddle.Path, movedMiddle.Depth, movedMiddle.IsRoot())
 	}
 	if want := wantMiddle + bottom.ID + "/"; movedBottom.Path != want || movedBottom.Depth != 2 {
 		t.Errorf("descendant: path=%%q depth=%%d, want %%q depth 2", movedBottom.Path, movedBottom.Depth, want)
@@ -888,8 +933,8 @@ func Test%[1]sTreeMoveToRoot(t *testing.T) {
 	}
 	var moved models.%[1]s
 	db.Where("id = ?", child.ID).First(&moved)
-	if moved.Path != "/"+child.ID+"/" || moved.Depth != 0 || moved.ParentID != "" {
-		t.Errorf("promoted node: path=%%q depth=%%d parent=%%q", moved.Path, moved.Depth, moved.ParentID)
+	if moved.Path != "/"+child.ID+"/" || moved.Depth != 0 || !moved.IsRoot() {
+		t.Errorf("promoted node: path=%%q depth=%%d root=%%v", moved.Path, moved.Depth, moved.IsRoot())
 	}
 }
 
@@ -912,8 +957,8 @@ func Test%[1]sTreeRefusesACycle(t *testing.T) {
 
 	var check models.%[1]s
 	db.Where("id = ?", top.ID).First(&check)
-	if check.ParentID != "" || check.Depth != 0 {
-		t.Errorf("a refused move must leave the row untouched: parent=%%q depth=%%d", check.ParentID, check.Depth)
+	if !check.IsRoot() || check.Depth != 0 {
+		t.Errorf("a refused move must leave the row untouched: root=%%v depth=%%d", check.IsRoot(), check.Depth)
 	}
 }
 
@@ -969,7 +1014,7 @@ func Test%[1]sTreeMoveOfAPathlessNodeLeavesOthersAlone(t *testing.T) {
 	// A row as AutoMigrate leaves it when --tree is added to an existing table.
 	stray := make%[1]s(t, db, "Stray", "")
 	db.Model(&models.%[1]s{}).Where("id = ?", stray.ID).
-		Updates(map[string]any{"path": "", "depth": 0})
+		Updates(map[string]any{"path": "", "depth": 0, "parent_id": nil})
 
 	if err := svc.Move(stray.ID, top.ID, 0); err != nil {
 		t.Fatalf("Move: %%v", err)

@@ -178,7 +178,7 @@ func (g *Generator) publicHandlerSource(names Names, included []Field) string {
 			// of them.
 			"\tDescendantIDs []string `json:\"descendant_ids,omitempty\"`")
 		assignments = append(assignments,
-			"\t\tParentID: m.ParentID,",
+			"\t\tParentID: derefID(m.ParentID),",
 			"\t\tDepth: m.Depth,")
 	}
 
@@ -386,6 +386,18 @@ func relatedPublic(names Names, def *ResourceDefinition, slugField string) strin
 	fk := toSnakeCase(base) + "_id"
 	fkField := toPascalCase(base) + "ID"
 
+	// A self-referential parent is a nullable *string, every other one is a
+	// plain string, so the emitted comparison differs. A tree resource with a
+	// related endpoint would otherwise not compile:
+	//   invalid operation: item.ParentID != "" (mismatched types *string and untyped string)
+	selfRef := parent.RelatedModelName() == toPascalCase(def.Name)
+	parentSet := "item." + fkField + ` != ""`
+	parentValue := "item." + fkField
+	if selfRef {
+		parentSet = "item." + fkField + " != nil && *item." + fkField + ` != ""`
+		parentValue = "*item." + fkField
+	}
+
 	return `
 // RelatedPublic handles GET /api/v1/public/` + names.Plural + `/:key/related.
 //
@@ -421,8 +433,8 @@ func (h *` + names.Pascal + `Handler) RelatedPublic(c *gin.Context) {
 	// A row with no ` + parent.Name + ` has no siblings, and an empty strip on
 	// a detail page looks broken. Falling back to the newest rows is a worse
 	// recommendation than a real match and a better one than nothing.
-	if item.` + fkField + ` != "" {
-		query = query.Where("` + fk + ` = ?", item.` + fkField + `)
+	if ` + parentSet + ` {
+		query = query.Where("` + fk + ` = ?", ` + parentValue + `)
 	}
 
 	var rows []models.` + names.Pascal + `
@@ -636,6 +648,30 @@ func treePublic(names Names, def *ResourceDefinition) string {
 		return ""
 	}
 	return `
+// derefID renders a nullable foreign key for the wire.
+//
+// The parent column is a *string because a root has no parent and SQL spells
+// absent as NULL, which a foreign key constraint accepts and an empty string
+// does not. JSON has the same choice to make, and "" reads better to a client
+// than null for an id it is only going to compare.
+func derefID(id *string) string {
+	if id == nil {
+		return ""
+	}
+	return *id
+}
+
+// publicParentOf resolves a row's parent in the node map, treating NULL and ""
+// alike as no parent. Both turn up in real data: NULL from a root written now,
+// "" from a row written before the column was nullable.
+func publicParentOf(byID map[string]*public` + names.Pascal + `Node, parentID *string) (*public` + names.Pascal + `Node, bool) {
+	if parentID == nil || *parentID == "" {
+		return nil, false
+	}
+	node, ok := byID[*parentID]
+	return node, ok
+}
+
 // public` + names.Pascal + `Node is a published node with its children attached.
 //
 // The embedded struct flattens in JSON, so a node reads as its own fields plus
@@ -672,7 +708,7 @@ func (h *` + names.Pascal + `Handler) TreePublic(c *gin.Context) {
 		// A node whose parent is archived is promoted to a root rather than
 		// dropped: a menu missing a whole branch is worse than one with a branch
 		// in the wrong place.
-		if parent, ok := byID[rows[i].ParentID]; ok && rows[i].ParentID != "" {
+		if parent, ok := publicParentOf(byID, rows[i].ParentID); ok {
 			parent.Children = append(parent.Children, node)
 			continue
 		}
