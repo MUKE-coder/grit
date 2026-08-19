@@ -57,9 +57,20 @@ func variantTestDB(t *testing.T) *gorm.DB {
 func buildShirt(t *testing.T, db *gorm.DB) (` + snake + `ID string, colours, sizes models.Option) {
 	t.Helper()
 
+	// Enforcement is off for this one insert, and on for everything after it.
+	//
+	// The resource under test may have required parents of its own — a
+	// category, an owner, a tenant — that have nothing to do with variants.
+	// Satisfying those would mean this generated file knowing the shape of a
+	// model it did not generate, and getting it wrong would fail the suite for
+	// a reason that is not about pricing. What these tests are actually about,
+	// the option and variant graph, is written with the constraints on.
+	db.Exec("PRAGMA foreign_keys = OFF")
 	` + snake + ` := models.` + pascal + `{Name: "Cotton shirt", Price: 40}
-	if err := db.Create(&` + snake + `).Error; err != nil {
-		t.Fatalf("create ` + lower + `: %v", err)
+	createErr := db.Create(&` + snake + `).Error
+	db.Exec("PRAGMA foreign_keys = ON")
+	if createErr != nil {
+		t.Fatalf("create ` + lower + `: %v", createErr)
 	}
 
 	colours = models.Option{Name: "Colour", Kind: "swatch", AffectsPrice: false, Position: 0}

@@ -29,6 +29,117 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.167.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.167.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Variants shipped with five tables, a price resolver, and no way
+                  to touch any of it.</strong> v3.166.0 installed the schema and the
+                  endpoints; there was no screen in the admin, nothing for a storefront to
+                  read, and no seed data, so the only way to see a variant was to write
+                  the SQL yourself. This release finishes the feature.
+                </p>
+
+                <h3>The matrix, on the product page</h3>
+                <p>
+                  <code>grit add variants</code> now writes an editor into the admin and
+                  hangs it off the record{"'"}s own detail page, because variants are a fact
+                  about one product and that is where a shop owner looks for them. Pick
+                  which axes the product offers, generate the combinations, then edit SKU,
+                  stock, price and active state inline. Edits collect into one Save.
+                </p>
+                <p>
+                  The price column is the part worth reading twice. A variant{"'"}s price is
+                  resolved and not stored, so the table shows what each combination costs
+                  and the override box{"'"}s placeholder shows what it would cost with no
+                  override. Clearing that box is never a guess about what the price becomes:
+                  the number is already on screen. Typing a value back to what it already
+                  was is deliberately not a change, so a save never bumps the version of
+                  every row somebody clicked into.
+                </p>
+                <p>
+                  The option library is shop-wide, so it is a sidebar entry rather than a
+                  panel on a product: Colour is Colour whether it is on a shirt or a phone
+                  case. Options can now be deleted, which they could not before, and the
+                  server refuses while anything is built on them.
+                </p>
+
+                <h3>A payload a storefront can render</h3>
+                <CodeBlock language="bash" code={`GET /api/v1/public/products/:key/variants
+
+{ "options": [ { "name": "Colour", "kind": "swatch", "values": [...] } ],
+  "variants": [ { "sku": "...", "price": 356.98, "in_stock": true,
+                  "option_value_ids": [...] } ],
+  "price_range": { "low": 354.48, "high": 356.98, "single": false } }`} />
+                <p>
+                  One endpoint, because a picker needs one payload: the options to draw,
+                  the combinations to match a selection against, and the range a listing
+                  card needs for {'"'}from 49{'"'}. It follows the same rules as the rest of the
+                  public surface. Stock goes out as a boolean and never as a count,
+                  inactive combinations do not go out at all, and a per-value price delta
+                  is zeroed unless its option declares that the axis affects price, so a
+                  picker can never label a swatch {'"'}+ 20{'"'} and then resolve to the base
+                  price.
+                </p>
+                <p>
+                  A product with no variants gets empty lists and a range of its own price,
+                  which is what lets a storefront render one component whether or not
+                  variants were ever set up.
+                </p>
+
+                <h3>Seed data, so there is something to look at</h3>
+                <p>
+                  <code>grit seed</code> now writes a Colour and Size library and a real
+                  matrix across the first few products, deterministically: Size affects
+                  price and XL costs 2.50 more, Colour does not, and one combination in
+                  seven is out of stock. That last one is on purpose. The disabled swatch
+                  is most of the work on a product page and the hardest state to remember
+                  to build, so the seed puts it on screen unasked.
+                </p>
+
+                <h3>Three bugs from v3.166.0</h3>
+                <p>
+                  <strong>The tables were never migrated.</strong> The model registration
+                  looked for its marker in routes.go, where that marker does not live, so
+                  Option, OptionValue and both join tables were never added to AutoMigrate.
+                  Every variant request then failed on a relation that does not exist,
+                  which reads as a bug in Grit rather than as a migration nobody ran.
+                </p>
+                <p>
+                  <strong>Changing a product{"'"}s options left the old matrix behind.</strong>{' '}
+                  The handler said the existing combinations went with it and then deleted
+                  only the links, leaving variants describing choices the product no longer
+                  offered. It now clears them for real, tells you how many went, and does
+                  nothing at all when the option set has not actually changed. The soft
+                  deletes are unscoped, too: a soft-deleted link still occupies the unique
+                  index, so re-adding the same option used to fail on a row nobody could
+                  see.
+                </p>
+                <p>
+                  <strong>A second resource with variants took the API down.</strong>{' '}
+                  Running the command twice mounted the shared /options routes twice, and
+                  gin panics at boot on two handlers for one method and path. The shared
+                  half is now mounted once, and the per-variant update moved from
+                  /variants/:id to /product-variants/:id so two resources cannot collide.
+                  Existing projects are migrated to the new layout by re-running the
+                  command.
+                </p>
+                <p>
+                  Verified end to end on a fresh project: scaffold, generate a public
+                  Product, add variants, migrate, seed, then drive the admin in a browser
+                  through choosing options, generating a matrix, editing a row, setting an
+                  override and clearing it back to the resolved price.
+                </p>
+              </div>
+            </div>
+
             {/* v3.166.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

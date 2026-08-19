@@ -928,20 +928,20 @@ Options and values as their own tables, because the requirement is not just
 change the price and others do not (laptop memory does, colour does not), and
 the selection has to survive in the URL.
 
-- [ ] `Option` (name, kind: select/swatch/size, `affects_price`, position) and
+- [x] `Option` (name, kind: select/swatch/size, `affects_price`, position) and
       `OptionValue` (label, swatch colour, image, `price_delta`, position),
       shared across resources because Colour is Colour.
-- [ ] `<Resource>Variant` (sku, `price_override`, stock, images, position) joined
+- [x] `<Resource>Variant` (sku, `price_override`, stock, images, position) joined
       to its option values through `variant_option_values`, plus
       `<resource>_options` for which options a given product uses.
-- [ ] Price resolution: `price_override` when set, otherwise the product price
+- [x] Price resolution: `price_override` when set, otherwise the product price
       plus the deltas of the value's options that declare `affects_price`. That
       is what makes "XXL costs more, red does not" expressible without typing a
       price into every combination.
-- [ ] Stock and images stay per combination, because Red/XXL selling out while
+- [x] Stock and images stay per combination, because Red/XXL selling out while
       Blue/XXL is in stock is the normal case, and the Red photo has to come
       from somewhere.
-- [ ] Public payload: options with their values and swatches, and variants with
+- [x] Public payload: options with their values and swatches, and variants with
       resolved price, `in_stock` and images, so a storefront can resolve a
       selection without a round trip.
 - [ ] `?color=red&size=xxl` on a public list, filtered through the variant join.
@@ -950,9 +950,15 @@ the selection has to survive in the URL.
 - [ ] The cart contract changes: a line carries `variant_id`, and price comes
       from the variant. Checkout has to re-resolve it server-side, exactly as it
       already re-prices products.
-- [ ] Admin: an option manager with swatches, and a variant matrix that
+- [x] Admin: an option manager with swatches, and a variant matrix that
       generates the combinations with per-row price, stock, sku and image, plus
-      bulk edit.
+      bulk edit. v3.166.0 shipped the schema, the resolver and the endpoints;
+      v3.167.0 added the matrix editor on the record's detail page, the shared
+      option library in the sidebar, the public payload and the seed data, and
+      fixed three v3.166.0 bugs: the tables were never registered for
+      AutoMigrate, changing a product's options left the stale matrix behind,
+      and a second resource with variants panicked gin at boot on duplicate
+      /options routes.
 
 ### 7.5 SaaS (recs 14, 15, 27, 31)
 

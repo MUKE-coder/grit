@@ -83,6 +83,61 @@ func (h *` + pascal + `VariantHandler) CreateOption(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"data": option, "message": "Option created"})
 }
 
+// DeleteOption handles DELETE /api/v1/options/:id, taking its values with it.
+//
+// Refuses while anything is built on it. Two checks, because an option can be
+// spoken for in two different ways: a variant somewhere in the shop is defined
+// by one of its values, or a ` + lower + ` offers the axis without having
+// generated the combinations yet. Either way, deleting it leaves a row that
+// describes a choice nobody can make.
+//
+// The first check spans every resource, because variant_option_values is one
+// table for the whole shop. Colour being safe to delete is not a question one
+// product can answer.
+func (h *` + pascal + `VariantHandler) DeleteOption(c *gin.Context) {
+	optionID := c.Param("id")
+
+	var inVariants int64
+	h.DB.Table("variant_option_values").
+		Joins("JOIN option_values ON option_values.id = variant_option_values.option_value_id").
+		Where("option_values.option_id = ?", optionID).
+		Count(&inVariants)
+	if inVariants > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": gin.H{
+			"code":    "OPTION_IN_USE",
+			"message": "Variants are built on this option. Clear their combinations first.",
+		}})
+		return
+	}
+
+	var offered int64
+	h.DB.Model(&models.` + pascal + `Option{}).Where("option_id = ?", optionID).Count(&offered)
+	if offered > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": gin.H{
+			"code":    "OPTION_IN_USE",
+			"message": "Some ` + plural + ` still offer this option. Remove it from them first.",
+		}})
+		return
+	}
+
+	err := h.DB.Transaction(func(tx *gorm.DB) error {
+		// The values go too. An option value whose option is gone is a row
+		// nothing can reach and nothing can mean.
+		if err := tx.Where("option_id = ?", optionID).
+			Delete(&models.OptionValue{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&models.Option{}, "id = ?", optionID).Error
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
+			"code": "INTERNAL_ERROR", "message": "Failed to delete the option",
+		}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Option deleted"})
+}
+
 // CreateOptionValue handles POST /api/v1/options/:id/values.
 func (h *` + pascal + `VariantHandler) CreateOptionValue(c *gin.Context) {
 	var req struct {
@@ -152,14 +207,58 @@ func (h *` + pascal + `VariantHandler) SetOptions(c *gin.Context) {
 	}
 
 	` + snake + `ID := c.Param("id")
-	err := h.DB.Transaction(func(tx *gorm.DB) error {
-		// Removing an option a variant is built from would leave that variant
-		// describing a choice the ` + lower + ` no longer offers, so the
-		// existing matrix goes with it.
-		if err := tx.Where("` + snake + `_id = ?", ` + snake + `ID).
+
+	// What it offers now. Compared before anything is written, because saving
+	// the same set again is the commonest thing this endpoint is asked to do
+	// and it must not cost anybody their matrix.
+	var current []models.` + pascal + `Option
+	err := h.DB.Where("` + snake + `_id = ?", ` + snake + `ID).
+		Order("position asc").Find(&current).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
+			"code": "INTERNAL_ERROR", "message": "Failed to read the current options",
+		}})
+		return
+	}
+	if same` + pascal + `OptionOrder(current, req.OptionIDs) {
+		c.JSON(http.StatusOK, gin.H{
+			"data":    gin.H{"variants_cleared": 0},
+			"message": "Options unchanged",
+		})
+		return
+	}
+
+	cleared := 0
+	err = h.DB.Transaction(func(tx *gorm.DB) error {
+		// A variant is a combination of the options the ` + lower + ` offered
+		// when it was generated. Change that set and every existing row
+		// describes a choice the ` + lower + ` no longer has, which is not
+		// something anybody can buy or ship, so the matrix goes with it.
+		var stale []models.` + pascal + `Variant
+		if err := tx.Where("` + snake + `_id = ?", ` + snake + `ID).Find(&stale).Error; err != nil {
+			return err
+		}
+		for i := range stale {
+			if err := tx.Model(&stale[i]).Association("OptionValues").Clear(); err != nil {
+				return err
+			}
+		}
+		cleared = len(stale)
+
+		// Unscoped, here and below. A soft-deleted variant is invisible to the
+		// generator's duplicate check and still holds the sku the replacement
+		// wants, and a soft-deleted link still occupies the unique index on
+		// (` + snake + `_id, option_id), so re-adding the same option a second
+		// time fails on a row nobody can see.
+		if err := tx.Unscoped().Where("` + snake + `_id = ?", ` + snake + `ID).
+			Delete(&models.` + pascal + `Variant{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Unscoped().Where("` + snake + `_id = ?", ` + snake + `ID).
 			Delete(&models.` + pascal + `Option{}).Error; err != nil {
 			return err
 		}
+
 		for i, optionID := range req.OptionIDs {
 			link := models.` + pascal + `Option{` + pascal + `ID: ` + snake + `ID, OptionID: optionID, Position: i}
 			if err := tx.Create(&link).Error; err != nil {
@@ -174,7 +273,27 @@ func (h *` + pascal + `VariantHandler) SetOptions(c *gin.Context) {
 		}})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Options set"})
+	c.JSON(http.StatusOK, gin.H{
+		"data":    gin.H{"variants_cleared": cleared},
+		"message": "Options set",
+	})
+}
+
+// same` + pascal + `OptionOrder reports whether a ` + lower + ` already offers exactly these
+// options, in this order.
+//
+// Order counts, because it is the order the storefront draws them in and
+// somebody dragging Size above Colour means it.
+func same` + pascal + `OptionOrder(current []models.` + pascal + `Option, wanted []string) bool {
+	if len(current) != len(wanted) {
+		return false
+	}
+	for i := range current {
+		if current[i].OptionID != wanted[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // List handles GET /api/v1/` + plural + `/:id/variants, with prices resolved.
