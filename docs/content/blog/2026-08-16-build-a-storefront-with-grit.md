@@ -1,12 +1,12 @@
 ---
 title: "Build a storefront with Grit"
-subtitle: "A complete ecommerce build for someone who learned Grit last week: catalogue, cart, Stripe checkout, order tracking for customers, and an admin your operations team can actually run the business from. Every command is one you can paste, every snippet says which file it belongs in, and the parts Grit does not do for you are named rather than glossed over."
+subtitle: "A complete ecommerce build for someone who learned Grit last week: catalogue, product variants, cart, Stripe checkout, order tracking for customers, and an admin your operations team can actually run the business from. Every command is one you can paste, every snippet says which file it belongs in, and the parts Grit does not do for you are named rather than glossed over."
 series: "The Daily Grit"
 edition: 15
 date: 2026-08-16
-readingTime: "32 min"
+readingTime: "40 min"
 author: "Muke JohnBaptist"
-tags: [grit, ecommerce, stripe, tutorial, beginner, workflows, events, settings]
+tags: [grit, ecommerce, stripe, tutorial, beginner, workflows, events, settings, variants]
 canonical: "https://gritframework.dev/blog/build-a-storefront-with-grit"
 # Explicit, because the file is not named after the slug. Without this the
 # slug-matched lookup finds nothing and the card falls back to a gradient.
@@ -28,6 +28,7 @@ That is the honest shape of it. Everything around the payment is generated; the 
 A storefront with:
 
 - A product catalogue with categories, images and stock
+- Product variants, so one shirt can be four colours in four sizes with its own stock and price per combination
 - A cart that survives a page refresh
 - Checkout with a real Stripe card payment
 - Orders with a status that moves through a real process, not a dropdown anyone can set to anything
@@ -35,7 +36,7 @@ A storefront with:
 - An admin where staff manage products, see orders, and move them through fulfilment
 - Emails when an order is paid and when it ships
 
-By the end you will have run about eight commands and written maybe four hundred lines of your own code, most of it the Stripe integration and the storefront pages.
+By the end you will have run about ten commands and written maybe four hundred lines of your own code, most of it the Stripe integration and the storefront pages.
 
 ---
 
@@ -935,9 +936,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       wasPrice={product.compare_at_price > product.price ? product.compare_at_price : undefined}
       description={product.description}
       images={(product.images ?? []).map((i) => i.url)}
-      // The Product resource has no variants, so say so. Left out, the block
-      // keeps its sample colours and sizes, and your page offers a Midnight
-      // Blue that does not exist.
+      // Empty, not left out. The block keeps its sample colours and sizes for
+      // any prop you omit, and your page then offers a Midnight Blue you do
+      // not sell. Step 4f replaces these with a real picker.
       colours={[]}
       sizes={[]}
       onAddToBasket={() => addToCart(product)}
@@ -958,6 +959,11 @@ So pass every prop you have, and pass an empty value for every prop you do not.
 When your schema genuinely has no variants, no ratings and no highlights, either
 delete those sections from your copy of the file or add the fields and publish
 them.
+
+Variants are the one of those three that Grit does generate for you, and
+[Step 4f](#step-4f-variants-when-one-product-is-sixteen-things) is that step:
+one command for the schema, the admin and the public payload, and a picker to
+put in place of the empty arrays above.
 
 Pull the card into `components/shop/product-card.tsx` with its own Add to cart button, and one component serves the grid, the similar strip, and anywhere else you show a product. The cart is a module-level store, so a card added from the similar strip updates the badge in the header with nothing passed down between them.
 
@@ -1231,6 +1237,483 @@ GET /api/v1/categories/:id/breadcrumbs   ->   Electronics / Cameras / Lenses
 ```
 
 The admin has a `TreeBreadcrumbs` component wired to it. On the storefront, build the same thing from the ids in `path`, which the public detail response already gives you.
+
+---
+
+## Step 4f: variants, when one product is sixteen things
+
+Skip this step if you sell one of each thing. Come back to it the day you sell a t-shirt, because that is the day the catalogue you have stops describing what you actually have on a shelf.
+
+A shirt in four colours and four sizes is one product and sixteen buyable things. Each of those sixteen has its own stock, most of them share a price, some of them do not, and the red one has a photograph the blue one does not. None of that fits in the `Product` you generated in Step 1.
+
+**The version everyone writes first is a `variants` table with a `colour` column and a `size` column.** It works. It keeps working right up until somebody adds a laptop, where the axes are memory and storage, and then you need a migration to sell a product. That is the whole argument for the shape below.
+
+### One command
+
+```bash
+grit add variants --resource Product
+grit migrate
+grit seed
+```
+
+Five tables, and it matters which two of them are shared:
+
+```
+options                Colour, Size, Memory            shop-wide
+option_values          Red, XXL, 32GB                  shop-wide
+product_options        which options THIS product offers, and in what order
+product_variants       one buyable combination: sku, stock, price override, images
+variant_option_values  the values that define each combination
+```
+
+Options are global rather than per product. Colour is Colour whether it is on a shirt or a phone case, and a shop where each product owns its own colours accumulates four spellings of it inside a month. You then have a filter that can only match one of them, and no way to tell which.
+
+### Three decisions in that schema, and the worse alternative to each
+
+**`affects_price` lives on the option, not on the value.** "Does memory change the price" is a fact about memory. Put the flag on each value instead and you have expressed that 32GB is price-affecting while 16GB is not, which is not a thing anyone means, and which you then have to defend against every time you resolve a price.
+
+**Stock and images live on the variant, not on the value.** Red/XXL selling out while Blue/XXL is still in stock is the normal case, not the edge case. And the photo of the red one is a photo of a combination, so it belongs to the combination. The value does carry a picture, but that one is the swatch: a small square of the colour, doing a different job. Both exist, deliberately.
+
+**The price is resolved, never stored.**
+
+```
+override set?   -> that figure, outright
+otherwise       -> product price + the deltas of the chosen values
+                   whose OPTION declares affects_price
+```
+
+This is the one to read twice, because storing the resolved number is the tempting version and it is a bug with a delay on it. Store it, change the product's price six months later, and every variant quietly keeps the old figure. Nothing errors. The listing page and the receipt just disagree, and you find out from a customer.
+
+The override is still there for the combination somebody priced by hand, and it wins outright when set.
+
+### The admin, in the order you will use it
+
+`grit seed` gives you a Colour and Size library and a real matrix on the first few products, so there is something on screen before you write any storefront code. One combination in seven is seeded out of stock on purpose: the greyed-out swatch is most of the work on a product page and the easiest state to forget to build.
+
+**Options** is a new entry in the admin sidebar, and it is shop-wide because the table is. An option carries a name, a `kind` that tells a storefront how to draw it (`swatch`, `size` or `select`), and the `affects_price` flag. Its values carry a label, a swatch colour, and a price delta that is ignored entirely while the option says the axis does not affect price.
+
+**The matrix** is on the product's own detail page, because a variant is a fact about one product and that is where you go looking for it. Choose which axes this product offers, press generate, and you get a row per combination with its SKU, stock, resolved price and an override box.
+
+Two things about that screen are worth knowing before you use it:
+
+- **The override box shows the resolved price as its placeholder.** Clearing it is never a guess about what the price becomes, because the number is already sitting there greyed out.
+- **Changing which options a product offers clears its combinations.** It has to: a variant is defined by the axes the product offered when it was generated, and dropping Size leaves rows meaning "Red, and something". The admin says how many rows that will cost before it does it.
+
+Generating is safe to run again. It writes the combinations that do not exist yet and leaves the ones that do alone, so adding a fifth colour and pressing generate adds four rows rather than resetting sixteen.
+
+### The storefront payload
+
+One endpoint, mounted in the same public group as the rest of the catalogue and guarded by the same API key:
+
+```
+GET /api/v1/public/products/:key/variants
+```
+
+```json
+{
+  "data": {
+    "options": [
+      { "id": "...", "name": "Colour", "kind": "swatch", "affects_price": false,
+        "values": [ { "id": "...", "label": "Black", "swatch": "#111118", "price_delta": 0 } ] },
+      { "id": "...", "name": "Size", "kind": "size", "affects_price": true,
+        "values": [ { "id": "...", "label": "XL", "price_delta": 2.5 } ] }
+    ],
+    "variants": [
+      { "id": "...", "sku": "AURA-TEE-BLACK-XL", "price": 356.98,
+        "in_stock": true, "option_value_ids": ["...", "..."] }
+    ],
+    "price_range": { "low": 354.48, "high": 356.98, "single": false }
+  }
+}
+```
+
+One request rather than three, because a picker needs the options to draw, the combinations to match a selection against, and the range for a "from" price, and fetching those separately means a round trip every time somebody clicks a swatch.
+
+Three things in there are deliberate:
+
+- **Stock is a boolean.** `in_stock`, never the count. It is what the page renders, and the number is a business fact your competitors would enjoy. Same rule the rest of the public surface follows.
+- **Inactive combinations are not in the list at all.** Not greyed out, absent. A variant somebody switched off is not something the shop sells, and publishing it invites you to render a choice that can never be completed.
+- **`price_delta` is zeroed unless the option affects price.** So a picker cannot label a swatch "+ 20" from a number typed on it by mistake and then resolve to the base price. The label and the price cannot disagree.
+
+A product with no variants gets empty lists and a range of its own price, which is what lets you render the same component either way.
+
+### The hook
+
+Three lines on the `get` from Step 4b, like every other hook here:
+
+```ts
+// apps/web/hooks/use-catalogue.ts
+export interface VariantOptionValue {
+  id: string;
+  label: string;
+  swatch?: string;
+  price_delta: number;
+}
+
+export interface VariantOption {
+  id: string;
+  name: string;
+  /** How to draw it: "swatch", "size" or "select". */
+  kind: string;
+  affects_price: boolean;
+  values: VariantOptionValue[];
+}
+
+export interface ProductVariant {
+  id: string;
+  sku: string;
+  price: number;
+  in_stock: boolean;
+  option_value_ids: string[];
+}
+
+export interface VariantPayload {
+  options: VariantOption[];
+  variants: ProductVariant[];
+  price_range: { low: number; high: number; single: boolean };
+}
+
+export function useVariants(slug: string) {
+  return useQuery({
+    queryKey: ["variants", slug],
+    enabled: Boolean(slug),
+    queryFn: () => get<{ data: VariantPayload }>(`products/${slug}/variants`),
+  });
+}
+```
+
+### Matching a selection to a variant
+
+Two functions, and both are worth writing carefully because the wrong version of either is a page that sells the wrong thing.
+
+```ts
+// apps/web/lib/variants.ts
+import type { ProductVariant } from "@/hooks/use-catalogue";
+
+/** optionId -> chosen valueId */
+export type Selection = Record<string, string | undefined>;
+
+/**
+ * The variant defined by exactly this set of values.
+ *
+ * Exactly, in both directions. A variant holding more values than were asked
+ * for is a different combination, not a match, and comparing only the asked-for
+ * ids returns the first variant that happens to include them. On a two-axis
+ * product that is the first colour, at the wrong size.
+ */
+export function variantFor(
+  variants: ProductVariant[],
+  selection: Selection,
+): ProductVariant | undefined {
+  const chosen = Object.values(selection).filter(Boolean) as string[];
+  if (chosen.length === 0) return undefined;
+  return variants.find(
+    (v) =>
+      v.option_value_ids.length === chosen.length &&
+      chosen.every((id) => v.option_value_ids.includes(id)),
+  );
+}
+
+/**
+ * Whether picking this value can still lead to something buyable, given what
+ * is already chosen on the OTHER axes.
+ *
+ * This is what greys out Navy when the only Navy shirts left are size S and the
+ * customer has already picked XL. Checking the value on its own instead offers
+ * every colour the shop has ever stocked and fails at the last step.
+ */
+export function isAvailable(
+  variants: ProductVariant[],
+  selection: Selection,
+  optionId: string,
+  valueId: string,
+): boolean {
+  const others = Object.entries(selection)
+    .filter(([id, value]) => id !== optionId && Boolean(value))
+    .map(([, value]) => value as string);
+
+  return variants.some(
+    (v) =>
+      v.in_stock &&
+      v.option_value_ids.includes(valueId) &&
+      others.every((id) => v.option_value_ids.includes(id)),
+  );
+}
+```
+
+### The picker
+
+Now the detail page from Step 4c, with the empty `colours` and `sizes` replaced by real ones. Remember the trap from that section: a block prop you do not pass keeps its sample default, so a page that offers a Midnight Blue you do not sell is a page that took the defaults.
+
+```tsx
+// apps/web/components/shop/variant-picker.tsx
+"use client";
+
+import { useState } from "react";
+import type { ProductVariant, VariantOption } from "@/hooks/use-catalogue";
+import { variantFor, isAvailable, type Selection } from "@/lib/variants";
+import { formatMoney } from "@/lib/format";
+
+interface Props {
+  options: VariantOption[];
+  variants: ProductVariant[];
+  basePrice: number;
+  onAdd: (variant: ProductVariant, label: string) => void;
+}
+
+export function VariantPicker({ options, variants, basePrice, onAdd }: Props) {
+  const [selection, setSelection] = useState<Selection>({});
+
+  const selected = variantFor(variants, selection);
+  const complete = options.every((o) => selection[o.id]);
+
+  // The label the cart and the order line will carry: "Black / XL".
+  const label = options
+    .map((o) => o.values.find((v) => v.id === selection[o.id])?.label)
+    .filter(Boolean)
+    .join(" / ");
+
+  return (
+    <div className="variant-picker">
+      {options.map((option) => (
+        <fieldset key={option.id}>
+          <legend>{option.name}</legend>
+
+          {option.values.map((value) => {
+            const available = isAvailable(variants, selection, option.id, value.id);
+            const active = selection[option.id] === value.id;
+
+            return (
+              <button
+                key={value.id}
+                type="button"
+                disabled={!available}
+                aria-pressed={active}
+                title={available ? value.label : `${value.label} is out of stock`}
+                onClick={() => setSelection((s) => ({ ...s, [option.id]: value.id }))}
+              >
+                {option.kind === "swatch" && value.swatch ? (
+                  <span style={{ backgroundColor: value.swatch }} aria-hidden />
+                ) : null}
+                {value.label}
+                {/* Already zeroed by the server unless this axis is priced,
+                    so there is no second check to forget here. */}
+                {value.price_delta !== 0 && <em>+{formatMoney(value.price_delta)}</em>}
+              </button>
+            );
+          })}
+        </fieldset>
+      ))}
+
+      <p className="price">
+        {selected ? formatMoney(selected.price) : formatMoney(basePrice)}
+      </p>
+
+      <button
+        type="button"
+        // Not disabled on "no variant selected" alone. A half-made selection
+        // and a selection with no matching row are different problems, and the
+        // customer deserves to be told which.
+        disabled={!selected || !selected.in_stock}
+        onClick={() => selected && onAdd(selected, label)}
+      >
+        {!complete
+          ? "Choose your options"
+          : !selected
+            ? "That combination is unavailable"
+            : selected.in_stock
+              ? "Add to cart"
+              : "Out of stock"}
+      </button>
+    </div>
+  );
+}
+```
+
+Wire it into the detail page beside the block, or in place of the block's own picker:
+
+```tsx
+// apps/web/app/products/[slug]/page.tsx
+const { data: variantData } = useVariants(slug);
+const payload = variantData?.data;
+
+{payload && payload.options.length > 0 && (
+  <VariantPicker
+    options={payload.options}
+    variants={payload.variants}
+    basePrice={product.price}
+    onAdd={(variant, label) =>
+      addToCart(product, 1, {
+        id: variant.id,
+        label,
+        price: variant.price,
+      })
+    }
+  />
+)}
+```
+
+Guard on `options.length` rather than on the request having succeeded. A product with no variants returns a valid payload with empty lists, and that product still has to render and still has to sell.
+
+### What changes in the cart
+
+The line stops being about a product and starts being about a combination. Widen `CartLine` and key on the pair:
+
+```ts
+// apps/web/lib/cart.ts
+export interface CartLine {
+  productId: string;
+  /** Absent on a product with no variants, which is a valid line. */
+  variantId?: string;
+  /** "Black / XL", copied at the time so the cart reads right on its own. */
+  variantLabel?: string;
+  name: string;
+  price: number;
+  image?: string;
+  quantity: number;
+}
+
+/**
+ * Two lines are the same line when the product AND the variant match.
+ *
+ * Keying on productId alone merges the black shirt into the navy one, and the
+ * customer gets two of whichever was added first.
+ */
+export function lineKey(line: Pick<CartLine, "productId" | "variantId">) {
+  return line.variantId ? `${line.productId}:${line.variantId}` : line.productId;
+}
+
+export function addToCart(
+  product: CatalogueProduct,
+  quantity = 1,
+  variant?: { id: string; label: string; price: number; image?: string },
+) {
+  const key = lineKey({ productId: product.id, variantId: variant?.id });
+
+  cartStore.set((lines) => {
+    const existing = lines.find((l) => lineKey(l) === key);
+    if (existing) {
+      return lines.map((l) =>
+        lineKey(l) === key ? { ...l, quantity: l.quantity + quantity } : l,
+      );
+    }
+    return [
+      ...lines,
+      {
+        productId: product.id,
+        variantId: variant?.id,
+        variantLabel: variant?.label,
+        name: product.name,
+        price: variant?.price ?? product.price,
+        image: variant?.image ?? product.images?.[0]?.url,
+        quantity,
+      },
+    ];
+  });
+}
+```
+
+`setQuantity` and `removeFromCart` take the key instead of a product id, for the same reason. Every existing `addToCart(product)` call in the guide still compiles and still means the same thing, which is the point of making the variant the third argument rather than a new function.
+
+### What changes in checkout, which is the part that costs money
+
+The rule from Step 6 does not move: **never trust a price that came from the browser.** It just has one more thing to re-resolve.
+
+Add the variant to the request line:
+
+```go
+type checkoutLine struct {
+	ProductID string `json:"product_id" binding:"required"`
+	VariantID string `json:"variant_id"`
+	Quantity  int    `json:"quantity" binding:"required,min=1,max=99"`
+}
+```
+
+And inside the transaction, when a line names one, price and stock come from the variant rather than the product:
+
+```go
+// The options for a product, loaded once per product rather than once per
+// line, because resolving a price needs to know which axes are priced.
+variantSvc := services.NewProductVariantService(h.DB)
+optionCache := map[string]map[string]models.Option{}
+
+// ... inside the line loop, after the product is loaded and locked:
+
+unitPrice := product.Price
+itemName := product.Name
+
+if line.VariantID != "" {
+	var variant models.ProductVariant
+	// Locked and checked against THIS product. Without the product_id in the
+	// where clause, a crafted request buys a cheap variant of something else.
+	if err := tx.Set("gorm:query_option", "FOR UPDATE").
+		Preload("OptionValues").
+		First(&variant, "id = ? AND product_id = ? AND active = ?",
+			line.VariantID, product.ID, true).Error; err != nil {
+		return ErrProductUnavailable{ID: line.ProductID}
+	}
+	if variant.Stock < line.Quantity {
+		return ErrOutOfStock{Name: product.Name, Available: variant.Stock}
+	}
+
+	byID, ok := optionCache[product.ID]
+	if !ok {
+		options, err := variantSvc.OptionsFor(product.ID)
+		if err != nil {
+			return err
+		}
+		byID = make(map[string]models.Option, len(options))
+		for _, option := range options {
+			byID[option.ID] = option
+		}
+		optionCache[product.ID] = byID
+	}
+
+	// The same resolver the admin and the storefront read, so three surfaces
+	// cannot arrive at three prices.
+	unitPrice = variantSvc.ResolvePrice(product.Price, variant, byID)
+	itemName = product.Name + " (" + variant.SKU + ")"
+
+	// Stock moves on the variant, not the product. Decrementing the product
+	// here is the bug that lets you oversell XL while S sits on the shelf.
+	if err := tx.Model(&variant).
+		Update("stock", gorm.Expr("stock - ?", line.Quantity)).Error; err != nil {
+		return err
+	}
+}
+```
+
+Then use `unitPrice` and `itemName` where the Step 6 code used `product.Price` and `product.Name`, and skip the product-level stock decrement for lines that named a variant.
+
+Two consequences worth being deliberate about:
+
+**Product-level `stock` becomes vestigial for anything with variants.** It is still on the model and the admin still shows it. Decide what it means in your shop and write it down, because "which number is the real one" is a question your operations team will ask on day one. The honest answer for most shops is that a product with variants has no stock of its own, and the column is there for the products that have none.
+
+**The order line should record the combination, not just the product.** The Step 2 order copies the product name instead of referencing it, so a renamed product does not rewrite history. Give the variant the same treatment:
+
+```bash
+grit g field OrderItem variant_id:string
+grit g field OrderItem variant_label:string
+```
+
+Then open `internal/models/order_item.go` and drop the `binding:"required"` the
+generator puts on a new string field, because a line for a product with no
+variants has neither:
+
+```go
+VariantID    string `gorm:"size:255" json:"variant_id"`
+VariantLabel string `gorm:"size:255" json:"variant_label"`
+```
+
+`grit migrate` adds the columns. Then set them alongside `ProductName`. A customer asking why their shirt arrived in the wrong size is a conversation you want to have with the row that says Black / XL on it.
+
+### What this does not do yet
+
+**Filtering the public list by a variant value.** `?colour=black` on `/public/products` is not wired: the public filters are built from the product's own published columns, and a filter that reaches through the variant join is a different query. Today you filter the catalogue on product fields and let the picker handle the rest, which is what most shops actually show.
+
+**Bulk edit across the matrix.** You can edit every row and save them in one go, but there is no "set all XL to 40" yet.
+
+Both are on the roadmap rather than in the box, and it is better to know that before you promise a filter to somebody.
 
 ---
 
@@ -2012,13 +2495,14 @@ Cross-compiles the Go binary, uploads it, configures systemd and Caddy with auto
 
 Roughly:
 
-- Three `grit g resource` commands and one YAML file
-- A cart store, a product grid, a checkout form, a tracking page
+- Three `grit g resource` commands, one `grit add variants`, and one YAML file
+- A cart store, a product grid, a variant picker, a checkout form, a tracking page
 - A checkout handler, a Stripe service, a webhook handler, a stock release function
 - Two event subscribers and two settings
 
 The public catalogue endpoint, the order state machine, the transition
-endpoints, the admin, the API keys and the settings page were all generated.
+endpoints, the variant schema with its matrix editor and public payload, the
+admin, the API keys and the settings page were all generated.
 
 Everything else came with the framework: the database schema, migrations, the whole REST API with pagination and filtering, auth, roles, file uploads to S3, the admin panel, typed hooks, email, jobs, deployment.
 
@@ -2026,7 +2510,7 @@ The parts I would go back and strengthen first, in order:
 
 1. **Test the checkout path.** It is the one place where a bug costs money in both directions. [Testing](/docs/testing) covers the setup that already ships with your project.
 2. **Cancel abandoned orders on a schedule**, or your stock leaks.
-3. **Add product variants** if you sell clothing. Size and colour is a `many_to_many` and a variant table, and it is much easier to add before you have real orders.
+3. **Add product variants** before you have real orders, if you sell anything that comes in sizes. [Step 4f](#step-4f-variants-when-one-product-is-sixteen-things) is one command, but the parts it touches are the cart line and the checkout re-price, and both are cheaper to change while the orders table is empty.
 4. **Watch the money numbers.** Floats are fine for a shop this size and you will eventually want integer cents. Know which one you are on.
 
 ---

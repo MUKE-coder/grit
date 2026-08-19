@@ -151,17 +151,42 @@ func DefinitionFromModel(name string) (*ResourceDefinition, error) {
 	}
 	names := MakeNames(name)
 	for _, apiRoot := range []string{filepath.Join(root, "apps", "api"), root} {
-		if fileExists(filepath.Join(apiRoot, "internal", "models", names.Lower+".go")) {
+		if modelFileFor(apiRoot, names) != "" {
 			return definitionFromModelFile(apiRoot, name)
 		}
 	}
 	return nil, fmt.Errorf("no model found for %q: generate the resource first (looked in apps/api/internal/models and internal/models)", names.Pascal)
 }
 
+// modelFileFor returns the path of a resource's model file, or "".
+//
+// Snake first, because that is what every generator in this package writes:
+// filepath.Join(..., "models", names.Snake+".go"). Looking it up as Lower
+// instead, which this file did until v3.168.0, is identical for a one-word
+// resource and wrong for every other one: OrderItem is written to
+// order_item.go and was looked for in orderitem.go, so `grit generate field`
+// and `grit generate seeder` reported a model that was plainly on disk as
+// missing.
+//
+// Lower is kept as a fallback for a model somebody wrote by hand under the
+// flat name, which costs one stat call and saves a confusing failure.
+func modelFileFor(apiRoot string, names Names) string {
+	for _, candidate := range []string{names.Snake, names.Lower} {
+		path := filepath.Join(apiRoot, "internal", "models", candidate+".go")
+		if fileExists(path) {
+			return path
+		}
+	}
+	return ""
+}
+
 // definitionFromModelFile parses a specific model file into a definition.
 func definitionFromModelFile(apiRoot, name string) (*ResourceDefinition, error) {
 	names := MakeNames(name)
-	modelPath := filepath.Join(apiRoot, "internal", "models", names.Lower+".go")
+	modelPath := modelFileFor(apiRoot, names)
+	if modelPath == "" {
+		modelPath = filepath.Join(apiRoot, "internal", "models", names.Snake+".go")
+	}
 	structs, err := parseGoStructs(modelPath)
 	if err != nil {
 		return nil, fmt.Errorf("reading model for %s: %w (has the resource been generated?)", names.Pascal, err)

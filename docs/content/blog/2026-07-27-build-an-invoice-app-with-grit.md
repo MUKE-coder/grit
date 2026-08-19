@@ -76,7 +76,7 @@ grit g resource Invoice --fields \
 > That one modifier stands up an atomic counter, fills the field on the server as
 > `INV-202607-0001`, marks the column optional, and hides it from the form, so the
 > user never types or even sees an empty number box. We unpack exactly what it does
-> in [Step 4](#step-4--auto-number-the-invoices).
+> in [Step 4](#step-4-auto-number-the-invoices).
 
 That's a lot on one line, so here's each piece, on its own.
 
