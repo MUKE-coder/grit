@@ -178,7 +178,7 @@ func (g *Generator) publicHandlerSource(names Names, included []Field) string {
 			// of them.
 			"\tDescendantIDs []string `json:\"descendant_ids,omitempty\"`")
 		assignments = append(assignments,
-			"\t\tParentID: derefID(m.ParentID),",
+			"\t\tParentID: deref"+names.Pascal+"ID(m.ParentID),",
 			"\t\tDepth: m.Depth,")
 	}
 
@@ -654,7 +654,7 @@ func treePublic(names Names, def *ResourceDefinition) string {
 // absent as NULL, which a foreign key constraint accepts and an empty string
 // does not. JSON has the same choice to make, and "" reads better to a client
 // than null for an id it is only going to compare.
-func derefID(id *string) string {
+func deref` + names.Pascal + `ID(id *string) string {
 	if id == nil {
 		return ""
 	}
@@ -664,7 +664,7 @@ func derefID(id *string) string {
 // publicParentOf resolves a row's parent in the node map, treating NULL and ""
 // alike as no parent. Both turn up in real data: NULL from a root written now,
 // "" from a row written before the column was nullable.
-func publicParentOf(byID map[string]*public` + names.Pascal + `Node, parentID *string) (*public` + names.Pascal + `Node, bool) {
+func public` + names.Pascal + `ParentOf(byID map[string]*public` + names.Pascal + `Node, parentID *string) (*public` + names.Pascal + `Node, bool) {
 	if parentID == nil || *parentID == "" {
 		return nil, false
 	}
@@ -708,7 +708,7 @@ func (h *` + names.Pascal + `Handler) TreePublic(c *gin.Context) {
 		// A node whose parent is archived is promoted to a root rather than
 		// dropped: a menu missing a whole branch is worse than one with a branch
 		// in the wrong place.
-		if parent, ok := publicParentOf(byID, rows[i].ParentID); ok {
+		if parent, ok := public` + names.Pascal + `ParentOf(byID, rows[i].ParentID); ok {
 			parent.Children = append(parent.Children, node)
 			continue
 		}

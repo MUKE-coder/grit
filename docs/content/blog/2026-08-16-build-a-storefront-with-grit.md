@@ -429,7 +429,9 @@ export interface CatalogueProduct {
   description: string;
   price: number;
   compare_at_price: number;
-  images: Array<{ url: string; name: string }>;
+  // A JSON column, so a product created before the field existed has null
+  // here, not an empty array. Every render site has to guard it.
+  images: Array<{ url: string; name: string }> | null;
 }
 
 interface Page<T> {
@@ -443,26 +445,143 @@ interface Page<T> {
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 const KEY = process.env.NEXT_PUBLIC_API_KEY ?? "";
 
+/**
+ * One fetch for the whole public surface.
+ *
+ * Every hook below goes through it, so the key header, the base path and the
+ * error handling are written once. The alternative is the same six lines copied
+ * into five hooks, and a header that gets forgotten in the fifth.
+ */
+async function get<T>(path: string, params: Record<string, string> = {}): Promise<T> {
+  const query = new URLSearchParams(params);
+  // The publishable key, not a bearer token. There is no user here.
+  const res = await fetch(`${API}/api/v1/public/${path}?${query}`, {
+    headers: { "X-API-Key": KEY },
+  });
+  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+  return res.json();
+}
+
 export function useCatalogue(params: { page?: number; search?: string } = {}) {
-  const query = new URLSearchParams({
+  const query: Record<string, string> = {
     page: String(params.page ?? 1),
     page_size: "24",
-    ...(params.search ? { search: params.search } : {}),
-  });
+  };
+  if (params.search) query.search = params.search;
 
-  return useQuery<Page<CatalogueProduct>>({
-    queryKey: ["catalogue", params],
-    queryFn: async () => {
-      // The publishable key, not a bearer token. There is no user here.
-      const res = await fetch(`${API}/api/v1/public/products?${query}`, {
-        headers: { "X-API-Key": KEY },
-      });
-      if (!res.ok) throw new Error("Could not load products");
-      return res.json();
-    },
+  return useQuery({
+    queryKey: ["catalogue", query],
+    queryFn: () => get<Page<CatalogueProduct>>("products", query),
   });
 }
 ```
+
+Every hook in the rest of this guide is three lines on top of that `get`, which
+is the reason to write it now rather than after the fourth copy of the same
+fetch.
+
+### The three pieces every page uses
+
+Before the grid, three small files. They are used by the catalogue, the category
+page and the similar-items strip, so they are worth having once.
+
+**Money, formatted in one place.** Scattering `toFixed(2)` through components is
+how one card reads `1234.5` and another reads `1,234.50`, and how changing
+currency becomes a search:
+
+```ts
+// apps/web/lib/format.ts
+const CURRENCY = process.env.NEXT_PUBLIC_CURRENCY ?? "AED";
+const LOCALE = process.env.NEXT_PUBLIC_LOCALE ?? "en-AE";
+
+export function formatMoney(amount: number): string {
+  return new Intl.NumberFormat(LOCALE, {
+    style: "currency",
+    currency: CURRENCY,
+    // Most catalogues are whole numbers, and "AED 1,200" reads better than
+    // "AED 1,200.00". Prices with real decimals still show them.
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+```
+
+**The loading state**, the same shape and gap as the real grid so the page does
+not jump when the data lands:
+
+```tsx
+// apps/web/components/shop/product-grid-skeleton.tsx
+export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-4" aria-busy="true">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="rounded-lg border p-3">
+          <div className="mb-2 aspect-[3/2] w-full animate-pulse rounded bg-neutral-200" />
+          <div className="h-4 w-3/4 animate-pulse rounded bg-neutral-200" />
+          <div className="mt-2 h-4 w-1/3 animate-pulse rounded bg-neutral-200" />
+        </div>
+      ))}
+      <span className="sr-only">Loading products</span>
+    </div>
+  );
+}
+```
+
+**The card**, which is one component rather than three copies, because the day
+you add a "low stock" badge you want it in all three places without having to
+remember where they are:
+
+```tsx
+// apps/web/components/shop/product-card.tsx
+"use client";
+
+import Link from "next/link";
+import Image from "next/image";
+import { addToCart } from "@/lib/cart";
+import { formatMoney } from "@/lib/format";
+import type { CatalogueProduct } from "@/hooks/use-catalogue";
+
+export function ProductCard({ product }: { product: CatalogueProduct }) {
+  const onSale = product.compare_at_price > product.price;
+
+  return (
+    <div className="rounded-lg border p-3">
+      <Link href={`/products/${product.slug}`}>
+        {product.images?.[0]?.url ? (
+          <Image
+            src={product.images[0].url}
+            alt={product.name}
+            width={600}
+            height={400}
+            className="mb-2 aspect-[3/2] w-full rounded object-cover"
+          />
+        ) : (
+          <div className="mb-2 aspect-[3/2] w-full rounded bg-neutral-200" />
+        )}
+        <h3 className="text-sm font-medium">{product.name}</h3>
+      </Link>
+
+      <p className="text-sm">
+        {formatMoney(product.price)}
+        {onSale && (
+          <s className="ml-2 text-neutral-500">{formatMoney(product.compare_at_price)}</s>
+        )}
+      </p>
+
+      <button
+        onClick={() => addToCart(product)}
+        className="mt-2 rounded bg-black px-3 py-1 text-xs text-white"
+      >
+        Add to cart
+      </button>
+    </div>
+  );
+}
+```
+
+> The card imports `addToCart` from `@/lib/cart`, which you build in Step 5. If
+> you are following in order, leave the button out until then and add it when the
+> cart exists. Everything else on this page works without it.
 
 And the grid, images and all:
 
@@ -1063,6 +1182,30 @@ export default function CartPage() {
 }
 ```
 
+An empty cart is a normal state rather than an error, so it gets a way out instead of a shrug:
+
+```tsx
+// apps/web/components/shop/empty-cart.tsx
+import Link from "next/link";
+
+export function EmptyCart() {
+  return (
+    <div className="mx-auto max-w-md py-16 text-center">
+      <h1 className="text-xl font-semibold">Your cart is empty</h1>
+      <p className="mt-2 text-sm text-neutral-600">
+        Nothing here yet. Have a look at what is in stock.
+      </p>
+      <Link
+        href="/products"
+        className="mt-6 inline-block rounded bg-black px-5 py-2 text-sm text-white"
+      >
+        Browse products
+      </Link>
+    </div>
+  );
+}
+```
+
 If your cart grows past an array (a saved-for-later list, a promo code, a chosen delivery slot), Simple Store's `select` narrows a subscription to one branch so a component watching the promo code does not re-render every time somebody changes a quantity:
 
 ```tsx
@@ -1503,6 +1646,52 @@ function OrderProgress({ status }: { status: string }) {
 }
 ```
 
+Both pieces that page leans on are small, and they are the same two the admin
+uses, so a status looks the same wherever a customer or an operator sees it:
+
+```tsx
+// apps/web/components/shop/order-status.tsx
+const STYLES: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-800",
+  paid: "bg-blue-100 text-blue-800",
+  packed: "bg-indigo-100 text-indigo-800",
+  shipped: "bg-violet-100 text-violet-800",
+  delivered: "bg-green-100 text-green-800",
+  cancelled: "bg-red-100 text-red-800",
+};
+
+export function StatusBadge({ status }: { status: string }) {
+  return (
+    <span
+      className={
+        "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize " +
+        // A state you add next month falls through to the neutral style rather
+        // than crashing, which is the right failure for a badge.
+        (STYLES[status] ?? "bg-neutral-100 text-neutral-700")
+      }
+    >
+      {status}
+    </span>
+  );
+}
+
+export function CancelledNotice() {
+  return (
+    <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+      <p className="text-sm font-medium text-red-800">This order was cancelled</p>
+      <p className="mt-1 text-sm text-red-700">
+        Nothing was shipped. Any payment taken is refunded to the original method,
+        which can take a few days to appear.
+      </p>
+    </div>
+  );
+}
+```
+
+A cancelled order gets the notice instead of the steps because it has not moved
+backwards through them, it has left them. Drawing it at step one would be a lie
+about where it is.
+
 Want the page to update itself while the customer watches? Grit's [realtime module](/docs/backend/realtime) is already a subscriber to the event bus as of v3.150.0, so `orders.ship` is being broadcast whether or not anything is listening yet.
 
 ---
@@ -1516,6 +1705,9 @@ Everything below goes in the customisation overlay, which is a separate file fro
 ```tsx
 // apps/admin/resources/orders/orders.custom.tsx
 import type { ResourceCustomisation } from "@/lib/resource";
+// The Order type grit sync generated from the Go model. The generator writes
+// this import into every .custom.tsx it scaffolds, so it is already there.
+import type { Order } from "@repo/shared/types";
 import { Badge } from "@/components/ui/badge";
 
 const custom: ResourceCustomisation<Order> = {

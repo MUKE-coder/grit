@@ -160,10 +160,14 @@ func New%[1]sTreeService(db *gorm.DB) *%[1]sTreeService {
 	return &%[1]sTreeService{DB: db}
 }
 
-// parentOf looks a row's parent up in the node map, treating NULL and "" alike
-// as "no parent". Both appear in real data: NULL from a root written today, ""
-// from a row written before the column was nullable.
-func parentOf(byID map[string]*%[1]sNode, parentID *string) (*%[1]sNode, bool) {
+// %[3]sParentOf looks a row's parent up in the node map, treating NULL and ""
+// alike as "no parent". Both appear in real data: NULL from a root written
+// today, "" from a row written before the column was nullable.
+//
+// Named after the resource because every tree service lands in package
+// services, and a second tree resource in the same project would otherwise
+// collide on a package-level parentOf.
+func %[3]sParentOf(byID map[string]*%[1]sNode, parentID *string) (*%[1]sNode, bool) {
 	if parentID == nil || *parentID == "" {
 		return nil, false
 	}
@@ -202,7 +206,7 @@ func (s *%[1]sTreeService) Tree() ([]*%[1]sNode, error) {
 	// is worse than showing it slightly out of place.
 	for i := range rows {
 		node := byID[rows[i].ID]
-		if parent, ok := parentOf(byID, rows[i].ParentID); ok {
+		if parent, ok := %[3]sParentOf(byID, rows[i].ParentID); ok {
 			parent.Children = append(parent.Children, node)
 			continue
 		}
