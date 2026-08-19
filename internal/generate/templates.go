@@ -579,14 +579,14 @@ func (g *Generator) writeGoHandler(names Names) error {
 				// is not a row any foreign key constraint can point at, and
 				// Postgres says so with SQLSTATE 23503 while SQLite quietly
 				// stores a dangling reference.
-				createAssignments += fmt.Sprintf("\t\t%s: optionalID(req.%s),\n", fkGoName, fkGoName)
+				createAssignments += fmt.Sprintf("\t\t%s: optional%sID(req.%s),\n", fkGoName, names.Pascal, fkGoName)
 			} else {
 				createAssignments += fmt.Sprintf("\t\t%s: req.%s,\n", fkGoName, fkGoName)
 			}
 
 			updateFields += fmt.Sprintf("\t\t%s *string `json:\"%s\"`\n", fkGoName, fkJson)
 			if selfRef {
-				updateMap += fmt.Sprintf("	if req.%s != nil {\n\t\tupdates[\"%s\"] = optionalID(*req.%s)\n\t}\n", fkGoName, fkJson, fkGoName)
+				updateMap += fmt.Sprintf("	if req.%s != nil {\n\t\tupdates[\"%s\"] = optional%sID(*req.%s)\n\t}\n", fkGoName, fkJson, names.Pascal, fkGoName)
 			} else {
 				updateMap += fmt.Sprintf("	if req.%s != nil {\n\t\tupdates[\"%s\"] = *req.%s\n\t}\n", fkGoName, fkJson, fkGoName)
 			}
@@ -940,7 +940,10 @@ func (g *Generator) writeGoHandler(names Names) error {
 	optionalIDHelper := ""
 	for _, f := range g.Definition.Fields {
 		if f.IsBelongsTo() && f.RelatedModelName() == toPascalCase(g.Definition.Name) {
-			optionalIDHelper = OPTIONAL_ID_HELPER_SRC
+			// Expanded here rather than left to the replacer below: a
+			// strings.Replacer is single pass, so {{Pascal}} inside text it
+			// just inserted is never looked at again.
+			optionalIDHelper = strings.ReplaceAll(OPTIONAL_ID_HELPER_SRC, "{{Pascal}}", names.Pascal)
 			break
 		}
 	}
@@ -1786,11 +1789,31 @@ func (g *Generator) writeTSTypes(names Names) error {
 		if f.IsBelongsTo() {
 			relModel := f.RelatedModelName()
 			relKebab := strings.ReplaceAll(toSnakeCase(relModel), "_", "-")
-			imports += fmt.Sprintf("import type { %s } from \"./%s\";\n", relModel, relKebab)
 			baseName := strings.TrimSuffix(f.Name, "_id")
 			fkSnake := toSnakeCase(baseName) + "_id"
-			// FK matches the referenced model's UUID string PK.
-			fields += fmt.Sprintf("  %s: string;\n", fkSnake)
+
+			// A self-reference needs no import: the type is declared in this
+			// very file. Emitting one produced
+			//
+			//   import type { Category } from "./category";
+			//   export interface Category { ... }
+			//
+			// in category.ts, which is TS2440, "import declaration conflicts
+			// with local declaration", and it failed tsc for the whole
+			// workspace rather than only for that file.
+			selfRef := relModel == toPascalCase(g.Definition.Name)
+			if !selfRef {
+				imports += fmt.Sprintf("import type { %s } from \"./%s\";\n", relModel, relKebab)
+			}
+
+			// FK matches the referenced model's UUID string PK, and a
+			// self-referential one is nullable: a tree root has no parent, and
+			// the column holds NULL rather than an empty string.
+			if selfRef {
+				fields += fmt.Sprintf("  %s: string | null;\n", fkSnake)
+			} else {
+				fields += fmt.Sprintf("  %s: string;\n", fkSnake)
+			}
 			fields += fmt.Sprintf("  %s?: %s;\n", toSnakeCase(baseName), relModel)
 			continue
 		}

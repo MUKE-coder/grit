@@ -29,6 +29,81 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.164.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.164.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>A second tree resource in one project did not compile, and a
+                  self-referential type broke tsc for the whole workspace.</strong>
+                </p>
+
+                <h3>Generated helpers collided</h3>
+                <p>
+                  Four helpers introduced with <code>--tree</code> were emitted at package
+                  level, once per resource, into packages every resource shares. One tree
+                  resource was fine. Two gave you:
+                </p>
+                <CodeBlock language="text" code={`internal/services/department_tree.go:27:6: parentOf redeclared in this block
+	internal/services/category_tree.go:27:6: other declaration of parentOf`} />
+                <p>
+                  <code>parentOf</code>, <code>derefID</code>,{' '}
+                  <code>publicParentOf</code> and <code>optionalID</code> are all named
+                  after their resource now, so any number of tree resources coexist.
+                </p>
+
+                <h3>The generated type imported itself</h3>
+                <p>
+                  A self-referential relation emitted an import for its own model, which
+                  in that model&rsquo;s own file is a self-import:
+                </p>
+                <CodeBlock language="ts" code={`// packages/shared/types/category.ts
+import type { Category } from "./category";
+
+export interface Category { ... }`} />
+                <p>
+                  TS2440, &ldquo;import declaration conflicts with local
+                  declaration&rdquo;, which fails <code>tsc</code> for the whole workspace
+                  rather than just that file. The import is skipped for a self-reference
+                  now, and <code>parent_id</code> is typed{' '}
+                  <code>string | null</code> to match the nullable column.
+                </p>
+
+                <h3>Relationship fields had no label</h3>
+                <p>
+                  Carried over from v3.163.0 and worth repeating because the blast radius
+                  is wide: <code>RelationshipSelectField</code> never rendered one, so
+                  every generated form with a <code>belongs_to</code> had one control
+                  floating under the previous field&rsquo;s label. Both relationship
+                  fields are labelled now.
+                </p>
+
+                <h3>The storefront guide now shows the code it uses</h3>
+                <p>
+                  A reader pointed out that the guide called <code>get()</code> and
+                  rendered <code>&lt;ProductGridSkeleton /&gt;</code> without ever showing
+                  either. An audit of every code block in the guide found eight such
+                  references. All eight are written out now:{' '}
+                  <code>get</code>, <code>formatMoney</code>,{' '}
+                  <code>ProductGridSkeleton</code>, <code>ProductCard</code>,{' '}
+                  <code>EmptyCart</code>, <code>StatusBadge</code>,{' '}
+                  <code>CancelledNotice</code>, and the missing <code>Order</code> type
+                  import.
+                </p>
+                <p>
+                  Every one of them was written into a real project and typechecked before
+                  it went into the guide, and the catalogue page was loaded in a browser to
+                  confirm the card renders and prices format.
+                </p>
+              </div>
+            </div>
+
             {/* v3.163.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
