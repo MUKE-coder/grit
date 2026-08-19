@@ -34,6 +34,7 @@ import {
   ChevronRight,
   GripVertical,
   Pencil,
+  Plus,
   RefreshCw,
 } from "@/lib/icons";
 import { apiClient } from "@/lib/api-client";
@@ -69,17 +70,15 @@ interface ResourceTreeProps {
    * populated from the row it is given and a tree node already is that row.
    */
   onEdit?: (node: TreeNode) => void;
+  /**
+   * Open a create form with the parent already chosen.
+   *
+   * This is why the controller has createWith(): calling plain create() here
+   * would open a form with no parent set, and the new row would be born at the
+   * root, which is a button that appears to do one thing and does another.
+   */
+  onAddChild?: (parentID: string) => void;
 }
-
-/*
- * There is deliberately no "add a child here" button.
- *
- * The obvious version calls the page's create(), which takes no starting
- * values, so the new record would be born at the root with the parent silently
- * dropped: a button that appears to do one thing and does another. Creating
- * happens from the page's New button, and then the row is dragged into place,
- * which is the gesture this view is built around anyway.
- */
 
 /** The first of these a node has is what we render as its label. */
 function labelOf(node: TreeNode): string {
@@ -89,6 +88,54 @@ function labelOf(node: TreeNode): string {
     (typeof node.label === "string" && node.label) ||
     node.id
   );
+}
+
+/**
+ * A second line under the label, when the row has one worth showing.
+ *
+ * Slug first because it is short, stable and the thing you actually look for
+ * when checking a URL. A description is trimmed hard: two lines of prose in a
+ * tree row destroys the scannability the tree exists for.
+ */
+function subtitleOf(node: TreeNode): string {
+  const slug = typeof node.slug === "string" ? node.slug : "";
+  if (slug) return slug;
+  const description = typeof node.description === "string" ? node.description : "";
+  return description.length > 60 ? description.slice(0, 60) + "..." : description;
+}
+
+/**
+ * The row's own image, if the resource has one.
+ *
+ * A file field arrives as an object with a url, and a files field as an array
+ * of them. Both are worth showing: a category tree with pictures is far faster
+ * to scan than one without.
+ */
+function imageOf(node: TreeNode): string {
+  for (const key of ["image", "images", "photo", "thumbnail", "logo", "avatar", "icon"]) {
+    const value = node[key];
+    if (!value) continue;
+    if (typeof value === "string" && value.startsWith("http")) return value;
+    const first = Array.isArray(value) ? value[0] : value;
+    if (first && typeof first === "object" && typeof (first as { url?: string }).url === "string") {
+      return (first as { url: string }).url;
+    }
+  }
+  return "";
+}
+
+/** Two letters for the fallback tile, so a row without a picture still reads. */
+function initialsOf(node: TreeNode): string {
+  return labelOf(node)
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join("");
+}
+
+/** Counts a node and everything under it, for the "N inside" badge. */
+function descendantCount(node: TreeNode): number {
+  return (node.children ?? []).reduce((total, child) => total + 1 + descendantCount(child), 0);
 }
 
 /** Flattens a tree into ids, used to stop a node being dropped inside itself. */
@@ -117,7 +164,7 @@ function siblingsOf(nodes: TreeNode[], parentID: string): TreeNode[] {
   return parent?.children ?? [];
 }
 
-export function ResourceTree({ resource, onEdit }: ResourceTreeProps) {
+export function ResourceTree({ resource, onEdit, onAddChild }: ResourceTreeProps) {
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [dragging, setDragging] = useState<string | null>(null);
@@ -134,6 +181,32 @@ export function ResourceTree({ resource, onEdit }: ResourceTreeProps) {
   });
 
   const nodes = data ?? [];
+
+  /** Every id in the forest, for expand all. */
+  const allIDs = useMemo(() => {
+    const out: string[] = [];
+    const walk = (list: TreeNode[]) => {
+      for (const node of list) {
+        out.push(node.id);
+        walk(node.children ?? []);
+      }
+    };
+    walk(nodes);
+    return out;
+  }, [nodes]);
+
+  /** How deep the tree goes, shown in the header so the shape is legible. */
+  const maxDepth = useMemo(() => {
+    let deepest = 0;
+    const walk = (list: TreeNode[], depth: number) => {
+      for (const node of list) {
+        deepest = Math.max(deepest, depth);
+        walk(node.children ?? [], depth + 1);
+      }
+    };
+    walk(nodes, 1);
+    return deepest;
+  }, [nodes]);
 
   // Collapsed by default would hide the structure the page exists to show, and
   // expanded by default makes a deep tree unreadable. Two levels is the
@@ -256,11 +329,11 @@ export function ResourceTree({ resource, onEdit }: ResourceTreeProps) {
     return (
       <div className="rounded-xl border border-border bg-background-secondary p-6">
         <div className="space-y-2">
-          {[0, 1, 2, 3].map((i) => (
+          {[0, 1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="h-9 animate-pulse rounded-lg bg-background-tertiary"
-              style={{ marginLeft: (i % 3) * 20 }}
+              className="h-[52px] animate-pulse rounded-xl border border-border bg-background-tertiary"
+              style={{ marginLeft: (i % 3) * 24 }}
             />
           ))}
         </div>
@@ -278,11 +351,42 @@ export function ResourceTree({ resource, onEdit }: ResourceTreeProps) {
 
   return (
     <div className="rounded-xl border border-border bg-background-secondary">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <p className="text-xs text-text-muted">
-          Drag a row onto another to nest it, or between rows to reorder. Drop it at the
-          very top to make it a root.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground">
+            {nodes.length} top level
+            {maxDepth > 1 && (
+              <span className="text-text-muted">
+                {" "}
+                &middot; {maxDepth} levels deep
+              </span>
+            )}
+          </p>
+          <p className="text-xs text-text-muted">
+            Drag a row onto another to nest it, or between rows to reorder. Drop it at
+            the very top to make it a root.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              setExpanded(Object.fromEntries(allIDs.map((id) => [id, true])))
+            }
+          >
+            Expand all
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              setExpanded(Object.fromEntries(allIDs.map((id) => [id, false])))
+            }
+          >
+            Collapse all
+          </Button>
         <Button
           variant="ghost"
           size="sm"
@@ -296,6 +400,7 @@ export function ResourceTree({ resource, onEdit }: ResourceTreeProps) {
           {!rebuild.isPending && <RefreshCw className="h-3.5 w-3.5" />}
           Rebuild paths
         </Button>
+        </div>
       </div>
 
       {/* A drop bar above the first root, which is the only way to promote a
@@ -308,11 +413,12 @@ export function ResourceTree({ resource, onEdit }: ResourceTreeProps) {
         enabled={Boolean(dragging) && nodes.length > 0}
       />
 
-      <ul className="p-2">
+      <ul className="space-y-1 p-3">
         {nodes.map((node, i) => (
           <TreeRow
             key={node.id}
             node={node}
+            depth={0}
             last={i === nodes.length - 1}
             dragging={dragging}
             target={target}
@@ -326,14 +432,19 @@ export function ResourceTree({ resource, onEdit }: ResourceTreeProps) {
             onDrop={handleDrop}
             wouldCycle={wouldCycle}
             onEdit={onEdit}
+            onAddChild={onAddChild}
           />
         ))}
       </ul>
 
       {nodes.length === 0 && (
-        <p className="px-4 py-8 text-center text-sm text-text-muted">
-          Nothing here yet. Create one, then drag rows to arrange them.
-        </p>
+        <div className="px-4 py-12 text-center">
+          <p className="text-sm font-medium text-foreground">Nothing here yet</p>
+          <p className="mt-1 text-xs text-text-muted">
+            Create one with the New button above, then drag rows onto each other to
+            build the hierarchy.
+          </p>
+        </div>
       )}
     </div>
   );
@@ -364,17 +475,32 @@ function RootDropBar({
         e.preventDefault();
         onDrop();
       }}
-      className={
-        "mx-2 mt-2 h-2 rounded transition-colors " +
-        (active ? "bg-accent" : "bg-transparent hover:bg-accent/30")
-      }
+      className="relative mx-3 mt-3 h-2"
       aria-hidden
-    />
+    >
+      <span
+        className={
+          "absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full transition-all " +
+          (active ? "bg-accent" : "bg-border")
+        }
+      />
+      <span
+        className={
+          "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-2 text-[10px] font-medium transition-colors " +
+          (active ? "bg-accent text-white" : "bg-background-secondary text-text-muted")
+        }
+      >
+        drop here to make it a root
+      </span>
+    </div>
   );
 }
 
 interface TreeRowProps {
   node: TreeNode;
+  /** Rendered depth, 0 for a root. Read from the tree shape rather than from
+      the row's own depth column, so a stale column cannot misdraw the view. */
+  depth: number;
   last: boolean;
   dragging: string | null;
   target: DropTarget | null;
@@ -386,10 +512,12 @@ interface TreeRowProps {
   onDrop: (draggedID: string, drop: DropTarget) => void;
   wouldCycle: (draggedID: string, targetID: string) => boolean;
   onEdit?: (node: TreeNode) => void;
+  onAddChild?: (parentID: string) => void;
 }
 
 function TreeRow({
   node,
+  depth,
   last,
   dragging,
   target,
@@ -401,9 +529,13 @@ function TreeRow({
   onDrop,
   wouldCycle,
   onEdit,
+  onAddChild,
 }: TreeRowProps) {
   const children = node.children ?? [];
   const hasChildren = children.length > 0;
+  const total = descendantCount(node);
+  const subtitle = subtitleOf(node);
+  const image = imageOf(node);
   const isDragging = dragging === node.id;
   const forbidden = Boolean(dragging) && dragging !== node.id && wouldCycle(dragging as string, node.id);
   const isInsideTarget = target?.id === node.id && target.where === "inside";
@@ -411,7 +543,7 @@ function TreeRow({
   const isAfterTarget = target?.id === node.id && target.where === "after";
 
   return (
-    <li>
+    <li className="relative mt-1 first:mt-0">
       <DropBar
         active={isBeforeTarget}
         enabled={Boolean(dragging) && !isDragging}
@@ -419,6 +551,15 @@ function TreeRow({
         onLeave={() => setTarget(null)}
         onDrop={() => dragging && onDrop(dragging, { id: node.id, where: "before" })}
       />
+
+      {/* The elbow that joins this card to its parent's guide line. Indentation
+          alone reads as "further right"; a connector reads as "belongs to". */}
+      {depth > 0 && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -left-3 top-[26px] h-px w-3 bg-border"
+        />
+      )}
 
       <div
         draggable
@@ -450,57 +591,110 @@ function TreeRow({
           onDrop(dragging, { id: node.id, where: "inside" });
         }}
         className={
-          "group flex items-center gap-1.5 rounded-lg px-2 py-1.5 transition-colors " +
+          "group flex items-center gap-2.5 rounded-xl border px-2.5 py-2 transition-all " +
           (isDragging ? "opacity-40 " : "") +
-          (forbidden ? "cursor-no-drop opacity-50 " : "") +
+          (forbidden ? "cursor-no-drop opacity-40 " : "") +
           (isInsideTarget
-            ? "bg-accent/15 ring-1 ring-accent "
-            : "hover:bg-background-hover ")
+            ? "border-accent bg-accent/10 shadow-sm ring-1 ring-accent "
+            : "border-border bg-background hover:border-accent/50 hover:shadow-sm ")
         }
       >
-        <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-text-muted opacity-0 transition-opacity group-hover:opacity-100" />
+        {/* Visible at rest, not on hover. A drag handle nobody can see is a
+            feature nobody finds: the whole panel read as an unstyled list
+            because every affordance was hidden until the pointer arrived. */}
+        <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-text-muted/50 transition-colors group-hover:text-text-muted" />
 
         <button
           type="button"
           onClick={() => onToggle(node.id)}
           className={
-            "flex h-5 w-5 shrink-0 items-center justify-center rounded text-text-muted hover:bg-background-tertiary " +
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-background-tertiary hover:text-foreground " +
             (hasChildren ? "" : "invisible")
           }
           aria-label={expanded ? "Collapse" : "Expand"}
+          aria-expanded={hasChildren ? expanded : undefined}
         >
           {expanded ? (
-            <ChevronDown className="h-3.5 w-3.5" />
+            <ChevronDown className="h-4 w-4" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5" />
+            <ChevronRight className="h-4 w-4" />
           )}
         </button>
 
-        <span className="truncate text-sm text-foreground">{labelOf(node)}</span>
-        {hasChildren && (
-          <span className="shrink-0 text-xs text-text-muted">({children.length})</span>
+        {/* The picture if there is one, initials if not. Either way the row has
+            a fixed leading block, so labels line up down the whole tree. */}
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={image}
+            alt=""
+            className="h-9 w-9 shrink-0 rounded-lg border border-border object-cover"
+          />
+        ) : (
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background-tertiary text-[11px] font-semibold text-text-muted">
+            {initialsOf(node)}
+          </span>
         )}
 
-        <span className="ml-auto flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2">
+            <span className="truncate text-sm font-medium text-foreground">
+              {labelOf(node)}
+            </span>
+            {/* Stated, not merely implied by indentation. On a wide screen a
+                third-level row sits a long way from its parent, and counting
+                pixels is not reading. */}
+            <span className="shrink-0 rounded bg-background-tertiary px-1.5 py-0.5 font-mono text-[10px] leading-none text-text-muted">
+              L{depth + 1}
+            </span>
+          </span>
+          {subtitle && (
+            <span className="block truncate text-xs text-text-muted">{subtitle}</span>
+          )}
+        </span>
+
+        {hasChildren && (
+          <span
+            className="shrink-0 rounded-full border border-border px-2 py-0.5 text-[11px] font-medium text-text-muted"
+            title={total + " inside, " + children.length + " directly under this one"}
+          >
+            {total}
+          </span>
+        )}
+
+        {/* Actions fade in, which is fine: they are secondary, and the row
+            already looks like something before the pointer arrives. */}
+        <span className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+          {onAddChild && (
+            <button
+              type="button"
+              onClick={() => onAddChild(node.id)}
+              title={"Add a child under " + labelOf(node)}
+              className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-accent/15 hover:text-accent"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          )}
           {onEdit && (
             <button
               type="button"
               onClick={() => onEdit(node)}
               title={"Edit " + labelOf(node)}
-              className="rounded p-1 text-text-muted hover:bg-background-tertiary hover:text-foreground"
+              className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-background-tertiary hover:text-foreground"
             >
-              <Pencil className="h-3.5 w-3.5" />
+              <Pencil className="h-4 w-4" />
             </button>
           )}
         </span>
       </div>
 
       {expanded && hasChildren && (
-        <ul className="ml-5 border-l border-border pl-2">
+        <ul className="ml-6 space-y-1 border-l-2 border-border/70 pl-3">
           {children.map((child, i) => (
             <TreeRow
               key={child.id}
               node={child}
+              depth={depth + 1}
               last={i === children.length - 1}
               dragging={dragging}
               target={target}
@@ -512,6 +706,7 @@ function TreeRow({
               onDrop={onDrop}
               wouldCycle={wouldCycle}
               onEdit={onEdit}
+              onAddChild={onAddChild}
             />
           ))}
         </ul>
@@ -563,12 +758,19 @@ function DropBar({
         e.stopPropagation();
         onDrop();
       }}
-      className={
-        "my-0.5 h-1.5 rounded transition-colors " +
-        (active ? "bg-accent" : "bg-transparent hover:bg-accent/30")
-      }
+      className="relative -my-1 h-2"
       aria-hidden
-    />
+    >
+      <span
+        className={
+          "absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full transition-all " +
+          (active ? "bg-accent" : "bg-transparent")
+        }
+      />
+      {active && (
+        <span className="absolute left-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-accent" />
+      )}
+    </div>
   );
 }
 `

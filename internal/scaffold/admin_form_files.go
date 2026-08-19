@@ -3445,7 +3445,14 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
   ) : null;
 
   return (
-    <div>
+    <div className="space-y-1.5">
+      {/* Every other field type renders its label; this one did not, so a
+          relationship was the one control on the form with nothing above it.
+          Visible on any generated form with a belongs_to, not just a tree. */}
+      <label className="block text-sm font-medium text-foreground">
+        {field.label}
+        {field.required && <span className="text-danger ml-1">*</span>}
+      </label>
       <button
         ref={triggerRef}
         type="button"
@@ -3709,7 +3716,12 @@ export function MultiRelationshipSelectField({ field, value = [], onChange, erro
   ) : null;
 
   return (
-    <div>
+    <div className="space-y-1.5">
+      {/* Same omission as the single relationship field: no label. */}
+      <label className="block text-sm font-medium text-foreground">
+        {field.label}
+        {field.required && <span className="text-danger ml-1">*</span>}
+      </label>
       <div
         ref={triggerRef}
         onClick={() => { if (!open) updatePosition(); setOpen(!open); }}

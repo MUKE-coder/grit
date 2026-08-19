@@ -29,6 +29,84 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.163.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.163.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The tree view looks like something now, shows its levels, and
+                  can add a child to any row.</strong>
+                </p>
+
+                <h3>Rows are cards</h3>
+                <p>
+                  The drag handle and the row actions were{' '}
+                  <code>opacity-0</code> until hover, so at rest a node had no affordance
+                  at all and the panel read as an unstyled list of names. Every row is a
+                  card now: a border, a background, a hover state, and a handle you can
+                  see before you reach for it.
+                </p>
+                <p>
+                  Each row carries the record&rsquo;s own image where the resource has one,
+                  falling back to an initials tile, so the leading block is a fixed width
+                  and labels line up down the whole tree. Under the name sits the slug, or
+                  a trimmed description. A node with children shows how many are beneath
+                  it, counting the whole subtree rather than one level.
+                </p>
+
+                <h3>Levels you can see</h3>
+                <p>
+                  Indentation alone reads as &ldquo;further right&rdquo;. Three things
+                  make the hierarchy explicit: a guide line down each level, an elbow
+                  joining every card to its parent&rsquo;s line, and an{' '}
+                  <code>L1</code> / <code>L2</code> chip on the row itself. On a wide
+                  screen a third-level row sits a long way from its parent, and counting
+                  pixels is not reading.
+                </p>
+                <p>
+                  The panel header states the shape as well: how many top-level rows there
+                  are and how deep the tree goes, with Expand all and Collapse all beside
+                  it.
+                </p>
+
+                <h3>Add a child, honestly</h3>
+                <p>
+                  There was deliberately no &ldquo;add a child here&rdquo; button, because
+                  the controller&rsquo;s <code>create()</code> takes no starting values:
+                  the new row would have been born at the root with the parent silently
+                  dropped.
+                </p>
+                <p>
+                  So the controller gained <code>createWith(defaults)</code>. The form
+                  components already accepted a <code>defaults</code> prop for exactly
+                  this; nothing carried the values to them. Now a plus button on any row
+                  opens the create form with that row already chosen as the parent, and
+                  every other resource gains a way to open a form pre-scoped to a parent.
+                </p>
+
+                <h3>And a label that was missing everywhere</h3>
+                <p>
+                  Building this surfaced an older bug with a much wider blast radius:{' '}
+                  <code>RelationshipSelectField</code> never rendered a label. Every
+                  generated form with a <code>belongs_to</code> had one control with
+                  nothing above it, sitting under the previous field&rsquo;s label. Both
+                  the single and multi relationship fields are labelled now.
+                </p>
+                <p>
+                  Found by loading the form in a browser, which is also where{' '}
+                  <code>onAddChild is not defined</code> turned up: the prop reached the
+                  row markup without reaching the row&rsquo;s props, and Go compiling the
+                  template that contains it proves nothing about the TypeScript inside.
+                </p>
+              </div>
+            </div>
+
             {/* v3.162.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
