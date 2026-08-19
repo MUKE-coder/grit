@@ -511,7 +511,13 @@ export interface ResourceDetailController<T = Record<string, unknown>> {
   // controller. Without it every caller writes item={c.record} and hits the
   // difference between "still loading" (undefined) and "creating" (null),
   // which the stock form distinguishes and a query result does not.
-  form: { open: boolean; item: T | null; close: () => void };
+  form: {
+    open: boolean;
+    item: T | null;
+    /** Pre-filled values for create mode, set by createWith(). */
+    defaults?: Record<string, unknown>;
+    close: () => void;
+  };
   confirmDelete: { open: boolean; confirm: () => void; cancel: () => void };
 }
 
@@ -1262,6 +1268,13 @@ function ResourceListView({ resource }: ResourcePageProps) {
                 ? (node) => c.edit(node as unknown as Record<string, unknown>)
                 : undefined
             }
+            // createWith rather than create, so the row you clicked is already
+            // chosen as the parent when the form opens.
+            onAddChild={
+              c.can("create")
+                ? (parentID) => c.createWith({ parent_id: parentID })
+                : undefined
+            }
           />
         ) : showEmptyState && EmptyState ? (
           <EmptyState resource={resource} />
@@ -1334,6 +1347,7 @@ function ResourceListView({ resource }: ResourcePageProps) {
           <FormModal
             resource={resource}
             item={c.form.item}
+            defaults={c.form.defaults}
             onClose={c.form.close}
           />
         ) : (
@@ -1341,6 +1355,7 @@ function ResourceListView({ resource }: ResourcePageProps) {
           <FormSheet
             resource={resource}
             item={c.form.item}
+            defaults={c.form.defaults}
             onClose={c.form.close}
           />
         )
@@ -1558,6 +1573,8 @@ export interface ResourceController<T = Record<string, unknown>> {
   actions: TableAction[];
   can: (action: TableAction) => boolean;
   create: () => void;
+  /** Create with fields pre-filled, e.g. createWith({ parent_id: id }). */
+  createWith: (defaults: Record<string, unknown>) => void;
   edit: (row: T) => void;
   view: (row: T) => void;
   /** Opens the confirm dialog; deletion happens on confirm. */
@@ -1604,7 +1621,13 @@ export interface ResourceController<T = Record<string, unknown>> {
   setShowArchived: (value: boolean) => void;
 
   // ── dialog state, for anyone rendering their own ────────────────────
-  form: { open: boolean; item: T | null; close: () => void };
+  form: {
+    open: boolean;
+    item: T | null;
+    /** Pre-filled values for create mode, set by createWith(). */
+    defaults?: Record<string, unknown>;
+    close: () => void;
+  };
   confirmDelete: { open: boolean; confirm: () => void; cancel: () => void };
   confirmBulkDelete: { open: boolean; confirm: () => void; cancel: () => void };
   confirmBulkArchive: { open: boolean; confirm: () => void; cancel: () => void };
@@ -1673,6 +1696,9 @@ export function useResourceController<T = Record<string, unknown>>(
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<T | null>(null);
+  // Starting values for the next create. Used by "add a child here" in the tree
+  // view, and by anything else that opens a form already scoped to a parent.
+  const [formDefaults, setFormDefaults] = useState<Record<string, unknown> | undefined>(undefined);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
@@ -1834,6 +1860,7 @@ export function useResourceController<T = Record<string, unknown>>(
   );
 
   const create = useCallback(() => {
+    setFormDefaults(undefined);
     if (isFormPage) {
       router.push("/resources/" + resource.slug + "?action=create");
     } else {
@@ -1841,6 +1868,30 @@ export function useResourceController<T = Record<string, unknown>>(
       setFormOpen(true);
     }
   }, [isFormPage, router, resource.slug]);
+
+  /**
+   * Create, with some fields already filled in.
+   *
+   * createWith({ parent_id: id }) is how the tree view adds a child to the row
+   * you clicked. In page mode the values ride along as query params, because a
+   * route change is the only state that survives the navigation.
+   */
+  const createWith = useCallback(
+    (defaults: Record<string, unknown>) => {
+      if (isFormPage) {
+        const params = new URLSearchParams({ action: "create" });
+        for (const [key, value] of Object.entries(defaults)) {
+          if (value !== undefined && value !== null) params.set(key, String(value));
+        }
+        router.push("/resources/" + resource.slug + "?" + params.toString());
+        return;
+      }
+      setFormDefaults(defaults);
+      setEditingItem(null);
+      setFormOpen(true);
+    },
+    [isFormPage, router, resource.slug],
+  );
 
   const remove = useCallback((id: string) => {
     setDeletingId(id);
@@ -2076,6 +2127,7 @@ export function useResourceController<T = Record<string, unknown>>(
     actions,
     can,
     create,
+    createWith,
     edit,
     view,
     remove,
@@ -2103,7 +2155,7 @@ export function useResourceController<T = Record<string, unknown>>(
     showArchived,
     setShowArchived,
 
-    form: { open: formOpen, item: editingItem, close: closeForm },
+    form: { open: formOpen, item: editingItem, defaults: formDefaults, close: closeForm },
     confirmDelete: {
       open: confirmOpen,
       confirm: doDelete,
