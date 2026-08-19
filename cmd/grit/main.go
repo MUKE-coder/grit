@@ -564,6 +564,7 @@ func addCmd() *cobra.Command {
 	cmd.AddCommand(addWebAuthCmd())
 	cmd.AddCommand(addI18nCmd())
 	cmd.AddCommand(addOfflineCmd())
+	cmd.AddCommand(addVariantsCmd())
 
 	return cmd
 }
