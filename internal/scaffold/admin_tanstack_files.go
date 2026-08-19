@@ -379,6 +379,7 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "lib", "api-client.ts"):   adminTanStackAPIClient(),
 		filepath.Join(adminRoot, "src", "lib", "query-client.ts"): adminQueryClient(),
 		filepath.Join(adminRoot, "src", "lib", "utils.ts"):        adminUtils(),
+		filepath.Join(adminRoot, "components.json"):               viteComponentsJSON(),
 		filepath.Join(adminRoot, "src", "lib", "resource.ts"):     adminResourceTypes(),
 		filepath.Join(adminRoot, "src", "lib", "icons.ts"):        adminIconMap(),
 		filepath.Join(adminRoot, "src", "lib", "formatters.ts"):   adminFormatters(),

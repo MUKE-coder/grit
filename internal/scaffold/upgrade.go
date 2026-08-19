@@ -167,6 +167,18 @@ func Upgrade(uOpts UpgradeOptions) error {
 		updated += n
 	}
 
+	// --- shadcn config for every frontend ---
+	//
+	// Created when missing, never overwritten. Without it,
+	// "npx shadcn@latest add https://ui.gritframework.dev/r/<block>.json"
+	// abandons the install and starts an interactive setup instead, asking a
+	// project that already knows all the answers to answer them again.
+	//
+	// Its own step rather than part of the app file maps because there is no
+	// upgrade path for apps/web at all: this is a config file, so creating a
+	// missing one is safe in a way that rewriting a page never is.
+	updated += ensureShadcnConfigs(root, spinner, green)
+
 	// --- Docs ---
 	if hasDocs {
 		spinner.Printf("  → Updating documentation...\n")
@@ -448,6 +460,39 @@ func pruneAdminStrays(adminRoot string) int {
 		fmt.Printf("  ✓ Removed %d stale duplicate component file(s) from earlier upgrades\n", removed)
 	}
 	return removed
+}
+
+// ensureShadcnConfigs gives every frontend a components.json if it has none.
+//
+// The shadcn CLI refuses to install into a project without one, and Grit UI is
+// distributed as a shadcn registry, so a project scaffolded before this shipped
+// cannot install a block without answering four setup questions first, one of
+// which offers a component library that is wrong for the project.
+//
+// Layout decides the contents: an App Router app declares rsc true and points
+// at app/globals.css, a Vite app declares false and points at src/globals.css.
+// Detected from the file that is actually there rather than from a flag, so a
+// project that switched frontends still gets the right one.
+func ensureShadcnConfigs(root string, spinner, green *color.Color) int {
+	created := 0
+	for _, app := range []string{"web", "admin"} {
+		appRoot := filepath.Join(root, "apps", app)
+		if !dirExists(appRoot) {
+			continue
+		}
+
+		body := viteComponentsJSON()
+		if fileExists(filepath.Join(appRoot, "app", "globals.css")) {
+			body = nextComponentsJSON()
+		}
+
+		wrote, err := createIfMissing(filepath.Join(appRoot, "components.json"), body)
+		if err == nil && wrote {
+			created++
+			green.Printf("  ✓ apps/%s/components.json (shadcn and Grit UI installs)\n", app)
+		}
+	}
+	return created
 }
 
 // createIfMissing writes a file only when it is absent, and reports whether it

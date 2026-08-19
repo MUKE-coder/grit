@@ -21,6 +21,7 @@ func writeWebFiles(root string, opts Options) error {
 		filepath.Join(webRoot, "app", "not-found.tsx"):     webNotFoundPage(),
 		filepath.Join(webRoot, "app", "global-error.tsx"):  webGlobalErrorPage(),
 		filepath.Join(webRoot, "lib", "utils.ts"):          webUtils(),
+		filepath.Join(webRoot, "components.json"):          nextComponentsJSON(),
 		filepath.Join(webRoot, "components", "navbar.tsx"): webNavbar(opts),
 		filepath.Join(webRoot, "components", "footer.tsx"): webFooter(opts),
 		// v3.31.49 — DevLinks renders every URL the `grit new` welcome

@@ -104,6 +104,7 @@ func writeSingleFrontendFiles(root string, opts Options) error {
 		filepath.Join(feRoot, "src", "components", "footer.tsx"):    singleViteFooter(opts),
 		filepath.Join(feRoot, "src", "components", "providers.tsx"): webTanStackProviders(),
 		filepath.Join(feRoot, "src", "lib", "utils.ts"):             webUtils(),
+		filepath.Join(feRoot, "components.json"):                    viteComponentsJSON(),
 		// viteAPIClientWithAuth (instead of viteAPIClient) so the axios
 		// instance auto-attaches Authorization from the stored token AND
 		// transparently refreshes on 401 — both gaps called out in the

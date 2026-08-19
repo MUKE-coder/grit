@@ -323,6 +323,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "lib", "api-client.ts"):   adminAPIClient(),
 		filepath.Join(adminRoot, "lib", "query-client.ts"): adminQueryClient(),
 		filepath.Join(adminRoot, "lib", "utils.ts"):        adminUtils(),
+		filepath.Join(adminRoot, "components.json"):        nextComponentsJSON(),
 		filepath.Join(adminRoot, "lib", "resource.ts"):     adminResourceTypes(),
 		filepath.Join(adminRoot, "lib", "icons.ts"):        adminIconMap(),
 		filepath.Join(adminRoot, "lib", "formatters.ts"):   adminFormatters(),
