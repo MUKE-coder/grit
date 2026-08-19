@@ -730,6 +730,86 @@ The guard around `product.images?.[0]` is not defensive padding either. `images`
 
 Also: faker fills `price` and `compare_at_price` independently, so on roughly half the seeded rows the "compare at" price is *lower*, and your strikethrough vanishes. Nothing is broken. If you want the discount to read convincingly in a demo, set the two by hand in the admin for a few products, or edit the seeder to derive one from the other.
 
+### Or install the grid instead of writing it
+
+Everything above is worth understanding once, and after that you mostly want a
+grid that already looks finished. [Grit UI](https://ui.gritframework.dev) is a
+shadcn registry of blocks built for exactly these screens, and a scaffolded
+project can install from it directly:
+
+```bash
+cd apps/web
+npx shadcn@latest add https://ui.gritframework.dev/r/ecommerce-product-grids-grid-with-ratings.json
+```
+
+That writes one file, `components/grit-ui/product-grids/grid-with-ratings.tsx`,
+and adds no dependency you do not already have. Your project ships a
+`components.json` for this, so there is nothing to set up first.
+
+The block takes its data as props, which is the part that makes it useful rather
+than a screenshot: hand it your catalogue and your cart and it is a real page.
+
+```tsx
+// apps/web/app/page.tsx
+"use client";
+
+import ProductGridWithRatings, {
+  type Product as GridProduct,
+} from "@/components/grit-ui/product-grids/grid-with-ratings";
+import { ProductGridSkeleton } from "@/components/shop/product-grid-skeleton";
+import { useCatalogue } from "@/hooks/use-catalogue";
+import { addToCart } from "@/lib/cart";
+
+export default function HomePage() {
+  const { data, isLoading } = useCatalogue({ pageSize: 8 });
+  if (isLoading) return <ProductGridSkeleton />;
+
+  const catalogue = data?.data ?? [];
+
+  // The block has its own shape, and mapping to it is the whole integration.
+  // originalPrice is undefined rather than 0 when there is no discount: the
+  // block decides whether to draw the struck-through price from that.
+  const products: GridProduct[] = catalogue.map((p) => ({
+    id: p.id,
+    name: p.name,
+    price: p.price,
+    originalPrice: p.compare_at_price > p.price ? p.compare_at_price : undefined,
+    image: p.images?.[0]?.url ?? "",
+    href: `/products/${p.slug}`,
+  }));
+
+  // The block hands back its own shape, and the cart wants yours. Keep the
+  // originals by id rather than rebuilding a product from what the block knows.
+  const byID = new Map(catalogue.map((p) => [p.id, p]));
+
+  return (
+    <ProductGridWithRatings
+      title="Featured products"
+      viewAllHref="/products"
+      products={products}
+      onAdd={(item) => {
+        const product = byID.get(item.id);
+        if (product) addToCart(product);
+      }}
+    />
+  );
+}
+```
+
+Two things worth knowing before you reach for these.
+
+**A block is a starting point you own.** `shadcn add` copies the file into your
+repo. There is no package to upgrade and no version to track, which also means a
+fix upstream does not reach you: you edit your copy. That is the shadcn model
+working as intended, and it is why the file arrives with comments explaining why
+it is built the way it is rather than as minified output.
+
+**Ratings are not in your schema.** The block renders `rating` and `reviews`
+because a storefront grid usually has them, and the Product resource you
+generated does not. Either add the fields and publish them, or leave them
+undefined and the block skips that row. Do not fake them: a made-up 4.8 next to
+124 reviews is the one piece of a shop a customer is entitled to trust.
+
 `data.data` and `data.meta` are Grit's [response format](/docs/backend/response-format), the same shape on every endpoint, so pagination code you write once works everywhere.
 
 The detail page uses the slug route the generator mounted: `GET /api/v1/public/products/:key` looks up by slug, so your URL reads `/products/blue-running-shoes` rather than a UUID.
@@ -819,6 +899,65 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   );
 }
 ```
+
+### The detail block, and the thing to watch with it
+
+There is a block for this screen too, with a gallery, variant pickers and a
+delivery panel:
+
+```bash
+npx shadcn@latest add https://ui.gritframework.dev/r/ecommerce-product-details-physical-product-with-variants.json
+```
+
+```tsx
+// apps/web/app/products/[slug]/page.tsx
+"use client";
+
+import { use } from "react";
+import PhysicalProductWithVariants from "@/components/grit-ui/product-details/physical-product-with-variants";
+import { useProduct } from "@/hooks/use-catalogue";
+import { addToCart } from "@/lib/cart";
+
+export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
+  const { data, isLoading, error } = useProduct(slug);
+
+  if (isLoading) return <p>Loading...</p>;
+  if (error || !data) return <p>Product not found</p>;
+  const product = data.data;
+
+  return (
+    <PhysicalProductWithVariants
+      name={product.name}
+      price={product.price}
+      // undefined, not 0, or the block draws a struck-through price on a
+      // product that is not discounted.
+      wasPrice={product.compare_at_price > product.price ? product.compare_at_price : undefined}
+      description={product.description}
+      images={(product.images ?? []).map((i) => i.url)}
+      // The Product resource has no variants, so say so. Left out, the block
+      // keeps its sample colours and sizes, and your page offers a Midnight
+      // Blue that does not exist.
+      colours={[]}
+      sizes={[]}
+      onAddToBasket={() => addToCart(product)}
+    />
+  );
+}
+```
+
+**Read that comment about `colours` again, because it is the one real trap in
+using any of these blocks.** Every prop has a sample default, and a prop you do
+not pass keeps it. Leave out `rating` and the page states 4.8 from 246 reviews
+about a product nobody has reviewed. Leave out `highlights` and it lists four
+features of a running shoe. Nothing errors and nothing looks broken, which is
+exactly why it is worth saying: a block is furnished by default, and furnishing
+is not data.
+
+So pass every prop you have, and pass an empty value for every prop you do not.
+When your schema genuinely has no variants, no ratings and no highlights, either
+delete those sections from your copy of the file or add the fields and publish
+them.
 
 Pull the card into `components/shop/product-card.tsx` with its own Add to cart button, and one component serves the grid, the similar strip, and anywhere else you show a product. The cart is a module-level store, so a card added from the similar strip updates the badge in the header with nothing passed down between them.
 
@@ -935,6 +1074,48 @@ const SORTS = [
 ```
 
 Finish the page with the other categories as chips at the bottom, the current one filtered out. Customers browse sideways far more than they browse down.
+
+Or use the block, which is the horizontal rail of circles every shop has at the
+top of its home page:
+
+```bash
+npx shadcn@latest add https://ui.gritframework.dev/r/ecommerce-store-categories-circular-category-rail.json
+```
+
+```tsx
+// apps/web/app/page.tsx
+"use client";
+
+import CircularCategoryRail, {
+  type Category as RailCategory,
+} from "@/components/grit-ui/store-categories/circular-category-rail";
+import { useCategories } from "@/hooks/use-catalogue";
+
+export default function HomePage() {
+  const { data, isLoading } = useCategories();
+  if (isLoading) return <p>Loading categories...</p>;
+
+  const categories: RailCategory[] = (data?.data ?? []).map((c) => ({
+    name: c.name,
+    href: `/categories/${c.slug}`,
+    // The rail is built around a picture per category. This is what the
+    // image:file:image in Step 1 was for: without it every circle is empty
+    // and the row reads as a loading state that never finishes.
+    image: c.image?.url ?? "",
+    tone: "#e5e7eb",
+  }));
+
+  return <CircularCategoryRail categories={categories} />;
+}
+```
+
+Add `image` to `CatalogueCategory` in your hook to match, and to
+`publicCategory` in `category_public.go` if you have not already: an image is
+published by default, so a category generated with the field already returns it.
+
+The rail handles its own scrolling, keeps the arrow buttons in step with a
+swipe or a scrollbar drag, and is keyboard reachable. That is the part worth
+not writing yourself.
 
 Brand works exactly the same way, and you have a choice to make. `brand:string` on the product gives you `?brand=Philips` for free. `brand:belongs_to:Brand` gives you a brand table with its own page, its own logo, and `?brand_id=`. If a brand is a thing in your shop with a page of its own, make it a resource. If it is a word on a label, a string is enough.
 

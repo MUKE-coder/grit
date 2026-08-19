@@ -29,6 +29,7 @@ func writeWebTanStackFiles(root string, opts Options) error {
 		filepath.Join(webRoot, "src", "components", "providers.tsx"): webTanStackProviders(),
 		filepath.Join(webRoot, "src", "lib", "next-compat.tsx"):      adminNextCompatShim(),
 		filepath.Join(webRoot, "src", "lib", "utils.ts"):             webUtils(),
+		filepath.Join(webRoot, "components.json"):                    viteComponentsJSON(),
 		filepath.Join(webRoot, "src", "lib", "api.ts"):               viteAPIClient(),
 		filepath.Join(webRoot, "src", "hooks", "use-blogs.ts"):       nextToTanStack(webUseBlogsHook()),
 		filepath.Join(webRoot, "public", ".gitkeep"):                 "",

@@ -29,6 +29,72 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.166.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.166.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Installing a Grit UI block into a scaffolded app started an
+                  interactive setup instead of installing anything.</strong>
+                </p>
+                <CodeBlock language="bash" code={`cd apps/web
+npx shadcn@latest add https://ui.gritframework.dev/r/ecommerce-product-grids-grid-with-ratings.json
+
+? You need to create a components.json file to add components. Proceed?
+? Select a component library >  Base UI (Recommended) / React Aria / Radix UI`} />
+                <p>
+                  The shadcn CLI will not install into a project without a{' '}
+                  <code>components.json</code>, and no scaffolded frontend had one. So the
+                  first thing anybody does with Grit UI is answer four questions about a
+                  project that already has every answer, and one of those questions offers
+                  a component library that is wrong here: Grit is built on Radix through
+                  shadcn/ui, and picking the recommended Base UI produces components
+                  importing packages the project does not have.
+                </p>
+                <p>
+                  Every frontend now ships one, with values read from the project rather
+                  than guessed: the tailwind config and css paths the scaffold actually
+                  wrote, the <code>cn()</code> in lib/utils.ts, and lucide as the icon
+                  library because it is already a dependency. Next.js apps declare{' '}
+                  <code>rsc: true</code>, Vite apps declare false and point at
+                  src/globals.css.
+                </p>
+                <p>
+                  Existing projects get one from <code>grit upgrade</code>, created only
+                  when missing. That runs as its own step because there is no upgrade path
+                  for apps/web at all, and a config file is safe to create in a way that
+                  rewriting a page never is.
+                </p>
+                <p>
+                  Verified end to end on a fresh project: scaffold, install a block with
+                  no prompts, typecheck, start the server, and render it in a browser.
+                </p>
+
+                <h3>Grit UI in the storefront guide</h3>
+                <p>
+                  Three blocks are now covered, each wired to the real public endpoints
+                  and clicked in a browser before being written down: the product grid,
+                  the product detail page with its gallery and variant pickers, and the
+                  circular category rail.
+                </p>
+                <p>
+                  With one warning that took a browser to notice. Every prop on these
+                  blocks has a sample default, and a prop you do not pass keeps it. Leave
+                  out <code>rating</code> and your page states 4.8 from 246 reviews about
+                  a product nobody has reviewed. Leave out <code>colours</code> and it
+                  offers a Midnight Blue that does not exist. Nothing errors and nothing
+                  looks broken, which is exactly why it is worth saying out loud: a block
+                  is furnished by default, and furnishing is not data.
+                </p>
+              </div>
+            </div>
+
             {/* v3.165.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
