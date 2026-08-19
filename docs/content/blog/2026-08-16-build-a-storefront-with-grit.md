@@ -527,6 +527,107 @@ export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
 }
 ```
 
+**The cart store**, because the card has an Add to cart button and a button
+that calls nothing is not worth writing. Step 5 is where the design is argued
+for: why a client-side cart, why [Simple Store](https://jb.desishub.com/blog/simple-store)
+rather than Context, and why it starts empty on the server. Create the file now
+and read that when you get there.
+
+```bash
+cd apps/web && pnpm add @simplestack/store
+```
+
+```ts
+// apps/web/lib/cart.ts
+import { store } from "@simplestack/store";
+import type { CatalogueProduct } from "@/hooks/use-catalogue";
+
+export interface CartLine {
+  productId: string;
+  name: string;
+  price: number;
+  image?: string;
+  quantity: number;
+}
+
+const STORAGE_KEY = "shopfront.cart";
+
+// Starts empty, on the server and on the client's first render alike.
+// Step 5 explains why that matters more than it looks.
+export const cartStore = store<CartLine[]>([]);
+
+// Takes the catalogue shape, not the full Product from @repo/shared.
+// The storefront never holds a full Product: the public endpoint publishes a
+// narrower struct on purpose, and typing this against the admin model gives you
+//   TS2739: Type 'CatalogueProduct' is missing the following properties
+//   from type 'Product': stock, category_id, active, created_at, updated_at
+export function addToCart(product: CatalogueProduct, quantity = 1) {
+  cartStore.set((lines) => {
+    const existing = lines.find((l) => l.productId === product.id);
+    if (existing) {
+      return lines.map((l) =>
+        l.productId === product.id ? { ...l, quantity: l.quantity + quantity } : l,
+      );
+    }
+    return [
+      ...lines,
+      {
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.images?.[0]?.url,
+        quantity,
+      },
+    ];
+  });
+}
+
+export function setQuantity(productId: string, quantity: number) {
+  cartStore.set((lines) =>
+    quantity <= 0
+      ? lines.filter((l) => l.productId !== productId)
+      : lines.map((l) => (l.productId === productId ? { ...l, quantity } : l)),
+  );
+}
+
+export function removeFromCart(productId: string) {
+  cartStore.set((lines) => lines.filter((l) => l.productId !== productId));
+}
+
+export function clearCart() {
+  cartStore.set([]);
+}
+
+// Reads the saved cart and starts persisting. Call once, after mount.
+//
+// Returns an unsubscribe, so a fast refresh in development does not leave two
+// subscriptions writing the same key.
+export function hydrateCart(): () => void {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw) cartStore.set(JSON.parse(raw) as CartLine[]);
+  } catch {
+    // A corrupt or unreadable cart is not worth breaking the page over. The
+    // customer gets an empty one and can carry on shopping, which is the
+    // failure mode you want in a shop.
+    window.localStorage.removeItem(STORAGE_KEY);
+  }
+
+  return cartStore.subscribe((lines) => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
+  });
+}
+
+// Derived values are plain functions, because they are plain functions.
+export function subtotalOf(lines: CartLine[]) {
+  return lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
+}
+
+export function countOf(lines: CartLine[]) {
+  return lines.reduce((sum, l) => sum + l.quantity, 0);
+}
+```
+
 **The card**, which is one component rather than three copies, because the day
 you add a "low stock" badge you want it in all three places without having to
 remember where they are:
@@ -578,10 +679,6 @@ export function ProductCard({ product }: { product: CatalogueProduct }) {
   );
 }
 ```
-
-> The card imports `addToCart` from `@/lib/cart`, which you build in Step 5. If
-> you are following in order, leave the button out until then and add it when the
-> cart exists. Everything else on this page works without it.
 
 And the grid, images and all:
 
@@ -968,105 +1065,27 @@ Start with the client-side one. Moving later is a contained change, and building
 
 For the state itself we are using [Simple Store](https://jb.desishub.com/blog/simple-store). A cart is read by the header badge, the cart drawer, the cart page and the checkout form, which is four unrelated places in the tree. That is the shape that normally pushes you into Context, and Context is a lot of ceremony for what is really one array: a provider component, a context object, a hook that throws if you forgot the provider, and a wrapper in the layout that has to sit above everything.
 
-Simple Store has none of that. You create a store in a file and import it where you need it.
+Simple Store has none of that. You create a store in a file and import it where you need it, which is the `apps/web/lib/cart.ts` you wrote back in Step 4c. Two decisions in that file are worth the paragraphs they cost.
 
-```bash
-cd apps/web && pnpm add @simplestack/store
+**It starts empty, on the server and on the client's first render alike.**
+
+```ts
+export const cartStore = store<CartLine[]>([]);
 ```
 
-```tsx
-// apps/web/lib/cart.ts
-import { store } from "@simplestack/store";
-import type { Product } from "@shopfront/shared";
+The tempting version reads `localStorage` right there, and it fails twice over in an App Router app. The module is evaluated during server rendering, where `localStorage` does not exist, so it throws. Guard the throw and you get the second failure: the server renders a cart badge saying 0 while the browser's first render says 3, which is a hydration mismatch. React keeps the server's markup, and your badge stays wrong until something unrelated re-renders it.
 
-export interface CartLine {
-  productId: string;
-  name: string;
-  price: number;
-  image?: string;
-  quantity: number;
-}
+So the store starts empty everywhere, and `hydrateCart()` fills it after mount. That function returns its unsubscribe, which matters in development: without it a fast refresh leaves two subscriptions writing the same key.
 
-const STORAGE_KEY = "shopfront.cart";
+**Derived values are plain functions.**
 
-// Starts empty, on the server and on the client's first render alike.
-//
-// The tempting version reads localStorage right here, and it fails twice over
-// in an App Router app. This module is evaluated during server rendering,
-// where localStorage does not exist, so it throws. And if you guard the throw,
-// the server renders a cart badge saying 0 while the browser's first render
-// says 3, which is a hydration mismatch: React keeps the server's markup and
-// your badge stays wrong until something else re-renders it.
-//
-// So: empty everywhere, then hydrate after mount. See hydrateCart below.
-export const cartStore = store<CartLine[]>([]);
-
-export function addToCart(product: Product, quantity = 1) {
-  cartStore.set((lines) => {
-    const existing = lines.find((l) => l.productId === product.id);
-    if (existing) {
-      return lines.map((l) =>
-        l.productId === product.id ? { ...l, quantity: l.quantity + quantity } : l,
-      );
-    }
-    return [
-      ...lines,
-      {
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.images?.[0]?.url,
-        quantity,
-      },
-    ];
-  });
-}
-
-export function setQuantity(productId: string, quantity: number) {
-  cartStore.set((lines) =>
-    quantity <= 0
-      ? lines.filter((l) => l.productId !== productId)
-      : lines.map((l) => (l.productId === productId ? { ...l, quantity } : l)),
-  );
-}
-
-export function removeFromCart(productId: string) {
-  cartStore.set((lines) => lines.filter((l) => l.productId !== productId));
-}
-
-export function clearCart() {
-  cartStore.set([]);
-}
-
-// Reads the saved cart and starts persisting. Call once, after mount.
-//
-// Returns an unsubscribe, so a fast refresh in development does not leave two
-// subscriptions writing the same key.
-export function hydrateCart(): () => void {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw) cartStore.set(JSON.parse(raw) as CartLine[]);
-  } catch {
-    // A corrupt or unreadable cart is not worth breaking the page over. The
-    // customer gets an empty one and can carry on shopping, which is the
-    // failure mode you want in a shop.
-    window.localStorage.removeItem(STORAGE_KEY);
-  }
-
-  return cartStore.subscribe((lines) => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
-  });
-}
-
-// Derived values are plain functions, because they are plain functions.
+```ts
 export function subtotalOf(lines: CartLine[]) {
   return lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
 }
-
-export function countOf(lines: CartLine[]) {
-  return lines.reduce((sum, l) => sum + l.quantity, 0);
-}
 ```
+
+Not a selector, not a memo, not a computed store. A subtotal is a fold over an array that is almost always under ten items long, and wrapping it in machinery costs more than it saves.
 
 One component to start the hydration, mounted once:
 
@@ -1126,9 +1145,9 @@ And writing to it does not need a hook at all, which is the part that changes ho
 "use client";
 
 import { addToCart } from "@/lib/cart";
-import type { Product } from "@shopfront/shared";
+import type { CatalogueProduct } from "@/hooks/use-catalogue";
 
-export function AddToCartButton({ product }: { product: Product }) {
+export function AddToCartButton({ product }: { product: CatalogueProduct }) {
   return (
     <button onClick={() => addToCart(product)}>
       Add to cart
