@@ -29,6 +29,65 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.165.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.165.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The storefront guide&rsquo;s cart file: wrong package, wrong
+                  type, and printed after the component that imports it.</strong>
+                </p>
+                <p>
+                  Three problems in one file, all reported by readers following the guide
+                  in order.
+                </p>
+
+                <h3>A package that does not exist</h3>
+                <CodeBlock language="ts" code={`import type { Product } from "@shopfront/shared";   // no such package`} />
+                <p>
+                  The workspace package a scaffolded project actually has is{' '}
+                  <code>@repo/shared</code>. It appeared twice, in the cart and in the
+                  add-to-cart button.
+                </p>
+
+                <h3>A type the storefront never holds</h3>
+                <p>
+                  <code>addToCart</code> took the full <code>Product</code> from the
+                  shared package. A storefront only ever has the narrower struct the
+                  public endpoint publishes, and passing one to the other is:
+                </p>
+                <CodeBlock language="text" code={`TS2739: Type 'CatalogueProduct' is missing the following properties
+from type 'Product': stock, category_id, active, created_at, updated_at`} />
+                <p>
+                  Which is the allowlist working exactly as designed, and the guide typing
+                  against the wrong side of it. Both the cart and the button take{' '}
+                  <code>CatalogueProduct</code> now.
+                </p>
+
+                <h3>Printed after it was used</h3>
+                <p>
+                  <code>lib/cart.ts</code> lived in Step 5, and Step 4c&rsquo;s{' '}
+                  <code>ProductCard</code> imports it. Anybody building in order hit a
+                  missing module and a red editor. The file now appears where it is first
+                  needed, and Step 5 keeps what it was actually there to teach: why a
+                  client-side cart, why Simple Store rather than Context, why the store
+                  starts empty on the server, and why derived values are plain functions.
+                </p>
+                <p>
+                  Verified by extracting the guide&rsquo;s cart file verbatim into a real
+                  project, typechecking it against the guide&rsquo;s own ProductCard, and
+                  clicking Add to cart in a browser: the badge went 0 to 1 and the line
+                  persisted with its name, price and image.
+                </p>
+              </div>
+            </div>
+
             {/* v3.164.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
