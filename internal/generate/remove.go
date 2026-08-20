@@ -47,6 +47,20 @@ func RemoveResource(name string) error {
 		filepath.Join(apiRoot, "internal", "services", names.Snake+".go"),
 		filepath.Join(apiRoot, "internal", "handlers", names.Snake+".go"),
 		filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_import.go"),
+		// The --public handler, and the variant files if `grit add variants`
+		// was run against this resource.
+		//
+		// Leaving the public one behind is not cosmetic: it is written only
+		// when absent, so a resource regenerated with different fields keeps
+		// the old allowlist and the API stops compiling on a column the model
+		// no longer has.
+		filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_public.go"),
+		filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_variant.go"),
+		filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_variant_public.go"),
+		filepath.Join(apiRoot, "internal", "models", names.Snake+"_variant.go"),
+		filepath.Join(apiRoot, "internal", "services", names.Snake+"_variants.go"),
+		filepath.Join(apiRoot, "internal", "services", names.Snake+"_variants_test.go"),
+		filepath.Join(apiRoot, "internal", "database", names.Snake+"_variants_seeder.go"),
 		// --- Go API: scaffolded demo-resource naming ---
 		filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_handler.go"),
 		filepath.Join(apiRoot, "internal", "services", names.Snake+"_service.go"),

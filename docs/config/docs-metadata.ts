@@ -439,9 +439,9 @@ export const docsMetadata: Record<string, DocPage> = {
       'Multi-step forms in Grit: modal-steps and page-steps variants with step indicators, per-step validation, and progress tracking.',
   },
   '/docs/admin/relationships': {
-    title: 'Relationships',
+    title: 'Relationships & Trees',
     description:
-      'Relationship fields in Grit: belongs_to and many_to_many with searchable select dropdowns, multi-select tags, and automatic foreign keys.',
+      'Relationship fields in Grit: belongs_to, many_to_many, inline items, and self-referential hierarchies with --tree. Includes how to render level-2 categories on a level-1 page from a single request.',
   },
   '/docs/admin/widgets': {
     title: 'Dashboard Widgets',

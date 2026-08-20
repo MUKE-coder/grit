@@ -29,6 +29,71 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.169.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.169.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong><code>grit remove resource</code> left the public handler
+                  behind.</strong> Regenerating the resource with different fields then
+                  failed to compile on a column the model no longer had, because that file
+                  is written only when absent and the stale allowlist survived. It now goes
+                  with everything else, along with the variant files when{' '}
+                  <code>grit add variants</code> had been run against the resource.
+                </p>
+
+                <h3>Hierarchies, documented properly</h3>
+                <p>
+                  <a href="/docs/admin/relationships#hierarchies">Relationships &amp;
+                  Trees</a> gains a section on <code>--tree</code>: the four columns, why a
+                  materialized path rather than a recursive CTE, and the question the docs
+                  did not answer before, which is how to render level-2 categories on a
+                  level-1 page.
+                </p>
+                <p>
+                  A category page asks two things that look like one. &quot;Which categories
+                  sit under this one&quot; is answered by <code>children</code> from the
+                  tree endpoint, and it is what you render as tiles. &quot;Which products
+                  belong here&quot; is answered by <code>descendant_ids</code> from the
+                  detail endpoint, because the products are filed under Cameras and not
+                  under Electronics. Reaching for the wrong one fails quietly: render{' '}
+                  <code>descendant_ids</code> and you get a row of UUIDs.
+                </p>
+                <p>
+                  The easy answer to both is one request. <code>GET
+                  /api/v1/public/categories/tree</code> returns the whole published
+                  hierarchy already nested, assembled server-side in a single query, and it
+                  is cached. The roots are your category index; each root&apos;s children are
+                  the tiles on that root&apos;s page. There is no per-node children endpoint
+                  and adding one would not help: a shop renders a nav menu on every page, so
+                  the tree is already in the cache before anybody clicks.
+                </p>
+                <p>
+                  One trap gets its own paragraph, because it has the most annoying shape a
+                  bug can have. A leaf&apos;s <code>children</code> is <code>null</code> and
+                  not <code>[]</code>, since Go marshals an empty slice that way, so{' '}
+                  <code>node.children.map(...)</code> works on Electronics and throws on
+                  Cameras. The helper in the docs guards it once.
+                </p>
+                <p>
+                  The <a href="/blog/build-a-storefront-with-grit">storefront guide</a> gets
+                  the same recipe built against a real catalogue, in Step 4e: the tree hook,
+                  the depth-first lookup, and a category page that renders sub-category tiles
+                  and subtree products together.
+                </p>
+                <p>
+                  Every response shape in both was captured from a running project with a
+                  real two-level tree, not written from the handler source.
+                </p>
+              </div>
+            </div>
+
             {/* v3.168.1 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
