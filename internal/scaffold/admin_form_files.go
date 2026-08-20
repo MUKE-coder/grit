@@ -3842,6 +3842,12 @@ export function RichTextField({ field, value, onChange, error }: RichTextFieldPr
           "prose-pre:bg-bg-primary prose-pre:border prose-pre:border-border prose-pre:rounded-lg",
       },
     },
+    // Tiptap renders on the server otherwise, and its DOM never matches what
+    // React produces on the client. It logs "SSR has been detected, please set
+    // immediatelyRender explicitly to false" and then hydrates a mismatch,
+    // which in a form reads as an editor that drops the first keystroke.
+    // The editor mounts in an effect on the client instead.
+    immediatelyRender: false,
   });
 
   useEffect(() => {
