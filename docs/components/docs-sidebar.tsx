@@ -27,6 +27,7 @@ import {
   Monitor,
   Smartphone,
   Menu,
+  TerminalSquare,
   Heart,
   ArrowRight,
 } from 'lucide-react'
@@ -61,6 +62,7 @@ const navItems: NavItem[] = [
   // or the whole course track becomes reachable only from the footer.
   { title: 'Courses', href: '/courses', icon: <GraduationCap className="h-3.5 w-3.5" /> },
   { title: 'Batteries Included', href: '/docs/batteries', icon: <Database className="h-3.5 w-3.5" /> },
+  { title: 'Command Explorer', href: '/docs/cli', icon: <TerminalSquare className="h-3.5 w-3.5" /> },
   {
     title: 'Getting Started',
     icon: <Rocket className="h-3.5 w-3.5" />,
