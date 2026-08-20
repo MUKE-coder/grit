@@ -1228,6 +1228,139 @@ GET /api/v1/public/categories/tree
 
 The whole published hierarchy, nested, in a single query. Each node carries its own fields plus `children`, so a mega-menu is a recursive component over the response and nothing else.
 
+### Showing the sub-categories, not just the products
+
+The section above answers half of what a category page needs. Here is the other half, and they are different questions with different answers.
+
+A customer lands on Electronics. That page usually shows **two** things: tiles for Cameras and Laptops, and the products from the whole branch. `descendant_ids` gives you the second. It does not give you the first, because it is a flat list of ids for filtering and not a shape you can render a menu from.
+
+Confusing the two is the usual first bug here, and it fails quietly: you render `descendant_ids` and get a row of UUIDs.
+
+**The children come from the tree endpoint, and one call covers every category page in the shop:**
+
+```
+GET /api/v1/public/categories/tree
+```
+
+```json
+{
+  "data": [
+    { "id": "...", "depth": 0, "name": "Clothing", "slug": "clothing", "children": null },
+    {
+      "id": "...", "depth": 0, "name": "Electronics", "slug": "electronics",
+      "children": [
+        { "id": "...", "depth": 1, "name": "Cameras", "slug": "cameras", "children": null },
+        { "id": "...", "depth": 1, "name": "Laptops", "slug": "laptops", "children": null }
+      ]
+    }
+  ]
+}
+```
+
+One response, assembled server-side in a single query, and it serves everything: the roots are your `/categories` index, and each root's `children` are the tiles on that root's page. It is in the public group, so it is cached, and a shop's tree is tens of nodes rather than thousands. Fetching it once and reading from it beats a request per page.
+
+Two hooks and one helper, on the same `get` from Step 4b:
+
+```ts
+// apps/web/hooks/use-categories.ts
+export interface CategoryNode {
+  id: string;
+  parent_id: string;
+  depth: number;
+  name: string;
+  slug: string;
+  description?: string;
+  /** null on a leaf, NOT an empty array. Go marshals an empty slice as null. */
+  children: CategoryNode[] | null;
+}
+
+/** The whole hierarchy, once. It changes when somebody edits the catalogue,
+ *  which is rarely, so it is cached hard. */
+export function useCategoryTree() {
+  return useQuery({
+    queryKey: ["category-tree"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: () => get<{ data: CategoryNode[] }>("categories/tree"),
+  });
+}
+
+/** Depth-first lookup by slug. */
+export function findNode(nodes: CategoryNode[], slug: string): CategoryNode | undefined {
+  for (const node of nodes) {
+    if (node.slug === slug) return node;
+    const hit = node.children ? findNode(node.children, slug) : undefined;
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
+/** Children as an array, whatever the API sent. */
+export function childrenOf(node?: CategoryNode): CategoryNode[] {
+  return node?.children ?? [];
+}
+```
+
+**That `children: null` is worth the comment it costs.** A leaf has no children and Go sends `null` rather than `[]`, so `category.children.map(...)` throws on Cameras and works on Electronics, which is the most annoying shape a bug can have. `childrenOf` guards it in one place so no render site has to remember.
+
+Now the category page renders both halves, and the sub-category tiles cost no extra request:
+
+```tsx
+// apps/web/app/categories/[slug]/page.tsx
+"use client";
+
+import { use } from "react";
+import Link from "next/link";
+import { useCategoryTree, findNode, childrenOf, useCategory } from "@/hooks/use-categories";
+import { useCatalogue } from "@/hooks/use-catalogue";
+
+export default function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
+
+  const { data: tree } = useCategoryTree();
+  const node = findNode(tree?.data ?? [], slug);
+  const subCategories = childrenOf(node);
+
+  // Still the detail call, for descendant_ids. Two requests total for the
+  // page, and the tree one is shared with every other category page.
+  const { data: category } = useCategory(slug);
+
+  const { data: products } = useCatalogue(
+    category?.data
+      ? { categoryIds: category.data.descendant_ids ?? [category.data.id], pageSize: 24 }
+      : {},
+  );
+
+  return (
+    <main>
+      <h1>{node?.name ?? category?.data.name}</h1>
+
+      {/* Level 2. Renders nothing on a leaf like Cameras, which is correct:
+          a leaf has no sub-categories and should go straight to products. */}
+      {subCategories.length > 0 && (
+        <nav className="category-tiles">
+          {subCategories.map((child) => (
+            <Link key={child.id} href={`/categories/${child.slug}`}>
+              {child.name}
+            </Link>
+          ))}
+        </nav>
+      )}
+
+      <ProductGrid products={products?.data ?? []} />
+    </main>
+  );
+}
+```
+
+And the index page at `/categories` is the same hook with no lookup at all, because the roots are the top level:
+
+```tsx
+const { data: tree } = useCategoryTree();
+const topLevel = tree?.data ?? [];   // Electronics, Clothing
+```
+
+**Why not an endpoint that returns just one node's children?** There isn't one, and it would not help. A shop renders a nav menu on every page anyway, so the tree is already in the cache by the time somebody clicks into a category. A per-node children endpoint would be a second request for something you already have, and a mega-menu built from it would be one request per level.
+
 ### Breadcrumbs
 
 The generated service reads ancestors straight out of the stored path, so breadcrumbs cost one query however deep the tree is:

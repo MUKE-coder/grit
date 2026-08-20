@@ -401,6 +401,252 @@ type Category struct {
             </div>
 
             <div className="prose-grit">
+              {/* Hierarchies */}
+              <h2 id="hierarchies">Hierarchies (<code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--tree</code>)</h2>
+              <p>
+                Everything above relates two <em>different</em> resources. A hierarchy relates
+                a resource to <strong>itself</strong>: Electronics contains Cameras contains
+                Lenses. That is one table with a parent pointing at another row in the same
+                table, and it is the one relationship a plain <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">belongs_to</code> could
+                not express, because a Go struct cannot contain itself by value.
+              </p>
+              <p><code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--tree</code> handles it:</p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock language="bash" code={`grit generate resource Category \\
+  --fields "name:string,slug:slug,description:text" \\
+  --tree --public`} />
+            </div>
+
+            <div className="prose-grit">
+              <p>It adds four columns and a service that knows how to use them:</p>
+              <ul>
+                <li><code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">parent_id</code> &mdash; the link upwards, empty for a root</li>
+                <li><code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">path</code> &mdash; <code>&quot;/id/id/id/&quot;</code>, this row&apos;s id last</li>
+                <li><code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">depth</code> &mdash; 0 for a root, 1 for its children</li>
+                <li><code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">position</code> &mdash; the order among siblings</li>
+              </ul>
+              <p><code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">path</code> is the one to understand, because every useful question
+                about a hierarchy becomes a string comparison on it. &quot;Everything under
+                Electronics&quot; is <code>WHERE path LIKE &apos;/electronics-id/%&apos;</code>:
+                one indexed comparison, no recursion, no joins, at any depth. A materialized
+                path rather than a recursive CTE because Grit runs on Postgres, MySQL and
+                SQLite, and CTE support differs across all three while a path is identical
+                everywhere.
+              </p>
+
+              <h3>Two levels, and the two questions a category page asks</h3>
+              <p>
+                Say you have Electronics with Cameras and Laptops under it. A category page
+                almost always needs <strong>both</strong> of these, and they have different
+                answers:
+              </p>
+              <ul>
+                <li>
+                  <strong>Which categories sit under this one?</strong> Those are the tiles you
+                  render. Use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">children</code> from the tree endpoint.
+                </li>
+                <li>
+                  <strong>Which products belong here?</strong> Products are filed under Cameras,
+                  not under Electronics, so filtering by the one id returns nothing and the page
+                  looks broken while the data is perfect. Use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">descendant_ids</code> from
+                  the detail endpoint.
+                </li>
+              </ul>
+              <p>
+                Confusing the two is the usual first bug. <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">descendant_ids</code> is a flat
+                list of ids for filtering products; it is not a shape you can render a menu
+                from.
+              </p>
+
+              <h3>The easy way to fetch both: one call</h3>
+              <p><code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--tree</code> with <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--public</code> mounts an endpoint that
+                returns the whole published hierarchy, already nested, in a single query:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock language="bash" code={`GET /api/v1/public/categories/tree`} />
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock language="json" filename="response (real, ids trimmed)" code={`{
+  "data": [
+    {
+      "id": "01a01d37-4afc...",
+      "parent_id": "",
+      "depth": 0,
+      "name": "Clothing",
+      "slug": "clothing",
+      "children": null
+    },
+    {
+      "id": "01a01d37-0e7f...",
+      "parent_id": "",
+      "depth": 0,
+      "name": "Electronics",
+      "slug": "electronics",
+      "children": [
+        {
+          "id": "01a01d37-485e...",
+          "parent_id": "01a01d37-0e7f...",
+          "depth": 1,
+          "name": "Cameras",
+          "slug": "cameras",
+          "children": null
+        },
+        {
+          "id": "01a01d37-49ad...",
+          "parent_id": "01a01d37-0e7f...",
+          "depth": 1,
+          "name": "Laptops",
+          "slug": "laptops",
+          "children": null
+        }
+      ]
+    }
+  ]
+}`} />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                That one response serves the category index page (the roots) and every level-1
+                page (each root&apos;s <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">children</code>), so a whole navigation tree
+                costs one request. It sits in the public group, which has response caching
+                mounted, so it is also among the cheapest things on the page.
+              </p>
+              <p>
+                <strong>
+                  A leaf&apos;s <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">children</code> is <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">null</code>, not <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">[]</code>.
+                </strong>{" "}
+                Go marshals an empty slice as null, so <code>node.children.map(...)</code>
+                throws on Cameras. Guard it once, in the helper below, rather than at every
+                render site.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="apps/web/hooks/use-categories.ts" code={`export interface CategoryNode {
+  id: string
+  parent_id: string
+  depth: number
+  name: string
+  slug: string
+  description?: string
+  /** null on a leaf, not an empty array. */
+  children: CategoryNode[] | null
+}
+
+/** The whole hierarchy, one request, cached hard because it rarely changes. */
+export function useCategoryTree() {
+  return useQuery({
+    queryKey: ["category-tree"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: () => get<{ data: CategoryNode[] }>("categories/tree"),
+  })
+}
+
+/** Depth-first lookup by slug. A shop tree is tens of nodes, not thousands. */
+export function findNode(nodes: CategoryNode[], slug: string): CategoryNode | undefined {
+  for (const node of nodes) {
+    if (node.slug === slug) return node
+    const hit = node.children ? findNode(node.children, slug) : undefined
+    if (hit) return hit
+  }
+  return undefined
+}
+
+/** Children as an array, whatever the API sent. The null is guarded once, here. */
+export function childrenOf(node?: CategoryNode): CategoryNode[] {
+  return node?.children ?? []
+}`} />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                The level-1 page then renders its children with no extra request, and the index
+                page reads the roots off the same cached response:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="apps/web/app/categories/[slug]/page.tsx" code={`const { data: tree } = useCategoryTree()
+const category = findNode(tree?.data ?? [], slug)
+const subCategories = childrenOf(category)
+
+return (
+  <>
+    <h1>{category?.name}</h1>
+
+    {/* Level 2: the tiles. Nothing renders on a leaf, which is correct. */}
+    {subCategories.length > 0 && (
+      <nav>
+        {subCategories.map((child) => (
+          <Link key={child.id} href={\`/categories/\${child.slug}\`}>
+            {child.name}
+          </Link>
+        ))}
+      </nav>
+    )}
+
+    {/* Products in this category AND everything under it. */}
+    <ProductGrid slug={slug} />
+  </>
+)`} />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                For the products half, the detail endpoint hands back the subtree so you never
+                walk the tree yourself:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock language="bash" code={`GET /api/v1/public/categories/electronics
+  -> { "descendant_ids": ["<electronics>", "<cameras>", "<laptops>"] }
+
+GET /api/v1/public/products?category_id=<electronics>,<cameras>,<laptops>
+  -> every product in the branch`} />
+            </div>
+
+            <div className="prose-grit">
+              <p><code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">descendant_ids</code> includes the category itself, so the same code
+                works unchanged on a leaf. The comma-separated filter is opt-in per column on
+                the server and only ever enabled for id columns: splitting on commas is right
+                for ids and wrong for anything a person types, where &quot;Smith, John&quot; is
+                one value rather than two.
+              </p>
+
+              <h3>The rest of the endpoints</h3>
+              <ul>
+                <li><code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">GET /api/v1/categories/tree</code> &mdash; the same tree behind auth, for the admin.</li>
+                <li><code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">GET /api/v1/categories/:id/breadcrumbs</code> &mdash; ancestors read
+                  straight out of the stored path, so it costs one query at any depth.</li>
+                <li><code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">PATCH /api/v1/categories/:id/move</code> &mdash; reparent, carrying the
+                  subtree, with a cycle refused as 422.</li>
+                <li><code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">POST /api/v1/categories/reorder</code> &mdash; sibling order.</li>
+                <li><code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">POST /api/v1/categories/rebuild-tree</code> &mdash; recompute every path
+                  from <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">parent_id</code> alone. This is what you need after adding <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--tree</code>
+                  to a resource that already had rows: those rows have no path, so the tree
+                  renders flat until you rebuild.</li>
+              </ul>
+              <p>
+                The admin gets a Tree / Table toggle on the list page: drag onto a row to nest,
+                between rows to reorder, onto the bar at the top to promote back to a root.
+                Dragging a node into its own subtree is refused before the request is made,
+                because a branch moved inside itself detaches from the tree and no query ever
+                finds it again.
+              </p>
+              <p>
+                The <Link href="/blog/build-a-storefront-with-grit">storefront guide</Link>{" "}
+                builds all of this against a real catalogue in Step 4e.
+              </p>
+            </div>
+
+            <div className="prose-grit">
               {/* Full Example */}
               <h2>Full Example &mdash; E-Commerce</h2>
               <p>
