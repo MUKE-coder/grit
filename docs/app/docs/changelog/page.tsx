@@ -29,6 +29,50 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.168.1 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.168.1
+                </span>
+                <span className="text-sm text-muted-foreground">August 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>A new <a href="/docs/cli">Command Explorer</a>: every CLI
+                  command, with a simulated run and the exact files it touches.</strong>
+                </p>
+                <p>
+                  Press run on a command and it types itself and streams its real output.
+                  Underneath is the part a CLI reference usually leaves out: the list of
+                  files that command creates, modifies or deletes. <code>grit generate
+                  resource</code> writes thirteen files and edits twelve more, and knowing
+                  which twelve before you run it on a project you care about is the
+                  difference between a reference and a list of names.
+                </p>
+                <p>
+                  None of it is written from memory. Every output block and every file list
+                  was captured from a real run against a freshly scaffolded project, with
+                  the file effects read out of <code>git status</code> rather than recalled.
+                  A reference that says a command touches nineteen files and then names
+                  eighteen is worse than none, because you meet the missing one at the
+                  worst moment.
+                </p>
+                <p>
+                  Search covers the command, its summary, its use cases and its file paths,
+                  so &quot;which command writes routes.go&quot; is a query rather than a
+                  grep. It answers with six. Category filters narrow to Scaffold, Generate,
+                  Add, Run, Data, Ship or Meta, every command deep-links by hash, and{' '}
+                  <kbd>/</kbd> focuses the search box.
+                </p>
+                <p>
+                  Commands that write nothing say so plainly rather than showing an empty
+                  panel. Twelve of the thirty-seven only read, run or report.
+                </p>
+              </div>
+            </div>
+
             {/* v3.168.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

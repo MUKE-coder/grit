@@ -136,6 +136,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Combine --desktop with other flags to scaffold a shared-API multi-client SaaS. One Go backend serving Expo mobile and Wails desktop, with optional web and admin. The Linear / Notion / Slack pattern.',
   },
+  '/docs/cli': {
+    title: 'Command Explorer',
+    description:
+      'Every Grit CLI command with a simulated run and the exact files it creates, modifies or deletes. Searchable by command, use case or file path.',
+  },
   '/docs/concepts/cli': {
     title: 'CLI Commands',
     description:
