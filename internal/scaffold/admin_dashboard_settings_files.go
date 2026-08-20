@@ -112,6 +112,12 @@ export function buildDashboardCatalog(resources: ResourceDefinition[]): CatalogW
   // slug so the saved layout survives label changes.
   for (const r of resources) {
     if (r.dashboard?.enabled === false) continue;
+    // A hidden resource is an inline --items child: it has no sidebar
+    // entry, no page of its own, and no case in the server's
+    // resource-stats dispatch, which the generator only writes for
+    // top-level resources. Offering a widget for one means two 400s on
+    // every dashboard load for a table nobody browses.
+    if (r.hidden) continue;
     const moduleName = r.label?.plural ?? r.name;
     out.push({
       key: r.slug + ":total",

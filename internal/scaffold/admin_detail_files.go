@@ -233,12 +233,15 @@ function ResourceDetailView({ resource, id }: ResourceDetailPageProps) {
   const cols = c.columns;
 
   return (
-    <div id="print-area">
+    // space-y-6 rather than a margin on each block. A DetailAside or
+    // DetailFields component is somebody else's, and it should not have to know
+    // this page's rhythm to sit correctly in it.
+    <div id="print-area" className="space-y-6">
       {/* Header */}
       {CustomHeader ? (
         <CustomHeader resource={resource} id={id} controller={c} />
       ) : (
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link
             href={"/resources/" + resource.slug}
@@ -327,20 +330,22 @@ function ResourceDetailView({ resource, id }: ResourceDetailPageProps) {
       )}
 
       {/* Related registry resources — not part of the printed record */}
-      <div className="no-print">
-      {related.map(({ resource: r, fk }) => (
-        <RelatedTable
-          key={r.slug}
-          title={r.label?.plural ?? r.name}
-          endpoint={r.endpoint}
-          fk={fk}
-          parentId={id}
-          columns={r.table.columns.filter((c) => !c.hidden)}
-          slug={r.slug}
-          createResource={r}
-        />
-      ))}
-      </div>
+      {related.length > 0 && (
+        <div className="no-print space-y-6">
+          {related.map(({ resource: r, fk }) => (
+            <RelatedTable
+              key={r.slug}
+              title={r.label?.plural ?? r.name}
+              endpoint={r.endpoint}
+              fk={fk}
+              parentId={id}
+              columns={r.table.columns.filter((c) => !c.hidden)}
+              slug={r.slug}
+              createResource={r}
+            />
+          ))}
+        </div>
+      )}
 
       <ConfirmModal
         open={confirmDelete}
@@ -387,7 +392,7 @@ function RelatedTable({
   const childLabel = createResource?.label?.singular ?? createResource?.name ?? "item";
 
   return (
-    <div className="mt-6 rounded-xl border border-border bg-bg-elevated">
+    <div className="rounded-xl border border-border bg-bg-elevated">
       <div className="flex items-center justify-between gap-2 border-b border-border px-6 py-4">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-foreground">{title}</h2>
