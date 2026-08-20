@@ -63,6 +63,12 @@ export interface AdminVariant {
   stock: number;
   active: boolean;
   position: number;
+  /**
+   * Photographs of THIS combination, which is why they live on the
+   * variant and not on an option value: the picture of the red one is a
+   * picture of red-in-XL, while the value's own image is the swatch.
+   */
+  images?: Array<{ url: string; name?: string }> | null;
   option_values?: AdminOptionValue[];
 }
 
@@ -331,7 +337,78 @@ interface VariantDraft {
 // <Product> — so a slot component fixed to the erased row type is not
 // assignable to it, and attaching this to a real resource would not compile.
 // The parameter is never used for anything but that assignability.
-export function VariantMatrix<T>({ resource, id, controller }: ResourceDetailPartProps<T>) {
+/** The columns the matrix draws for you. */
+export type VariantColumnKey = "sku" | "stock" | "price" | "override" | "active";
+
+/** What a cell renderer is handed. */
+export interface VariantCellContext {
+  /** This row's unsaved edits, if it has any. */
+  draft?: VariantDraft;
+  /**
+   * Stage an edit on this row.
+   *
+   * It joins the same Save button the built-in cells feed, so a custom column
+   * is not a second way to write: one click still sends one PATCH per row.
+   */
+  patch: (patch: VariantDraft) => void;
+  /** What this combination costs with no override, already resolved. */
+  resolved: number;
+}
+
+/**
+ * One column, added or overridden.
+ *
+ * Keyed the way the resource definition's own column overrides are keyed: a
+ * built-in key patches that column, any other key adds one. Deliberately the
+ * same shape, so this is a pattern you already know rather than a second one
+ * to learn.
+ *
+ *   <VariantMatrix
+ *     {...props}
+ *     columns={{
+ *       // add: a photo of this combination, which the variant already stores
+ *       images: {
+ *         label: "Photo",
+ *         after: "sku",
+ *         cell: (variant) => <VariantThumb images={variant.images} />,
+ *       },
+ *       // override: same cell, different header
+ *       sku: { label: "Barcode" },
+ *       // drop one you do not use
+ *       override: { hidden: true },
+ *     }}
+ *   />
+ */
+export interface VariantColumn {
+  /** Header text. Defaults to the built-in label, or to the key. */
+  label?: string;
+  /** Drop the column. Only meaningful on a built-in. */
+  hidden?: boolean;
+  /** Render the cell. Without one, a built-in keeps its own renderer. */
+  cell?: (variant: AdminVariant, ctx: VariantCellContext) => React.ReactNode;
+  /** Place an added column after this one. Appended when absent. */
+  after?: VariantColumnKey | string;
+}
+
+const BUILT_IN_COLUMNS: VariantColumnKey[] = ["sku", "stock", "price", "override", "active"];
+
+const BUILT_IN_LABELS: Record<VariantColumnKey, string> = {
+  sku: "SKU",
+  stock: "Stock",
+  price: "Price",
+  override: "Override",
+  active: "Active",
+};
+
+export function VariantMatrix<T>({
+  resource,
+  id,
+  controller,
+  columns,
+}: ResourceDetailPartProps<T> & {
+  /** Add columns, or patch the built-in ones. See VariantColumn. */
+  columns?: Record<string, VariantColumn>;
+}) {
   const matrix = useVariantMatrix(resource.slug, id);
   const library = useOptions();
   const setOptions = useSetResourceOptions(resource.slug, id);
@@ -374,6 +451,122 @@ export function VariantMatrix<T>({ resource, id, controller }: ResourceDetailPar
   }, [options, basePrice]);
 
   const edits = useMemo(() => collectEdits(variants, drafts), [variants, drafts]);
+
+  /**
+   * The columns to draw: the built-ins, patched, with any added ones slotted
+   * in. Option columns are not in here because they are data rather than
+   * configuration, and they always come first.
+   */
+  const columnList = useMemo(() => {
+    const out: Array<{ key: string; label: string; custom?: VariantColumn }> = [];
+    for (const key of BUILT_IN_COLUMNS) {
+      const custom = columns?.[key];
+      if (custom?.hidden) continue;
+      out.push({ key, label: custom?.label ?? BUILT_IN_LABELS[key], custom });
+    }
+    for (const [key, custom] of Object.entries(columns ?? {})) {
+      if ((BUILT_IN_COLUMNS as string[]).includes(key) || custom.hidden) continue;
+      const entry = { key, label: custom.label ?? key, custom };
+      const at = custom.after ? out.findIndex((col) => col.key === custom.after) : -1;
+      if (at >= 0) out.splice(at + 1, 0, entry);
+      else out.push(entry);
+    }
+    return out;
+  }, [columns]);
+
+  /** Price is the one built-in that is text rather than a control. */
+  function cellClass(key: string) {
+    return key === "price"
+      ? "px-3 py-2.5 whitespace-nowrap tabular-nums text-text-secondary"
+      : "px-3 py-2.5";
+  }
+
+  /**
+   * The stock renderers.
+   *
+   * A column with no cell of its own falls through to here, and an added
+   * column with no cell renders nothing rather than throwing, because a
+   * half-written customisation should not take the page down.
+   */
+  function builtInCell(key: string, variant: AdminVariant, draft?: VariantDraft) {
+    switch (key) {
+      case "sku":
+        return (
+          // Wide enough for a real SKU. The generated ones carry the record's
+          // slug and every option value, and a box showing the first fifteen
+          // characters of that is a box you cannot check anything against.
+          <div className="w-56">
+            <input
+              className={inputClasses({ inputSize: "sm", className: "font-mono text-xs" })}
+              placeholder="unset"
+              value={draft?.sku ?? variant.sku ?? ""}
+              onChange={(e) => patchDraft(variant.id, { sku: e.target.value })}
+            />
+          </div>
+        );
+      case "stock":
+        return (
+          <div className="w-20">
+            <input
+              className={inputClasses({ inputSize: "sm", className: "tabular-nums" })}
+              inputMode="numeric"
+              value={String(draft?.stock ?? variant.stock)}
+              onChange={(e) => {
+                const next = parseInt(e.target.value, 10);
+                patchDraft(variant.id, { stock: Number.isNaN(next) ? 0 : next });
+              }}
+            />
+          </div>
+        );
+      case "price":
+        return formatCurrency(effectivePrice(variant, draft, computed));
+      case "override":
+        return (
+          <div className="w-24">
+            <input
+              className={inputClasses({ inputSize: "sm", className: "tabular-nums" })}
+              inputMode="decimal"
+              /* Empty means resolved, and the placeholder says what that
+                 resolves to, so clearing the box is never a guess about what
+                 the price becomes. */
+              placeholder={formatCurrency(computed(variant))}
+              value={overrideInput(variant, draft)}
+              onChange={(e) => {
+                const raw = e.target.value.trim();
+                if (raw === "") {
+                  patchDraft(variant.id, { priceOverride: null });
+                  return;
+                }
+                const next = parseFloat(raw);
+                if (!Number.isNaN(next)) patchDraft(variant.id, { priceOverride: next });
+              }}
+            />
+          </div>
+        );
+      case "active":
+        return (
+          <button
+            type="button"
+            aria-label={(draft?.active ?? variant.active) ? "Deactivate" : "Activate"}
+            onClick={() => patchDraft(variant.id, { active: !(draft?.active ?? variant.active) })}
+            className={
+              "inline-flex h-7 w-7 items-center justify-center rounded-lg border transition-colors " +
+              ((draft?.active ?? variant.active)
+                ? "border-success/40 bg-success/10 text-success"
+                : "border-border text-text-muted hover:text-foreground")
+            }
+          >
+            {(draft?.active ?? variant.active) ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <X className="h-4 w-4" />
+            )}
+          </button>
+        );
+      default:
+        return null;
+    }
+  }
 
   function patchDraft(variantID: string, patch: VariantDraft) {
     setDrafts((prev) => ({ ...prev, [variantID]: { ...prev[variantID], ...patch } }));
@@ -539,11 +732,11 @@ export function VariantMatrix<T>({ resource, id, controller }: ResourceDetailPar
                     {option.name}
                   </th>
                 ))}
-                <th className="px-3 py-3 font-medium">SKU</th>
-                <th className="px-3 py-3 font-medium">Stock</th>
-                <th className="px-3 py-3 font-medium">Price</th>
-                <th className="px-3 py-3 font-medium">Override</th>
-                <th className="px-3 py-3 font-medium">Active</th>
+                {columnList.map((col) => (
+                  <th key={col.key} className="px-3 py-3 font-medium">
+                    {col.label}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -564,83 +757,18 @@ export function VariantMatrix<T>({ resource, id, controller }: ResourceDetailPar
                       </td>
                     ))}
 
-                    <td className="px-3 py-2.5">
-                      {/* Wide enough for a real SKU. The generated ones carry
-                          the record's slug and both option values, and a box
-                          that shows the first fifteen characters of that is a
-                          box you cannot check anything against. */}
-                      <div className="w-56">
-                        <input
-                          className={inputClasses({ inputSize: "sm", className: "font-mono text-xs" })}
-                          placeholder="unset"
-                          value={draft?.sku ?? variant.sku ?? ""}
-                          onChange={(e) => patchDraft(variant.id, { sku: e.target.value })}
-                        />
-                      </div>
-                    </td>
+                    {columnList.map((col) => (
+                      <td key={col.key} className={cellClass(col.key)}>
+                        {col.custom?.cell
+                          ? col.custom.cell(variant, {
+                              draft,
+                              patch: (patch) => patchDraft(variant.id, patch),
+                              resolved: computed(variant),
+                            })
+                          : builtInCell(col.key, variant, draft)}
+                      </td>
+                    ))}
 
-                    <td className="px-3 py-2.5">
-                      <div className="w-20">
-                        <input
-                          className={inputClasses({ inputSize: "sm", className: "tabular-nums" })}
-                          inputMode="numeric"
-                          value={String(draft?.stock ?? variant.stock)}
-                          onChange={(e) => {
-                            const next = parseInt(e.target.value, 10);
-                            patchDraft(variant.id, { stock: Number.isNaN(next) ? 0 : next });
-                          }}
-                        />
-                      </div>
-                    </td>
-
-                    <td className="px-3 py-2.5 whitespace-nowrap tabular-nums text-text-secondary">
-                      {formatCurrency(effectivePrice(variant, draft, computed))}
-                    </td>
-
-                    <td className="px-3 py-2.5">
-                      <div className="w-24">
-                        <input
-                        className={inputClasses({ inputSize: "sm", className: "tabular-nums" })}
-                        inputMode="decimal"
-                        /* Empty means resolved, and the placeholder says what
-                           that resolves to, so clearing the box is never a
-                           guess about what the price becomes. */
-                        placeholder={formatCurrency(computed(variant))}
-                        value={overrideInput(variant, draft)}
-                        onChange={(e) => {
-                          const raw = e.target.value.trim();
-                          if (raw === "") {
-                            patchDraft(variant.id, { priceOverride: null });
-                            return;
-                          }
-                          const next = parseFloat(raw);
-                          if (!Number.isNaN(next)) patchDraft(variant.id, { priceOverride: next });
-                        }}
-                        />
-                      </div>
-                    </td>
-
-                    <td className="px-3 py-2.5">
-                      <button
-                        type="button"
-                        aria-label={(draft?.active ?? variant.active) ? "Deactivate" : "Activate"}
-                        onClick={() =>
-                          patchDraft(variant.id, { active: !(draft?.active ?? variant.active) })
-                        }
-                        className={
-                          "inline-flex h-7 w-7 items-center justify-center rounded-lg border transition-colors " +
-                          ((draft?.active ?? variant.active)
-                            ? "border-success/40 bg-success/10 text-success"
-                            : "border-border text-text-muted hover:text-foreground")
-                        }
-                      >
-                        {(draft?.active ?? variant.active) ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <X className="h-4 w-4" />
-                        )}
-                      </button>
-                    </td>
                   </tr>
                 );
               })}
@@ -1064,6 +1192,20 @@ export function OptionLibraryPage(_: ResourcePageSlotProps) {
   );
 }
 
+/**
+ * The placeholder for a new value.
+ *
+ * Deliberately something the seeded library does NOT contain. The first
+ * version used "Black", which is also the first chip on the Colour card, so
+ * the add row looked like a duplicate of a value already there rather than an
+ * empty field waiting for input.
+ */
+function newValueHint(kind: string): string {
+  if (kind === "size") return "e.g. XXL";
+  if (kind === "swatch") return "e.g. Red";
+  return "e.g. 512GB";
+}
+
 function OptionCard({ option, onRemove }: { option: AdminOption; onRemove: () => void }) {
   const addValue = useCreateOptionValue();
   const removeValue = useDeleteOptionValue();
@@ -1137,6 +1279,7 @@ function OptionCard({ option, onRemove }: { option: AdminOption; onRemove: () =>
             <button
               type="button"
               aria-label={"Delete " + value.label}
+              title={"Delete " + value.label + ". Refused while a variant is built on it."}
               disabled={removeValue.isPending}
               onClick={() => removeValue.mutate(value.id)}
               className="rounded p-1 text-text-muted transition-colors hover:bg-bg-hover hover:text-danger disabled:opacity-50"
@@ -1149,31 +1292,42 @@ function OptionCard({ option, onRemove }: { option: AdminOption; onRemove: () =>
 
       <form
         onSubmit={submitValue}
-        className="flex flex-wrap items-center gap-2 border-t border-border px-6 py-3"
+        className="flex flex-wrap items-end gap-2 border-t border-border px-6 py-3"
       >
-        <div className="w-40">
+        <div className="w-44">
+          <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-muted">
+            Add a value
+          </label>
           <input
             className={inputClasses({ inputSize: "sm" })}
-            placeholder={option.kind === "size" ? "XL" : "Black"}
+            placeholder={newValueHint(option.kind)}
             value={label}
             onChange={(e) => setLabel(e.target.value)}
           />
         </div>
         {option.kind === "swatch" && (
-          <input
-            type="color"
-            aria-label="Swatch colour"
-            className="h-8 w-10 cursor-pointer rounded-lg border border-border bg-bg-secondary p-1"
-            value={swatch}
-            onChange={(e) => setSwatch(e.target.value)}
-          />
+          <div>
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-muted">
+              Swatch
+            </label>
+            <input
+              type="color"
+              aria-label="Swatch colour"
+              className="h-8 w-12 cursor-pointer rounded-lg border border-border bg-bg-secondary p-1"
+              value={swatch}
+              onChange={(e) => setSwatch(e.target.value)}
+            />
+          </div>
         )}
         {option.affects_price && (
           <div className="w-28">
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-muted">
+              Price change
+            </label>
             <input
               className={inputClasses({ inputSize: "sm", className: "tabular-nums" })}
               inputMode="decimal"
-              placeholder="+ / - price"
+              placeholder="+ / -"
               value={delta}
               onChange={(e) => setDelta(e.target.value)}
             />
@@ -1182,6 +1336,7 @@ function OptionCard({ option, onRemove }: { option: AdminOption; onRemove: () =>
         <button
           type="submit"
           disabled={addValue.isPending || !label.trim()}
+          title={label.trim() ? "Add this value" : "Type a name first"}
           className={buttonClasses({ variant: "outline", size: "sm" })}
         >
           {addValue.isPending ? (

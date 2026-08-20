@@ -29,6 +29,80 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.170.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.170.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Columns of your own on the variant matrix</h3>
+                <p>
+                  A variant already stores its own photographs, and the matrix had no way
+                  to show them and no way for you to add one. It takes a{' '}
+                  <code>columns</code> prop now, keyed the way a resource
+                  definition&apos;s own column overrides are keyed: a built-in key patches
+                  that column, any other key adds one.
+                </p>
+                <CodeBlock language="tsx" code={`<VariantMatrix
+  {...props}
+  columns={{
+    images: {                              // add
+      label: "Photo",
+      after: "sku",
+      cell: (variant) => <Thumb src={variant.images?.[0]?.url} />,
+    },
+    sku: { label: "Barcode" },             // rename a built-in
+    override: { hidden: true },            // drop one you do not use
+  }}
+/>`} />
+                <p>
+                  A cell renderer is handed the variant, its unsaved draft, a{' '}
+                  <code>patch</code> that feeds the same Save button the built-in cells
+                  feed, and the resolved price. So a column of your own is editable without
+                  being a second way to write: one click still sends one PATCH per row.
+                </p>
+                <p>
+                  <code>images</code> is on the variant type now, too. The server was
+                  already sending it.
+                </p>
+
+                <h3>The detail page had no vertical rhythm</h3>
+                <p>
+                  The Details card and anything below it sat flush against each other. The
+                  container had no spacing at all: the header carried its own bottom
+                  margin, the related tables carried their own top margin, and the Details
+                  card and any DetailAside carried nothing, so a custom slot touched the
+                  card above it. The spacing moved to the container, because a slot
+                  component is somebody else&apos;s and should not have to know this
+                  page&apos;s margins to sit correctly in it.
+                </p>
+
+                <h3>Adding an option value looked like a duplicate row</h3>
+                <p>
+                  The add-value field on an option card used <code>Black</code> as its
+                  placeholder, and Black is also the first chip sitting directly above it.
+                  The row read as a copy of a value already there rather than an empty field
+                  waiting for input, and the submit button stays disabled until you type, so
+                  the whole thing looked inert. The fields are labelled now, and the
+                  placeholder is plainly an example of something not in the list.
+                </p>
+
+                <h3>Two 400s per dashboard load, per inline child</h3>
+                <p>
+                  An inline <code>--items</code> child is hidden from the sidebar and has no
+                  page of its own, but the dashboard still built it a Total and a Latest
+                  widget. The server answers those from a whitelist the generator writes
+                  only for top-level resources, so every load asked twice for stats on a
+                  table nobody browses and got two 400s back. Hidden resources are now
+                  skipped by the dashboard and by the widget catalogue.
+                </p>
+              </div>
+            </div>
+
             {/* v3.169.1 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

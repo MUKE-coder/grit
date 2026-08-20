@@ -57,7 +57,13 @@ export default function DashboardPage() {
   // open while permissions load (can() is closed until then); super-admins
   // short-circuit inside can(). Every underlying route is enforced server-side.
   const { can, isSuper, isLoading: permsLoading } = usePermissions();
-  const visibleResources = resources.filter((r) => permsLoading || can(r.slug + ".view"));
+  // hidden is an inline --items child: no sidebar entry, no page of its own,
+  // and no case in the server's resource-stats dispatch, which the generator
+  // writes only for top-level resources. Left in, each one costs two 400s on
+  // every dashboard load and offers a tile to a table nobody browses.
+  const visibleResources = resources.filter(
+    (r) => !r.hidden && (permsLoading || can(r.slug + ".view")),
+  );
   const canViewUsers = permsLoading || can("users.view");
   const canViewActivity = permsLoading || can("audit.view");
   // v3.31.44 -- shared DateFilter scopes the per-resource widgets
