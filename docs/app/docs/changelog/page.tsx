@@ -29,6 +29,60 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.169.1 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.169.1
+                </span>
+                <span className="text-sm text-muted-foreground">August 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Every form with a richtext field logged a Tiptap SSR
+                  warning.</strong>
+                </p>
+                <CodeBlock language="bash" code={`Tiptap Error: SSR has been detected, please set \`immediatelyRender\`
+explicitly to \`false\` to avoid hydration mismatches.
+  (components/forms/fields/rich-text-field.tsx:31:27)`} />
+                <p>
+                  Tiptap builds its document on the server, React builds a different one on
+                  the client, and the two do not match. The warning is the polite half; the
+                  impolite half is a hydration mismatch that shows up as an editor dropping
+                  the first keystroke somebody types into it.
+                </p>
+                <p>
+                  <code>immediatelyRender: false</code> defers the editor to an effect on
+                  the client, which is the documented fix and the one the blog editor
+                  already had. The form field did not, so every generated resource with a
+                  richtext column carried it. Both admin flavours share the source, so Next
+                  and TanStack are covered by the one change.
+                </p>
+                <p>
+                  New projects get it from <code>grit new</code>. Existing ones get it from{' '}
+                  <code>grit upgrade</code>, verified on a project that had the old version:
+                  the field is rewritten, the warning goes, and typing into the editor keeps
+                  the first character.
+                </p>
+
+                <h3>A correction in the Command Explorer</h3>
+                <p>
+                  The <a href="/docs/cli#upgrade">grit upgrade</a> entry shipped yesterday
+                  described <code>--diff</code> as a preview, ending its sample output with
+                  &quot;Run without --diff to apply&quot;. That is wrong, and wrong in the
+                  direction that costs you something.
+                </p>
+                <p>
+                  <code>--diff</code> is not a dry run. It performs the upgrade exactly as it
+                  would without the flag, and <em>additionally</em> prints the diff for the
+                  files it skipped because you had edited them. There is no preview-only
+                  mode. The entry now says so, carries the real output, and the note tells
+                  you to commit first.
+                </p>
+              </div>
+            </div>
+
             {/* v3.169.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
