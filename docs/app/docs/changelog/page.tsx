@@ -39,6 +39,13 @@ export default function ChangelogPage() {
               </div>
 
               <div className="prose-grit">
+                <p>
+                  Variants also have a page of their own now:{' '}
+                  <a href="/docs/backend/variants">Product Variants</a> covers the five
+                  tables, the three decisions behind them, why a price is resolved rather
+                  than stored, and every endpoint the command mounts.
+                </p>
+
                 <h3>Columns of your own on the variant matrix</h3>
                 <p>
                   A variant already stores its own photographs, and the matrix had no way
