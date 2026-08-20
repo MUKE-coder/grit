@@ -208,6 +208,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Built-in Grit middleware: authentication, CORS, logging, rate limiting, cache, and how to write custom Gin middleware.',
   },
+  '/docs/backend/variants': {
+    title: 'Product Variants',
+    description:
+      'The five-table variant schema, why options are shop-wide, why affects_price lives on the option, and why a variant price is resolved rather than stored. Installed with grit add variants.',
+  },
   '/docs/backend/invoices': {
     title: 'Invoices & Line Items',
     description:
