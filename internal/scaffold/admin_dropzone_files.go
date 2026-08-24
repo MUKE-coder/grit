@@ -39,6 +39,12 @@ export interface UploadedFile {
    * call site; the FileField bridge maps it to FileRef.mime. */
   type: string;
   thumbnail_url?: string;
+  /** The size of the file the user picked, before optimisation. */
+  originalSize?: number;
+  /** What the stored file actually is: "jpeg", "webp". */
+  format?: string;
+  /** Whether the pipeline transformed it, as opposed to storing it as-is. */
+  optimised?: boolean;
 }
 
 export interface DropzoneProps {
@@ -149,6 +155,13 @@ export function Dropzone({
             size: (d.size as number) || file.size,
             type: (d.mime as string) || (d.mime_type as string) || file.type,
             thumbnail_url: (d.thumbnail_url as string) || undefined,
+            // What the optimisation pipeline did. originalSize is the file the
+            // user picked; size is what was actually stored. Showing both is
+            // the difference between "uploaded" and "uploaded 5.3 MB as
+            // 147 KB", and it is the only place that work is visible.
+            originalSize: (d.original_size as number) || file.size,
+            format: (d.format as string) || undefined,
+            optimised: d.optimised === true,
           });
         } catch (err: unknown) {
           const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
@@ -633,7 +646,18 @@ function FilePreview({ file, onRemove, index, total, reorderable, onMove }: File
       <PreviewThumb file={file} />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
-        <p className="text-xs text-text-muted">{formatSize(file.size)}</p>
+        <p className="text-xs text-text-muted">
+          {file.optimised && file.originalSize && file.originalSize > file.size ? (
+            <>
+              <span className="line-through opacity-60">{formatSize(file.originalSize)}</span>
+              {" -> "}
+              <span className="text-success">{formatSize(file.size)}</span>
+              {file.format ? <span className="uppercase"> {file.format}</span> : null}
+            </>
+          ) : (
+            formatSize(file.size)
+          )}
+        </p>
       </div>
       {canReorder && (
         <div className="flex flex-col gap-0.5">

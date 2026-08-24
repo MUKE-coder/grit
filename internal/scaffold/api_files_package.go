@@ -43,6 +43,43 @@ type FileRef struct {
 	Height       *int   ` + "`json:\"height,omitempty\"`" + `
 	Duration     *int   ` + "`json:\"duration,omitempty\"`" + ` // video / audio (seconds)
 	ThumbnailURL string ` + "`json:\"thumbnail_url,omitempty\"`" + `
+
+	// Format is what the stored file actually is, after optimisation.
+	//
+	// Recorded rather than inferred from the URL, because a pipeline that
+	// falls back to a different encoder must not leave a client guessing:
+	// asking for AVIF and silently receiving JPEG is only safe if the ref
+	// says so.
+	Format string ` + "`json:\"format,omitempty\"`" + `
+
+	// Optimised is false when the transform failed and the original was
+	// stored as-is. The admin surfaces these, and reprocessing finds them.
+	Optimised bool ` + "`json:\"optimised\"`" + `
+
+	// OriginalKey points at the untouched upload, kept under a private
+	// prefix. It is what makes reprocessing possible when a profile changes
+	// later, and it is deliberately a key rather than a URL: the original is
+	// not for serving.
+	OriginalKey  string ` + "`json:\"original_key,omitempty\"`" + `
+	OriginalSize int64  ` + "`json:\"original_size,omitempty\"`" + `
+
+	// Renditions are the extra sizes a profile asked for, keyed by name
+	// ("thumb"). Absent when the profile declared none.
+	Renditions map[string]Rendition ` + "`json:\"renditions,omitempty\"`" + `
+
+	// Profile is the name that produced this ref, so reprocessing knows
+	// which settings to apply without consulting the model.
+	Profile string ` + "`json:\"profile,omitempty\"`" + `
+}
+
+// Rendition is one derived size of a file.
+type Rendition struct {
+	URL    string ` + "`json:\"url\"`" + `
+	Key    string ` + "`json:\"key\"`" + `
+	Width  int    ` + "`json:\"width,omitempty\"`" + `
+	Height int    ` + "`json:\"height,omitempty\"`" + `
+	Size   int64  ` + "`json:\"size,omitempty\"`" + `
+	MIME   string ` + "`json:\"mime,omitempty\"`" + `
 }
 
 // Value implements driver.Valuer so GORM stores FileRef as JSON.

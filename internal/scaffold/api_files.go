@@ -263,6 +263,10 @@ require (
 	// signature verification, audience restriction and clock-skew handling are
 	// exactly the places a DIY implementation becomes an auth bypass.
 	github.com/crewjam/saml v0.5.1
+	// Pure-Go WebP, so image optimisation does not cost the static
+	// cross-compiled binary. Lossless (VP8L) only: there is no pure-Go
+	// lossy WebP encoder, which is why lossy compression targets JPEG.
+	github.com/HugoSmits86/nativewebp v1.3.0
 	github.com/disintegration/imaging v1.6.2
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-pdf/fpdf v1.4.3
@@ -8235,6 +8239,35 @@ func eventBusStatus() interface{} {
 // the prefix will eventually be dragged onto a version it wasn't written for.
 const APIVersion = "v1"
 
+// wafExcludedRoutes lists the paths Sentinel's WAF steps aside for, under the
+// live API prefix.
+//
+// Uploads are here because the WAF rejects any body over its inspection cap
+// before the route runs, and a photograph is larger than that cap by design.
+// The richtext resources are here because the XSS heuristics flag ordinary
+// markup: a blog body is <p> and <strong> and <img> by definition.
+//
+// Exclusion is from body inspection only. These routes still pass through
+// auth, RBAC, binding validation and rate limiting.
+func wafExcludedRoutes() []string {
+	prefix := "/api/" + APIVersion
+	paths := []string{
+		"/blogs", "/blogs/*",
+		"/posts", "/posts/*",
+		"/articles", "/articles/*",
+		"/uploads", "/uploads/*",
+		// Public form-share submissions. Auth is the share's bcrypt password
+		// (optional) and the token itself; Sentinel rate-limits the path. The
+		// subtree match also covers .../submit.
+		"/public/forms/*",
+	}
+	out := make([]string, 0, len(paths))
+	for _, p := range paths {
+		out = append(out, prefix+p)
+	}
+	return out
+}
+
 // Services holds all Phase 4 services for dependency injection.
 type Services struct {
 	Cache   *cache.Cache
@@ -8354,20 +8387,18 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 				// literal string ":id" and never "/api/blogs/123" — they
 				// were silent dead config. Use "/*" (a subtree match) so the
 				// id/token routes are actually excluded.
-				ExcludeRoutes: []string{
-					"/api/blogs",
-					"/api/blogs/*",
-					"/api/posts",
-					"/api/posts/*",
-					"/api/articles",
-					"/api/articles/*",
-					"/api/uploads",
-					// v3.31.20 — public form-share submissions. Auth is
-					// the share's bcrypt password (optional) and the
-					// token itself; Sentinel rate-limits the path. The
-					// subtree match also covers .../submit.
-					"/api/public/forms/*",
-				},
+				//
+				// They are built from APIVersion for the same reason. Every
+				// entry here was once written as a literal "/api/blogs", while
+				// the router mounts "/api/" + APIVersion, so not one of them
+				// ever matched. Two things were broken by that and neither
+				// announced itself: an upload over MaxBodyBytes was rejected
+				// with 413 before the handler saw it, and richtext bodies were
+				// never actually stepped aside, so in production (ModeBlock) a
+				// blog post containing markup could be refused as an XSS
+				// payload. Deriving the prefix means the next version bump
+				// cannot quietly disable all of it again.
+				ExcludeRoutes: wafExcludedRoutes(),
 			},
 			RateLimit: sentinel.RateLimitConfig{
 				Enabled: !isDev,

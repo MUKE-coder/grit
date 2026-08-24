@@ -318,6 +318,7 @@ func uploadHandlerGo() string {
 	return `package handlers
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -333,6 +334,7 @@ import (
 
 	"{{MODULE}}/internal/files"
 	"{{MODULE}}/internal/jobs"
+	"{{MODULE}}/internal/media"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/storage"
 )
@@ -533,29 +535,148 @@ func (h *UploadHandler) Create(c *gin.Context) {
 
 	// Generate unique filename
 	ext := filepath.Ext(header.Filename)
-	filename := fmt.Sprintf("%d-%s%s", time.Now().UnixNano(), strings.TrimSuffix(filepath.Base(header.Filename), ext), ext)
-	key := fmt.Sprintf("uploads/%s/%s", time.Now().Format("2006/01"), filename)
+	base := strings.TrimSuffix(filepath.Base(header.Filename), ext)
+	stamp := time.Now()
+	filename := fmt.Sprintf("%d-%s%s", stamp.UnixNano(), base, ext)
+	prefix := fmt.Sprintf("uploads/%s", stamp.Format("2006/01"))
+	key := fmt.Sprintf("%s/%s", prefix, filename)
 
-	// Upload to storage
-	if err := h.Storage.Upload(c.Request.Context(), key, file, mimeType); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "UPLOAD_FAILED",
-				"message": "Failed to upload file",
-			},
-		})
-		return
+	// The optimisation profile this field asked for. An unknown or absent name
+	// resolves to the default profile rather than failing, so a stale name in a
+	// client build degrades to sensible behaviour instead of a broken upload.
+	profileName := c.Query("profile")
+	profile := media.Get(profileName)
+
+	storedMIME := mimeType
+	storedSize := header.Size
+	ref := files.FileRef{
+		Name:    header.Filename,
+		Profile: profileName,
 	}
+
+	// Optimise before storing, not after.
+	//
+	// The version this replaces uploaded the original, queued a job, and
+	// returned a ref whose ThumbnailURL was still empty because the worker had
+	// not run yet. That ref is what got written into the record, so every
+	// thumbnail Grit generated for a resource field was orphaned: produced,
+	// paid for, and referenced by nothing. Doing the primary transform inline
+	// means the row is only ever written with final URLs, and the 5 MB original
+	// never lands in the public prefix at all.
+	optimised := false
+	if media.IsOptimisable(mimeType) {
+		res, terr := media.Transform(file, profile)
+		if terr != nil {
+			// A file nobody can decode is not necessarily a lost cause: the
+			// profile decides whether to refuse it or keep it as it came.
+			if profile.OnError == media.Reject {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": gin.H{
+						"code":    "INVALID_FILE_TYPE",
+						"message": "That image could not be processed",
+					},
+				})
+				return
+			}
+			log.Printf("media: keeping %s unoptimised: %v", header.Filename, terr)
+		} else {
+			optimised = true
+
+			// The original, under a prefix of its own. Private, because it is
+			// kept for reprocessing rather than for serving, and a 5 MB file
+			// reachable by anyone who guesses the key defeats the exercise.
+			if !profile.DiscardOriginal {
+				if _, serr := file.Seek(0, io.SeekStart); serr == nil {
+					origKey := fmt.Sprintf("originals/%s/%s", stamp.Format("2006/01"), filename)
+					if err := h.Storage.Upload(c.Request.Context(), origKey, file, mimeType); err == nil {
+						ref.OriginalKey = origKey
+						ref.OriginalSize = header.Size
+					} else {
+						// Not fatal. Losing the ability to reprocess later is
+						// worth less than the upload the user is waiting on.
+						log.Printf("media: could not keep the original for %s: %v", header.Filename, err)
+					}
+				}
+			}
+
+			key = fmt.Sprintf("%s/%s-%d%s", prefix, base, stamp.UnixNano(), res.Primary.Ext)
+			filename = filepath.Base(key)
+			storedMIME = res.Primary.MIME
+			storedSize = int64(len(res.Primary.Bytes))
+			if err := h.Storage.Upload(c.Request.Context(), key, bytes.NewReader(res.Primary.Bytes), storedMIME); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": gin.H{"code": "UPLOAD_FAILED", "message": "Failed to upload file"},
+				})
+				return
+			}
+
+			w, hgt := res.Primary.Width, res.Primary.Height
+			ref.Width, ref.Height = &w, &hgt
+			ref.Format = strings.TrimPrefix(res.Primary.MIME, "image/")
+
+			for _, r := range res.Extra {
+				rk := fmt.Sprintf("%s/%s-%d-%s%s", prefix, base, stamp.UnixNano(), r.Name, r.Ext)
+				if err := h.Storage.Upload(c.Request.Context(), rk, bytes.NewReader(r.Bytes), r.MIME); err != nil {
+					// A missing rendition is a smaller problem than a failed
+					// upload: the primary is already stored and usable.
+					log.Printf("media: rendition %q failed for %s: %v", r.Name, header.Filename, err)
+					continue
+				}
+				if ref.Renditions == nil {
+					ref.Renditions = map[string]files.Rendition{}
+				}
+				ref.Renditions[r.Name] = files.Rendition{
+					URL: h.Storage.GetURL(rk), Key: rk,
+					Width: r.Width, Height: r.Height,
+					Size: int64(len(r.Bytes)), MIME: r.MIME,
+				}
+				// The thumb doubles as the ref's thumbnail, which is what the
+				// admin table and the dropzone preview read.
+				if r.Name == "thumb" {
+					ref.ThumbnailURL = h.Storage.GetURL(rk)
+				}
+			}
+
+			log.Printf("media: %s %.1fKB %dx%d -> %.1fKB %s %dx%d",
+				header.Filename, float64(header.Size)/1024,
+				res.OriginalWidth, res.OriginalHeight,
+				float64(storedSize)/1024, ref.Format, w, hgt)
+		}
+	}
+
+	// Not optimisable, or optimisation was declined: store what arrived.
+	if !optimised {
+		if _, serr := file.Seek(0, io.SeekStart); serr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": gin.H{"code": "UPLOAD_FAILED", "message": "Could not read the uploaded file"},
+			})
+			return
+		}
+		if err := h.Storage.Upload(c.Request.Context(), key, file, mimeType); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": gin.H{
+					"code":    "UPLOAD_FAILED",
+					"message": "Failed to upload file",
+				},
+			})
+			return
+		}
+	}
+	ref.Optimised = optimised
 
 	userID, _ := c.Get("user_id")
 
 	upload := models.Upload{
 		Filename:     filename,
 		OriginalName: header.Filename,
-		MimeType:     mimeType,
-		Size:         header.Size,
+		// The stored file, not the file that arrived. Recording the source
+		// type and size here would make every storage total in the admin a
+		// report of bytes the bucket does not hold.
+		MimeType:     storedMIME,
+		Size:         storedSize,
 		Path:         key,
 		URL:          h.Storage.GetURL(key),
+		ThumbnailURL: ref.ThumbnailURL,
 		UserID:       userID.(string),
 	}
 
@@ -570,26 +691,21 @@ func (h *UploadHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Enqueue image processing job. Width / height are written back to
-	// the upload row by the worker; for now we return what we have and
-	// the frontend can refetch the FileRef later if it needs dimensions.
-	if h.Jobs != nil && storage.IsImageMimeType(mimeType) {
-		_ = h.Jobs.EnqueueProcessImage(c.Request.Context(), upload.ID, key, mimeType, jobs.EnqueueOption{
+	// Only images the pipeline declined reach the worker now. Anything it
+	// handled already has its renditions, and enqueueing here would generate a
+	// second thumbnail that nothing reads.
+	if h.Jobs != nil && !optimised && storage.IsImageMimeType(storedMIME) {
+		_ = h.Jobs.EnqueueProcessImage(c.Request.Context(), upload.ID, key, storedMIME, jobs.EnqueueOption{
 			IdempotencyKey: "image:process:" + upload.ID,
 		})
 	}
 
-	// Dimensions / duration aren't extracted synchronously -- the
-	// image-processing worker populates ThumbnailURL asynchronously
-	// and the frontend can re-fetch the record if it needs them later.
-	ref := files.FileRef{
-		URL:          upload.URL,
-		Key:          upload.Path,
-		Name:         upload.OriginalName,
-		MIME:         upload.MimeType,
-		Size:         upload.Size,
-		ThumbnailURL: upload.ThumbnailURL,
-	}
+	// Filled in above by the pipeline; everything the caller needs is here, so
+	// there is nothing to re-fetch later.
+	ref.URL = upload.URL
+	ref.Key = upload.Path
+	ref.MIME = upload.MimeType
+	ref.Size = upload.Size
 
 	c.JSON(http.StatusCreated, gin.H{
 		"data":    ref,
