@@ -452,6 +452,17 @@ func sharedFileRefSchema() string {
 // server when the source format makes them cheap to compute (images get
 // dimensions, audio gets duration). They're optional because not every
 // upload has them — a PDF has no width, a CSV has no thumbnail.
+export const RenditionSchema = z.object({
+  url: z.string().url(),
+  key: z.string().min(1),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
+  size: z.number().int().nonnegative().optional(),
+  mime: z.string().optional(),
+});
+
+export type Rendition = z.infer<typeof RenditionSchema>;
+
 export const FileRefSchema = z.object({
   url: z.string().url(),
   key: z.string().min(1),
@@ -462,6 +473,19 @@ export const FileRefSchema = z.object({
   height: z.number().int().positive().optional(),
   duration: z.number().int().nonnegative().optional(),
   thumbnail_url: z.string().url().optional(),
+
+  // Written by the image pipeline. format is what the file actually is after
+  // optimisation, which is not always what was uploaded: a PNG photograph
+  // comes back as a JPEG, and a PNG with transparency comes back as WebP.
+  format: z.string().optional(),
+  // false when the transform failed and the upload was stored as it arrived.
+  optimised: z.boolean().optional(),
+  // The untouched upload, kept privately so a profile change can be replayed.
+  // A key rather than a URL, because the original is not for serving.
+  original_key: z.string().optional(),
+  original_size: z.number().int().nonnegative().optional(),
+  renditions: z.record(z.string(), RenditionSchema).optional(),
+  profile: z.string().optional(),
 });
 
 export type FileRef = z.infer<typeof FileRefSchema>;
@@ -474,6 +498,17 @@ func sharedFileRefTypes() string {
 // schemas/file-ref.ts; importing the type from here avoids pulling in
 // Zod just to get a type definition.
 
+
+/** One derived size of a file, produced by the optimisation pipeline. */
+export type Rendition = {
+  url: string;
+  key: string;
+  width?: number;
+  height?: number;
+  size?: number;
+  mime?: string;
+};
+
 export type FileRef = {
   url: string;
   key: string;
@@ -484,6 +519,18 @@ export type FileRef = {
   height?: number;
   duration?: number;
   thumbnail_url?: string;
+
+  /** What the stored file actually is, after optimisation. */
+  format?: string;
+  /** false when the transform failed and the upload was stored as it arrived. */
+  optimised?: boolean;
+  /** The untouched upload, kept privately for reprocessing. Not for serving. */
+  original_key?: string;
+  original_size?: number;
+  /** Extra sizes the profile asked for, keyed by name ("thumb"). */
+  renditions?: Record<string, Rendition>;
+  /** The profile that produced this ref. */
+  profile?: string;
 };
 `
 }

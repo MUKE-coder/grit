@@ -198,6 +198,7 @@ const navItems: NavItem[] = [
     icon: <Database className="h-3.5 w-3.5" />,
     items: [
       { title: 'File Storage', href: '/docs/batteries/storage' },
+      { title: 'Image Optimisation', href: '/docs/batteries/media' },
       { title: 'Email System', href: '/docs/batteries/email' },
       { title: 'Background Jobs', href: '/docs/batteries/jobs' },
       { title: 'Cron Scheduler', href: '/docs/batteries/cron' },

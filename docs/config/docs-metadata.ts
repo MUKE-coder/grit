@@ -500,6 +500,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Security in Grit with Sentinel: WAF, rate limiting, brute-force protection, anomaly detection, IP geolocation, and threat dashboard.',
   },
+  '/docs/batteries/media': {
+    title: 'Image Optimisation',
+    description:
+      'A 6 MB phone photo stored as 150 KB with no configuration: resized, re-encoded per image, EXIF oriented then stripped, and a thumbnail alongside. Profiles when a field wants something different.',
+  },
   '/docs/batteries/storage': {
     title: 'File Storage',
     description:

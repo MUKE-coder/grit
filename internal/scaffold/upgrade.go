@@ -124,6 +124,27 @@ func Upgrade(uOpts UpgradeOptions) error {
 		green.Printf("  ✓ Migration and seed tools updated\n")
 		updated += 4
 
+		// The media pipeline, and the storage/upload code it hooks into.
+		//
+		// Narrow on purpose. Upgrade does not regenerate API code in general,
+		// and widening it here would be that project rather than this feature.
+		// These are listed because the pipeline is useless without them:
+		// internal/media is new, and the upload handler is where the transform
+		// actually happens.
+		//
+		// writeFile is manifest-guarded, so a file the reader has edited is
+		// reported as a conflict rather than overwritten.
+		spinner.Printf("  → Updating the media pipeline...\n")
+		if err := writeMediaFiles(root, opts); err != nil {
+			return fmt.Errorf("updating media files: %w", err)
+		}
+		if err := writeStorageFiles(root, opts); err != nil {
+			return fmt.Errorf("updating storage files: %w", err)
+		}
+		green.Printf("  ✓ Media pipeline updated\n")
+		green.Printf("    Then run: cd apps/api && go mod tidy\n")
+		updated += 3
+
 		// API documentation (gin-docs — now configured in routes.go)
 		green.Printf("  ✓ API documentation (gin-docs) configured in routes.go\n")
 	}

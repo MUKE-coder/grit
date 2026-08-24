@@ -29,6 +29,98 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.171.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.171.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Image optimisation, on by default</h3>
+                <p>
+                  Upload a 6 MB photograph and 147 KB gets stored: resized to fit 1600x1600,
+                  encoded at quality 0.82, EXIF oriented and then stripped, with a 400x400
+                  thumbnail alongside and the original kept privately for reprocessing. No
+                  configuration required. See{' '}
+                  <a href="/docs/batteries/media">Image Optimisation</a>.
+                </p>
+                <p>
+                  The output format is decided per image rather than configured, because the
+                  answer is in the pixels: anything with real transparency becomes lossless
+                  WebP, everything else becomes JPEG. That makes the usual mistake, a
+                  transparent logo saved as JPEG and quietly gaining a black box,
+                  unrepresentable.
+                </p>
+                <p>
+                  Define a profile when one field wants something else, in{' '}
+                  <code>internal/media/profiles.go</code>, which is written once and never
+                  regenerated:
+                </p>
+                <CodeBlock language="go" code={`media.Define("product-image", media.Profile{
+    Max:     media.Fit(1000, 1000),
+    Quality: 0.8,
+    Renditions: map[string]media.Size{"thumb": media.Fill(300, 300)},
+})
+
+// POST /api/v1/uploads?profile=product-image`} />
+                <p>
+                  No lossy WebP and no AVIF, deliberately. Neither has a pure-Go encoder, and
+                  adding one means cgo, which costs the static cross-compiled binary. On a
+                  photograph the pure-Go lossless WebP encoder produced 778 KB where JPEG
+                  produced 35 KB, so it earns its place as a PNG replacement and nothing more.
+                </p>
+
+                <h3>Every thumbnail was being orphaned</h3>
+                <p>
+                  The upload handler stored the original, queued a thumbnail job, and returned
+                  a file reference whose thumbnail field was still empty because the worker had
+                  not run yet. That reference is what got written into the record, and the
+                  worker wrote its result onto the separate uploads row, which nothing read
+                  back. Every thumbnail generated for a resource file field was produced, paid
+                  for, and referenced by nothing. Transforming inline fixes it: the record is
+                  only ever written with final URLs.
+                </p>
+
+                <h3>The WAF was blocking every upload over 1 MB</h3>
+                <p>
+                  Sentinel&apos;s exclusion list named <code>/api/uploads</code>,{' '}
+                  <code>/api/blogs</code> and the rest, while the router mounts{' '}
+                  <code>/api/</code> + <code>APIVersion</code>. Not one entry ever matched. Two
+                  things were broken by that and neither announced itself: an upload larger
+                  than the WAF&apos;s inspection cap was rejected with a 413 before the handler
+                  saw it, and richtext bodies were never actually stepped aside, so in
+                  production a blog post containing ordinary markup could be refused as an XSS
+                  payload. The list is built from <code>APIVersion</code> now, so a version
+                  bump cannot quietly disable all of it again.
+                </p>
+
+                <h3>Also</h3>
+                <ul>
+                  <li>
+                    <code>FileRef</code> carries <code>format</code>, <code>optimised</code>,{' '}
+                    <code>renditions</code> and the original&apos;s key and size. The format is
+                    recorded rather than inferred from the URL, so a client never guesses what
+                    it received.
+                  </li>
+                  <li>
+                    The admin dropzone shows the work: <code>5.3 MB -&gt; 147 KB JPEG</code>{' '}
+                    instead of just a filename.
+                  </li>
+                  <li>
+                    <code>grit upgrade</code> now delivers the media package and the storage
+                    code it hooks into, so existing projects get this without rescaffolding.
+                  </li>
+                  <li>
+                    GIF is left alone on purpose: decoding one keeps the first frame only, so
+                    optimising an animation would silently throw it away.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.170.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
