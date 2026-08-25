@@ -17,9 +17,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/config"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
 )
@@ -103,6 +105,47 @@ func ensureKey(db *gorm.DB, want models.APIKey) (string, error) {
 	return issued.Token, nil
 }
 
+// apiOrigin is where the browser should call this API.
+func apiOrigin() string {
+	cfg, err := config.Load()
+	if err != nil || cfg == nil || cfg.Port == "" {
+		return "http://localhost:8080"
+	}
+	return "http://localhost:" + cfg.Port
+}
+
+// storageOrigin is the browser-facing origin of stored files.
+//
+// Derived from whichever storage this project is configured for rather than
+// assumed. The default MinIO port is only correct until somebody moves it, and
+// in production it is never correct. Getting it wrong does not fail loudly:
+// the upload is refused by the Content-Security-Policy, and the only trace is
+// a console message nobody is watching.
+func storageOrigin() string {
+	cfg, err := config.Load()
+	if err != nil || cfg == nil {
+		return "http://localhost:9002"
+	}
+	for _, candidate := range []string{cfg.Storage.PublicURL, cfg.Storage.Endpoint} {
+		if candidate == "" {
+			continue
+		}
+		value := strings.TrimSuffix(candidate, "/")
+		if !strings.Contains(value, "://") {
+			value = "http://" + value
+		}
+		// A public URL usually carries the bucket path. The CSP wants an
+		// origin, so everything after the host is dropped.
+		if i := strings.Index(value, "://"); i >= 0 {
+			if j := strings.Index(value[i+3:], "/"); j >= 0 {
+				value = value[:i+3+j]
+			}
+		}
+		return value
+	}
+	return "http://localhost:9002"
+}
+
 // writeClientEnv drops the publishable key into the web app's local env, so a
 // fresh project's storefront can call the API without anyone copying anything.
 //
@@ -122,9 +165,24 @@ func writeClientEnv(publishable string) {
 		if _, err := os.Stat(rel); err == nil {
 			continue // already there
 		}
-		body := "# Publishable API key, written by the seeder.\n" +
-			"# Safe to ship to a browser: it reaches public endpoints only.\n" +
-			"NEXT_PUBLIC_API_KEY=" + publishable + "\n"
+		body := "# Written by the seeder. Only ever created, never overwritten." + "\n" +
+			"\n" +
+			"# Publishable API key. Safe to ship to a browser: it reaches public" + "\n" +
+			"# endpoints only." + "\n" +
+			"NEXT_PUBLIC_API_KEY=" + publishable + "\n" +
+			"\n" +
+			"# Where this app calls the API." + "\n" +
+			"NEXT_PUBLIC_API_URL=" + apiOrigin() + "\n" +
+			"\n" +
+			"# Browser-facing origin of stored files." + "\n" +
+			"#" + "\n" +
+			"# Both of these end up in the Content-Security-Policy. Uploads are" + "\n" +
+			"# presigned PUTs made straight from the browser to object storage," + "\n" +
+			"# so an origin missing from connect-src is an upload the browser" + "\n" +
+			"# refuses, reporting it only as a CSP violation in the console." + "\n" +
+			"#" + "\n" +
+			"# In production set this to your S3, R2 or CDN origin." + "\n" +
+			"NEXT_PUBLIC_STORAGE_URL=" + storageOrigin() + "\n"
 		if err := os.WriteFile(rel, []byte(body), 0o644); err == nil {
 			log.Printf("  Wrote %s", rel)
 		}

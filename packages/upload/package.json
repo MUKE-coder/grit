@@ -1,6 +1,6 @@
 {
   "name": "@gritframework/upload",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Client-side image optimisation and direct-to-storage uploads for React, Next.js and Expo. Shrinks a 6 MB photo to ~35 KB before it leaves the device.",
   "keywords": [
     "upload",

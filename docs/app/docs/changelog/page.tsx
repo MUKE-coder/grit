@@ -29,6 +29,60 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.176.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.176.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Uploads were blocked in production, and nothing said so</h3>
+                <p>
+                  Found by running a real project end to end rather than by reading the
+                  templates. The frontend Content-Security-Policy builds its{' '}
+                  <code>connect-src</code> from <code>NEXT_PUBLIC_STORAGE_URL</code>, and the
+                  scaffolder never wrote that variable. It fell back to the default MinIO port,
+                  which is right for exactly one configuration: a local project that has not
+                  moved anything.
+                </p>
+                <p>
+                  Move MinIO, or deploy to R2 or S3, and every presigned upload is refused by
+                  the browser. There is no server log, no failed request in the network tab
+                  worth noticing, and no error in the UI. The only trace is a CSP violation in
+                  the console.
+                </p>
+                <p>
+                  The seeder now writes both origins into each frontend&apos;s{' '}
+                  <code>.env.local</code>, derived from the project&apos;s own storage config
+                  rather than assumed, with a comment saying what they are for.
+                </p>
+
+                <h3>Stored files are named by what they actually are</h3>
+                <p>
+                  A JPEG optimised to WebP was stored as <code>photo.jpg</code>. The
+                  Content-Type was correct so browsers rendered it, but a key whose extension
+                  contradicts its bytes confuses everything that reads keys instead: CDN rules,
+                  lifecycle policies, and whoever is looking through the bucket later.
+                </p>
+
+                <h3>Verified end to end</h3>
+                <p>
+                  A fresh project, real MinIO, real browser, no manual configuration: a 3.70 MB
+                  photograph reached storage as <strong>50.6 KB across two objects, 75x
+                  smaller</strong>, both genuinely WebP by their magic bytes, and{' '}
+                  <strong>zero multipart uploads reached the API</strong>.
+                </p>
+                <p>
+                  <code>@repo/upload</code> is already wired into the admin and web apps, so a
+                  plain <code>pnpm install</code> links it. Nothing to install, nothing to
+                  configure.
+                </p>
+              </div>
+            </div>
+
             {/* v3.175.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -157,7 +157,20 @@ export function createUploader({ transport, optimize, profiles }: UploaderOption
 
     const stored: Record<string, { key: string; url: string; rendition: Rendition }> = {};
     for (const part of parts) {
-      const name = part.name === "primary" ? filename : stem(filename) + "-" + part.name + part.ext;
+      // The stored name carries the format actually produced, so a WebP is not
+      // filed as photo.jpg. The Content-Type is right either way and browsers
+      // go by that, but a key whose extension contradicts its bytes confuses
+      // every tool that reads the key instead: CDN rules, lifecycle policies,
+      // and whoever is looking through the bucket six months from now.
+      //
+      // ext is empty when nothing was optimised, and then the original name is
+      // exactly right.
+      const name =
+        part.name === "primary"
+          ? part.ext
+            ? stem(filename) + part.ext
+            : filename
+          : stem(filename) + "-" + part.name + part.ext;
       const { key, url } = await putOne(part, name, options.accepts, (f) => {
         options.onProgress?.((done + f * part.blob.size) / total);
       });
