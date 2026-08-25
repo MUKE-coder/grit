@@ -637,8 +637,8 @@ func (h *UploadHandler) Create(c *gin.Context) {
 				}
 			}
 
-			log.Printf("media: %s %.1fKB %dx%d -> %.1fKB %s %dx%d",
-				header.Filename, float64(header.Size)/1024,
+			log.Printf("media[%s]: %s %.1fKB %dx%d -> %.1fKB %s %dx%d",
+				media.Backend(), header.Filename, float64(header.Size)/1024,
 				res.OriginalWidth, res.OriginalHeight,
 				float64(storedSize)/1024, ref.Format, w, hgt)
 		}

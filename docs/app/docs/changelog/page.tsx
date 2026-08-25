@@ -29,6 +29,64 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.172.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.172.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A decompression bomb could exhaust the API&apos;s memory</h3>
+                <p>
+                  Shipped in v3.171.0 and closed here. A solid-colour PNG compresses to almost
+                  nothing whatever its dimensions, so an upload that passes every file-size
+                  check on the way in can still be enormous once decoded. Measured: a{' '}
+                  <strong>165 KB file at 12000x12000 allocated 224 MB</strong>, and ten
+                  concurrent uploads of it would have been 2.2 GB. Dimensions are now read
+                  from the header before any pixels are allocated, and anything over{' '}
+                  <code>MaxPixels</code> (50 megapixels by default) is refused. A 48 MP
+                  professional camera frame still passes.
+                </p>
+
+                <h3>libvips, as an opt-in backend</h3>
+                <p>
+                  The pipeline now has a swappable backend. The default is unchanged and needs
+                  no system libraries. Build with <code>-tags vips</code> and it uses libvips,
+                  which can write lossy WebP and AVIF. Measured on the same 6.08 MB photograph
+                  in the same container:
+                </p>
+                <CodeBlock language="bash" code={`                    pure Go (default)      libvips (-tags vips)
+default profile     149.9 KB JPEG 1001ms   33.9 KB lossy WebP 1853ms
+JPEG, forced        141.0 KB       950ms  123.7 KB            1366ms
+AVIF                downgrades to JPEG     79.9 KB            7544ms`} />
+                <p>
+                  <strong>About 4x smaller, and not faster.</strong> libvips is slower here on
+                  both the default path and a like-for-like JPEG comparison. The widely quoted
+                  4-8x speedup is libvips against ImageMagick rather than against Go&apos;s
+                  native image package, and it did not reproduce. The reason to want it is
+                  bandwidth, not latency. AVIF costs 7.5 seconds for one image and on this
+                  photograph came out larger than lossy WebP, so it is opt-in per profile and
+                  not viable on a synchronous upload.
+                </p>
+                <p>
+                  Opt in where the environment is controlled, because cgo cannot
+                  cross-compile and <code>grit deploy</code> builds for linux/amd64 from your
+                  machine with <code>CGO_ENABLED=0</code>:
+                </p>
+                <CodeBlock language="bash" code={`docker build --build-arg IMAGE_BACKEND=vips -f Dockerfile.api .`} />
+                <p>
+                  The same profiles drive both. What changes is what <code>Auto</code> resolves
+                  to. A profile asking for AVIF on the pure-Go backend is downgraded rather
+                  than refused, so one binary still serves a project whose profiles assume
+                  libvips, and <code>format</code> on the ref records what was really produced.
+                  The active backend is named in the upload log line.
+                </p>
+              </div>
+            </div>
+
             {/* v3.171.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

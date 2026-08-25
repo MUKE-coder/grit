@@ -15,6 +15,7 @@ func writeMediaFiles(root string, opts Options) error {
 	files := map[string]string{
 		filepath.Join(apiRoot, "internal", "media", "profile.go"):        mediaProfileGo(),
 		filepath.Join(apiRoot, "internal", "media", "transform.go"):      mediaTransformGo(),
+		filepath.Join(apiRoot, "internal", "media", "transform_vips.go"): mediaTransformVipsGo(),
 		filepath.Join(apiRoot, "internal", "media", "transform_test.go"): mediaTransformTestGo(module),
 	}
 
@@ -69,10 +70,14 @@ const (
 	Auto Format = "auto"
 	JPEG Format = "jpeg"
 	PNG  Format = "png"
-	// WebP here is always lossless (VP8L). There is no pure-Go lossy WebP
-	// encoder, and adding one means cgo, which costs the static
-	// cross-compiled binary. Ask for lossy compression and you get JPEG.
+	// WebP is lossless (VP8L) on the pure-Go backend, because there is no
+	// pure-Go lossy WebP encoder. Built with -tags vips it is lossy, carries
+	// alpha, and is smaller than JPEG at the same quality.
 	WebP Format = "webp"
+	// AVIF requires -tags vips and a libvips built with libheif. The pure-Go
+	// backend cannot produce it and falls back to its own Auto choice, which
+	// is why FileRef records the format actually produced.
+	AVIF Format = "avif"
 )
 
 // Size is a target box. Fit scales down to sit inside it and keeps the aspect
@@ -122,6 +127,18 @@ type Profile struct {
 	DiscardOriginal bool
 	// OnError decides what a failed transform does.
 	OnError FailurePolicy
+	// MaxPixels refuses an image whose decoded size would exceed this, read
+	// from the header before any pixels are allocated.
+	//
+	// The attack this closes is a decompression bomb: a solid-colour PNG
+	// compresses to almost nothing whatever its dimensions, so 165 KB on the
+	// wire can be 144 megapixels decoded. Measured, that one upload allocated
+	// 224 MB, and ten concurrent would have been 2.2 GB. The file size limit
+	// upstream cannot see it, because on disk it is small.
+	//
+	// 50 megapixels passes a 48 MP professional camera frame and refuses the
+	// bomb.
+	MaxPixels int
 }
 
 // DefaultProfile applies to every image field that does not name one.
@@ -142,6 +159,7 @@ func DefaultProfile() Profile {
 		Format:       Auto,
 		Renditions: map[string]Size{"thumb": Fill(400, 400)},
 		OnError:    StoreOriginal,
+		MaxPixels:  50_000_000,
 	}
 }
 
@@ -223,6 +241,9 @@ func withDefaults(p Profile) Profile {
 	if p.OnError == "" {
 		p.OnError = d.OnError
 	}
+	if p.MaxPixels <= 0 {
+		p.MaxPixels = d.MaxPixels
+	}
 	return p
 }
 
@@ -244,6 +265,8 @@ func (f Format) mime() string {
 		return "image/png"
 	case WebP:
 		return "image/webp"
+	case AVIF:
+		return "image/avif"
 	default:
 		return "image/jpeg"
 	}
@@ -255,31 +278,12 @@ func (f Format) ext() string {
 		return ".png"
 	case WebP:
 		return ".webp"
+	case AVIF:
+		return ".avif"
 	default:
 		return ".jpg"
 	}
 }
-
-func (p Profile) String() string {
-	return fmt.Sprintf("%dx%d q%.2f %s", p.Max.Width, p.Max.Height, p.Quality, p.Format)
-}
-`
-}
-
-func mediaTransformGo() string {
-	return `package media
-
-import (
-	"bytes"
-	"fmt"
-	"image"
-	"image/jpeg"
-	"image/png"
-	"io"
-
-	"github.com/HugoSmits86/nativewebp"
-	"github.com/disintegration/imaging"
-)
 
 // Rendition is one encoded output.
 type Rendition struct {
@@ -302,10 +306,53 @@ type Result struct {
 	// and reprocessing can find it later.
 	Optimised bool
 	// OriginalWidth and OriginalHeight are the source dimensions, before any
-	// resizing, so "5.3 MB 4000x3000 -> 147 KB 1600x1200" can be reported.
+	// resizing, so "6 MB 4000x3000 -> 147 KB 1600x1200" can be reported.
 	OriginalWidth  int
 	OriginalHeight int
 }
+
+// IsOptimisable reports whether the pipeline can handle this MIME type.
+//
+// GIF is excluded deliberately: it is usually animated, and decoding one
+// yields the first frame only, so "optimising" it would silently throw the
+// animation away.
+func IsOptimisable(mime string) bool {
+	switch mime {
+	case "image/jpeg", "image/png", "image/webp":
+		return true
+	}
+	return false
+}
+
+func (p Profile) String() string {
+	return fmt.Sprintf("%dx%d q%.2f %s", p.Max.Width, p.Max.Height, p.Quality, p.Format)
+}
+`
+}
+
+func mediaTransformGo() string {
+	return `//go:build !vips
+
+// Pure-Go image pipeline: the default.
+//
+// Encodes JPEG and lossless WebP with no system libraries, so the API stays a
+// single static binary and "grit deploy" can keep cross-compiling to Linux
+// from any machine. Build with -tags vips to swap in libvips, which is several
+// times faster and can write lossy WebP and AVIF, at the cost of that.
+
+package media
+
+import (
+	"bytes"
+	"fmt"
+	"image"
+	"image/jpeg"
+	"image/png"
+	"io"
+
+	"github.com/HugoSmits86/nativewebp"
+	"github.com/disintegration/imaging"
+)
 
 // Transform decodes, orients, resizes and re-encodes an image according to a
 // profile.
@@ -320,8 +367,24 @@ type Result struct {
 // so no source metadata survives. That matters more than it sounds, because a
 // phone photo carries GPS coordinates, and a shop publishing product photos
 // would otherwise publish the seller's home address with them.
-func Transform(r io.Reader, p Profile) (Result, error) {
+func Transform(r io.ReadSeeker, p Profile) (Result, error) {
 	p = withDefaults(p)
+
+	// Read the dimensions from the header first. DecodeConfig parses only the
+	// header, so this costs nothing and it is the only chance to refuse a
+	// decompression bomb: once Decode runs, the memory is already committed.
+	cfg, _, err := image.DecodeConfig(r)
+	if err != nil {
+		return Result{}, fmt.Errorf("reading image header: %w", err)
+	}
+	if px := cfg.Width * cfg.Height; px > p.MaxPixels {
+		return Result{}, fmt.Errorf(
+			"image is %dx%d (%d megapixels), over the %d megapixel limit",
+			cfg.Width, cfg.Height, px/1000000, p.MaxPixels/1000000)
+	}
+	if _, err := r.Seek(0, io.SeekStart); err != nil {
+		return Result{}, fmt.Errorf("rewinding after the header: %w", err)
+	}
 
 	src, err := imaging.Decode(r, imaging.AutoOrientation(true))
 	if err != nil {
@@ -385,7 +448,18 @@ func resize(src image.Image, s Size) image.Image {
 }
 
 // resolveFormat turns Auto into a concrete encoding.
+//
+// A profile asking for AVIF gets JPEG here, because this backend has no AVIF
+// encoder. It is downgraded rather than refused so that one binary built
+// without -tags vips still serves a project whose profiles assume it, and the
+// ref records what was actually produced so nothing downstream has to guess.
 func resolveFormat(f Format, img image.Image) Format {
+	if f == AVIF {
+		if hasAlpha(img) {
+			return WebP
+		}
+		return JPEG
+	}
 	if f != Auto {
 		return f
 	}
@@ -435,18 +509,12 @@ func encode(img image.Image, f Format, quality float64) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// IsOptimisable reports whether the pipeline can handle this MIME type.
-//
-// GIF is excluded deliberately: it is usually animated, and decoding one
-// yields the first frame only, so "optimising" it would silently throw the
-// animation away.
-func IsOptimisable(mime string) bool {
-	switch mime {
-	case "image/jpeg", "image/png", "image/webp":
-		return true
-	}
-	return false
-}
+// Backend names the compiled-in image backend, for logs and grit doctor.
+func Backend() string { return "pure-go" }
+
+// SupportsLossyWebP reports whether this backend can write lossy WebP or AVIF.
+// The pure-Go encoder cannot: it is lossless (VP8L) only.
+func SupportsLossyWebP() bool { return false }
 `
 }
 
@@ -461,6 +529,7 @@ import (
 	"image/png"
 	"math"
 	"math/rand"
+	"strings"
 	"testing"
 )
 
@@ -627,6 +696,40 @@ func TestGarbageIsAnError(t *testing.T) {
 	}
 }
 
+// A decompression bomb is refused from its header, before pixels are
+// allocated.
+//
+// The one test here about an attacker rather than a mistake. A solid-colour
+// PNG compresses to almost nothing whatever its dimensions, so an upload that
+// passes every file-size check on the way in can still be hundreds of
+// megabytes once decoded.
+func TestDecompressionBombIsRefused(t *testing.T) {
+	const dim = 12000 // 144 megapixels, about 165 KB on the wire
+	img := image.NewGray(image.Rect(0, 0, dim, dim))
+	for i := range img.Pix {
+		img.Pix[i] = 200
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatal(err)
+	}
+	_, err := Transform(bytes.NewReader(buf.Bytes()), DefaultProfile())
+	if err == nil {
+		t.Fatal("a 144 megapixel image must be refused, not decoded")
+	}
+	if !strings.Contains(err.Error(), "megapixel") {
+		t.Errorf("the error should name the limit, got: %v", err)
+	}
+}
+
+// The limit must not refuse a real camera frame.
+func TestLargeCameraFrameIsAccepted(t *testing.T) {
+	src := encodeJPEG(t, photo(6000, 4000)) // 24 megapixels
+	if _, err := Transform(bytes.NewReader(src), DefaultProfile()); err != nil {
+		t.Fatalf("a 24 megapixel photo must be accepted: %v", err)
+	}
+}
+
 // An animated GIF must not be silently reduced to its first frame.
 func TestGIFIsNotOptimisable(t *testing.T) {
 	if IsOptimisable("image/gif") {
@@ -685,6 +788,194 @@ func init() {
 		Quality:    0.82,
 		Renditions: map[string]Size{"thumb": Fill(600, 300)},
 	})
+}
+`
+}
+
+func mediaTransformVipsGo() string {
+	return `//go:build vips
+
+// libvips image pipeline: opt-in, via -tags vips.
+//
+// What it buys, over the pure-Go default:
+//
+//   - Several times faster, and it streams, so a large image is not fully
+//     decoded into the heap before it can be resized.
+//   - Lossy WebP, which is typically 25-35%% smaller than JPEG at the same
+//     visual quality, and unlike the pure-Go encoder it keeps transparency
+//     without falling back to lossless.
+//   - AVIF, smaller again, when the linked libvips was built with libheif.
+//
+// What it costs:
+//
+//   - cgo. The API is no longer a single static binary, so "grit deploy",
+//     which cross-compiles to linux/amd64 with CGO_ENABLED=0, cannot build it
+//     from a machine that is not the target. Build in Docker instead.
+//   - libvips 8.10+ must be present at build time and on the host at runtime.
+//
+// Requires: libvips-dev (Debian/Ubuntu) or vips (Homebrew), then
+//   go get github.com/davidbyttow/govips/v2/vips
+//
+// The same Profile drives both backends. What changes is the encoding Auto
+// resolves to, which is why FileRef records the format actually produced
+// rather than leaving a client to infer it.
+
+package media
+
+import (
+	"fmt"
+	"io"
+	"sync"
+
+	"github.com/davidbyttow/govips/v2/vips"
+)
+
+var startOnce sync.Once
+
+func startup() {
+	startOnce.Do(func() {
+		// Quiet: libvips logs at info level are noise in an API server.
+		vips.LoggingSettings(nil, vips.LogLevelError)
+		vips.Startup(nil)
+	})
+}
+
+// Backend names the compiled-in image backend, for logs and grit doctor.
+func Backend() string { return "libvips " + vips.Version }
+
+// SupportsLossyWebP reports whether this backend can write lossy WebP or AVIF.
+func SupportsLossyWebP() bool { return true }
+
+// Transform decodes, orients, resizes and re-encodes an image, entirely inside
+// libvips.
+//
+// The work is done with Thumbnail rather than a decode-then-resize pair,
+// because libvips can use a format's own reduced-resolution decoding to avoid
+// ever materialising the full frame. That, and not the encoder, is where the
+// memory difference against the pure-Go path comes from.
+func Transform(r io.ReadSeeker, p Profile) (Result, error) {
+	startup()
+	p = withDefaults(p)
+
+	buf, err := io.ReadAll(r)
+	if err != nil {
+		return Result{}, fmt.Errorf("reading image: %w", err)
+	}
+
+	// Dimensions first, so a decompression bomb is refused before any pixels
+	// are committed. libvips is lazy: loading a buffer parses the header and
+	// reading Width/Height does not decode the image.
+	probe, err := vips.NewImageFromBuffer(buf)
+	if err != nil {
+		return Result{}, fmt.Errorf("reading image header: %w", err)
+	}
+	srcW, srcH := probe.Width(), probe.Height()
+	probe.Close()
+	if px := srcW * srcH; px > p.MaxPixels {
+		return Result{}, fmt.Errorf(
+			"image is %dx%d (%d megapixels), over the %d megapixel limit",
+			srcW, srcH, px/1000000, p.MaxPixels/1000000)
+	}
+
+	out := Result{
+		Optimised:      true,
+		OriginalWidth:  srcW,
+		OriginalHeight: srcH,
+	}
+
+	primary, err := renderOne(buf, p.Max, p)
+	if err != nil {
+		return Result{}, err
+	}
+	primary.Name = "primary"
+	out.Primary = primary
+
+	for name, size := range p.Renditions {
+		// From the source bytes rather than from the primary, so a crop is
+		// taken at full detail instead of from an already-downscaled copy.
+		rend, err := renderOne(buf, size, p)
+		if err != nil {
+			return Result{}, err
+		}
+		rend.Name = name
+		out.Extra = append(out.Extra, rend)
+	}
+
+	return out, nil
+}
+
+func renderOne(buf []byte, s Size, p Profile) (Rendition, error) {
+	img, err := vips.NewImageFromBuffer(buf)
+	if err != nil {
+		return Rendition{}, fmt.Errorf("loading image: %w", err)
+	}
+	defer img.Close()
+
+	// EXIF orientation applied here. Metadata is stripped at export, so a
+	// phone photo neither arrives sideways nor leaves carrying GPS.
+	if err := img.AutoRotate(); err != nil {
+		return Rendition{}, fmt.Errorf("orienting image: %w", err)
+	}
+
+	if s.Width > 0 || s.Height > 0 {
+		crop := vips.InterestingNone
+		if s.Crop {
+			// Centre, matching what the pure-Go backend does, so the two
+			// produce the same framing.
+			crop = vips.InterestingCentre
+		}
+		if s.Crop {
+			if err := img.Thumbnail(s.Width, s.Height, crop); err != nil {
+				return Rendition{}, fmt.Errorf("resizing image: %w", err)
+			}
+		} else if img.Width() > s.Width || img.Height() > s.Height {
+			// Fit, and never upscale: enlarging a small upload spends bytes on
+			// pixels the source never had.
+			if err := img.Thumbnail(s.Width, s.Height, vips.InterestingNone); err != nil {
+				return Rendition{}, fmt.Errorf("resizing image: %w", err)
+			}
+		}
+	}
+
+	format := p.Format
+	if format == Auto {
+		// Lossy WebP for everything, which this backend can do and the pure-Go
+		// one cannot. It carries alpha, so a transparent logo needs no special
+		// case, and it is smaller than JPEG at the same quality.
+		format = WebP
+	}
+
+	quality := jpegQuality(p.Quality)
+	var encoded []byte
+	switch format {
+	case JPEG:
+		ep := vips.NewJpegExportParams()
+		ep.Quality = quality
+		ep.StripMetadata = true
+		encoded, _, err = img.ExportJpeg(ep)
+	case PNG:
+		ep := vips.NewPngExportParams()
+		ep.StripMetadata = true
+		encoded, _, err = img.ExportPng(ep)
+	case AVIF:
+		ep := vips.NewAvifExportParams()
+		ep.Quality = quality
+		ep.StripMetadata = true
+		encoded, _, err = img.ExportAvif(ep)
+	default:
+		ep := vips.NewWebpExportParams()
+		ep.Quality = quality
+		ep.StripMetadata = true
+		encoded, _, err = img.ExportWebp(ep)
+	}
+	if err != nil {
+		return Rendition{}, fmt.Errorf("encoding %s: %w", format, err)
+	}
+
+	return Rendition{
+		Bytes: encoded, Width: img.Width(), Height: img.Height(),
+		MIME: format.mime(), Ext: format.ext(),
+	}, nil
 }
 `
 }
