@@ -285,6 +285,61 @@ func (f Format) ext() string {
 	}
 }
 
+// Public is the wire form of a profile, for clients that do the optimising.
+//
+// Uploads go browser to storage directly, so the resizing happens on the
+// client. Publishing the profile means the numbers live in one place: a client
+// that hardcodes 1600 and a server default of 1600 are the same number until
+// somebody changes one of them.
+type Public struct {
+	Name       string                   ` + "`" + `json:"name"` + "`" + `
+	MaxWidth   int                      ` + "`" + `json:"max_width"` + "`" + `
+	MaxHeight  int                      ` + "`" + `json:"max_height"` + "`" + `
+	Crop       bool                     ` + "`" + `json:"crop"` + "`" + `
+	Quality    float64                  ` + "`" + `json:"quality"` + "`" + `
+	Format     string                   ` + "`" + `json:"format"` + "`" + `
+	MaxPixels  int                      ` + "`" + `json:"max_pixels"` + "`" + `
+	Renditions map[string]PublicSize    ` + "`" + `json:"renditions,omitempty"` + "`" + `
+}
+
+// PublicSize is one rendition target on the wire.
+type PublicSize struct {
+	Width  int  ` + "`" + `json:"width"` + "`" + `
+	Height int  ` + "`" + `json:"height"` + "`" + `
+	Crop   bool ` + "`" + `json:"crop"` + "`" + `
+}
+
+// ToPublic converts a profile to its wire form.
+func ToPublic(name string, p Profile) Public {
+	p = withDefaults(p)
+	out := Public{
+		Name:      name,
+		MaxWidth:  p.Max.Width,
+		MaxHeight: p.Max.Height,
+		Crop:      p.Max.Crop,
+		Quality:   p.Quality,
+		Format:    string(p.Format),
+		MaxPixels: p.MaxPixels,
+	}
+	if len(p.Renditions) > 0 {
+		out.Renditions = map[string]PublicSize{}
+		for k, v := range p.Renditions {
+			out.Renditions[k] = PublicSize{Width: v.Width, Height: v.Height, Crop: v.Crop}
+		}
+	}
+	return out
+}
+
+// AllPublic returns every registered profile plus the default, for
+// GET /api/v1/media/profiles.
+func AllPublic() []Public {
+	out := []Public{ToPublic("default", DefaultProfile())}
+	for _, name := range Names() {
+		out = append(out, ToPublic(name, Get(name)))
+	}
+	return out
+}
+
 // Rendition is one encoded output.
 type Rendition struct {
 	Name   string

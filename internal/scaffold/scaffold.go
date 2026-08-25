@@ -62,7 +62,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.172.0"
+const DefaultVersion = "3.173.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -346,6 +346,9 @@ func Run(opts Options) error {
 	if err := writeCacheFiles(root, opts); err != nil {
 		return fmt.Errorf("writing cache files: %w", err)
 	}
+	if err := writeUploadPackageFiles(root, opts); err != nil {
+		return err
+	}
 	if err := writeMediaFiles(root, opts); err != nil {
 		return err
 	}
@@ -542,6 +545,9 @@ func RunSingle(opts Options) error {
 	spinner.Printf("  → Adding batteries (cache, storage, mail, jobs, cron, AI, TOTP)...\n")
 	if err := writeCacheFiles(root, opts); err != nil {
 		return fmt.Errorf("writing cache files: %w", err)
+	}
+	if err := writeUploadPackageFiles(root, opts); err != nil {
+		return err
 	}
 	if err := writeMediaFiles(root, opts); err != nil {
 		return err

@@ -135,6 +135,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		// writeFile is manifest-guarded, so a file the reader has edited is
 		// reported as a conflict rather than overwritten.
 		spinner.Printf("  → Updating the media pipeline...\n")
+		if err := writeUploadPackageFiles(root, opts); err != nil {
+			return fmt.Errorf("updating upload package: %w", err)
+		}
 		if err := writeMediaFiles(root, opts); err != nil {
 			return fmt.Errorf("updating media files: %w", err)
 		}

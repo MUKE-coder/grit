@@ -283,7 +283,86 @@ AVIF                    downgrades to JPEG        79.9 KB              7544ms`}
                 refuse those instead.
               </p>
 
-              <h2 id="sync">It happens before the file is stored</h2>
+              <h2 id="client">Client-side, which is where it belongs</h2>
+              <p>
+                Uploads go from the browser straight to storage through a presigned URL and
+                never pass through the API. So the optimisation happens on the client, in{' '}
+                <code className={C}>@repo/upload</code>, before the bytes leave the device.
+                That is not a compromise. Measured in real Chromium on the same 5 MB
+                photograph:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock
+                language="bash"
+                code={`pure-Go server backend      149.9 KB
+libvips server backend       33.9 KB   (needs cgo)
+browser, client-side         35.0 KB   <- 147x smaller, no server involved`}
+              />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                The browser matches libvips, because it has a lossy WebP encoder built in.
+                That is the one thing pure Go could not do without cgo, and it turns out to
+                have been on the client the whole time. Nothing is spent on server CPU or
+                server bandwidth, and on a phone the 5 MB never leaves the handset.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock
+                filename="apps/admin/lib/uploader.ts"
+                code={`import { createUploader, createAxiosTransport } from "@repo/upload";
+import { optimizeImage } from "@repo/upload/web";
+import { apiClient } from "@/lib/api-client";
+
+export const uploader = createUploader({
+  transport: createAxiosTransport(apiClient),
+  optimize: optimizeImage,
+});`}
+              />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                The optimiser is injected rather than imported, so the same uploader works on
+                Next.js, a Vite SPA and Expo without any bundler resolving a platform. Expo
+                swaps in <code className={C}>@repo/upload/expo</code>, which uses
+                expo-image-manipulator because React Native has no canvas. React apps get{' '}
+                <code className={C}>useUpload</code> from{' '}
+                <code className={C}>@repo/upload/react</code>, with per-file progress and{' '}
+                <code className={C}>describeSaving()</code> for the &quot;6.1 MB to 41 KB&quot;
+                label.
+              </p>
+              <p>
+                Profiles come from <code className={C}>GET /api/v1/media/profiles</code>, so
+                the client uses the server&apos;s numbers rather than its own copy of them.
+                Two copies drift the first time one changes.
+              </p>
+
+              <h2 id="trust">What the server does once it stops doing the work</h2>
+              <p>
+                A presigned URL is a capability handed to a browser, so the server can no
+                longer guarantee what landed in the bucket. Its job becomes constraining and
+                verifying rather than transforming, and two things do that.
+              </p>
+              <p>
+                <strong>The exact byte count is signed into the URL.</strong> The client
+                optimises first, so it knows the size before it asks, and S3 rejects a PUT of
+                any other length. Without that the URL is an unbounded write capability: ask
+                to upload two megabytes, send five gigabytes, and nothing on the server side
+                ever sees it happen.
+              </p>
+              <p>
+                <strong>The completion call re-reads the object from storage.</strong> Every
+                number in that request is a claim, since the bytes never came through the
+                API. Believing the reported size would make every storage total in the admin
+                fiction. It now asks the bucket, and deletes anything over the limit.
+              </p>
+
+              <h2 id="sync">The server pipeline is still there</h2>
               <p>
                 The transform is synchronous, which costs roughly half a second to two seconds
                 on a large photograph, most of it decoding and resampling rather than encoding.

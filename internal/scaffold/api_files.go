@@ -8870,6 +8870,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 
 		// File uploads
 		protected.POST("/uploads", uploadHandler.Create)
+		// The client optimises before it uploads, so it needs the same numbers
+		// the server would have used.
+		protected.GET("/media/profiles", uploadHandler.Profiles)
 		protected.POST("/uploads/presign", uploadHandler.Presign)
 		protected.POST("/uploads/complete", uploadHandler.CompleteUpload)
 		protected.GET("/uploads", uploadHandler.List)
