@@ -1311,6 +1311,22 @@ export const CATALOG: Category[] = [
             ],
           },
           {
+            slug: 'file-upload',
+            name: 'File Upload',
+            description:
+              'Uploads that go straight to storage and shrink the file before they send it. The drop target is a label wrapping a real input, so keyboard activation and the mobile picker come for free.',
+            blocks: [
+              {
+                slug: 'optimizing-dropzone',
+                name: 'Optimizing dropzone',
+                description:
+                  'Drag and drop with per-file progress and the saving shown as it happens: 5.2 MB struck through, 41 KB beside it, WebP. A failed file stays in the list with the reason rather than vanishing.',
+                previewHeight: 640,
+                dependencies: ['@gritframework/upload', 'lucide-react'],
+              },
+            ],
+          },
+          {
             slug: 'authentication',
             name: 'Authentication',
             description:

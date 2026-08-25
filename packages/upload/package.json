@@ -3,8 +3,16 @@
   "version": "0.1.0",
   "description": "Client-side image optimisation and direct-to-storage uploads for React, Next.js and Expo. Shrinks a 6 MB photo to ~35 KB before it leaves the device.",
   "keywords": [
-    "upload", "image-optimization", "presigned-url", "s3", "webp",
-    "react", "nextjs", "expo", "react-native", "grit"
+    "upload",
+    "image-optimization",
+    "presigned-url",
+    "s3",
+    "webp",
+    "react",
+    "nextjs",
+    "expo",
+    "react-native",
+    "grit"
   ],
   "license": "MIT",
   "author": "MUKE JohnBaptist",
@@ -47,7 +55,11 @@
       "require": "./dist/transport.cjs"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -61,7 +73,9 @@
     "react": ">=18"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": true }
+    "react": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
@@ -69,5 +83,9 @@
     "tsup": "^8.3.5",
     "typescript": "^5.6.3",
     "vitest": "^2.1.4"
+  },
+  "allowScripts": {
+    "esbuild@0.27.7": true,
+    "esbuild@0.21.5": true
   }
 }

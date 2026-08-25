@@ -11,6 +11,7 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "application-ui-authentication-sign-in-card-with-oauth": dynamic(() => import('@/registry/application-ui/authentication/sign-in-card-with-oauth').then((m) => ({ default: m.default }))),
   "application-ui-buttons-glow-ring": dynamic(() => import('@/registry/application-ui/buttons/glow-ring').then((m) => ({ default: m.default }))),
   "application-ui-buttons-solid-default": dynamic(() => import('@/registry/application-ui/buttons/solid-default').then((m) => ({ default: m.default }))),
+  "application-ui-file-upload-optimizing-dropzone": dynamic(() => import('@/registry/application-ui/file-upload/optimizing-dropzone').then((m) => ({ default: m.default }))),
   "application-ui-forms-resource-form-with-error-summary": dynamic(() => import('@/registry/application-ui/forms/resource-form-with-error-summary').then((m) => ({ default: m.default }))),
   "application-ui-inputs-bordered-default": dynamic(() => import('@/registry/application-ui/inputs/bordered-default').then((m) => ({ default: m.default }))),
   "application-ui-inputs-soft-filled": dynamic(() => import('@/registry/application-ui/inputs/soft-filled').then((m) => ({ default: m.default }))),
@@ -148,5 +149,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 140 blocks at generation time. */
-export const BLOCK_COUNT: number = 140
+/** 141 blocks at generation time. */
+export const BLOCK_COUNT: number = 141
