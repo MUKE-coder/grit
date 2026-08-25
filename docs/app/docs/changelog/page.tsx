@@ -29,6 +29,75 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.173.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.173.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Image optimisation moved to the client, and got better</h3>
+                <p>
+                  Uploads go browser to storage through a presigned URL and never touch the
+                  API, so optimising on the server was always working on the wrong side of
+                  the wire. <code>@repo/upload</code> does it before the bytes leave the
+                  device. Measured in real Chromium on a 5 MB photograph:
+                </p>
+                <CodeBlock language="bash" code={`pure-Go server backend      149.9 KB
+libvips server backend       33.9 KB   (needs cgo)
+browser, client-side         35.0 KB   <- 147x smaller, no server involved`} />
+                <p>
+                  The browser matches libvips because it has a lossy WebP encoder built in.
+                  That is precisely the thing pure Go could not do without cgo, and it was on
+                  the client the whole time. No server CPU, no server bandwidth, and on a
+                  phone the 5 MB never leaves the handset.
+                </p>
+                <p>
+                  One package, three platforms. The optimiser is injected rather than
+                  imported, so nothing has to resolve a platform at build time:
+                </p>
+                <CodeBlock language="ts" code={`import { createUploader, createAxiosTransport } from "@repo/upload";
+import { optimizeImage } from "@repo/upload/web";   // or @repo/upload/expo
+
+export const uploader = createUploader({
+  transport: createAxiosTransport(apiClient),
+  optimize: optimizeImage,
+});`} />
+                <p>
+                  Expo uses expo-image-manipulator, since React Native has no canvas. React
+                  gets <code>useUpload</code> with per-file progress and{' '}
+                  <code>describeSaving()</code> for the &quot;6.1 MB to 41 KB&quot; label.
+                  Profiles are served from <code>GET /api/v1/media/profiles</code> so the
+                  client uses the server&apos;s numbers instead of a second copy that drifts.
+                </p>
+
+                <h3>The server now constrains and verifies instead</h3>
+                <p>
+                  A presigned URL is a capability handed to a browser, so once the client does
+                  the optimising the server cannot guarantee what landed. Two holes closed.
+                </p>
+                <p>
+                  <strong>The exact byte count is signed into the presigned URL.</strong> The
+                  client optimises first and therefore knows its size before asking, so S3
+                  rejects a PUT of any other length. Previously the URL was an unbounded write
+                  capability: ask for two megabytes, send five gigabytes, and nothing on this
+                  side ever saw it.
+                </p>
+                <p>
+                  <strong>Completion re-reads the object from storage</strong> rather than
+                  believing the reported size, which was a claim about bytes that never came
+                  through the API. Anything over the limit is deleted rather than recorded.
+                </p>
+                <p>
+                  The server pipeline from v3.171.0 stays as the fallback for anything that
+                  does reach it, and for non-browser clients.
+                </p>
+              </div>
+            </div>
+
             {/* v3.172.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

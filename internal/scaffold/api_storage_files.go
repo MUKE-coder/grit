@@ -218,10 +218,43 @@ func (s *Storage) GetSignedURL(ctx context.Context, key string, duration time.Du
 	return result.URL, nil
 }
 
+// Stat returns the size and content type of a stored object.
+//
+// Needed because a presigned upload never passes through this server: the only
+// way to know what actually landed in the bucket is to ask the bucket.
+func (s *Storage) Stat(ctx context.Context, key string) (int64, string, error) {
+	out, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return 0, "", fmt.Errorf("stat %q: %w", key, err)
+	}
+	var size int64
+	if out.ContentLength != nil {
+		size = *out.ContentLength
+	}
+	var ctype string
+	if out.ContentType != nil {
+		ctype = *out.ContentType
+	}
+	return size, ctype, nil
+}
+
 // PresignPutURL generates a pre-signed PUT URL for direct browser upload.
-func (s *Storage) PresignPutURL(ctx context.Context, key, contentType string) (string, error) {
+//
+// contentLength is signed into the URL, so S3 rejects a PUT of any other size.
+// Without it the URL is an unbounded write capability: a client can ask to
+// upload two megabytes and then send five gigabytes, and nothing on this side
+// ever sees it happen.
+//
+// It is an exact match rather than a ceiling, which the client can satisfy
+// because it optimises the image first and therefore knows the byte count
+// before it asks for a URL.
+func (s *Storage) PresignPutURL(ctx context.Context, key, contentType string, contentLength int64) (string, error) {
 	presigner := s3.NewPresignClient(s.client)
 	result, err := presigner.PresignPutObject(ctx, &s3.PutObjectInput{
+		ContentLength: aws.Int64(contentLength),
 		Bucket:      aws.String(s.bucket),
 		Key:         aws.String(key),
 		ContentType: aws.String(contentType),
@@ -918,7 +951,7 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 	filename := fmt.Sprintf("%d-%s%s", time.Now().UnixNano(), strings.TrimSuffix(filepath.Base(req.Filename), ext), ext)
 	key := fmt.Sprintf("uploads/%s/%s", time.Now().Format("2006/01"), filename)
 
-	presignedURL, err := h.Storage.PresignPutURL(c.Request.Context(), key, req.ContentType)
+	presignedURL, err := h.Storage.PresignPutURL(c.Request.Context(), key, req.ContentType, req.FileSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "PRESIGN_FAILED", "message": "Failed to generate upload URL"},
@@ -931,6 +964,25 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 			"presigned_url": presignedURL,
 			"key":           key,
 			"public_url":    h.Storage.GetURL(key),
+		},
+	})
+}
+
+// Profiles publishes the image optimisation profiles.
+//
+// The client optimises before uploading, because a presigned PUT goes straight
+// to storage and never passes through here. Serving the profiles keeps one set
+// of numbers: without this the browser would carry its own copy of every size
+// and quality, and the two would drift the first time one changed.
+func (h *UploadHandler) Profiles(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"profiles": media.AllPublic(),
+			// What the server would do with a file that reaches it, so a client
+			// can tell whether it is expected to do the work itself.
+			"backend":      media.Backend(),
+			"max_upload":   MaxUploadSize,
+			"lossy_webp":   media.SupportsLossyWebP(),
 		},
 	})
 }
@@ -969,13 +1021,41 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 		return
 	}
 
+	// Ask the bucket what it actually received.
+	//
+	// The bytes never came through this server, so every number in the request
+	// is a claim. Believing req.Size means a client can upload anything and
+	// report two kilobytes, which makes every storage total in the admin
+	// fiction and removes the only size ceiling there is. The signed
+	// Content-Length already makes a mismatch hard; this makes it pointless.
+	storedSize, storedType, err := h.Storage.Stat(c.Request.Context(), req.Key)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"code": "UPLOAD_NOT_FOUND", "message": "No file was uploaded to that key"},
+		})
+		return
+	}
+	if storedSize > MaxUploadSize {
+		// It got past the presign somehow. Do not keep it.
+		_ = h.Storage.Delete(c.Request.Context(), req.Key)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"code": "FILE_TOO_LARGE", "message": fmt.Sprintf("File size exceeds maximum of %d MB", MaxUploadSize/(1<<20))},
+		})
+		return
+	}
+	// The stored type is what S3 recorded from the signed presign, so prefer it
+	// over the one repeated in this request.
+	if storedType != "" {
+		req.ContentType = storedType
+	}
+
 	userID, _ := c.Get("user_id")
 
 	upload := models.Upload{
 		Filename:     filepath.Base(req.Key),
 		OriginalName: req.Filename,
 		MimeType:     req.ContentType,
-		Size:         req.Size,
+		Size:         storedSize,
 		Path:         req.Key,
 		URL:          h.Storage.GetURL(req.Key),
 		UserID:       userID.(string),
