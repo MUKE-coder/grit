@@ -1,7 +1,4 @@
-package scaffold
-
-func uploadTransportTS() string {
-	return `import type { UploadTransport } from "./types";
+import type { UploadTransport } from "./types";
 
 /**
  * Transports: the small amount of glue between the uploader and your API
@@ -23,13 +20,19 @@ interface AxiosLike {
  * Adapts the generated apiClient (axios) used by the admin and web apps.
  *
  *   import { apiClient } from "@/lib/api-client";
- *   const transport = createAxiosTransport(apiClient);
+ *   const transport = createAxiosTransport(apiClient, "/api");
+ *
+ * basePath is prepended to every API call. Grit's client writes endpoints as
+ * "/api/users" and pins the version in an interceptor, so "/api" here becomes
+ * "/api/v1/uploads/presign" on the wire without this package knowing the
+ * version exists.
  */
-export function createAxiosTransport(client: AxiosLike): UploadTransport {
+export function createAxiosTransport(client: AxiosLike, basePath = ""): UploadTransport {
+  const at = (path: string) => basePath + path;
   return {
-    get: async <T,>(path: string) => (await client.get(path)).data as T,
+    get: async <T,>(path: string) => (await client.get(at(path))).data as T,
     post: async <T,>(path: string, body: unknown) =>
-      (await client.post(path, body)).data as T,
+      (await client.post(at(path), body)).data as T,
     put: (url, body, contentType, onProgress) =>
       putWithProgress(url, body, contentType, onProgress),
   };
@@ -117,6 +120,4 @@ function putWithProgress(
     xhr.ontimeout = () => reject(new Error("Upload timed out"));
     xhr.send(body);
   });
-}
-`
 }

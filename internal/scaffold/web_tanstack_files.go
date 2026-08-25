@@ -66,7 +66,8 @@ func webTanStackPackageJSON(opts Options) string {
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "tailwind-merge": "^2.6.0",
-    "@repo/shared": "workspace:*"
+    "@repo/shared": "workspace:*",
+    "@repo/upload": "workspace:*"
   },
   "devDependencies": {
     "@tanstack/react-router-devtools": "^1.93.0",

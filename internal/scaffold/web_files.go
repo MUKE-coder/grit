@@ -74,6 +74,7 @@ func webPackageJSON(opts Options) string {
   },
   "dependencies": {
     "@repo/shared": "workspace:*",
+    "@repo/upload": "workspace:*",
     "@tanstack/react-query": "^5.17.0",
     "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",

@@ -342,6 +342,45 @@ export const uploader = createUploader({
                 Two copies drift the first time one changes.
               </p>
 
+              <p>
+                The admin&apos;s dropzone already uses this. Every file field in a generated
+                project optimises before it uploads, with no wiring on your part: measured in
+                the browser, a 2.53 MB photo dropped on a form asks to upload 64 KB and a
+                3.5 KB thumbnail, both WebP.
+              </p>
+
+              <h2 id="npm">Using it outside Grit</h2>
+              <p>
+                Inside a Grit monorepo the package is a workspace dependency, resolved from
+                disk, so there is nothing to install and no registry involved. For a React
+                app that is not a Grit project, it is on npm:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock
+                language="bash"
+                code={`npm install @gritframework/upload
+npx expo install expo-image-manipulator   # Expo only`}
+              />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                It has no dependency on Grit. What it needs is three endpoints your API
+                provides: <code className={C}>GET /media/profiles</code>,{' '}
+                <code className={C}>POST /uploads/presign</code> and{' '}
+                <code className={C}>POST /uploads/complete</code>. The README documents the
+                shapes, including the two things a presign endpoint should do once the client
+                is the one optimising.
+              </p>
+              <p>
+                The published package and the copy in your project are the same source: the
+                scaffolder embeds{' '}
+                <code className={C}>packages/upload</code> from the Grit repository rather
+                than keeping its own template, so the two cannot drift.
+              </p>
+
               <h2 id="trust">What the server does once it stops doing the work</h2>
               <p>
                 A presigned URL is a capability handed to a browser, so the server can no
