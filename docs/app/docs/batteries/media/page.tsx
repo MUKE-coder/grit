@@ -122,14 +122,73 @@ export default function MediaPage() {
                 that cannot happen.
               </p>
               <p>
-                It also explains the one thing people ask for and do not get.{' '}
-                <strong>There is no lossy WebP and no AVIF</strong>, because there is no
-                pure-Go encoder for either, and adding one means cgo. Grit compiles to a
-                single static binary that cross-compiles to any target, and that property is
-                worth more than the last 20% of compression. Measured on a photograph, pure-Go
-                lossless WebP produced 778 KB where JPEG q82 produced 35 KB. It is not a
-                substitute for lossy encoding: it is a PNG replacement, which is exactly what
-                it is used for here.
+                It also explains what the default backend will not do.{' '}
+                <strong>No lossy WebP and no AVIF</strong>, because there is no pure-Go
+                encoder for either. Measured on a photograph, pure-Go lossless WebP produced
+                778 KB where JPEG q82 produced 35 KB: it is not a substitute for lossy
+                encoding, it is a PNG replacement, which is exactly the job it is given here.
+                Both formats are available on the libvips backend below.
+              </p>
+
+              <h2 id="backends">Two backends, and what swapping costs</h2>
+              <p>
+                The pipeline has a swappable backend. The default needs no system
+                libraries; build with <code className={C}>-tags vips</code> and it uses
+                libvips instead. Measured on the same 6.08 MB photograph, in the same
+                container:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock
+                language="bash"
+                code={`                        pure Go (default)        libvips (-tags vips)
+default profile         149.9 KB  JPEG  1001ms    33.9 KB  lossy WebP  1853ms
+JPEG, forced            141.0 KB        950ms    123.7 KB              1366ms
+AVIF                    downgrades to JPEG        79.9 KB              7544ms`}
+              />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                <strong>libvips produces files about 4x smaller and is not faster.</strong>{' '}
+                It is slower here, on both the default path and a like-for-like JPEG
+                comparison. The often-quoted 4-8x speedup is libvips against ImageMagick,
+                not against Go&apos;s native image package, and it did not reproduce. The
+                reason to want libvips is bandwidth and storage, which is the thing that
+                actually costs money.
+              </p>
+              <p>
+                Note what AVIF costs: 7.5 seconds for one image, and on this photograph it
+                came out <em>larger</em> than lossy WebP. It is worth having for the cases
+                where it wins, but it is not a default and it is not viable on a synchronous
+                upload.
+              </p>
+              <p>
+                The catch is cgo. <code className={C}>grit deploy</code> cross-compiles to
+                linux/amd64 with <code className={C}>CGO_ENABLED=0</code> from whatever
+                machine you run it on, and cgo cannot cross-compile without a target
+                toolchain, so the vips build has to happen where it will run. Docker is that
+                place:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock
+                language="bash"
+                code={`docker build --build-arg IMAGE_BACKEND=vips -f Dockerfile.api .`}
+              />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                The same profiles drive both backends. What changes is what{' '}
+                <code className={C}>Auto</code> resolves to: lossy WebP under libvips, JPEG
+                or lossless WebP under pure Go. A profile asking for AVIF on the pure-Go
+                backend is downgraded rather than refused, so one binary still serves a
+                project whose profiles assume libvips, and the ref records what was really
+                produced. That is what <code className={C}>format</code> on the FileRef is
+                for, and the backend is named in the upload log line.
               </p>
 
               <h2 id="profiles">Profiles, when a field wants something different</h2>
@@ -246,6 +305,21 @@ export default function MediaPage() {
                 Presigned uploads go straight from the browser to S3 and never pass through
                 your server, so they cannot be transformed this way. Use the multipart endpoint
                 for fields that want optimisation.
+              </p>
+
+              <h2 id="bombs">Decompression bombs are refused</h2>
+              <p>
+                A solid-colour PNG compresses to almost nothing whatever its dimensions, so
+                an upload that passes every file-size check on the way in can still be
+                enormous once decoded. Measured: a <strong>165 KB file at 12000x12000
+                allocated 224 MB</strong>, and ten concurrent uploads of it would have been
+                2.2 GB.
+              </p>
+              <p>
+                The dimensions are read from the header before any pixels are allocated, and
+                anything over <code className={C}>MaxPixels</code> is refused. The default is
+                50 megapixels, which passes a 48 MP professional camera frame and refuses the
+                bomb.
               </p>
 
               <h2 id="not">What is not optimised</h2>
