@@ -596,7 +596,8 @@ func adminTanStackPackageJSON(opts Options) string {
     "tailwind-merge": "^2.6.0",
     "xlsx": "^0.18.5",
     "zod": "^3.24.1",
-    "@repo/shared": "workspace:*"
+    "@repo/shared": "workspace:*",
+    "@repo/upload": "workspace:*"
   },
   "devDependencies": {
     "@tanstack/react-router-devtools": "^1.93.0",

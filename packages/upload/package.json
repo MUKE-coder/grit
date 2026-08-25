@@ -1,0 +1,73 @@
+{
+  "name": "@gritframework/upload",
+  "version": "0.1.0",
+  "description": "Client-side image optimisation and direct-to-storage uploads for React, Next.js and Expo. Shrinks a 6 MB photo to ~35 KB before it leaves the device.",
+  "keywords": [
+    "upload", "image-optimization", "presigned-url", "s3", "webp",
+    "react", "nextjs", "expo", "react-native", "grit"
+  ],
+  "license": "MIT",
+  "author": "MUKE JohnBaptist",
+  "homepage": "https://gritframework.dev/docs/batteries/media",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MUKE-coder/grit.git",
+    "directory": "packages/upload"
+  },
+  "bugs": "https://github.com/MUKE-coder/grit/issues",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./web": {
+      "types": "./dist/web.d.ts",
+      "import": "./dist/web.js",
+      "require": "./dist/web.cjs"
+    },
+    "./expo": {
+      "types": "./dist/expo.d.ts",
+      "import": "./dist/expo.js",
+      "require": "./dist/expo.cjs"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js",
+      "require": "./dist/react.cjs"
+    },
+    "./transport": {
+      "types": "./dist/transport.d.ts",
+      "import": "./dist/transport.js",
+      "require": "./dist/transport.cjs"
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true }
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "react": "^18.3.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}

@@ -29,6 +29,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.174.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.174.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Every upload in the admin now optimises itself</h3>
+                <p>
+                  The dropzone, the avatar picker and every generated file field go through{' '}
+                  <code>@repo/upload</code>. Measured in the browser against a running API: a
+                  2.53 MB photo dropped on a form asks to upload <strong>64 KB plus a 3.5 KB
+                  thumbnail</strong>, both WebP, and the presign asks for exactly the byte
+                  count it then sends.
+                </p>
+                <p>
+                  The public signature of <code>uploadFile()</code> is unchanged, so nothing
+                  that called it needed touching. What changed is that progress now covers the
+                  thumbnail too, and the returned ref carries the renditions.
+                </p>
+
+                <h3>The package is on npm</h3>
+                <p>
+                  <code>@gritframework/upload</code> works in any React, Next.js or Expo app,
+                  with no dependency on Grit. It needs three endpoints from your API, and the
+                  README documents the shapes.
+                </p>
+                <CodeBlock language="bash" code={`npm install @gritframework/upload`} />
+                <p>
+                  Inside a Grit monorepo nothing changes: it stays a workspace dependency
+                  resolved from disk, so there is no install and no registry in the loop.
+                </p>
+
+                <h3>One source, not two</h3>
+                <p>
+                  The library moved out of Go string templates into{' '}
+                  <code>packages/upload</code> in the Grit repository, which the scaffolder
+                  embeds with <code>go:embed</code>. That directory is simultaneously the
+                  published npm package and the source written into every generated project,
+                  because the alternative is a package and a template that agree right up
+                  until somebody edits one of them.
+                </p>
+              </div>
+            </div>
+
             {/* v3.173.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -544,7 +544,8 @@ func adminPackageJSON(opts Options) string {
     "xlsx": "^0.18.5",
     "@react-pdf/renderer": "^4.1.5",
     "zod": "^3.22.0",
-    "@repo/shared": "workspace:*"
+    "@repo/shared": "workspace:*",
+    "@repo/upload": "workspace:*"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.4.0",
@@ -1265,6 +1266,8 @@ export function useLogout() {
 
 func adminAPIClient() string {
 	return `import axios from "axios";
+import { createUploader, createAxiosTransport } from "@repo/upload";
+import { optimizeImage } from "@repo/upload/web";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -1450,10 +1453,29 @@ apiClient.interceptors.response.use(
 );
 
 /**
- * Upload a file via presigned URL (browser uploads directly to storage).
- * 1. POST /api/uploads/presign → get presigned PUT URL
- * 2. XHR PUT to presigned URL (direct to R2/S3/MinIO)
- * 3. POST /api/uploads/complete → record in DB
+ * The shared uploader: optimise on the client, then upload straight to storage.
+ *
+ * Built once at module scope so the profile list is fetched once per session
+ * rather than per file.
+ */
+const uploader = createUploader({
+  // "/api" here, not "/api/v1": the interceptor above pins the version, so the
+  // package never has to know it exists.
+  transport: createAxiosTransport(apiClient, "/api"),
+  optimize: optimizeImage,
+});
+
+/**
+ * Upload a file, optimising it first.
+ *
+ * The bytes go browser to storage through a presigned URL and never touch the
+ * API. Optimising before the PUT is what makes that worth having: a 6 MB photo
+ * is about 35 KB by the time it is sent, so the upload is faster, the bucket
+ * is smaller, and on mobile data the difference is most of the wait.
+ *
+ * The signature is unchanged, so every existing call site keeps working. What
+ * changed is that onProgress now covers the thumbnail as well as the primary,
+ * and the returned data carries the renditions.
  */
 export async function uploadFile(
   file: File,
@@ -1462,52 +1484,31 @@ export async function uploadFile(
   accepts?: string[]
 ): Promise<{ data: Record<string, unknown>; message: string }> {
   // The endpoint carries the field's metadata as query params — see
-  // buildUploadEndpoint(). This function presigns rather than POSTing to it,
-  // so read the accepts back out instead of dropping them: without that, a
-  // field declared file:zip could never upload (the API falls back to its
-  // global allow-list) and a field declared file:pdf would happily take a PNG.
+  // buildUploadEndpoint(). Read them back out instead of dropping them:
+  // without accepts, a field declared file:zip could never upload (the API
+  // falls back to its global allow-list) and a field declared file:pdf would
+  // happily take a PNG.
   let fieldAccepts = accepts;
-  if (!fieldAccepts?.length && endpoint.includes("?")) {
-    const q = new URLSearchParams(endpoint.slice(endpoint.indexOf("?") + 1)).get("accepts");
-    if (q) fieldAccepts = q.split(",").map((a) => a.trim()).filter(Boolean);
+  let profile: string | undefined;
+  if (endpoint.includes("?")) {
+    const q = new URLSearchParams(endpoint.slice(endpoint.indexOf("?") + 1));
+    if (!fieldAccepts?.length) {
+      const a = q.get("accepts");
+      if (a) fieldAccepts = a.split(",").map((x) => x.trim()).filter(Boolean);
+    }
+    profile = q.get("profile") ?? undefined;
   }
 
-  // Step 1: Get presigned URL from API
-  const { data: presignRes } = await apiClient.post("/api/uploads/presign", {
-    filename: file.name,
-    content_type: file.type,
-    file_size: file.size,
-    ...(fieldAccepts?.length ? { accepts: fieldAccepts } : {}),
-  });
-  const { presigned_url, key } = presignRes.data;
-
-  // Step 2: Upload directly to storage via XHR PUT (bypasses API server)
-  await new Promise<void>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    if (onProgress) {
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
-      };
-    }
-    xhr.onload = () =>
-      xhr.status >= 200 && xhr.status < 300
-        ? resolve()
-        : reject(new Error(` + "`" + `Storage upload failed: ${xhr.status}` + "`" + `));
-    xhr.onerror = () => reject(new Error("Network error during upload"));
-    xhr.open("PUT", presigned_url);
-    xhr.setRequestHeader("Content-Type", file.type);
-    xhr.send(file);
+  const ref = await uploader.upload(file, file.name, {
+    accepts: fieldAccepts,
+    profile,
+    onProgress: onProgress ? (f) => onProgress(Math.round(f * 100)) : undefined,
   });
 
-  // Step 3: Record the upload in the database
-  const { data: completeRes } = await apiClient.post("/api/uploads/complete", {
-    key,
-    filename: file.name,
-    content_type: file.type,
-    size: file.size,
-    ...(fieldAccepts?.length ? { accepts: fieldAccepts } : {}),
-  });
-  return completeRes;
+  return {
+    data: ref as unknown as Record<string, unknown>,
+    message: "File uploaded successfully",
+  };
 }
 `
 }
