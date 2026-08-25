@@ -29,6 +29,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.175.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.175.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A dropzone in the package itself</h3>
+                <p>
+                  <code>@gritframework/upload</code> was logic only, which meant every project
+                  rewrote the same drag handling, progress rows and object-URL cleanup, and
+                  most of them got the last one wrong. It now ships a component:
+                </p>
+                <CodeBlock language="tsx" code={`import { Dropzone } from "@gritframework/upload/ui";
+import "@gritframework/upload/styles.css"; // optional
+
+<Dropzone uploader={uploader} profile="product-image" onChange={setFiles} />`} />
+                <p>
+                  It ships unstyled, with stable class names under a <code>grit-dz</code>{' '}
+                  namespace and a <code>classNames</code> prop that replaces any of them, so it
+                  sits inside an existing design system without a fight. The stylesheet is
+                  optional and themed through custom properties, because a package that forces
+                  its own CSS on you is a package you fight.
+                </p>
+                <p>
+                  Per-file progress rather than one bar for the batch, the saving shown as it
+                  happens, and a failed file that stays in the list with the reason instead of
+                  vanishing. The drop target is a label around a real file input, so keyboard
+                  activation and the native mobile picker come for free.
+                </p>
+                <p>
+                  Using Tailwind and want a version to own rather than configure? The Grit UI
+                  block is the same idea with the styling baked in:{' '}
+                  <code>npx shadcn@latest add https://ui.gritframework.dev/r/application-ui-file-upload-optimizing-dropzone.json</code>
+                </p>
+                <p>
+                  Eight component tests cover the parts that are easy to break: the real input
+                  behind a label, the saving appearing, a failed file staying put, the profile
+                  reaching the uploader, maxFiles disabling the input, removal releasing its
+                  object URL, and the progressbar exposing aria-valuenow. They stay in the
+                  library rather than being vendored into projects, because they need jsdom and
+                  a second copy of react-dom that pnpm cannot reconcile, and no project should
+                  inherit that to test a component it did not write.
+                </p>
+              </div>
+            </div>
+
             {/* v3.174.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
