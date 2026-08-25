@@ -8,6 +8,7 @@ export default defineConfig({
     web: "src/web.ts",
     expo: "src/expo.ts",
     react: "src/react.ts",
+    ui: "src/ui.tsx",
     transport: "src/transport.ts",
   },
   format: ["esm", "cjs"],

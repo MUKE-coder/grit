@@ -29,7 +29,25 @@ func writeUploadPackageFiles(root string, opts Options) error {
 	if err != nil {
 		return fmt.Errorf("reading embedded upload sources: %w", err)
 	}
+	// The optional stylesheet for <Dropzone>.
+	css, err := uploadpkg.Sources.ReadFile("styles.css")
+	if err != nil {
+		return fmt.Errorf("reading embedded upload styles: %w", err)
+	}
+	if err := writeFile(filepath.Join(pkgRoot, "styles.css"), string(css)); err != nil {
+		return fmt.Errorf("writing styles.css: %w", err)
+	}
 	for _, e := range entries {
+		// The component test stays in the library.
+		//
+		// It needs jsdom, Testing Library and a second copy of react-dom, and
+		// under pnpm's strict layout that second copy talks to a different
+		// React instance and every render throws. None of that is worth
+		// carrying into a project that did not write the component. The logic
+		// tests ship, because they need nothing but vitest.
+		if strings.HasSuffix(e.Name(), ".test.tsx") {
+			continue
+		}
 		body, err := uploadpkg.Sources.ReadFile("src/" + e.Name())
 		if err != nil {
 			return fmt.Errorf("reading embedded %s: %w", e.Name(), err)
@@ -81,7 +99,9 @@ func uploadPackageJSON() string {
     "./web": "./src/web.ts",
     "./expo": "./src/expo.ts",
     "./react": "./src/react.ts",
-    "./transport": "./src/transport.ts"
+    "./ui": "./src/ui.tsx",
+    "./transport": "./src/transport.ts",
+    "./styles.css": "./styles.css"
   },
   "scripts": {
     "test": "vitest run",

@@ -43,7 +43,39 @@ const ref = await uploader.upload(file, file.name, { profile: "product-image" })
 // ref.url, ref.thumbnail_url, ref.renditions.thumb, ref.format, ref.optimised
 ```
 
-### React
+### The dropzone
+
+If you want a working dropzone rather than a hook:
+
+```tsx
+import { Dropzone } from "@gritframework/upload/ui";
+import "@gritframework/upload/styles.css"; // optional
+
+<Dropzone uploader={uploader} profile="product-image" maxFiles={4} onChange={setFiles} />
+```
+
+It ships unstyled, with stable class names under a `grit-dz` namespace and a
+`classNames` prop that replaces any of them, so it can sit inside your design
+system without a fight. The stylesheet above is optional and themed through
+custom properties:
+
+```css
+.grit-dz { --grit-dz-accent: #6c5ce7; --grit-dz-radius: 4px; }
+```
+
+Per-file progress rather than one bar for the batch, the saving shown as it
+happens, and a failed file that stays in the list with the reason instead of
+vanishing. The drop target is a `<label>` around a real file input, so keyboard
+activation and the native mobile picker come for free.
+
+Using Tailwind and want a version to own and edit? Take the Grit UI block
+instead:
+
+```bash
+npx shadcn@latest add https://ui.gritframework.dev/r/application-ui-file-upload-optimizing-dropzone.json
+```
+
+### React (the hook)
 
 ```tsx
 import { useUpload, describeSaving } from "@gritframework/upload/react";

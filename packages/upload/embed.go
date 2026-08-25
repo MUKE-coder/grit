@@ -18,5 +18,9 @@ import "embed"
 // package.json is not embedded: the published package and a workspace copy
 // need different names and entry points, so the scaffolder writes its own.
 //
-//go:embed src/*.ts README.md
+// The .tsx pattern is separate because src/*.ts does not match it. Missing it
+// would drop the Dropzone from every generated project silently, since a file
+// that is not embedded simply is not written.
+//
+//go:embed src/*.ts src/*.tsx styles.css README.md
 var Sources embed.FS
