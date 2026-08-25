@@ -349,6 +349,22 @@ export const uploader = createUploader({
                 3.5 KB thumbnail, both WebP.
               </p>
 
+              <p>
+                There is a Grit UI block for it too, if you want the dropzone rather than the
+                hook. It shows the saving as it happens, keeps a failed file in the list with
+                the reason instead of letting it vanish, and puts a real file input behind a
+                label so keyboard activation and the mobile picker come for free:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock
+                language="bash"
+                code={`npx shadcn@latest add https://ui.gritframework.dev/r/application-ui-file-upload-optimizing-dropzone.json`}
+              />
+            </div>
+
+            <div className="prose-grit">
               <h2 id="npm">Using it outside Grit</h2>
               <p>
                 Inside a Grit monorepo the package is a workspace dependency, resolved from
