@@ -963,6 +963,56 @@ the selection has to survive in the URL.
       saving them in one request is there; setting a column in one action is
       not, and a sixteen-row matrix is where somebody first wants it.
 
+### 7.4i Image optimisation (rec 16)
+
+A 6 MB phone photo was stored as a 6 MB phone photo. The half-built pipeline
+that existed was worse than nothing: it generated a thumbnail asynchronously
+and wrote it onto the `uploads` row, while the ref already written into the
+record still had an empty thumbnail field. Every thumbnail Grit produced for a
+resource file field was orphaned.
+
+- [x] `internal/media`: profiles, an Auto format policy and a default that
+      applies with no configuration - v3.171.0. Fit 1600x1600, quality 0.82, a
+      400x400 thumbnail, the original kept under a private prefix, EXIF
+      oriented then stripped. Measured: 6.08 MB in, 147 KB out.
+- [x] Format decided per image rather than configured. Alpha goes to lossless
+      WebP, everything else to JPEG, so a transparent logo saved as JPEG and
+      gaining a black box is unrepresentable rather than discouraged.
+- [x] Transform synchronously, before the file is stored - v3.171.0. Fixes the
+      orphaned thumbnail, and the 6 MB original never reaches the public bucket.
+- [x] `FileRef` carries `format`, `optimised`, `renditions`, and the original's
+      key and size. Format is recorded, not inferred from the URL.
+- [x] The WAF was rejecting every upload over 1 MB - v3.171.0. Sentinel's
+      exclusion list named `/api/uploads` while the router mounts
+      `/api/` + `APIVersion`, so not one entry ever matched. Richtext bodies
+      were never stepped aside either, so in production a blog post containing
+      markup could be refused as an XSS payload.
+- [x] Decompression bomb guard - v3.172.0. A 165 KB PNG at 12000x12000
+      allocated 224 MB; ten concurrent would have been 2.2 GB. Dimensions are
+      read from the header before pixels are allocated, capped at 50 megapixels.
+- [x] libvips as an opt-in backend (`-tags vips`) - v3.172.0. Lossy WebP and
+      AVIF, and about 4x smaller on a photograph. Measured against libvips
+      8.14.1 in Docker: **not faster**, slower on a like-for-like JPEG
+      comparison. The quoted 4-8x is libvips against ImageMagick, not against
+      Go's native image package. Opt in via a Docker build arg, because cgo
+      cannot cross-compile and `grit deploy` builds for linux/amd64 with
+      `CGO_ENABLED=0` from the developer's machine.
+- [ ] The presigned upload path cannot be optimised: the bytes go browser to S3
+      and never touch the server. Either an async transform after the complete
+      callback, or a documented rule that media fields use the multipart
+      endpoint.
+- [ ] `grit media reprocess --profile <name>`, which is the whole reason the
+      original is kept. Without it a profile change only affects new uploads.
+- [ ] Re-validate the stored ref against the field's declared profile on write.
+      The upload endpoint is generic and the client names the profile, so today
+      a client can ask for the cheap one.
+- [ ] On-the-fly renditions with a cache, as an alternative to generating a
+      fixed set at upload. If this is ever built, the transformation URL must
+      be HMAC-signed from day one, or `?w=10000&h=10000` is free CPU
+      exhaustion.
+- [ ] PDF and video. The shape generalises, the implementation does not: both
+      need external binaries that do not fit in a static Go binary.
+
 ### 7.5 SaaS (recs 14, 15, 27, 31)
 
 Billing, entitlements, payment adapters, invitations, usage limits, automation
@@ -982,7 +1032,7 @@ rules. A plugin bundle, not core, exactly as the review's own section 36 argues.
       `packages/sync`: the same mirror, outbox and version-checked conflicts in
       TypeScript, over a storage interface with IndexedDB, expo-sqlite and
       in-memory adapters. Verified by running 45 checks against a mock server.
-- [ ] Media abstraction over storage (rec 16).
+- [x] Media abstraction over storage (rec 16) - v3.171.0 / v3.172.0. See 7.4i.
 - [ ] `grit audit a11y` against the generated admin (gap 4.3).
 - [ ] GraphQL as a plugin over the generated handlers (gap 3.5).
 - [ ] Preview environments per branch (gap 3.12).
