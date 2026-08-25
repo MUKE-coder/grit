@@ -4,9 +4,9 @@ subtitle: "A complete ecommerce build for someone who learned Grit last week: ca
 series: "The Daily Grit"
 edition: 15
 date: 2026-08-16
-readingTime: "40 min"
+readingTime: "43 min"
 author: "Muke JohnBaptist"
-tags: [grit, ecommerce, stripe, tutorial, beginner, workflows, events, settings, variants]
+tags: [grit, ecommerce, stripe, tutorial, beginner, workflows, events, settings, variants, uploads]
 canonical: "https://gritframework.dev/blog/build-a-storefront-with-grit"
 # Explicit, because the file is not named after the slug. Without this the
 # slug-matched lookup finds nothing and the card falls back to a gradient.
@@ -34,6 +34,7 @@ A storefront with:
 - Orders with a status that moves through a real process, not a dropdown anyone can set to anything
 - A "track my order" page for customers
 - An admin where staff manage products, see orders, and move them through fulfilment
+- Product photos that shrink on the phone that took them, and upload straight to storage
 - Emails when an order is paid and when it ships
 
 By the end you will have run about ten commands and written maybe four hundred lines of your own code, most of it the Stripe integration and the storefront pages.
@@ -576,7 +577,9 @@ export function addToCart(product: CatalogueProduct, quantity = 1) {
         productId: product.id,
         name: product.name,
         price: product.price,
-        image: product.images?.[0]?.url,
+        // The thumbnail, not the full image: a cart row draws it at about
+        // sixty pixels.
+        image: product.images?.[0]?.thumbnail_url ?? product.images?.[0]?.url,
         quantity,
       },
     ];
@@ -775,7 +778,11 @@ export default function HomePage() {
     name: p.name,
     price: p.price,
     originalPrice: p.compare_at_price > p.price ? p.compare_at_price : undefined,
-    image: p.images?.[0]?.url ?? "",
+    // The card rendition, not the full image. Twenty cards drawn from the
+    // 1600px version is about four megabytes to render tiles a few hundred
+    // pixels wide. Falls back to the original for anything uploaded before the
+    // profile existed, or that the optimiser declined.
+    image: p.images?.[0]?.renditions?.card?.url ?? p.images?.[0]?.url ?? "",
     href: `/products/${p.slug}`,
   }));
 
@@ -2561,6 +2568,99 @@ grit add role WAREHOUSE
 ```
 
 Then grant `orders.fulfil` to warehouse staff and withhold refunds from them. [RBAC](/docs/backend/rbac) and [Authorization](/docs/security/authorization) cover the model. The important part is that the workflow already enforces it: a warehouse account calling the ship transition without the permission gets a 403 from the service, not just a hidden button.
+
+### Product photos, and what happens to them
+
+Somebody on your team is going to photograph a product with their phone and drop
+the file straight into that form. It will be five or six megabytes. This is the
+one part of a shop where the default behaviour of most frameworks quietly costs
+you money, so it is worth knowing what Grit does instead.
+
+**The photo is shrunk before it leaves the phone.** Not on your server after it
+arrives: in the browser, before the upload starts. Measured on a real 3.7 MB
+camera photo through the admin:
+
+```
+3.70 MB  3400x2600 JPEG      what was picked
+  47 KB  1600x1200 WebP      what got stored
+   3 KB   400x400  WebP      the thumbnail, alongside it
+--------------------------------------------------------
+  75x smaller, and the 3.7 MB never left the handset
+```
+
+**And it never touches your API.** The browser asks for a presigned URL, then
+PUTs straight to object storage. Your server sees two small JSON requests and no
+file bytes at all, which means no upload bandwidth, no image processing CPU, and
+no request timeout on a slow connection. It also means the API cannot be the
+bottleneck when three people upload a catalogue at once.
+
+You do not configure any of this. The admin dropzone already does it, because
+`@repo/upload` ships wired into the project and `pnpm install` links it.
+
+If you want different dimensions for product photos than the default 1600px,
+declare a profile:
+
+```go
+// apps/api/internal/media/profiles.go  (written once, never regenerated)
+func init() {
+    media.Define("product-image", media.Profile{
+        Max:     media.Fit(1000, 1000),
+        Quality: 0.8,
+        Renditions: map[string]media.Size{
+            "thumb": media.Fill(300, 300),
+            "card":  media.Fit(600, 600),
+        },
+    })
+}
+```
+
+The format is not in there on purpose. It is decided per image: anything with
+real transparency stays lossless, everything else goes lossy. That makes the
+usual mistake, a transparent logo saved as a JPEG and gaining a black box,
+impossible to express.
+
+**The one thing that will bite you in production.** Uploads go browser to
+storage, so your storage origin has to be in the frontend's
+Content-Security-Policy or the browser refuses the PUT. The seeder writes it
+into `apps/admin/.env.local` for local work:
+
+```bash
+NEXT_PUBLIC_STORAGE_URL=http://localhost:9002
+```
+
+When you deploy, set it to your real S3, R2 or CDN origin. Get this wrong and
+uploads fail with no server log, no error in the UI and nothing in the network
+tab worth noticing, because the request is never made. The only trace is a CSP
+violation in the browser console. It is the single most annoying way to lose an
+hour on launch day, and it is one environment variable.
+
+### Draw each screen from the size it needs
+
+The upload stored more than one image, and the point of that is to stop sending
+a 1600px photograph to a tile a few hundred pixels wide. Which rendition belongs
+where is decided by the size on screen, not by convenience:
+
+```tsx
+// a product grid card
+image: p.images?.[0]?.renditions?.card?.url ?? p.images?.[0]?.url ?? "",
+
+// a cart row, an admin table, anywhere small and square
+image: p.images?.[0]?.thumbnail_url ?? p.images?.[0]?.url,
+
+// the detail page, the one screen where somebody is looking at the photo
+images={(product.images ?? []).map((i) => i.url)}
+```
+
+Always with the fallback. A file uploaded before you declared the profile, or
+one the optimiser declined because the browser could not decode it, has no
+renditions at all and the original is what there is.
+
+And do not reach for the 400x400 thumbnail to fill a 600px card. It is a square
+crop scaled up, so it arrives blurry and cropped through the middle, which looks
+worse than the bandwidth you saved. That is what the `card` rendition in the
+profile above is for.
+
+---
 
 ---
 
