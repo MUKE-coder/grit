@@ -273,6 +273,63 @@ The states come from the field's own `options`. You do not list them twice. If y
 
 `terminal: [delivered, cancelled]` is not decoration. Grit refuses to generate a workflow with a state nothing can leave unless you say it is meant to be an end state. That check exists because a stuck state is invisible until an order lands in it in production and nobody can move it.
 
+### What that YAML actually generated
+
+Four things, and it is worth knowing which is doing the work.
+
+**A guarded service method.** The permission check runs on the server, so a
+warehouse account calling `ship` without `orders.fulfil` gets a 403. Not a
+hidden button: hiding a button is a UI preference, and the request still works
+if somebody sends it by hand.
+
+**Per-action endpoints, and no general status write.**
+
+```
+POST /api/v1/orders/:id/transitions/mark_paid
+POST /api/v1/orders/:id/transitions/pack
+POST /api/v1/orders/:id/transitions/cancel
+
+GET  /api/v1/orders/workflow      the definition, for a client that draws it
+```
+
+This is the core of it. There is no endpoint that sets `status` to an arbitrary
+value, so an illegal jump is not rejected. It is **unrepresentable**.
+
+**A domain event per transition**, named `orders.mark_paid`, on the same bus
+audit and webhooks already listen to. That is how Step 7 sends the confirmation
+email without a line of email code in the checkout handler.
+
+**`confirm: true`** marks cancel as needing a confirmation step in the admin,
+because it is not undoable and a misclick on a table row is easy.
+
+### It is a graph, not a ladder
+
+The mental model that trips people up: these transitions are not a sequence.
+`paid` back to `pending` is illegal only because you did not declare it. Add one
+and it becomes legal:
+
+```yaml
+- action: reopen
+  from: [paid]
+  to: pending
+```
+
+An empty `from` means from anywhere, which is what you want for something like
+`archive`.
+
+But do not add that particular back-edge, and the reason is the events above.
+Your `orders.mark_paid` subscriber sends the customer their confirmation. So
+`paid → pending → paid` sends it twice. The state machine is behaving exactly as
+declared; the mistake is reversing into a state whose entry has a side effect.
+When a payment needs redoing, add a `refunded` or `payment_failed` state with
+its own transitions, which says what actually happened rather than pretending
+the order went back in time.
+
+[Workflows](/docs/backend/workflows) covers the rest: what is enforced and what
+is merely undeclared, the 422 that tells a client which actions are available
+from here, and the definition endpoint that lets an admin draw only the legal
+buttons.
+
 ---
 
 ## Step 4: the storefront, and the auth boundary

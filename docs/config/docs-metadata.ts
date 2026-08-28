@@ -228,6 +228,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Define GORM models in Grit: struct tags, field types, relationships (belongs_to, many_to_many), hooks, and soft deletes.',
   },
+  '/docs/backend/workflows': {
+    title: 'Workflows (State Machines)',
+    description:
+      'Turn a status select into a process the server enforces: named transitions, per-transition permissions, endpoints that make an illegal jump unrepresentable, and a domain event per action.',
+  },
   '/docs/backend/rbac': {
     title: 'RBAC',
     description:
