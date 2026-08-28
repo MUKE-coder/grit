@@ -271,7 +271,29 @@ func buildZodSchema(s GoStruct) string {
 		updateFields.WriteString(fmt.Sprintf("  %s: %s,\n", camelName, updateZod))
 	}
 
+	// The entity schema is emitted alongside the create and update pair.
+	//
+	// Not decoration: the scaffold's own packages/shared/schemas/index.ts
+	// re-exports <Name>Schema for every resource it ships. Writing this file
+	// without one left the barrel importing a member that no longer existed,
+	// which is a TS2305 inside @repo/shared, which fails the type-check of the
+	// admin AND the web app. The reported symptom was that sync broke the
+	// login page, and nothing in the project imported the missing schema at
+	// all: the stale re-export was the entire fault.
+	//
+	// It is also the useful one. Create and update describe what goes in;
+	// this describes what comes back, id and timestamps included, which is
+	// what you validate an API response against.
+	var entityFields strings.Builder
+	for _, f := range s.Fields {
+		zodType := goTypeToZod(f.GoType, f.GORMTag)
+		entityFields.WriteString(fmt.Sprintf("  %s: %s,\n", toCamelCase(f.JSONName), zodType))
+	}
+
 	return fmt.Sprintf(`import { z } from "zod";
+
+export const %sSchema = z.object({
+%s});
 
 export const Create%sSchema = z.object({
 %s});
@@ -279,10 +301,11 @@ export const Create%sSchema = z.object({
 export const Update%sSchema = z.object({
 %s});
 
+export type %s = z.infer<typeof %sSchema>;
 export type Create%sInput = z.infer<typeof Create%sSchema>;
 export type Update%sInput = z.infer<typeof Update%sSchema>;
-`, s.Name, createFields.String(), s.Name, updateFields.String(),
-		s.Name, s.Name, s.Name, s.Name)
+`, s.Name, entityFields.String(), s.Name, createFields.String(), s.Name, updateFields.String(),
+		s.Name, s.Name, s.Name, s.Name, s.Name, s.Name)
 }
 
 func goTypeToTS(goType string) string {

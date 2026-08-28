@@ -72,6 +72,16 @@ func (g *Generator) writeGoModel(names Names) error {
 	// already needs fmt. Built as a sorted list rather than by appending to a
 	// string, because "fmt" has to come before "strings" before "time" and
 	// nothing downstream reorders them.
+	// A date field no longer contributes a "time" import: its Go type comes
+	// from internal/jsontime. time is still needed unconditionally for the
+	// auto-managed CreatedAt / UpdatedAt columns.
+	needsJSONTime := false
+	for _, f := range fields {
+		if f.NeedsJSONTimeImport() {
+			needsJSONTime = true
+			break
+		}
+	}
 	std := []string{`"time"`}
 	if hasSlug || isTree {
 		std = append(std, `"fmt"`)
@@ -95,6 +105,11 @@ func (g *Generator) writeGoModel(names Names) error {
 		projImports = append(projImports, fmt.Sprintf("\"%s/internal/files\"", g.Module))
 	}
 	projImports = append(projImports, fmt.Sprintf("\"%s/internal/ids\"", g.Module))
+	// jsontime carries date and datetime fields. Sorted after ids and before
+	// sequence so the block stays gofmt-clean.
+	if needsJSONTime {
+		projImports = append(projImports, fmt.Sprintf("\"%s/internal/jsontime\"", g.Module))
+	}
 	if hasAuto {
 		projImports = append(projImports, fmt.Sprintf("\"%s/internal/sequence\"", g.Module))
 	}
@@ -807,10 +822,14 @@ func (g *Generator) writeGoHandler(names Names) error {
 	// Check if any field needs "time" import
 	needsTimeImport := false
 	needsHandlerDatatypes := false
+	needsHandlerJSONTime := false
 	hasFileFields := false
 	for _, f := range g.Definition.Fields {
 		if f.GoType() == "*time.Time" {
 			needsTimeImport = true
+		}
+		if f.NeedsJSONTimeImport() {
+			needsHandlerJSONTime = true
 		}
 		if f.NeedsDatatypesImport() {
 			needsHandlerDatatypes = true
@@ -836,17 +855,26 @@ func (g *Generator) writeGoHandler(names Names) error {
 	// flows pick up cleanup-on-replace + claim-on-save. The
 	// {{HANDLER_*}} replacements degrade to empty strings on resources
 	// without file fields so non-file handlers stay unchanged.
+	// jsontime carries date and datetime fields. It rides the same
+	// replacement slot as files, since both are project imports.
+	jsonTimeImport := ""
+	if needsHandlerJSONTime {
+		jsonTimeImport = "\n\t\"" + g.Module + "/internal/jsontime\""
+	}
 	filesImport := ""
 	handlerStorageField := ""
 	createClaim := ""
 	updateSnapshot := ""
 	updateCleanup := ""
 	if hasFileFields {
-		filesImport = "\n\t\"" + g.Module + "/internal/files\"\n\t\"" + g.Module + "/internal/storage\""
+		filesImport = "\n\t\"" + g.Module + "/internal/files\"\n\t\"" + g.Module + "/internal/storage\"" + jsonTimeImport
 		handlerStorageField = "\n\tStorage *storage.Storage // v3.31.33"
 		createClaim = "\n\tif h.Storage != nil {\n\t\tfiles.ClaimRefs(c.Request.Context(), h.DB, &item)\n\t}"
 		updateSnapshot = "\n\toldItem := item // v3.31.33: snapshot for file diff"
 		updateCleanup = "\n\tif h.Storage != nil {\n\t\tfiles.CleanupRemoved(c.Request.Context(), h.Storage, &oldItem, &item)\n\t\tfiles.ClaimRefs(c.Request.Context(), h.DB, &item)\n\t}"
+	} else {
+		// No file fields, so this slot carries jsontime alone.
+		filesImport = jsonTimeImport
 	}
 
 	// v3.31.39: identifier expression for the activity log calls --

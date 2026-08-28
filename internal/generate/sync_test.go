@@ -168,12 +168,28 @@ func TestBuildZodSchema(t *testing.T) {
 		t.Errorf("buildZodSchema missing UpdateProductSchema:\n%s", got)
 	}
 
-	// Auto fields (id, created_at) must be excluded from create/update schemas
-	if strings.Contains(got, "id:") {
-		t.Errorf("buildZodSchema should not include auto field 'id':\n%s", got)
+	// The entity schema describes what comes back, so it carries the auto
+	// fields. It exists because the scaffold's schemas/index.ts re-exports
+	// <Name>Schema, and emitting this file without one left the barrel
+	// importing a member that did not exist, which failed the type-check of
+	// the shared package and every app that depends on it.
+	if !strings.Contains(got, "export const ProductSchema") {
+		t.Errorf("buildZodSchema missing ProductSchema:%s", got)
 	}
-	if strings.Contains(got, "createdAt:") {
-		t.Errorf("buildZodSchema should not include auto field 'created_at':\n%s", got)
+	entity, rest, found := strings.Cut(got, "export const CreateProductSchema")
+	if !found {
+		t.Fatalf("buildZodSchema missing CreateProductSchema:%s", got)
+	}
+	if !strings.Contains(entity, "id:") || !strings.Contains(entity, "createdAt:") {
+		t.Errorf("the entity schema should carry id and createdAt:%s", entity)
+	}
+
+	// Create and update take input, so the auto fields stay out of those.
+	if strings.Contains(rest, "id:") {
+		t.Errorf("create/update should not include auto field id:%s", rest)
+	}
+	if strings.Contains(rest, "createdAt:") {
+		t.Errorf("create/update should not include auto field created_at:%s", rest)
 	}
 
 	// Non-auto fields must be present
