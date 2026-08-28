@@ -21,8 +21,10 @@ func TestField_GoType(t *testing.T) {
 		{"belongs_to", "string"}, // FK matches UUID string PK
 		{"float", "float64"},
 		{"bool", "bool"},
-		{"datetime", "*time.Time"},
-		{"date", "*time.Time"},
+		// Not *time.Time: that unmarshals RFC3339 only, and the admin picker
+		// sends "2001-08-06". See internal/jsontime.
+		{"datetime", "*jsontime.DateTime"},
+		{"date", "*jsontime.Date"},
 		{"many_to_many", "[]string"},
 		{"string_array", "datatypes.JSONSlice[string]"},
 		{"unknown", "string"}, // fallback

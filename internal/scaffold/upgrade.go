@@ -138,6 +138,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeUploadPackageFiles(root, opts); err != nil {
 			return fmt.Errorf("updating upload package: %w", err)
 		}
+		if err := writeJSONTimeFiles(root, opts); err != nil {
+			return fmt.Errorf("updating jsontime files: %w", err)
+		}
 		if err := writeMediaFiles(root, opts); err != nil {
 			return fmt.Errorf("updating media files: %w", err)
 		}

@@ -206,8 +206,15 @@ func (f Field) GoType() string {
 		return "string"
 	case FieldCheck:
 		return "datatypes.JSONSlice[string]"
-	case FieldDatetime, FieldDate:
-		return "*time.Time"
+	case FieldDate:
+		// Not *time.Time. time.Time.UnmarshalJSON accepts RFC3339 and nothing
+		// else, while the admin's picker sends "2001-08-06" on purpose, so
+		// every date field failed to save. See internal/jsontime.
+		return "*jsontime.Date"
+	case FieldDatetime:
+		// Same reason: <input type="datetime-local"> sends "2001-08-06T14:30",
+		// which has neither seconds nor a zone and is not RFC3339 either.
+		return "*jsontime.DateTime"
 	case FieldManyToMany:
 		return "[]string"
 	case FieldStringArray:
@@ -402,6 +409,12 @@ func (f Field) ZodType() string {
 
 // NeedsTimeImport returns true if this field requires "time" import in Go.
 func (f Field) NeedsTimeImport() bool {
+	return FieldType(f.Type) == FieldDatetime || FieldType(f.Type) == FieldDate
+}
+
+// NeedsJSONTimeImport reports whether this field's Go type comes from
+// internal/jsontime.
+func (f Field) NeedsJSONTimeImport() bool {
 	return FieldType(f.Type) == FieldDatetime || FieldType(f.Type) == FieldDate
 }
 

@@ -29,6 +29,74 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.177.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.177.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p className="text-muted-foreground">
+                  Two bugs reported by Mukisa Mark Cole (
+                  <a href="https://github.com/MUKE-coder/grit/issues/75">#75</a>,{' '}
+                  <a href="https://github.com/MUKE-coder/grit/issues/73">#73</a>), both
+                  reproduced exactly as described.
+                </p>
+
+                <h3>Every date field failed to save</h3>
+                <p>
+                  A <code>date</code> field generated a Go <code>*time.Time</code>, whose
+                  <code>UnmarshalJSON</code> accepts RFC3339 and nothing else. The admin&apos;s
+                  date picker sends <code>&quot;2001-08-06&quot;</code>, deliberately: it
+                  builds the string from year, month and day numbers rather than from a{' '}
+                  <code>Date</code> object, because that is how a birthday ends up a day
+                  earlier for anyone west of Greenwich.
+                </p>
+                <p>
+                  So the two halves of the scaffold disagreed about the wire format and every
+                  date field was unsaveable out of the box:
+                </p>
+                <CodeBlock language="bash" code={`parsing time "2001-08-06" as "2006-01-02T15:04:05Z07:00": cannot parse "" as "T"`} />
+                <p>
+                  <code>datetime</code> was broken the same way and the report said so:{' '}
+                  <code>datetime-local</code> sends <code>&quot;2026-03-15T14:30&quot;</code>,
+                  which has neither seconds nor a zone and is not RFC3339 either.
+                </p>
+                <p>
+                  Fixed on the server, which is the side that was wrong. A new{' '}
+                  <code>internal/jsontime</code> package provides <code>Date</code> and{' '}
+                  <code>DateTime</code>, which accept what browsers actually send. A{' '}
+                  <code>Date</code> parses in UTC and truncates to the day, so it cannot drift
+                  with the server&apos;s zone, and marshals back as{' '}
+                  <code>&quot;2001-08-06&quot;</code>, so a value survives a round trip
+                  unchanged. Nine tests ship into your project.
+                </p>
+
+                <h3><code>grit sync</code> broke the login page</h3>
+                <p>
+                  Sync rewrote each schema file with only the create and update pair, while
+                  the scaffold&apos;s <code>schemas/index.ts</code> re-exports{' '}
+                  <code>&lt;Name&gt;Schema</code> for every resource it ships. The barrel was
+                  left importing a member that no longer existed.
+                </p>
+                <p>
+                  That is a <code>TS2305</code> inside <code>@repo/shared</code>, so the admin
+                  and the web app both failed to type-check, including the login page. Nothing
+                  in the project imported the missing schema at all: the stale re-export was
+                  the entire fault, which is what made it so confusing to hit.
+                </p>
+                <p>
+                  Sync now emits the entity schema alongside the pair. It is the useful one
+                  anyway: create and update describe what goes in, and this describes what
+                  comes back, id and timestamps included, which is what you validate a
+                  response against.
+                </p>
+              </div>
+            </div>
+
             {/* v3.176.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
