@@ -2350,7 +2350,8 @@ export function DateField({ field, value, onChange, error }: DateFieldProps) {
 
 // adminToggleField returns the toggle/switch field component.
 func adminToggleField() string {
-	return `import type { FieldDefinition } from "@/lib/resource";
+	return `import { useId } from "react";
+import type { FieldDefinition } from "@/lib/resource";
 
 interface ToggleFieldProps {
   field: FieldDefinition;
@@ -2360,13 +2361,17 @@ interface ToggleFieldProps {
 }
 
 export function ToggleField({ field, value, onChange, error }: ToggleFieldProps) {
+  const labelId = useId();
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-foreground">{field.label}</label>
+        <label id={labelId} className="text-sm font-medium text-foreground">{field.label}</label>
         <button
           type="button"
           onClick={() => onChange(!value)}
+          role="switch"
+          aria-checked={value}
+          aria-labelledby={labelId}
           className={` + "`" + `relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
             value ? "bg-accent" : "bg-bg-hover"
           }` + "`" + `}
@@ -2552,7 +2557,8 @@ export function RadioField({ field, value, onChange, error }: RadioFieldProps) {
 // adminCheckboxGroupField returns the multi-select checkbox-group field: one
 // checkbox per option, stored as a string array.
 func adminCheckboxGroupField() string {
-	return `import type { FieldDefinition } from "@/lib/resource";
+	return `import { useId } from "react";
+import type { FieldDefinition } from "@/lib/resource";
 
 /* Alpha-blended accent, computed at render time rather than with Tailwind's
    /opacity syntax. The themes set --accent to a hex, and Tailwind v3 cannot
@@ -2570,6 +2576,7 @@ interface CheckboxGroupFieldProps {
 }
 
 export function CheckboxGroupField({ field, value, onChange, error }: CheckboxGroupFieldProps) {
+  const labelId = useId();
   const toggle = (v: string) => {
     if (value.includes(v)) {
       onChange(value.filter((x) => x !== v));
@@ -2579,7 +2586,7 @@ export function CheckboxGroupField({ field, value, onChange, error }: CheckboxGr
   };
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-foreground">
+      <label id={labelId} className="block text-sm font-medium text-foreground">
         {field.label}
         {field.required && <span className="text-danger ml-1">*</span>}
       </label>
@@ -2587,7 +2594,12 @@ export function CheckboxGroupField({ field, value, onChange, error }: CheckboxGr
           as one design rather than two. Single column even when the options are
           short: descriptions wrap, and a two-column grid of unequal-height
           cards leaves ragged holes down the form. */}
+      {/* A group role, so the boxes are announced as one labelled set
+          rather than a run of unrelated checkboxes. The radio field has
+          had radiogroup all along; this is the same idea. */}
       <div
+        role="group"
+        aria-labelledby={labelId}
         className={
           "divide-y divide-border overflow-hidden rounded-xl border " +
           (error ? "border-danger" : "border-border")
