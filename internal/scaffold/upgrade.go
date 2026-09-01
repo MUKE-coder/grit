@@ -138,6 +138,15 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeUploadPackageFiles(root, opts); err != nil {
 			return fmt.Errorf("updating upload package: %w", err)
 		}
+		if err := writeAdminSecurityFiles(root, opts); err != nil {
+			return fmt.Errorf("updating security page: %w", err)
+		}
+		if err := ensureRecoveryWiring(root, opts); err != nil {
+			return fmt.Errorf("wiring recovery contacts: %w", err)
+		}
+		if err := writeRecoveryFiles(root, opts); err != nil {
+			return fmt.Errorf("updating recovery files: %w", err)
+		}
 		if err := writeJSONTimeFiles(root, opts); err != nil {
 			return fmt.Errorf("updating jsontime files: %w", err)
 		}

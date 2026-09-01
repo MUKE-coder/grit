@@ -32,6 +32,8 @@ var reservedModels = map[string]string{
 	"Upload":                 "file storage",
 	"PasswordResetToken":     "authentication",
 	"EmailVerificationToken": "authentication",
+	"RecoveryContact":        "authentication",
+	"RecoveryContactToken":   "authentication",
 
 	// Two-factor and SSO.
 	"TwoFactorConfig":  "two-factor auth",

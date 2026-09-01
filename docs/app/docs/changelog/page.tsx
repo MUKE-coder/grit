@@ -29,6 +29,70 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.178.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.178.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An account security page, and recovery contacts</h3>
+                <p>
+                  Two-factor and active sessions already existed, on a page called
+                  &quot;profile&quot;, next to a bio and an avatar. That is a page somebody
+                  opens to change their job title. Security decisions now have their own
+                  screen at <code>/account/security</code>, reachable from the user menu.
+                </p>
+                <p>
+                  Note this is not <code>/system/security</code>, which is the operator&apos;s
+                  threat dashboard: blocked addresses, recent attacks, the state of the
+                  perimeter. That page is about other people. This one is about you, and
+                  merging them would put a password box next to a list of intrusion attempts.
+                </p>
+
+                <h3>Recovery email, and a seam for SMS</h3>
+                <p>
+                  A verified second address that can get somebody back in when the primary is
+                  gone. Six-digit code, fifteen-minute expiry, hash-only storage, single use,
+                  and guesses capped at five, because a million possibilities with unlimited
+                  attempts is a formality rather than a secret.
+                </p>
+                <p>
+                  <strong>Every write takes the account password.</strong> That is the whole
+                  security model: a recovery address is a second way in, so somebody holding a
+                  live session from a borrowed laptop could otherwise attach their own address
+                  and keep the account. Adding and removing both require it, and the overview
+                  returns the address masked, because whoever is reading that screen might be
+                  the problem.
+                </p>
+                <p>
+                  Phone recovery ships as an interface rather than a provider.{' '}
+                  <code>internal/sms</code> defines the seam; nothing is registered by default,
+                  because the right provider depends on where your users are and baking one in
+                  would make everybody carry a dependency most cannot use. The page asks the
+                  server whether one exists and leaves the card out entirely when it does not.
+                </p>
+
+                <h3>Two things this release does not claim</h3>
+                <p>
+                  <strong>Passkeys are still not implemented.</strong> There is no WebAuthn
+                  anywhere in Grit, and the page does not pretend otherwise. That is its own
+                  feature: credential storage, registration and authentication ceremonies,
+                  challenge state, and a client flow. The page is now the place to hold it.
+                </p>
+                <p>
+                  Recovery contacts live in their own table rather than as columns on{' '}
+                  <code>User</code>. That was a correction: as user columns, an upgraded
+                  project got the handler that reads them and a model without them, which does
+                  not compile. <code>grit upgrade</code> does not rewrite the User model, and a
+                  half-delivered feature is worse than an undelivered one.
+                </p>
+              </div>
+            </div>
+
             {/* v3.177.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

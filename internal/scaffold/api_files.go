@@ -1492,6 +1492,8 @@ func Models() []interface{} {
 		&Session{},
 		&PasswordResetToken{},
 		&EmailVerificationToken{},
+		&RecoveryContactToken{},
+		&RecoveryContact{},
 		&APIKey{},
 		// Role/UserRole must migrate before anything authorises a request.
 		&Role{},
@@ -8856,6 +8858,18 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		protected.POST("/auth/totp/backup-codes", totpHandler.RegenerateBackupCodes)
 		protected.DELETE("/auth/totp/trusted-devices", totpHandler.RevokeTrustedDevices)
 		protected.POST("/auth/verify-email/send", authHandler.SendVerificationEmail)
+
+		// Recovery contacts. Every write takes the account password, because a
+		// recovery address is a second way in and a live session is exactly what
+		// somebody on a borrowed laptop already has.
+		recoveryHandler := handlers.NewRecoveryHandler(db, svc.Mailer)
+		protected.GET("/auth/security", recoveryHandler.Overview)
+		protected.POST("/auth/recovery/email", recoveryHandler.SetEmail)
+		protected.POST("/auth/recovery/email/verify", recoveryHandler.VerifyEmail)
+		protected.DELETE("/auth/recovery/email", recoveryHandler.ClearEmail)
+		protected.POST("/auth/recovery/phone", recoveryHandler.SetPhone)
+		protected.POST("/auth/recovery/phone/verify", recoveryHandler.VerifyPhone)
+		protected.DELETE("/auth/recovery/phone", recoveryHandler.ClearPhone)
 		protected.GET("/api-keys", apiKeyHandler.List)
 		protected.POST("/api-keys", apiKeyHandler.Create)
 		protected.DELETE("/api-keys/:id", apiKeyHandler.Revoke)
