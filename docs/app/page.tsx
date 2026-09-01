@@ -7,6 +7,7 @@ import { CodeBlock } from '@/components/code-block'
 import { HeroCodeTabs, InstallTabs } from '@/components/hero-code-tabs'
 import { HomepageBenchmarks } from '@/components/homepage-benchmarks'
 import { HomepageCapabilities } from '@/components/homepage-capabilities'
+import { Testimonials } from '@/components/testimonials'
 import { OneApiClients } from '@/components/one-api-clients'
 import { ThemeShowcase } from '@/components/theme-showcase'
 import { PlatformShowcase } from '@/components/platform-showcase'
@@ -1070,51 +1071,15 @@ export default function HomePage() {
 
       {/* ═══ TESTIMONIALS ═══
 
-          This section previously carried quotes attributed to real, named people
-          and institutions who never gave them — placeholder copy from the design
-          mock that shipped by accident.
+          Two states, and the empty one is deliberate. This section once
+          carried quotes attributed to real people and institutions who never
+          gave them, placeholder copy from a design mock that shipped by
+          accident. Saying plainly that there is nothing here yet is a
+          stronger claim to a sceptical reader than inventing three.
 
-          It is deliberately empty until there are real ones. Inventing an
-          endorsement is both legally actionable and, for a framework asking to be
-          trusted with auth and audit logs, self-defeating: nothing else on this
-          page survives being caught doing it.
-
-          Add real quotes here as they arrive, with a link to the source. Never
-          add a name without written permission. */}
-      <section className="relative py-24 px-6 border-t border-border/40 overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-card/40 via-background to-background" />
-        <div className="absolute top-40 left-1/4 w-[500px] h-[500px] -z-10 rounded-full bg-primary/[0.04] blur-[120px]" />
-
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
-            Built something with Grit?
-          </h2>
-          <p className="mt-5 text-lg text-muted-foreground leading-relaxed">
-            There are no testimonials here yet, and there will not be any invented ones.
-            If Grit is running something of yours in production, tell us about it (the
-            good and the parts that hurt) and it goes on this page with your name and a
-            link back to you.
-          </p>
-          <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              href="https://github.com/MUKE-coder/grit/issues/new?template=testimonial.yml"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              <Github className="h-4 w-4" />
-              Share your experience
-            </Link>
-            <Link
-              href="/showcase"
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-border/60 px-6 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50"
-            >
-              See what people are building
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
+          Approved entries live in data/testimonials.json; see
+          config/testimonials.ts for how one gets there. */}
+      <Testimonials />
 
       {/* ═══ SHOWCASE ═══ */}
       <section className="py-24 px-6 border-t border-border/40">
