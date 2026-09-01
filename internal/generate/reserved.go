@@ -32,6 +32,7 @@ var reservedModels = map[string]string{
 	"Upload":                 "file storage",
 	"PasswordResetToken":     "authentication",
 	"EmailVerificationToken": "authentication",
+	"Profile":                "authentication",
 	"RecoveryContact":        "authentication",
 	"RecoveryContactToken":   "authentication",
 

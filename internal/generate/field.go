@@ -21,6 +21,13 @@ const (
 	FieldRichtext    FieldType = "richtext"
 	FieldBelongsTo   FieldType = "belongs_to"
 	FieldManyToMany  FieldType = "many_to_many"
+	// One-to-one: a belongs_to whose foreign key is unique.
+	//
+	// Declared on the side that holds the key, so a Profile declares its
+	// User rather than the other way round. That is the side the constraint
+	// can actually live on, and a unique index is the entire difference
+	// between "many profiles per user" and "one".
+	FieldOneToOne    FieldType = "one_to_one"
 	FieldStringArray FieldType = "string_array"
 	FieldFile        FieldType = "file"  // single FileRef
 	FieldFiles       FieldType = "files" // []FileRef
@@ -141,8 +148,19 @@ func (f Field) IsSlug() bool {
 }
 
 // IsBelongsTo returns true if this field is a belongs_to relationship.
+//
+// one_to_one counts. It is a belongs_to with a unique foreign key, and every
+// consumer of this, the preload, the admin picker, the CSV import, the mobile
+// and desktop clients, wants exactly the same treatment. Only the GORM tag and
+// the duplicate-key error message differ.
 func (f Field) IsBelongsTo() bool {
-	return FieldType(f.Type) == FieldBelongsTo
+	t := FieldType(f.Type)
+	return t == FieldBelongsTo || t == FieldOneToOne
+}
+
+// IsOneToOne returns true only for the unique variant.
+func (f Field) IsOneToOne() bool {
+	return FieldType(f.Type) == FieldOneToOne
 }
 
 // IsManyToMany returns true if this field is a many_to_many relationship.
@@ -262,6 +280,12 @@ func (f Field) GORMTag() string {
 	case FieldBelongsTo:
 		// FK matches the referenced model's UUID string PK.
 		parts = append(parts, "size:36", "index")
+	case FieldOneToOne:
+		// uniqueIndex, not index. Without it this is a belongs_to wearing a
+		// different name: the database would happily accept a second row
+		// pointing at the same parent, and "one to one" would be a comment
+		// rather than a constraint.
+		parts = append(parts, "size:36", "uniqueIndex")
 	case FieldStringArray, FieldCheck:
 		parts = append(parts, "type:json")
 	case FieldSelect, FieldRadio:
@@ -494,7 +518,7 @@ func (f Field) IsSearchable() bool {
 
 // ValidFieldTypes returns all valid field type names.
 func ValidFieldTypes() []string {
-	return []string{"string", "text", "richtext", "int", "uint", "float", "bool", "toggle", "select", "radio", "check", "datetime", "date", "slug", "belongs_to", "many_to_many", "string_array", "file", "files"}
+	return []string{"string", "text", "richtext", "int", "uint", "float", "bool", "toggle", "select", "radio", "check", "datetime", "date", "slug", "belongs_to", "one_to_one", "many_to_many", "string_array", "file", "files"}
 }
 
 // FKColumnName returns the foreign key column name for a belongs_to field.

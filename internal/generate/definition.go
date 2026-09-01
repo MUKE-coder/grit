@@ -337,9 +337,15 @@ func parseFieldInput(input string) (Field, error) {
 		}, nil
 	}
 
-	// belongs_to: third part is the related model name (optional, inferred from field name)
-	// e.g., category:belongs_to → Category, author:belongs_to:User → User
-	if typ == "belongs_to" {
+	// belongs_to and one_to_one: third part is the related model name, optional
+	// and inferred from the field name.
+	//   category:belongs_to        → Category
+	//   author:belongs_to:User     → User
+	//   user:one_to_one:User       → User, with a unique foreign key
+	//
+	// Parsed together because they are the same shape. They differ only in the
+	// GORM tag, where one_to_one gets uniqueIndex.
+	if typ == "belongs_to" || typ == "one_to_one" {
 		relatedModel := ""
 		if len(parts) >= 3 && strings.TrimSpace(parts[2]) != "" {
 			relatedModel = strings.TrimSpace(parts[2])
