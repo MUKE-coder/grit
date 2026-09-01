@@ -302,6 +302,7 @@ import { AlertCircle, ArrowLeft, KeyRound, Monitor, ShieldCheck } from "lucide-r
 import { TwoFactorCard } from "@/components/profile/two-factor-card";
 import { ActiveSessions } from "@/components/profile/active-sessions";
 import { RecoveryContactCard } from "@/components/security/recovery-contacts";
+import { PasskeysCard } from "@/components/security/passkeys";
 import { useSecurityOverview } from "@/hooks/use-security";
 import { SkeletonCards } from "@/components/ui/Skeleton";
 
@@ -344,6 +345,11 @@ export default function AccountSecurityPage() {
           because it is the single largest improvement available here, and an
           account without it is one leaked password away from gone. */}
       <TwoFactorCard />
+
+      {/* Passkeys before recovery, because a passkey is the thing that makes
+          the password matter less, and recovery is what you need when it does
+          not. The card hides itself when the browser has no authenticator. */}
+      <PasskeysCard />
 
       <RecoveryContactCard kind="email" overview={overview} />
 

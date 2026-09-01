@@ -268,6 +268,8 @@ require (
 	// lossy WebP encoder, which is why lossy compression targets JPEG.
 	github.com/HugoSmits86/nativewebp v1.3.0
 	github.com/disintegration/imaging v1.6.2
+	// Pure Go WebAuthn, so passkeys do not cost the static binary.
+	github.com/go-webauthn/webauthn v0.18.0
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-pdf/fpdf v1.4.3
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -1494,6 +1496,8 @@ func Models() []interface{} {
 		&EmailVerificationToken{},
 		&RecoveryContactToken{},
 		&RecoveryContact{},
+		&Passkey{},
+		&WebAuthnSession{},
 		&APIKey{},
 		// Role/UserRole must migrate before anything authorises a request.
 		&Role{},
@@ -8527,6 +8531,16 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		AuthService: authService,
 		Issuer:      cfg.TOTPIssuer,
 	}
+	// The passkey relying party, built once from the origins the frontends
+	// actually run on. A deployment with none (CORS_ORIGINS unset or '*')
+	// gets a nil service, and every passkey route answers 501 rather than
+	// panicking: passkeys are optional, a broken boot is not.
+	passkeys, passkeyErr := services.NewPasskeys(db, cfg.AppName, cfg.CORSOrigins)
+	if passkeyErr != nil {
+		log.Printf("Passkeys disabled: %v", passkeyErr)
+		passkeys = nil
+	}
+	passkeyHandler := handlers.NewPasskeyHandler(db, passkeys, authHandler)
 	activityHandler := handlers.NewActivityHandler(db)
 	webhookHandler := handlers.NewWebhookHandler(db)
 	webhooks.Setup(db)
@@ -8817,6 +8831,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	}
 
 	// TOTP verification (public — uses pending tokens, not JWT)
+	// Passkey sign-in. Public because there is no session yet; the
+	// server-side challenge is what makes it safe.
+	auth.POST("/passkeys/login/begin", passkeyHandler.BeginLogin)
+	auth.POST("/passkeys/login/finish", passkeyHandler.FinishLogin)
 	auth.POST("/totp/verify", totpHandler.Verify)
 	auth.POST("/totp/backup-codes/verify", totpHandler.VerifyBackupCode)
 
@@ -8863,6 +8881,13 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// recovery address is a second way in and a live session is exactly what
 		// somebody on a borrowed laptop already has.
 		recoveryHandler := handlers.NewRecoveryHandler(db, svc.Mailer)
+		// Passkeys. Registration is behind auth because you add one to an
+		// account you are already in; the sign-in pair is public by necessity.
+		protected.GET("/auth/passkeys", passkeyHandler.List)
+		protected.POST("/auth/passkeys/register/begin", passkeyHandler.BeginRegistration)
+		protected.POST("/auth/passkeys/register/finish", passkeyHandler.FinishRegistration)
+		protected.PATCH("/auth/passkeys/:id", passkeyHandler.Rename)
+		protected.DELETE("/auth/passkeys/:id", passkeyHandler.Delete)
 		protected.GET("/auth/security", recoveryHandler.Overview)
 		protected.POST("/auth/recovery/email", recoveryHandler.SetEmail)
 		protected.POST("/auth/recovery/email/verify", recoveryHandler.VerifyEmail)

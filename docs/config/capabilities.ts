@@ -120,6 +120,22 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
         },
       },
       {
+        id: 'passkeys',
+        label: 'Passkeys',
+        detail:
+          'WebAuthn sign-in with a fingerprint, face or device PIN. The private key never ' +
+          'leaves the authenticator, so there is nothing for a breach to leak and nothing for ' +
+          'a phishing page to collect.',
+        cells: {
+          grit: B('Built in, pure Go, with the management UI'),
+          laravel: O('Laravel Passkeys, or a community package'),
+          django: C('django-passkeys or similar'),
+          nextjs: C('SimpleWebAuthn, wired yourself'),
+          encore: N(),
+          express: C('SimpleWebAuthn, wired yourself'),
+        },
+      },
+      {
         id: 'sso',
         label: 'Enterprise SSO (OIDC and SAML)',
         detail: 'Connections stored as rows, so onboarding a customer is a form and not a deploy.',

@@ -33,7 +33,9 @@ var reservedModels = map[string]string{
 	"PasswordResetToken":     "authentication",
 	"EmailVerificationToken": "authentication",
 	"Profile":                "authentication",
+	"Passkey":                "authentication",
 	"RecoveryContact":        "authentication",
+	"WebAuthnSession":        "authentication",
 	"RecoveryContactToken":   "authentication",
 
 	// Two-factor and SSO.
