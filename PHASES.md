@@ -1013,6 +1013,64 @@ resource file field was orphaned.
 - [ ] PDF and video. The shape generalises, the implementation does not: both
       need external binaries that do not fit in a static Go binary.
 
+### 7.4j Account security (v3.176 - v3.182)
+
+Two-factor and sessions existed on a page called "profile", beside a bio and
+an avatar. Everything below is about giving those decisions their own screen
+and filling the holes that appeared once they sat together.
+
+- [x] `/account/security` in the admin - v3.178.0. Two-factor, passkeys,
+      recovery contacts and sessions on one page. Deliberately not
+      `/system/security`, which is the operator's threat dashboard: merging
+      them would put a password box beside a list of intrusion attempts.
+- [x] Recovery contacts - v3.178.0. A verified second address, six digits from
+      crypto/rand, hash-only storage, single use, fifteen minutes, five
+      guesses. Every write takes the account password, because a recovery
+      address is a second way in and a live session is what an attacker on a
+      borrowed laptop already has. The address comes back masked even to the
+      person reading it, for the same reason.
+- [x] `internal/sms` as a seam with no default provider - v3.178.0. The right
+      one depends on where your users are; the overview reports whether one is
+      configured and the admin omits the card when none is.
+- [x] **Passkeys** - v3.181.0. WebAuthn, pure Go, so the static
+      cross-compiled binary survives. Usernameless sign-in issuing the same
+      tokens a password login does. Ceremonies in a table rather than in
+      memory, single use, five minutes. Verified against Chrome's virtual
+      authenticator over CDP, not a mock.
+- [ ] A "sign in with a passkey" button on the sign-in screen. The endpoints
+      exist and work; nothing offers them yet.
+- [ ] Attestation verification against a metadata service, for deployments
+      that must require specific hardware. A barrier with no benefit for
+      everyone else.
+
+### 7.4k Generator and admin correctness (v3.177 - v3.182)
+
+Mostly things that were broken in every generated project and had been for a
+while. Each was found by running a real project rather than reading templates.
+
+- [x] `date` and `datetime` fields were unsaveable - v3.177.0. The generator
+      emitted `*time.Time`, which unmarshals RFC3339 only, while the admin's
+      picker sends `2001-08-06` on purpose. `internal/jsontime` accepts what
+      browsers actually send. Reported as #75.
+- [x] `grit sync` broke the login page - v3.177.0. It rewrote schema files
+      without the entity schema the barrel re-exports, a TS2305 inside
+      `@repo/shared` that failed the admin and the web app together. #73.
+- [x] `one_to_one` - v3.179.0. A belongs_to whose foreign key is unique,
+      declared on the side that holds the key.
+- [x] `grit g resource Profile` produced a project that did not compile
+      - v3.179.0. Reserved now.
+- [x] Form labels were attached to nothing - v3.180.0 and v3.182.0. Twelve of
+      thirteen field components rendered a bare label and an input with no id.
+      Single-control fields pair htmlFor with useId; the toggle became a
+      `role="switch"` with state and a name; the checkbox group got
+      `role="group"`.
+- [x] The many-to-many picker is a real combobox - v3.180.0. It was a div with
+      an onClick: Tab could not reach it and a keyboard could not open it.
+- [x] Testimonials that can go live, with a required photo - pushed. The
+      section and issue template existed; nothing connected them.
+- [ ] `grit audit a11y` would have caught every one of the label defects. It
+      is already listed in 7.6 and has earned its place.
+
 ### 7.5 SaaS (recs 14, 15, 27, 31)
 
 Billing, entitlements, payment adapters, invitations, usage limits, automation
