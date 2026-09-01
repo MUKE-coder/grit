@@ -307,6 +307,54 @@ if req.TagIDs != nil {
             </div>
 
             <div className="prose-grit">
+              {/* one_to_one */}
+              <h2 id="one_to_one">one_to_one</h2>
+              <p>
+                A <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">belongs_to</code> whose foreign key is unique. Declared on the side
+                that holds the key, because that is the only side the constraint can live on: a
+                passport declares its user, not the other way round.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock language="bash" code={`grit g resource Passport --fields "user:one_to_one:User,number:string,expires_at:date"`} />
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="apps/api/internal/models/passport.go" code={`type Passport struct {
+    UserID string \`gorm:"size:36;uniqueIndex" json:"user_id" binding:"required"\`
+    User   User   \`gorm:"foreignKey:UserID" json:"user"\`
+    // ...
+}`} />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                <strong>uniqueIndex is the whole difference.</strong> Everything else, the foreign
+                key column, the eager loading, the searchable picker in the admin, the CSV import,
+                is identical to <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">belongs_to</code>, and that is deliberate: one_to_one is
+                the same relationship with a constraint, so it reuses the same machinery rather
+                than a parallel implementation.
+              </p>
+              <p>
+                Without the unique index, &quot;one to one&quot; would be a comment. The database
+                would accept a second passport pointing at the same user, and nothing would notice
+                until somebody asked which one was real. With it, the second insert is refused:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock language="bash" code={`UNIQUE constraint failed: passports.user_id`} />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                Worth planning for in the UI: the second attempt fails at the database, so a form
+                that lets somebody pick an already-taken parent will surface a constraint error
+                rather than a friendly one. Filter the picker, or catch the duplicate and say
+                which record already holds it.
+              </p>
+
               {/* has_one & has_many */}
               <h2>has_one &amp; has_many (Inverse Side)</h2>
               <p>

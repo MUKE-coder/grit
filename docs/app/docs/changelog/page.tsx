@@ -29,6 +29,49 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.179.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.179.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>one_to_one</h3>
+                <p>
+                  A <code>belongs_to</code> whose foreign key is unique, declared on the side that
+                  holds the key: a passport declares its user, not the other way round, because
+                  that is the only side the constraint can live on.
+                </p>
+                <CodeBlock language="bash" code={`grit g resource Passport --fields "user:one_to_one:User,number:string"`} />
+                <p>
+                  <code>uniqueIndex</code> is the entire difference. The column, the eager loading,
+                  the searchable picker, the CSV import are all identical to{' '}
+                  <code>belongs_to</code>, deliberately: it is the same relationship with a
+                  constraint, so it reuses the machinery rather than duplicating it. Verified
+                  against a real database, where the second row for one parent is refused.
+                </p>
+
+                <h3>The docs said a command did not exist</h3>
+                <p>
+                  Code Generation claimed there is no <code>add field</code> command and told you
+                  to edit the Go model by hand. <code>grit generate field</code> has existed for
+                  some time and does the whole job: the column, both Zod schemas, the TypeScript
+                  type, and the admin table and form. The page now leads with it, and keeps the
+                  manual path for the four types the command declines.
+                </p>
+
+                <h3><code>grit g resource Profile</code> produced a project that did not compile</h3>
+                <p>
+                  Found while testing the above. It collides with the built-in{' '}
+                  <code>UpdateProfileRequest</code> in the users handler. <code>Profile</code> is
+                  reserved now, so the generator refuses it and suggests a name.
+                </p>
+              </div>
+            </div>
+
             {/* v3.178.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

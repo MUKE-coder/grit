@@ -202,11 +202,19 @@ func (g *Generator) writeGoModel(names Names) error {
 			// hide this again.
 			selfRef := relModel == toPascalCase(g.Definition.Name)
 
-			// FK column
+			// FK column.
+			//
+			// one_to_one differs from belongs_to here and nowhere else: a unique
+			// index. Without it the name is a comment, because the database would
+			// accept a second row pointing at the same parent.
+			fkIndex := "index"
+			if f.IsOneToOne() {
+				fkIndex = "uniqueIndex"
+			}
 			if selfRef {
-				structFields += fmt.Sprintf("\t%s *string `gorm:\"size:36;index\" json:\"%s\"`\n", fkGoName, fkJson)
+				structFields += fmt.Sprintf("\t%s *string `gorm:\"size:36;%s\" json:\"%s\"`\n", fkGoName, fkIndex, fkJson)
 			} else {
-				structFields += fmt.Sprintf("\t%s string `gorm:\"size:36;index\" json:\"%s\" binding:\"required\"`\n", fkGoName, fkJson)
+				structFields += fmt.Sprintf("\t%s string `gorm:\"size:36;%s\" json:\"%s\" binding:\"required\"`\n", fkGoName, fkIndex, fkJson)
 			}
 			// Association struct
 			assocType := relModel
