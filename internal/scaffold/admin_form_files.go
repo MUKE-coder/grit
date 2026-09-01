@@ -1525,6 +1525,7 @@ export function GenerateButton({ onGenerate }: GenerateButtonProps) {
 
 func adminTextField() string {
 	return `import type { FieldDefinition } from "@/lib/resource";
+import { useId } from "react";
 import { GenerateButton } from "./generate-button";
 import { Input } from "@/components/ui/input";
 
@@ -1538,10 +1539,11 @@ interface TextFieldProps {
 }
 
 export function TextField({ field, value, onChange, error, onGenerate }: TextFieldProps) {
+  const fieldId = useId();
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
-        <label className="block text-sm font-medium text-foreground">
+        <label htmlFor={fieldId} className="block text-sm font-medium text-foreground">
           {field.label}
           {field.required && <span className="text-danger ml-1">*</span>}
         </label>
@@ -1555,6 +1557,7 @@ export function TextField({ field, value, onChange, error, onGenerate }: TextFie
           </span>
         )}
         <Input
+          id={fieldId}
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -1585,6 +1588,7 @@ export function TextField({ field, value, onChange, error, onGenerate }: TextFie
 // adminTextareaField returns the textarea field component.
 func adminTextareaField() string {
 	return `import type { FieldDefinition } from "@/lib/resource";
+import { useId } from "react";
 import { inputClasses } from "@/components/ui/input";
 
 interface TextareaFieldProps {
@@ -1595,9 +1599,10 @@ interface TextareaFieldProps {
 }
 
 export function TextareaField({ field, value, onChange, error }: TextareaFieldProps) {
+  const fieldId = useId();
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-foreground">
+      <label htmlFor={fieldId} className="block text-sm font-medium text-foreground">
         {field.label}
         {field.required && <span className="text-danger ml-1">*</span>}
       </label>
@@ -1633,7 +1638,7 @@ func adminNumberField() string {
 // would never reach the DOM. We use type="text" + inputMode so the
 // numeric keyboard still pops up on mobile.
 
-import { useEffect, useRef, useState } from "react";
+import { useId, useEffect, useRef, useState } from "react";
 import type { FieldDefinition } from "@/lib/resource";
 import { GenerateButton } from "./generate-button";
 import { Input } from "@/components/ui/input";
@@ -1705,6 +1710,7 @@ export function parseFormattedNumber(formatted: string): number | "" {
 }
 
 export function NumberField({ field, value, onChange, error, onGenerate }: NumberFieldProps) {
+  const fieldId = useId();
   const kind = field.numberKind ?? "float";
   const allowDecimal = kind === "float";
   const allowNegative = kind !== "uint";
@@ -1759,7 +1765,7 @@ export function NumberField({ field, value, onChange, error, onGenerate }: Numbe
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
-        <label className="block text-sm font-medium text-foreground">
+        <label htmlFor={fieldId} className="block text-sm font-medium text-foreground">
           {field.label}
           {field.required && <span className="text-danger ml-1">*</span>}
         </label>
@@ -1773,6 +1779,7 @@ export function NumberField({ field, value, onChange, error, onGenerate }: Numbe
           </span>
         )}
         <Input
+          id={fieldId}
           ref={inputRef}
           type="text"
           inputMode={allowDecimal ? "decimal" : "numeric"}
@@ -1809,7 +1816,7 @@ export function NumberField({ field, value, onChange, error, onGenerate }: Numbe
 // ADMIN/EDITOR/USER list that never saw custom roles.
 func adminSelectField() string {
 	return `import { useQuery } from "@tanstack/react-query";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useId, useState, useRef, useEffect, useMemo } from "react";
 import { apiClient } from "@/lib/api-client";
 import type { FieldDefinition } from "@/lib/resource";
 import { ChevronDown, Check, Search } from "@/lib/icons";
@@ -1825,6 +1832,7 @@ interface SelectFieldProps {
 // arrow keys + Enter to pick, Escape to close. Works for both command-generated
 // select fields (static options) and fields that pull choices from optionsUrl.
 export function SelectField({ field, value, onChange, error }: SelectFieldProps) {
+  const fieldId = useId();
   const labelKey = field.optionsLabelKey ?? "name";
   const valueKey = field.optionsValueKey ?? "name";
 
@@ -1884,7 +1892,7 @@ export function SelectField({ field, value, onChange, error }: SelectFieldProps)
 
   return (
     <div className="space-y-1.5" ref={rootRef}>
-      <label className="block text-sm font-medium text-foreground">
+      <label htmlFor={fieldId} className="block text-sm font-medium text-foreground">
         {field.label}
         {field.required && <span className="text-danger ml-1">*</span>}
       </label>
@@ -1949,7 +1957,7 @@ export function SelectField({ field, value, onChange, error }: SelectFieldProps)
 func adminDateField() string {
 	src := `"use client";
 
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useId, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import type { FieldDefinition } from "@/lib/resource";
 import { Calendar, ChevronLeft, ChevronRight } from "@/lib/icons";
@@ -2028,6 +2036,7 @@ function ordOf(iso: string | undefined): number | null {
 }
 
 export function DateField({ field, value, onChange, error }: DateFieldProps) {
+  const fieldId = useId();
   const withTime = field.type === "datetime";
   const selected = parseValue(value);
   const today = todayParts();
@@ -2265,6 +2274,7 @@ export function DateField({ field, value, onChange, error }: DateFieldProps) {
         <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
           <label className="text-xs text-text-secondary">Time</label>
           <input
+          id={fieldId}
             type="time"
             value={selected ? ~${pad(selected.hour)}:${pad(selected.minute)}~ : ""}
             onChange={(e) => {
@@ -2303,7 +2313,7 @@ export function DateField({ field, value, onChange, error }: DateFieldProps) {
 
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-foreground">
+      <label htmlFor={fieldId} className="block text-sm font-medium text-foreground">
         {field.label}
         {field.required && <span className="text-danger ml-1">*</span>}
       </label>
@@ -3499,20 +3509,48 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
 func adminMultiRelationshipSelectField() string {
 	src := `"use client";
 
-import { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, useId, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { getResourceByEndpoint } from "@/resources";
 import { usePermissions } from "@/hooks/use-permissions";
 import type { FieldDefinition } from "@/lib/resource";
-import { Plus } from "@/lib/icons";
+import { Plus, X, Check } from "@/lib/icons";
 import { inputClasses } from "@/components/ui/input";
 
 // Lazy for the same reason as the single select — see adminInlineCreateDialog.
 const InlineCreateDialog = lazy(() =>
   import("./inline-create-dialog").then((m) => ({ default: m.InlineCreateDialog }))
 );
+
+/**
+ * The many-to-many picker: tags on a post, categories on a product.
+ *
+ * Built as a real combobox rather than a div that opens another div. The
+ * version this replaces could not be reached with Tab, could not be opened
+ * without a mouse, offered no way to move through the options with the
+ * keyboard, and gave a screen reader a pile of unlabelled buttons. All of that
+ * is fixed here, and none of it is decoration: this is the control somebody
+ * uses fifty times while tagging a catalogue.
+ *
+ * What it does now:
+ *
+ *   - the trigger is a button with role="combobox", so Tab reaches it and
+ *     Enter, Space or ArrowDown open it
+ *   - the list is role="listbox" with aria-multiselectable, options carry
+ *     aria-selected, and the active one is tracked with aria-activedescendant
+ *     so a screen reader announces movement without focus ever leaving the
+ *     search box
+ *   - Arrow keys move, Enter toggles, Escape closes and returns focus to the
+ *     trigger, Home and End jump
+ *   - every remove button has a name: "Remove Electronics", not a bare X
+ *
+ * The relationship is not required to create the parent. You can save a
+ * product with no categories and attach them afterwards, which is the normal
+ * way a catalogue actually gets built: the products arrive first and the
+ * taxonomy settles later.
+ */
 
 interface MultiRelationshipSelectFieldProps {
   field: FieldDefinition;
@@ -3521,238 +3559,354 @@ interface MultiRelationshipSelectFieldProps {
   error?: string;
 }
 
-export function MultiRelationshipSelectField({ field, value = [], onChange, error }: MultiRelationshipSelectFieldProps) {
+export function MultiRelationshipSelectField({
+  field,
+  value = [],
+  onChange,
+  error,
+}: MultiRelationshipSelectFieldProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [active, setActive] = useState(0);
   const [creating, setCreating] = useState(false);
-  // Records created inline, kept until the refetch returns them — otherwise a
-  // freshly added tag shows as a raw UUID chip for as long as the request takes.
-  const [justCreated, setJustCreated] = useState<Record<string, unknown>[]>([]);
-  const triggerRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
 
-  const { data: options = [], isLoading } = useQuery({
-    queryKey: [field.relatedEndpoint, "options"],
+  // Records created inline, kept until the refetch returns them — otherwise a
+  // record you just made vanishes from the list for a moment.
+  const [justCreated, setJustCreated] = useState<Record<string, unknown>[]>([]);
+
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const listboxId = useId();
+  const { can } = usePermissions();
+
+  const endpoint = field.relatedEndpoint ?? "";
+  const displayField = field.displayField ?? "name";
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["relationship-options", endpoint],
     queryFn: async () => {
-      const { data } = await apiClient.get(` + "`" + `${field.relatedEndpoint}?page_size=100` + "`" + `);
-      return data.data || data || [];
+      const { data } = await apiClient.get(endpoint, { params: { page_size: 100 } });
+      return data;
     },
-    enabled: !!field.relatedEndpoint,
+    enabled: !!endpoint,
   });
 
-  const updatePosition = useCallback(() => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
-    }
-  }, []);
+  const options: Record<string, unknown>[] = useMemo(() => data?.data ?? [], [data]);
 
-  useEffect(() => {
-    if (!open) return;
-    updatePosition();
-    function handleClickOutside(e: MouseEvent) {
-      const target = e.target as Node;
-      if (
-        triggerRef.current && !triggerRef.current.contains(target) &&
-        dropdownRef.current && !dropdownRef.current.contains(target)
-      ) {
-        setOpen(false);
-      }
-    }
-    function handleScroll() { updatePosition(); }
-    document.addEventListener("mousedown", handleClickOutside);
-    window.addEventListener("scroll", handleScroll, true);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      window.removeEventListener("scroll", handleScroll, true);
-    };
-  }, [open, updatePosition]);
-
-  const displayField = field.displayField || "name";
-
-  // Options plus anything created inline that the refetch has not returned yet.
   const allOptions = useMemo(() => {
-    const list = options as Record<string, unknown>[];
-    if (justCreated.length === 0) return list;
-    const known = new Set(list.map((o) => String(o.id)));
+    if (justCreated.length === 0) return options;
+    const known = new Set(options.map((o) => String(o.id ?? "")));
     const extra = justCreated.filter((r) => !known.has(String(r.id ?? "")));
-    return extra.length > 0 ? [...extra, ...list] : list;
+    return [...extra, ...options];
   }, [options, justCreated]);
 
-  // The related resource, looked up by the endpoint the field already points
-  // at. Undefined when the related model has no registered admin resource — in
-  // which case there is no form to open and the button must not appear.
-  const relatedResource = useMemo(
-    () => (field.relatedEndpoint ? getResourceByEndpoint(field.relatedEndpoint) : undefined),
-    [field.relatedEndpoint]
+  const labelOf = useCallback(
+    (item: Record<string, unknown>) =>
+      String(item[displayField] || item.name || item.title || item.id || ""),
+    [displayField]
   );
 
-  // can() is false while permissions load, which is the right default here: a
-  // button that appears and then vanishes reads as a bug.
-  const { can } = usePermissions();
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return allOptions;
+    return allOptions.filter((o) => labelOf(o).toLowerCase().includes(q));
+  }, [allOptions, search, labelOf]);
+
+  const selectedLabels = useMemo(
+    () =>
+      value
+        .map((id) => {
+          const found = allOptions.find((o) => String(o.id) === String(id));
+          return found ? { id: String(id), label: labelOf(found) } : null;
+        })
+        .filter(Boolean) as { id: string; label: string }[],
+    [value, allOptions, labelOf]
+  );
+
+  const relatedResource = endpoint ? getResourceByEndpoint(endpoint) : undefined;
   const canCreate =
     field.allowCreate !== false && !!relatedResource && can(relatedResource.slug + ".create");
 
   // Carry the typed search into the new record, but only when the related form
-  // actually declares that field.
+  // actually has the field being searched.
   const prefill = useMemo(() => {
-    const typed = search.trim();
-    if (!typed || !relatedResource) return undefined;
-    return relatedResource.form.fields.some((f) => f.key === displayField)
-      ? { [displayField]: typed }
-      : undefined;
+    const q = search.trim();
+    if (!q || !relatedResource) return undefined;
+    const target = relatedResource.form?.fields?.find((f) => f.key === displayField);
+    return target ? { [displayField]: q } : undefined;
   }, [search, relatedResource, displayField]);
 
-  const filtered = useMemo(() =>
-    allOptions.filter((item) => {
-      if (!search) return true;
-      const label = String(item[displayField] || item.name || item.title || item.id || "");
-      return label.toLowerCase().includes(search.toLowerCase());
-    }),
-    [allOptions, search, displayField]
+  const updatePosition = useCallback(() => {
+    const el = triggerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setPosition({ top: r.bottom + window.scrollY + 4, left: r.left + window.scrollX, width: r.width });
+  }, []);
+
+  const openList = useCallback(() => {
+    updatePosition();
+    setOpen(true);
+    setActive(0);
+  }, [updatePosition]);
+
+  const closeList = useCallback(
+    (returnFocus = true) => {
+      setOpen(false);
+      setSearch("");
+      // Focus goes back where it came from. Without this, closing the list
+      // drops the caret at the top of the document and the next Tab starts
+      // over from the beginning of the page.
+      if (returnFocus) triggerRef.current?.focus();
+    },
+    []
   );
 
-  const selectedLabels = useMemo(() => {
-    return value.map((id) => {
-      const found = allOptions.find((item) => String(item.id) === String(id));
-      if (!found) return { id, label: String(id) };
-      return { id, label: String(found[displayField] || found.name || found.title || found.id || "") };
-    });
-  }, [value, allOptions, displayField]);
+  const toggleItem = useCallback(
+    (id: string) => {
+      onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id]);
+    },
+    [value, onChange]
+  );
 
-  const toggleItem = (id: string) => {
-    if (value.includes(id)) {
-      onChange(value.filter((v) => v !== id));
-    } else {
-      onChange([...value, id]);
+  // Reposition on scroll and resize while open, or the list detaches from its
+  // trigger the moment the page moves under it.
+  useEffect(() => {
+    if (!open) return;
+    const onMove = () => updatePosition();
+    window.addEventListener("scroll", onMove, true);
+    window.addEventListener("resize", onMove);
+    return () => {
+      window.removeEventListener("scroll", onMove, true);
+      window.removeEventListener("resize", onMove);
+    };
+  }, [open, updatePosition]);
+
+  useEffect(() => {
+    if (open) searchRef.current?.focus();
+  }, [open]);
+
+  // Keep the active option in view when the arrows walk past the fold.
+  useEffect(() => {
+    if (!open) return;
+    const el = listRef.current?.querySelector('[data-active="true"]');
+    el?.scrollIntoView({ block: "nearest" });
+  }, [active, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (triggerRef.current?.contains(t) || listRef.current?.contains(t)) return;
+      setOpen(false);
+      setSearch("");
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  function onSearchKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActive((i) => Math.min(i + 1, filtered.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActive((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setActive(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      setActive(Math.max(filtered.length - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const item = filtered[active];
+      // Enter on an empty result set creates, because that is what somebody
+      // typing a tag that does not exist yet is trying to do.
+      if (item) toggleItem(String(item.id));
+      else if (canCreate && search.trim()) {
+        setOpen(false);
+        setCreating(true);
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      closeList();
+    } else if (e.key === "Backspace" && search === "" && value.length > 0) {
+      // Backspace on an empty box removes the last chip, the way every tag
+      // input people have used before this one behaves.
+      onChange(value.slice(0, -1));
     }
-  };
+  }
 
-  const removeItem = (id: string) => {
-    onChange(value.filter((v) => v !== id));
-  };
-
-  const dropdown = open ? createPortal(
-    <div
-      ref={dropdownRef}
-      className="fixed z-[9999] rounded-md border border-border bg-bg-elevated shadow-lg"
-      style={{ top: pos.top, left: pos.left, width: pos.width, backgroundColor: "var(--bg-elevated, #22222e)" }}
-    >
-      <div className="p-2">
-        <input
-          type="text"
-          placeholder="Search..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className={inputClasses({ inputSize: "sm", className: "flex" })}
-          style={{ backgroundColor: "var(--bg-secondary, #111118)" }}
-          autoFocus
-        />
-      </div>
-      <div className="max-h-60 overflow-y-auto p-1">
-        {isLoading ? (
-          <div className="px-3 py-2 text-sm text-text-secondary">Loading...</div>
-        ) : filtered.length === 0 ? (
-          <div className="px-3 py-2 text-sm text-text-secondary">No results found</div>
-        ) : (
-          <>
-            {value.length > 0 && (
-              <button
-                type="button"
-                onClick={() => onChange([])}
-                className="flex w-full items-center rounded-sm px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover"
-              >
-                Clear all
-              </button>
-            )}
-            {filtered.map((item) => {
-              const id = String(item.id);
-              const label = String(item[displayField] || item.name || item.title || item.id || "");
-              const isSelected = value.includes(id);
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => toggleItem(id)}
-                  className={` + "`" + `flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-foreground hover:bg-bg-hover
-                    ${isSelected ? "bg-bg-hover" : ""}` + "`" + `}
-                >
-                  <div className={` + "`" + `flex h-4 w-4 items-center justify-center rounded border
-                    ${isSelected ? "border-accent bg-accent text-white" : "border-border"}` + "`" + `}>
-                    {isSelected && (
-                      <svg className="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    )}
-                  </div>
-                  {label}
-                </button>
-              );
-            })}
-          </>
-        )}
-      </div>
-
-      {/* Outside the empty branch on purpose: "No results found" is exactly
-          when someone needs to create the record. */}
-      {canCreate && relatedResource && (
-        <div className="border-t border-border p-1">
-          <button
-            type="button"
-            onClick={() => { setOpen(false); setCreating(true); }}
-            className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm font-medium text-accent hover:bg-bg-hover"
+  const dropdown =
+    open && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            ref={listRef}
+            style={{ position: "absolute", top: position.top, left: position.left, width: position.width, zIndex: 9999 }}
+            className="overflow-hidden rounded-md border border-border bg-bg-elevated shadow-lg"
           >
-            <Plus className="h-4 w-4 shrink-0" />
-            <span className="truncate">
-              New {relatedResource.label?.singular ?? field.label}
-              {search.trim() ? ' “' + search.trim() + '”' : ""}
-            </span>
-          </button>
-        </div>
-      )}
-    </div>,
-    document.body
-  ) : null;
+            <div className="border-b border-border p-2">
+              <input
+                ref={searchRef}
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setActive(0);
+                }}
+                onKeyDown={onSearchKeyDown}
+                placeholder={"Search " + (field.label ?? "") + "..."}
+                className={inputClasses({ inputSize: "sm" })}
+                role="combobox"
+                aria-expanded="true"
+                aria-controls={listboxId}
+                aria-autocomplete="list"
+                aria-activedescendant={filtered[active] ? listboxId + "-" + String(filtered[active].id) : undefined}
+                aria-label={"Search " + (field.label ?? "options")}
+              />
+            </div>
+
+            <div
+              id={listboxId}
+              role="listbox"
+              aria-multiselectable="true"
+              aria-label={field.label}
+              className="max-h-60 overflow-y-auto p-1"
+            >
+              {isLoading ? (
+                <div className="px-3 py-2 text-sm text-text-secondary">Loading...</div>
+              ) : filtered.length === 0 ? (
+                <div className="px-3 py-2 text-sm text-text-secondary">
+                  {search.trim() ? "Nothing matches “" + search.trim() + "”" : "Nothing to choose from yet"}
+                </div>
+              ) : (
+                filtered.map((item, i) => {
+                  const id = String(item.id);
+                  const label = labelOf(item);
+                  const isSelected = value.includes(id);
+                  const isActive = i === active;
+                  return (
+                    <div
+                      key={id}
+                      id={listboxId + "-" + id}
+                      role="option"
+                      aria-selected={isSelected}
+                      data-active={isActive}
+                      onMouseEnter={() => setActive(i)}
+                      onClick={() => toggleItem(id)}
+                      className={
+                        "flex cursor-pointer items-center gap-2 rounded-sm px-3 py-2 text-sm text-foreground " +
+                        (isActive ? "bg-bg-hover" : "")
+                      }
+                    >
+                      <span
+                        className={
+                          "flex h-4 w-4 shrink-0 items-center justify-center rounded border " +
+                          (isSelected ? "border-accent bg-accent text-white" : "border-border")
+                        }
+                      >
+                        {isSelected && <Check className="h-3 w-3" aria-hidden="true" />}
+                      </span>
+                      <span className="truncate">{label}</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {value.length > 0 && (
+              <div className="border-t border-border p-1">
+                <button
+                  type="button"
+                  onClick={() => onChange([])}
+                  className="flex w-full items-center rounded-sm px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover"
+                >
+                  Clear all
+                </button>
+              </div>
+            )}
+
+            {/* Outside the empty branch on purpose: "nothing matches" is exactly
+                when somebody needs to create the record. */}
+            {canCreate && relatedResource && (
+              <div className="border-t border-border p-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    setCreating(true);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm font-medium text-accent hover:bg-bg-hover"
+                >
+                  <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span className="truncate">
+                    New {relatedResource.label?.singular ?? field.label}
+                    {search.trim() ? " “" + search.trim() + "”" : ""}
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>,
+          document.body
+        )
+      : null;
 
   return (
     <div className="space-y-1.5">
-      {/* Same omission as the single relationship field: no label. */}
-      <label className="block text-sm font-medium text-foreground">
+      <label className="block text-sm font-medium text-foreground" id={listboxId + "-label"}>
         {field.label}
-        {field.required && <span className="text-danger ml-1">*</span>}
+        {field.required && <span className="ml-1 text-danger">*</span>}
       </label>
+
+      {/* A real button, so Tab reaches it and Enter opens it. The chips live
+          beside it rather than inside, because a button containing buttons is
+          invalid and the remove controls have to be reachable on their own. */}
       <div
-        ref={triggerRef}
-        onClick={() => { if (!open) updatePosition(); setOpen(!open); }}
-        className={` + "`" + `flex min-h-10 w-full cursor-pointer flex-wrap items-center gap-1 rounded-md border bg-bg-secondary px-3 py-2 text-sm text-foreground transition-colors
-          ${error ? "border-red-500" : "border-border"}
-          ${open ? "ring-2 ring-accent" : ""}` + "`" + `}
+        className={
+          "flex min-h-10 w-full flex-wrap items-center gap-1 rounded-md border bg-bg-secondary px-2 py-1.5 text-sm transition-colors " +
+          (error ? "border-red-500 " : "border-border ") +
+          (open ? "ring-2 ring-accent" : "")
+        }
       >
-        {selectedLabels.length > 0 ? (
-          selectedLabels.map(({ id, label }) => (
-            <span
-              key={id}
-              className="inline-flex items-center gap-1 rounded-md bg-accent/20 text-accent px-2 py-0.5 text-xs font-medium"
+        {selectedLabels.map(({ id, label }) => (
+          <span
+            key={id}
+            className="inline-flex items-center gap-1 rounded-md bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent"
+          >
+            {label}
+            <button
+              type="button"
+              onClick={() => toggleItem(id)}
+              aria-label={"Remove " + label}
+              className="ml-0.5 rounded-full p-0.5 hover:bg-danger/20 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {label}
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); removeItem(id); }}
-                className="ml-0.5 rounded-full hover:bg-red-500/20 hover:text-red-400"
-              >
-                <svg className="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 6 6 18" /><path d="m6 6 12 12" />
-                </svg>
-              </button>
-            </span>
-          ))
-        ) : (
-          <span className="text-text-secondary">
-            {` + "`" + `Select ${field.label}...` + "`" + `}
+              <X className="h-3 w-3" aria-hidden="true" />
+            </button>
           </span>
-        )}
+        ))}
+
+        <button
+          ref={triggerRef}
+          type="button"
+          role="combobox"
+          aria-expanded={open}
+          aria-haspopup="listbox"
+          aria-controls={open ? listboxId : undefined}
+          aria-labelledby={listboxId + "-label"}
+          onClick={() => (open ? closeList(false) : openList())}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openList();
+            }
+          }}
+          className="flex-1 rounded px-1 py-0.5 text-left text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {selectedLabels.length > 0 ? "Add more..." : "Select " + (field.label ?? "") + "..."}
+        </button>
       </div>
+
       {dropdown}
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
 
@@ -3766,8 +3920,7 @@ export function MultiRelationshipSelectField({ field, value = [], onChange, erro
               if (id !== undefined && id !== null) {
                 setJustCreated((prev) => [record, ...prev]);
                 // Append rather than replace: this select holds a list, and the
-                // whole point of creating inline is to add to what is already
-                // picked.
+                // whole point of creating inline is to add to what is picked.
                 const next = String(id);
                 if (!value.includes(next)) onChange([...value, next]);
               }

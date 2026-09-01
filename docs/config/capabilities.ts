@@ -147,6 +147,21 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
           express: C(),
         },
       },
+      {
+        id: 'recovery',
+        label: 'Account recovery',
+        detail:
+          'A verified second address that gets somebody back in when the primary is gone, ' +
+          'with the code hashed, single use, expiring, and capped at five guesses.',
+        cells: {
+          grit: B('Built in, and every change to it takes the account password'),
+          laravel: N('Password reset only, to the address you may have lost'),
+          django: N('Password reset only'),
+          nextjs: C('Whatever your auth provider offers'),
+          encore: N(),
+          express: N(),
+        },
+      },
     ],
   },
   {
@@ -363,6 +378,21 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
           laravel: C('Filament is third party; Nova is first party and paid'),
           django: B('The Django admin, and it is still the benchmark'),
           nextjs: N(),
+          encore: N(),
+          express: N(),
+        },
+      },
+      {
+        id: 'admincustom',
+        label: 'Customising the admin',
+        detail:
+          'Override one cell, swap the whole table, or replace the page, without forking the ' +
+          'generated file. Regenerating never eats the overrides.',
+        cells: {
+          grit: G('A .custom.tsx overlay per resource, separate from the generated definition'),
+          laravel: O('Filament, which is its own framework to learn'),
+          django: B('ModelAdmin subclassing, in Python templates'),
+          nextjs: N('There is no admin to customise'),
           encore: N(),
           express: N(),
         },

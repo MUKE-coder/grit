@@ -29,6 +29,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.180.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.180.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Form labels were not attached to their inputs</h3>
+                <p>
+                  Twelve of the thirteen admin form fields rendered a bare{' '}
+                  <code>&lt;label&gt;</code> and an input with no <code>id</code>. The two were
+                  never connected, so clicking a label did not focus its field and a screen reader
+                  announced an unlabelled box. On every form, in every generated project.
+                </p>
+                <p>
+                  Fixed for the single-control fields: text, textarea, number, select and date now
+                  pair <code>htmlFor</code> with a <code>useId</code>. The group fields, radio,
+                  checkbox-group and toggle, want <code>role=&quot;group&quot;</code> with{' '}
+                  <code>aria-labelledby</code> rather than <code>htmlFor</code>, and are next.
+                </p>
+
+                <h3>The many-to-many picker is a real combobox</h3>
+                <p>
+                  Tags on an article, categories on a product. The trigger was a{' '}
+                  <code>&lt;div onClick&gt;</code>: Tab could not reach it, a keyboard could not
+                  open it, there was no way to move through the options without a mouse, and a
+                  screen reader saw a pile of unlabelled buttons.
+                </p>
+                <p>
+                  It is now <code>role=&quot;combobox&quot;</code> over a{' '}
+                  <code>role=&quot;listbox&quot;</code> with{' '}
+                  <code>aria-multiselectable</code>, options that report{' '}
+                  <code>aria-selected</code>, and <code>aria-activedescendant</code> so movement is
+                  announced without focus leaving the search box. Arrows move, Enter toggles,
+                  Escape closes and returns focus to the trigger, Home and End jump, and Backspace
+                  on an empty box removes the last chip. Every remove button has a name:
+                  &quot;Remove React&quot;, not a bare X. Enter on a search with no matches opens
+                  the inline create dialog, because that is what somebody typing a tag that does
+                  not exist is trying to do.
+                </p>
+                <p>
+                  Worth stating because it was asked: the relationship is optional. An article
+                  saves with no tags and gets them later, which is how a catalogue actually gets
+                  built. Verified in a browser.
+                </p>
+              </div>
+            </div>
+
             {/* v3.179.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
