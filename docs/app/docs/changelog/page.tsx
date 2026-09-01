@@ -29,6 +29,60 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.182.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.182.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The toggle was a button with no name and no state</h3>
+                <p>
+                  Finishing the form accessibility work from v3.180.0. The toggle rendered a bare{' '}
+                  <code>&lt;button&gt;</code>: no <code>role</code>, no{' '}
+                  <code>aria-checked</code>, no accessible name. A screen reader announced
+                  &quot;button&quot; and nothing else, so there was no way to know what it
+                  controlled or whether it was on.
+                </p>
+                <p>
+                  It is a <code>role=&quot;switch&quot;</code> now, with{' '}
+                  <code>aria-checked</code> that flips and <code>aria-labelledby</code> pointing
+                  at its label. The checkbox group gained{' '}
+                  <code>role=&quot;group&quot;</code> so its boxes are announced as one labelled
+                  set rather than a run of unrelated checkboxes. The radio field already had{' '}
+                  <code>radiogroup</code> and needed nothing.
+                </p>
+
+                <h3>Two docs pages that did not exist</h3>
+                <p>
+                  <a href="/docs/backend/passkeys">Passkeys</a> covers what a passkey actually is,
+                  the two ceremonies, why sign-in is usernameless, why the challenge lives in a
+                  table rather than in memory, why a backwards sign counter is logged instead of
+                  blocked, and how to test it against a virtual authenticator. Including the three
+                  things it deliberately does not do.
+                </p>
+                <p>
+                  <a href="/docs/backend/account-security">Account Security</a> covers the page and
+                  the recovery flow behind it: why every write takes the account password, why the
+                  address comes back masked even to the person reading it, the two addresses that
+                  are refused, and why phone recovery is a seam rather than a bundled provider.
+                </p>
+
+                <h3><code>grit sync</code> warned on every run</h3>
+                <p>
+                  The scaffold&apos;s own blog resource shipped without the{' '}
+                  <code>grit:cols:auto</code> and <code>grit:fields:auto</code> markers, so every
+                  sync in every new project printed a warning about a file the reader had never
+                  touched. The markers are in the scaffold now. An existing project still gets the
+                  warning, correctly: that file is yours to edit, so upgrade will not overwrite it,
+                  and the message says exactly what to do.
+                </p>
+              </div>
+            </div>
+
             {/* v3.181.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

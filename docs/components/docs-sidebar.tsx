@@ -123,6 +123,8 @@ const navItems: NavItem[] = [
       { title: 'Middleware', href: '/docs/backend/middleware' },
       { title: 'Authentication', href: '/docs/backend/authentication' },
       { title: 'Social Login (OAuth2)', href: '/docs/backend/oauth' },
+      { title: 'Passkeys', href: '/docs/backend/passkeys' },
+      { title: 'Account Security', href: '/docs/backend/account-security' },
       { title: 'API Response Format', href: '/docs/backend/response-format' },
       { title: 'The Request Lifecycle', href: '/docs/backend/request-lifecycle' },
       { title: 'Migrations', href: '/docs/backend/migrations' },

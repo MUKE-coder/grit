@@ -193,6 +193,16 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Implement JWT authentication in Grit: login, register, token refresh, password hashing with bcrypt, and protected routes.',
   },
+  '/docs/backend/passkeys': {
+    title: 'Passkeys',
+    description:
+      'WebAuthn sign-in with a fingerprint, face or device PIN. Pure Go, usernameless, with the ceremony stored server-side and a management card in the admin.',
+  },
+  '/docs/backend/account-security': {
+    title: 'Account Security',
+    description:
+      'The account security page, and the recovery-contact flow behind it: hashed single-use codes, a password required on every write, and a masked address even to the person reading it.',
+  },
   '/docs/backend/oauth': {
     title: 'Social Login (OAuth2)',
     description:

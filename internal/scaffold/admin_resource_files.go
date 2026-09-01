@@ -3301,6 +3301,7 @@ export const blogsResource = defineResource({
 
   table: {
     columns: [
+      // grit:cols:auto-start
       // v3.31.5: dropped the raw UUID column. Title + status + author
       // already identify a blog row clearly; the ID lives in the URL when
       // you open the detail view.
@@ -3318,6 +3319,7 @@ export const blogsResource = defineResource({
       },
       { key: "published_at", label: "Published At", format: "relative", sortable: true },
       { key: "created_at", label: "Created", format: "relative", sortable: true },
+      // grit:cols:auto-end
     ],
     filters: [
       {
@@ -3343,6 +3345,7 @@ export const blogsResource = defineResource({
   form: {
     layout: "single",
     fields: [
+      // grit:fields:auto-start
       {
         key: "title",
         label: "Title",
@@ -3371,6 +3374,7 @@ export const blogsResource = defineResource({
         label: "Published",
         type: "toggle",
       },
+      // grit:fields:auto-end
     ],
   },
 }, custom);
