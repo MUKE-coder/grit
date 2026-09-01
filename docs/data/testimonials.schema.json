@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Approved testimonials",
+  "description": "Filled by a maintainer from an approved 'Share your experience' issue. Nothing is rendered straight from an issue: an issue is a text box on the internet, and the homepage carries named people vouching for the project.",
+  "type": "object",
+  "properties": {
+    "approved": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["quote", "name", "photo"],
+        "additionalProperties": false,
+        "properties": {
+          "quote": { "type": "string", "minLength": 1, "description": "The line shown on the card." },
+          "name": { "type": "string", "minLength": 1, "description": "Exactly as they asked to be credited." },
+          "role": { "type": "string", "description": "Role and company, e.g. 'Engineering lead, Acme Logistics'." },
+          "photo": {
+            "type": "string",
+            "pattern": "^/testimonials/",
+            "description": "Committed under public/testimonials/, not hotlinked from the issue: GitHub user-content URLs are not a CDN and a broken face reads worse than no testimonial."
+          },
+          "link": { "type": "string", "format": "uri", "description": "Their site, GitHub or LinkedIn, so a reader can check they exist." },
+          "source": { "type": "string", "format": "uri", "description": "The issue it came from, so the permission trail is one click away." }
+        }
+      }
+    }
+  },
+  "required": ["approved"]
+}

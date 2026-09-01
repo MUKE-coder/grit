@@ -33,20 +33,46 @@ body:
     id: quote
     attributes:
       label: A line we can quote
-      description: One or two sentences. Leave blank if you would rather we did not quote you.
+      description: One or two sentences. This is what appears on the card.
       placeholder: "Grit got us from nothing to a working admin panel in a day."
+    validations:
+      required: true
 
   - type: input
     id: name
     attributes:
       label: Name to credit
-      description: Exactly as you want it shown. Leave blank to stay anonymous.
+      description: |
+        Exactly as you want it shown.
+
+        Required, because the photo is. An anonymous face is not a testimonial,
+        it is a stock image, and a reader can tell.
+      placeholder: "Amina Nakato"
+    validations:
+      required: true
 
   - type: input
     id: role
     attributes:
       label: Role and company
       placeholder: "Engineering lead, Acme Logistics"
+
+  - type: textarea
+    id: photo
+    attributes:
+      label: A photo of you
+      description: |
+        Required. Drag an image straight into this box and GitHub uploads it and
+        pastes the link for you.
+
+        A quote with a face reads as a person; a quote without one reads as
+        marketing copy somebody wrote in-house. That is the whole reason this is
+        not optional, and it is also why a logo will not do.
+
+        Square works best, and anything above 400x400 is plenty.
+      placeholder: "Drag your photo here, or paste a link to one."
+    validations:
+      required: true
 
   - type: input
     id: link
@@ -72,5 +98,5 @@ body:
     attributes:
       label: Permission
       options:
-        - label: I am the person quoted, and Grit may publish this with the name and link above.
+        - label: I am the person quoted, and Grit may publish this with the name, photo and link above.
           required: true
