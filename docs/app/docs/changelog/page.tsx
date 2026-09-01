@@ -29,6 +29,61 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.181.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.181.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Passkeys</h3>
+                <p>
+                  WebAuthn sign-in with a fingerprint, face or device PIN. The private key never
+                  leaves the authenticator and the server stores only the public half, so there
+                  is nothing here for a breach to leak and nothing for a phishing page to
+                  collect.
+                </p>
+                <p>
+                  Pure Go, via <code>go-webauthn</code>, so the API still cross-compiles to a
+                  single static binary. That was the constraint the whole design was checked
+                  against before a line was written.
+                </p>
+                <CodeBlock language="bash" code={`POST /api/v1/auth/passkeys/register/begin    add one to the account you are in
+POST /api/v1/auth/passkeys/register/finish
+POST /api/v1/auth/passkeys/login/begin       public: usernameless sign-in
+POST /api/v1/auth/passkeys/login/finish
+GET  /api/v1/auth/passkeys                   list, rename, remove`} />
+                <p>
+                  Sign-in is usernameless, because that is the point of a passkey: the
+                  authenticator knows which account it holds, so asking for an email first buys
+                  nothing. It issues the same tokens a password sign-in does and records the same
+                  session, so the device appears in Active Sessions and can be revoked like any
+                  other.
+                </p>
+                <p>
+                  Ceremonies are stored in a table rather than in memory, for the same reason
+                  refresh sessions are: the moment there are two API instances, an in-memory
+                  challenge is a coin flip on whether sign-in works. Single use, five-minute
+                  life, and deleted on read. The sign counter is kept and a counter that goes
+                  backwards is logged, because that is the signature of a cloned credential.
+                </p>
+                <p>
+                  A card on <code>/account/security</code> manages them, and hides itself when
+                  the browser has no platform authenticator rather than offering a button that
+                  opens a dialog and fails.
+                </p>
+                <p>
+                  <strong>Verified against a real authenticator</strong>, not a mock: Chrome&apos;s
+                  virtual authenticator over CDP, registering a passkey through the actual UI,
+                  confirming the credential exists on the device as a resident key, that the
+                  server verified the attestation and stored it, and that removal takes it away.
+                </p>
+              </div>
+            </div>
+
             {/* v3.180.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

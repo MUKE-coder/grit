@@ -141,8 +141,17 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeAdminSecurityFiles(root, opts); err != nil {
 			return fmt.Errorf("updating security page: %w", err)
 		}
+		if err := ensurePasskeyWiring(root, opts); err != nil {
+			return fmt.Errorf("wiring passkeys: %w", err)
+		}
 		if err := ensureRecoveryWiring(root, opts); err != nil {
 			return fmt.Errorf("wiring recovery contacts: %w", err)
+		}
+		if err := writeAdminPasskeyFiles(root, opts); err != nil {
+			return fmt.Errorf("updating passkey UI: %w", err)
+		}
+		if err := writePasskeyFiles(root, opts); err != nil {
+			return fmt.Errorf("updating passkey files: %w", err)
 		}
 		if err := writeRecoveryFiles(root, opts); err != nil {
 			return fmt.Errorf("updating recovery files: %w", err)
