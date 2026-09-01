@@ -105,7 +105,7 @@ func adminUserMenuComponent() string {
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useMe, useLogout } from "@/hooks/use-auth";
-import { Activity, User as UserIcon, LogOut } from "@/lib/icons";
+import { Activity, User as UserIcon, LogOut, ShieldCheck } from "@/lib/icons";
 
 /**
  * Avatar button + dropdown. Click outside to close. Click items to
@@ -171,6 +171,14 @@ export function UserMenu() {
             >
               <UserIcon className="h-4 w-4" />
               Profile
+            </Link>
+            <Link
+              href="/account/security"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-bg-hover hover:text-foreground"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Security
             </Link>
             <button
               type="button"
