@@ -100,6 +100,14 @@ func (g *Generator) writeGoModel(names Names) error {
 	// Project imports (same module). internal/ids is unconditional — every model
 	// mints its primary key in BeforeCreate. Appended in alphabetical order
 	// (files, ids, sequence) so the block is already gofmt-sorted.
+	needsMoney := false
+	for _, f := range fields {
+		if FieldType(f.Type) == FieldMoney {
+			needsMoney = true
+			break
+		}
+	}
+
 	projImports := []string{}
 	if needsFiles {
 		projImports = append(projImports, fmt.Sprintf("\"%s/internal/files\"", g.Module))
@@ -109,6 +117,9 @@ func (g *Generator) writeGoModel(names Names) error {
 	// sequence so the block stays gofmt-clean.
 	if needsJSONTime {
 		projImports = append(projImports, fmt.Sprintf("\"%s/internal/jsontime\"", g.Module))
+	}
+	if needsMoney {
+		projImports = append(projImports, fmt.Sprintf("\"%s/internal/money\"", g.Module))
 	}
 	if hasAuto {
 		projImports = append(projImports, fmt.Sprintf("\"%s/internal/sequence\"", g.Module))
@@ -243,6 +254,12 @@ func (g *Generator) writeGoModel(names Names) error {
 		tags := fmt.Sprintf(`json:"%s"`, jsonTag)
 
 		gormTag := f.GORMTag()
+		if FieldType(f.Type) == FieldMoney {
+			// Embedded with a prefix, so one declared field becomes
+			// <name>_amount and <name>_currency. The amount stays an integer
+			// column the database can SUM and index.
+			gormTag = "embedded;embeddedPrefix:" + toSnakeCase(f.Name) + "_"
+		}
 		if gormTag != "" {
 			tags = fmt.Sprintf(`gorm:"%s" %s`, gormTag, tags)
 		}
@@ -779,6 +796,13 @@ func (g *Generator) writeGoHandler(names Names) error {
 		if f.IsRelationship() {
 			continue
 		}
+		if FieldType(f.Type) == FieldMoney {
+			// The money field is two columns, and neither is named after the
+			// field. Sorting by "price" is a missing-column error, so the
+			// sortable key is the amount column that actually exists.
+			sortCols += fmt.Sprintf(`, "%s_amount": true`, toSnakeCase(f.Name))
+			continue
+		}
 		if f.GoType() == "string" || f.GoType() == "int" || f.GoType() == "uint" {
 			sortCols += fmt.Sprintf(`, "%s": true`, toSnakeCase(f.Name))
 		}
@@ -796,6 +820,13 @@ func (g *Generator) writeGoHandler(names Names) error {
 		col := toSnakeCase(f.Name)
 		if f.IsBelongsTo() {
 			col = f.FKColumnName()
+		}
+		if FieldType(f.Type) == FieldMoney {
+			// Both halves, under their real column names. Filtering by
+			// currency is the one people reach for first: show me everything
+			// priced in UGX.
+			filterCols += fmt.Sprintf(`, "%s_amount": true, "%s_currency": true`, col, col)
+			continue
 		}
 		filterCols += fmt.Sprintf(`, "%s": true`, col)
 	}
@@ -831,6 +862,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 	needsTimeImport := false
 	needsHandlerDatatypes := false
 	needsHandlerJSONTime := false
+	needsHandlerMoney := false
 	hasFileFields := false
 	for _, f := range g.Definition.Fields {
 		if f.GoType() == "*time.Time" {
@@ -838,6 +870,9 @@ func (g *Generator) writeGoHandler(names Names) error {
 		}
 		if f.NeedsJSONTimeImport() {
 			needsHandlerJSONTime = true
+		}
+		if FieldType(f.Type) == FieldMoney {
+			needsHandlerMoney = true
 		}
 		if f.NeedsDatatypesImport() {
 			needsHandlerDatatypes = true
@@ -868,6 +903,9 @@ func (g *Generator) writeGoHandler(names Names) error {
 	jsonTimeImport := ""
 	if needsHandlerJSONTime {
 		jsonTimeImport = "\n\t\"" + g.Module + "/internal/jsontime\""
+	}
+	if needsHandlerMoney {
+		jsonTimeImport += "\n\t\"" + g.Module + "/internal/money\""
 	}
 	filesImport := ""
 	handlerStorageField := ""
@@ -1782,21 +1820,30 @@ func (g *Generator) writeZodSchema(names Names) error {
 		updateFields += fmt.Sprintf("  %s: %s,\n", snakeName, updateZod)
 	}
 
-	// If any field is a file/files, pull FileRefSchema from the
-	// shared package so the generated schema references it directly
-	// instead of inlining the FileRef shape (single source of truth).
-	needsFileRef := false
+	// Shared schemas the generated one references directly rather than
+	// inlining, so each shape has one definition.
+	//
+	// Built as a list. Appending to a slice stays correct the day a third
+	// shared schema appears; rewriting an anchor line fails silently the
+	// day the anchor moves.
+	needsFileRef, needsMoney := false, false
 	for _, f := range g.Definition.Fields {
 		if f.IsFileField() {
 			needsFileRef = true
-			break
+		}
+		if FieldType(f.Type) == FieldMoney {
+			needsMoney = true
 		}
 	}
 
-	importLines := `import { z } from "zod";`
+	imports := []string{`import { z } from "zod";`}
 	if needsFileRef {
-		importLines = "import { z } from \"zod\";\nimport { FileRefSchema } from \"./file-ref\";"
+		imports = append(imports, `import { FileRefSchema } from "./file-ref";`)
 	}
+	if needsMoney {
+		imports = append(imports, `import { MoneySchema } from "./money";`)
+	}
+	importLines := strings.Join(imports, "\n")
 
 	content := fmt.Sprintf(`%s
 
@@ -1820,7 +1867,7 @@ func (g *Generator) writeTSTypes(names Names) error {
 	// Collect relationship imports
 	imports := ""
 	fields := ""
-	needsFileRef := false
+	needsFileRef, needsMoney := false, false
 	for _, f := range g.Definition.Fields {
 		if f.IsBelongsTo() {
 			relModel := f.RelatedModelName()
@@ -1868,12 +1915,20 @@ func (g *Generator) writeTSTypes(names Names) error {
 		if f.IsFileField() {
 			needsFileRef = true
 		}
+		// Same reason as FileRef above: the interface says Money, so the
+		// name has to come from somewhere.
+		if FieldType(f.Type) == FieldMoney {
+			needsMoney = true
+		}
 		tsName := toSnakeCase(f.Name)
 		tsType := f.TSType()
 		fields += fmt.Sprintf("  %s: %s;\n", tsName, tsType)
 	}
 	if needsFileRef {
 		imports += "import type { FileRef } from \"../schemas/file-ref\";\n"
+	}
+	if needsMoney {
+		imports += "import type { Money } from \"./money\";\n"
 	}
 
 	content := ""
@@ -1905,15 +1960,20 @@ func (g *Generator) writeReactQueryHooks(names Names, app string) error {
 	// 'FileRef'" -- the same TS2304 the typed shared model used to
 	// surface before v3.31.37 patched writeTSTypes. Patch the hook
 	// generator the same way.
-	needsFileRef := false
+	needsFileRef, needsMoney := false, false
 	for _, f := range g.Definition.Fields {
 		if f.IsFileField() {
 			needsFileRef = true
-			break
+		}
+		if FieldType(f.Type) == FieldMoney {
+			needsMoney = true
 		}
 	}
 	if needsFileRef {
 		apiImport += "\nimport type { FileRef } from \"@repo/shared/schemas\";"
+	}
+	if needsMoney {
+		apiImport += "\nimport type { Money } from \"@repo/shared/types\";"
 	}
 	content := fmt.Sprintf(`import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 %s

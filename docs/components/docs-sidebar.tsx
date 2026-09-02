@@ -92,6 +92,7 @@ const navItems: NavItem[] = [
       { title: 'Generated File Map', href: '/docs/concepts/generated-files' },
       { title: 'Type System', href: '/docs/concepts/type-system' },
       { title: 'Field Types Reference', href: '/docs/concepts/field-types' },
+      { title: 'Money', href: '/docs/concepts/money' },
       { title: 'Relationships & Hierarchies', href: '/docs/admin/relationships#hierarchies' },
       { title: 'Naming Conventions', href: '/docs/concepts/naming-conventions' },
       { title: 'Style Variants', href: '/docs/concepts/styles' },

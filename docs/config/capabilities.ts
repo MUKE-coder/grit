@@ -373,6 +373,21 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
         },
       },
       {
+        id: 'money',
+        label: 'A money type that does not lose cents',
+        detail:
+          'Prices stored as integer minor units with the currency beside them, so totals stay ' +
+          'exact and a UGX amount cannot quietly join a USD one.',
+        cells: {
+          grit: G('price:money generates the column pair, the admin field and the formatting'),
+          laravel: C('Casts get you part of the way; brick/money is the usual addition'),
+          django: O('DecimalField is exact; the currency is yours to carry'),
+          nextjs: N(),
+          encore: N(),
+          express: N(),
+        },
+      },
+      {
         id: 'typedclient',
         label: 'Typed client from the backend',
         detail: 'Backend types crossing the language boundary without being retyped by hand.',

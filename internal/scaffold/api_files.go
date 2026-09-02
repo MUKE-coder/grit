@@ -23,8 +23,6 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "models", "session.go"):             apiSessionModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "session.go"):           apiSessionServiceGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "session.go"):           apiSessionHandlerGo(),
-		filepath.Join(apiRoot, "internal", "ids", "ids.go"):                    apiIDsGo(),
-		filepath.Join(apiRoot, "internal", "ids", "ids_test.go"):               apiIDsTestGo(),
 		filepath.Join(apiRoot, "internal", "models", "sso.go"):                 apiSSOModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "sso.go"):               apiSSOServiceGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "sso.go"):               apiSSOHandlerGo(),
@@ -38,12 +36,10 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "logger.go"):          apiLoggerMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "maintenance.go"):     apiMaintenanceMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "idempotency.go"):     apiIdempotencyMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "paginate", "paginate.go"):          apiPaginateGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "hub.go"):               apiRealtimeHubGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):          apiRealtimeHandlerGo(),
 		filepath.Join(apiRoot, "internal", "sync", "registry.go"):              apiSyncRegistryGo(),
 		filepath.Join(apiRoot, "internal", "sync", "policy.go"):                apiSyncPolicyGo(),
-		filepath.Join(apiRoot, "internal", "events", "events.go"):              apiEventsGo(),
 		filepath.Join(apiRoot, "internal", "workflow", "workflow.go"):          apiWorkflowGo(),
 		filepath.Join(apiRoot, "internal", "settings", "settings.go"):          apiSettingsRegistryGo(),
 		filepath.Join(apiRoot, "internal", "settings", "store.go"):             apiSettingsStoreGo(),
@@ -55,11 +51,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "models", "activity_log.go"):        apiActivityLogModelGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "activity.go"):        apiActivityMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "activity.go"):          apiActivityHandlerGo(),
-		filepath.Join(apiRoot, "internal", "export", "export.go"):              apiExportGo(),
 		filepath.Join(apiRoot, "internal", "respond", "respond.go"):            apiRespondGo(),
-		filepath.Join(apiRoot, "internal", "pdf", "pdf.go"):                    apiPDFGo(),
-		filepath.Join(apiRoot, "internal", "pdf", "invoice.go"):                apiPDFInvoiceGo(),
-		filepath.Join(apiRoot, "internal", "pdf", "record.go"):                 apiPDFRecordGo(),
 		filepath.Join(apiRoot, "internal", "audit", "audit.go"):                apiAuditGo(),
 		filepath.Join(apiRoot, "internal", "models", "webhook_event.go"):       apiWebhookEventModelGo(),
 		filepath.Join(apiRoot, "internal", "webhooks", "webhooks.go"):          apiWebhooksGo(),
@@ -115,14 +107,14 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "models", "email_verification.go"):        apiEmailVerifyModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "email_verification.go"):      apiEmailVerifyServiceGo(),
 		filepath.Join(apiRoot, "internal", "services", "email_verification_test.go"): apiEmailVerifyTestGo(),
-		filepath.Join(apiRoot, "internal", "models", "api_key.go"):                   apiAPIKeyModelGo(),
-		filepath.Join(apiRoot, "internal", "services", "api_key.go"):                 apiAPIKeyServiceGo(),
-		filepath.Join(apiRoot, "internal", "services", "api_key_test.go"):            apiAPIKeyTestGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "api_key.go"):               apiAPIKeyMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "api_key.go"):                 apiAPIKeyHandlerGo(),
-		filepath.Join(apiRoot, "internal", "database", "api_keys_seeder.go"):         apiAPIKeySeederGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user_test.go"):               apiUserTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "bench_test.go"):              apiBenchTestGo(),
+	}
+
+	// The packages generated code imports. Their own function because
+	// upgrade calls it too; see writeCodegenRuntimeFiles.
+	if err := writeCodegenRuntimeFiles(root, opts); err != nil {
+		return err
 	}
 
 	for path, content := range files {

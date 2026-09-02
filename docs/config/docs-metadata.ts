@@ -161,6 +161,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Every field type for grit generate resource --fields, with its Go type, TypeScript type, Zod schema, and default admin form control and table column. The single source of truth for field mapping.',
   },
+  '/docs/concepts/money': {
+    title: 'Money',
+    description:
+      'The money field type: integer minor units plus an ISO 4217 currency, stored as two columns. Why float loses cents, how zero-decimal currencies like UGX and JPY are handled, the JSON shape, the admin form and table column, and how to migrate an existing float price column.',
+  },
   '/docs/concepts/generated-files': {
     title: 'Generated File Map',
     description:

@@ -16,8 +16,26 @@ func writeMigrateSeedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "database", "seed.go"):         apiSeedGo(),
 		filepath.Join(apiRoot, "internal", "database", "users_seeder.go"): apiUsersSeederGo(),
 		filepath.Join(apiRoot, "internal", "database", "blogs_seeder.go"): apiBlogsSeederGo(),
-		filepath.Join(apiRoot, "internal", "database", "seed_helpers.go"): apiSeedHelpersGo(),
-		filepath.Join(apiRoot, "internal", "database", "migrate.go"):      apiMigrateGo(),
+		// The whole API key cluster, together.
+		//
+		// These five files reference each other's types and signatures, so
+		// upgrading any subset produces a project that does not compile: a
+		// seeder setting a field the model lacks, or calling a service
+		// function with the arity it does not have. They were split between
+		// the scaffold-only set and this one, and seed.go (which is in this
+		// one) calls into them, so every upgraded project broke.
+		filepath.Join(apiRoot, "internal", "models", "api_key.go"):        apiAPIKeyModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "api_key.go"):      apiAPIKeyServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "api_key_test.go"): apiAPIKeyTestGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "api_key.go"):    apiAPIKeyMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "api_key.go"):      apiAPIKeyHandlerGo(),
+		// Lives here rather than with the other API files because seed.go
+		// calls SeedAPIKeys and seed.go IS refreshed on upgrade. Split across
+		// the two sets, an upgraded project got a seed.go calling a function
+		// whose file never arrived, and the whole API stopped compiling.
+		filepath.Join(apiRoot, "internal", "database", "api_keys_seeder.go"): apiAPIKeySeederGo(),
+		filepath.Join(apiRoot, "internal", "database", "seed_helpers.go"):    apiSeedHelpersGo(),
+		filepath.Join(apiRoot, "internal", "database", "migrate.go"):         apiMigrateGo(),
 	}
 
 	for path, content := range files {

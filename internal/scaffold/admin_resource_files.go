@@ -11,7 +11,7 @@ import type { ComponentType, ReactNode } from "react";
 
 // ─── Column Definitions ─────────────────────────────────────────────
 
-export type ColumnFormat = "text" | "badge" | "currency" | "date" | "relative" | "boolean" | "image" | "video" | "file" | "files" | "link" | "email" | "color" | "richtext" | "user";
+export type ColumnFormat = "text" | "badge" | "currency" | "money" | "date" | "relative" | "boolean" | "image" | "video" | "file" | "files" | "link" | "email" | "color" | "richtext" | "user";
 
 export interface BadgeConfig {
   [value: string]: { color: string; label: string };
@@ -239,7 +239,7 @@ export interface TableDefinition {
 
 // ─── Form Field Definitions ─────────────────────────────────────────
 
-export type FieldType = "text" | "textarea" | "number" | "select" | "date" | "datetime" | "toggle" | "checkbox" | "checkbox-group" | "radio" | "richtext" | "image" | "images" | "video" | "videos" | "file" | "files" | "relationship-select" | "multi-relationship-select" | "line-items";
+export type FieldType = "text" | "textarea" | "number" | "money" | "select" | "date" | "datetime" | "toggle" | "checkbox" | "checkbox-group" | "radio" | "richtext" | "image" | "images" | "video" | "videos" | "file" | "files" | "relationship-select" | "multi-relationship-select" | "line-items";
 
 export interface FieldDefinition {
   key: string;
@@ -315,6 +315,13 @@ export interface FieldDefinition {
    *  + decimals; "float" allows both. The generator sets this from
    *  the Go field type. Unset = "float" (legacy permissive). */
   numberKind?: "int" | "uint" | "float";
+
+  /** Currency codes a money field offers. Unset shows a short default list.
+   *  A shop that only ever trades in one currency should name that one: the
+   *  picker then has a single option and nobody can pick the wrong one. */
+  currencies?: string[];
+  /** Which of them a new record starts on. Unset uses the first. */
+  defaultCurrency?: string;
 
   // v3.103.0 — a visible field with a small "Generate" button in its label
   // row. Unlike an auto field (which is server-filled and hidden from the

@@ -453,6 +453,7 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "text-field.tsx"):                      nextToTanStack(adminTextField()),
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "textarea-field.tsx"):                  nextToTanStack(adminTextareaField()),
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "number-field.tsx"):                    nextToTanStack(adminNumberField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "money-field.tsx"):                     nextToTanStack(adminMoneyField()),
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "select-field.tsx"):                    nextToTanStack(adminSelectField()),
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "date-field.tsx"):                      nextToTanStack(adminDateField()),
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "toggle-field.tsx"):                    nextToTanStack(adminToggleField()),

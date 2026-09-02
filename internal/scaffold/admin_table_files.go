@@ -398,6 +398,7 @@ func adminCellRenderers() string {
 	return `import type { ColumnDefinition } from "@/lib/resource";
 import { Check, X, Play, ExternalLink } from "@/lib/icons";
 import { formatDate, formatRelative, formatCurrency } from "@/lib/formatters";
+import { formatMoney, type Money } from "@repo/shared/types";
 
 export function renderCell(
   column: ColumnDefinition,
@@ -426,6 +427,12 @@ export function renderCell(
       break;
     case "currency":
       content = <CurrencyCell value={Number(value)} prefix={column.currencyPrefix} />;
+      break;
+    case "money":
+      // A {amount, currency} object, not a number. It formats itself from the
+      // currency it carries, so a UGX row and a USD row in the same table are
+      // each right, which a fixed prefix cannot manage.
+      content = <MoneyCell value={value as Money | null} />;
       break;
     case "date":
       content = <DateCell value={String(value)} />;
@@ -550,6 +557,17 @@ function BooleanCell({ value }: { value: boolean }) {
 
 function CurrencyCell({ value, prefix = "$" }: { value: number; prefix?: string }) {
   return <span className="font-mono text-sm">{formatCurrency(value, prefix)}</span>;
+}
+
+function MoneyCell({ value }: { value: Money | null }) {
+  // Tabular numerals and right alignment, because a column of prices is read
+  // by scanning down it, and proportional digits make that harder than it
+  // needs to be.
+  return (
+    <span className="block text-right font-mono text-sm tabular-nums">
+      {formatMoney(value)}
+    </span>
+  );
 }
 
 function DateCell({ value }: { value: string }) {
