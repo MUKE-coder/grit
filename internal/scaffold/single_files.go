@@ -86,7 +86,6 @@ func writeSingleFrontendFiles(root string, opts Options) error {
 		filepath.Join(feRoot, "package.json"):       singleFrontendPackageJSON(opts),
 		filepath.Join(feRoot, "vite.config.ts"):     singleFrontendViteConfig(),
 		filepath.Join(feRoot, "index.html"):         webTanStackIndexHTML(opts),
-		filepath.Join(feRoot, "tailwind.config.ts"): webTanStackTailwindConfig(),
 		// .cjs (not .js) because package.json sets "type": "module" and PostCSS
 		// config still uses CommonJS module.exports.
 		filepath.Join(feRoot, "postcss.config.cjs"):                 webPostCSSConfig(),
@@ -500,9 +499,10 @@ func singleFrontendPackageJSON(opts Options) string {
     "@tanstack/router-vite-plugin": "^1.93.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "autoprefixer": "^10.4.20",
+    "@tailwindcss/postcss": "^4.1.13",
+    "tw-animate-css": "^1.4.0",
     "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "^4.1.13",
     "typescript": "~5.7.0",
     "vite": "^6.0.0",
     "@vitejs/plugin-react": "^4.3.4"

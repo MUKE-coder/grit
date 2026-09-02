@@ -237,7 +237,6 @@ func adminFileMap(root string, opts Options) map[string]string {
 		// installed — three type errors in every fresh admin — and, because
 		// `add i18n` skips files that already exist, the broken copies then
 		// blocked the command that would have fixed them.
-		filepath.Join(adminRoot, "tailwind.config.ts"): adminTailwindConfig(),
 		filepath.Join(adminRoot, "postcss.config.js"):  adminPostCSSConfig(),
 		filepath.Join(adminRoot, "tsconfig.json"):      adminTSConfig(),
 		filepath.Join(adminRoot, "app", "globals.css"): adminGlobalCSS(),
@@ -500,7 +499,8 @@ func adminPackageJSON(opts Options) string {
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "rm -rf .next && next dev --port 3001",
+    "//dev": "--webpack is a workaround for an upstream Turbopack bug: its Google-fonts loader fails to resolve its own @vercel/turbopack-next/internal/font/google/font module, and the app never renders (grit#77). It does not reproduce on every machine, which is why it survived so long. Remove the flag once Turbopack ships the fix and dev gets faster again.",
+    "dev": "rm -rf .next && next dev --webpack --port 3001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -540,7 +540,7 @@ func adminPackageJSON(opts Options) string {
     "recharts": "^2.12.0",
     "sonner": "^1.3.0",
     "tailwind-merge": "^2.2.0",
-    "tailwindcss-animate": "^1.0.7",
+    "tw-animate-css": "^1.4.0",
     "xlsx": "^0.18.5",
     "@react-pdf/renderer": "^4.1.5",
     "zod": "^3.22.0",
@@ -555,12 +555,12 @@ func adminPackageJSON(opts Options) string {
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "autoprefixer": "^10.4.0",
+    "@tailwindcss/postcss": "^4.1.13",
     "jsdom": "^25.0.0",
     "postcss": "^8.4.0",
     "prettier": "^3.3.0",
     "prettier-plugin-tailwindcss": "^0.6.0",
-    "tailwindcss": "^3.4.0",
+    "tailwindcss": "^4.1.13",
     "typescript": "^5.3.0",
     "vitest": "^2.0.0"
   }
@@ -666,10 +666,13 @@ export default config;
 }
 
 func adminPostCSSConfig() string {
+	// v4 ships its own PostCSS plugin and does its own prefixing, so neither the
+	// bare tailwindcss plugin nor autoprefixer belongs here any more. Leaving
+	// autoprefixer in is not merely redundant: it re-processes v4's output and
+	// is known to mangle its @property rules.
 	return `module.exports = {
   plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
+    "@tailwindcss/postcss": {},
   },
 };
 `
@@ -703,9 +706,51 @@ func adminTSConfig() string {
 }
 
 func adminGlobalCSS() string {
-	return `@tailwind base;
-@tailwind components;
-@tailwind utilities;
+	return `@import "tailwindcss";
+/* Successor to tailwindcss-animate for v4: provides the animate-in, fade-in
+ * and zoom-in used by the dialog, sheet and dropdown components. */
+@import "tw-animate-css";
+
+/* Map the design-token CSS variables (defined per [data-theme] below) onto
+ * Tailwind utility colors and fonts.
+ *
+ * Regular @theme, NOT @theme inline, and that is the load-bearing detail. The
+ * utilities compile to var(--color-*), whose values are var(--bg-*)
+ * indirections that re-resolve per element, so overriding --bg-* under
+ * [data-theme="..."] repaints the whole UI at runtime. With @theme inline the
+ * values are substituted at build time and theme switching silently stops
+ * working. */
+@theme {
+  --color-background: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-hover: var(--bg-hover);
+  --color-border: var(--border);
+  --color-foreground: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+
+  --font-sans: var(--font-display), system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+  --font-serif: var(--font-serif), Georgia, serif;
+}
+
+/* v3 parity: v4 defaults the border color to currentColor, but the admin
+ * relies on the themed border everywhere. Point bare borders at --border. */
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--border);
+  }
+}
 
 /* Print: isolate the record. Everything is hidden, then only #print-area (the
  * detail card + line items) is made visible and floated to the top-left, so the

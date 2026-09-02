@@ -563,7 +563,6 @@ func TestWriteWebTanStackFiles(t *testing.T) {
 		filepath.Join(root, "apps", "web", "package.json"),
 		filepath.Join(root, "apps", "web", "vite.config.ts"),
 		filepath.Join(root, "apps", "web", "index.html"),
-		filepath.Join(root, "apps", "web", "tailwind.config.ts"),
 		filepath.Join(root, "apps", "web", "tsconfig.json"),
 		filepath.Join(root, "apps", "web", "src", "main.tsx"),
 		filepath.Join(root, "apps", "web", "src", "globals.css"),
@@ -580,6 +579,22 @@ func TestWriteWebTanStackFiles(t *testing.T) {
 		if _, err := os.Stat(f); err != nil {
 			t.Errorf("expected file %s was not created: %v", f, err)
 		}
+	}
+
+	// Tailwind v4 is CSS-first: the config is deliberately not written, because
+	// v4 does not read one unless a stylesheet asks for it with @config, and
+	// shipping an unread config is a file people edit expecting an effect.
+	if _, err := os.Stat(filepath.Join(root, "apps", "web", "tailwind.config.ts")); err == nil {
+		t.Error("tailwind.config.ts should not be written for a v4 project")
+	}
+
+	// And the stylesheet must be v4, or the v4 dependency below is a mismatch.
+	css, _ := os.ReadFile(filepath.Join(root, "apps", "web", "src", "globals.css"))
+	if !strings.Contains(string(css), "@import \"tailwindcss\"") {
+		t.Error("globals.css should use the v4 @import, not the v3 @tailwind directives")
+	}
+	if strings.Contains(string(css), "@tailwind base") {
+		t.Error("globals.css still carries v3 directives")
 	}
 
 	// Verify package.json contains vite, not next
