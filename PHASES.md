@@ -1071,6 +1071,37 @@ while. Each was found by running a real project rather than reading templates.
 - [ ] `grit audit a11y` would have caught every one of the label defects. It
       is already listed in 7.6 and has earned its place.
 
+### 7.4l Money, and the upgrade path that shipped half a project (v3.184.0)
+
+From the two senior-engineer ecommerce guides: the finding both made first was
+that a shop built on `float` prices loses money slowly.
+
+- [x] `money` field type - v3.184.0. Integer minor units plus an ISO 4217 code
+      in two columns (`price_amount`, `price_currency`), the Go type and its
+      currency-checked arithmetic, the shared TS type and `Intl` formatting,
+      an admin form field with a currency picker, a table cell that formats in
+      the row's own currency, and zero-decimal currencies (UGX, JPY) handled
+      in both languages from one table.
+- [x] The first version was wrong and the test now says why - v3.184.0.
+      `driver.Valuer` and `sql.Scanner` made GORM treat it as a scalar, ignore
+      the embedded tag, and store one INTEGER column, keeping the amount and
+      discarding the currency. Nothing failed; only `PRAGMA table_info` showed
+      it.
+- [x] Sort and filter whitelists carry the real column names - v3.184.0. They
+      carried the field name, so sorting silently fell back and filtering was
+      a 500.
+- [x] `grit upgrade` no longer ships a project that will not compile
+      - v3.184.0. `seed.go` was refreshed but the API key seeder it calls was
+      not, nor the model, service, middleware and handler behind it.
+- [x] Split the packages generated code imports out of the scaffold-only set
+      - v3.184.0. `paginate`, `events`, `export`, `ids` and `pdf` travel on
+      upgrade now, so a handler generated today is never compiled against a
+      `paginate.Config` six versions older than itself. This is the first
+      real dent in the 7.2 gap rather than another feature working around it.
+- [x] The money frontend is injected into existing projects - v3.184.0, the
+      mistake media, recovery contacts and passkeys each shipped with.
+- [x] The storefront blog said floats were fine at that scale - corrected.
+
 ### 7.5 SaaS (recs 14, 15, 27, 31)
 
 Billing, entitlements, payment adapters, invitations, usage limits, automation
