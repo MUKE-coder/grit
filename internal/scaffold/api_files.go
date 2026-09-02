@@ -57,10 +57,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "activity.go"):                apiActivityHandlerGo(),
 		filepath.Join(apiRoot, "internal", "respond", "respond.go"):                  apiRespondGo(),
 		filepath.Join(apiRoot, "internal", "audit", "audit.go"):                      apiAuditGo(),
-		filepath.Join(apiRoot, "internal", "models", "webhook_event.go"):             apiWebhookEventModelGo(),
-		filepath.Join(apiRoot, "internal", "webhooks", "webhooks.go"):                apiWebhooksGo(),
 		filepath.Join(apiRoot, "internal", "webhooks", "verifiers.go"):               apiWebhooksVerifiersGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "webhooks.go"):                apiWebhooksHandlerGo(),
 		filepath.Join(apiRoot, "internal", "models", "feature_flag.go"):              apiFeatureFlagModelGo(),
 		filepath.Join(apiRoot, "internal", "flags", "flags.go"):                      apiFlagsGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "flags.go"):                   apiFlagsHandlerGo(),
@@ -119,6 +116,11 @@ func writeAPIFiles(root string, opts Options) error {
 	// The packages generated code imports. Their own function because
 	// upgrade calls it too; see writeCodegenRuntimeFiles.
 	if err := writeCodegenRuntimeFiles(root, opts); err != nil {
+		return err
+	}
+
+	// Models the framework owns and keeps in step with its own code.
+	if err := writeFrameworkOwnedFiles(root, opts); err != nil {
 		return err
 	}
 
@@ -1535,6 +1537,10 @@ func Models() []interface{} {
 		// the service provider's own signing keypair, generated on first use
 		&SAMLKeypair{},
 		&Setting{},
+		// The transactional outbox. Registered here like every other table so
+		// AutoMigrate creates it and the backup writer includes it; an outbox
+		// missing from a backup loses events nobody knows were pending.
+		&OutboxMessage{},
 		// grit:models
 	}
 }
@@ -3534,6 +3540,14 @@ type Params struct {
 	SortBy    string
 	SortOrder string
 	Cursor    string // opaque base64 from a previous Result.Meta.NextCursor
+
+	// CursorMode asks for keyset pagination on this request.
+	//
+	// Set by ?mode=cursor, and implied by sending a ?cursor= at all, so a
+	// client that follows meta.next_cursor never has to say so twice. Offset
+	// stays the default because the admin table needs page numbers and a
+	// total, which keyset pagination cannot give you.
+	CursorMode bool
 	Filters   map[string]any
 	// QueryFilters are raw query-string params that are NOT reserved words.
 	// Untrusted: kept apart from Filters (which handlers set in Go) so the
@@ -3648,6 +3662,15 @@ type Meta struct {
 	Pages      int    ` + "`" + `json:"pages"` + "`" + `
 	NextCursor string ` + "`" + `json:"next_cursor,omitempty"` + "`" + `
 	HasMore    bool   ` + "`" + `json:"has_more,omitempty"` + "`" + `
+
+	// Mode is "cursor" on a keyset response and absent on an offset one.
+	//
+	// It is here because total, page and pages are all zero in cursor mode,
+	// and a client cannot otherwise tell that apart from an empty table. The
+	// counts are zero because counting the whole set on every page is the
+	// cost keyset pagination exists to avoid; ask for it with
+	// Config.IncludeTotal when you genuinely need it.
+	Mode string ` + "`" + `json:"mode,omitempty"` + "`" + `
 }
 
 // Result wraps the paginated data in the canonical { data, meta } envelope.
@@ -3715,6 +3738,7 @@ func Bind(c *gin.Context) Params {
 		SortBy:       c.Query("sort_by"),
 		SortOrder:    c.Query("sort_order"),
 		Cursor:       c.Query("cursor"),
+		CursorMode:   c.Query("mode") == "cursor" || c.Query("cursor") != "",
 		DateField:    dateField,
 		DateFrom:     dateFrom,
 		DateTo:       dateTo,
@@ -3729,6 +3753,7 @@ var reservedParams = map[string]bool{
 	"page": true, "page_size": true, "search": true,
 	"sort_by": true, "sort_order": true, "cursor": true,
 	"date_field": true, "date_from": true, "date_to": true,
+	"mode": true,
 	"created_since": true, "created_from": true, "created_to": true,
 	"updated_since": true, "archived": true, "format": true,
 }
@@ -3966,7 +3991,8 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 		query = query.Where(clause, args...)
 	}
 
-	if cfg.CursorMode {
+	// Either the handler insists, or the request asked.
+	if cfg.CursorMode || p.CursorMode {
 		return listCursor[T](query, p, cfg, sortBy, sortOrder)
 	}
 
@@ -4021,7 +4047,13 @@ func listCursor[T any](query *gorm.DB, p Params, cfg Config, sortBy, sortOrder s
 			// Postgres tuple comparison: (sort_col, id) < (val, id).
 			// Works on SQLite too. The id tiebreaker keeps the cursor
 			// stable when sort_value collides on multiple rows.
-			query = query.Where(fmt.Sprintf("(%s, id) %s (?, ?)", sortBy, op), sortVal, lastID)
+			//
+			// typedCursorValue matters more than it looks: handing the raw
+			// string over compares a timestamp column against text, which
+			// SQLite answers true for every row, and page two comes back
+			// identical to page one.
+			query = query.Where(fmt.Sprintf("(%s, id) %s (?, ?)", sortBy, op),
+				typedCursorValue(sortVal), lastID)
 		}
 	}
 
@@ -4048,7 +4080,34 @@ func listCursor[T any](query *gorm.DB, p Params, cfg Config, sortBy, sortOrder s
 	}
 
 	result.Meta.PageSize = p.PageSize
+	result.Meta.Mode = "cursor"
 	return result, nil
+}
+
+// typedCursorValue turns the cursor's text back into something the column can
+// be compared against.
+//
+// The cursor is text because it travels in a URL, but the column is not: a
+// timestamp compared against a string, or an integer compared against '500',
+// is a different comparison in every database and the wrong one in SQLite.
+// Binding the value at its own type lets the driver do what it does for every
+// other parameter.
+//
+// The order is deliberate. RFC3339 first, because that is what extractCursor
+// writes for a time and it is specific enough not to swallow anything else.
+// Integers before floats, so an id-like value does not become 1.0. A string
+// that is none of those was a string in the column too.
+func typedCursorValue(s string) any {
+	if t, err := time.Parse(time.RFC3339Nano, s); err == nil {
+		return t
+	}
+	if n, err := strconv.ParseInt(s, 10, 64); err == nil {
+		return n
+	}
+	if f, err := strconv.ParseFloat(s, 64); err == nil {
+		return f
+	}
+	return s
 }
 
 // EncodeCursor / DecodeCursor are exported for handlers that build
@@ -4090,16 +4149,58 @@ func extractCursor(item interface{}, sortBy string) (string, string) {
 	}
 	id := idVal.String()
 
-	goFieldName := snakeToPascal(sortBy)
-	sortField := rv.FieldByName(goFieldName)
+	sortField := lookupSortField(rv, sortBy)
 	if !sortField.IsValid() {
-		return "", id
+		// No field to read means no usable cursor. Returning the id alone
+		// would encode an empty sort value, and the next page would compare
+		// against "" and return the whole table from the top.
+		return "", ""
 	}
 
 	if t, ok := sortField.Interface().(time.Time); ok {
 		return t.Format(time.RFC3339Nano), id
 	}
 	return fmt.Sprintf("%v", sortField.Interface()), id
+}
+
+// lookupSortField finds the struct field behind a column name.
+//
+// Usually that is one field: "created_at" is CreatedAt. An embedded struct is
+// two, because GORM flattens it with a prefix: a money field declared as
+// Price money.Money becomes the columns price_amount and price_currency, and
+// there is no PriceAmount field to find. So a name that does not resolve
+// whole is split at each underscore and tried as a path, longest prefix first,
+// which finds Price then Amount.
+//
+// Getting this wrong is not a crash. FieldByName returns an invalid Value, the
+// cursor encodes an empty sort value, and the next page compares against ""
+// and starts again from the top: an infinite scroll that repeats its first
+// page forever.
+func lookupSortField(rv reflect.Value, column string) reflect.Value {
+	if f := rv.FieldByName(snakeToPascal(column)); f.IsValid() {
+		return f
+	}
+
+	parts := strings.Split(column, "_")
+	for split := len(parts) - 1; split >= 1; split-- {
+		outer := rv.FieldByName(snakeToPascal(strings.Join(parts[:split], "_")))
+		if !outer.IsValid() {
+			continue
+		}
+		if outer.Kind() == reflect.Ptr {
+			if outer.IsNil() {
+				return reflect.Value{}
+			}
+			outer = outer.Elem()
+		}
+		if outer.Kind() != reflect.Struct {
+			continue
+		}
+		if inner := outer.FieldByName(snakeToPascal(strings.Join(parts[split:], "_"))); inner.IsValid() {
+			return inner
+		}
+	}
+	return reflect.Value{}
 }
 
 // snakeToPascal turns "created_at" into "CreatedAt".
@@ -5046,9 +5147,15 @@ import (
 //   skipped   — duplicate ExternalID — handler was bypassed
 type WebhookEvent struct {
 	ID           string         ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
-	Provider     string         ` + "`" + `gorm:"size:50;index;not null" json:"provider"` + "`" + `
-	EventType    string         ` + "`" + `gorm:"size:100;index" json:"event_type"` + "`" + `
-	ExternalID   string         ` + "`" + `gorm:"size:255;index" json:"external_id"` + "`" + ` // provider's event id
+	Provider  string ` + "`" + `gorm:"size:50;not null;uniqueIndex:idx_webhook_provider_external,priority:1" json:"provider"` + "`" + `
+	EventType string ` + "`" + `gorm:"size:100;index" json:"event_type"` + "`" + `
+
+	// ExternalID is the provider's own event id, and the second half of the
+	// idempotency key. A pointer because it has to be NULL when a provider
+	// does not supply one: every database allows repeated NULLs in a unique
+	// index and none allow a repeated empty string, so storing "" would make
+	// two unrelated anonymous events collide and silently drop the second.
+	ExternalID *string ` + "`" + `gorm:"size:255;uniqueIndex:idx_webhook_provider_external,priority:2" json:"external_id,omitempty"` + "`" + `
 	// No explicit type: datatypes.JSON maps to jsonb on Postgres and json on
 	// MySQL by itself. Naming jsonb here fails AutoMigrate on MySQL, which has
 	// no such type.
@@ -5067,13 +5174,13 @@ func (w *WebhookEvent) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// Composite unique index on (provider, external_id) gives us
-// idempotent receipt: a duplicate delivery from the same provider
-// with the same event id fails the INSERT, which we treat as
-// "already processed".
-func (WebhookEvent) Indexes() string {
-	return "CREATE UNIQUE INDEX IF NOT EXISTS idx_webhook_events_provider_external_id ON webhook_events(provider, external_id) WHERE external_id <> ''"
-}
+// The unique index is declared on the fields above rather than built here.
+//
+// It used to live in a method returning DDL as a string, which nothing
+// called. The column had a plain index, the INSERT never failed, and the
+// handler's "duplicate means already processed" branch was unreachable: every
+// retried delivery ran the handler again. Declaring it as a tag means the
+// migration creates it, and the constraint is where it can be seen.
 `
 }
 
@@ -5489,10 +5596,19 @@ func (h *WebhookHandler) Receive(c *gin.Context) {
 		return
 	}
 
+	// A provider that supplies no event id cannot be deduplicated, and every
+	// such delivery is a distinct row. NULL says that; "" would make two
+	// unrelated anonymous events collide on the unique index and drop the
+	// second one as a duplicate it is not.
+	var externalRef *string
+	if externalID != "" {
+		externalRef = &externalID
+	}
+
 	event := models.WebhookEvent{
 		Provider:   providerName,
 		EventType:  eventType,
-		ExternalID: externalID,
+		ExternalID: externalRef,
 		Payload:    datatypes.JSON(body),
 		Status:     "pending",
 	}

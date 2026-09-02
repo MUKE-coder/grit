@@ -124,6 +124,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeCodegenRuntimeFiles(root, opts); err != nil {
 			return fmt.Errorf("updating codegen runtime packages: %w", err)
 		}
+		if err := writeFrameworkOwnedFiles(root, opts); err != nil {
+			return fmt.Errorf("updating framework models: %w", err)
+		}
 		if err := ensureRouteRegistry(root, opts); err != nil {
 			return fmt.Errorf("adding the route registry: %w", err)
 		}
@@ -164,6 +167,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		}
 		if err := writeMoneyFiles(root, opts); err != nil {
 			return fmt.Errorf("updating money files: %w", err)
+		}
+		if err := writeOutboxFiles(root, opts); err != nil {
+			return fmt.Errorf("updating outbox files: %w", err)
+		}
+		if err := writeStockFiles(root, opts); err != nil {
+			return fmt.Errorf("updating stock files: %w", err)
 		}
 		if err := ensureMoneyFrontend(root, opts); err != nil {
 			return fmt.Errorf("wiring money frontend: %w", err)

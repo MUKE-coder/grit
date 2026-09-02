@@ -34,14 +34,15 @@ func writeCodegenRuntimeFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "paginate", "paginate.go"): apiPaginateGo(),
-		filepath.Join(apiRoot, "internal", "events", "events.go"):     apiEventsGo(),
-		filepath.Join(apiRoot, "internal", "export", "export.go"):     apiExportGo(),
-		filepath.Join(apiRoot, "internal", "ids", "ids.go"):           apiIDsGo(),
-		filepath.Join(apiRoot, "internal", "ids", "ids_test.go"):      apiIDsTestGo(),
-		filepath.Join(apiRoot, "internal", "pdf", "pdf.go"):           apiPDFGo(),
-		filepath.Join(apiRoot, "internal", "pdf", "invoice.go"):       apiPDFInvoiceGo(),
-		filepath.Join(apiRoot, "internal", "pdf", "record.go"):        apiPDFRecordGo(),
+		filepath.Join(apiRoot, "internal", "paginate", "paginate.go"):      apiPaginateGo(),
+		filepath.Join(apiRoot, "internal", "paginate", "paginate_test.go"): apiPaginateTestGo(),
+		filepath.Join(apiRoot, "internal", "events", "events.go"):          apiEventsGo(),
+		filepath.Join(apiRoot, "internal", "export", "export.go"):          apiExportGo(),
+		filepath.Join(apiRoot, "internal", "ids", "ids.go"):                apiIDsGo(),
+		filepath.Join(apiRoot, "internal", "ids", "ids_test.go"):           apiIDsTestGo(),
+		filepath.Join(apiRoot, "internal", "pdf", "pdf.go"):                apiPDFGo(),
+		filepath.Join(apiRoot, "internal", "pdf", "invoice.go"):            apiPDFInvoiceGo(),
+		filepath.Join(apiRoot, "internal", "pdf", "record.go"):             apiPDFRecordGo(),
 	}
 
 	for path, content := range files {
