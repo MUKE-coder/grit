@@ -107,51 +107,16 @@ export const Route = createFileRoute('%s')({
 // Regular @theme (NOT @theme inline) is deliberate: the utilities compile to
 // var(--color-*), whose values are var(--bg-*) indirections that re-resolve per
 // element — so overriding --bg-* under [data-theme="…"] repaints the whole UI.
+// adminTanStackGlobalCSS is the shared admin stylesheet, unchanged.
+//
+// It used to prepend a Tailwind v4 header here by string-replacing the v3
+// directives out of adminGlobalCSS(). That header now lives in adminGlobalCSS()
+// itself, so both admins are v4 from one source and there is nothing left to
+// patch. Kept as a named function because the file map refers to it and the
+// indirection is where a Vite-only stylesheet rule would go if one is ever
+// needed.
 func adminTanStackGlobalCSS() string {
-	v4Header := `@import "tailwindcss";
-/* Successor to tailwindcss-animate for v4: provides animate-in / fade-in /
- * zoom-in used by the dialog, sheet and dropdown components. */
-@import "tw-animate-css";
-
-/* Map the design-token CSS variables (defined per [data-theme] below) onto
- * Tailwind utility colors + fonts. Regular @theme so the var() indirection
- * re-resolves per element and [data-theme] switching repaints at runtime. */
-@theme {
-  --color-background: var(--bg-primary);
-  --color-bg-secondary: var(--bg-secondary);
-  --color-bg-tertiary: var(--bg-tertiary);
-  --color-bg-elevated: var(--bg-elevated);
-  --color-bg-hover: var(--bg-hover);
-  --color-border: var(--border);
-  --color-foreground: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-muted: var(--text-muted);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
-  --color-success: var(--success);
-  --color-danger: var(--danger);
-  --color-warning: var(--warning);
-  --color-info: var(--info);
-
-  --font-sans: var(--font-display), system-ui, sans-serif;
-  --font-mono: var(--font-mono), ui-monospace, monospace;
-  --font-serif: var(--font-serif), Georgia, serif;
-}
-
-/* v3 parity: v4's default border color is currentColor, but the admin relies
- * on the themed border. Point bare borders at --border. */
-@layer base {
-  *,
-  ::after,
-  ::before {
-    border-color: var(--border);
-  }
-}`
-	css := adminGlobalCSS()
-	css = strings.Replace(css,
-		"@tailwind base;\n@tailwind components;\n@tailwind utilities;",
-		v4Header, 1)
-	return css
+	return adminGlobalCSS()
 }
 
 // adminTanStackUseAuth reuses the shared auth hooks and adds the useAuth() hook

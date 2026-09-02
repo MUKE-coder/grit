@@ -11,7 +11,6 @@ func writeWebFiles(root string, opts Options) error {
 	files := map[string]string{
 		filepath.Join(webRoot, "package.json"):             webPackageJSON(opts),
 		filepath.Join(webRoot, "next.config.ts"):           webNextConfig(),
-		filepath.Join(webRoot, "tailwind.config.ts"):       webTailwindConfig(),
 		filepath.Join(webRoot, "postcss.config.js"):        webPostCSSConfig(),
 		filepath.Join(webRoot, "tsconfig.json"):            webTSConfig(),
 		filepath.Join(webRoot, "app", "globals.css"):       webGlobalCSS(),
@@ -63,7 +62,8 @@ func webPackageJSON(opts Options) string {
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "rm -rf .next && next dev --port 3000",
+    "//dev": "--webpack is a workaround for an upstream Turbopack bug: its Google-fonts loader fails to resolve its own @vercel/turbopack-next/internal/font/google/font module, and the app never renders (grit#77). It does not reproduce on every machine, which is why it survived so long. Remove the flag once Turbopack ships the fix and dev gets faster again.",
+    "dev": "rm -rf .next && next dev --webpack --port 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -87,7 +87,7 @@ func webPackageJSON(opts Options) string {
     "@hookform/resolvers": "^3.3.0",
     "js-cookie": "^3.0.5",
     "tailwind-merge": "^2.2.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tw-animate-css": "^1.4.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.4.0",
@@ -98,12 +98,12 @@ func webPackageJSON(opts Options) string {
     "@types/js-cookie": "^3.0.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "autoprefixer": "^10.4.0",
+    "@tailwindcss/postcss": "^4.1.13",
     "jsdom": "^25.0.0",
     "postcss": "^8.4.0",
     "prettier": "^3.3.0",
     "prettier-plugin-tailwindcss": "^0.6.0",
-    "tailwindcss": "^3.4.0",
+    "tailwindcss": "^4.1.13",
     "typescript": "^5.3.0",
     "vitest": "^2.0.0"
   }
@@ -198,10 +198,11 @@ export default config;
 }
 
 func webPostCSSConfig() string {
+	// v4 is its own PostCSS plugin and prefixes for itself; autoprefixer would
+	// re-process the output and can mangle its @property rules.
 	return `module.exports = {
   plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
+    "@tailwindcss/postcss": {},
   },
 };
 `
@@ -235,9 +236,49 @@ func webTSConfig() string {
 }
 
 func webGlobalCSS() string {
-	return `@tailwind base;
-@tailwind components;
-@tailwind utilities;
+	return `@import "tailwindcss";
+/* Successor to tailwindcss-animate for v4. */
+@import "tw-animate-css";
+
+/* The same token mapping the admin uses, so a single THEME=<name> still paints
+ * both surfaces.
+ *
+ * Regular @theme, NOT @theme inline: the utilities compile to var(--color-*)
+ * whose values are var(--bg-*) indirections that re-resolve per element, which
+ * is what makes [data-theme] switching repaint at runtime. @theme inline would
+ * bake the values at build time and the theme switcher would quietly stop
+ * working. */
+@theme {
+  --color-background: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-hover: var(--bg-hover);
+  --color-border: var(--border);
+  --color-foreground: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+
+  --font-sans: var(--font-display), system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+  --font-serif: var(--font-serif), Georgia, serif;
+}
+
+/* v3 parity: v4 defaults the border color to currentColor, and the site relies
+ * on the themed border. */
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--border);
+  }
+}
 
 /* v3.28.1 — theme-aware CSS variables. Web mirrors admin's variable
  * system so a single THEME=<name> in .env paints both surfaces. */

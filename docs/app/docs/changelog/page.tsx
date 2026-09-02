@@ -29,6 +29,67 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.183.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.183.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Tailwind v4 everywhere on the web</h3>
+                <p>
+                  The Next.js admin and web app were still on Tailwind v3 while the rest of the
+                  ecosystem, shadcn included, had moved to v4. Both are on v4 now, along with the
+                  TanStack and single-binary frontends.
+                </p>
+                <p>
+                  The v4 port of Grit&apos;s design tokens already existed, but only in the
+                  TanStack admin, applied by string-replacing the v3 directives out of the shared
+                  stylesheet. It lives in that shared stylesheet now, so every frontend is v4 from
+                  one source and there is nothing left to patch.
+                </p>
+                <p>
+                  <strong>The load-bearing detail is regular <code>@theme</code>, not{' '}
+                  <code>@theme inline</code>.</strong> The utilities compile to{' '}
+                  <code>var(--color-*)</code>, whose values are <code>var(--bg-*)</code>{' '}
+                  indirections that re-resolve per element, which is what makes{' '}
+                  <code>[data-theme]</code> switching repaint at runtime. With{' '}
+                  <code>@theme inline</code> the values bake at build time and the theme switcher
+                  silently stops working.
+                </p>
+                <p>
+                  <code>tailwind.config.ts</code> is no longer written: v4 does not read one unless
+                  a stylesheet asks with <code>@config</code>, and shipping an unread config is a
+                  file people edit expecting an effect. <code>autoprefixer</code> is gone too, since
+                  v4 prefixes for itself and re-processing its output can mangle its{' '}
+                  <code>@property</code> rules.
+                </p>
+                <p>
+                  Expo and the Wails desktop client stay on v3 deliberately. NativeWind targets
+                  Tailwind 3.4, so moving it would break the mobile app rather than modernise it.
+                  Both remain internally consistent.
+                </p>
+
+                <h3>The admin would not load for some people</h3>
+                <p>
+                  <a href="https://github.com/MUKE-coder/grit/issues/77">#77</a>: Turbopack&apos;s
+                  Google-fonts loader fails to resolve its own{' '}
+                  <code>@vercel/turbopack-next/internal/font/google/font</code> module, and the app
+                  never renders. The scaffolded <code>dev</code> scripts pass{' '}
+                  <code>--webpack</code> until Turbopack ships the fix.
+                </p>
+                <p>
+                  Worth being straight about: it does not reproduce here. A project on the exact
+                  reported version, 16.3.3, ran all day with the same font imports. So this is a
+                  machine-dependent upstream bug, the flag is a workaround rather than a
+                  correction, and it carries a comment saying so and when to remove it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.182.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
