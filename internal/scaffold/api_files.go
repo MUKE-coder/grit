@@ -11,55 +11,59 @@ func writeAPIFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "go.mod"):                                       apiGoMod(opts),
-		filepath.Join(apiRoot, ".gitignore"):                                   apiGitignore(),
-		filepath.Join(apiRoot, "cmd", "server", "main.go"):                     apiMainGo(opts),
-		filepath.Join(apiRoot, "internal", "config", "config.go"):              apiConfigGo(),
-		filepath.Join(apiRoot, "internal", "database", "database.go"):          apiDatabaseGo(),
-		filepath.Join(apiRoot, "internal", "database", "dialect.go"):           apiDialectGo(),
-		filepath.Join(apiRoot, "internal", "models", "user.go"):                apiUserModelGo(),
-		filepath.Join(apiRoot, "internal", "models", "upload.go"):              apiUploadModelGo(),
-		filepath.Join(apiRoot, "internal", "services", "auth.go"):              apiAuthServiceGo(),
-		filepath.Join(apiRoot, "internal", "models", "session.go"):             apiSessionModelGo(),
-		filepath.Join(apiRoot, "internal", "services", "session.go"):           apiSessionServiceGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "session.go"):           apiSessionHandlerGo(),
-		filepath.Join(apiRoot, "internal", "models", "sso.go"):                 apiSSOModelGo(),
-		filepath.Join(apiRoot, "internal", "services", "sso.go"):               apiSSOServiceGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "sso.go"):               apiSSOHandlerGo(),
-		filepath.Join(apiRoot, "internal", "models", "saml.go"):                apiSAMLModelGo(),
-		filepath.Join(apiRoot, "internal", "services", "saml.go"):              apiSAMLServiceGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "saml.go"):              apiSAMLHandlerGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "auth.go"):              apiAuthHandlerGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "user.go"):              apiUserHandlerGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "auth.go"):            apiAuthMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "cors.go"):            apiCorsMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "logger.go"):          apiLoggerMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "maintenance.go"):     apiMaintenanceMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "idempotency.go"):     apiIdempotencyMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "realtime", "hub.go"):               apiRealtimeHubGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):          apiRealtimeHandlerGo(),
-		filepath.Join(apiRoot, "internal", "sync", "registry.go"):              apiSyncRegistryGo(),
-		filepath.Join(apiRoot, "internal", "sync", "policy.go"):                apiSyncPolicyGo(),
-		filepath.Join(apiRoot, "internal", "workflow", "workflow.go"):          apiWorkflowGo(),
-		filepath.Join(apiRoot, "internal", "settings", "settings.go"):          apiSettingsRegistryGo(),
-		filepath.Join(apiRoot, "internal", "settings", "store.go"):             apiSettingsStoreGo(),
-		filepath.Join(apiRoot, "internal", "settings", "defaults.go"):          apiSettingsDefaultsGo(),
-		filepath.Join(apiRoot, "internal", "models", "setting.go"):             apiSettingsModelGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "settings.go"):          apiSettingsHandlerGo(),
-		filepath.Join(apiRoot, "internal", "services", "event_subscribers.go"): apiEventsSubscribersGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "sync.go"):              apiSyncHandlerGo(),
-		filepath.Join(apiRoot, "internal", "models", "activity_log.go"):        apiActivityLogModelGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "activity.go"):        apiActivityMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "activity.go"):          apiActivityHandlerGo(),
-		filepath.Join(apiRoot, "internal", "respond", "respond.go"):            apiRespondGo(),
-		filepath.Join(apiRoot, "internal", "audit", "audit.go"):                apiAuditGo(),
-		filepath.Join(apiRoot, "internal", "models", "webhook_event.go"):       apiWebhookEventModelGo(),
-		filepath.Join(apiRoot, "internal", "webhooks", "webhooks.go"):          apiWebhooksGo(),
-		filepath.Join(apiRoot, "internal", "webhooks", "verifiers.go"):         apiWebhooksVerifiersGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "webhooks.go"):          apiWebhooksHandlerGo(),
-		filepath.Join(apiRoot, "internal", "models", "feature_flag.go"):        apiFeatureFlagModelGo(),
-		filepath.Join(apiRoot, "internal", "flags", "flags.go"):                apiFlagsGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "flags.go"):             apiFlagsHandlerGo(),
+		filepath.Join(apiRoot, "go.mod"):                                             apiGoMod(opts),
+		filepath.Join(apiRoot, ".gitignore"):                                         apiGitignore(),
+		filepath.Join(apiRoot, "cmd", "server", "main.go"):                           apiMainGo(opts),
+		filepath.Join(apiRoot, "internal", "config", "config.go"):                    apiConfigGo(),
+		filepath.Join(apiRoot, "internal", "database", "database.go"):                apiDatabaseGo(),
+		filepath.Join(apiRoot, "internal", "database", "dialect.go"):                 apiDialectGo(),
+		filepath.Join(apiRoot, "internal", "models", "user.go"):                      apiUserModelGo(),
+		filepath.Join(apiRoot, "internal", "models", "upload.go"):                    apiUploadModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "auth.go"):                    apiAuthServiceGo(),
+		filepath.Join(apiRoot, "internal", "models", "session.go"):                   apiSessionModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "session.go"):                 apiSessionServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "session.go"):                 apiSessionHandlerGo(),
+		filepath.Join(apiRoot, "internal", "models", "sso.go"):                       apiSSOModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "sso.go"):                     apiSSOServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "sso.go"):                     apiSSOHandlerGo(),
+		filepath.Join(apiRoot, "internal", "models", "saml.go"):                      apiSAMLModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "saml.go"):                    apiSAMLServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "saml.go"):                    apiSAMLHandlerGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "auth.go"):                    apiAuthHandlerGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "auth_password_reset.go"):     apiAuthPasswordResetGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "auth_email_verification.go"): apiAuthEmailVerificationGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "auth_oauth.go"):              apiAuthOAuthGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "auth_lockout.go"):            apiAuthLockoutGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "user.go"):                    apiUserHandlerGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "auth.go"):                  apiAuthMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "cors.go"):                  apiCorsMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "logger.go"):                apiLoggerMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "maintenance.go"):           apiMaintenanceMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "idempotency.go"):           apiIdempotencyMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "hub.go"):                     apiRealtimeHubGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):                apiRealtimeHandlerGo(),
+		filepath.Join(apiRoot, "internal", "sync", "registry.go"):                    apiSyncRegistryGo(),
+		filepath.Join(apiRoot, "internal", "sync", "policy.go"):                      apiSyncPolicyGo(),
+		filepath.Join(apiRoot, "internal", "workflow", "workflow.go"):                apiWorkflowGo(),
+		filepath.Join(apiRoot, "internal", "settings", "settings.go"):                apiSettingsRegistryGo(),
+		filepath.Join(apiRoot, "internal", "settings", "store.go"):                   apiSettingsStoreGo(),
+		filepath.Join(apiRoot, "internal", "settings", "defaults.go"):                apiSettingsDefaultsGo(),
+		filepath.Join(apiRoot, "internal", "models", "setting.go"):                   apiSettingsModelGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "settings.go"):                apiSettingsHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "event_subscribers.go"):       apiEventsSubscribersGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "sync.go"):                    apiSyncHandlerGo(),
+		filepath.Join(apiRoot, "internal", "models", "activity_log.go"):              apiActivityLogModelGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "activity.go"):              apiActivityMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "activity.go"):                apiActivityHandlerGo(),
+		filepath.Join(apiRoot, "internal", "respond", "respond.go"):                  apiRespondGo(),
+		filepath.Join(apiRoot, "internal", "audit", "audit.go"):                      apiAuditGo(),
+		filepath.Join(apiRoot, "internal", "models", "webhook_event.go"):             apiWebhookEventModelGo(),
+		filepath.Join(apiRoot, "internal", "webhooks", "webhooks.go"):                apiWebhooksGo(),
+		filepath.Join(apiRoot, "internal", "webhooks", "verifiers.go"):               apiWebhooksVerifiersGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "webhooks.go"):                apiWebhooksHandlerGo(),
+		filepath.Join(apiRoot, "internal", "models", "feature_flag.go"):              apiFeatureFlagModelGo(),
+		filepath.Join(apiRoot, "internal", "flags", "flags.go"):                      apiFlagsGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "flags.go"):                   apiFlagsHandlerGo(),
 
 		// v3.30 — semantic UserActivity log + ticket system
 		filepath.Join(apiRoot, "internal", "models", "user_activity.go"): userActivityModelGo(),
@@ -93,6 +97,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "import_job.go"):  importJobHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "ticket_mail.go"): ticketMailGo(),
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):        apiRoutesGo(),
+		filepath.Join(apiRoot, "internal", "routes", "resources.go"):     apiRoutesRegistryGo(),
 		filepath.Join(apiRoot, "internal", "routes", "apidocs.go"):       apiDocsRoutesGo(),
 		filepath.Join(apiRoot, ".air.toml"):                              airConfig(),
 		// Test files — give the generated API a working test suite out of the box
@@ -1839,25 +1844,19 @@ func apiAuthHandlerGo() string {
 	return `package handlers
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/markbates/goth/gothic"
 	"gorm.io/gorm"
 
-	"golang.org/x/crypto/bcrypt"
-
-	"` + "{{MODULE}}" + `/internal/config"
-	"` + "{{MODULE}}" + `/internal/mail"
-	"` + "{{MODULE}}" + `/internal/models"
-	"` + "{{MODULE}}" + `/internal/services"
-	"` + "{{MODULE}}" + `/internal/totp"
+	"{{MODULE}}/internal/config"
+	"{{MODULE}}/internal/mail"
+	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/services"
+	"{{MODULE}}/internal/totp"
 )
 
 // AuthHandler handles authentication endpoints.
@@ -1870,6 +1869,12 @@ type AuthHandler struct {
 	// ForgotPassword refuses to log the token when APP_ENV is production.
 	Mailer *mail.Mailer
 }
+
+// AuthResponse documents the body returned by register, login and refresh.
+//
+// The handlers emit gin.H rather than this struct, so nothing enforces the two
+// agree — if you change what an auth handler writes, change this with it. It
+// exists because a reference that says "No Body" is worse than no reference.
 
 // AuthResponse documents the body returned by register, login and refresh.
 //
@@ -1895,9 +1900,13 @@ type AuthResponse struct {
 // prose nobody updates.
 
 // MessageResponse is the plain acknowledgement shape.
+
+// MessageResponse is the plain acknowledgement shape.
 type MessageResponse struct {
 	Message string ` + "`" + `json:"message"` + "`" + `
 }
+
+// IssuedKeyResponse is returned once, when an API key is created.
 
 // IssuedKeyResponse is returned once, when an API key is created.
 type IssuedKeyResponse struct {
@@ -1907,6 +1916,8 @@ type IssuedKeyResponse struct {
 	} ` + "`" + `json:"data"` + "`" + `
 	Message string ` + "`" + `json:"message"` + "`" + `
 }
+
+// TOTPStatusResponse describes the caller's two-factor state.
 
 // TOTPStatusResponse describes the caller's two-factor state.
 type TOTPStatusResponse struct {
@@ -1919,12 +1930,17 @@ type TOTPStatusResponse struct {
 
 // PresignResponse carries the URL a browser PUTs to, and the key to send back
 // to /uploads/complete afterwards.
+
+// PresignResponse carries the URL a browser PUTs to, and the key to send back
+// to /uploads/complete afterwards.
 type PresignResponse struct {
 	Data struct {
 		PresignedURL string ` + "`" + `json:"presigned_url"` + "`" + `
 		Key          string ` + "`" + `json:"key"` + "`" + `
 	} ` + "`" + `json:"data"` + "`" + `
 }
+
+// ChainStatusResponse is the activity-log integrity verdict.
 
 // ChainStatusResponse is the activity-log integrity verdict.
 type ChainStatusResponse struct {
@@ -1936,6 +1952,8 @@ type ChainStatusResponse struct {
 	Got          string ` + "`" + `json:"got,omitempty"` + "`" + `
 	Message      string ` + "`" + `json:"message,omitempty"` + "`" + `
 }
+
+// ErrorResponse is the error envelope every endpoint uses.
 
 // ErrorResponse is the error envelope every endpoint uses.
 type ErrorResponse struct {
@@ -1971,6 +1989,8 @@ type ResetPasswordRequest struct {
 	Token    string ` + "`" + `json:"token" binding:"required"` + "`" + `
 	Password string ` + "`" + `json:"password" binding:"required,min=8"` + "`" + `
 }
+
+// Register creates a new user account.
 
 // Register creates a new user account.
 func (h *AuthHandler) Register(c *gin.Context) {
@@ -2054,6 +2074,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		"message": "User registered successfully",
 	})
 }
+
+// Login authenticates a user and returns tokens.
 
 // Login authenticates a user and returns tokens.
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -2243,6 +2265,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // read from the grit_refresh cookie first (web client) and falls back to
 // the JSON body (mobile/desktop bearer clients) — so a single endpoint
 // supports both flows.
+
+// Refresh generates a new access token from a refresh token. The token is
+// read from the grit_refresh cookie first (web client) and falls back to
+// the JSON body (mobile/desktop bearer clients) — so a single endpoint
+// supports both flows.
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	refreshToken := ""
 	if cookieValue, err := c.Cookie("grit_refresh"); err == nil && cookieValue != "" {
@@ -2337,6 +2364,9 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 // Logout invalidates the user's session. Cookies are cleared immediately;
 // native bearer clients should also drop their stored tokens client-side.
+
+// Logout invalidates the user's session. Cookies are cleared immediately;
+// native bearer clients should also drop their stored tokens client-side.
 func (h *AuthHandler) Logout(c *gin.Context) {
 	// v3.30.1: read the user out of context BEFORE clearing cookies so
 	// the activity row carries the right email. The auth middleware set
@@ -2370,6 +2400,8 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 }
 
 // Me returns the current authenticated user.
+
+// Me returns the current authenticated user.
 func (h *AuthHandler) Me(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -2388,192 +2420,6 @@ func (h *AuthHandler) Me(c *gin.Context) {
 }
 
 // ForgotPassword initiates a password reset.
-func (h *AuthHandler) ForgotPassword(c *gin.Context) {
-	var req ForgotPasswordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
-		return
-	}
-
-	// One response for every outcome. Any variation — a different message, a
-	// different status, a measurably different latency — turns this endpoint
-	// into an oracle for which email addresses hold accounts.
-	const genericResponse = "If an account with that email exists, a password reset link has been sent"
-
-	var user models.User
-	if err := h.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
-		c.JSON(http.StatusOK, gin.H{"message": genericResponse})
-		return
-	}
-
-	// Everything past the lookup — minting the token, storing it, delivering the
-	// link — runs off the request path. Both branches then do the same work
-	// before answering (parse, one indexed SELECT), so a registered address does
-	// not take measurably longer to respond than an unregistered one. Identical
-	// wording with a distinguishable response time is still an oracle.
-	//
-	// c.ClientIP() is read here: the gin context must not be touched once the
-	// handler has returned.
-	go h.deliverPasswordReset(user, c.ClientIP())
-
-	c.JSON(http.StatusOK, gin.H{"message": genericResponse})
-}
-
-// deliverPasswordReset issues a reset token and sends the link. It runs in its
-// own goroutine, so it owns its context and reports failures only to the log —
-// there is no caller left to tell, and telling the original one would have
-// confirmed the address exists.
-func (h *AuthHandler) deliverPasswordReset(user models.User, clientIP string) {
-	token, err := services.GenerateResetToken()
-	if err != nil {
-		log.Printf("password reset: generating token for %s: %v", user.Email, err)
-		return
-	}
-
-	if _, err := services.CreatePasswordResetToken(h.DB, user.ID, token, clientIP); err != nil {
-		log.Printf("password reset: storing token for %s: %v", user.Email, err)
-		return
-	}
-
-	resetURL := strings.TrimSuffix(h.Config.OAuthFrontendURL, "/") + "/reset-password?token=" + url.QueryEscape(token)
-
-	if h.Mailer != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
-		if err := h.Mailer.Send(ctx, mail.SendOptions{
-			To:       user.Email,
-			Subject:  "Reset your password",
-			Template: "password-reset",
-			Data: map[string]interface{}{
-				"AppName":  h.Config.AppName,
-				"Title":    "Reset your password",
-				"Message":  "We received a request to reset your password. This link expires in one hour and can only be used once. If you didn't ask for this, you can ignore this email.",
-				"ResetURL": resetURL,
-				"Year":     time.Now().Year(),
-			},
-		}); err != nil {
-			log.Printf("password reset: sending email to %s: %v", user.Email, err)
-		}
-		return
-	}
-
-	if h.Config.AppEnv == "production" {
-		// No mailer in production means nobody can complete a reset. Say so
-		// loudly rather than printing a working token into the log — a live
-		// reset link in a log file is a credential.
-		log.Printf("password reset: NO MAILER CONFIGURED: %s cannot receive a reset link. Set RESEND_API_KEY.", user.Email)
-		return
-	}
-
-	// Dev convenience only, and only outside production.
-	log.Printf("password reset link for %s: %s", user.Email, resetURL)
-}
-
-
-// Unlock clears a lockout early. Waiting out the window is the normal path;
-// this exists for the support call that follows a user locking themselves out
-// five minutes before a demo.
-func (h *UserHandler) Unlock(c *gin.Context) {
-	id := c.Param("id")
-
-	res := h.DB.Model(&models.User{}).Where("id = ?", id).
-		Updates(map[string]interface{}{"locked_until": nil, "failed_login_count": 0})
-	if res.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to unlock the account"},
-		})
-		return
-	}
-	if res.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "User not found"},
-		})
-		return
-	}
-
-	services.LogActivity(h.DB, c, services.ActivityArgs{
-		Action:       "user.unlock",
-		Severity:     "warn",
-		Summary:      "Account lockout cleared by an administrator",
-		ResourceType: "user",
-		ResourceID:   id,
-	})
-
-	c.JSON(http.StatusOK, gin.H{"message": "Account unlocked"})
-}
-
-// registerFailedLogin counts a wrong password against the account and locks it
-// once the threshold is reached.
-//
-// Only wrong-password-on-a-real-account is counted. Counting unknown emails
-// would let anyone lock an address they can guess, which turns a defence into
-// a denial-of-service tool.
-//
-// The increment is a single UPDATE rather than read-modify-write, so parallel
-// attempts cannot each read the same count and overwrite one another.
-func (h *AuthHandler) registerFailedLogin(user *models.User) {
-	max := h.Config.LoginMaxAttempts
-	if max <= 0 {
-		return // lockout disabled
-	}
-
-	if err := h.DB.Model(&models.User{}).
-		Where("id = ?", user.ID).
-		UpdateColumn("failed_login_count", gorm.Expr("failed_login_count + 1")).Error; err != nil {
-		log.Printf("lockout: incrementing failed_login_count for %s: %v", user.ID, err)
-		return
-	}
-
-	var fresh models.User
-	if err := h.DB.Select("id", "failed_login_count").First(&fresh, "id = ?", user.ID).Error; err != nil {
-		return
-	}
-	if fresh.FailedLoginCount < max {
-		return
-	}
-
-	until := time.Now().Add(h.Config.LoginLockoutWindow)
-	if err := h.DB.Model(&models.User{}).
-		Where("id = ?", user.ID).
-		Updates(map[string]interface{}{"locked_until": until, "failed_login_count": 0}).Error; err != nil {
-		log.Printf("lockout: locking %s: %v", user.ID, err)
-		return
-	}
-	log.Printf("lockout: %s locked until %s after %d failed attempts", user.Email, until.Format(time.RFC3339), max)
-}
-
-// SendVerificationEmail issues a fresh verification link for the signed-in
-// user. Authenticated on purpose: an unauthenticated "send a link to this
-// address" endpoint is a spam cannon aimed at whoever you name.
-func (h *AuthHandler) SendVerificationEmail(c *gin.Context) {
-	userID := c.GetString("user_id")
-
-	var user models.User
-	if err := h.DB.First(&user, "id = ?", userID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "User not found"},
-		})
-		return
-	}
-
-	if user.EmailVerifiedAt != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "ALREADY_VERIFIED", "message": "This email is already verified"},
-		})
-		return
-	}
-
-	go h.deliverVerificationEmail(user)
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Verification email sent. The link is valid for 48 hours.",
-	})
-}
 
 // The token from a verification link.
 type VerifyEmailRequest struct {
@@ -2582,262 +2428,6 @@ type VerifyEmailRequest struct {
 
 // VerifyEmail consumes a verification token. Public — the user clicks this
 // from their mail client, where they are usually not signed in.
-
-func (h *AuthHandler) VerifyEmail(c *gin.Context) {
-	var req VerifyEmailRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
-		return
-	}
-
-	if _, err := services.ConsumeEmailVerificationToken(h.DB, req.Token); err != nil {
-		// One message for expired, spent, unknown and address-changed. Telling
-		// them apart tells an attacker which tokens once existed.
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_TOKEN",
-				"message": "That verification link is invalid or has expired. Request a new one.",
-			},
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Email verified"})
-}
-
-// deliverVerificationEmail mints a token and sends the link, off the request
-// path so a slow SMTP call cannot hold the response open.
-func (h *AuthHandler) deliverVerificationEmail(user models.User) {
-	token, err := services.GenerateVerificationToken()
-	if err != nil {
-		log.Printf("email verification: generating token for %s: %v", user.Email, err)
-		return
-	}
-
-	if _, err := services.CreateEmailVerificationToken(h.DB, user.ID, user.Email, token); err != nil {
-		log.Printf("email verification: storing token for %s: %v", user.Email, err)
-		return
-	}
-
-	verifyURL := strings.TrimSuffix(h.Config.OAuthFrontendURL, "/") + "/verify-email?token=" + url.QueryEscape(token)
-
-	if h.Mailer != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
-		if err := h.Mailer.Send(ctx, mail.SendOptions{
-			To:       user.Email,
-			Subject:  "Confirm your email address",
-			Template: "email-verification",
-			Data: map[string]interface{}{
-				"AppName":   h.Config.AppName,
-				"Title":     "Confirm your email address",
-				"Message":   "Click the button below to confirm this address. The link expires in 48 hours and can only be used once.",
-				"VerifyURL": verifyURL,
-				"Year":      time.Now().Year(),
-			},
-		}); err != nil {
-			log.Printf("email verification: sending to %s: %v", user.Email, err)
-		}
-		return
-	}
-
-	if h.Config.AppEnv == "production" {
-		log.Printf("email verification: NO MAILER CONFIGURED: %s cannot receive a link. Set RESEND_API_KEY.", user.Email)
-		return
-	}
-
-	log.Printf("email verification link for %s: %s", user.Email, verifyURL)
-}
-
-// ResetPassword resets a user's password with a valid token.
-func (h *AuthHandler) ResetPassword(c *gin.Context) {
-	var req ResetPasswordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
-		return
-	}
-
-	// Consume first. The token is single-use and burning it before doing any
-	// work means a failure later can't leave a still-valid token behind.
-	userID, err := services.ConsumePasswordResetToken(h.DB, req.Token)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_TOKEN",
-				"message": "This reset link is invalid or has expired. Request a new one.",
-			},
-		})
-		return
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to hash password",
-			},
-		})
-		return
-	}
-
-	if err := h.DB.Model(&models.User{}).Where("id = ?", userID).
-		Update("password", string(hashedPassword)).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to update password",
-			},
-		})
-		return
-	}
-
-	// The reason someone resets a password is to evict whoever they think is in
-	// their account. Leaving that person's session alive would defeat the entire
-	// exercise, so every device is signed out — including any the attacker holds.
-	if err := services.RevokeAllUserSessions(h.DB, userID, ""); err != nil {
-		log.Printf("password reset: revoking sessions for %s: %v", userID, err)
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Password reset successfully. Please sign in with your new password.",
-	})
-}
-
-// OAuthBegin redirects the user to the OAuth provider's consent screen.
-func (h *AuthHandler) OAuthBegin(c *gin.Context) {
-	provider := c.Param("provider")
-
-	// Gothic reads provider from query string, not URL params
-	q := c.Request.URL.Query()
-	q.Set("provider", provider)
-	c.Request.URL.RawQuery = q.Encode()
-
-	gothic.BeginAuthHandler(c.Writer, c.Request)
-}
-
-// OAuthCallback completes the OAuth flow, finds or creates the user, and redirects with JWT tokens.
-func (h *AuthHandler) OAuthCallback(c *gin.Context) {
-	provider := c.Param("provider")
-
-	q := c.Request.URL.Query()
-	q.Set("provider", provider)
-	c.Request.URL.RawQuery = q.Encode()
-
-	gothUser, err := gothic.CompleteUserAuth(c.Writer, c.Request)
-	if err != nil {
-		log.Printf("OAuth callback error: %v", err)
-		redirectURL := fmt.Sprintf("%s/login?error=%s", h.Config.OAuthFrontendURL, url.QueryEscape("Authentication failed. Please try again."))
-		c.Redirect(http.StatusTemporaryRedirect, redirectURL)
-		return
-	}
-
-	// Find or create user by email
-	var user models.User
-	result := h.DB.Where("email = ?", gothUser.Email).First(&user)
-
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			// Create new user from OAuth data
-			now := time.Now()
-			user = models.User{
-				FirstName:       gothUser.FirstName,
-				LastName:        gothUser.LastName,
-				Email:           gothUser.Email,
-				Avatar:          gothUser.AvatarURL,
-				Provider:        provider,
-				Active:          true,
-				EmailVerifiedAt: &now,
-				IPAddress:       c.ClientIP(),
-			}
-
-			if provider == "google" {
-				user.GoogleID = gothUser.UserID
-			} else if provider == "github" {
-				user.GithubID = gothUser.UserID
-			}
-
-			// If name is empty, try to use NickName
-			if user.FirstName == "" && gothUser.NickName != "" {
-				user.FirstName = gothUser.NickName
-			}
-			if user.FirstName == "" {
-				user.FirstName = "User"
-			}
-			if user.LastName == "" {
-				user.LastName = ""
-			}
-
-			if err := h.DB.Create(&user).Error; err != nil {
-				log.Printf("OAuth: failed to create user: %v", err)
-				redirectURL := fmt.Sprintf("%s/login?error=%s", h.Config.OAuthFrontendURL, url.QueryEscape("Failed to create account."))
-				c.Redirect(http.StatusTemporaryRedirect, redirectURL)
-				return
-			}
-		} else {
-			log.Printf("OAuth: database error: %v", result.Error)
-			redirectURL := fmt.Sprintf("%s/login?error=%s", h.Config.OAuthFrontendURL, url.QueryEscape("Something went wrong."))
-			c.Redirect(http.StatusTemporaryRedirect, redirectURL)
-			return
-		}
-	} else {
-		// Link OAuth provider to existing account
-		updates := map[string]interface{}{}
-		if provider == "google" && user.GoogleID == "" {
-			updates["google_id"] = gothUser.UserID
-		} else if provider == "github" && user.GithubID == "" {
-			updates["github_id"] = gothUser.UserID
-		}
-		if user.Avatar == "" && gothUser.AvatarURL != "" {
-			updates["avatar"] = gothUser.AvatarURL
-		}
-		if user.Provider == "local" {
-			updates["provider"] = provider
-		}
-
-		if len(updates) > 0 {
-			h.DB.Model(&user).Updates(updates)
-		}
-	}
-
-	if !user.Active {
-		redirectURL := fmt.Sprintf("%s/login?error=%s", h.Config.OAuthFrontendURL, url.QueryEscape("Your account has been disabled."))
-		c.Redirect(http.StatusTemporaryRedirect, redirectURL)
-		return
-	}
-
-	// Generate JWT tokens
-	tokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
-	if err != nil {
-		log.Printf("OAuth: failed to generate tokens: %v", err)
-		redirectURL := fmt.Sprintf("%s/login?error=%s", h.Config.OAuthFrontendURL, url.QueryEscape("Failed to sign in."))
-		c.Redirect(http.StatusTemporaryRedirect, redirectURL)
-		return
-	}
-
-	// Record the refresh token as a server-side session, so an OAuth login is
-	// listed and revocable exactly like a password login.
-	if _, err := services.CreateSession(h.DB, c, user.ID, tokens.RefreshToken); err != nil {
-		log.Printf("OAuth: failed to record session for %s: %v", user.ID, err)
-	}
-
-	// Set HttpOnly auth cookies BEFORE redirecting so the browser stores
-	// them as part of this same response. The callback page then just
-	// navigates — no tokens in URL, no tokens in JS, no XSS exposure.
-	h.AuthService.SetAuthCookies(c, tokens)
-
-	// Redirect to frontend callback. No query params — tokens travel as
-	// HttpOnly Set-Cookie headers on this 307 response.
-	redirectURL := fmt.Sprintf("%s/auth/callback", h.Config.OAuthFrontendURL)
-	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
-}
 `
 }
 
@@ -9111,6 +8701,22 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 
 	// Custom role-restricted routes
 	// grit:routes:custom
+
+	// Every generated resource, each from its own <resource>_routes.go.
+	//
+	// A resource file registers itself from an init(), so this loop is the
+	// only place routes.go mentions them. Adding a resource does not edit this
+	// file, and neither does removing one.
+	mountResources(&Mount{
+		Engine:    r,
+		DB:        db,
+		Cfg:       cfg,
+		Svc:       svc,
+		V1:        v1,
+		Public:    publicAPI,
+		Protected: protected,
+		Admin:     admin,
+	})
 
 	mountLegacyAPIAlias(r)
 

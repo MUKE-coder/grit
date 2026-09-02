@@ -124,6 +124,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeCodegenRuntimeFiles(root, opts); err != nil {
 			return fmt.Errorf("updating codegen runtime packages: %w", err)
 		}
+		if err := ensureRouteRegistry(root, opts); err != nil {
+			return fmt.Errorf("adding the route registry: %w", err)
+		}
 		green.Printf("  ✓ Migration and seed tools updated\n")
 		updated += 4
 

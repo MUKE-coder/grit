@@ -533,6 +533,12 @@ func (g *Generator) ensurePublicRoutes(names Names) error {
 	if !g.Definition.Public {
 		return nil
 	}
+	// A project with a route registry already has these in the resource's own
+	// file, written in one pass with the rest of its routes. Injecting them
+	// here as well would mount each path twice, and Gin panics on a duplicate.
+	if fileExists(filepath.Join(g.APIRoot(), "internal", "routes", names.Snake+"_routes.go")) {
+		return nil
+	}
 	path := filepath.Join(g.APIRoot(), "internal", "routes", "routes.go")
 	data, err := os.ReadFile(path)
 	if err != nil {
