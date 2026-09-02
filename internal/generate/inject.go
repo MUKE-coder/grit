@@ -62,8 +62,24 @@ func (g *Generator) injectAll(names Names) error {
 		}
 	}
 
+	// 3 and 4, when the project has a route registry: one file holding this
+	// resource's handler and every route that reaches it.
+	//
+	// Everything below this branch is the older path, which edits routes.go in
+	// four places. It stays for projects generated before the registry existed
+	// and not yet upgraded; `grit upgrade` adds the registry, after which new
+	// resources get their own file and the ones already inline keep working
+	// where they are.
+	splitRoutes, err := g.writeResourceRoutes(names)
+	if err != nil {
+		return err
+	}
+	if splitRoutes {
+		fmt.Printf("  ✓ Routes in internal/routes/%s_routes.go\n", names.Snake)
+	}
+
 	// 3. Inject handler init
-	if fileExists(routesFile) {
+	if !splitRoutes && fileExists(routesFile) {
 		// v3.31.33 -- if the resource has file fields, wire Storage so
 		// the Create/Update flows can do immediate S3 cleanup on
 		// replace and mark uploads as claimed.
@@ -86,7 +102,7 @@ func (g *Generator) injectAll(names Names) error {
 	// Skipped entirely when this resource is already wired, however it was
 	// written. Restoring routes somebody deliberately moved is not a favour:
 	// the app stops booting, and the panic names Gin rather than the generator.
-	if fileExists(routesFile) {
+	if !splitRoutes && fileExists(routesFile) {
 		wired := false
 		if data, err := os.ReadFile(routesFile); err == nil {
 			var where string

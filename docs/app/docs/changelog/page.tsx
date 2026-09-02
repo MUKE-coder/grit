@@ -29,6 +29,86 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.185.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.185.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Every resource owns its routes file</h3>
+                <p>
+                  <code>routes.go</code> was the worst file in a generated project. Each resource
+                  edited it in four places, hundreds of lines apart: the handler construction, the
+                  protected block, the admin block and sometimes the public one. It passed a
+                  thousand lines with a handful of resources, so adding a route by hand meant
+                  working out which of four blocks it belonged in, and the generator had four
+                  chances to inject into the wrong one.
+                </p>
+                <p>
+                  Each resource now gets{' '}
+                  <code>internal/routes/&lt;resource&gt;_routes.go</code> holding its handler and
+                  every path that reaches it. The file registers itself from an{' '}
+                  <code>init()</code>, so creating one mounts a resource and deleting one unmounts
+                  it. Three resources generated back to back grew <code>routes.go</code> by two
+                  lines total, and both were model names in a list rather than routes.
+                </p>
+                <p>
+                  Nothing moves in an existing project. Routes already inline stay inline and keep
+                  working, because relocating them would silently drop any edit made to those
+                  lines. <code>grit upgrade</code> adds the registry, and resources generated after
+                  that get their own files alongside.
+                </p>
+
+                <h3>The auth handler, split by concern</h3>
+                <p>
+                  <code>handlers/auth.go</code> was the second largest file at a thousand lines,
+                  covering sessions, password reset, email verification, OAuth and account lockout
+                  at once, and it is a file people customise. Changing the reset email meant
+                  scrolling past OAuth. It is 587 lines now, holding the session core, with{' '}
+                  <code>auth_password_reset.go</code>, <code>auth_email_verification.go</code>,{' '}
+                  <code>auth_oauth.go</code> and <code>auth_lockout.go</code> beside it. New
+                  projects only; an upgrade leaves an existing <code>auth.go</code> alone.
+                </p>
+                <p>
+                  Everything else that grows with your resources adds a line or two to a file
+                  under thirty, so nothing else was worth splitting. The remaining large files are
+                  fixed-size framework code that does not grow as you build.
+                </p>
+
+                <h3>A new project failed its own test suite six times in ten</h3>
+                <p>
+                  <code>go test ./...</code> straight after <code>grit new</code> failed on
+                  <code> TestAuthHandler_Login_Success</code> more often than it passed, with a
+                  401 that reads as broken login. Every connection to SQLite&apos;s{' '}
+                  <code>:memory:</code> gets its own empty database, and the pool opened a second
+                  one as soon as two queries overlapped, which they did because registering writes
+                  its activity row on a goroutine. The login that followed landed on an empty
+                  database and found no user. The test helper pins the pool to one connection.
+                  Eight runs in a row now pass where five used to give three failures.
+                </p>
+                <p>
+                  Existing projects can apply the same three lines to{' '}
+                  <code>newTestDB</code> in <code>internal/handlers/auth_test.go</code>:{' '}
+                  <code>sqlDB, _ := db.DB()</code> then{' '}
+                  <code>sqlDB.SetMaxOpenConns(1)</code>.
+                </p>
+
+                <h3>Removing a resource left the project uncompilable</h3>
+                <p>
+                  The API reference moved out of <code>routes.go</code> into{' '}
+                  <code>apidocs.go</code> in v3.154.0 and took its markers with it. The generator
+                  learned the new home; <code>grit remove resource</code> never did, so it left
+                  every <code>docs.Route</code> chain and the model entry behind and the project
+                  stopped compiling on <code>undefined: models.X</code>. It follows the same
+                  fallback the generator uses.
+                </p>
+              </div>
+            </div>
+
             {/* v3.184.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

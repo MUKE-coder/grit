@@ -46,6 +46,19 @@ func newTestDB(tb testing.TB) *gorm.DB {
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	require.NoError(tb, err)
+
+	// One connection, and only one.
+	//
+	// Every connection to ":memory:" gets its OWN empty database. The pool
+	// opens a second one as soon as two queries overlap, which they do here
+	// because registering writes its activity row on a goroutine: the login
+	// that follows lands on a fresh, empty database, finds no user, and
+	// returns 401. It passed or failed depending on timing, about six runs in
+	// ten, which reads as a broken login rather than a test-harness problem.
+	sqlDB, err := db.DB()
+	require.NoError(tb, err)
+	sqlDB.SetMaxOpenConns(1)
+
 	require.NoError(tb, db.AutoMigrate(
 		&models.User{},
 		&models.Session{},

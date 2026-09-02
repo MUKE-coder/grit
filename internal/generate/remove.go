@@ -152,6 +152,13 @@ func RemoveResource(name string) error {
 	// --- Reverse injections ---
 
 	routesFile := filepath.Join(apiRoot, "internal", "routes", "routes.go")
+	// The API reference moved out of routes.go in v3.154.0. A project from
+	// before that still has it inline, so try the new home and fall back,
+	// which is what the generator does when it writes these entries.
+	docsFile := filepath.Join(apiRoot, "internal", "routes", "apidocs.go")
+	if !fileExists(docsFile) {
+		docsFile = routesFile
+	}
 	modelFile := filepath.Join(apiRoot, "internal", "models", "user.go")
 	schemaIndex := filepath.Join(sharedRoot, "schemas", "index.ts")
 	typesIndex := filepath.Join(sharedRoot, "types", "index.ts")
@@ -181,14 +188,34 @@ func RemoveResource(name string) error {
 	// mount, Pulse config, ...). Both separator positions are tried: the model
 	// may sit mid-slice ("&M{}, ") or last ( ", &M{}" ), and only handling the
 	// former left the trailing entry behind.
-	if fileExists(routesFile) {
-		removedAny := removeInlineText(routesFile, fmt.Sprintf("&models.%s{}, ", names.Pascal)) == nil
-		if removeInlineText(routesFile, fmt.Sprintf(", &models.%s{}", names.Pascal)) == nil {
+	removedAny := false
+	for _, f := range dedupe(routesFile, docsFile) {
+		if !fileExists(f) {
+			continue
+		}
+		if removeInlineText(f, fmt.Sprintf("&models.%s{}, ", names.Pascal)) == nil {
 			removedAny = true
 		}
-		if removedAny {
-			fmt.Println("  ✗ Removed model from studio/model lists")
+		if removeInlineText(f, fmt.Sprintf(", &models.%s{}", names.Pascal)) == nil {
+			removedAny = true
 		}
+	}
+	if removedAny {
+		fmt.Println("  ✗ Removed model from studio/model lists")
+	}
+
+	// 3pre. The resource's own routes file, when it has one.
+	//
+	// Deleting it unmounts everything the resource served, because the file is
+	// the only thing that registered it. The line-by-line unpicking below runs
+	// anyway: a project can hold both shapes at once, one resource generated
+	// before the split and another after.
+	splitRemoved, err := removeResourceRoutes(apiRoot, names.Snake)
+	if err != nil {
+		return err
+	}
+	if splitRemoved {
+		fmt.Printf("  ✗ Removed internal/routes/%s_routes.go\n", names.Snake)
 	}
 
 	// 3. Remove handler initialization — two shapes exist:
@@ -224,8 +251,8 @@ func RemoveResource(name string) error {
 	}
 
 	// 5c. Remove the API-reference entries.
-	if fileExists(routesFile) {
-		if removeDocsRoutes(routesFile, "/api/"+apiVersion+"/"+names.Plural) == nil {
+	if fileExists(docsFile) {
+		if removeDocsRoutes(docsFile, "/api/"+apiVersion+"/"+names.Plural) == nil {
 			fmt.Println("  ✗ Removed the /docs entries")
 		}
 	}
@@ -833,4 +860,22 @@ func ConfirmRemoval() bool {
 	input, _ := reader.ReadString('\n')
 	input = strings.TrimSpace(strings.ToLower(input))
 	return input == "y" || input == "yes"
+}
+
+// dedupe returns the paths with duplicates dropped, preserving order.
+//
+// routesFile and docsFile are the same path on a project generated before
+// the API reference moved out, and removing the same inline entry twice
+// would take a second, unrelated model with it.
+func dedupe(paths ...string) []string {
+	seen := map[string]bool{}
+	out := make([]string, 0, len(paths))
+	for _, p := range paths {
+		if seen[p] {
+			continue
+		}
+		seen[p] = true
+		out = append(out, p)
+	}
+	return out
 }

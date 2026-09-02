@@ -246,15 +246,32 @@ export function useCreateProduct() {
                   Keep the markers in place &mdash; they&apos;re how generation and{' '}
                   <Link href="/docs/backend/seeders">seeding</Link> stay idempotent.
                 </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Routes are the exception, and used to be the worst case: four edits per
+                  resource, hundreds of lines apart, in a <code>routes.go</code> that passed a
+                  thousand lines with a handful of resources. Each resource now gets its own{' '}
+                  <code>internal/routes/&lt;resource&gt;_routes.go</code> holding the handler and
+                  every path that reaches it, and <code>routes.go</code> no longer changes when
+                  you add or remove one.
+                </p>
                 <FileTable
                   rows={[
                     ['apps/api/internal/models/user.go', 'Model registered in Models() at // grit:models'],
-                    ['apps/api/internal/routes/routes.go', 'Routes registered at // grit:routes:*'],
                     ['packages/shared/schemas/index.ts', 'Schema re-exported at // grit:schemas'],
                     ['apps/admin/resources/index.ts', 'Resource registered at // grit:resources'],
                   ]}
                 />
               </div>
+
+              <Callout type="note" title="Adding a route to a resource">
+                Open <code>internal/routes/&lt;resource&gt;_routes.go</code> and add a line. The
+                file registers itself from an <code>init()</code>, so creating one mounts a
+                resource and deleting one unmounts it; nothing else refers to it by name.{' '}
+                <code>m.Public</code> is outside the auth middleware and behind an API key,{' '}
+                <code>m.Protected</code> takes a JWT or an API key, and <code>m.Admin</code> also
+                requires the ADMIN role. <code>Mount</code> is defined in{' '}
+                <code>internal/routes/resources.go</code>.
+              </Callout>
 
               <Callout type="tip" title="Yours vs regenerated">
                 Everything above is <strong>your code</strong> once generated &mdash; edit models,
