@@ -101,7 +101,7 @@ func (g *Generator) injectModelField(names Names, f Field) error {
 		tags += ` binding:"required"`
 	}
 	line := fmt.Sprintf("\t%s %s `%s`", goName, f.GoType(), tags)
-	return injectAfterAnchor(path, fmt.Sprintf("type %s struct {", names.Pascal), line)
+	return injectModelLine(path, names.Pascal, line)
 }
 
 func (g *Generator) injectZodField(names Names, f Field) error {
@@ -175,4 +175,59 @@ func (g *Generator) injectAdminField(names Names, f Field) error {
 		return fmt.Errorf("admin resource definition for %s not found", names.PluralKebab)
 	}
 	return nil
+}
+
+// injectModelLine adds a field at the end of the declared ones.
+//
+// A generated model reads in two halves: the fields the resource was
+// generated with, then the framework's own block, which starts at Version
+// and runs through the timestamps to ArchivedAt. A new column belongs at the
+// bottom of the first half, which is where somebody adding it by hand would
+// put it.
+//
+// This used to inject straight after the struct opening, so a new field
+// landed above ID: ahead of the primary key and every field the resource
+// already had. It compiled, and it looked like a mistake.
+//
+// Falls back to the struct opening when there is no Version line, which is
+// what a hand-written model may look like. Wrong place beats not added.
+func injectModelLine(filePath, pascal, code string) error {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("reading %s: %w", filePath, err)
+	}
+	content := string(data)
+	if alreadyInjected(content, strings.TrimRight(code, "\n")) {
+		return nil
+	}
+
+	lines := strings.Split(content, "\n")
+	open := fmt.Sprintf("type %s struct {", pascal)
+	start := -1
+	for i, l := range lines {
+		if strings.TrimSpace(l) == open {
+			start = i
+			break
+		}
+	}
+	if start < 0 {
+		return fmt.Errorf("struct %s not found in %s", pascal, filePath)
+	}
+
+	at := start + 1
+	for i := start + 1; i < len(lines); i++ {
+		trimmed := strings.TrimSpace(lines[i])
+		if trimmed == "}" {
+			break
+		}
+		if strings.HasPrefix(trimmed, "Version ") || strings.HasPrefix(trimmed, "Version\t") {
+			at = i
+			break
+		}
+	}
+
+	out := append([]string{}, lines[:at]...)
+	out = append(out, strings.TrimRight(code, "\n"))
+	out = append(out, lines[at:]...)
+	return os.WriteFile(filePath, []byte(strings.Join(out, "\n")), 0644)
 }

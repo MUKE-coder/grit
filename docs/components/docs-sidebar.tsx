@@ -302,6 +302,7 @@ const navItems: NavItem[] = [
       { title: 'Learn Grit Step by Step', href: '/docs/tutorials/learn' },
       { title: 'Build a Blog', href: '/docs/tutorials/blog' },
       { title: 'Build a SaaS', href: '/docs/tutorials/saas' },
+      { title: 'Custom API Endpoints', href: '/docs/tutorials/custom-endpoints' },
       { title: 'Build an E-Commerce', href: '/docs/tutorials/ecommerce' },
       { title: 'Build a Product Catalog', href: '/docs/tutorials/product-catalog' },
       { title: 'Live Demo App', href: '/docs/demo' },

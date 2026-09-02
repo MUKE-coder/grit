@@ -628,6 +628,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Step-by-step tutorial: build a full-stack blog with Grit including Go API, Next.js pages, admin panel, and SEO-friendly URLs.',
   },
+  '/docs/tutorials/custom-endpoints': {
+    title: 'Custom API Endpoints',
+    description:
+      'Build a shop with three resources, see every endpoint Grit generates for free, then write your own public and protected endpoints. Handlers and services explained from scratch, a GORM cheat sheet, seeding, adding fields, relationships, and consuming it all from Next.js and TanStack Start.',
+  },
   '/docs/tutorials/ecommerce': {
     title: 'Build an E-Commerce App',
     description:

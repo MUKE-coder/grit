@@ -515,7 +515,19 @@ func (s *{{Pascal}}Service) Delete(id string) error {
 func (g *Generator) buildServiceSearchWhere() string {
 	var searchFields []string
 	for _, f := range g.Definition.Fields {
-		if f.GoType() == "string" {
+		// Relationships are excluded, and the same rule the handler uses picks
+		// the rest, so the two agree about what "search" means.
+		//
+		// GoType() is "string" for a belongs_to as well, because the foreign
+		// key is a UUID string. Taking that at face value put LOWER(parent) in
+		// the WHERE clause of every tree resource: parent is the relation, the
+		// column is parent_id, and the query fails at the database. It went
+		// unnoticed because nothing calls the generated service until somebody
+		// writes the first line of business logic in it.
+		if f.IsRelationship() {
+			continue
+		}
+		if f.IsSearchable() {
 			searchFields = append(searchFields, "LOWER("+toSnakeCase(f.Name)+") LIKE LOWER(?)")
 		}
 	}
@@ -831,6 +843,61 @@ func (g *Generator) writeGoHandler(names Names) error {
 		filterCols += fmt.Sprintf(`, "%s": true`, col)
 	}
 
+	// PATCH used to build its update map from the scalar whitelist alone, so a
+	// many-to-many set sent alongside a scalar was dropped without a word, and
+	// one sent on its own came back 422 about a field PUT accepts. Both are the
+	// same omission; this closes it.
+	//
+	// touchedRelations is declared even when there are none, because the guard
+	// below reads it either way and an unused variable does not compile in Go.
+	patchM2M := "\ttouchedRelations := false\n"
+	for _, f := range g.Definition.Fields {
+		if !f.IsManyToMany() {
+			continue
+		}
+		rel := MakeNames(f.RelatedModelName())
+		// The same key the create and update request structs declare:
+		// singularised, so a "products" field is product_ids. Deriving it a
+		// second way here gave PATCH a "products_ids" nobody sends.
+		key := strings.TrimSuffix(toSnakeCase(f.Name), "s") + "_ids"
+		patchM2M += fmt.Sprintf(`	// %s: replace the whole set, the same as POST and PUT. An empty
+	// list is a real instruction, so presence in the body is what counts,
+	// not whether the list has anything in it.
+	if rawIDs, ok := body[%q]; ok {
+		list, isList := rawIDs.([]interface{})
+		if !isList {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{
+				"error": gin.H{
+					"code":    "VALIDATION_ERROR",
+					"message": %q,
+				},
+			})
+			return
+		}
+		ids := make([]string, 0, len(list))
+		for _, raw := range list {
+			if s, ok := raw.(string); ok {
+				ids = append(ids, s)
+			}
+		}
+		var related []models.%s
+		if len(ids) > 0 {
+			h.DB.Find(&related, ids)
+		}
+		if err := h.DB.Model(&item).Association(%q).Replace(related); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": gin.H{
+					"code":    "INTERNAL_ERROR",
+					"message": "Failed to update %s",
+				},
+			})
+			return
+		}
+		touchedRelations = true
+	}
+`, key, key, key+" must be a list of ids", rel.Pascal, toPascalCase(f.Name), toSnakeCase(f.Name))
+	}
+
 	searchCols := g.buildHandlerSearchCols()
 
 	// Build export columns from the field list. Skips relationships
@@ -1046,6 +1113,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{UPDATE_FIELDS}}", updateFields,
 		"{{UPDATE_MAP}}", updateMap,
 		"{{PATCH_ALLOWED}}", patchAllowed,
+		"{{PATCH_M2M}}", patchM2M,
 		"{{PRELOADS}}", preloadChain,
 		"{{M2M_CREATE}}", m2mCreateCode,
 		"{{M2M_UPDATE}}", m2mUpdateCode,
@@ -1443,7 +1511,7 @@ func (h *{{Pascal}}Handler) Patch(c *gin.Context) {
 			updates[k] = v
 		}
 	}
-	if len(updates) == 0 {
+{{PATCH_M2M}}	if len(updates) == 0 && !touchedRelations {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{
 				"code":    "VALIDATION_ERROR",
@@ -1453,14 +1521,16 @@ func (h *{{Pascal}}Handler) Patch(c *gin.Context) {
 		return
 	}
 
-	if err := h.DB.Model(&item).Updates(updates).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to patch {{lower}}",
-			},
-		})
-		return
+	if len(updates) > 0 {
+		if err := h.DB.Model(&item).Updates(updates).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": gin.H{
+					"code":    "INTERNAL_ERROR",
+					"message": "Failed to patch {{lower}}",
+				},
+			})
+			return
+		}
 	}
 {{RELOAD}}
 
