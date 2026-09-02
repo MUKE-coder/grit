@@ -36,7 +36,9 @@ func ensureRecoveryModelRegistered(path string) error {
 		return nil
 	}
 	content := string(body)
-	if strings.Contains(content, "&RecoveryContact{}") && strings.Contains(content, "&Passkey{}") {
+	if strings.Contains(content, "&RecoveryContact{}") &&
+		strings.Contains(content, "&Passkey{}") &&
+		strings.Contains(content, "&OutboxMessage{}") {
 		return nil
 	}
 	const marker = "// grit:models"
@@ -47,8 +49,25 @@ func ensureRecoveryModelRegistered(path string) error {
 	// Passkeys ride along: their models live in the same registry, and an
 	// upgraded project with the handler but not the table answers every
 	// passkey request with "no such table: passkeys".
-	inject := "\t\t&RecoveryContactToken{},\n\t\t&RecoveryContact{},\n" +
-		"\t\t&Passkey{},\n\t\t&WebAuthnSession{},\n\t\t" + marker
+	// Only the models this registry is missing.
+	//
+	// The list grew past the point where injecting all of them blindly was
+	// safe: a project that already has passkeys but not the outbox would get
+	// a second &Passkey{} in front of the next person to read the file.
+	var add []string
+	for _, m := range []string{
+		"&RecoveryContactToken{}", "&RecoveryContact{}",
+		"&Passkey{}", "&WebAuthnSession{}",
+		"&OutboxMessage{}",
+	} {
+		if !strings.Contains(content, m) {
+			add = append(add, "\t\t"+m+",")
+		}
+	}
+	if len(add) == 0 {
+		return nil
+	}
+	inject := strings.Join(add, "\n") + "\n\t\t" + marker
 	content = strings.Replace(content, marker, inject, 1)
 	return os.WriteFile(path, []byte(content), 0o644)
 }

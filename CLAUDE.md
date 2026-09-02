@@ -96,6 +96,7 @@
 | Database | **PostgreSQL** (prod), **SQLite** (quick start/testing) | |
 | Frontend | **Next.js 14+** with App Router | NOT Pages Router |
 | Styling | **Tailwind CSS** + **shadcn/ui** | NOT Material UI, NOT Chakra |
+| UI primitives | **Base UI**, for new primitives only | NOT Radix. See below. |
 | Data fetching | **React Query (TanStack Query)** | NOT SWR, NOT Apollo |
 | Validation | **Zod** | Shared between frontend and generated from Go types |
 | Monorepo | **Turborepo** + **pnpm** | NOT npm, NOT yarn |
@@ -185,6 +186,36 @@ project-root/
 **Fonts:**
 - UI: `Onest` (weights: 400, 500, 600, 700)
 - Code: `JetBrains Mono` (weights: 400, 500, 600)
+
+### UI primitives: Base UI, and only when a primitive needs one
+
+The admin has **no** primitive library today. Every component in
+`components/ui/` is hand-written against the design tokens, and the dependency
+count is the better for it.
+
+That stays true for anything that is a styled element. It stops being true the
+moment a component needs behaviour rather than appearance: a focus trap, roving
+focus, listbox semantics, portalled positioning that survives a scroll
+container. Those are where hand-rolled components fail, and they fail for
+keyboard and screen-reader users specifically, which is to say silently, for
+people who are not in the room when it is demonstrated. Twelve of thirteen form
+fields shipped with a label attached to nothing, and the many-to-many picker
+was a `div` with an `onClick` that Tab could not reach; both went unnoticed for
+months.
+
+**When a new primitive needs real interaction behaviour, use Base UI**
+(`@base-ui-components/react`), the successor the shadcn maintainers point at.
+Not Radix: it is the thing Base UI exists to replace.
+
+Two rules that matter more than the choice of library:
+
+1. **New primitives only.** Do not rewrite `confirm-modal`, `dropzone` or the
+   relationship pickers to use it. They work, they are tested, and a rewrite
+   trades known behaviour for unknown behaviour to satisfy a preference.
+2. **Add the dependency in the same change that uses it.** Shipping it to every
+   scaffolded project ahead of the first component that needs it is a
+   dependency with no benefit, which is how a 50-package `package.json` becomes
+   a 90-package one.
 
 **Design Feel:** Premium CRM / dark mode SaaS tool. Not generic Bootstrap. Not Material Design. Think Linear, Vercel Dashboard, or Raycast — dark, polished, fast.
 

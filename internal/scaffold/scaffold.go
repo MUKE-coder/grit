@@ -62,7 +62,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.185.0"
+const DefaultVersion = "3.186.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -364,6 +364,12 @@ func Run(opts Options) error {
 	if err := writeMoneyFiles(root, opts); err != nil {
 		return err
 	}
+	if err := writeOutboxFiles(root, opts); err != nil {
+		return err
+	}
+	if err := writeStockFiles(root, opts); err != nil {
+		return err
+	}
 	if err := writeJSONTimeFiles(root, opts); err != nil {
 		return err
 	}
@@ -580,6 +586,12 @@ func RunSingle(opts Options) error {
 		return err
 	}
 	if err := writeMoneyFiles(root, opts); err != nil {
+		return err
+	}
+	if err := writeOutboxFiles(root, opts); err != nil {
+		return err
+	}
+	if err := writeStockFiles(root, opts); err != nil {
 		return err
 	}
 	if err := writeJSONTimeFiles(root, opts); err != nil {

@@ -29,6 +29,118 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.186.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.186.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Cursor pagination, which had never worked</h3>
+                <p>
+                  The keyset code was all there and unreachable: cursor mode was a
+                  compile-time <code>Config</code> field no generated handler set, and no query
+                  parameter turned it on. Every list endpoint was offset-only, which walks
+                  100,000 rows to throw them away and shifts the window under anyone paging
+                  while rows arrive.
+                </p>
+                <p>
+                  <code>?mode=cursor</code> asks for it, and sending a <code>?cursor=</code>
+                  implies it, so a client following <code>meta.next_cursor</code> never says so
+                  twice. Offset stays the default because the admin table needs page numbers
+                  and a total.
+                </p>
+                <p>
+                  <strong>Being unreachable is why it was broken.</strong> The cursor encodes
+                  the last row&apos;s sort value as text and handed it to the WHERE clause as
+                  text, so a timestamp column compared against{' '}
+                  <code>&apos;2026-09-02T09:18:39.7195481+03:00&apos;</code> matched every row
+                  in SQLite and page two came back identical to page one, forever. Values are
+                  bound at their own type now. Sorting on a money field was broken separately:
+                  the column is <code>price_amount</code> and there is no <code>PriceAmount</code>{' '}
+                  field to reflect on, so the cursor encoded nothing and the walk restarted from
+                  the top. Seven tests ship with every project.
+                </p>
+
+                <h3>A transactional outbox</h3>
+                <p>
+                  &quot;Save the row and tell the world&quot; has no correct ordering. Publish
+                  then commit, and a failed commit leaves a webhook announcing an order that
+                  does not exist. Commit then publish, and a process killed in between leaves
+                  the order with nobody told, and nothing logged, because from the process&apos;s
+                  point of view nothing failed.
+                </p>
+                <p>
+                  <code>outbox.Enqueue(tx, topic, payload)</code> writes the message in the same
+                  transaction as the data, and a relay delivers what committed. It refuses the
+                  root <code>*gorm.DB</code> outright: enqueueing outside a transaction is the
+                  bug it exists to prevent, and it is one that fails in production and never in
+                  a test. Claims, backoff, a dead-relay timeout so nothing is stranded, and
+                  <code> Prune</code> that will not delete a failed message, because that is a
+                  bug nobody has looked at yet.
+                </p>
+
+                <h3>Webhook deduplication was decoration</h3>
+                <p>
+                  The model&apos;s comment described a unique index on{' '}
+                  <code>(provider, external_id)</code>. The handler treated a duplicate-key
+                  error as &quot;already processed&quot; and returned 200. The index itself
+                  lived in an <code>Indexes()</code> method that nothing called, so the column
+                  had a plain index, the second INSERT succeeded, and every retried delivery
+                  ran the handler again. A Stripe retry is not an edge case; it is how Stripe
+                  works.
+                </p>
+                <p>
+                  The constraint is now declared on the fields, so the migration creates it, and{' '}
+                  <code>external_id</code> is nullable so events from providers that send no id
+                  stay distinct rather than colliding on the empty string. Migrations convert
+                  existing empty strings to NULL first, because no database will build a unique
+                  index over repeated empty strings. Four tests, one of which asserts the index
+                  exists in the database rather than in a comment.
+                </p>
+
+                <h3>Taking stock without overselling</h3>
+                <p>
+                  <code>stock.Take(tx, model, id, &quot;stock&quot;, qty)</code> is one
+                  conditional UPDATE:{' '}
+                  <code>SET stock = stock - ? WHERE id = ? AND stock &gt;= ?</code>. The
+                  read-modify-write it replaces lets two orders for the last item both read 1,
+                  both find it sufficient, and both write 0: one unit, two sales, and a row
+                  that looks fine afterwards. <code>TakeMany</code> sorts by id before locking,
+                  which is not tidiness: two orders touching the same two products in opposite
+                  order deadlock under exactly the load that makes it expensive. Eleven tests,
+                  including twenty goroutines racing for ten units.
+                </p>
+
+                <h3>Framework-owned files travel on upgrade</h3>
+                <p>
+                  Each of the fixes above needed the same thing: a change to framework code
+                  reaching projects that already exist. The webhook model, its receiver and the
+                  dispatch package read the same columns and only work as a set, and they were
+                  split across the scaffold-only and upgraded sets, so half a fix landed and
+                  the project stopped compiling. They travel together now, alongside the
+                  packages generated code imports.
+                </p>
+
+                <h3>Base UI, for new primitives only</h3>
+                <p>
+                  Recorded as a decision rather than shipped as a dependency. The admin has no
+                  primitive library at all: every component is hand-written against the design
+                  tokens. That is right for anything that is a styled element, and wrong the
+                  moment a component needs a focus trap, roving focus or listbox semantics,
+                  which is where hand-rolled components fail silently for keyboard users.
+                </p>
+                <p>
+                  So: new primitives that need real interaction behaviour use Base UI, not
+                  Radix. Existing ones are not rewritten, and the dependency arrives with the
+                  first component that needs it rather than in every scaffold ahead of time.
+                </p>
+              </div>
+            </div>
+
             {/* v3.185.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -1102,6 +1102,37 @@ that a shop built on `float` prices loses money slowly.
       mistake media, recovery contacts and passkeys each shipped with.
 - [x] The storefront blog said floats were fine at that scale - corrected.
 
+### 7.4m The rest of the ecommerce-guide findings (v3.185.0 - v3.186.0)
+
+- [x] Every resource owns its routes file - v3.185.0. routes.go took four edits
+      per resource, hundreds of lines apart, in a file past a thousand lines.
+      Now `internal/routes/<resource>_routes.go`, registered from its own
+      init(); three resources grew routes.go by two lines.
+- [x] handlers/auth.go split by concern - v3.185.0. 1001 lines covering
+      sessions, password reset, email verification, OAuth and lockout, down to
+      587 with the four flows beside it.
+- [x] Cursor pagination reachable, and working - v3.186.0. It had never run:
+      cursor mode was a compile-time field nothing set, and the WHERE compared
+      a timestamp column against text, so page two was page one forever.
+- [x] Transactional outbox - v3.186.0. Enqueue in the caller's transaction, a
+      relay with claims, backoff and a dead-relay timeout. Refuses the root
+      handle, because enqueueing outside a transaction is the bug it prevents.
+- [x] Webhook dedup by provider event id - v3.186.0. The unique index lived in
+      a method nothing called, so every retried delivery ran the handler again.
+- [x] Atomic stock decrement - v3.186.0. One conditional UPDATE instead of a
+      read-modify-write that lets two orders sell the same last unit.
+- [x] Base UI for new primitives only - v3.186.0, recorded in CLAUDE.md.
+      A decision, not a dependency: the admin has no primitive library and does
+      not need one until a component needs a focus trap.
+- [x] Framework-owned files travel on upgrade - v3.185.0 and v3.186.0. The
+      second real dent in the 7.2 gap: the API key cluster, the packages
+      generated code imports, and the webhook cluster all now reach existing
+      projects instead of only new ones.
+- [x] A new project failed its own test suite six runs in ten - v3.185.0.
+      Every connection to SQLite's :memory: is its own database.
+- [x] `grit remove resource` left the project uncompilable - v3.185.0. The API
+      reference moved to apidocs.go in v3.154.0 and the remover never followed.
+
 ### 7.5 SaaS (recs 14, 15, 27, 31)
 
 Billing, entitlements, payment adapters, invitations, usage limits, automation
