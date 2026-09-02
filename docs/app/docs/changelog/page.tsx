@@ -29,6 +29,84 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.187.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.187.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A tutorial for writing your own endpoints</h3>
+                <p>
+                  <a href="/docs/tutorials/custom-endpoints">Custom API endpoints, end to end</a>:
+                  build a shop with three resources, see every endpoint Grit already generated,
+                  then write four of your own and call them from Next.js and TanStack Start.
+                  Handlers and services explained for someone who has used neither, a GORM cheat
+                  sheet, seeding, adding a column to a resource that already exists, and what a
+                  relationship actually changes.
+                </p>
+                <p>
+                  It was written by building the project first and reading the files, which is how
+                  the four fixes below were found. Every command and response on the page came out
+                  of a running API.
+                </p>
+
+                <h3>PATCH silently ignored many-to-many</h3>
+                <p>
+                  <code>PATCH /campaigns/:id {'{'}"title": "Renamed", "product_ids": [...]{'}'}</code>{' '}
+                  renamed the campaign, dropped the product ids on the floor, and answered 200.
+                  Nothing said no. Sending only <code>product_ids</code> was worse: no scalar
+                  survived the whitelist, so it came back 422 &quot;No writable fields in request
+                  body&quot; about a field PUT accepts.
+                </p>
+                <p>
+                  PATCH now applies the association the way POST and PUT do. An empty list still
+                  means &quot;empty it&quot;, because presence in the body is the instruction, not
+                  the length of the list.
+                </p>
+
+                <h3>Seeders wrote to columns the framework owns</h3>
+                <p>
+                  <code>grit generate seeder</code> reads the model back and takes every field it
+                  recognises, which included <code>archived_at</code>, and for a{' '}
+                  <code>--tree</code> resource also <code>path</code>, <code>depth</code> and{' '}
+                  <code>position</code>. The tree columns are computed in{' '}
+                  <code>BeforeCreate</code>, so a literal there describes a hierarchy that does not
+                  exist. <code>archived_at</code> was worse: every seeded row would have been
+                  archived, and the admin&apos;s default list hides those, so the seeder looks like
+                  it did nothing.
+                </p>
+                <p>
+                  It never got that far, because <code>archived_at</code> is a{' '}
+                  <code>*time.Time</code> and the seeder emitted <code>time.Now()</code>, so the
+                  generated file did not compile. That is the only reason this was noticed.
+                </p>
+
+                <h3>A generated service could not run its own search</h3>
+                <p>
+                  The service&apos;s List built its WHERE from every field whose Go type is{' '}
+                  <code>string</code>, and a belongs_to qualifies, because the foreign key is a
+                  UUID string. So a <code>--tree</code> resource got{' '}
+                  <code>LOWER(parent) LIKE ?</code>: <code>parent</code> is the relation, the
+                  column is <code>parent_id</code>, and the query fails at the database. Latent
+                  rather than fatal, because nothing calls the generated service until you write
+                  the first line of business logic in it.
+                </p>
+
+                <h3>New fields landed above the primary key</h3>
+                <p>
+                  <code>grit generate field Category is_featured:toggle</code> injected directly
+                  after the struct opening, so the new column appeared above <code>ID</code> and
+                  ahead of every field the resource was generated with. It compiled, and it read as
+                  though something had gone wrong. New fields now go where a person would have
+                  written them: after the declared fields, before the framework&apos;s block.
+                </p>
+              </div>
+            </div>
+
             {/* v3.186.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

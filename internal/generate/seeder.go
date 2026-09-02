@@ -202,9 +202,25 @@ func definitionFromModelFile(apiRoot, name string) (*ResourceDefinition, error) 
 		return nil, fmt.Errorf("model %s not found in %s", names.Pascal, modelPath)
 	}
 
+	// Columns the framework owns. None of them were declared by whoever
+	// generated the resource, so none of them should turn up in a seeder for a
+	// person to wonder about and then leave alone.
+	//
+	// archived_at is the one that bites: seeding it puts every row in the
+	// archive, where the default list does not show them, and the seeder looks
+	// like it worked. It is also *time.Time, so the generated file did not
+	// compile, which is the only reason this was noticed.
+	//
+	// path, depth and position are the --tree columns. BeforeCreate computes
+	// all three from the parent; a literal here describes a hierarchy that does
+	// not exist.
 	skip := map[string]bool{
 		"id": true, "created_at": true, "updated_at": true,
 		"deleted_at": true, "version": true, "slug": true,
+		"archived_at": true,
+		"path":        true,
+		"depth":       true,
+		"position":    true,
 	}
 	def := &ResourceDefinition{Name: names.Pascal}
 	for _, gf := range target.Fields {
@@ -215,6 +231,16 @@ func definitionFromModelFile(apiRoot, name string) (*ResourceDefinition, error) 
 		ft := goTypeToFieldType(gf.GoType)
 		if ft == "" {
 			continue // relation / unknown type — user wires it up
+		}
+		// A nullable time is left NULL rather than seeded.
+		//
+		// Narrow on purpose. The value branch emits time.Now(), which does not
+		// assign to a *time.Time, so the generated file would not compile. The
+		// other pointer this hits is *files.FileRef, which seeds correctly as
+		// &files.FileRef{...} and is worth keeping: a category with no image is
+		// a duller demo than one with.
+		if strings.HasPrefix(gf.GoType, "*") && ft == string(FieldDatetime) {
+			continue
 		}
 		def.Fields = append(def.Fields, Field{Name: jn, Type: ft})
 	}
