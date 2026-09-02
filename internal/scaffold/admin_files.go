@@ -374,6 +374,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "components", "forms", "fields", "text-field.tsx"):                      adminTextField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "textarea-field.tsx"):                  adminTextareaField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "number-field.tsx"):                    adminNumberField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "money-field.tsx"):                     adminMoneyField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "select-field.tsx"):                    adminSelectField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "date-field.tsx"):                      adminDateField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "toggle-field.tsx"):                    adminToggleField(),

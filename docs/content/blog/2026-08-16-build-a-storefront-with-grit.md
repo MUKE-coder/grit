@@ -2801,7 +2801,7 @@ The parts I would go back and strengthen first, in order:
 1. **Test the checkout path.** It is the one place where a bug costs money in both directions. [Testing](/docs/testing) covers the setup that already ships with your project.
 2. **Cancel abandoned orders on a schedule**, or your stock leaks.
 3. **Add product variants** before you have real orders, if you sell anything that comes in sizes. [Step 4f](#step-4f-variants-when-one-product-is-sixteen-things) is one command, but the parts it touches are the cart line and the checkout re-price, and both are cheaper to change while the orders table is empty.
-4. **Watch the money numbers.** Floats are fine for a shop this size and you will eventually want integer cents. Know which one you are on.
+4. **Move the prices off `float`.** This build used `price:float`, and that was the one shortcut in it I would not take again. Binary floating point cannot represent 0.1, so a total that has been through a discount, a tax rate and a split refund drifts, and the difference turns up in a reconciliation rather than in a test. Grit now has a [`money` field type](/docs/concepts/money) that stores an integer count of minor units alongside an ISO 4217 currency code: `price:money` instead of `price:float`. It is a migration once the orders table has rows in it, so it is worth doing before that.
 
 ---
 

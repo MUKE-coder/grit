@@ -121,6 +121,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeMigrateSeedFiles(root, opts); err != nil {
 			return fmt.Errorf("updating migrate/seed files: %w", err)
 		}
+		if err := writeCodegenRuntimeFiles(root, opts); err != nil {
+			return fmt.Errorf("updating codegen runtime packages: %w", err)
+		}
 		green.Printf("  ✓ Migration and seed tools updated\n")
 		updated += 4
 
@@ -155,6 +158,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		}
 		if err := writeRecoveryFiles(root, opts); err != nil {
 			return fmt.Errorf("updating recovery files: %w", err)
+		}
+		if err := writeMoneyFiles(root, opts); err != nil {
+			return fmt.Errorf("updating money files: %w", err)
+		}
+		if err := ensureMoneyFrontend(root, opts); err != nil {
+			return fmt.Errorf("wiring money frontend: %w", err)
 		}
 		if err := writeJSONTimeFiles(root, opts); err != nil {
 			return fmt.Errorf("updating jsontime files: %w", err)

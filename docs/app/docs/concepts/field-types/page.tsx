@@ -25,7 +25,8 @@ const ROWS: Row[] = [
   { type: 'richtext', syntax: 'body:richtext', go: 'string', ts: 'string', zod: 'z.string()' },
   { type: 'int', syntax: 'qty:int', go: 'int', ts: 'number', zod: 'z.number().int()' },
   { type: 'uint', syntax: 'stock:uint', go: 'uint', ts: 'number', zod: 'z.number().int().nonnegative()' },
-  { type: 'float', syntax: 'price:float', go: 'float64', ts: 'number', zod: 'z.number()' },
+  { type: 'float', syntax: 'weight:float', go: 'float64', ts: 'number', zod: 'z.number()' },
+  { type: 'money', syntax: 'price:money', go: 'money.Money', ts: 'Money', zod: 'MoneySchema' },
   { type: 'bool', syntax: 'active:bool', go: 'bool', ts: 'boolean', zod: 'z.boolean()' },
   { type: 'toggle', syntax: 'active:toggle', go: 'bool', ts: 'boolean', zod: 'z.boolean()' },
   { type: 'select', syntax: 'status:select:draft=Draft|paid=Paid', go: 'string', ts: '"draft" | "paid"', zod: 'z.enum([...])' },
@@ -47,6 +48,7 @@ const RENDER: { type: string; form: string; table: string }[] = [
   { type: 'text', form: 'Textarea', table: 'text' },
   { type: 'richtext', form: 'Rich-text editor (Tiptap)', table: 'richtext' },
   { type: 'int / uint / float', form: 'Number input', table: 'text' },
+  { type: 'money', form: 'Amount input + currency picker', table: 'money' },
   { type: 'bool', form: 'Switch', table: 'boolean' },
   { type: 'toggle', form: 'Switch', table: 'boolean' },
   { type: 'select', form: 'Searchable dropdown (value=Label options)', table: 'text' },
@@ -91,7 +93,7 @@ export default function FieldTypesPage() {
                 </p>
                 <CodeBlock
                   terminal
-                  code={`grit generate resource Product --fields "name:string,price:float,category:belongs_to:Category,gallery:files:image"`}
+                  code={`grit generate resource Product --fields "name:string,price:money,category:belongs_to:Category,gallery:files:image"`}
                 />
                 <ul className="space-y-2.5 mt-4 mb-4">
                   {[
@@ -102,6 +104,7 @@ export default function FieldTypesPage() {
                     ['belongs_to', 'category:belongs_to (model inferred → Category) or author:belongs_to:User (explicit). Creates a <name>_id UUID foreign-key column.'],
                     ['many_to_many', 'tags:many_to_many:Tag — the related model is required. GORM builds the join table.'],
                     ['File accepts', 'image:file:image, doc:file:all, or att:file:[pdf,doc,image,video]. Aliases: image, video, audio, pdf, doc, all — or a bracketed list.'],
+                    ['Money', 'price:money — stores an integer count of minor units plus an ISO 4217 currency code, in two columns (price_amount, price_currency). Use it for anything you will add up. See the money page.'],
                   ].map(([k, v]) => (
                     <li key={k} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
                       <span className="text-primary mt-1 font-mono text-xs shrink-0">{k}</span>
@@ -122,12 +125,12 @@ export default function FieldTypesPage() {
                   id="field-types"
                   lanes={['One field declaration', 'Resolves across the stack']}
                   nodes={[
-                    { id: 'decl', lane: 0, row: 2, title: 'price:float', sub: '--fields', tone: 'primary' },
-                    { id: 'go', lane: 1, row: 0, title: 'Go struct field', sub: 'float64', tone: 'cyan' },
-                    { id: 'ts', lane: 1, row: 1, title: 'TypeScript type', sub: 'number', tone: 'blue' },
-                    { id: 'zod', lane: 1, row: 2, title: 'Zod rule', sub: 'z.number()', tone: 'violet' },
-                    { id: 'form', lane: 1, row: 3, title: 'Admin form', sub: 'number input', tone: 'amber' },
-                    { id: 'col', lane: 1, row: 4, title: 'Table column', sub: 'right-aligned', tone: 'green' },
+                    { id: 'decl', lane: 0, row: 2, title: 'price:money', sub: '--fields', tone: 'primary' },
+                    { id: 'go', lane: 1, row: 0, title: 'Go struct field', sub: 'money.Money', tone: 'cyan' },
+                    { id: 'ts', lane: 1, row: 1, title: 'TypeScript type', sub: 'Money', tone: 'blue' },
+                    { id: 'zod', lane: 1, row: 2, title: 'Zod rule', sub: 'MoneySchema', tone: 'violet' },
+                    { id: 'form', lane: 1, row: 3, title: 'Admin form', sub: 'amount + currency', tone: 'amber' },
+                    { id: 'col', lane: 1, row: 4, title: 'Table column', sub: 'formatted, right-aligned', tone: 'green' },
                   ]}
                   edges={[
                     { from: 'decl', to: 'go', tone: 'cyan' },

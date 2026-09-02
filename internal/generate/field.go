@@ -28,6 +28,12 @@ const (
 	// can actually live on, and a unique index is the entire difference
 	// between "many profiles per user" and "one".
 	FieldOneToOne    FieldType = "one_to_one"
+	// Money: an integer count of minor units plus its currency.
+	//
+	// Not float. 0.1 + 0.2 is not 0.3 in binary floating point, and after
+	// tax, a discount and a refund the ledger drifts. float stays available
+	// and is still right for weights, ratings and percentages.
+	FieldMoney       FieldType = "money"
 	FieldStringArray FieldType = "string_array"
 	FieldFile        FieldType = "file"  // single FileRef
 	FieldFiles       FieldType = "files" // []FileRef
@@ -218,6 +224,8 @@ func (f Field) GoType() string {
 		return "string"
 	case FieldFloat:
 		return "float64"
+	case FieldMoney:
+		return "money.Money"
 	case FieldBool, FieldToggle:
 		return "bool"
 	case FieldSelect, FieldRadio:
@@ -280,6 +288,10 @@ func (f Field) GORMTag() string {
 	case FieldBelongsTo:
 		// FK matches the referenced model's UUID string PK.
 		parts = append(parts, "size:36", "index")
+	case FieldMoney:
+		// Two columns behind one field: price_amount BIGINT and price_currency.
+		// One column holding "19.99 USD" is not something you can SUM.
+		return "" // the embedded tag is added by the model template
 	case FieldOneToOne:
 		// uniqueIndex, not index. Without it this is a belongs_to wearing a
 		// different name: the database would happily accept a second row
@@ -362,6 +374,8 @@ func (f Field) TSType() string {
 		return "string[]"
 	case FieldStringArray:
 		return "string[]"
+	case FieldMoney:
+		return "Money"
 	case FieldFile:
 		return "FileRef | null"
 	case FieldFiles:
@@ -413,6 +427,11 @@ func (f Field) ZodType() string {
 		base = "z.array(z.string().uuid()).optional()"
 	case FieldStringArray:
 		base = "z.array(z.string()).optional()"
+	case FieldMoney:
+		// Not z.number(). The currency is half the value, and a schema that
+		// validates only the amount lets a client post a price with no
+		// currency at all, which the API would then default to USD.
+		base = "MoneySchema"
 	case FieldFile:
 		base = "FileRefSchema.nullable()"
 		if f.Required {
@@ -451,6 +470,8 @@ func (f Field) ColumnFormat() string {
 		return "relative"
 	case FieldRichtext:
 		return "richtext"
+	case FieldMoney:
+		return "money"
 	case FieldFile:
 		return "file"
 	case FieldFiles:
@@ -492,6 +513,8 @@ func (f Field) FormFieldType() string {
 		return "multi-relationship-select"
 	case FieldStringArray:
 		return "images"
+	case FieldMoney:
+		return "money"
 	case FieldFile:
 		return "file"
 	case FieldFiles:
@@ -506,6 +529,10 @@ func (f Field) IsSortable() bool {
 	switch FieldType(f.Type) {
 	case FieldString, FieldInt, FieldUint, FieldFloat, FieldDatetime, FieldDate, FieldSlug:
 		return true
+	case FieldMoney:
+		// Sorts on <field>_amount, which the handler whitelists under that
+		// name. The ordering is exact because the amount is an integer.
+		return true
 	default:
 		return false
 	}
@@ -518,7 +545,7 @@ func (f Field) IsSearchable() bool {
 
 // ValidFieldTypes returns all valid field type names.
 func ValidFieldTypes() []string {
-	return []string{"string", "text", "richtext", "int", "uint", "float", "bool", "toggle", "select", "radio", "check", "datetime", "date", "slug", "belongs_to", "one_to_one", "many_to_many", "string_array", "file", "files"}
+	return []string{"string", "text", "richtext", "int", "uint", "float", "bool", "toggle", "select", "radio", "check", "datetime", "date", "money", "slug", "belongs_to", "one_to_one", "many_to_many", "string_array", "file", "files"}
 }
 
 // FKColumnName returns the foreign key column name for a belongs_to field.

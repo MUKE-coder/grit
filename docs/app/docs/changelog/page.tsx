@@ -29,6 +29,75 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.184.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.184.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A money field type</h3>
+                <p>
+                  <code>price:money</code> stores an integer count of a currency&apos;s smallest
+                  unit alongside its ISO 4217 code, in two columns:{' '}
+                  <code>price_amount BIGINT</code> and <code>price_currency VARCHAR(3)</code>. The
+                  amount stays exact, the currency travels with it, and{' '}
+                  <code>SUM(price_amount) GROUP BY price_currency</code> is a query the database
+                  can answer.
+                </p>
+                <p>
+                  It generates the Go type with the arithmetic that goes with it (currency-checked
+                  add and subtract, an <code>Allocate</code> that splits 10.00 three ways without
+                  evaporating a cent), the shared TypeScript type and formatting helpers, an admin
+                  form field with a currency picker, and a right-aligned table cell that formats
+                  in the row&apos;s own currency. Zero-decimal currencies work: UGX 50,000 is
+                  50000, not 5000000, and it renders as 50,000 rather than 500.
+                </p>
+                <p>
+                  <strong>Worth recording how the first version was wrong.</strong> The type
+                  implemented <code>driver.Valuer</code> and <code>sql.Scanner</code>, which seemed
+                  tidy. GORM treats anything with those as a scalar, so it ignored the{' '}
+                  <code>embedded</code> tag and made a single <code>price INTEGER</code> column:
+                  the amount survived and the currency was silently discarded. Nothing failed. It
+                  only showed up in <code>PRAGMA table_info</code>, and the fix was to delete the
+                  two methods, which is now a test.
+                </p>
+                <p>
+                  The storefront blog used to say floats were fine at that scale. That advice is
+                  gone. See <a href="/docs/concepts/money">Money</a>, which includes the migration
+                  for an existing float price column.
+                </p>
+
+                <h3>Upgrade stopped shipping half a project</h3>
+                <p>
+                  <code>grit upgrade</code> refreshed <code>seed.go</code> but not the API key
+                  seeder it calls, nor the model, service, middleware and handler that seeder
+                  depends on. Every upgraded project failed to compile with{' '}
+                  <code>undefined: SeedAPIKeys</code>, and fixing that one file only moved the
+                  error to the next one along.
+                </p>
+                <p>
+                  The underlying split was wrong. Upgrade deliberately does not regenerate API
+                  code, which is right for anything a person might have edited and wrong for a
+                  package that exists purely to be imported by code the generator writes
+                  tomorrow. Those packages, <code>paginate</code>, <code>events</code>,{' '}
+                  <code>export</code>, <code>ids</code> and <code>pdf</code>, now travel on
+                  upgrade, so a freshly generated handler is never compiled against a{' '}
+                  <code>paginate.Config</code> six versions older than itself. Files you have
+                  actually edited are still reported as conflicts rather than overwritten.
+                </p>
+                <p>
+                  The money field&apos;s own frontend half gets the same treatment: the shared
+                  type, the admin cell and the form field are injected into existing projects
+                  rather than only appearing in new ones, which is the mistake media, recovery
+                  contacts and passkeys each shipped with.
+                </p>
+              </div>
+            </div>
+
             {/* v3.183.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -85,6 +85,7 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 	var assign strings.Builder
 	var headers []string
 	needStrconv := false
+	needMoney := false
 	needDatatypes := false
 
 	for _, f := range g.Definition.Fields {
@@ -151,6 +152,24 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 		case FieldFloat:
 			needStrconv = true
 			assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\tn, _ := strconv.ParseFloat(v, 64)\n\t\t\titem.%s = n\n\t\t}\n", jsonName, goName))
+		case FieldMoney:
+			// A CSV cell carries a human figure like 19.99, so it is read as
+			// major units and converted once. The currency comes from a
+			// sibling <field>_currency column when the file has one; guessing
+			// it from the amount is not possible and defaulting silently is
+			// better than importing an amount with no currency at all.
+			needStrconv = true
+			needMoney = true
+			assign.WriteString(fmt.Sprintf(
+				"\t\tif v, ok := get(rec, %q); ok && v != \"\" {\n"+
+					"\t\t\tcur := \"USD\"\n"+
+					"\t\t\tif c, ok := get(rec, %q); ok && c != \"\" {\n"+
+					"\t\t\t\tcur = c\n"+
+					"\t\t\t}\n"+
+					"\t\t\tmajor, _ := strconv.ParseFloat(v, 64)\n"+
+					"\t\t\titem.%s = money.FromMajor(major, cur)\n"+
+					"\t\t}\n",
+				jsonName, jsonName+"_currency", goName))
 		case FieldBool, FieldToggle:
 			assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\titem.%s = v == \"true\" || v == \"1\" || v == \"yes\"\n\t\t}\n", jsonName, goName))
 		case FieldCheck:
@@ -162,6 +181,10 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 		}
 	}
 
+	moneyImport := ""
+	if needMoney {
+		moneyImport = "\n\t\"" + g.Module + "/internal/money\""
+	}
 	strconvImport := ""
 	if needStrconv {
 		strconvImport = "\n\t\"strconv\""
@@ -178,7 +201,7 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 		"{{Plural}}", names.Plural,
 		"{{PluralKebab}}", names.PluralKebab,
 		"{{STRCONV}}", strconvImport,
-		"{{DATATYPES}}", datatypesImport,
+		"{{DATATYPES}}", datatypesImport+moneyImport,
 		"{{ASSIGN}}", assign.String(),
 		"{{HEADERS}}", templateHeaders,
 	)
