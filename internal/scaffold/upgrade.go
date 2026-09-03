@@ -273,6 +273,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 	finished = true
 	_ = updated // superseded by the guard's count, which counts actual writes
 
+	// Record the version in grit.json, which is where people look for it.
+	// Never fatal: the upgrade itself has already happened, and failing here
+	// over a label would be the wrong trade.
+	if err := stampProjectVersion(root, uOpts.Version); err != nil {
+		spinner.Printf("  Could not update grit.json: %v\n", err)
+	}
+
 	fmt.Println()
 	green.Printf("  ✓ Upgrade complete. Updated %d files.\n", written)
 
