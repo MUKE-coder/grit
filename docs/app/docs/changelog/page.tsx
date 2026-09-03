@@ -29,6 +29,35 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.188.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.188.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit.json reported the version you scaffolded with</h3>
+                <p>
+                  The <code>version</code> field was written once by{' '}
+                  <code>grit new</code> and never touched again, so a project upgraded four times
+                  still named the version it was created with. That is the field people open to
+                  answer &quot;what version am I on&quot;, and it was the wrong answer every time
+                  after the first upgrade.
+                </p>
+                <p>
+                  <code>grit upgrade</code> stamps it now. Only that key changes: the file is
+                  decoded and re-encoded rather than rewritten from the template, so
+                  architecture, frontend, apps and anything you added yourself survive. The
+                  authoritative record was already correct in{' '}
+                  <code>.grit/manifest.json</code>; this is the human-facing copy of the same
+                  fact, and the two disagreeing was worse than either.
+                </p>
+              </div>
+            </div>
+
             {/* v3.187.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
