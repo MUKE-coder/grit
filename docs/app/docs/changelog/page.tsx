@@ -29,6 +29,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.189.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.189.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Upgrade could half-migrate an app to Tailwind v4</h3>
+                <p>
+                  The v3 to v4 move spans three files that only work as a set:{' '}
+                  <code>package.json</code> names the engine,{' '}
+                  <code>postcss.config.js</code> names the plugin, and{' '}
+                  <code>globals.css</code> uses either the v3 <code>@tailwind</code> directives or
+                  the v4 <code>@import</code>. Upgrade writes all three, and the manifest guard
+                  holds back whichever ones you have edited, one at a time. Nobody edits all three
+                  or none of them.
+                </p>
+                <p>
+                  So the reachable state was a v4 plugin parsing a v3 stylesheet, and it does not
+                  degrade: the first utility built from <code>tailwind.config.ts</code> becomes{' '}
+                  <code>Cannot apply unknown utility</code> and the app stops building. The
+                  upgrade did list the held-back files, but nothing connected &quot;your
+                  package.json was left alone&quot; to &quot;your web app no longer compiles&quot;.
+                  Found on a real project upgrading from v3.176.0.
+                </p>
+                <p>
+                  The PostCSS config now follows the stylesheet: an app still on the v3 directives
+                  keeps the v3 plugin, and the file it gets says how to migrate when you want to.
+                  A consistent v3 app keeps working, and the migration becomes something you do
+                  deliberately rather than something an upgrade does to two files out of three.
+                  New projects are unaffected and still scaffold fully on v4.
+                </p>
+                <p>
+                  If you hit this already, the smallest fix is the one in that comment: move{' '}
+                  <code>package.json</code> to <code>tailwindcss ^4</code> plus{' '}
+                  <code>@tailwindcss/postcss</code>, and replace the three{' '}
+                  <code>@tailwind</code> lines with <code>@import &quot;tailwindcss&quot;;</code>{' '}
+                  and <code>@config &quot;../tailwind.config.ts&quot;;</code>. The{' '}
+                  <code>@config</code> line keeps your existing theme file working, so nothing has
+                  to move into an <code>@theme</code> block on day one.
+                </p>
+              </div>
+            </div>
+
             {/* v3.188.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

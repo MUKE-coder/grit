@@ -237,7 +237,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		// installed — three type errors in every fresh admin — and, because
 		// `add i18n` skips files that already exist, the broken copies then
 		// blocked the command that would have fixed them.
-		filepath.Join(adminRoot, "postcss.config.js"):  adminPostCSSConfig(),
+		filepath.Join(adminRoot, "postcss.config.js"):  postCSSConfigFor(adminRoot),
 		filepath.Join(adminRoot, "tsconfig.json"):      adminTSConfig(),
 		filepath.Join(adminRoot, "app", "globals.css"): adminGlobalCSS(),
 		filepath.Join(adminRoot, "app", "layout.tsx"):  adminRootLayout(opts),
