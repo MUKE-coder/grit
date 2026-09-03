@@ -83,12 +83,12 @@ func writeSingleFrontendFiles(root string, opts Options) error {
 		filepath.Join(shared, "brand.config.ts"):        sharedBrandConfig(opts),
 		filepath.Join(shared, "themes.ts"):              singleSharedThemes(opts),
 
-		filepath.Join(feRoot, "package.json"):       singleFrontendPackageJSON(opts),
-		filepath.Join(feRoot, "vite.config.ts"):     singleFrontendViteConfig(),
-		filepath.Join(feRoot, "index.html"):         webTanStackIndexHTML(opts),
+		filepath.Join(feRoot, "package.json"):   singleFrontendPackageJSON(opts),
+		filepath.Join(feRoot, "vite.config.ts"): singleFrontendViteConfig(),
+		filepath.Join(feRoot, "index.html"):     webTanStackIndexHTML(opts),
 		// .cjs (not .js) because package.json sets "type": "module" and PostCSS
 		// config still uses CommonJS module.exports.
-		filepath.Join(feRoot, "postcss.config.cjs"):                 webPostCSSConfig(),
+		filepath.Join(feRoot, "postcss.config.cjs"):                 postCSSConfigFor(feRoot),
 		filepath.Join(feRoot, "tsconfig.json"):                      singleFrontendTSConfig(),
 		filepath.Join(feRoot, "src", "main.tsx"):                    webTanStackMain(),
 		filepath.Join(feRoot, "src", "vite-env.d.ts"):               singleViteEnvTypes(),

@@ -11,7 +11,7 @@ func writeWebFiles(root string, opts Options) error {
 	files := map[string]string{
 		filepath.Join(webRoot, "package.json"):             webPackageJSON(opts),
 		filepath.Join(webRoot, "next.config.ts"):           webNextConfig(),
-		filepath.Join(webRoot, "postcss.config.js"):        webPostCSSConfig(),
+		filepath.Join(webRoot, "postcss.config.js"):        postCSSConfigFor(webRoot),
 		filepath.Join(webRoot, "tsconfig.json"):            webTSConfig(),
 		filepath.Join(webRoot, "app", "globals.css"):       webGlobalCSS(),
 		filepath.Join(webRoot, "app", "layout.tsx"):        webRootLayout(opts),
