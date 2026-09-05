@@ -29,6 +29,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.191.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.191.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>--single and --double grew an admin directory they do not have</h3>
+                <p>
+                  Found by sweeping the architectures that had gone untested after the TanStack
+                  bugs in v3.190.0. The account security writers put five files into{' '}
+                  <code>apps/admin/</code> in every architecture, including the two that have no
+                  admin app: no <code>package.json</code>, no layout, nothing that builds. An
+                  orphan tree reads as something half-finished, which is worse than the feature
+                  simply not being there.
+                </p>
+                <p>
+                  Both writers now skip when the project has no admin, which is what every other
+                  admin writer already did. The guard is inside the functions rather than at
+                  their six call sites, so a seventh cannot miss it. The API endpoints are
+                  unaffected and still exist in every architecture.
+                </p>
+
+                <h3>The sweep itself</h3>
+                <p>
+                  Every architecture and frontend combination was scaffolded and checked: imports
+                  resolved against each app&apos;s own <code>tsconfig</code> alias, Go built, and
+                  each frontend built. <code>--single</code>, <code>--double</code>,{' '}
+                  <code>--triple</code>, <code>--mobile</code>, <code>--desktop</code> and{' '}
+                  <code>--full</code>, times Next and Vite where both apply. Plugins were
+                  installed on the architectures that have an admin and confirmed to install only
+                  their API halves on the ones that do not.
+                </p>
+                <p>
+                  Two things that look like bugs and are not, recorded so the next sweep does not
+                  chase them: the desktop app&apos;s Go build fails until its frontend has been
+                  built, because Wails embeds <code>frontend/dist</code> and that is the
+                  documented build order; and the docs app imports{' '}
+                  <code>@/.source/server</code>, which <code>fumadocs-mdx</code> generates before
+                  every dev and build run.
+                </p>
+              </div>
+            </div>
+
             {/* v3.190.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
