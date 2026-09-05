@@ -2,7 +2,6 @@ package scaffold
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 )
 
@@ -15,15 +14,25 @@ import (
 // own screen, and the moment there is more than one of them, they need
 // somewhere to sit together.
 func writeAdminSecurityFiles(root string, opts Options) error {
-	adminRoot := filepath.Join(root, "apps", "admin")
-
 	files := map[string]string{
-		filepath.Join(adminRoot, "app", "(dashboard)", "account", "security", "page.tsx"): adminSecurityPageTSX(),
-		filepath.Join(adminRoot, "components", "security", "recovery-contacts.tsx"):       adminRecoveryContactsTSX(),
-		filepath.Join(adminRoot, "hooks", "use-security.ts"):                              adminUseSecurityTS(),
+		adminComponent(root, opts, "security", "recovery-contacts.tsx"): adminRecoveryContactsTSX(),
+		adminHook(root, opts, "use-security.ts"):                        adminUseSecurityTS(),
 	}
 	for path, content := range files {
 		content = strings.ReplaceAll(content, "{{MODULE}}", opts.Module())
+		if opts.UseTanStack() {
+			content = nextToTanStack(content)
+		}
+		if err := writeFile(path, content); err != nil {
+			return fmt.Errorf("writing %s: %w", path, err)
+		}
+	}
+
+	// The page itself: one file on Next, a component plus a route shim on
+	// TanStack. adminPageFiles has already converted the body for TanStack, so
+	// these are written as they come.
+	for path, content := range adminPageFiles(root, opts, "account/security", "account-security",
+		strings.ReplaceAll(adminSecurityPageTSX(), "{{MODULE}}", opts.Module())) {
 		if err := writeFile(path, content); err != nil {
 			return fmt.Errorf("writing %s: %w", path, err)
 		}

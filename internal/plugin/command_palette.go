@@ -43,7 +43,7 @@ func commandPaletteFiles(ctx Context) map[string]string {
 		return map[string]string{}
 	}
 	return map[string]string{
-		"apps/admin/components/command-palette.tsx": commandPaletteComponent(),
+		adminFile(ctx, "components/command-palette.tsx"): adminSource(ctx, commandPaletteComponent()),
 	}
 }
 
@@ -51,7 +51,7 @@ func commandPaletteInjections(ctx Context) []Injection {
 	if ctx.Architecture != "triple" && ctx.Architecture != "full" {
 		return []Injection{}
 	}
-	admin := "apps/admin"
+	admin := adminDir(ctx)
 	return []Injection{
 		{
 			File:   admin + "/components/layout/admin-layout.tsx",

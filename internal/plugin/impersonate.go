@@ -71,10 +71,15 @@ func impersonateFiles(ctx Context) map[string]string {
 
 	// Frontend surfaces only exist where there's an admin app.
 	if ctx.Architecture == "triple" || ctx.Architecture == "full" {
-		admin := "apps/admin"
-		files[admin+"/hooks/use-impersonate.ts"] = impersonateHook()
-		files[admin+"/components/impersonation-banner.tsx"] = impersonateBanner()
-		files[admin+"/app/(dashboard)/system/impersonate/page.tsx"] = impersonatePage()
+		files[adminFile(ctx, "hooks/use-impersonate.ts")] = adminSource(ctx, impersonateHook())
+		files[adminFile(ctx, "components/impersonation-banner.tsx")] = adminSource(ctx, impersonateBanner())
+
+		// The page, plus the route shim TanStack Router needs to reach it.
+		page, route := adminPageFile(ctx, "system/impersonate", "system-impersonate")
+		files[page] = adminSource(ctx, impersonatePage())
+		if route != "" {
+			files[route] = tanStackRouteShim("system/impersonate", "@/pages/system-impersonate")
+		}
 	}
 
 	return files
@@ -114,7 +119,7 @@ func impersonateInjections(ctx Context) []Injection {
 
 	// Wire the banner + nav link into the admin app.
 	if ctx.Architecture == "triple" || ctx.Architecture == "full" {
-		admin := "apps/admin"
+		admin := adminDir(ctx)
 		injections = append(injections,
 			Injection{
 				File:   admin + "/components/layout/admin-layout.tsx",

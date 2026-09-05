@@ -69,9 +69,12 @@ func webhooksFiles(ctx Context) map[string]string {
 	// Admin page (Next / TanStack share the component via nextToTanStack at
 	// scaffold time, but a plugin writes the concrete file, so emit per frontend).
 	if ctx.Architecture == "triple" || ctx.Architecture == "full" {
+		// Plain root here, not adminDir: this branch appends its own src/.
 		admin := "apps/admin"
 		if ctx.Frontend == "tanstack" {
-			files[admin+"/src/pages/system/webhooks.tsx"] = webhooksAdminPage()
+			// Converted, not copied: the page is written in the Next dialect and
+			// "use client" plus next/navigation mean nothing to Vite.
+			files[admin+"/src/pages/system/webhooks.tsx"] = adminSource(ctx, webhooksAdminPage())
 			files[admin+"/src/routes/_dashboard/system/webhooks.tsx"] = webhooksTanStackRoute()
 		} else {
 			files[admin+"/app/(dashboard)/system/webhooks/page.tsx"] = webhooksAdminPage()
@@ -111,7 +114,7 @@ func webhooksInjections(ctx Context) []Injection {
 
 	// Sidebar nav link (triple/full only).
 	if ctx.Architecture == "triple" || ctx.Architecture == "full" {
-		admin := "apps/admin"
+		admin := adminDir(ctx)
 		injections = append(injections, Injection{
 			File:   admin + "/components/chrome/CollapsibleSidebar.tsx",
 			Marker: "// grit:nav:system",

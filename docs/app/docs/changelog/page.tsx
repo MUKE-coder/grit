@@ -29,6 +29,70 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.190.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.190.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The TanStack admin was missing files, a whole feature, and every plugin</h3>
+                <p>
+                  Reported by somebody whose <code>grit new --vite</code> project would not start:{' '}
+                  <code>Failed to resolve import &quot;@/components/tables/table-tabs&quot;</code>.
+                  Vite reports these one at a time, so that was the first of four.
+                </p>
+                <p>
+                  All of it is one mistake repeated: writers that hardcode the Next.js admin
+                  layout. The Next admin keeps components, hooks and lib at the app root; the
+                  TanStack admin puts them under <code>src/</code> and routes through{' '}
+                  <code>src/routes/</code>. Anything written to the Next shape in a TanStack
+                  project lands where the <code>@/</code> alias does not point.
+                </p>
+                <p>
+                  <strong>Four components were never registered</strong> for TanStack:{' '}
+                  <code>table-tabs</code>, <code>bulk-action-bar</code>,{' '}
+                  <code>bulk-edit-modal</code> and{' '}
+                  <code>use-resource-detail-controller</code>. That one is a build error, so it
+                  at least announced itself.
+                </p>
+                <p>
+                  <strong>The account security page did not exist at all.</strong> Passkeys,
+                  recovery contacts, the WebAuthn helpers and the page itself were written to the
+                  Next paths, so a TanStack project got five files nothing imports and no security
+                  screen. No error, because unimported files are not a build failure.
+                </p>
+                <p>
+                  <strong>Four of the five plugins could not be installed.</strong>{' '}
+                  <code>command-palette</code>, <code>impersonate</code> and{' '}
+                  <code>saved-views</code> wrote into the Next layout, their injections missed
+                  targets that live under <code>src/</code>, and the install reported success
+                  anyway. Worse, the stray file then counted as &quot;already exists&quot;, so a
+                  second attempt refused outright. Only <code>multitenant</code>, which touches no
+                  admin files, worked.
+                </p>
+                <p>
+                  Every writer now asks the project which layout it has, and plugin components go
+                  through the same Next-to-TanStack converter the scaffold uses, so a rule added
+                  there reaches plugins without being added twice. Verified by installing all five
+                  plugins into both a Next and a Vite project and building each: Go, admin and
+                  web.
+                </p>
+                <p>
+                  Four tests now assert it, because none of these were build failures and the
+                  next one will not be either: no plugin may write outside the project&apos;s
+                  admin layout, in either direction; a page shipped under{' '}
+                  <code>src/pages/</code> must have a route pointing at it; and no file written
+                  for TanStack may still carry <code>&quot;use client&quot;</code> or{' '}
+                  <code>next/navigation</code>. That last one caught a fifth bug while it was
+                  being written.
+                </p>
+              </div>
+            </div>
+
             {/* v3.189.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

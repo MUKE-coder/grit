@@ -2,20 +2,20 @@ package scaffold
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 )
 
 // writeAdminPasskeyFiles writes the passkey card and its WebAuthn plumbing.
 func writeAdminPasskeyFiles(root string, opts Options) error {
-	adminRoot := filepath.Join(root, "apps", "admin")
-
 	files := map[string]string{
-		filepath.Join(adminRoot, "lib", "webauthn.ts"):                 adminWebauthnLibTS(),
-		filepath.Join(adminRoot, "components", "security", "passkeys.tsx"): adminPasskeysCardTSX(),
+		adminLib(root, opts, "webauthn.ts"):                    adminWebauthnLibTS(),
+		adminComponent(root, opts, "security", "passkeys.tsx"): adminPasskeysCardTSX(),
 	}
 	for path, content := range files {
 		content = strings.ReplaceAll(content, "{{MODULE}}", opts.Module())
+		if opts.UseTanStack() {
+			content = nextToTanStack(content)
+		}
 		if err := writeFile(path, content); err != nil {
 			return fmt.Errorf("writing %s: %w", path, err)
 		}
