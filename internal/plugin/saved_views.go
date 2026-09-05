@@ -56,9 +56,8 @@ func savedViewsFiles(ctx Context) map[string]string {
 	}
 
 	if ctx.Architecture == "triple" || ctx.Architecture == "full" {
-		admin := "apps/admin"
-		files[admin+"/hooks/use-saved-views.ts"] = savedViewsHook()
-		files[admin+"/components/saved-views.tsx"] = savedViewsComponent()
+		files[adminFile(ctx, "hooks/use-saved-views.ts")] = adminSource(ctx, savedViewsHook())
+		files[adminFile(ctx, "components/saved-views.tsx")] = adminSource(ctx, savedViewsComponent())
 	}
 
 	return files
@@ -98,7 +97,7 @@ func savedViewsInjections(ctx Context) []Injection {
 	}
 
 	if ctx.Architecture == "triple" || ctx.Architecture == "full" {
-		admin := "apps/admin"
+		admin := adminDir(ctx)
 		injections = append(injections,
 			Injection{
 				File:   admin + "/components/resource/resource-page.tsx",

@@ -27,6 +27,14 @@ func stripUseClient(code string) string {
 // next/link, next/image, next/navigation and next/dynamic onto TanStack Router
 // equivalents. Without this, the Vite admin ships components that import
 // `usePathname`/`next/link`/`next/image` and fail to build (grit issue #69).
+// NextToTanStack converts a Next.js component for the TanStack admin.
+//
+// Exported for internal/plugin, whose components are written in the Next
+// dialect and need the same treatment. One implementation rather than a copy:
+// a rule added here should reach plugins without anybody remembering to add
+// it twice.
+func NextToTanStack(code string) string { return nextToTanStack(code) }
+
 func nextToTanStack(code string) string {
 	code = stripUseClient(code)
 
@@ -356,17 +364,18 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "lib", "file-accepts.ts"): adminFileAcceptsLib(),
 
 		// Hooks (same as Next.js versions)
-		filepath.Join(adminRoot, "src", "hooks", "use-auth.ts"):                adminTanStackUseAuth(),
-		filepath.Join(adminRoot, "src", "hooks", "use-resource.ts"):            nextToTanStack(adminUseResource()),
-		filepath.Join(adminRoot, "src", "hooks", "use-resource-controller.ts"): nextToTanStack(adminUseResourceController()),
-		filepath.Join(adminRoot, "src", "hooks", "use-system.ts"):              nextToTanStack(adminUseSystem()),
-		filepath.Join(adminRoot, "src", "hooks", "use-profile.ts"):             nextToTanStack(adminUseProfile()),
-		filepath.Join(adminRoot, "src", "hooks", "use-roles.ts"):               nextToTanStack(adminUseRoles()),
-		filepath.Join(adminRoot, "src", "hooks", "use-permissions.ts"):         nextToTanStack(adminUsePermissions()),
-		filepath.Join(adminRoot, "src", "hooks", "use-modules.ts"):             nextToTanStack(adminUseModules()),
-		filepath.Join(adminRoot, "src", "hooks", "use-backups.ts"):             nextToTanStack(adminUseBackups()),
-		filepath.Join(adminRoot, "src", "hooks", "use-dashboard-layout.ts"):    nextToTanStack(adminUseDashboardLayoutTS()),
-		filepath.Join(adminRoot, "src", "hooks", "use-toasted-mutation.ts"):    nextToTanStack(adminToastHook()),
+		filepath.Join(adminRoot, "src", "hooks", "use-auth.ts"):                       adminTanStackUseAuth(),
+		filepath.Join(adminRoot, "src", "hooks", "use-resource.ts"):                   nextToTanStack(adminUseResource()),
+		filepath.Join(adminRoot, "src", "hooks", "use-resource-controller.ts"):        nextToTanStack(adminUseResourceController()),
+		filepath.Join(adminRoot, "src", "hooks", "use-resource-detail-controller.ts"): nextToTanStack(adminUseResourceDetailController()),
+		filepath.Join(adminRoot, "src", "hooks", "use-system.ts"):                     nextToTanStack(adminUseSystem()),
+		filepath.Join(adminRoot, "src", "hooks", "use-profile.ts"):                    nextToTanStack(adminUseProfile()),
+		filepath.Join(adminRoot, "src", "hooks", "use-roles.ts"):                      nextToTanStack(adminUseRoles()),
+		filepath.Join(adminRoot, "src", "hooks", "use-permissions.ts"):                nextToTanStack(adminUsePermissions()),
+		filepath.Join(adminRoot, "src", "hooks", "use-modules.ts"):                    nextToTanStack(adminUseModules()),
+		filepath.Join(adminRoot, "src", "hooks", "use-backups.ts"):                    nextToTanStack(adminUseBackups()),
+		filepath.Join(adminRoot, "src", "hooks", "use-dashboard-layout.ts"):           nextToTanStack(adminUseDashboardLayoutTS()),
+		filepath.Join(adminRoot, "src", "hooks", "use-toasted-mutation.ts"):           nextToTanStack(adminToastHook()),
 
 		// Lib modules the reused pages import.
 		filepath.Join(adminRoot, "src", "lib", "dashboard-catalog.ts"): nextToTanStack(adminDashboardCatalogTS()),
@@ -431,6 +440,9 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "components", "tables", "table-filters.tsx"):     nextToTanStack(adminTableFilters()),
 		filepath.Join(adminRoot, "src", "components", "tables", "table-toolbar.tsx"):     nextToTanStack(adminTableToolbar()),
 		filepath.Join(adminRoot, "src", "components", "tables", "table-pagination.tsx"):  nextToTanStack(adminTablePagination()),
+		filepath.Join(adminRoot, "src", "components", "tables", "table-tabs.tsx"):        nextToTanStack(adminTableTabs()),
+		filepath.Join(adminRoot, "src", "components", "tables", "bulk-action-bar.tsx"):   nextToTanStack(adminBulkActionBar()),
+		filepath.Join(adminRoot, "src", "components", "tables", "bulk-edit-modal.tsx"):   nextToTanStack(adminBulkEditModal()),
 		filepath.Join(adminRoot, "src", "components", "tables", "date-filter.tsx"):       nextToTanStack(adminDateFilter()),
 		filepath.Join(adminRoot, "src", "components", "tables", "table-skeleton.tsx"):    nextToTanStack(adminTableSkeleton()),
 		filepath.Join(adminRoot, "src", "components", "tables", "table-empty-state.tsx"): nextToTanStack(adminTableEmptyState()),
