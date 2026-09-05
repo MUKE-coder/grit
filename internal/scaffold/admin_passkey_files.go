@@ -7,6 +7,20 @@ import (
 
 // writeAdminPasskeyFiles writes the passkey card and its WebAuthn plumbing.
 func writeAdminPasskeyFiles(root string, opts Options) error {
+	// No admin app, nothing to write.
+	//
+	// This is an admin screen: it renders inside the dashboard chrome and its
+	// route lives under the dashboard layout. Without the guard, --single and
+	// --double projects grew an apps/admin/ directory holding these five files
+	// and nothing else: no package.json, no layout, no build. An orphan tree
+	// that never compiles and nobody asked for, which is worse than the feature
+	// being absent, because it looks like something went half-finished.
+	//
+	// The API endpoints are unaffected and still exist in every architecture.
+	if !opts.ShouldIncludeAdmin() {
+		return nil
+	}
+
 	files := map[string]string{
 		adminLib(root, opts, "webauthn.ts"):                    adminWebauthnLibTS(),
 		adminComponent(root, opts, "security", "passkeys.tsx"): adminPasskeysCardTSX(),
