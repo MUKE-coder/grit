@@ -72,6 +72,7 @@ func webTanStackPackageJSON(opts Options) string {
     "@tanstack/react-router-devtools": "^1.93.0",
     "@tanstack/router-vite-plugin": "^1.93.0",
     "@types/react": "^19.0.0",
+    "@types/node": "^22.0.0",
     "@types/react-dom": "^19.0.0",
     "@tailwindcss/postcss": "^4.1.13",
     "tw-animate-css": "^1.4.0",

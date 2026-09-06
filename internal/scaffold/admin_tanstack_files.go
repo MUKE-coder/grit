@@ -264,9 +264,14 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "index.html"):     adminTanStackIndexHTML(opts),
 		// Tailwind v4: styling is driven by the @tailwindcss/vite plugin +
 		// @theme/@import in globals.css — no tailwind.config or postcss.config.
-		filepath.Join(adminRoot, "tsconfig.json"):      adminTanStackTSConfig(),
-		filepath.Join(adminRoot, "src", "main.tsx"):    adminTanStackMain(),
-		filepath.Join(adminRoot, "src", "globals.css"): adminTanStackGlobalCSS(),
+		filepath.Join(adminRoot, "tsconfig.json"):   adminTanStackTSConfig(),
+		filepath.Join(adminRoot, "src", "main.tsx"): adminTanStackMain(),
+		// Without this, every import.meta.env read is TS2339 "Property env
+		// does not exist on type ImportMeta" and pnpm typecheck is red on a
+		// freshly scaffolded project. Every other Vite app in the scaffold
+		// already had it; the admin was the one that did not.
+		filepath.Join(adminRoot, "src", "vite-env.d.ts"): viteEnvTypes(),
+		filepath.Join(adminRoot, "src", "globals.css"):   adminTanStackGlobalCSS(),
 
 		// Pages — reused verbatim from the Next.js admin (transformed by
 		// nextToTanStack). These are the real dashboards/forms/tables; the
@@ -581,6 +586,7 @@ func adminTanStackPackageJSON(opts Options) string {
     "@tanstack/react-router-devtools": "^1.93.0",
     "@tanstack/router-vite-plugin": "^1.93.0",
     "@types/react": "^19.0.0",
+    "@types/node": "^22.0.0",
     "@types/react-dom": "^19.0.0",
     "tailwindcss": "^4.1.13",
     "@tailwindcss/vite": "^4.1.13",

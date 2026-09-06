@@ -163,7 +163,7 @@ func adminJobsPage() string {
 
 import { useState } from "react";
 import { useJobStats, useJobsByStatus, useRetryJob, useClearQueue } from "@/hooks/use-system";
-import { Briefcase, RefreshCw, Trash2, Loader2, AlertCircle } from "@/lib/icons";
+import { Briefcase, RefreshCw, Trash2, Loader2 } from "@/lib/icons";
 
 const statuses = ["active", "pending", "completed", "failed", "retry"] as const;
 
@@ -298,7 +298,7 @@ func adminFilesPage() string {
 
 import { useState, useRef } from "react";
 import { useUploads, useUploadFile, useDeleteUpload, useUploadStats } from "@/hooks/use-system";
-import { FolderOpen, Upload, Trash2, Loader2, X, Image as ImageIcon, Play, Music, FileText, FileSpreadsheet, File as FileIcon } from "@/lib/icons";
+import { FolderOpen, Upload, Loader2, X, Image as ImageIcon, Play, Music, FileText, FileSpreadsheet, File as FileIcon } from "@/lib/icons";
 import { buttonClasses } from "@/components/ui/button";
 
 function formatFileSize(bytes: number): string {
@@ -991,7 +991,7 @@ func adminObservabilityPage() string {
 	return `"use client";
 
 import { useEffect, useState } from "react";
-import { Activity, ExternalLink, AlertTriangle, Cpu, Database, Zap } from "@/lib/icons";
+import { Activity, ExternalLink, AlertTriangle, Zap } from "@/lib/icons";
 import { apiClient as api } from "@/lib/api-client";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
