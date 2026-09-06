@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 	"strings"
 )
 
@@ -107,12 +109,50 @@ func (g *Generator) buildTSFields(names Names) string {
 // lib/resource.ts defineResource(), so the content must not diverge.
 func (g *Generator) writeResourceDefinitionTanStack(names Names) error {
 	content := g.resourceDefinitionFileContent(names)
-	dir := filepath.Join(g.Root, "apps", "admin", "src", "resources")
-	os.MkdirAll(dir, 0755)
-	if err := os.WriteFile(filepath.Join(dir, names.PluralKebab+".ts"), []byte(content), 0644); err != nil {
+	root := g.tanStackResourcesRoot()
+
+	// A folder per resource, matching the Next generator and the built-in
+	// blogs and users. It used to write a flat src/resources/<kebab>.ts while
+	// both route writers imported '@/resources/<kebab>/<kebab>', so every
+	// generated resource failed to typecheck on the line reaching its own
+	// definition.
+	//
+	// A project still holding a flat file keeps it where it is: writing a
+	// second copy in a folder would leave two definitions and a registry
+	// pointing at whichever one it found first.
+	if flat := filepath.Join(root, names.PluralKebab+".ts"); fileExists(flat) {
+		if err := writeFileWithDirs(flat, content); err != nil {
+			return err
+		}
+		return writeResourceCustomStub(root, names)
+	}
+
+	dir, path := scaffold.ResourceDefPath(root, names.PluralKebab)
+	if err := writeFileWithDirs(path, content); err != nil {
 		return err
 	}
 	return writeResourceCustomStub(dir, names)
+}
+
+// tanStackResourcesRoot is where the TanStack admin keeps resource
+// definitions.
+func (g *Generator) tanStackResourcesRoot() string {
+	return filepath.Join(g.Root, "apps", "admin", "src", "resources")
+}
+
+// tanStackResourceImport is the module specifier a route uses to reach a
+// resource definition.
+//
+// Asked rather than assumed, because the two layouts need different specifiers
+// and a project can be in either: the folder form for anything generated now,
+// the flat form for one written before that was fixed. Guessing is what broke
+// this in the first place.
+func (g *Generator) tanStackResourceImport(names Names) string {
+	root := g.tanStackResourcesRoot()
+	if fileExists(filepath.Join(root, names.PluralKebab+".ts")) {
+		return "@/resources/" + names.PluralKebab
+	}
+	return "@/resources/" + names.PluralKebab + "/" + names.PluralKebab
 }
 
 // writeResourcePageTanStack writes a TanStack Router resource list page. It uses
@@ -121,12 +161,12 @@ func (g *Generator) writeResourceDefinitionTanStack(names Names) error {
 func (g *Generator) writeResourcePageTanStack(names Names) error {
 	content := fmt.Sprintf(`import { createFileRoute } from '@tanstack/react-router'
 import { ResourcePage } from '@/components/resource/resource-page'
-import { %sResource } from '@/resources/%s/%s'
+import { %sResource } from '%s'
 
 export const Route = createFileRoute('/_dashboard/resources/%s/')({
   component: () => <ResourcePage resource={%sResource} />,
 })
-`, names.Camel, names.PluralKebab, names.PluralKebab, names.PluralKebab, names.Camel)
+`, names.Camel, g.tanStackResourceImport(names), names.PluralKebab, names.Camel)
 
 	dir := filepath.Join(g.Root, "apps", "admin", "src", "routes", "_dashboard", "resources", names.PluralKebab)
 	os.MkdirAll(dir, 0755)
@@ -140,7 +180,7 @@ export const Route = createFileRoute('/_dashboard/resources/%s/')({
 func (g *Generator) writeResourceDetailPageTanStack(names Names) error {
 	content := fmt.Sprintf(`import { createFileRoute } from '@tanstack/react-router'
 import { ResourceDetailPage } from '@/components/resource/resource-detail-page'
-import { %sResource } from '@/resources/%s/%s'
+import { %sResource } from '%s'
 
 export const Route = createFileRoute('/_dashboard/resources/%s/$id')({
   component: RouteComponent,
@@ -150,7 +190,7 @@ function RouteComponent() {
   const { id } = Route.useParams()
   return <ResourceDetailPage resource={%sResource} id={id} />
 }
-`, names.Camel, names.PluralKebab, names.PluralKebab, names.PluralKebab, names.Camel)
+`, names.Camel, g.tanStackResourceImport(names), names.PluralKebab, names.Camel)
 
 	dir := filepath.Join(g.Root, "apps", "admin", "src", "routes", "_dashboard", "resources", names.PluralKebab)
 	os.MkdirAll(dir, 0755)

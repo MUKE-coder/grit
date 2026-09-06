@@ -17,7 +17,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AreaChart, Area, BarChart, Bar, CartesianGrid, ResponsiveContainer,
+  AreaChart, Area, CartesianGrid, ResponsiveContainer,
   Tooltip, XAxis, YAxis, PieChart, Pie, Cell,
 } from "recharts";
 import { useMe } from "@/hooks/use-auth";

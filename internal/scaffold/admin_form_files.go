@@ -692,7 +692,7 @@ func adminFormStepper() string {
 
 import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import type { FieldDefinition, FormDefinition, StepDefinition } from "@/lib/resource";
+import type { FieldDefinition, FormDefinition } from "@/lib/resource";
 import { FieldRenderer, buildDefaults } from "./form-builder";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Check, ChevronLeft, ChevronRight, Loader2 } from "@/lib/icons";

@@ -165,7 +165,6 @@ import { renderCell } from "@/components/tables/cell-renderers";
 import { DataTable } from "@/components/tables/data-table";
 import { FormSheet } from "@/components/forms/form-sheet";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
-import { apiClient } from "@/lib/api-client";
 import { ArrowLeft, Pencil, Trash2, Loader2, Printer, Plus, FileText } from "@/lib/icons";
 import { buttonClasses } from "@/components/ui/button";
 
@@ -194,7 +193,6 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
 // That is the proof the hook is complete enough to build your own on.
 function ResourceDetailView({ resource, id }: ResourceDetailPageProps) {
   const c = useResourceDetailController(resource, id);
-  const router = useRouter();
 
   const CustomHeader = resource.components?.DetailHeader;
   const CustomFields = resource.components?.DetailFields;
