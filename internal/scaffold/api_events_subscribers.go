@@ -63,20 +63,52 @@ func registerAudit(db *gorm.DB) {
 	})
 }
 
-// registerRealtime pushes every event to connected clients.
+// RealtimeAudience decides which users see a resource event.
+//
+// The default is the actor and nobody else, so a user's other devices stay in
+// sync and no one learns about a record they may not be allowed to read.
+//
+// This is deliberately narrow. The payload carries e.Label, which is the row's
+// human-readable title: a conversation subject, a document name, a customer.
+// Broadcasting that to every connected session hands every authenticated user
+// a live feed of every title in the system, across tenants, whatever the REST
+// layer permits. There is no per-row authorization in the event bus to lean
+// on, so the only safe default is the one person already known to have seen
+// the row: whoever just wrote it.
+//
+// Widen it deliberately when the app knows who is allowed to look. A chat app
+// sends to the conversation's participants; an admin dashboard sends to staff:
+//
+//	services.RealtimeAudience = func(e events.Event) []string {
+//	    if e.Resource == "messages" {
+//	        return participantIDs(db, e)
+//	    }
+//	    return staffIDs(db)
+//	}
+//
+// Returning nil drops the event, which is what an unauthenticated or
+// system-initiated write does by default.
+var RealtimeAudience = func(e events.Event) []string {
+	if e.Actor == "" {
+		return nil
+	}
+	return []string{e.Actor}
+}
+
+// registerRealtime pushes resource events to the users RealtimeAudience picks.
 //
 // Async: a websocket write to a client on a bad connection must not slow the
 // request that caused the event.
-//
-// Broadcast rather than per-user, matching what the hub can do today. Once
-// rooms exist this becomes a send to the room watching the record, which is
-// the point at which presence and live editing become possible.
 func registerRealtime(hub *realtime.Hub) {
 	if hub == nil {
 		return
 	}
 	events.On("*", events.Async, "realtime", func(e events.Event) error {
-		hub.Broadcast(realtime.Event{
+		audience := RealtimeAudience(e)
+		if len(audience) == 0 {
+			return nil
+		}
+		hub.SendToUsers(audience, realtime.Event{
 			Type: e.Name,
 			Payload: map[string]interface{}{
 				"resource": e.Resource,
