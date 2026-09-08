@@ -29,6 +29,109 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.193.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.193.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  Found by building a chat app on a stock scaffold and watching what the wire
+                  actually carried. Three of these are security fixes and all three were
+                  reproduced against a clean project before being changed.
+                </p>
+
+                <h3>Resource events were broadcast to every connected user</h3>
+                <p>
+                  The realtime subscriber listened on <code>&quot;*&quot;</code> and called{' '}
+                  <code>hub.Broadcast</code>, so every create, update and delete of every
+                  resource went to every open socket in the process. The payload carries the
+                  row&apos;s label, which is its human-readable title.
+                </p>
+                <p>
+                  Two accounts and one websocket were enough to show it. A user with no
+                  relationship to the record received{' '}
+                  <code>
+                    {'{'}&quot;type&quot;:&quot;conversations.created&quot;,&quot;label&quot;:&quot;Chemo results - family only&quot;{'}'}
+                  </code>
+                  , along with the actor&apos;s id and the timestamp. In a multi-tenant app that
+                  is every tenant&apos;s record titles, live, to everyone signed in, whatever the
+                  REST layer permits. There is no per-row authorization in the event bus for it
+                  to have leaned on.
+                </p>
+                <p>
+                  Events now go to <code>services.RealtimeAudience(e)</code>, which defaults to
+                  the actor alone: your own devices stay in sync and nobody learns about a row
+                  they may not be allowed to read. Widen it deliberately when the app knows who
+                  is entitled to look, for example a chat sending to a conversation&apos;s
+                  participants. Returning nil drops the event.
+                </p>
+
+                <h3>A WebSocket outlived the token that authorised it</h3>
+                <p>
+                  The JWT is checked once, at the handshake, and never again. Nothing bounded
+                  the connection after that, so a socket opened with a 15 minute token kept
+                  delivering events indefinitely.
+                </p>
+                <p>
+                  <code>realtime.Client</code> now carries the token&apos;s expiry and{' '}
+                  <code>writePump</code> closes the connection when it passes, which is the same
+                  bound REST already operates under.
+                </p>
+
+                <h3>&quot;Sign out of all devices&quot; did not sign out of all devices</h3>
+                <p>
+                  Revoking a session marked a database row and stopped there. Verified before
+                  the fix: after a successful <code>revoke-all</code> from a second session, the
+                  revoked device&apos;s access token still returned 200 on REST, and its open
+                  websocket kept receiving message bodies. Combined with the broadcast above,
+                  a signed-out device kept a live feed of activity across the whole system.
+                </p>
+                <p>
+                  <code>Hub.DisconnectUser</code> closes every connection a user holds, and both{' '}
+                  <code>RevokeSession</code> and <code>RevokeAllUserSessions</code> now call it
+                  through a <code>services.OnSessionsRevoked</code> hook that{' '}
+                  <code>routes.Setup</code> wires to the hub. The socket closes within seconds
+                  rather than never.
+                </p>
+
+                <h3>No audio file could be uploaded</h3>
+                <p>
+                  <code>AllowedMimeTypes</code> had images, video, documents and archives, and
+                  no <code>audio/*</code> entry of any kind. Every voice note came back{' '}
+                  <code>INVALID_FILE_TYPE</code>.
+                </p>
+                <p>
+                  The admin has had an <code>audio</code> accept group listing five audio types
+                  for a long time, and the storage dashboard already buckets uploads by{' '}
+                  <code>mime_type LIKE &apos;audio/%&apos;</code>, so a field declared{' '}
+                  <code>accepts:&quot;audio&quot;</code> offered an audio picker and then failed
+                  every file it produced. That is the same trap the archive types were added to
+                  close. The audio types are now in the fallback list.
+                </p>
+
+                <h3>The defenders&apos; handbook claimed an ownership check that is not there</h3>
+                <p>
+                  It said <code>grit generate resource</code> wires{' '}
+                  <code>authz.MustOwn</code> into the generated handler, and that &quot;IDOR is
+                  closed by the generator, not by the developer remembering&quot;. Nothing
+                  outside the <code>authz</code> package calls <code>MustOwn</code>. Generated
+                  routes sit on the authenticated group, so any signed-in user can read and
+                  write every row of every generated resource.
+                </p>
+                <p>
+                  The helper is good and the page now says what it actually is: something you
+                  call, with a warning about what the default is until you do. The generator
+                  cannot guess which resources are per-user and which are shared reference
+                  data, so this is a page correction rather than a code change.
+                </p>
+              </div>
+            </div>
+
             {/* v3.192.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

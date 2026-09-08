@@ -705,12 +705,23 @@ const BONUS: Bonus[] = [
           someone else&apos;s order. It&apos;s OWASP&apos;s #1 risk three years running.
         </p>
         <p>
-          Every <code>grit generate resource</code> wires{' '}
-          <code>authz.MustOwn(c, db, &amp;model, c.Param(&quot;id&quot;))</code> into the
-          generated handler. The helper loads the row, verifies ownership against the
+          Grit ships <code>authz.MustOwn(c, db, &amp;model, c.Param(&quot;id&quot;))</code>{' '}
+          for this. The helper loads the row, verifies ownership against the
           authenticated user, and returns 404 (not 403) on a mismatch so existence
-          isn&apos;t leaked. IDOR is closed by the generator, not by the developer
-          remembering.
+          isn&apos;t leaked. Implement <code>GetOwnerID()</code> on the model and call
+          it at the top of any handler that reads or writes a row by id.
+        </p>
+        <p className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+          <strong className="text-amber-400">You have to call it.</strong>{' '}
+          <code>grit generate resource</code> does <em>not</em> wire{' '}
+          <code>MustOwn</code> into the handlers it writes, and it has no way to
+          guess which resources are per-user and which are shared reference data.
+          Generated routes sit on the authenticated group, so out of the box{' '}
+          <strong>any signed-in user can read and write every row of every
+          generated resource</strong>. That is the right default for a product
+          catalogue and badly wrong for an invoice. Until you add the check, or
+          restrict the routes with <code>--roles</code>, assume every generated
+          endpoint is readable by every account you have issued.
         </p>
       </>
     ),

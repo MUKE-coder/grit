@@ -193,19 +193,50 @@ func RevokeSession(db *gorm.DB, userID, sessionID string) error {
 	if res.RowsAffected == 0 {
 		return ErrSessionInvalid
 	}
+	// Sockets are bound to a user, not to a session row, so the revoked
+	// device cannot be singled out. Every connection this user holds is
+	// closed and the ones still entitled reconnect.
+	sessionsRevoked(userID)
 	return nil
+}
+
+// OnSessionsRevoked runs after a user's sessions are revoked, with that user's
+// id. routes.Setup points it at the realtime hub's DisconnectUser.
+//
+// Revoking a session marks a database row. It does not reach an already-open
+// WebSocket, whose token was checked once at the handshake and is never
+// consulted again, so without this hook "sign out of all devices" leaves the
+// signed-out device receiving live events until its token expires. Closing the
+// socket is the half of revocation that the row cannot do on its own.
+//
+// Nil by default so the services package stays free of a realtime dependency.
+var OnSessionsRevoked func(userID string)
+
+func sessionsRevoked(userID string) {
+	if OnSessionsRevoked != nil {
+		OnSessionsRevoked(userID)
+	}
 }
 
 // RevokeAllUserSessions kills every session for a user. Call it on password
 // change, on MFA change, and from "log out everywhere". exceptToken, when
 // non-empty, spares the caller's own session.
+//
+// Note that exceptToken spares a session row but cannot spare a socket: every
+// connection the user holds is closed and the surviving session simply
+// reconnects. Dropping one live connection is a great deal better than leaving
+// a revoked one open.
 func RevokeAllUserSessions(db *gorm.DB, userID, exceptToken string) error {
 	now := time.Now()
 	q := db.Model(&models.Session{}).Where("user_id = ? AND revoked_at IS NULL", userID)
 	if exceptToken != "" {
 		q = q.Where("token_hash <> ?", models.HashSessionToken(exceptToken))
 	}
-	return q.Update("revoked_at", &now).Error
+	if err := q.Update("revoked_at", &now).Error; err != nil {
+		return err
+	}
+	sessionsRevoked(userID)
+	return nil
 }
 
 // ListUserSessions returns a user's live sessions, newest activity first.

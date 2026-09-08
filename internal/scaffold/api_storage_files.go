@@ -381,6 +381,20 @@ var AllowedMimeTypes = map[string]bool{
 	"video/mp4":       true,
 	"video/webm":      true,
 	"video/quicktime": true,
+	// Audio, mirroring the "audio" accept group in the admin's file-accepts
+	// lib. Without these a field declared accepts:"audio" offers an audio
+	// picker and then fails the upload against this fallback, which is the
+	// same trap the archive types above were added to close. Browsers record
+	// as "audio/webm;codecs=opus"; parameters are stripped before the lookup,
+	// so the bare type is what has to be listed.
+	"audio/webm":  true,
+	"audio/ogg":   true,
+	"audio/mpeg":  true,
+	"audio/mp4":   true,
+	"audio/aac":   true,
+	"audio/wav":   true,
+	"audio/x-wav": true,
+	"audio/x-m4a": true,
 	"application/pdf": true,
 	"text/plain":      true,
 	"text/csv":        true,

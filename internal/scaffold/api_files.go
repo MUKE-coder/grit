@@ -7592,6 +7592,7 @@ import (
 	"encoding/json"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -7607,7 +7608,20 @@ type Client struct {
 	UserID string
 	Conn   *websocket.Conn
 	Send   chan []byte
+
+	// ExpiresAt is when the JWT that authorised this connection stops being
+	// valid. The handshake is the only time the token is checked, so without
+	// this the socket would outlive its own credential and keep streaming to
+	// a session that has since been signed out. writePump closes the
+	// connection at this instant and the client reconnects with a fresh
+	// token, which is the same bound REST already operates under.
+	ExpiresAt time.Time
 }
+
+// disconnectGrace is how long DisconnectUser waits for writePump to send its
+// close frame and tear the socket down before forcing it. It matches the write
+// deadline writePump already works to.
+const disconnectGrace = 10 * time.Second
 
 // Hub manages connected clients. Safe for concurrent use.
 type Hub struct {
@@ -7648,6 +7662,43 @@ func (h *Hub) Unregister(c *Client) {
 			delete(h.clients, c.UserID)
 		}
 	}
+}
+
+// DisconnectUser closes every connection a user holds, immediately.
+//
+// Call this when a session is revoked, a password changes, or an account is
+// deactivated. Waiting for the token to expire leaves a revoked device
+// receiving live data for the rest of the access-token lifetime, which is not
+// what "sign out of all devices" tells the user happened.
+func (h *Hub) DisconnectUser(userID string) {
+	h.mu.Lock()
+	set, ok := h.clients[userID]
+	if !ok {
+		h.mu.Unlock()
+		return
+	}
+	conns := make([]*websocket.Conn, 0, len(set))
+	for c := range set {
+		conns = append(conns, c.Conn)
+		// Closing Send makes writePump emit a proper close frame and tear the
+		// connection down itself, so the client sees a clean 1000 rather than
+		// an abnormal 1006 and can distinguish "you were signed out" from
+		// "the network dropped".
+		close(c.Send)
+	}
+	delete(h.clients, userID)
+	h.mu.Unlock()
+
+	// Backstop, outside the lock. If writePump is wedged on a dead socket it
+	// will not get to its own deferred Close, and a revoked connection that
+	// stays open is the thing this function exists to prevent. wsWriteWait is
+	// the bound writePump is already operating under.
+	go func() {
+		time.Sleep(disconnectGrace)
+		for _, conn := range conns {
+			_ = conn.Close()
+		}
+	}()
 }
 
 // SendToUser delivers an event to every connection bound to userID.
@@ -7783,6 +7834,13 @@ func (h *RealtimeHandler) Connect(c *gin.Context) {
 		Conn:   conn,
 		Send:   make(chan []byte, 32),
 	}
+	// The handshake is the only point at which the token is verified, so the
+	// connection has to carry its own deadline. Without one, a socket opened
+	// with a 15 minute token keeps delivering events indefinitely, including
+	// after the session behind it has been revoked.
+	if exp := claims.ExpiresAt; exp != nil {
+		client.ExpiresAt = exp.Time
+	}
 	h.Hub.Register(client)
 
 	// Greeting so the client knows the link is live.
@@ -7839,6 +7897,15 @@ func writePump(c *realtime.Client) {
 				return
 			}
 		case <-ticker.C:
+			// Retire the connection once the token that authorised it has
+			// expired. The client reconnects with a fresh one, which is how
+			// a revoked session stops receiving: the same bound REST has.
+			if !c.ExpiresAt.IsZero() && time.Now().After(c.ExpiresAt) {
+				_ = c.Conn.SetWriteDeadline(time.Now().Add(wsWriteWait))
+				_ = c.Conn.WriteMessage(websocket.CloseMessage,
+					websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "token expired"))
+				return
+			}
 			_ = c.Conn.SetWriteDeadline(time.Now().Add(wsWriteWait))
 			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
@@ -8243,6 +8310,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	webhookHandler := handlers.NewWebhookHandler(db)
 	webhooks.Setup(db)
 	realtimeHub := realtime.NewHub()
+	// Revoking a session has to close that user's live sockets too. Without
+	// this, "sign out of all devices" leaves every open WebSocket streaming.
+	services.OnSessionsRevoked = realtimeHub.DisconnectUser
 
 	// The domain event bus. Created before any handler so an emit during
 	// startup has somewhere to go, and wired to the audit log, realtime and
