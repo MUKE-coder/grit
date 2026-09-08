@@ -154,12 +154,47 @@ func pluginListCmd() *cobra.Command {
 				fmt.Printf("  %-16s %s\n", "", color.New(color.Faint).Sprint(p.Summary))
 				fmt.Println()
 			}
+			printModulePlugins()
+
 			fmt.Println("  grit plugin info <name>   details")
 			fmt.Println("  grit plugin add <name>    install")
 			fmt.Println()
 			return nil
 		},
 	}
+}
+
+// modulePlugins are the packages at github.com/MUKE-coder/grit-plugins.
+//
+// They are installed with go get rather than grit plugin add, so they cannot
+// be folded into the list above without implying a command that does not work.
+// Listing them anyway matters more than the tidiness of one list: without it
+// the CLI reads as a complete catalogue of five, and the nine it does not
+// mention are the ones people go looking for first.
+var modulePlugins = []struct{ name, summary string }{
+	{"websockets", "Realtime hub with rooms, presence and typing indicators"},
+	{"notifications", "In-app and push notifications with a delivery log"},
+	{"search", "Full-text search across resources"},
+	{"stripe", "Subscriptions, checkout and the webhook plumbing"},
+	{"oauth", "Sign in with Google, GitHub and friends"},
+	{"i18n", "Translated API messages and locale negotiation"},
+	{"video", "Video upload, transcode and playback"},
+	{"export", "Scheduled exports to CSV and XLSX"},
+	{"conference", "Audio and video rooms"},
+}
+
+func printModulePlugins() {
+	fmt.Println("  Go module plugins:")
+	fmt.Println("  " + color.New(color.Faint).Sprint(
+		"installed with go get, from github.com/MUKE-coder/grit-plugins") + "\n")
+	for _, p := range modulePlugins {
+		fmt.Printf("  %-16s %s\n", color.CyanString(p.name),
+			color.New(color.Faint).Sprint(p.summary))
+	}
+	fmt.Println()
+	fmt.Println("  " + color.New(color.Faint).Sprint(
+		"go get github.com/MUKE-coder/grit-plugins/grit-<name>"))
+	fmt.Println()
 }
 
 func pluginInfoCmd() *cobra.Command {

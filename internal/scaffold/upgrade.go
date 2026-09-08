@@ -183,7 +183,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeMediaFiles(root, opts); err != nil {
 			return fmt.Errorf("updating media files: %w", err)
 		}
-		if err := writeStorageFiles(root, opts); err != nil {
+		// The browser half of realtime: one shared socket, reconnection, and
+	// the React Query bindings. The hub has shipped for a long time with
+	// nothing on the client able to consume it.
+	if err := writeRealtimeClientFiles(root, opts); err != nil {
+		return err
+	}
+	if err := writeStorageFiles(root, opts); err != nil {
 			return fmt.Errorf("updating storage files: %w", err)
 		}
 		green.Printf("  ✓ Media pipeline updated\n")

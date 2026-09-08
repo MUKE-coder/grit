@@ -72,6 +72,11 @@ func ensureMountResourcesCall(path string) error {
 	for _, g := range []struct{ field, decl string }{
 		{"Cfg:       cfg,", "cfg *config.Config"},
 		{"Svc:       svc,", "svc *Services"},
+		// Only when the project actually has them. An older project upgrading
+		// may predate either, and a Mount field referring to a variable that
+		// is not there will not compile.
+		{"Hub:       realtimeHub,", "realtimeHub :="},
+		{"Auth:      authService,", "authService :="},
 		{"V1:        v1,", "v1 :="},
 		{"Public:    publicAPI,", "publicAPI :="},
 		{"Protected: protected,", "protected :="},

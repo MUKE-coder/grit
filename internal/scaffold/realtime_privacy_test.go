@@ -151,3 +151,78 @@ func TestAudioIsUploadable(t *testing.T) {
 		}
 	}
 }
+
+// A browser must be able to open the socket, which means the cookie.
+//
+// The documented way to connect is ?token=<jwt> read from storage. The web app
+// has no readable token: login sets grit_access HttpOnly precisely so scripts
+// cannot read it, so the documented call could not be written in the app Grit
+// generates, and nothing in apps/web ever connected. The handshake is a plain
+// GET, so the cookie arrives with it.
+func TestWebSocketAcceptsTheAuthCookie(t *testing.T) {
+	read := apiSource(t)
+	h := read("internal", "handlers", "realtime.go")
+
+	if !strings.Contains(h, `c.Cookie("grit_access")`) {
+		t.Error("Connect only reads ?token=, which a browser cannot supply: the " +
+			"access token is in an HttpOnly cookie by design")
+	}
+	// The query parameter still comes first, for Expo and service clients that
+	// hold a real token and have no cookie jar.
+	if !strings.Contains(h, `tokenStr := c.Query("token")`) {
+		t.Error("explicit tokens are no longer accepted, which breaks every " +
+			"non-browser client")
+	}
+}
+
+// The client half has to exist, in every frontend the project has.
+func TestRealtimeClientShipsWithTheFrontends(t *testing.T) {
+	for _, frontend := range []Frontend{FrontendNext, FrontendTanStack} {
+		root := t.TempDir()
+		opts := Options{
+			ProjectName: "chat", Architecture: ArchTriple,
+			Frontend: frontend, IncludeExpo: true,
+		}
+		if err := createDirectories(root, opts); err != nil {
+			t.Fatalf("%s: createDirectories: %v", frontend, err)
+		}
+		if err := writeRealtimeClientFiles(root, opts); err != nil {
+			t.Fatalf("%s: %v", frontend, err)
+		}
+
+		adminHooks := filepath.Join("apps", "admin", "hooks", "use-realtime.ts")
+		if frontend == FrontendTanStack {
+			adminHooks = filepath.Join("apps", "admin", "src", "hooks", "use-realtime.ts")
+		}
+		for _, rel := range []string{
+			filepath.Join("apps", "web", "lib", "realtime.ts"),
+			filepath.Join("apps", "web", "hooks", "use-realtime.ts"),
+			adminHooks,
+			filepath.Join("apps", "expo", "lib", "realtime.ts"),
+		} {
+			if _, err := os.Stat(filepath.Join(root, rel)); err != nil {
+				t.Errorf("%s: missing %s", frontend, filepath.ToSlash(rel))
+			}
+		}
+
+		// Reconnection is the part a copy-pasted snippet never has, and the
+		// part that decides whether live updates survive a laptop lid.
+		b, err := os.ReadFile(filepath.Join(root, "apps", "web", "lib", "realtime.ts"))
+		if err != nil {
+			t.Fatalf("%s: %v", frontend, err)
+		}
+		src := string(b)
+		for _, want := range []string{"backoffDelay", "Math.random()", "scheduleReconnect"} {
+			if !strings.Contains(src, want) {
+				t.Errorf("%s: the client has no %s, so it does not reconnect "+
+					"with jitter and every client retries in lockstep", frontend, want)
+			}
+		}
+
+		// "use client" belongs to Next only; Vite and Metro warn about a stray one.
+		expo, _ := os.ReadFile(filepath.Join(root, "apps", "expo", "hooks", "use-realtime.ts"))
+		if strings.Contains(string(expo), `"use client"`) {
+			t.Errorf("%s: the Expo hook carries a Next-only directive", frontend)
+		}
+	}
+}

@@ -62,7 +62,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.193.0"
+const DefaultVersion = "3.194.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -374,6 +374,12 @@ func Run(opts Options) error {
 		return err
 	}
 	if err := writeMediaFiles(root, opts); err != nil {
+		return err
+	}
+	// The browser half of realtime: one shared socket, reconnection, and
+	// the React Query bindings. The hub has shipped for a long time with
+	// nothing on the client able to consume it.
+	if err := writeRealtimeClientFiles(root, opts); err != nil {
 		return err
 	}
 	if err := writeStorageFiles(root, opts); err != nil {

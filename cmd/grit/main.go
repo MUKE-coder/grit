@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.193.0"
+var version = "3.194.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -769,6 +769,7 @@ func generateResourceCmd() *cobra.Command {
 	var force bool
 	var publicRead bool
 	var tree bool
+	var ownedBy string
 
 	cmd := &cobra.Command{
 		Use:   "resource <Name>",
@@ -858,6 +859,20 @@ func generateResourceCmd() *cobra.Command {
 
 			gen.Definition.Public = publicRead
 			gen.Definition.Tree = tree
+			gen.Definition.OwnedBy = ownedBy
+
+			// --owned-by without that field adds it, for the same reason --tree
+			// adds its parent: making somebody write both --owned-by user and
+			// --fields "user:belongs_to:User" is asking for one fact twice,
+			// with a spelling that silently generates an unscoped resource.
+			if ownedBy != "" && gen.Definition.OwnerField() == nil {
+				gen.Definition.Fields = append(gen.Definition.Fields, generate.Field{
+					Name:         ownedBy,
+					Type:         "belongs_to",
+					RelatedModel: "User",
+				})
+				fmt.Println("  • --owned-by added " + ownedBy + ":belongs_to:User")
+			}
 
 			// --tree without a self-referential parent field adds one, because
 			// requiring both --tree and --fields "parent:belongs_to:Category" is
@@ -897,6 +912,8 @@ func generateResourceCmd() *cobra.Command {
 		"Also expose read-only list and detail endpoints under /api/v1/public/, guarded by an API key")
 	cmd.Flags().BoolVar(&tree, "tree", false,
 		"Make the resource hierarchical: a self-referential parent, a materialized path, depth and sibling order, plus the tree queries and a move endpoint")
+	cmd.Flags().StringVar(&ownedBy, "owned-by", "",
+		"Scope the resource to its owner: the named belongs_to-User field decides who may read or write each row (e.g. --owned-by user). Adds the field if absent. ADMIN is exempt")
 	cmd.Flags().IntVar(&seedCount, "count", 10, "Number of rows for the faker seeder")
 	cmd.Flags().BoolVar(&force, "force", false, "Generate even when the name collides with a built-in model (overwrites it)")
 

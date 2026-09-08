@@ -21,6 +21,8 @@ import (
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/config"
+	"{{MODULE}}/internal/realtime"
+	"{{MODULE}}/internal/services"
 )
 
 // Mount is what a resource's route file receives: the router groups, already
@@ -36,6 +38,18 @@ type Mount struct {
 	DB     *gorm.DB
 	Cfg    *config.Config
 	Svc    *Services
+
+	// Hub is the realtime fan-out hub, for a route that needs to push.
+	//
+	// It has to be handed over rather than built, because it cannot be built:
+	// realtime.NewHub() returns a different registry holding no connections,
+	// so a handler that makes its own pushes into nothing and fails silently.
+	// There is exactly one live Hub per process and this is it.
+	Hub *realtime.Hub
+
+	// Auth issues and validates tokens, for a route that signs someone in or
+	// mints a token pair (device pairing, magic links, invite acceptance).
+	Auth *services.AuthService
 
 	// V1 is the /api/v1 group, for a route that fits none of the three below.
 	V1        *gin.RouterGroup
