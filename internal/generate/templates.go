@@ -227,13 +227,17 @@ func (g *Generator) writeGoModel(names Names) error {
 			} else {
 				structFields += fmt.Sprintf("\t%s string `gorm:\"size:36;%s\" json:\"%s\" binding:\"required\"`\n", fkGoName, fkIndex, fkJson)
 			}
-			// Association struct
-			assocType := relModel
-			if selfRef {
-				assocType = "*" + relModel
-			}
-			structFields += fmt.Sprintf("\t%s %s `gorm:\"foreignKey:%s\" json:\"%s\"`\n",
-				assocName, assocType, fkGoName, toSnakeCase(assocName))
+			// Association struct.
+			//
+			// A pointer with omitempty, so a relation that was not preloaded is
+			// absent from the JSON rather than present and blank. As a value it
+			// marshalled a complete zero-value object every time, which reads to
+			// a client as a real record whose every field happens to be empty:
+			// sender.first_name "" instead of undefined, sender.active false
+			// instead of unknown. The generated TypeScript said the object was
+			// always there, and agreed with the lie.
+			structFields += fmt.Sprintf("\t%s *%s `gorm:\"foreignKey:%s\" json:\"%s,omitempty\"`\n",
+				assocName, relModel, fkGoName, toSnakeCase(assocName))
 			continue
 		}
 
@@ -371,6 +375,21 @@ func (m *%s) BeforeUpdate(tx *gorm.DB) error {
 	return nil
 }
 `, names.Pascal)
+
+	// GetOwnerID makes the model satisfy authz.Ownable, which is what lets the
+	// handlers check ownership on a row fetched by id. Without it the helper
+	// has nothing to compare against, which is why it sat unused for so long.
+	if owner := g.Definition.OwnerField(); owner != nil {
+		content += fmt.Sprintf(`
+// GetOwnerID identifies the row's owner for authz.MustOwnUnlessAdmin.
+//
+// This resource was generated with --owned-by %s: a caller may only read or
+// write rows where this matches their own user id, ADMIN excepted.
+func (m *%s) GetOwnerID() string {
+	return m.%s
+}
+`, owner.Name, names.Pascal, toPascalCase(owner.Name)+"ID")
+	}
 
 	// Path resolution, the cycle refusal, and the two accessors a breadcrumb
 	// needs. Reparenting lives in the tree service instead: a move rewrites a
@@ -601,6 +620,13 @@ func (g *Generator) writeGoHandler(names Names) error {
 	// Collect preloads for relationships
 	var preloads []string
 
+	// The --owned-by field is server-assigned, so it is preloaded and
+	// filterable but never appears in a request body.
+	ownerFieldName := ""
+	if owner := g.Definition.OwnerField(); owner != nil {
+		ownerFieldName = owner.Name
+	}
+
 	for _, f := range g.Definition.Fields {
 		if f.IsSlug() {
 			continue
@@ -618,6 +644,14 @@ func (g *Generator) writeGoHandler(names Names) error {
 			// parent. Required here and the API refuses to create the first row
 			// with a validation error about a field the caller correctly left
 			// empty, which is where this was first noticed.
+			// The owner is stamped from the authenticated session in the
+			// handler. Emitting it here would require the caller to send a
+			// user_id (create fails without one) and would let them name a
+			// different user, which is the whole point of not asking.
+			if ownerFieldName != "" && f.Name == ownerFieldName {
+				continue
+			}
+
 			selfRef := f.RelatedModelName() == toPascalCase(g.Definition.Name)
 			if selfRef {
 				createFields += fmt.Sprintf("\t\t%s string `json:\"%s\"`\n", fkGoName, fkJson)
@@ -1089,7 +1123,40 @@ func (g *Generator) writeGoHandler(names Names) error {
 		}
 	}
 
+	// --owned-by: scope the list, guard the row and stamp the owner. All
+	// three are empty for a shared resource, which is every resource
+	// generated without the flag.
+	ownerScope, ownerGuard, ownerStamp, authzImport := "", "", "", ""
+	if owner := g.Definition.OwnerField(); owner != nil {
+		col := toSnakeCase(owner.Name) + "_id"
+		field := toPascalCase(owner.Name) + "ID"
+		authzImport = "\"" + g.Module + "/internal/authz\"\n\t"
+
+		ownerScope = "\n\t// --owned-by " + owner.Name +
+			": a caller sees only their own rows. Without this the" +
+			"\n\t// list hands over every row, and the id on the routes below" +
+			"\n\t// stops being worth protecting. ADMIN is exempt." +
+			"\n\tquery = authz.ScopeToOwner(c, query, \"" + col + "\")\n"
+
+		ownerGuard = "\n\t// --owned-by " + owner.Name +
+			": 404 rather than 403 on somebody else's row, so a" +
+			"\n\t// wrong guess cannot be told from a right one." +
+			"\n\tif !authz.OwnsOr404(c, &item) {" +
+			"\n\t\treturn" +
+			"\n\t}\n"
+
+		ownerStamp = "\n\t// --owned-by " + owner.Name +
+			": the owner is whoever is signed in. Taking it from" +
+			"\n\t// the request body would let a caller create rows that" +
+			"\n\t// belong to somebody else." +
+			"\n\titem." + field + " = authz.CurrentUserID(c)\n"
+	}
+
 	r := strings.NewReplacer(
+		"{{AUTHZ_IMPORT}}", authzImport,
+		"{{OWNER_SCOPE}}", ownerScope,
+		"{{OWNER_GUARD}}", ownerGuard,
+		"{{OWNER_STAMP}}", ownerStamp,
 		"{{OPTIONAL_ID_HELPER}}", optionalIDHelper,
 		"{{FK_FILTERS}}", fkFilters,
 		"{{UPPER_LABEL}}", strings.ToUpper(strings.Join(splitPascal(names.Pascal), " ")),
@@ -1145,7 +1212,7 @@ import (
 	"github.com/gin-gonic/gin"{{DATATYPES_IMPORT}}
 	"gorm.io/gorm"{{CLAUSE_IMPORT}}
 
-	"{{MODULE}}/internal/events"
+	{{AUTHZ_IMPORT}}"{{MODULE}}/internal/events"
 	"{{MODULE}}/internal/export"{{FILES_IMPORT}}{{DATABASE_IMPORT}}{{WORKFLOW_IMPORT}}
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
@@ -1179,6 +1246,7 @@ func (h *{{Pascal}}Handler) List(c *gin.Context) {
 		query = query.Where("archived_at IS NULL")
 	}
 
+{{OWNER_SCOPE}}
 	res, err := paginate.List[models.{{Pascal}}](
 		query,
 		paginate.Bind(c){{FK_FILTERS}},
@@ -1317,7 +1385,7 @@ func (h *{{Pascal}}Handler) GetByID(c *gin.Context) {
 		})
 		return
 	}
-
+{{OWNER_GUARD}}
 	c.JSON(http.StatusOK, gin.H{
 		"data": item,
 	})
@@ -1401,7 +1469,7 @@ func (h *{{Pascal}}Handler) Create(c *gin.Context) {
 
 	item := models.{{Pascal}}{
 {{CREATE_ASSIGN}}	}
-{{ITEMS_BUILD}}
+{{OWNER_STAMP}}{{ITEMS_BUILD}}
 	if err := {{CREATE_CALL}}.Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
@@ -1436,7 +1504,7 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 		})
 		return
 	}
-
+{{OWNER_GUARD}}
 	var req Update{{Pascal}}Request
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -1556,7 +1624,7 @@ func (h *{{Pascal}}Handler) Delete(c *gin.Context) {
 		})
 		return
 	}
-
+{{OWNER_GUARD}}
 	if err := h.DB.Delete(&item).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{

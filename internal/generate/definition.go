@@ -52,7 +52,36 @@ type ResourceDefinition struct {
 	// comparison that behaves identically on all three, where CTE support and
 	// syntax do not.
 	Tree bool `yaml:"tree,omitempty"`
+
+	// OwnedBy names the belongs_to-User field that says who a row belongs to,
+	// set by --owned-by. Empty means the resource is shared: every
+	// authenticated caller sees every row, which is right for a product
+	// catalogue and wrong for an invoice.
+	//
+	// When set, the generator scopes the list to the caller, checks ownership
+	// on read/update/delete by id, and stamps the owner on create. An ADMIN is
+	// exempt from all four, because the admin panel calls the same endpoints.
+	OwnedBy string `yaml:"owned_by,omitempty"`
 }
+
+// OwnerField returns the field ownership is checked against, or nil when the
+// resource is shared or --owned-by named a field that is not a belongs_to User.
+func (d *ResourceDefinition) OwnerField() *Field {
+	if d.OwnedBy == "" {
+		return nil
+	}
+	want := toSnakeCase(d.OwnedBy)
+	for i := range d.Fields {
+		f := &d.Fields[i]
+		if f.IsBelongsTo() && toSnakeCase(f.Name) == want {
+			return f
+		}
+	}
+	return nil
+}
+
+// IsOwned reports whether ownership scoping should be generated.
+func (d *ResourceDefinition) IsOwned() bool { return d.OwnerField() != nil }
 
 // TreeParentField returns the field the tree hangs from, adding it if --tree was
 // passed without one.

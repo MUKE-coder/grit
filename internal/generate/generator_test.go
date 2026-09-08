@@ -340,8 +340,14 @@ func TestWriteGoModel_BelongsTo(t *testing.T) {
 	if !containsField(got, "CategoryID string") {
 		t.Errorf("belongs_to should generate CategoryID field:\n%s", got)
 	}
-	if !containsField(got, "Category Category") {
-		t.Errorf("belongs_to should generate Category association:\n%s", got)
+	// A pointer, so a category that was not preloaded is omitted from the
+	// JSON rather than marshalled as a blank Category the client cannot tell
+	// from a real one.
+	if !containsField(got, "Category *Category") {
+		t.Errorf("belongs_to should generate a pointer Category association:\n%s", got)
+	}
+	if !strings.Contains(got, `json:"category,omitempty"`) {
+		t.Errorf("the association needs omitempty or it serialises blank:\n%s", got)
 	}
 }
 
@@ -713,10 +719,12 @@ func TestWriteGoModel_SelfReferentialBelongsTo(t *testing.T) {
 	if strings.Contains(got, `json:"parent_id" binding:"required"`) {
 		t.Error(`a self-referential FK must not be required: the root has no parent`)
 	}
-	// An ordinary relation keeps both properties it always had.
-	ordinary := regexp.MustCompile("Owner\\s+User\\s+`gorm:\"foreignKey:OwnerID\"")
+	// An ordinary relation is a pointer as well, for the same reason the
+	// self-reference is one: absent beats present-and-blank. It keeps the
+	// required FK, which the self-reference does not have.
+	ordinary := regexp.MustCompile("Owner\\s+\\*User\\s+`gorm:\"foreignKey:OwnerID\" json:\"owner,omitempty\"")
 	if !ordinary.MatchString(got) {
-		t.Errorf("an ordinary belongs_to should still be a value:\n%s", got)
+		t.Errorf("an ordinary belongs_to should be a pointer with omitempty:\n%s", got)
 	}
 	if !strings.Contains(got, `json:"owner_id" binding:"required"`) {
 		t.Error("an ordinary FK should still be required")

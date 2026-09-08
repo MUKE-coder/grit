@@ -711,17 +711,27 @@ const BONUS: Bonus[] = [
           isn&apos;t leaked. Implement <code>GetOwnerID()</code> on the model and call
           it at the top of any handler that reads or writes a row by id.
         </p>
+        <p>
+          Or let the generator do it. <code>--owned-by</code> names the field that
+          says who a row belongs to, and wires all four access paths: the list is
+          scoped to the caller, read, update and delete check ownership by id, and
+          create stamps the owner from the session rather than trusting the request
+          body. An <code>ADMIN</code> is exempt from all four, because the admin
+          panel calls the same endpoints.
+        </p>
+        <CodeBlock
+          language="bash"
+          code={`grit generate resource Invoice --fields "number:string,total:money" --owned-by user`}
+        />
         <p className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
-          <strong className="text-amber-400">You have to call it.</strong>{' '}
-          <code>grit generate resource</code> does <em>not</em> wire{' '}
-          <code>MustOwn</code> into the handlers it writes, and it has no way to
-          guess which resources are per-user and which are shared reference data.
-          Generated routes sit on the authenticated group, so out of the box{' '}
-          <strong>any signed-in user can read and write every row of every
-          generated resource</strong>. That is the right default for a product
-          catalogue and badly wrong for an invoice. Until you add the check, or
-          restrict the routes with <code>--roles</code>, assume every generated
-          endpoint is readable by every account you have issued.
+          <strong className="text-amber-400">Without it, nothing is scoped.</strong>{' '}
+          The generator cannot guess which resources are per-user and which are
+          shared reference data, so a resource generated without{' '}
+          <code>--owned-by</code> is shared: its routes sit on the authenticated
+          group, and <strong>any signed-in user can read and write every row</strong>.
+          That is right for a product catalogue and badly wrong for an invoice. If
+          you did not pass the flag and did not add the check yourself, assume every
+          row of that resource is readable by every account you have issued.
         </p>
       </>
     ),

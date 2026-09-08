@@ -92,6 +92,59 @@ grit plugin remove impersonate   # replay the install backwards`} />
             your app like anything else.
           </p>
 
+          {/* Go module plugins */}
+          <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">
+            Go module plugins
+          </h2>
+          <p className="leading-relaxed text-muted-foreground">
+            A second set lives at{' '}
+            <a
+              href="https://github.com/MUKE-coder/grit-plugins"
+              className="text-primary hover:underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              github.com/MUKE-coder/grit-plugins
+            </a>
+            . These are ordinary Go modules rather than code generators, so they install with{' '}
+            <code>go get</code> and you wire them into your routes yourself.
+          </p>
+          <CodeBlock language="bash" code={`go get github.com/MUKE-coder/grit-plugins/grit-websockets`} />
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left">
+                  <th className="py-2 pr-4 font-medium text-foreground">Module</th>
+                  <th className="py-2 font-medium text-foreground">What it adds</th>
+                </tr>
+              </thead>
+              <tbody className="text-muted-foreground">
+                {[
+                  ['grit-websockets', 'Realtime hub with rooms, presence and typing indicators'],
+                  ['grit-notifications', 'In-app and push notifications with a delivery log'],
+                  ['grit-search', 'Full-text search across resources'],
+                  ['grit-stripe', 'Subscriptions, checkout and the webhook plumbing'],
+                  ['grit-oauth', 'Sign in with Google, GitHub and friends'],
+                  ['grit-i18n', 'Translated API messages and locale negotiation'],
+                  ['grit-video', 'Video upload, transcode and playback'],
+                  ['grit-export', 'Scheduled exports to CSV and XLSX'],
+                  ['grit-conference', 'Audio and video rooms'],
+                  ['grit-webhooks', 'The library behind the webhooks plugin above'],
+                ].map(([name, what]) => (
+                  <tr key={name} className="border-b border-border/50">
+                    <td className="py-2 pr-4 font-mono text-xs text-foreground">{name}</td>
+                    <td className="py-2">{what}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-4 leading-relaxed text-muted-foreground">
+            <code>grit plugin list</code> prints these too, under a separate heading, so the
+            command is a complete picture of what is available rather than of what it can
+            install itself.
+          </p>
+
           {/* Guarantees */}
           <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">
             What the installer guarantees

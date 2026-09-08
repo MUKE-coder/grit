@@ -110,25 +110,69 @@ export default function RealtimePage() {
                   is live.
                 </p>
 
+                <p className="mt-4">
+                  You do not open the socket yourself. Every frontend is scaffolded
+                  with <code>lib/realtime.ts</code> and a{' '}
+                  <code>useRealtime</code> hook that owns one connection for the whole
+                  app, reconnects with exponential backoff and jitter, and hands events
+                  to whichever components asked for them.
+                </p>
+
                 <CodeBlock
                   language="typescript"
-                  filename="apps/web — connecting from the client"
-                  code={`const token = getAccessToken() // your stored JWT
-const ws = new WebSocket(\`\${API_WS_URL}/api/ws?token=\${token}\`)
+                  filename="apps/web — subscribing"
+                  code={`import { useRealtime, useLiveResource } from '@/hooks/use-realtime'
 
-ws.onmessage = (e) => {
-  const evt = JSON.parse(e.data) as { type: string; payload: unknown }
-  switch (evt.type) {
-    case 'system.connected':
-      console.log('realtime link live')
-      break
-    case 'job.finished':
-      toast.success('Your export is ready')
-      queryClient.invalidateQueries({ queryKey: ['exports'] })
-      break
-  }
-}`}
+// One or more event types, handled for as long as the component is mounted.
+useRealtime({
+  'chat.message.new': (payload) => {
+    queryClient.setQueryData(
+      ['messages', payload.conversation_id],
+      (old) => [...(old ?? []), payload.message],
+    )
+  },
+})
+
+// Or, for an ordinary list: keep it in step with created / updated / deleted.
+useLiveResource('invoices', ['invoices'])`}
                 />
+
+                <p className="mt-4">
+                  Handlers are held in a ref, so passing an inline object literal is
+                  fine: the subscription is not torn down and rebuilt on every render.
+                  <code>useRealtimeStatus()</code> returns{' '}
+                  <code>connecting | open | closed</code> for a status dot, and{' '}
+                  <code>disconnectRealtime()</code> closes the socket on sign-out.
+                </p>
+
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    <strong className="text-foreground">How each client authenticates.</strong>{' '}
+                    A browser cannot put the token in the query string, because login
+                    stores it in the <strong>HttpOnly</strong> <code>grit_access</code>{' '}
+                    cookie so that scripts cannot read it. The handshake is an ordinary
+                    HTTP GET, so the cookie is sent with it and the server reads it from
+                    there. Expo and service clients have no cookie jar and pass{' '}
+                    <code>?token=</code> instead; call{' '}
+                    <code>setRealtimeToken(() =&gt; ...)</code> once where you set up auth.
+                    Either way the token is validated with the same{' '}
+                    <code>AuthService.ValidateToken</code> as the REST API.
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 mt-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    <strong className="text-amber-400">The socket does not outlive its token.</strong>{' '}
+                    The JWT is checked once, at the handshake. The connection carries that
+                    token&apos;s expiry and closes when it passes, and revoking a session
+                    closes every socket the user holds immediately. Both are deliberate:
+                    without them a socket opened with a fifteen minute token kept
+                    delivering events forever, and &quot;sign out of all devices&quot; left
+                    the signed-out device receiving message bodies. The client reconnects
+                    on its own, so a live session is uninterrupted and a revoked one is
+                    turned away at the handshake.
+                  </p>
+                </div>
 
                 <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-4">
                   <p className="text-sm text-muted-foreground leading-relaxed">
@@ -267,6 +311,76 @@ func (w *ExportWorker) Handle(ctx context.Context, userID string) error {
                   so connected clients can refetch.
                 </p>
               </div>
+
+              {/* Who receives an event */}
+              <section className="mb-12">
+                <h2 className="text-2xl font-bold text-foreground mb-4">
+                  Who receives a resource event
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Every generated handler emits{' '}
+                  <code>&lt;plural&gt;.created</code>, <code>.updated</code> and{' '}
+                  <code>.deleted</code>. Those go to{' '}
+                  <code>services.RealtimeAudience(e)</code>, which by default returns the
+                  actor and nobody else: your own devices stay in step, and no one learns
+                  about a row they may not be allowed to read.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The default is narrow on purpose. The payload carries{' '}
+                  <code>e.Label</code>, the row&apos;s human-readable title, and there is
+                  no per-row authorization in the event bus to filter on. Broadcasting it
+                  handed every signed-in session a live feed of every title written
+                  anywhere in the system, across tenants. Widen it where the app knows who
+                  is entitled to look:
+                </p>
+                <CodeBlock
+                  language="go"
+                  filename="internal/routes/routes.go — after RegisterEventSubscribers"
+                  code={`services.RealtimeAudience = func(e events.Event) []string {
+    switch e.Resource {
+    case "messages":
+        // Everyone in the conversation the message belongs to.
+        return participantIDs(db, e.ID)
+    case "announcements":
+        return staffIDs(db)
+    }
+    // Anything not named here keeps the safe default.
+    if e.Actor == "" {
+        return nil
+    }
+    return []string{e.Actor}
+}`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  Returning <code>nil</code> drops the event, which is what a
+                  system-initiated write does by default since it has no actor.
+                </p>
+              </section>
+
+              {/* Scaling */}
+              <section className="mb-12">
+                <h2 className="text-2xl font-bold text-foreground mb-4">
+                  One API replica, unless you add a backplane
+                </h2>
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    <strong className="text-amber-400">Realtime stops working at two replicas,
+                    and it does so silently.</strong>{' '}
+                    The Hub is an in-process registry. A user connected to replica A never
+                    receives an event published on replica B: the push succeeds, into a
+                    registry that does not contain them. Nothing errors and nothing is
+                    logged.
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mt-3">
+                    This is invisible in development and on a single instance, and appears
+                    as &quot;messages sometimes do not arrive&quot; the first time you scale
+                    out, or during a rolling deploy where two versions overlap. If you run
+                    more than one API process, either pin websocket traffic to one instance
+                    or put a shared backplane behind the Hub;{' '}
+                    <code>grit-plugins/grit-websockets</code> is the place to start.
+                  </p>
+                </div>
+              </section>
 
               {/* Go deeper callout */}
               <div className="mb-12">

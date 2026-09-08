@@ -350,6 +350,74 @@ func MustOwn(c *gin.Context, db *gorm.DB, dest Ownable, id string) error {
 	return nil
 }
 
+// IsAdmin reports whether the caller holds the ADMIN role.
+//
+// Ownership scoping has to let an admin through or the admin panel, which
+// calls the same endpoints, shows an administrator only the rows they happen
+// to have created themselves.
+func IsAdmin(c *gin.Context) bool {
+	role, _ := c.Get("user_role")
+	return asString(role) == "ADMIN"
+}
+
+// MustOwnUnlessAdmin is MustOwn with that exemption. It is what a generated
+// handler calls; MustOwn stays strict for code that wants no exemption at all.
+func MustOwnUnlessAdmin(c *gin.Context, db *gorm.DB, dest Ownable, id string) error {
+	if IsAdmin(c) {
+		if err := db.Where("id = ?", id).First(dest).Error; err != nil {
+			writeNotFound(c)
+			return ErrNotFound
+		}
+		return nil
+	}
+	return MustOwn(c, db, dest, id)
+}
+
+// OwnsOr404 checks a row the handler has already loaded, writing 404 and
+// returning false when the caller does not own it. ADMIN always passes.
+//
+// Same 404-not-403 reasoning as MustOwn: 403 confirms the row exists, which
+// turns a guessed id into an enumeration oracle. This variant exists so a
+// handler that already fetched the row does not fetch it a second time.
+func OwnsOr404(c *gin.Context, row Ownable) bool {
+	if IsAdmin(c) {
+		return true
+	}
+	if row.GetOwnerID() != CurrentUserID(c) {
+		writeNotFound(c)
+		return false
+	}
+	return true
+}
+
+// ScopeToOwner narrows a list query to rows the caller owns. An ADMIN gets the
+// query back untouched.
+//
+// This is the half of IDOR prevention that MustOwn cannot do. MustOwn protects
+// a row fetched by id; without this, the list endpoint hands over every row in
+// the table and the id is no longer a secret worth guessing.
+//
+// column is a fixed string from the generator, never user input.
+func ScopeToOwner(c *gin.Context, q *gorm.DB, column string) *gorm.DB {
+	if IsAdmin(c) {
+		return q
+	}
+	userID, ok := c.Get("user_id")
+	if !ok {
+		// No authenticated user: match nothing rather than everything. A
+		// scoping helper that opens up when it cannot identify the caller is
+		// worse than no scoping, because it reads as if it is protecting you.
+		return q.Where("1 = 0")
+	}
+	return q.Where(column+" = ?", userID)
+}
+
+// CurrentUserID returns the authenticated user's id, or "".
+func CurrentUserID(c *gin.Context) string {
+	userID, _ := c.Get("user_id")
+	return asString(userID)
+}
+
 // CheckScope verifies a (column, value) pair matches the current user's
 // authoritative scope (e.g. team_id, tenant_id). Use this when ownership
 // is by membership rather than a single user_id column.

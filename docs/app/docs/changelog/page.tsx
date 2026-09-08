@@ -29,6 +29,124 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.194.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.194.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  The rest of what building a chat app on a stock scaffold turned up.
+                  v3.193.0 closed the leaks; this closes the gaps that made them easy to
+                  hit and hard to fix.
+                </p>
+
+                <h3>
+                  <code>--owned-by</code>: per-user resources, generated
+                </h3>
+                <p>
+                  A generated resource was shared by default and had no option to be
+                  anything else. Its routes sit on the authenticated group, so any
+                  signed-in account could list, read, edit and delete every row.{' '}
+                  <code>authz.MustOwn</code> existed for exactly this and nothing in the
+                  generator ever called it.
+                </p>
+                <CodeBlock
+                  language="bash"
+                  code={`grit generate resource Invoice --fields "number:string,total:money" --owned-by user`}
+                />
+                <p>
+                  All four access paths are wired, because guarding three of them is the
+                  same as guarding none: the list is scoped to the caller, read, update
+                  and delete check ownership by id and answer 404 rather than 403 so a
+                  wrong guess cannot be told from a right one, and create stamps the owner
+                  from the session. The owner field is kept out of the request body
+                  entirely, so a caller cannot hand a row to somebody else. An{' '}
+                  <code>ADMIN</code> is exempt from all four, because the admin panel calls
+                  the same endpoints. The flag adds the{' '}
+                  <code>belongs_to:User</code> field when it is not already there.
+                </p>
+                <p>
+                  Resources generated without the flag are untouched, which is right for a
+                  product catalogue and is why this is opt-in rather than a default that
+                  would have made every existing shared resource invisible.
+                </p>
+
+                <h3>A realtime client, in every frontend</h3>
+                <p>
+                  The hub has shipped for a long time and nothing consumed it: a scaffolded
+                  project contained no WebSocket code at all. The docs offered a six-line
+                  snippet, which proves the endpoint answers and is not enough to ship.
+                </p>
+                <p>
+                  It also could not be written in the app Grit generates. It reads the JWT
+                  out of storage, and the web app keeps its JWT in the{' '}
+                  <strong>HttpOnly</strong> <code>grit_access</code> cookie so that scripts
+                  cannot read it. The handshake now accepts that cookie, which is what makes
+                  a browser client possible; Expo and service clients still pass{' '}
+                  <code>?token=</code>.
+                </p>
+                <p>
+                  <code>lib/realtime.ts</code> and a <code>useRealtime</code> hook now ship
+                  in web, admin and Expo: one connection for the whole app rather than one
+                  per mounted component, reconnection with exponential backoff and jitter,
+                  and <code>useLiveResource(&quot;invoices&quot;, [&quot;invoices&quot;])</code>{' '}
+                  to keep a React Query list in step with created, updated and deleted
+                  without polling.
+                </p>
+
+                <h3>Custom routes can reach the hub</h3>
+                <p>
+                  <code>Mount</code> carried the DB, the config, the service bundle and the
+                  router groups, and neither the realtime hub nor the auth service. The hub
+                  is the one thing a route cannot work around:{' '}
+                  <code>realtime.NewHub()</code> returns a different registry holding no
+                  connections, so a handler that builds its own pushes into nothing and
+                  fails silently. Reaching the real one meant editing{' '}
+                  <code>routes.go</code>, which is the file the per-resource split exists to
+                  keep people out of. Both are on <code>Mount</code> now.
+                </p>
+
+                <h3><code>grit plugin list</code> was showing a third of the catalogue</h3>
+                <p>
+                  Five CLI plugins were listed. Ten more packages exist at{' '}
+                  <code>grit-plugins</code> and only <code>webhooks</code> overlaps by name,
+                  so the command read as a complete catalogue while omitting websockets,
+                  search, notifications, Stripe, OAuth, i18n, video, export and conference.
+                  They install with <code>go get</code> rather than{' '}
+                  <code>grit plugin add</code>, so they are listed under their own heading
+                  with the command that installs them.
+                </p>
+
+                <h3>An un-preloaded relation is now absent, not blank</h3>
+                <p>
+                  <code>belongs_to</code> generated a value-typed association with no{' '}
+                  <code>omitempty</code>, so every response carried a complete zero-value
+                  object for any relation that had not been preloaded.{' '}
+                  <code>message.sender.first_name</code> was <code>&quot;&quot;</code> rather
+                  than undefined, and <code>sender.active</code> was <code>false</code>,
+                  which is a specific and wrong claim rather than &quot;unknown&quot;. On a
+                  chat app&apos;s highest-volume endpoint most of the payload was that
+                  padding, and it rode the websocket push too. Now a pointer with{' '}
+                  <code>omitempty</code>, and the generated TypeScript says{' '}
+                  <code>sender?: User</code>, which is the truth. A client reading the blank
+                  object will need updating.
+                </p>
+
+                <h3><code>UPLOAD_ALLOWED_MIME</code></h3>
+                <p>
+                  Adding the audio types last release meant editing framework code inside a
+                  scaffolded project, which the manifest guard may hold back on upgrade.
+                  Set <code>UPLOAD_ALLOWED_MIME=audio/flac,image/avif</code> to extend the
+                  allowlist without touching it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.193.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

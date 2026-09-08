@@ -358,6 +358,7 @@ import (
 	"math"
 	"net/http"
 	"path/filepath"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -413,6 +414,25 @@ var AllowedMimeTypes = map[string]bool{
 	"application/x-tar":            true,
 	"application/x-rar-compressed": true,
 	"application/x-7z-compressed":  true,
+}
+
+// UPLOAD_ALLOWED_MIME adds types to AllowedMimeTypes, comma separated:
+//
+//	UPLOAD_ALLOWED_MIME=audio/flac,image/avif,model/gltf+json
+//
+// It extends rather than replaces, because the list above is a safety baseline
+// and the request people actually have is for one more type, not for a smaller
+// set. Narrow a particular field with its accepts instead.
+//
+// It exists so a type nobody anticipated does not require editing framework
+// code inside a scaffolded project, which is an edit the manifest guard may
+// hold back the next time you upgrade.
+func init() {
+	for _, m := range strings.Split(os.Getenv("UPLOAD_ALLOWED_MIME"), ",") {
+		if m = strings.ToLower(strings.TrimSpace(m)); m != "" {
+			AllowedMimeTypes[m] = true
+		}
+	}
 }
 
 // MaxUploadSize is the maximum file size (50 MB).

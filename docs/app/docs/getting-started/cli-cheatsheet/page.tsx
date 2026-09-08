@@ -442,6 +442,10 @@ export default function CLICheatsheetPage() {
                     desc="Restrict generated routes to specific roles"
                   />
                   <TerminalCard
+                    cmd='grit g resource Invoice --fields "number:string,total:money" --owned-by user'
+                    desc="Scope every row to its owner: a caller sees and edits only their own"
+                  />
+                  <TerminalCard
                     cmd='grit g resource Post --fields "title:string,views:int" --faker --count 50'
                     desc="Also generate a seeder that inserts 50 fake rows"
                   />
@@ -476,6 +480,11 @@ export default function CLICheatsheetPage() {
                           flag: "--roles",
                           type: "string",
                           desc: 'Restrict routes to roles (e.g. "ADMIN,EDITOR")',
+                        },
+                        {
+                          flag: "--owned-by",
+                          type: "string",
+                          desc: "Scope rows to their owner (e.g. user). Adds the field if absent; ADMIN is exempt",
                         },
                         {
                           flag: "--seed",
@@ -1688,6 +1697,7 @@ grit upgrade`}
 │   │   ├── --from file.yaml  # YAML field definitions
 │   │   ├── -i, --interactive # Interactive field prompts
 │   │   ├── --roles "..."     # Restrict routes to roles
+│   │   ├── --owned-by user  # Each row belongs to a user; scope every route to them
 │   │   ├── --seed            # Also generate a seeder (one example row)
 │   │   ├── --faker           # Also generate a gofakeit seeder (implies --seed)
 │   │   └── --count <n>       # Rows for the faker seeder (default 10)

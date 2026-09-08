@@ -7812,9 +7812,19 @@ func NewRealtimeHandler(hub *realtime.Hub, auth *services.AuthService) *Realtime
 //
 //   GET /api/ws?token=<jwt>
 func (h *RealtimeHandler) Connect(c *gin.Context) {
+	// A native client holds a real token and passes it explicitly. A browser
+	// cannot: login stores the JWT in the HttpOnly grit_access cookie so that
+	// scripts cannot read it, which also means a script cannot put it in this
+	// query string. The cookie rides along with the handshake GET, so read it
+	// from there instead of inventing a way to hand the token to JavaScript.
 	tokenStr := c.Query("token")
 	if tokenStr == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": gin.H{"code": "MISSING_TOKEN", "message": "?token query is required"}})
+		if cookie, err := c.Cookie("grit_access"); err == nil {
+			tokenStr = cookie
+		}
+	}
+	if tokenStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": gin.H{"code": "MISSING_TOKEN", "message": "a ?token query or a grit_access cookie is required"}})
 		return
 	}
 	claims, err := h.Auth.ValidateToken(tokenStr)
@@ -8898,6 +8908,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		DB:        db,
 		Cfg:       cfg,
 		Svc:       svc,
+		Hub:       realtimeHub,
+		Auth:      authService,
 		V1:        v1,
 		Public:    publicAPI,
 		Protected: protected,
