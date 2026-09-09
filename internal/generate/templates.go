@@ -2510,17 +2510,30 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 				itemCols += fmt.Sprintf("\n        { key: %q, label: %q, type: \"relationship-select\", relatedEndpoint: \"/api/%s\", displayField: \"name\" },", cf.FKColumnName(), label, relKebab)
 				continue
 			}
-			typ := "text"
+			// The same mapping the resource's own form uses.
+			//
+			// This used to be a second switch covering five types and falling
+			// through to "text", so money, toggles, selects, textareas and rich
+			// text were all plain text inputs. An invoice line's unit_rate came
+			// out as text while the identical column in the child's own
+			// resource came out as money, in the same run. A partial copy of a
+			// mapping is a copy that falls behind, and this one had.
+			typ := cf.FormFieldType()
+			if typ == "" {
+				continue // slug, and anything else with no form control
+			}
 			extra := ""
 			switch FieldType(cf.Type) {
 			case FieldInt:
-				typ, extra = "number", `, numberKind: "int"`
+				extra = `, numberKind: "int"`
 			case FieldUint:
-				typ, extra = "number", `, numberKind: "uint"`
+				extra = `, numberKind: "uint"`
 			case FieldFloat:
-				typ, extra = "number", `, numberKind: "float"`
-			case FieldDate, FieldDatetime:
-				typ = "date"
+				extra = `, numberKind: "float"`
+			case FieldSelect, FieldRadio, FieldCheck:
+				// Without its options a select renders an empty dropdown, which
+				// reads as a loading bug rather than a missing argument.
+				extra = ", options: " + cf.OptionsLiteral()
 			}
 			itemCols += fmt.Sprintf("\n        { key: %q, label: %q, type: %q%s },", toSnakeCase(cf.Name), label, typ, extra)
 		}
