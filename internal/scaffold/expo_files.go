@@ -200,7 +200,9 @@ func expoTSConfig() string {
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@repo/shared": ["../../packages/shared"],
+      "@repo/shared/*": ["../../packages/shared/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"]
@@ -266,8 +268,34 @@ func expoMetroConfig() string {
 	return `const { getDefaultConfig } = require("expo/metro-config");
 const { withNativeWind } = require("nativewind/metro");
 
+const path = require("path");
+
 const projectRoot = __dirname;
+// apps/expo -> apps -> the workspace root, which is where packages/shared and
+// the hoisted node_modules live.
+const workspaceRoot = path.resolve(projectRoot, "../..");
+
 const config = getDefaultConfig(projectRoot);
+
+// Resolving @repo/shared, the workspace package holding the types every
+// client shares. It is raw TypeScript with no build step, which Metro compiles
+// happily; keep it that way, because a dist/ step here means remembering to
+// run it before every bundle.
+//
+// An alias rather than a package.json dependency, matching how the desktop app
+// reaches the same package through its vite alias. Adding it to dependencies
+// also works and moves pnpm's hoisting, which is how the desktop app once
+// ended up with a second copy of vite and a config that no longer typechecked.
+// Nothing here touches the dependency graph.
+//
+// watchFolders is separate and still required: without it Metro never reads
+// anything outside apps/expo, and the import fails with "Unable to resolve
+// module @repo/shared" however good the alias is.
+config.watchFolders = [workspaceRoot];
+config.resolver.extraNodeModules = {
+  ...(config.resolver.extraNodeModules ?? {}),
+  "@repo/shared": path.resolve(workspaceRoot, "packages/shared"),
+};
 
 const nwConfig = withNativeWind(config, { input: "./global.css" });
 

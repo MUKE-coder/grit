@@ -249,19 +249,23 @@ func (g *Generator) mobileDetailRows() string {
 // ---- templates ---------------------------------------------------------
 
 func (g *Generator) writeMobileHook(names Names) error {
+	// FileRef comes from the shared package too, rather than being redeclared
+	// here: two structurally identical definitions of the same thing is how
+	// they eventually stop being identical.
 	fileRef := ""
 	if g.mobileHasFileField() {
-		fileRef = "type FileRef = { url: string; name?: string; size?: number; type?: string };\n\n"
+		fileRef = "import type { FileRef } from \"@repo/shared/schemas\";\n"
 	}
 
 	tmpl := `import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import type { __PASCAL__ } from "@repo/shared/types";
+__FILEREF__import { api } from "@/lib/api";
 
-__FILEREF__export interface __PASCAL__ {
-  id: string;
-__FIELDS__  created_at: string;
-  updated_at: string;
-}
+// Re-exported because the generated screens import it from here. The
+// definition itself lives in packages/shared, so grit sync reaches it: a local
+// copy could not be updated, and a field added to the Go model would arrive in
+// the shared type and nowhere else.
+export type { __PASCAL__ };
 
 export interface __PLURAL_PASCAL__Page {
   data: __PASCAL__[];

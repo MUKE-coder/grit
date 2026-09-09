@@ -70,14 +70,30 @@ func TestMobile_HookContent(t *testing.T) {
 		"export function useProduct(id", // single-item hook
 		"useCreateProduct",              // mutation
 		`api.get("/products?"`,          // list endpoint (mobile api has no /api prefix)
-		"category_id: string;",          // belongs_to FK
-		"category?: any;",               // preloaded relation
-		"type FileRef =",                // inline FileRef for the file field
-		"thumbnail: FileRef | null;",    // file field typed
+
+		// The resource shape comes from the shared package now. It used to be
+		// declared here, which meant grit sync could not reach it: a field
+		// added to the Go model landed in packages/shared and the mobile app
+		// never heard about it, with nothing erroring because the local copy
+		// stayed internally consistent.
+		`import type { Product } from "@repo/shared/types";`,
+		"export type { Product };", // the generated screens import it from here
+		`import type { FileRef } from "@repo/shared/schemas";`,
 	}
 	for _, w := range wants {
 		if !strings.Contains(hook, w) {
 			t.Errorf("hook missing %q\n---\n%s", w, hook)
+		}
+	}
+
+	// And the shape must not be declared here as well, or the two drift.
+	for _, unwanted := range []string{
+		"export interface Product {",
+		"type FileRef = {",
+	} {
+		if strings.Contains(hook, unwanted) {
+			t.Errorf("hook still declares %q locally; a schema change would "+
+				"update packages/shared and leave this behind", unwanted)
 		}
 	}
 }

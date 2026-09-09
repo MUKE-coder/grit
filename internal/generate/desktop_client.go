@@ -51,14 +51,27 @@ func (g *Generator) desktopClientHook(names Names) string {
 	Pascal := names.Pascal
 	Plural := names.PluralPascal
 	return `import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { ` + Pascal + ` } from "@repo/shared/types";
 import { localList, localGet, localCreate, localUpdate, localDelete } from "@/lib/sync-client";
 
-export type ` + Pascal + ` = Record<string, unknown> & { id: string };
+// The offline store is generic over whatever it mirrors, so it hands back
+// Record<string, unknown>. Asserting through unknown is what TypeScript wants
+// for a widening cast between two types that do not overlap structurally, and
+// it is honest: the rows really are unshaped until they get here.
+//
+// Casting once, here, is what lets the rest of the app see the same
+// ` + Pascal + ` the API and every other client sees, and what makes grit sync
+// reach this file: a locally declared type could not be updated.
+export type { ` + Pascal + ` };
+
+// What a create or an update may carry: the resource without the fields the
+// server owns.
+export type ` + Pascal + `Input = Partial<Omit<` + Pascal + `, "id" | "created_at" | "updated_at">>;
 
 export function use` + Plural + `() {
   return useQuery<` + Pascal + `[]>({
     queryKey: ["` + p + `"],
-    queryFn: async () => (await localList("` + p + `")) as ` + Pascal + `[],
+    queryFn: async () => (await localList("` + p + `")) as unknown as ` + Pascal + `[],
     // The background sync loop keeps the local mirror fresh; re-read it so the
     // list reflects server changes without a manual refresh.
     refetchInterval: 3000,
@@ -68,7 +81,7 @@ export function use` + Plural + `() {
 export function use` + Pascal + `(id: string) {
   return useQuery<` + Pascal + ` | null>({
     queryKey: ["` + p + `", id],
-    queryFn: async () => (await localGet("` + p + `", id)) as ` + Pascal + ` | null,
+    queryFn: async () => (await localGet("` + p + `", id)) as unknown as ` + Pascal + ` | null,
     enabled: !!id,
   });
 }
@@ -76,7 +89,7 @@ export function use` + Pascal + `(id: string) {
 export function useCreate` + Pascal + `() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Record<string, unknown>) => localCreate("` + p + `", "", data),
+    mutationFn: (data: ` + Pascal + `Input) => localCreate("` + p + `", "", data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["` + p + `"] }),
   });
 }
@@ -84,7 +97,7 @@ export function useCreate` + Pascal + `() {
 export function useUpdate` + Pascal + `() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+    mutationFn: ({ id, data }: { id: string; data: ` + Pascal + `Input }) =>
       localUpdate("` + p + `", id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["` + p + `"] }),
   });
@@ -285,15 +298,18 @@ func (g *Generator) desktopClientForm(names Names) string {
 
 	return `import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import type { ` + Pascal + `, ` + Pascal + `Input } from "@/hooks/use-` + names.PluralKebab + `";
 ` + parts.imports + `
 const inputCls =
   "w-full rounded-lg border border-border bg-surface-2 px-4 py-2.5 text-[13px] text-foreground placeholder:text-foreground-muted outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent";
 
 interface ` + Pascal + `FormProps {
-  record?: Record<string, unknown> | null;
+  // The typed resource, so passing the wrong record is a compile error rather
+  // than a form that silently prefills nothing.
+  record?: ` + Pascal + ` | null;
   submitting?: boolean;
   submitLabel: string;
-  onSubmit: (values: Record<string, unknown>) => void | Promise<void>;
+  onSubmit: (values: ` + Pascal + `Input) => void | Promise<void>;
   onCancel?: () => void;
 }
 
