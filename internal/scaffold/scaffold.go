@@ -62,7 +62,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.201.0"
+const DefaultVersion = "3.202.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -492,6 +492,22 @@ func Run(opts Options) error {
 		spinner.Printf("  → Scaffolding desktop app (Wails)...\n")
 		if err := writeDesktopClientFiles(root, opts); err != nil {
 			return fmt.Errorf("writing desktop files: %w", err)
+		}
+
+		// The desktop app is its own Go module, so tidying apps/api does not
+		// reach it. Without this a fresh project cannot build or test anything
+		// under apps/desktop: four missing go.sum entries, including the
+		// SQLite driver the offline engine is built on.
+		//
+		// A failure here is not fatal. The API is already resolved and the
+		// project works; losing the whole scaffold to a network hiccup would
+		// be the worse outcome, so say what to run and carry on.
+		spinner.Printf("  → Resolving desktop Go dependencies...\n")
+		desktopTidy := exec.Command("go", "mod", "tidy")
+		desktopTidy.Dir = filepath.Join(root, "apps", "desktop")
+		if out, err := desktopTidy.CombinedOutput(); err != nil {
+			spinner.Printf("  ⚠ could not resolve desktop dependencies: %v\n", err)
+			spinner.Printf("    run: cd apps/desktop && go mod tidy\n%s\n", string(out))
 		}
 	}
 
