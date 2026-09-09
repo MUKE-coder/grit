@@ -226,3 +226,57 @@ func TestRealtimeClientShipsWithTheFrontends(t *testing.T) {
 		}
 	}
 }
+
+// Realtime must survive a second replica.
+//
+// The Hub is an in-process registry, so without a backplane a user connected
+// to replica A never receives an event published on replica B: the push
+// succeeds into a registry that does not contain them, and nothing errors or
+// logs. That is invisible in development, invisible on one instance, and shows
+// up as "messages sometimes do not arrive" during the first rolling deploy
+// where two versions overlap.
+func TestRealtimeHasACrossProcessBackplane(t *testing.T) {
+	read := apiSource(t)
+
+	bp := read("internal", "realtime", "backplane.go")
+	for _, want := range []string{
+		"type Backplane interface",
+		"func RedisBackplane(",
+		"func (h *Hub) publish(",
+		"func (h *Hub) receive(",
+	} {
+		if !strings.Contains(bp, want) {
+			t.Errorf("the backplane is missing %q", want)
+		}
+	}
+	// A node has to ignore its own messages, or every user sees their own
+	// events twice: once locally, once off the backplane.
+	if !strings.Contains(bp, "f.Origin == h.nodeID") {
+		t.Error("no origin check: a node would re-deliver its own published events")
+	}
+	// Revocation has to cross the wire, or "sign out of all devices" only
+	// reaches the replica that served the request.
+	if !strings.Contains(bp, "case f.Kick != \"\":") {
+		t.Error("a kick does not cross the backplane, so a revoked socket on " +
+			"another replica stays open and keeps receiving")
+	}
+
+	hub := read("internal", "realtime", "hub.go")
+	for _, want := range []string{"func WithBackplane(", "func WithRedis(", "h.publish(fanout{Kick: userID})"} {
+		if !strings.Contains(hub, want) {
+			t.Errorf("hub.go is missing %q", want)
+		}
+	}
+	// Local delivery must not depend on the backplane, so a Redis outage
+	// degrades realtime to one replica rather than breaking it.
+	if !strings.Contains(hub, "h.deliverLocal(userIDs, bytes)") {
+		t.Error("SendToUsers does not deliver locally before publishing")
+	}
+
+	// And the wiring, so a project with Redis gets it without being asked.
+	routes := read("internal", "routes", "routes.go")
+	if !strings.Contains(routes, "realtime.NewHub(realtime.WithRedis(cfg.RedisURL") {
+		t.Error("routes.Setup does not pass Redis to the hub, so every project " +
+			"stays single-process no matter what it has configured")
+	}
+}
