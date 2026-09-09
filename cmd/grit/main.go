@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.197.0"
+var version = "3.198.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -770,6 +770,7 @@ func generateResourceCmd() *cobra.Command {
 	var publicRead bool
 	var tree bool
 	var ownedBy string
+	var tenantOwned bool
 
 	cmd := &cobra.Command{
 		Use:   "resource <Name>",
@@ -866,6 +867,18 @@ func generateResourceCmd() *cobra.Command {
 			gen.Definition.Public = publicRead
 			gen.Definition.Tree = tree
 			gen.Definition.OwnedBy = ownedBy
+			gen.Definition.TenantOwned = tenantOwned
+
+			// The flag only helps somebody who knows it exists. When the
+			// plugin is installed and it was not passed, name it once: a
+			// shared table is a legitimate thing to generate, so this is a
+			// note rather than a refusal.
+			if !tenantOwned && generate.PluginInstalled(gen.Root, "multitenant") {
+				fmt.Printf("  • multitenant is installed and %s is shared: every "+
+					"organization will see every row.\n"+
+					"    Pass --tenant-owned to scope it.\n",
+					gen.Names().Pascal)
+			}
 
 			// --owned-by without that field adds it, for the same reason --tree
 			// adds its parent: making somebody write both --owned-by user and
@@ -918,6 +931,8 @@ func generateResourceCmd() *cobra.Command {
 		"Also expose read-only list and detail endpoints under /api/v1/public/, guarded by an API key")
 	cmd.Flags().BoolVar(&tree, "tree", false,
 		"Make the resource hierarchical: a self-referential parent, a materialized path, depth and sibling order, plus the tree queries and a move endpoint")
+	cmd.Flags().BoolVar(&tenantOwned, "tenant-owned", false,
+		"Scope the resource to an organization (requires the multitenant plugin): embeds tenant.Owned, so queries are filtered by the active org and OrgID is stamped on insert")
 	cmd.Flags().StringVar(&ownedBy, "owned-by", "",
 		"Scope the resource to its owner: the named belongs_to-User field decides who may read or write each row (e.g. --owned-by user). Adds the field if absent. ADMIN is exempt")
 	cmd.Flags().IntVar(&seedCount, "count", 10, "Number of rows for the faker seeder")

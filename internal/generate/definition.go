@@ -62,6 +62,14 @@ type ResourceDefinition struct {
 	// on read/update/delete by id, and stamps the owner on create. An ADMIN is
 	// exempt from all four, because the admin panel calls the same endpoints.
 	OwnedBy string `yaml:"owned_by,omitempty"`
+
+	// TenantOwned embeds tenant.Owned, set by --tenant-owned. It requires the
+	// multitenant plugin, which supplies the package.
+	//
+	// Off by default even when that plugin is installed: scoping is per model,
+	// and a shared reference table scoped by accident becomes invisible to
+	// every query with no error to explain it.
+	TenantOwned bool `yaml:"tenant_owned,omitempty"`
 }
 
 // OwnerField returns the field ownership is checked against, or nil when the

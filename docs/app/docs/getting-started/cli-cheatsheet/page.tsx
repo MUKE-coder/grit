@@ -482,6 +482,11 @@ export default function CLICheatsheetPage() {
                           desc: 'Restrict routes to roles (e.g. "ADMIN,EDITOR")',
                         },
                         {
+                          flag: "--tenant-owned",
+                          type: "bool",
+                          desc: "Scope rows to the active organization (needs the multitenant plugin)",
+                        },
+                        {
                           flag: "--owned-by",
                           type: "string",
                           desc: "Scope rows to their owner (e.g. user). Adds the field if absent; ADMIN is exempt",

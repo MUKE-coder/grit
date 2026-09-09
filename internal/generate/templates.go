@@ -124,6 +124,10 @@ func (g *Generator) writeGoModel(names Names) error {
 	if hasAuto {
 		projImports = append(projImports, fmt.Sprintf("\"%s/internal/sequence\"", g.Module))
 	}
+	// tenant sorts after sequence, so the block stays gofmt-clean.
+	if g.Definition.TenantOwned {
+		projImports = append(projImports, fmt.Sprintf("\"%s/internal/tenant\"", g.Module))
+	}
 	if len(projImports) > 0 {
 		imports = fmt.Sprintf("import (\n\t%s\n\n\t%s\n\n\t%s\n)", stdImports, extImports, strings.Join(projImports, "\n\t"))
 	} else {
@@ -287,6 +291,14 @@ func (g *Generator) writeGoModel(names Names) error {
 	// self-referential belongs_to, emitted above with the other fields.
 	if isTree {
 		structFields += treeFields(names)
+	}
+
+	// --tenant-owned: OrgID and its index, plus the opt-in that makes the
+	// scoping callbacks apply to this model at all. Prepended so it sits
+	// directly under ID, where a reader looking for "which tenant owns this"
+	// will find it.
+	if g.Definition.TenantOwned {
+		structFields = "\ttenant.Owned\n" + structFields
 	}
 
 	content := fmt.Sprintf(`package models

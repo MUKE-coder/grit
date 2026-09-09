@@ -29,6 +29,41 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.198.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.198.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3><code>--tenant-owned</code></h3>
+                <CodeBlock language="bash" code={`grit generate resource Contact --fields "name:string,email:string" --tenant-owned`} />
+                <p>
+                  Embeds <code>tenant.Owned</code> and imports the package, so a
+                  generated resource is scoped to the active organization: queries are
+                  filtered by it and <code>OrgID</code> is stamped on insert. The
+                  multitenant plugin asked you to do this by hand on every generated
+                  model, and again after any <code>--force</code> regeneration.
+                </p>
+                <p>
+                  Off by default even with the plugin installed, for the same reason{' '}
+                  <code>--owned-by</code> is: a country list, a currency table and a
+                  plan catalogue are shared on purpose, and scoping one by accident
+                  makes it invisible to every query with no error to explain it.
+                </p>
+                <p>
+                  The flag only helps someone who knows it exists, so when the plugin
+                  is installed and it was not passed, the generator now says so once:{' '}
+                  <em>&quot;multitenant is installed and Country is shared: every
+                  organization will see every row. Pass --tenant-owned to scope
+                  it.&quot;</em> A note, not a refusal.
+                </p>
+              </div>
+            </div>
+
             {/* v3.197.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
