@@ -360,26 +360,62 @@ func (w *ExportWorker) Handle(ctx context.Context, userID string) error {
               {/* Scaling */}
               <section className="mb-12">
                 <h2 className="text-2xl font-bold text-foreground mb-4">
-                  One API replica, unless you add a backplane
+                  Running more than one replica
                 </h2>
-                <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The Hub is an in-process registry, so on its own a user connected to
+                  replica A never receives an event published on replica B: the push
+                  succeeds, into a registry that does not contain them, and nothing
+                  errors. A backplane joins the processes, and{' '}
+                  <code>routes.Setup</code> wires one whenever the project has Redis:
+                </p>
+                <CodeBlock
+                  language="go"
+                  filename="internal/routes/routes.go"
+                  code={`realtimeHub := realtime.NewHub(realtime.WithRedis(cfg.RedisURL, ""))`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  <code>WithRedis</code> is a no-op on an empty URL, so a project with no
+                  Redis keeps the single-process hub rather than failing to start. Redis
+                  is already there for cache and background jobs, so the common case adds
+                  no new infrastructure. Pass a channel name as the second argument if two
+                  applications share one Redis, or they will deliver each other&apos;s
+                  events.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  Every send takes both paths: this node&apos;s own clients first and
+                  unconditionally, then a single publish for the others no matter how
+                  large the audience. Local delivery never waits on Redis and still works
+                  when Redis is down, so an outage degrades realtime to one replica rather
+                  than breaking it. Revocation crosses the backplane as well, so signing
+                  out of all devices closes sockets on every instance and not just the one
+                  that served the request.
+                </p>
+
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-4">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    <strong className="text-amber-400">Realtime stops working at two replicas,
-                    and it does so silently.</strong>{' '}
-                    The Hub is an in-process registry. A user connected to replica A never
-                    receives an event published on replica B: the push succeeds, into a
-                    registry that does not contain them. Nothing errors and nothing is
-                    logged.
-                  </p>
-                  <p className="text-sm text-muted-foreground leading-relaxed mt-3">
-                    This is invisible in development and on a single instance, and appears
-                    as &quot;messages sometimes do not arrive&quot; the first time you scale
-                    out, or during a rolling deploy where two versions overlap. If you run
-                    more than one API process, either pin websocket traffic to one instance
-                    or put a shared backplane behind the Hub;{' '}
-                    <code>grit-plugins/grit-websockets</code> is the place to start.
+                    <strong className="text-foreground">Delivery between nodes is best
+                    effort, deliberately.</strong>{' '}
+                    A realtime event is a hint that something changed, not the record of
+                    it: the database holds the truth and every client resyncs on its next
+                    REST call. Guaranteeing delivery here would mean per-subscriber queues,
+                    acknowledgements and retention, which is a message broker, and one that
+                    fails in ways a notification badge does not justify. A message
+                    published while a node is reconnecting is lost, and a publish queued
+                    behind a backplane that has stopped answering is dropped rather than
+                    blocking the request that made it.
                   </p>
                 </div>
+
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  <code>Backplane</code> is an interface, so Redis is the shipped
+                  implementation rather than the only possible one. Implement{' '}
+                  <code>Publish</code>, <code>Subscribe</code> and <code>Close</code> over
+                  NATS or anything else and pass it with{' '}
+                  <code>realtime.WithBackplane(...)</code>. The one rule is that{' '}
+                  <code>Publish</code> must not block: it is reachable from a request
+                  handler.
+                </p>
               </section>
 
               {/* Go deeper callout */}

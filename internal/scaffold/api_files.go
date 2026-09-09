@@ -41,6 +41,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "maintenance.go"):           apiMaintenanceMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "idempotency.go"):           apiIdempotencyMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "hub.go"):                     apiRealtimeHubGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "backplane.go"):               apiRealtimeBackplaneGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "backplane_test.go"):          apiRealtimeBackplaneTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):                apiRealtimeHandlerGo(),
 		filepath.Join(apiRoot, "internal", "sync", "registry.go"):                    apiSyncRegistryGo(),
 		filepath.Join(apiRoot, "internal", "sync", "policy.go"):                      apiSyncPolicyGo(),
@@ -7589,6 +7591,7 @@ func apiRealtimeHubGo() string {
 package realtime
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"sync"
@@ -7627,11 +7630,87 @@ const disconnectGrace = 10 * time.Second
 type Hub struct {
 	mu      sync.RWMutex
 	clients map[string]map[*Client]struct{} // userID -> set of connections
+
+	// nodeID identifies this process so it can ignore its own messages coming
+	// back off the backplane.
+	nodeID string
+
+	// backplane is nil for a single-process deployment, which is the default
+	// and is correct for most projects. See WithBackplane.
+	backplane Backplane
+	pub       chan []byte
+	cancel    context.CancelFunc
 }
 
-// NewHub returns an empty Hub.
-func NewHub() *Hub {
-	return &Hub{clients: make(map[string]map[*Client]struct{})}
+// Option configures a Hub at construction.
+type Option func(*Hub)
+
+// WithBackplane fans every send out to the other API processes.
+//
+// Without one the Hub is an in-process registry, so a second replica silently
+// halves realtime: a user connected to replica A never sees an event published
+// on replica B, the push succeeds into a registry that does not contain them,
+// and nothing errors. Pass this whenever more than one process serves
+// websockets, including during a rolling deploy where two versions overlap.
+//
+// Delivery between nodes is best effort. See Backplane.
+func WithBackplane(b Backplane) Option {
+	return func(h *Hub) { h.backplane = b }
+}
+
+// WithRedis is WithBackplane over the Redis this project already runs.
+//
+// An empty url is a no-op, so the common wiring is one unconditional line:
+//
+//	realtime.NewHub(realtime.WithRedis(cfg.RedisURL, ""))
+//
+// A project with no Redis configured then keeps the single-process behaviour
+// instead of failing to start.
+func WithRedis(redisURL, channel string) Option {
+	return func(h *Hub) {
+		if redisURL == "" {
+			return
+		}
+		bp, err := RedisBackplane(redisURL, channel)
+		if err != nil {
+			// Not fatal. Realtime degrades to this process's own clients,
+			// which is exactly what every project had before backplanes
+			// existed, and the API still serves everything else.
+			log.Printf("[realtime] no backplane, staying single-process: %v", err)
+			return
+		}
+		h.backplane = bp
+	}
+}
+
+// NewHub returns a Hub, single-process unless an option says otherwise.
+func NewHub(opts ...Option) *Hub {
+	h := &Hub{
+		clients: make(map[string]map[*Client]struct{}),
+		nodeID:  newNodeID(),
+	}
+	for _, opt := range opts {
+		opt(h)
+	}
+	if h.backplane != nil {
+		h.pub = make(chan []byte, publishBuffer)
+		ctx, cancel := context.WithCancel(context.Background())
+		h.cancel = cancel
+		go h.backplane.Subscribe(ctx, h.receive)
+		go h.publishLoop(ctx)
+	}
+	return h
+}
+
+// Close stops the backplane subscription. Local clients are unaffected.
+func (h *Hub) Close() error {
+	if h.cancel != nil {
+		h.cancel()
+	}
+	if h.backplane != nil {
+		return h.backplane.Close()
+	}
+	return nil
 }
 
 // Register adds a client to the hub. A user can have multiple registered
@@ -7671,6 +7750,16 @@ func (h *Hub) Unregister(c *Client) {
 // receiving live data for the rest of the access-token lifetime, which is not
 // what "sign out of all devices" tells the user happened.
 func (h *Hub) DisconnectUser(userID string) {
+	h.disconnectLocal(userID)
+	// And on every other node. A revoked connection on a replica that did not
+	// handle the revocation request would otherwise stay open and keep
+	// receiving, which is the failure this function exists to prevent.
+	h.publish(fanout{Kick: userID})
+}
+
+// disconnectLocal closes this process's connections for a user. It is what
+// both DisconnectUser and an incoming kick run.
+func (h *Hub) disconnectLocal(userID string) {
 	h.mu.Lock()
 	set, ok := h.clients[userID]
 	if !ok {
@@ -7706,41 +7795,35 @@ func (h *Hub) DisconnectUser(userID string) {
 // connection only — we never block the entire hub on a slow client.
 // The slow client will resync on its next REST poll/refetch.
 func (h *Hub) SendToUser(userID string, evt Event) {
-	bytes, err := json.Marshal(evt)
-	if err != nil {
-		log.Printf("[realtime] marshal: %v", err)
+	h.SendToUsers([]string{userID}, evt)
+}
+
+// deliverLocal pushes an encoded event to this process's own connections.
+// It never touches the backplane, so it is also what a received message runs.
+func (h *Hub) deliverLocal(userIDs []string, bytes []byte) {
+	if len(bytes) == 0 {
 		return
 	}
 	h.mu.RLock()
-	set := h.clients[userID]
-	targets := make([]*Client, 0, len(set))
-	for c := range set {
-		targets = append(targets, c)
+	targets := make([]*Client, 0, len(userIDs))
+	for _, uid := range userIDs {
+		for c := range h.clients[uid] {
+			targets = append(targets, c)
+		}
 	}
 	h.mu.RUnlock()
 	for _, c := range targets {
 		select {
 		case c.Send <- bytes:
 		default:
-			log.Printf("[realtime] dropping message for slow client user=%s", userID)
+			log.Printf("[realtime] dropping message for slow client user=%s", c.UserID)
 		}
 	}
 }
 
-// SendToUsers fans out to a slice of user IDs.
-func (h *Hub) SendToUsers(userIDs []string, evt Event) {
-	for _, uid := range userIDs {
-		h.SendToUser(uid, evt)
-	}
-}
-
-// Broadcast delivers an event to every connected client, regardless of
-// user. Use sparingly — for system-wide announcements, maintenance
-// notices, etc.
-func (h *Hub) Broadcast(evt Event) {
-	bytes, err := json.Marshal(evt)
-	if err != nil {
-		log.Printf("[realtime] marshal: %v", err)
+// broadcastLocal is deliverLocal for every connection on this node.
+func (h *Hub) broadcastLocal(bytes []byte) {
+	if len(bytes) == 0 {
 		return
 	}
 	h.mu.RLock()
@@ -7758,6 +7841,37 @@ func (h *Hub) Broadcast(evt Event) {
 			log.Printf("[realtime] dropping broadcast for slow client user=%s", c.UserID)
 		}
 	}
+}
+
+// SendToUsers fans out to a slice of user IDs.
+func (h *Hub) SendToUsers(userIDs []string, evt Event) {
+	if len(userIDs) == 0 {
+		return
+	}
+	bytes, err := json.Marshal(evt)
+	if err != nil {
+		log.Printf("[realtime] marshal: %v", err)
+		return
+	}
+	// This node first, and unconditionally: local clients must not wait on
+	// Redis, and must still be served when Redis is down.
+	h.deliverLocal(userIDs, bytes)
+	// Then once for every other node, whatever the size of the audience. A
+	// per-user publish would send the same payload N times over the wire.
+	h.publish(fanout{Users: userIDs, Event: bytes})
+}
+
+// Broadcast delivers an event to every connected client, regardless of
+// user. Use sparingly — for system-wide announcements, maintenance
+// notices, etc.
+func (h *Hub) Broadcast(evt Event) {
+	bytes, err := json.Marshal(evt)
+	if err != nil {
+		log.Printf("[realtime] marshal: %v", err)
+		return
+	}
+	h.broadcastLocal(bytes)
+	h.publish(fanout{All: true, Event: bytes})
 }
 `
 }
@@ -8319,7 +8433,12 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	activityHandler := handlers.NewActivityHandler(db)
 	webhookHandler := handlers.NewWebhookHandler(db)
 	webhooks.Setup(db)
-	realtimeHub := realtime.NewHub()
+	// WithRedis is a no-op when REDIS_URL is empty, so a single-process
+	// project keeps the in-process hub and a multi-replica one fans out
+	// across every instance without a second thing to configure. Without a
+	// backplane, a user on replica A never sees an event published on
+	// replica B and nothing anywhere reports it.
+	realtimeHub := realtime.NewHub(realtime.WithRedis(cfg.RedisURL, ""))
 	// Revoking a session has to close that user's live sockets too. Without
 	// this, "sign out of all devices" leaves every open WebSocket streaming.
 	services.OnSessionsRevoked = realtimeHub.DisconnectUser

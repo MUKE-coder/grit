@@ -29,6 +29,71 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.196.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.196.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Realtime works with more than one API replica</h3>
+                <p>
+                  The Hub was an in-process registry, so a second replica silently halved
+                  realtime: a user connected to replica A never received an event
+                  published on replica B. The push succeeded, into a registry that did not
+                  contain them, and nothing errored or logged. Invisible in development,
+                  invisible on one instance, and first met as &quot;messages sometimes do
+                  not arrive&quot; during a rolling deploy where two versions overlap.
+                </p>
+                <p>
+                  <code>routes.Setup</code> now wires a backplane whenever the project has
+                  Redis, which it already runs for cache and background jobs:
+                </p>
+                <CodeBlock
+                  language="go"
+                  code={`realtimeHub := realtime.NewHub(realtime.WithRedis(cfg.RedisURL, ""))`}
+                />
+                <p>
+                  <code>WithRedis</code> is a no-op on an empty URL, so a project without
+                  Redis keeps exactly the behaviour it had rather than failing to start.
+                </p>
+                <p>
+                  Every send takes both paths: this node&apos;s own clients first and
+                  unconditionally, then one publish for the others however large the
+                  audience. Local delivery never waits on Redis and still works while
+                  Redis is down, so an outage degrades realtime to a single replica
+                  instead of breaking it. A node ignores its own messages coming back, or
+                  every user would see their own events twice.
+                </p>
+                <p>
+                  <strong>Revocation crosses the backplane too.</strong> Closing sockets
+                  is how &quot;sign out of all devices&quot; became true in v3.193.0, and
+                  a kick that stayed local would have signed out only the devices sharing
+                  a replica with the request while the UI reported success. Verified
+                  against two live replicas: a revoke issued on B closes a socket held on
+                  A.
+                </p>
+                <p>
+                  Delivery between nodes is best effort and says so. A realtime event is a
+                  hint that something changed, not the record of it, and every client
+                  resyncs on its next REST call. A publish queued behind a backplane that
+                  has stopped answering is dropped rather than blocking the request that
+                  made it, which matters because <code>SendToUser</code> is reachable
+                  straight from a handler and not only through the async event bus.
+                </p>
+                <p>
+                  <code>Backplane</code> is an interface, so Redis is the shipped
+                  implementation and not the only possible one. Six tests ship with every
+                  project, wiring two hubs through an in-memory backplane, so cross-node
+                  delivery, the origin check, broadcast, revocation and the
+                  non-blocking publish are all covered without needing Redis to run them.
+                </p>
+              </div>
+            </div>
+
             {/* v3.195.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
