@@ -29,6 +29,36 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.205.1 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.205.1
+                </span>
+                <span className="text-sm text-muted-foreground">September 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A promised sidebar entry that was never written</h3>
+                <p>
+                  A triple project always closed a generate with &quot;the admin panel
+                  will show Widgets in the sidebar&quot;, including when there was no{' '}
+                  <code>apps/admin/resources</code> to write to. The resource definition
+                  and both screens were skipped, nothing said so, and the run still
+                  ended with a green tick. Found by renaming{' '}
+                  <code>apps/admin</code> to see how the CLI copes; the same path is
+                  reached by a bad merge or a partial checkout.
+                </p>
+                <p>
+                  The message now says what was skipped and what was not. Everything
+                  else about that case was already fine: the API, the shared types and
+                  the web hooks are generated, and both{' '}
+                  <code>grit sync</code> and the Go build work with an app folder
+                  missing or renamed.
+                </p>
+              </div>
+            </div>
+
             {/* v3.205.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
