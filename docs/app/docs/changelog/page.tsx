@@ -29,6 +29,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.202.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.202.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The offline sync engine has tests now</h3>
+                <p>
+                  It is the least testable-by-hand and most consequential part of the
+                  desktop app: it decides what happens to a change made on a plane, and
+                  what happens when the server moved underneath it. It shipped with no
+                  tests, so every one of those decisions had only ever been checked by
+                  using the app.
+                </p>
+                <p>
+                  Five tests ship with every desktop project, running against an{' '}
+                  <code>httptest</code> server standing in for <code>/api/sync</code>:
+                  a local write is readable before it is pushed, a successful push
+                  clears the queue and records the server&apos;s version, a version
+                  conflict parks the change with the server&apos;s copy attached and the
+                  local edit intact, a conflicted row is not retried behind the
+                  user&apos;s back, and resolving one replays it at the version the user
+                  actually saw.
+                </p>
+                <p>
+                  The engine passed all five on the first run. That is the useful
+                  result: the behaviour was already right, and now it stays right.
+                </p>
+
+                <h3>The desktop app did not build on a fresh project</h3>
+                <p>
+                  <code>apps/desktop</code> is a second Go module, so tidying{' '}
+                  <code>apps/api</code> during <code>grit new</code> never reached it.{' '}
+                  <code>go build ./...</code> inside it failed on four missing{' '}
+                  <code>go.sum</code> entries, including the SQLite driver the offline
+                  engine is built on. <code>grit new-desktop</code> had always tidied
+                  the standalone project; the combinable <code>--desktop</code> path had
+                  not. It does now, and a failure there warns and prints the command
+                  rather than losing the whole scaffold.
+                </p>
+              </div>
+            </div>
+
             {/* v3.201.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

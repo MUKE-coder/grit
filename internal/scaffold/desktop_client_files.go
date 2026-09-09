@@ -163,9 +163,10 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "internal", "ids", "ids.go"): desktopIDsGo(),
 
 		// Offline-first sync engine (local SQLite + outbox + push/pull orchestration)
-		filepath.Join(desktopRoot, "sync", "engine.go"): desktopSyncEngineGo(),
-		filepath.Join(desktopRoot, "sync", "outbox.go"): desktopSyncOutboxGo(),
-		filepath.Join(desktopRoot, "sync", "local.go"):  desktopSyncLocalGo(),
+		filepath.Join(desktopRoot, "sync", "engine.go"):      desktopSyncEngineGo(),
+		filepath.Join(desktopRoot, "sync", "engine_test.go"): desktopSyncEngineTestGo(opts),
+		filepath.Join(desktopRoot, "sync", "outbox.go"):      desktopSyncOutboxGo(),
+		filepath.Join(desktopRoot, "sync", "local.go"):       desktopSyncLocalGo(),
 	}
 
 	for path, content := range files {
