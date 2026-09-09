@@ -29,6 +29,109 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.197.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.197.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  Found by building a multi-tenant CRM on the docs, following them
+                  exactly.
+                </p>
+
+                <h3>The multitenant plugin never turned its own scoping on</h3>
+                <p>
+                  It installed a correct <code>tenant</code> package and a correct
+                  middleware, and wired neither.{' '}
+                  <code>tenant.RegisterScoping(db)</code> was never called, so the GORM
+                  callbacks that add the organization filter and stamp{' '}
+                  <code>OrgID</code> on insert were never installed.{' '}
+                  <code>middleware.Tenant(db)</code> was never mounted, so nothing put
+                  the active organization on the request context for them to read.
+                </p>
+                <p>
+                  Following the documented steps produced a multi-tenant application
+                  with <strong>no isolation at all</strong>. Two organizations, one
+                  contact: the second organization listed it, and{' '}
+                  <code>org_id</code> came back empty on every insert. The plugin&apos;s
+                  own middleware comment reads &quot;the whole isolation model rests on
+                  this check&quot;, and nothing called it.
+                </p>
+
+                <h3>Generated handlers never passed the request context to GORM</h3>
+                <p>
+                  Every generated handler queried <code>h.DB</code> directly, so GORM
+                  saw <code>context.Background()</code> and nothing a middleware put on
+                  the request could reach a callback. That made the plugin unusable with
+                  generated resources even once wired: unscoped it returned every
+                  tenant&apos;s rows, and scoped every query failed closed with a 500.
+                </p>
+                <p>
+                  Handlers now go through <code>h.scoped(c)</code>. The swap is applied
+                  to the assembled handler source rather than at each of the dozen
+                  places that build a query, because the create call, the reload, the
+                  many-to-many association writes and the line-items writer are all
+                  computed separately and the next one would have been missed. This is
+                  worth having without tenancy: a cancelled request now cancels its
+                  query instead of holding a connection to build a response nobody will
+                  read.
+                </p>
+
+                <h3>Generating a resource could silently delete the audit log</h3>
+                <p>
+                  <code>grit generate resource Activity</code> reported success and
+                  overwrote <code>internal/services/activity.go</code>, taking{' '}
+                  <code>LogActivity</code>, <code>LogCreate</code>,{' '}
+                  <code>LogUpdate</code>, <code>LogDelete</code>,{' '}
+                  <code>DiffSummary</code> and seven more with it. The build then failed
+                  in <code>access_review.go</code> and{' '}
+                  <code>event_subscribers.go</code>, two files the developer had never
+                  opened, with nothing connecting the error to the command.
+                </p>
+                <p>
+                  The reserved-name list covers built-in <em>models</em>. This was a
+                  built-in <em>file</em>, and they are not the same set: the audit
+                  log&apos;s models are <code>ActivityLog</code> and{' '}
+                  <code>UserActivity</code>, both reserved, while the helpers that write
+                  to them live in a file <code>Activity</code> claims. Names like{' '}
+                  <code>Chart</code>, <code>Blog</code>, <code>Recovery</code>,{' '}
+                  <code>Security</code>, <code>Sync</code> and <code>Jobs</code> were in
+                  the same position.
+                </p>
+                <p>
+                  The generator now asks the manifest, which already records every file
+                  the scaffold wrote, so whatever the scaffold gains next is protected
+                  on the day it lands rather than after someone loses a morning to it.
+                  It names the files, suggests a free name, and{' '}
+                  <code>--force</code> still overrides.
+                </p>
+
+                <h3>Also</h3>
+                <ul>
+                  <li>
+                    <code>// grit:middleware:protected</code> and{' '}
+                    <code>// grit:imports</code> in <code>routes.go</code>: there was no
+                    way for a plugin to mount request middleware or add an import.
+                  </li>
+                  <li>
+                    A failing <code>grit generate resource</code> no longer prints the
+                    flag list underneath the error, which buried the sentence saying
+                    what to do instead.
+                  </li>
+                  <li>
+                    The multitenant docs now say that a generated resource is shared
+                    until you embed <code>tenant.Owned</code> in it yourself, and that
+                    nothing warns you.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.196.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

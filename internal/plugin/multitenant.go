@@ -45,7 +45,8 @@ Requires the roles system (Grit v3.66.0+).`,
 
 		NextSteps: []string{
 			"Run migrations:  cd apps/api && go run cmd/migrate/main.go",
-			"Every tenant-scoped model needs an OrgID field — add `tenant.Owned` to it",
+			"Add `tenant.Owned` to every model that belongs to an organization",
+			"Until you do, a model is shared: scoping only applies to models that have OrgID",
 			"Clients send the active org as the X-Organization-ID header",
 			"Read internal/tenant/tenant.go for how to opt a query OUT of scoping",
 		},
@@ -98,6 +99,32 @@ func multitenantInjections(ctx Context) []Injection {
 			File:   p("internal/routes/routes.go"),
 			Marker: "// grit:handlers",
 			Code:   "\torgHandler := handlers.NewOrganizationHandler(db)",
+		},
+		{
+			File:   p("internal/routes/routes.go"),
+			Marker: "// grit:imports",
+			Code:   "\t\"" + ctx.Module + "/internal/tenant\"",
+		},
+		{
+			// Turn the scoping on. Without this the callbacks that add the
+			// org filter and stamp OrgID on insert are never installed, so
+			// every tenant-owned model is read and written unscoped: the
+			// package is present, correct, and doing nothing.
+			File:   p("internal/routes/routes.go"),
+			Marker: "// grit:handlers",
+			Code: "\t// Installs the GORM callbacks that scope every tenant-owned model.\n" +
+				"\t// Without it tenant.Owned is just a column.\n" +
+				"\tif err := tenant.RegisterScoping(db); err != nil {\n" +
+				"\t\tlog.Fatalf(\"tenant scoping: %v\", err)\n" +
+				"\t}",
+		},
+		{
+			// And put the active organization on the request context for those
+			// callbacks to read. Mounted after auth, because membership is
+			// verified against the authenticated user.
+			File:   p("internal/routes/routes.go"),
+			Marker: "// grit:middleware:protected",
+			Code:   "\tprotected.Use(middleware.Tenant(db))",
 		},
 		{
 			File:   p("internal/routes/routes.go"),
