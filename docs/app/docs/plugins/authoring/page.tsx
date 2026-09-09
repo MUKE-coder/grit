@@ -36,9 +36,10 @@ export default function PluginsPage() {
 
           <div className="prose-grit">
             <h2>Using plugins</h2>
-            <CodeBlock language="bash" code={`grit plugin list              # what's available
-grit plugin info multitenant  # what it does
-grit plugin add multitenant   # install
+            <CodeBlock language="bash" code={`grit plugin list                       # what's available
+grit plugin info multitenant           # what it does
+grit plugin add multitenant            # install a built-in
+grit plugin add ./plugins/my-plugin    # install one of your own
 grit plugin remove multitenant`} />
 
             <h2>Why generated code, not a library</h2>
@@ -125,13 +126,26 @@ grit plugin remove multitenant`} />
               Code is inserted on the line <em>before</em> a marker comment. The markers a
               scaffolded project provides:
             </p>
-            <CodeBlock language="text" code={`// grit:models             AutoMigrate registry
-// grit:handlers           handler construction
-// grit:routes:protected   authenticated routes
-// grit:routes:admin       admin-only routes
-// grit:routes:custom      public routes
-// grit:seeders            seed registration
-// grit:cron-tasks         scheduled tasks`} />
+            <CodeBlock language="text" code={`// grit:models                AutoMigrate registry
+// grit:handlers              handler construction
+// grit:imports               imports in routes.go
+// grit:middleware:protected  request middleware, after auth
+// grit:routes:public         API-key routes
+// grit:routes:protected      authenticated routes
+// grit:routes:admin          admin-only routes
+// grit:routes:custom         unauthenticated routes
+// grit:seeders               seed registration
+// grit:cron-tasks            scheduled tasks
+// grit:nav:system            a System entry in the admin sidebar
+// grit:icons:import          an icon import in the admin
+// grit:icons:map             that icon in the admin's iconMap`} />
+
+              <p className="mt-4 leading-relaxed text-muted-foreground">
+                An icon needs both of its markers. <code>getIcon</code> falls back to
+                a document icon for a key it does not know rather than failing, so a
+                sidebar entry with only the import renders the wrong icon and nothing
+                reports it.
+              </p>
 
             <p>
               Mark an injection <code>Optional</code> when the target legitimately may not
@@ -157,6 +171,79 @@ grit plugin remove multitenant`} />
                 without dependencies, or remove something still depended on.
               </li>
             </ul>
+
+            <h2>Writing one you can install</h2>
+            <p className="leading-relaxed text-muted-foreground">
+              The value above is how the built-in plugins are written, and they are
+              compiled into the CLI. Yours does not have to be: the same shape,
+              described in JSON, installs from a directory.
+            </p>
+
+            <CodeBlock language="text" code={`my-plugin/
+  plugin.json          the manifest
+  files/               the file bodies it installs`} />
+
+            <CodeBlock language="json" code={`{
+  "name": "product-reviews",
+  "version": "1.0.0",
+  "summary": "Customer reviews with a moderation queue",
+  "files": [
+    { "from": "files/review_model.go", "to": "{{API_ROOT}}/internal/models/review.go" }
+  ],
+  "injections": [
+    {
+      "file": "{{API_ROOT}}/internal/models/user.go",
+      "marker": "// grit:models",
+      "code": "\t\t&Review{},"
+    },
+    {
+      "file": "{{API_ROOT}}/internal/routes/routes.go",
+      "marker": "// grit:routes:public",
+      "code": "\t\tpublicAPI.GET(\"/products/:key/reviews\", reviewHandler.ForProduct)",
+      "when": { "architecture": ["triple", "double", "full"] }
+    }
+  ],
+  "nextSteps": ["Run the migration:  grit migrate"]
+}`} />
+
+              <p className="leading-relaxed text-muted-foreground">
+                <code>from</code> is relative to the plugin directory,{' '}
+                <code>to</code> to the project root. File bodies and paths get{' '}
+                <code>{'{{MODULE}}'}</code>, <code>{'{{PROJECT}}'}</code> and{' '}
+                <code>{'{{API_ROOT}}'}</code> substituted, so a plugin does not need to
+                know the module path of the project installing it, or whether that
+                project keeps its Go code in <code>apps/api</code> or at the root.
+              </p>
+              <p className="leading-relaxed text-muted-foreground">
+                <code>when</code> limits a file or injection to certain projects, by{' '}
+                <code>architecture</code> and <code>frontend</code>. It is data rather
+                than an expression language on purpose: a plugin that needs real logic
+                is better written in Go and contributed upstream, and a
+                half-implemented expression parser is a support burden nobody asked
+                for.
+              </p>
+
+              <div className="not-prose my-5 rounded-xl border border-border p-4 text-sm leading-relaxed">
+                <p className="text-foreground"><strong>Nothing else changes.</strong></p>
+                <p className="mt-2 text-muted-foreground">
+                  A directory plugin is recorded in{' '}
+                  <code>.grit/plugins.lock.json</code> exactly like a built-in, and{' '}
+                  <code>grit plugin remove</code> replays that record backwards the same
+                  way. The installer refuses the same things: an existing file, a
+                  missing marker that is not optional, a second install, a dirty git
+                  tree. Paths that climb out of the project are refused at load time,
+                  because a plugin is somebody else&apos;s code and{' '}
+                  <code>&quot;to&quot;: &quot;../../.ssh/authorized_keys&quot;</code>{' '}
+                  is a file write rather than an install.
+                </p>
+              </div>
+
+              <p className="leading-relaxed text-muted-foreground">
+                Only an explicit path is read as a directory:{' '}
+                <code>./plugins/x</code>, <code>../x</code> or an absolute path. A bare
+                name is always a built-in, so a folder cannot shadow one by sharing its
+                name.
+              </p>
 
             <h2>A worked example</h2>
             <p>

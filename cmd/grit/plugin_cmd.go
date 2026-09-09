@@ -236,14 +236,32 @@ func pluginAddCmd() *cobra.Command {
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add <name>",
+		Use:   "add <name|./path>",
 		Short: "Install a plugin into this project",
-		Args:  cobra.ExactArgs(1),
+		Long: `Install a built-in plugin by name, or one of your own from a directory:
+
+  grit plugin add impersonate
+  grit plugin add ./plugins/product-reviews
+
+A plugin directory holds a plugin.json manifest and the files it installs.
+Everything else is identical: the same lockfile records what was written, and
+` + "`" + `grit plugin remove` + "`" + ` replays it backwards either way.`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
 
-			p, err := plugin.Get(args[0])
+			// An explicit path means a plugin of your own. Requiring ./ or an
+			// absolute path rather than sniffing for a directory keeps a local
+			// folder from ever shadowing a built-in that shares its name.
+			var p plugin.Plugin
+			var err error
+			if plugin.IsDirRef(args[0]) {
+				p, err = plugin.LoadDir(args[0])
+			} else {
+				p, err = plugin.Get(args[0])
+			}
 			if err != nil {
+				cmd.SilenceUsage = true
 				return err
 			}
 			ctx, err := pluginContext()

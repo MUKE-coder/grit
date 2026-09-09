@@ -271,6 +271,11 @@ MODULE_FLAGS=true
 MODULE_TWOFACTOR=true
 
 # AI — Vercel AI Gateway (one key, hundreds of models)
+#
+# The default model needs paid credits. A free-tier key authenticates fine and
+# then refuses the request with "Free tier users do not have access to this
+# model", so if /api/v1/ai/complete returns AI_FORBIDDEN, this line is why:
+# either add credits or set a model your plan covers.
 AI_GATEWAY_API_KEY=                           # Get from vercel.com/ai-gateway
 AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
 AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
