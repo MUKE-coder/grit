@@ -29,6 +29,49 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.201.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.201.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3><code>grit sync</code> says which screens it could not update</h3>
+                <p>
+                  Found by running the multi-client project on an Android emulator: a
+                  column added to a Go model mid-project was in the API response and in
+                  the shared type, and the mobile create form still showed the original
+                  three fields. Nothing anywhere said so.
+                </p>
+                <p>
+                  <code>grit sync</code> keeps three things current: the shared
+                  TypeScript type, the Zod schema, and the admin resource definition,
+                  which is patched through markers so customised entries survive. The
+                  mobile forms and screens and the desktop columns have no equivalent
+                  and are only written when the resource is generated. Neither does{' '}
+                  <code>grit generate field</code>, which updates the model, the
+                  schemas, the type and the admin, and stops there.
+                </p>
+                <p>
+                  Sync now names the files and the fields they never saw, and is honest
+                  that the only way to rebuild them is regenerating the resource with
+                  its full field list, which discards edits to those screens. It does
+                  not report framework-owned columns like <code>version</code> and{' '}
+                  <code>archived_at</code>, which no screen shows, or resources the
+                  generator did not write, whose screens are hand-written and where a
+                  regeneration would be actively wrong advice.
+                </p>
+                <p>
+                  This reports the drift rather than fixing it. Marker-based
+                  regeneration for the mobile and desktop screens, matching what the
+                  admin already has, is the actual fix and is filed separately.
+                </p>
+              </div>
+            </div>
+
             {/* v3.200.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

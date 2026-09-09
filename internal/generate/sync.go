@@ -37,6 +37,7 @@ func Sync() error {
 	var synced int
 	var adminFieldsAdded int
 	var adminWarnings []string
+	var uiDrift []clientUIDrift
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".go") {
 			continue
@@ -87,6 +88,10 @@ func Sync() error {
 			}
 			adminWarnings = append(adminWarnings, warnings...)
 
+			// The admin was just brought up to date in place. The mobile and
+			// desktop screens cannot be, so say which fields they never saw.
+			uiDrift = append(uiDrift, findClientUIDrift(root, s)...)
+
 			synced++
 		}
 	}
@@ -103,6 +108,7 @@ func Sync() error {
 			fmt.Println(w)
 		}
 		fmt.Println()
+		printClientUIDrift(uiDrift)
 	}
 
 	return nil
