@@ -83,6 +83,32 @@ func NewGenerator(def *ResourceDefinition) (*Generator, error) {
 }
 
 // Run generates all files for the resource and injects into existing files.
+// announceResourceDef names the two files the admin half just produced, at the
+// paths they are actually on disk.
+//
+// It reads them back rather than rebuilding them from a layout rule. There are
+// two layouts in the wild, folder-per-resource and the flat one that predates
+// it, and the writer picks between them by looking; a printer that guesses is
+// how the output came to name a file that was never written.
+//
+// The overlay gets a line of its own the first time, because it is where
+// custom cells, forms and tables go, and it is the half of the pair that is
+// never overwritten. Announcing it once is the difference between finding that
+// out here and finding it out after a regenerate eats an afternoon's work.
+func (g *Generator) announceResourceDef(resourcesRoot string, names Names, hadCustom bool) {
+	if def := scaffold.FindResourceDef(resourcesRoot, names.PluralKebab); def != "" {
+		fmt.Printf("  ✓ %s\n", relFromRoot(g.Root, def))
+	}
+	if hadCustom {
+		return
+	}
+	if custom := scaffold.FindResourceCustom(resourcesRoot, names.PluralKebab); custom != "" {
+		fmt.Printf("  ✓ %s  (your custom cells and forms go here, never regenerated)\n",
+			relFromRoot(g.Root, custom))
+	}
+}
+
+
 func (g *Generator) Run() error {
 	names := g.Names()
 	apiRoot := g.APIRoot()
@@ -97,6 +123,13 @@ func (g *Generator) Run() error {
 	// command.
 	if !g.Force {
 		if err := g.checkFileCollisions(names); err != nil {
+			return err
+		}
+		// And a re-run over a resource whose files have been edited since we
+		// wrote them, which is how anyone adds a field: same command, one more
+		// entry in --fields, and the service layer the docs call yours is
+		// rewritten without a word.
+		if err := g.checkEditedFiles(names); err != nil {
 			return err
 		}
 	}
@@ -263,10 +296,15 @@ func (g *Generator) Run() error {
 	adminTanStackResourcesDir := filepath.Join(g.Root, "apps", "admin", "src", "resources")
 	if dirExists(adminResourcesDir) {
 		// Next.js admin
+		//
+		// Whether the overlay is new decides what we say about it below, and
+		// writeResourceCustomStub refuses to touch one that already exists, so
+		// the question has to be asked before the write rather than after.
+		hadCustom := scaffold.FindResourceCustom(adminResourcesDir, names.PluralKebab) != ""
 		if err := g.writeResourceDefinition(names); err != nil {
 			return fmt.Errorf("writing resource definition: %w", err)
 		}
-		fmt.Printf("  ✓ apps/admin/resources/%s.ts\n", names.PluralKebab)
+		g.announceResourceDef(adminResourcesDir, names, hadCustom)
 
 		if err := g.writeResourcePage(names); err != nil {
 			return fmt.Errorf("writing resource page: %w", err)
@@ -279,10 +317,11 @@ func (g *Generator) Run() error {
 		fmt.Printf("  ✓ apps/admin/app/(dashboard)/resources/%s/[id]/page.tsx\n", names.PluralKebab)
 	} else if dirExists(adminTanStackResourcesDir) {
 		// TanStack admin
+		hadCustom := scaffold.FindResourceCustom(adminTanStackResourcesDir, names.PluralKebab) != ""
 		if err := g.writeResourceDefinitionTanStack(names); err != nil {
 			return fmt.Errorf("writing resource definition: %w", err)
 		}
-		fmt.Printf("  ✓ apps/admin/src/resources/%s.ts\n", names.PluralKebab)
+		g.announceResourceDef(adminTanStackResourcesDir, names, hadCustom)
 
 		if err := g.writeResourcePageTanStack(names); err != nil {
 			return fmt.Errorf("writing resource page: %w", err)

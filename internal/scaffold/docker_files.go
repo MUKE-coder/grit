@@ -84,7 +84,7 @@ services:
       # ("An attempt was made to access a socket in a way forbidden..."
       # — see `+"`netsh int ipv4 show excludedportrange protocol=tcp`"+`).
       # The container still listens on 5432 inside the Docker network.
-      - "127.0.0.1:5434:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5434}:5432"
     # Credentials come from .env (POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB).
     # Edit them ONLY in .env — never duplicate them here. The :- syntax
     # provides a fallback so 'docker compose up' still works if the env
@@ -109,7 +109,7 @@ services:
       # Host 6380 (not the Redis-default 6379) avoids native Redis installs
       # — Memurai on Windows, brew/apt Redis on macOS/Linux, WSL Redis.
       # Container still listens on 6379 inside the Docker network.
-      - "127.0.0.1:6380:6379"
+      - "127.0.0.1:${REDIS_PORT:-6380}:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -131,8 +131,8 @@ services:
       # Bound to all interfaces (not 127.0.0.1) so a phone/emulator on your LAN
       # can load uploaded images: stored URLs point at this host:9002 and the
       # Expo app rewrites "localhost" to your dev IP (apps/expo/lib/images.ts).
-      - "9002:9000"
-      - "9003:9001"
+      - "${MINIO_PORT:-9002}:9000"
+      - "${MINIO_CONSOLE_PORT:-9003}:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
@@ -145,8 +145,8 @@ services:
     container_name: %s-mailhog
     restart: unless-stopped
     ports:
-      - "127.0.0.1:1025:1025"
-      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:${MAILHOG_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILHOG_UI_PORT:-8025}:8025"
 
 volumes:
   postgres-data:
