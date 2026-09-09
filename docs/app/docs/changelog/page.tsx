@@ -29,6 +29,93 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.195.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.195.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The device-pairing plugin</h3>
+                <p>
+                  <code>grit plugin add device-pairing</code> adds the WhatsApp Web
+                  flow: a browser shows a QR code, a device that is already signed in
+                  scans it and approves, and the browser is signed in. It is how
+                  Telegram Web, Discord, Steam and most TV apps onboard a second
+                  screen, and it needed about two hundred lines over pieces Grit
+                  already had.
+                </p>
+                <p>
+                  Five endpoints, a <code>/link</code> page in the web app, and a{' '}
+                  <strong>System &rarr; Link a device</strong> screen in the admin.
+                  There is no <code>Device</code> model: approval creates an ordinary
+                  session and sets the same cookies a password login does, so a paired
+                  browser appears under Account &rarr; Security and is signed out from
+                  there. A parallel device table would be a second list of the same
+                  thing, drifting from the first.
+                </p>
+                <p>
+                  The parts that look like extra work are the ones that matter, because
+                  a pairing code is a bearer credential for a whole account:
+                </p>
+                <ul>
+                  <li>
+                    <strong>Approval is two steps.</strong> The approving device fetches
+                    the browser and IP behind the code and shows them before it asks.
+                    Approving an opaque code is not consent, and it is the difference
+                    between a QR somebody photographed across a room being useless and
+                    being a silent takeover. <strong>Deny</strong> sits next to it,
+                    because &quot;that wasn&apos;t me&quot; has to be one tap.
+                  </li>
+                  <li>
+                    <strong>Single use is enforced by the database.</strong> The claim
+                    is a conditional <code>UPDATE</code>, not a read then a write, so
+                    two polls arriving together cannot both walk away with a token pair.
+                    The generated tests race eight approvals and assert exactly one wins.
+                  </li>
+                  <li>
+                    <strong>Two minutes, and rate limited.</strong> Codes are 32 bytes
+                    from <code>crypto/rand</code>. The start endpoint is anonymous, so
+                    one address may hold five in flight.
+                  </li>
+                </ul>
+
+                <h3>An injection could be silently dropped</h3>
+                <p>
+                  Found while building the plugin. <code>injectBefore</code> decided an
+                  injection was already applied by asking whether its code appeared{' '}
+                  <em>anywhere</em> in the target file, which is a different question
+                  and gets it wrong two ways.
+                </p>
+                <p>
+                  A plugin legitimately injecting the same snippet at two markers loses
+                  the second, which is exactly what an icon needs: an import at the top
+                  and a map entry lower down. And a snippet that occurs naturally
+                  somewhere else in the file blocks the injection entirely. Both fail
+                  silently. The device-pairing sidebar entry rendered{' '}
+                  <code>getIcon</code>&apos;s <code>FileText</code> fallback because of
+                  it, with nothing anywhere reporting a problem.
+                </p>
+                <p>
+                  The check now compares the lines directly above the marker being
+                  injected at, which answers the actual question and is still a no-op
+                  when you install twice.
+                </p>
+
+                <h3>The admin icon map takes injections</h3>
+                <p>
+                  <code>// grit:icons:import</code> and <code>// grit:icons:map</code>{' '}
+                  in <code>apps/admin/lib/icons.ts</code>. A plugin adding a sidebar
+                  entry needs an icon and had no way to add one, and{' '}
+                  <code>getIcon</code> falls back to a document icon for a key it does
+                  not know rather than failing, so the wrong icon was the quiet outcome.
+                </p>
+              </div>
+            </div>
+
             {/* v3.194.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -243,14 +243,21 @@ func injectBefore(path, marker, code string) error {
 	}
 	content := string(data)
 
-	if strings.Contains(content, code) {
-		return nil // already applied; installing twice is a no-op
-	}
-
 	lines := strings.Split(content, "\n")
+	codeLines := strings.Split(code, "\n")
+
 	for i, line := range lines {
 		if strings.TrimSpace(line) != strings.TrimSpace(marker) {
 			continue
+		}
+		// Already applied? Only the lines directly above THIS marker can
+		// answer that. Searching the whole file asks a different question and
+		// gets it wrong twice over: a plugin legitimately injecting the same
+		// snippet at two markers loses the second, and a snippet that occurs
+		// naturally somewhere else blocks the injection entirely. Both fail
+		// silently, which is the worst way for codegen to be wrong.
+		if i >= len(codeLines) && slicesEqual(lines[i-len(codeLines):i], codeLines) {
+			return nil
 		}
 		out := append([]string{}, lines[:i]...)
 		out = append(out, code)
@@ -258,6 +265,18 @@ func injectBefore(path, marker, code string) error {
 		return os.WriteFile(path, []byte(strings.Join(out, "\n")), 0644)
 	}
 	return fmt.Errorf("marker %q not found", marker)
+}
+
+func slicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func fileExists(p string) bool {
