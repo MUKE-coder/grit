@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // Sync parses Go model files and regenerates TypeScript types and Zod schemas.
@@ -82,8 +84,14 @@ func Sync() error {
 				fmt.Printf("  ⚠ admin auto-add for %s: %v\n", s.Name, syncErr)
 			} else if added > 0 {
 				pluralKebab := strings.ReplaceAll(Pluralize(toSnakeCase(s.Name)), "_", "-")
-				fmt.Printf("  ✓ apps/admin/resources/%s.ts  (added %d field%s to columns + form)\n",
-					pluralKebab, added, plural(added))
+				// The definition sits in a folder of its own on a current
+				// project and flat on an older one. SyncAdminResource just
+				// resolved that to edit the file; resolve it again to name it,
+				// rather than printing a path built from the slug that is
+				// wrong in whichever layout the guess did not pick.
+				def := scaffold.FindResourceDef(filepath.Join(root, "apps", "admin", "resources"), pluralKebab)
+				fmt.Printf("  ✓ %s  (added %d field%s to columns + form)\n",
+					relFromRoot(root, def), added, plural(added))
 				adminFieldsAdded += added
 			}
 			adminWarnings = append(adminWarnings, warnings...)

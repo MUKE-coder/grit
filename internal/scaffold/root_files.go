@@ -99,6 +99,19 @@ POSTGRES_HOST=localhost
 # why docker-compose.prod.yml overrides POSTGRES_PORT back to 5432 for
 # inter-container traffic.
 POSTGRES_PORT=5434
+# ─── Docker host ports ──────────────────────────────────────────────────
+#
+# What docker-compose binds on your machine. Every Grit project defaults to
+# the same numbers, so the second one you start fails with "port is already
+# allocated". Change them here and both compose and the URLs above follow.
+#
+# Only the host side moves. Inside the compose network the services keep
+# their standard ports, so nothing else needs to know.
+REDIS_PORT=6380
+MAILHOG_SMTP_PORT=1025
+MAILHOG_UI_PORT=8025
+MINIO_PORT=9002
+MINIO_CONSOLE_PORT=9003
 
 # Override the connection string ONLY if you're pointing at an external
 # Postgres (Neon, Supabase, RDS) or want to use SQLite. When set, this
@@ -348,6 +361,19 @@ POSTGRES_PASSWORD=change-me          # MUST change in production
 POSTGRES_DB=myapp
 POSTGRES_HOST=localhost              # ` + "`postgres`" + ` inside docker-compose.prod.yml
 POSTGRES_PORT=5434                   # host port; 5432 inside docker network
+# ─── Docker host ports ──────────────────────────────────────────────────
+#
+# What docker-compose binds on your machine. Every Grit project defaults to
+# the same numbers, so the second one you start fails with "port is already
+# allocated". Change them here and both compose and the URLs above follow.
+#
+# Only the host side moves. Inside the compose network the services keep
+# their standard ports, so nothing else needs to know.
+REDIS_PORT=6380
+MAILHOG_SMTP_PORT=1025
+MAILHOG_UI_PORT=8025
+MINIO_PORT=9002
+MINIO_CONSOLE_PORT=9003
 
 # Override the connection string ONLY for external Postgres (Neon,
 # Supabase, RDS) or SQLite. When set, this wins over the POSTGRES_*

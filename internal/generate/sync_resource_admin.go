@@ -61,9 +61,11 @@ func SyncAdminResource(root string, s GoStruct) (added int, warnings []string, e
 		return 0, nil, overlayErr
 	}
 	if overlayCreated {
+		// Beside the definition, wherever that turned out to be, which is not
+		// necessarily beside where this message used to claim it was.
 		warnings = append(warnings, fmt.Sprintf(
-			"  + apps/admin/resources/%s.custom.tsx created — custom tables, forms and cells go here",
-			kebab,
+			"  + %s created — custom tables, forms and cells go here",
+			relFromRoot(root, filepath.Join(filepath.Dir(path), kebab+".custom.tsx")),
 		))
 	}
 

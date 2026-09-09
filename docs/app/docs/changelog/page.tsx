@@ -29,6 +29,111 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.205.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.205.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Re-running a generate destroyed hand-written code</h3>
+                <p>
+                  Adding a field by re-running <code>grit generate resource</code> with
+                  one more entry in <code>--fields</code> is the obvious thing to do:
+                  you already know the command. It rewrote the model, the service and
+                  the handler from scratch, printed a green tick for each, and
+                  everything hand-written in them was gone. No prompt, no backup, and
+                  nothing in the output to say a file had been replaced rather than
+                  created. <code>--force</code> was not required; a plain re-run did it.
+                </p>
+                <p>
+                  Which is the opposite of what this site promised. The generated-files
+                  page called{' '}
+                  <code>apps/api/internal/services/&lt;name&gt;.go</code> the place
+                  &quot;your custom business logic goes here&quot; and said of
+                  regeneration that it &quot;never touches&quot; it. So the file a
+                  newcomer was told was safe was the file that lost their work, and the
+                  reassurance that made re-running the command feel safe was in writing.
+                </p>
+                <p>
+                  Grit already records who wrote every generated file and a hash of what
+                  it wrote. It now compares before regenerating: if you have edited any
+                  of a resource&apos;s files, the command stops, names them, and points
+                  at the non-destructive route, which is to add the field to the Go model
+                  and let <code>grit sync</code> carry it through the types, the Zod
+                  schemas and the admin columns and form. <code>--force</code> still
+                  overwrites, deliberately. The <code>.custom.tsx</code> overlay is
+                  exempt: editing it is what it is for, and generation never rewrote it.
+                </p>
+                <p>
+                  A resource you have not customised regenerates exactly as before. The
+                  documentation now describes what the command does rather than what it
+                  was hoped to do.
+                </p>
+
+                <h3>grit migrate failed on Postgres</h3>
+                <p>
+                  The documented default database, on the documented quick-start path:
+                </p>
+                <p>
+                  <code>
+                    Migration failed: migrating *models.Passkey: ERROR: type
+                    &quot;blob&quot; does not exist (SQLSTATE 42704)
+                  </code>
+                </p>
+                <p>
+                  Three <code>[]byte</code> columns on the passkey model carried{' '}
+                  <code>gorm:&quot;type:blob&quot;</code>, which is SQLite spelling.
+                  Nothing needed the override: GORM already maps <code>[]byte</code> to{' '}
+                  <code>bytea</code> on Postgres and <code>BLOB</code> on SQLite, so
+                  removing it makes the model portable rather than changing it. The
+                  desktop sync store keeps <code>blob</code>, correctly, because its
+                  database is always local SQLite. Verified by migrating and seeding a
+                  fresh project against Postgres, where the column is now{' '}
+                  <code>bytea</code>.
+                </p>
+
+                <h3>A second project could not start</h3>
+                <p>
+                  Every Grit project bound the same host ports, so{' '}
+                  <code>docker compose up -d</code> on the second one failed with{' '}
+                  <code>Bind for 127.0.0.1:6380 failed: port is already allocated</code>
+                  {' '}&mdash; at step two of the quick start, which anyone evaluating
+                  the framework reaches by the end of the first afternoon.
+                </p>
+                <p>
+                  <code>.env</code> said above these values &quot;single source of truth:
+                  edit ONLY the POSTGRES_* values below&quot;, and that was not true of
+                  the host port: compose hardcoded it, so editing <code>.env</code> moved
+                  what the API dialled and left the container bound where it was. Compose
+                  reads <code>.env</code> from the project directory on its own, and now
+                  does, for Postgres, Redis, Mailhog and MinIO. Defaults are unchanged,
+                  so nothing moves for an existing project.
+                </p>
+
+                <h3>The generator named a file it had not written</h3>
+                <p>
+                  Resource definitions moved to a folder each, so a new project gets{' '}
+                  <code>apps/admin/resources/posts/posts.ts</code>. The success output
+                  still announced <code>apps/admin/resources/posts.ts</code>, which is
+                  the first thing anyone opens after a generate and the first thing that
+                  does not open. <code>grit sync</code> printed the same stale path in
+                  two more places.
+                </p>
+                <p>
+                  The same block also wrote <code>posts.custom.tsx</code>, the overlay
+                  that is never regenerated and therefore the only safe place to
+                  customise, and said nothing about it at all. So the one file worth
+                  knowing about was hidden and the one it pointed at was not there. Both
+                  now report the path on disk, and the overlay is announced the first
+                  time it is created.
+                </p>
+              </div>
+            </div>
+
             {/* v3.204.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -275,10 +275,27 @@ export function useCreateProduct() {
 
               <Callout type="tip" title="Yours vs regenerated">
                 Everything above is <strong>your code</strong> once generated &mdash; edit models,
-                add service methods, restyle screens freely. The one exception is{' '}
-                <code>packages/shared/types/*</code>, which <code>grit sync</code> regenerates from
-                your Go structs; put custom logic in the service layer (which regeneration never
-                touches), not in the types.
+                add service methods, restyle screens freely. Put custom logic in the service layer,
+                not in <code>packages/shared/types/*</code>, which <code>grit sync</code> rewrites
+                from your Go structs every time it runs.
+              </Callout>
+
+              <Callout type="warning" title="Adding a field to a resource you have already edited">
+                Re-running <code>grit generate resource</code> writes these files again from
+                scratch. If you have edited them, Grit compares each one against what it last
+                wrote, stops before touching anything, and names the files at risk. Nothing is
+                lost, but nothing is generated either.
+                <br />
+                <br />
+                To add a field without that, skip the generator: add it to{' '}
+                <code>apps/api/internal/models/&lt;name&gt;.go</code>, then run{' '}
+                <code>grit sync</code> to carry it through the types, the Zod schemas and the
+                admin columns and form, and <code>grit migrate</code> to add the column. Your
+                handlers and service methods are untouched throughout.
+                <br />
+                <br />
+                <code>--force</code> regenerates anyway, overwriting your edits. Commit first:
+                there is no backup.
               </Callout>
 
               <Callout type="escape" title="Escape hatch">

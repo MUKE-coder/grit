@@ -38,6 +38,13 @@ import (
 	"{{MODULE}}/internal/ids"
 )
 
+// No explicit column type on the []byte fields below.
+//
+// They carried gorm:"type:blob", which is SQLite spelling. Postgres has no
+// blob type, so a migrate against the database the quick start starts
+// failed with: type "blob" does not exist (SQLSTATE 42704). GORM already maps
+// []byte per dialect, bytea on Postgres and blob on SQLite, so naming the type
+// only took portability away.
 // Passkey is one registered WebAuthn credential: a phone, a laptop's biometric
 // sensor, a hardware key.
 //
@@ -53,9 +60,9 @@ type Passkey struct {
 	// the same authenticator twice should update rather than duplicate.
 	CredentialID string ` + "`" + `gorm:"size:512;uniqueIndex;not null" json:"credential_id"` + "`" + `
 
-	PublicKey       []byte ` + "`" + `gorm:"type:blob;not null" json:"-"` + "`" + `
+	PublicKey       []byte ` + "`" + `gorm:"not null" json:"-"` + "`" + `
 	AttestationType string ` + "`" + `gorm:"size:64" json:"-"` + "`" + `
-	AAGUID          []byte ` + "`" + `gorm:"type:blob" json:"-"` + "`" + `
+	AAGUID          []byte ` + "`" + `gorm:"" json:"-"` + "`" + `
 	Transports      string ` + "`" + `gorm:"size:255" json:"transports,omitempty"` + "`" + `
 
 	// SignCount is the authenticator's own counter.
@@ -99,7 +106,7 @@ type WebAuthnSession struct {
 	UserID string ` + "`" + `gorm:"size:36;index" json:"user_id,omitempty"` + "`" + `
 
 	Purpose   string    ` + "`" + `gorm:"size:16;not null" json:"purpose"` + "`" + `
-	Data      []byte    ` + "`" + `gorm:"type:blob;not null" json:"-"` + "`" + `
+	Data      []byte    ` + "`" + `gorm:"not null" json:"-"` + "`" + `
 	ExpiresAt time.Time ` + "`" + `gorm:"index" json:"expires_at"` + "`" + `
 	CreatedAt time.Time ` + "`" + `json:"created_at"` + "`" + `
 }
