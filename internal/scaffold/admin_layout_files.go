@@ -192,6 +192,7 @@ func adminIconMap() string {
   Truck,
   UsersRound,
   Workflow,
+  // grit:icons:import
   type LucideIcon,
 } from "lucide-react";
 
@@ -256,6 +257,7 @@ export const iconMap: Record<string, LucideIcon> = {
   Truck,
   UsersRound,
   Workflow,
+  // grit:icons:map
 };
 
 export function getIcon(name: string): LucideIcon {
