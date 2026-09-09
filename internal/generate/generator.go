@@ -108,7 +108,6 @@ func (g *Generator) announceResourceDef(resourcesRoot string, names Names, hadCu
 	}
 }
 
-
 func (g *Generator) Run() error {
 	names := g.Names()
 	apiRoot := g.APIRoot()
@@ -294,7 +293,13 @@ func (g *Generator) Run() error {
 	// Write admin resource definition + page (if admin app exists)
 	adminResourcesDir := filepath.Join(g.Root, "apps", "admin", "resources")
 	adminTanStackResourcesDir := filepath.Join(g.Root, "apps", "admin", "src", "resources")
+	// Whether the admin half actually ran. The closing message promised a
+	// sidebar entry unconditionally on a triple project, including when there
+	// was no admin directory to write to and nothing had been written: a green
+	// tick, and a next step pointing at a screen that does not exist.
+	wroteAdmin := false
 	if dirExists(adminResourcesDir) {
+		wroteAdmin = true
 		// Next.js admin
 		//
 		// Whether the overlay is new decides what we say about it below, and
@@ -316,6 +321,7 @@ func (g *Generator) Run() error {
 		}
 		fmt.Printf("  ✓ apps/admin/app/(dashboard)/resources/%s/[id]/page.tsx\n", names.PluralKebab)
 	} else if dirExists(adminTanStackResourcesDir) {
+		wroteAdmin = true
 		// TanStack admin
 		hadCustom := scaffold.FindResourceCustom(adminTanStackResourcesDir, names.PluralKebab) != ""
 		if err := g.writeResourceDefinitionTanStack(names); err != nil {
@@ -414,7 +420,13 @@ func (g *Generator) Run() error {
 		fmt.Printf("    2. Restart the API server\n")
 	}
 	if g.Architecture == "triple" {
-		fmt.Printf("    3. The admin panel will show %s in the sidebar\n", names.PluralPascal)
+		if wroteAdmin {
+			fmt.Printf("    3. The admin panel will show %s in the sidebar\n", names.PluralPascal)
+		} else {
+			fmt.Printf("\n  This project is configured as triple but has no admin app at\n")
+			fmt.Printf("  apps/admin/resources, so the resource definition and its screens\n")
+			fmt.Printf("  were skipped. The API, the shared types and the web hooks are done.\n")
+		}
 	}
 	fmt.Println()
 
