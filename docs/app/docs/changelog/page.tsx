@@ -29,6 +29,70 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.200.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.200.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Every client now uses the shared types</h3>
+                <p>
+                  v3.199.0 fixed web and admin. Expo declared its own copy of the
+                  resource type, which went stale the moment the Go model changed, and
+                  desktop declared{' '}
+                  <code>Record&lt;string, unknown&gt; &amp; {'{'} id: string {'}'}</code>,
+                  which is not drift but an absent type: <code>task.titel</code>{' '}
+                  typechecked.
+                </p>
+                <p>
+                  Both import from <code>@repo/shared/types</code> now, so a column
+                  added to a Go model reaches all four clients on the next{' '}
+                  <code>grit sync</code> with nothing else to remember. Verified on a
+                  five-target project: added a field, ran sync, and web, admin, Expo and
+                  desktop all typecheck against it.
+                </p>
+
+                <h3>The desktop table rejected every real type</h3>
+                <p>
+                  Typing the desktop client surfaced this. <code>DataTable</code> was
+                  constrained to{' '}
+                  <code>T extends Record&lt;string, unknown&gt; &amp; {'{'} id {'}'}</code>
+                  , which reads as &quot;any object&quot; and is not: TypeScript gives
+                  implicit index signatures to type aliases and not to interfaces, so no
+                  declared interface satisfied it. It went unnoticed while the desktop
+                  resource types were themselves open records.
+                </p>
+                <p>
+                  The constraint is <code>{'{'} id {'}'}</code> now, and the one thing
+                  the table needs beyond that, reading a column by a caller-supplied
+                  key, is a single <code>field(row, key)</code> helper rather than a
+                  cast at each of eight read sites.
+                </p>
+
+                <h3>Wired by alias, not by dependency</h3>
+                <p>
+                  Worth recording, because the first attempt was wrong. Adding{' '}
+                  <code>&quot;@repo/shared&quot;: &quot;workspace:*&quot;</code> to the
+                  desktop app works and also moves pnpm&apos;s hoisting: the app ended
+                  up with its own nested copy of vite, two vite type packages disagreed
+                  about <code>Plugin</code>, and <code>vite.config.ts</code> stopped
+                  typechecking in a project that had been clean.
+                </p>
+                <p>
+                  The desktop app never needed the dependency. Its{' '}
+                  <code>vite.config.ts</code> already aliased{' '}
+                  <code>@repo/shared</code> and its tsconfig already mapped the path;
+                  only the generated hook was not using them. Expo now gets the same
+                  treatment, a Metro <code>extraNodeModules</code> alias plus tsconfig
+                  paths, so neither app adds an entry to the dependency graph.
+                </p>
+              </div>
+            </div>
+
             {/* v3.199.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

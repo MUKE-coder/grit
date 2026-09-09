@@ -223,7 +223,16 @@ export interface DataColumn {
   format?: ColumnFormat;
 }
 
-interface DataTableProps<T extends Record<string, unknown> & { id: string | number }> {
+// A row needs an id and nothing else.
+//
+// This used to also require Record<string, unknown>, which reads as "any
+// object" and is not: TypeScript gives implicit index signatures to type
+// aliases but not to interfaces, so no declared interface satisfied it. That
+// went unnoticed while the desktop resource types were themselves
+// Record<string, unknown>, which is to say while the desktop client was not
+// really typed. Reading a column by key is handled at the one line that does
+// it instead.
+interface DataTableProps<T extends { id: string | number }> {
   title: string;
   singular: string;
   columns: DataColumn[];
@@ -290,7 +299,16 @@ function cellText(value: unknown, format?: ColumnFormat): string {
   }
 }
 
-export function DataTable<T extends Record<string, unknown> & { id: string | number }>({
+// The one place a row is read by a key the caller chose.
+//
+// The table is generic over the row, and its columns name fields as strings,
+// which no declared interface permits. Saying so once here beats a cast at
+// each read site, where the next one added would be written without it.
+function field<T>(row: T, key: string): unknown {
+  return (row as Record<string, unknown>)[key];
+}
+
+export function DataTable<T extends { id: string | number }>({
   title, singular, columns, rows, loading, searchKeys,
   createdKey = "created_at", updatedKey = "updated_at",
   newLabel, onNew, onEdit, onDelete, onBulkDelete, onImport, onRowClick,
@@ -308,18 +326,18 @@ export function DataTable<T extends Record<string, unknown> & { id: string | num
 
   const stats = useMemo(() => ({
     total: rows.length,
-    week: rows.filter((r) => within(r[createdKey], 7)).length,
-    month: rows.filter((r) => within(r[createdKey], 30)).length,
-    updated: rows.filter((r) => within(r[updatedKey], 7)).length,
+    week: rows.filter((r) => within(field(r, createdKey), 7)).length,
+    month: rows.filter((r) => within(field(r, createdKey), 30)).length,
+    updated: rows.filter((r) => within(field(r, updatedKey), 7)).length,
   }), [rows, createdKey, updatedKey]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const [from, to] = rangeToBounds(range);
     let out = rows.filter((r) => {
-      if (q && !searchKeys.some((k) => String(r[k] ?? "").toLowerCase().includes(q))) return false;
+      if (q && !searchKeys.some((k) => String(field(r, k) ?? "").toLowerCase().includes(q))) return false;
       if (from !== null || to !== null) {
-        const t = new Date(String(r[createdKey])).getTime();
+        const t = new Date(String(field(r, createdKey))).getTime();
         if (Number.isNaN(t)) return false;
         if (from !== null && t < from) return false;
         if (to !== null && t >= to) return false;
@@ -327,7 +345,7 @@ export function DataTable<T extends Record<string, unknown> & { id: string | num
       return true;
     });
     out = [...out].sort((a, b) => {
-      const av = a[sort.key], bv = b[sort.key];
+      const av = field(a, sort.key), bv = field(b, sort.key);
       let cmp: number;
       if (typeof av === "number" && typeof bv === "number") cmp = av - bv;
       else cmp = String(av ?? "").localeCompare(String(bv ?? ""));
@@ -376,7 +394,7 @@ export function DataTable<T extends Record<string, unknown> & { id: string | num
   const exportCsv = () => {
     const escape = (v: string) => (/[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v);
     const lines = [visibleCols.map((c) => escape(c.label)).join(",")];
-    for (const r of filtered) lines.push(visibleCols.map((c) => escape(cellText(r[c.key], c.format))).join(","));
+    for (const r of filtered) lines.push(visibleCols.map((c) => escape(cellText(field(r, c.key), c.format))).join(","));
     download(lines.join("\n"), "text/csv;charset=utf-8", "csv");
     setExportOpen(false);
   };
@@ -611,7 +629,7 @@ export function DataTable<T extends Record<string, unknown> & { id: string | num
                     )}
                     {visibleCols.map((c) => (
                       <td key={c.key} className="px-4 py-3 text-[13px] text-foreground">
-                        <Cell value={row[c.key]} format={c.format} />
+                        <Cell value={field(row, c.key)} format={c.format} />
                       </td>
                     ))}
                     {(onEdit || onDelete) && (
