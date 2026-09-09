@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.196.0"
+var version = "3.197.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -857,6 +857,12 @@ func generateResourceCmd() *cobra.Command {
 				}
 			}
 
+			// By this point the flags parsed and the project was found, so any
+			// failure below is about the request, not about how it was typed.
+			// Dumping the flag list under it buries the sentence that says what
+			// to do instead.
+			cmd.SilenceUsage = true
+			gen.Force = force
 			gen.Definition.Public = publicRead
 			gen.Definition.Tree = tree
 			gen.Definition.OwnedBy = ownedBy

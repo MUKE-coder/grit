@@ -1224,6 +1224,18 @@ import (
 type {{Pascal}}Handler struct {
 	DB *gorm.DB{{HANDLER_STORAGE_FIELD}}
 }
+
+// scoped binds the database to this request.
+//
+// Anything a middleware put on the request context travels with the query:
+// the active organization the multitenant plugin resolves, a tracing span,
+// and the cancellation that fires when the client goes away. Querying h.DB
+// directly hands GORM a background context instead, and a callback looking
+// for any of those finds nothing there.
+func (h *{{Pascal}}Handler) scoped(c *gin.Context) *gorm.DB {
+	return h.DB.WithContext(c.Request.Context())
+}
+
 {{OPTIONAL_ID_HELPER}}
 
 // List returns a paginated list of {{plural}}.
@@ -1232,7 +1244,7 @@ type {{Pascal}}Handler struct {
 //	?archived=all    both
 //	(default)        only live rows
 func (h *{{Pascal}}Handler) List(c *gin.Context) {
-	query := h.DB.Model(&models.{{Pascal}}{}){{PRELOADS}}
+	query := h.scoped(c).Model(&models.{{Pascal}}{}){{PRELOADS}}
 
 	// Archived rows are excluded by default. Anything else means an operator
 	// archives twelve rows, sees the count go down, and finds them again the
@@ -1287,7 +1299,7 @@ func (h *{{Pascal}}Handler) Export(c *gin.Context) {
 	format := c.DefaultQuery("format", "csv")
 	search := c.Query("search")
 
-	query := h.DB.Model(&models.{{Pascal}}{}){{PRELOADS}}.Order("created_at desc")
+	query := h.scoped(c).Model(&models.{{Pascal}}{}){{PRELOADS}}.Order("created_at desc")
 	if search != "" && len([]string{{{SEARCH_COLS}}}) > 0 {
 		// Reuse the same searchable columns as List.
 		searchable := []string{{{SEARCH_COLS}}}
@@ -1495,7 +1507,7 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 	id := c.Param("id")
 
 	var item models.{{Pascal}}
-	if err := h.DB.First(&item, "id = ?", id).Error; err != nil {
+	if err := h.scoped(c).First(&item, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -1547,7 +1559,7 @@ func (h *{{Pascal}}Handler) Patch(c *gin.Context) {
 	id := c.Param("id")
 
 	var item models.{{Pascal}}
-	if err := h.DB.First(&item, "id = ?", id).Error; err != nil {
+	if err := h.scoped(c).First(&item, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -1590,7 +1602,7 @@ func (h *{{Pascal}}Handler) Patch(c *gin.Context) {
 	}
 
 	if len(updates) > 0 {
-		if err := h.DB.Model(&item).Updates(updates).Error; err != nil {
+		if err := h.scoped(c).Model(&item).Updates(updates).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": gin.H{
 					"code":    "INTERNAL_ERROR",
@@ -1615,7 +1627,7 @@ func (h *{{Pascal}}Handler) Delete(c *gin.Context) {
 	id := c.Param("id")
 
 	var item models.{{Pascal}}
-	if err := h.DB.First(&item, "id = ?", id).Error; err != nil {
+	if err := h.scoped(c).First(&item, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -1625,7 +1637,7 @@ func (h *{{Pascal}}Handler) Delete(c *gin.Context) {
 		return
 	}
 {{OWNER_GUARD}}
-	if err := h.DB.Delete(&item).Error; err != nil {
+	if err := h.scoped(c).Delete(&item).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"code":    "INTERNAL_ERROR",
@@ -1674,7 +1686,7 @@ func (h *{{Pascal}}Handler) Bulk(c *gin.Context) {
 	// Unarchived scope for archive, archived scope for restore: without it a
 	// mixed selection reports "12 archived" having changed three rows.
 	var items []models.{{Pascal}}
-	scope := h.DB.Where("id IN ?", req.IDs)
+	scope := h.scoped(c).Where("id IN ?", req.IDs)
 	if req.Action == "restore" {
 		scope = scope.Where("archived_at IS NOT NULL")
 	} else if req.Action == "archive" {
@@ -1723,7 +1735,7 @@ func (h *{{Pascal}}Handler) Bulk(c *gin.Context) {
 	}
 
 	// One transaction: all of it lands or none of it does.
-	err := h.DB.Transaction(func(tx *gorm.DB) error {
+	err := h.scoped(c).Transaction(func(tx *gorm.DB) error {
 		switch req.Action {
 		case "delete":
 			return tx.Where("id IN ?", ids).Delete(&models.{{Pascal}}{}).Error
@@ -1786,6 +1798,25 @@ func (h *{{Pascal}}Handler) Bulk(c *gin.Context) {
 	// state machine. Appended rather than templated in, so an ordinary
 	// resource's handler is byte-identical to what it was.
 	content += g.workflowHandlerMethod(names)
+
+	// Every database call in a handler goes through the request context.
+	//
+	// A handler builds its queries from a dozen slots computed elsewhere in
+	// this file, so converting them at each source means finding all of them
+	// and every future one. Doing it here is one place that cannot be
+	// forgotten. The helper's own body is the single call that must keep
+	// using h.DB, and it is written after the swap for that reason.
+	//
+	// Without this, GORM sees context.Background() and nothing a middleware
+	// put on the request can reach a callback. The multitenant plugin could
+	// not scope a generated resource at all: its middleware resolves the
+	// active organization onto c.Request, and the scoping callback looked
+	// somewhere that never had it.
+	content = strings.ReplaceAll(content, "h.DB", "h.scoped(c)")
+	content = strings.ReplaceAll(content,
+		"return h.scoped(c).WithContext(c.Request.Context())",
+		"return h.DB.WithContext(c.Request.Context())")
+
 
 	path := filepath.Join(g.APIRoot(), "internal", "handlers", names.Snake+".go")
 	return writeFileWithDirs(path, content)

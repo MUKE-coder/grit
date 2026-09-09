@@ -8074,6 +8074,8 @@ import (
 	"` + "{{MODULE}}" + `/internal/flags"
 	"` + "{{MODULE}}" + `/internal/sync"
 	"` + "{{MODULE}}" + `/internal/webhooks"
+	// Imports added by plugins.
+	// grit:imports
 )
 
 // splitOrigins parses the cors.origins setting.
@@ -8745,6 +8747,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// Activity logger writes one row per successful authenticated mutation.
 	// Records who/what/when/where for audit. Read-only — see admin/activity.
 	protected.Use(middleware.ActivityLogger(db))
+	// Request middleware added by plugins. It runs after auth, so anything
+	// here can read the authenticated user.
+	// grit:middleware:protected
 	{
 		protected.GET("/auth/me", authHandler.Me)
 		// The caller's own permissions, for the frontend can() helper and nav

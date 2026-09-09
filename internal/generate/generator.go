@@ -23,6 +23,8 @@ type Generator struct {
 	Frontend     string // "next", "tanstack"
 	Definition   *ResourceDefinition
 	Roles        []string // optional: restrict routes to these roles
+	// Force skips the checks that refuse to overwrite framework files.
+	Force bool
 }
 
 // APIRoot returns the base directory for Go files.
@@ -87,6 +89,16 @@ func (g *Generator) Run() error {
 	apiPrefix := "apps/api/" // for display
 	if g.Architecture == "single" {
 		apiPrefix = ""
+	}
+
+	// Before the first write, and before the manifest is even opened: a name
+	// that collides with a framework file breaks the build somewhere the
+	// developer never touched, with an error that does not mention this
+	// command.
+	if !g.Force {
+		if err := g.checkFileCollisions(names); err != nil {
+			return err
+		}
 	}
 
 	fmt.Printf("\n  Generating resource: %s\n\n", names.Pascal)

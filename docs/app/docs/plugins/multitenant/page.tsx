@@ -56,6 +56,26 @@ cd apps/api && go run cmd/migrate/main.go`} />
     tenant.Owned   // adds OrgID + the index
 }`} />
 
+            <div className="not-prose my-5 rounded-xl border border-amber-500/30 bg-amber-500/[0.05] p-4 text-sm leading-relaxed">
+              <p className="text-foreground">
+                <strong className="text-amber-400">Generated resources are shared until you do this.</strong>
+              </p>
+              <p className="mt-2 text-muted-foreground">
+                <code>grit generate resource</code> does not know this plugin is
+                installed, so a model it writes has no <code>OrgID</code> and no
+                scoping. That is the right default for a shared table like a country
+                list, and the wrong one for anything belonging to a customer. Open the
+                model and embed <code>tenant.Owned</code> for each resource that
+                belongs to an organization, and remember it again after any{' '}
+                <code>--force</code> regeneration.
+              </p>
+              <p className="mt-2 text-muted-foreground">
+                Scoping applies per model, so a table without <code>OrgID</code> is
+                simply never filtered. Nothing warns you: the endpoint works, returns
+                rows, and returns everyone&apos;s.
+              </p>
+            </div>
+
             <p>Then just query normally — scoping is applied for you:</p>
             <CodeBlock language="go" code={`// Only the active organization's invoices.
 db.WithContext(ctx).Find(&invoices)
