@@ -2141,29 +2141,23 @@ func (g *Generator) writeReactQueryHooks(names Names, app string) error {
 	// 'FileRef'" -- the same TS2304 the typed shared model used to
 	// surface before v3.31.37 patched writeTSTypes. Patch the hook
 	// generator the same way.
-	needsFileRef, needsMoney := false, false
-	for _, f := range g.Definition.Fields {
-		if f.IsFileField() {
-			needsFileRef = true
-		}
-		if FieldType(f.Type) == FieldMoney {
-			needsMoney = true
-		}
-	}
-	if needsFileRef {
-		apiImport += "\nimport type { FileRef } from \"@repo/shared/schemas\";"
-	}
-	if needsMoney {
-		apiImport += "\nimport type { Money } from \"@repo/shared/types\";"
-	}
+	// The resource type comes from the shared package rather than being
+	// redeclared here.
+	//
+	// A local copy is what broke "one backend, every client, from shared
+	// types": grit sync rewrites packages/shared and cannot reach a duplicate
+	// declaration, so a field added to the Go model reached the shared type
+	// and nowhere else. Nothing errored, because each file stayed internally
+	// consistent; the app simply did not know the field existed. The
+	// scaffold's own use-blogs.ts has always imported the type, and this now
+	// matches it.
+	//
+	// FileRef and Money were imported only to satisfy that local copy, so they
+	// are no longer needed: an unused import is an error under noUnusedLocals,
+	// which the Vite admin sets.
+	apiImport += "\nimport type { " + names.Pascal + " } from \"@repo/shared/types\";"
 	content := fmt.Sprintf(`import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 %s
-
-interface %s {
-  id: string;
-%s  created_at: string;
-  updated_at: string;
-}
 
 interface %sResponse {
   data: %s[];
@@ -2255,8 +2249,6 @@ export function useDelete%s() {
 }
 `,
 		apiImport,
-		names.Pascal,
-		g.buildTSInterfaceFields(),
 		names.PluralPascal, names.Pascal,
 		names.PluralPascal,
 		names.PluralPascal, names.PluralPascal,

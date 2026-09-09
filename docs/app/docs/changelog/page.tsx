@@ -29,6 +29,41 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.199.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.199.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Generated hooks redeclared the type instead of sharing it</h3>
+                <p>
+                  Found by doing what the multi-client tutorial describes: add a column
+                  to a Go model mid-project, run <code>grit sync</code>, and see it reach
+                  the clients.
+                </p>
+                <p>
+                  It reached one of them. The generated hook declared its own copy of
+                  the resource type, so <code>grit sync</code> rewrote{' '}
+                  <code>packages/shared</code> and could not reach the duplicate. The
+                  new field existed in the shared type and nowhere else. Nothing
+                  errored, because each file stayed internally consistent, and the web
+                  app simply did not know the field was there.
+                </p>
+                <p>
+                  The scaffold&apos;s own hand-written{' '}
+                  <code>apps/web/hooks/use-blogs.ts</code> has always imported its type
+                  from <code>@repo/shared/types</code>. The generator wrote the same
+                  file a different way, which is how the two drifted. It now matches, so
+                  a schema change reaches the client on the next{' '}
+                  <code>grit sync</code> with nothing else to remember.
+                </p>
+              </div>
+            </div>
+
             {/* v3.198.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
