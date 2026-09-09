@@ -260,12 +260,69 @@ func aiHandlerGo() string {
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
 	"{{MODULE}}/internal/ai"
 )
+
+// aiFailure turns an error from the ai package into something the caller can
+// act on, and logs the rest.
+//
+// These cases need different responses from whoever hits them and used to be
+// one message: a key the gateway rejected, a rate limit, a model that does not
+// exist, and everything else. The gateway's own reply is logged rather than
+// returned, since it is somebody else's error text and may quote the request
+// back.
+//
+// Worth having because the generic version cost real time: the API said
+// "Failed to generate completion" while the gateway had said "Authentication
+// failed. Create an API key and set in AI_GATEWAY_API_KEY", which is the whole
+// answer.
+func aiFailure(c *gin.Context, op string, err error) {
+	log.Printf("[ai] %s: %v", op, err)
+
+	msg := err.Error()
+	switch {
+	case strings.Contains(msg, "(401)"):
+		c.JSON(http.StatusBadGateway, gin.H{"error": gin.H{
+			"code": "AI_UNAUTHORIZED",
+			"message": "The AI gateway rejected the API key. Check AI_GATEWAY_API_KEY " +
+				"in your .env, and that it is a gateway key rather than a provider key.",
+		}})
+	case strings.Contains(msg, "(403)"):
+		// 403 from the gateway is usually entitlement rather than identity:
+		// the key is real and the plan does not cover the model. The default
+		// AI_GATEWAY_MODEL is a large one, so this is what a free-tier key
+		// meets first, and "rejected the key" sends people to look in the
+		// wrong place.
+		c.JSON(http.StatusBadGateway, gin.H{"error": gin.H{
+			"code": "AI_FORBIDDEN",
+			"message": "The AI gateway accepted the key but refused the request. This is " +
+				"usually the plan not covering AI_GATEWAY_MODEL. The server log has " +
+				"the gateway's own words.",
+		}})
+	case strings.Contains(msg, "(429)"):
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": gin.H{
+			"code":    "AI_RATE_LIMITED",
+			"message": "The AI gateway is rate limiting this key. Try again shortly.",
+		}})
+	case strings.Contains(msg, "(404)"):
+		c.JSON(http.StatusBadGateway, gin.H{"error": gin.H{
+			"code": "AI_MODEL_NOT_FOUND",
+			"message": "The AI gateway does not know that model. Check AI_GATEWAY_MODEL " +
+				"in your .env.",
+		}})
+	default:
+		c.JSON(http.StatusBadGateway, gin.H{"error": gin.H{
+			"code":    "AI_ERROR",
+			"message": "The AI gateway did not answer. The server log has the detail.",
+		}})
+	}
+}
 
 // AIHandler handles AI completion endpoints.
 type AIHandler struct {
@@ -313,12 +370,7 @@ func (h *AIHandler) Complete(c *gin.Context) {
 		Temperature: req.Temperature,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "AI_ERROR",
-				"message": "Failed to generate completion",
-			},
-		})
+		aiFailure(c, "complete", err)
 		return
 	}
 
@@ -356,12 +408,7 @@ func (h *AIHandler) Chat(c *gin.Context) {
 		Temperature: req.Temperature,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "AI_ERROR",
-				"message": "Failed to generate response",
-			},
-		})
+		aiFailure(c, "chat", err)
 		return
 	}
 

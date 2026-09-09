@@ -29,6 +29,85 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.203.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.203.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>You can write a plugin now</h3>
+                <p>
+                  The authoring page described a plugin as a{' '}
+                  <code>plugin.Plugin</code> value and ended by pointing at{' '}
+                  <code>internal/plugin/multitenant.go</code>, which is inside the CLI.
+                  So a reader who followed it had nowhere to put what they had written:
+                  the registry was compiled in, writing a plugin meant forking Grit and
+                  rebuilding the binary, and the page never said so.
+                </p>
+                <CodeBlock language="bash" code={`grit plugin add ./plugins/product-reviews`} />
+                <p>
+                  A plugin directory holds a <code>plugin.json</code> manifest and the
+                  files it installs. It is the same shape as a built-in, so nothing
+                  about installing or removing changes: the same lockfile records what
+                  was written and <code>grit plugin remove</code> replays it backwards
+                  either way. <code>{'{{MODULE}}'}</code>,{' '}
+                  <code>{'{{PROJECT}}'}</code> and <code>{'{{API_ROOT}}'}</code> are
+                  substituted, so a plugin does not need to know the module path of the
+                  project installing it. A <code>when</code> clause limits a file or an
+                  injection by architecture and frontend.
+                </p>
+                <p>
+                  Paths that climb out of the project are refused when the manifest
+                  loads, because a plugin is somebody else&apos;s code and{' '}
+                  <code>&quot;to&quot;: &quot;../../.ssh/authorized_keys&quot;</code>{' '}
+                  is a file write rather than an install. Only an explicit path is read
+                  as a directory, so a folder cannot shadow a built-in by sharing its
+                  name.
+                </p>
+                <p>
+                  Proven by writing one: a product-reviews plugin with two files and
+                  five injections, installed into a storefront, exercised end to end
+                  (public reads with an average, held writes, duplicate refused, admin
+                  approval, public read after approval), then removed, leaving only the
+                  lockfile behind.
+                </p>
+                <p>
+                  The marker list on that page was also three releases stale.{' '}
+                  <code>grit:imports</code>, <code>grit:middleware:protected</code>,{' '}
+                  <code>grit:nav:system</code> and the two icon markers all exist and
+                  were added because plugins needed them.
+                </p>
+
+                <h3>The AI handlers were throwing the error away</h3>
+                <p>
+                  Both took the error from the <code>ai</code> package and returned
+                  &quot;Failed to generate completion&quot;. Not logged, not
+                  categorised, not returned. A rejected key, a rate limit, a model that
+                  does not exist and a DNS failure all looked identical, and the server
+                  log said nothing at all.
+                </p>
+                <p>
+                  Met while testing product-description generation: Grit said
+                  &quot;Failed to generate completion&quot; while the gateway had said{' '}
+                  <em>&quot;Free tier users do not have access to this model&quot;</em>.
+                  That second sentence is the entire answer. Failures now come back as{' '}
+                  <code>AI_UNAUTHORIZED</code>, <code>AI_RATE_LIMITED</code>,{' '}
+                  <code>AI_MODEL_NOT_FOUND</code> or <code>AI_FORBIDDEN</code>, and the
+                  gateway&apos;s own words go to the log rather than to the caller,
+                  since it is somebody else&apos;s error text and may quote the request
+                  back.
+                </p>
+                <p>
+                  <code>.env.example</code> now says that the default model needs paid
+                  credits, which is the specific thing a free-tier key meets first.
+                </p>
+              </div>
+            </div>
+
             {/* v3.202.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
