@@ -245,11 +245,22 @@ RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 FROM base AS deps
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# pnpm-lock.yaml is written by the first pnpm install, so a project that has
+# not run one yet does not have it. The glob keeps this COPY working either
+# way: Docker only fails when nothing matches, and package.json always does.
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY apps/` + app + `/package.json ./apps/` + app + `/
-COPY packages/shared/package.json ./packages/shared/
+# The whole workspace, not a hand-listed subset. Both apps depend on
+# @repo/upload as well as @repo/shared, and naming members here meant pnpm
+# stopped with ERR_PNPM_WORKSPACE_PKG_NOT_FOUND the first time one was
+# added. Costs the install cache when packages/ changes; the builder stage
+# copies everything a few lines later anyway.
+COPY packages ./packages
 
-RUN pnpm install --frozen-lockfile
+# Frozen when there is a lockfile to freeze to, which is what a repo that
+# commits its lock wants, and a plain install when there is not, so a
+# freshly scaffolded project still builds an image.
+RUN if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi
 
 # Build
 FROM base AS builder

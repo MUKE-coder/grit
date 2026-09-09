@@ -29,6 +29,67 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.204.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.204.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The production images did not build on a fresh project</h3>
+                <p>
+                  Found by building an invoicing app and following the VPS guide as far
+                  as it goes without a server: scaffold, then{' '}
+                  <code>docker compose -f docker-compose.prod.yml build</code>. The API
+                  image was fine. Both Next images failed, for two reasons.
+                </p>
+                <p>
+                  The Dockerfile did{' '}
+                  <code>COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./</code>,
+                  and <code>grit new</code> does not write a lockfile: pnpm does, on the
+                  first install. So the build stopped at the first COPY with{' '}
+                  <code>&quot;/pnpm-lock.yaml: not found&quot;</code>. The lockfile is
+                  now a glob, and <code>--frozen-lockfile</code> is used only when there
+                  is one to freeze to, so a repo that commits its lock keeps
+                  reproducible installs and a fresh project still builds.
+                </p>
+                <p>
+                  Past that, pnpm stopped with{' '}
+                  <code>ERR_PNPM_WORKSPACE_PKG_NOT_FOUND</code>. The image copied two
+                  workspace manifests by name, and both apps depend on{' '}
+                  <code>@repo/upload</code> as well as <code>@repo/shared</code>. A list
+                  of workspace members maintained by hand in a Dockerfile goes stale the
+                  first time one is added, and had. It copies{' '}
+                  <code>packages/</code> now, so whatever the workspace gains is in the
+                  image the day it lands.
+                </p>
+                <p>
+                  Verified by building all three production images from a project that
+                  had never run <code>pnpm install</code>.
+                </p>
+
+                <h3>Line items were typed as plain text</h3>
+                <p>
+                  An inline <code>--items</code> child had its own switch over field
+                  types, covering five and falling through to <code>text</code> for the
+                  rest. Money, toggles, selects, textareas and rich text all rendered as
+                  text inputs.
+                </p>
+                <p>
+                  On an invoicing app the field it got wrong was{' '}
+                  <code>unit_rate</code>: <code>type: &quot;money&quot;</code> in the
+                  standalone InvoiceItem resource and <code>type: &quot;text&quot;</code>{' '}
+                  inline, in the same generation run. A currency amount in a plain text
+                  box, on the line the whole invoice multiplies. Line items now use{' '}
+                  <code>FormFieldType()</code>, the mapping the rest of the generator
+                  uses, and selects carry their options.
+                </p>
+              </div>
+            </div>
+
             {/* v3.203.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
