@@ -29,8 +29,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"reflect"
 	"strings"
 	"sync"
+
+	"gorm.io/gorm"
 )
 
 // cipherPrefix tags an encrypted value and versions the scheme, so the algorithm
@@ -196,6 +199,49 @@ func (e *EncryptedString) UnmarshalJSON(b []byte) error {
 	}
 	*e = EncryptedString(s)
 	return nil
+}
+
+// Install makes map-based updates encrypt EncryptedString columns. Call it once,
+// straight after connecting.
+//
+// Value() encrypts, but GORM only calls it when the value already has the
+// EncryptedString type. The generated update and PATCH handlers, bulk edit and
+// most hand-written code write updates as a map of plain strings, so the first
+// edit to an encrypted column stored plaintext. Nothing showed it: Scan passes
+// a value without the enc:v1: prefix straight through, so reads looked right.
+//
+// This wraps any string headed for an EncryptedString column before GORM builds
+// the statement. It needs the model to know the column: db.Model(&row).Updates
+// is covered, db.Table("x").Updates is not, and neither is raw SQL.
+func Install(db *gorm.DB) error {
+	return db.Callback().Update().Before("gorm:update").Register("crypto:encrypt_map_values", encryptMapValues)
+}
+
+var encryptedStringType = reflect.TypeOf(EncryptedString(""))
+
+func encryptMapValues(tx *gorm.DB) {
+	stmt := tx.Statement
+	if stmt == nil || stmt.Schema == nil {
+		return
+	}
+	values, ok := stmt.Dest.(map[string]interface{})
+	if !ok {
+		return
+	}
+	for key, value := range values {
+		field := stmt.Schema.LookUpField(key)
+		if field == nil || field.FieldType != encryptedStringType {
+			continue
+		}
+		switch v := value.(type) {
+		case string:
+			values[key] = EncryptedString(v)
+		case *string:
+			if v != nil {
+				values[key] = EncryptedString(*v)
+			}
+		}
+	}
 }
 `
 	return src

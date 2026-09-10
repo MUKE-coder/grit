@@ -29,6 +29,80 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.212.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.212.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>A note on v3.211.0.</strong> It was tagged in error on the v3.210.0 commit
+                  and published before that could be stopped. Its contents are exactly those of
+                  v3.210.0; everything described below arrives in this release.
+                </p>
+                <h3>Encrypted columns were stored in plaintext after the first edit</h3>
+                <p>
+                  Found on a patient-records app. Creating a patient stored the notes as{' '}
+                  <code>enc:v1:</code> ciphertext. The next <code>PUT</code> stored{' '}
+                  <code>PUT: diabetic</code> in the column as plain text, and the next{' '}
+                  <code>PATCH</code> did the same. Nothing showed it: reads came back right, because a
+                  value without the prefix is passed straight through, and search even started
+                  finding the rows, which it only could because they were no longer encrypted.
+                </p>
+                <p>
+                  Generated update, PATCH and bulk handlers write a map of plain strings, and GORM
+                  only runs a column type&apos;s encoder when the value already has that type.{' '}
+                  <code>crypto.Install</code>, now called when the API connects, wraps any string
+                  headed for an <code>EncryptedString</code> column, and a test that ships with every
+                  project checks the raw column after a map update. <code>grit upgrade</code> adds
+                  the call to existing projects. Grit&apos;s own encrypted fields, the profile bio and
+                  the SSO secrets, were always converted by hand and were not affected.
+                </p>
+                <p>
+                  <strong>Values written through an update before this release are still
+                  plaintext.</strong> They are re-encrypted the next time they are saved; to find
+                  them, look for rows whose column does not start with <code>enc:v1:</code>.
+                </p>
+
+                <h3>An :encrypted field modifier</h3>
+                <p>
+                  The security page said to adopt encryption by changing a field&apos;s type to{' '}
+                  <code>crypto.EncryptedString</code>, &quot;that&apos;s it&quot;. On a generated
+                  resource that broke the build twice, in the handler and in the CSV importer, since
+                  a plain string does not convert into the type by itself.{' '}
+                  <code>notes:text:encrypted</code> now makes the type the field&apos;s own in the
+                  model, both request structs and the importer, keeps the column as text because
+                  ciphertext outgrows a <code>varchar(255)</code>, and leaves it out of search,
+                  sorting and filters, where ciphertext could only ever be noise. It refuses{' '}
+                  <code>:unique</code>, which non-deterministic ciphertext could never enforce, and
+                  works with <code>grit generate field</code> too.
+                </p>
+
+                <h3>Backups could not be restored</h3>
+                <p>
+                  Two ways, found by restoring real projects. Every project with line items took
+                  backups it could not restore: the dump writes tables in the order the models are
+                  registered, the generator registers a child before its parent, and replaying the
+                  lines before their journal entries failed on the foreign key. And every project
+                  using <code>--append-only</code>, added in v3.207.0, refused the restore outright,
+                  because restore begins by truncating and those tables refuse to be truncated.
+                </p>
+                <p>
+                  Restore now replays in foreign-key order, worked out from the models&apos; own
+                  relationships, which also rescues archives already written, and lets itself past
+                  the append-only triggers for its own transaction only. Verified on both projects
+                  after <code>grit upgrade</code>, which now carries the backup package: the
+                  line-item project restored 45 rows with no orphaned lines, and the append-only one
+                  restored 62 rows with all four triggers enabled again and a raw <code>UPDATE</code>{' '}
+                  still refused.
+                </p>
+              </div>
+            </div>
+
             {/* v3.210.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

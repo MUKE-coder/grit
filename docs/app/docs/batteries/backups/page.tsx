@@ -113,6 +113,13 @@ grit restore backup.zip --no-migrate`} />
             restored database matches the backup exactly. The whole replay runs in one transaction —
             if anything fails, nothing is left half-applied.
           </p>
+          <p className="mt-4 leading-relaxed text-muted-foreground">
+            Rows are replayed in foreign-key order, worked out from the models&apos; relationships,
+            so a table is always filled after the tables it points at. Append-only tables are let
+            through for the length of the restore transaction and guarded again before it commits.
+            Both matter more than they sound: before v3.212.0 a project with line items, or with
+            append-only records, took backups it could not restore.
+          </p>
 
           <div className="my-8 rounded-xl border border-amber-500/30 bg-amber-500/5 p-6">
             <div className="mb-2 flex items-center gap-2">

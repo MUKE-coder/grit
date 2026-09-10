@@ -176,6 +176,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strings"
 	"sync"
 
 	"gorm.io/gorm"
@@ -296,6 +297,55 @@ func InstallTriggers(db *gorm.DB) error {
 		}
 	}
 	return nil
+}
+
+// Suspend switches this project's append-only triggers off for the rest of the
+// transaction tx, and returns the function that switches them back on.
+//
+// For restoring a backup, which has to rewrite these tables wholesale and is
+// the one writer the triggers must let through. Other sessions never see the
+// gap: ALTER TABLE inside a transaction is invisible until it commits, and the
+// triggers are back on before this one does.
+//
+// ALTER TABLE rather than session_replication_role, which needs a superuser;
+// the table owner is all a restore should require. Postgres only, like the
+// restore that calls it.
+func Suspend(tx *gorm.DB) (func() error, error) {
+	noop := func() error { return nil }
+	if tx.Dialector.Name() != "postgres" {
+		return noop, nil
+	}
+	tables, err := Tables(tx)
+	if err != nil {
+		return nil, err
+	}
+	type trigger struct{ table, name string }
+	var found []trigger
+	for _, t := range tables {
+		if !identifier.MatchString(t) {
+			return nil, fmt.Errorf("refusing to alter the table name %q", t)
+		}
+		var names []string
+		if err := tx.Raw("SELECT tgname FROM pg_trigger WHERE tgrelid = to_regclass(?) AND tgname LIKE 'grit_append_only%'", t).
+			Scan(&names).Error; err != nil {
+			return nil, fmt.Errorf("finding the append-only triggers on %s: %w", t, err)
+		}
+		for _, n := range names {
+			found = append(found, trigger{t, n})
+		}
+	}
+	toggle := func(action string) error {
+		for _, tr := range found {
+			if err := tx.Exec("ALTER TABLE " + tr.table + " " + action + " TRIGGER " + tr.name).Error; err != nil {
+				return fmt.Errorf("%s trigger %s on %s: %w", strings.ToLower(action), tr.name, tr.table, err)
+			}
+		}
+		return nil
+	}
+	if err := toggle("DISABLE"); err != nil {
+		return nil, err
+	}
+	return func() error { return toggle("ENABLE") }, nil
 }
 
 const postgresFunction = "CREATE OR REPLACE FUNCTION grit_append_only() RETURNS trigger AS $$\n" +

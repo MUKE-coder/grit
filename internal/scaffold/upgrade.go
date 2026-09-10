@@ -183,6 +183,24 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := EnsureAppendOnlyWiring(opts.APIRoot(root), opts.Module()); err != nil {
 			fmt.Printf("  ⚠ %v\n", err)
 		}
+		// The leak fix for encrypted columns lives in the crypto package and a
+		// call at connect time; an older project has neither.
+		if err := writeCryptoFiles(root, opts); err != nil {
+			return fmt.Errorf("updating crypto files: %w", err)
+		}
+		if err := EnsureFieldEncryptionWiring(opts.APIRoot(root), opts.Module()); err != nil {
+			fmt.Printf("  ⚠ %v\n", err)
+		}
+		// Restore replays in foreign-key order and lets itself past the
+		// append-only triggers. Without it a project with --items or
+		// --append-only has backups it cannot restore, which nobody finds out
+		// until the day they need one. Only refreshed where the package is
+		// already there: a project older than backups may lack what it imports.
+		if fileExists(filepath.Join(opts.APIRoot(root), "internal", "backup", "restore.go")) {
+			if err := writeBackupFiles(root, opts); err != nil {
+				return fmt.Errorf("updating backup files: %w", err)
+			}
+		}
 		// Read-only. .env holds secrets and is the developer's, so a URL that
 		// disagrees with the port compose binds is reported, not rewritten.
 		for _, w := range envPortDrift(root) {

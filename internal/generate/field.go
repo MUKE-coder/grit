@@ -58,6 +58,11 @@ type Field struct {
 	SlugSource   string `yaml:"slug_source"`
 	RelatedModel string `yaml:"related_model"`
 
+	// Encrypted stores the column as crypto.EncryptedString: AES-256-GCM at
+	// rest, plaintext in code and over the wire. Set by the :encrypted
+	// modifier, on string, text and richtext fields only.
+	Encrypted bool `yaml:"encrypted,omitempty"`
+
 	// FileAccepts is the resolved list of accept-aliases for a file/files
 	// field. Source: the third position of name:file:<accept-list>. May be
 	// a single alias ("image") or a bracketed list ("[pdf,doc,image]").
@@ -212,6 +217,13 @@ func (f Field) NeedsFilesImport() bool {
 
 // GoType returns the Go type for this field.
 func (f Field) GoType() string {
+	// Still text to everyone but the database. The type carries the
+	// encryption, so the model, both request structs and the create literal
+	// agree about it without a conversion anywhere; a plain string in any one
+	// of them was a compile error, and in an update map, plaintext at rest.
+	if f.Encrypted {
+		return "crypto.EncryptedString"
+	}
 	switch FieldType(f.Type) {
 	case FieldString, FieldText, FieldSlug, FieldRichtext:
 		return "string"
@@ -256,6 +268,11 @@ func (f Field) GoType() string {
 
 // GORMTag returns the GORM struct tag for this field.
 func (f Field) GORMTag() string {
+	// Ciphertext is longer than the text it holds (a nonce, a tag, base64 and a
+	// prefix), so a size:255 column would reject a 200-character value.
+	if f.Encrypted {
+		return "type:text"
+	}
 	// Relationship fields handle their own GORM tags in the template
 	if f.IsManyToMany() {
 		return ""
@@ -540,6 +557,10 @@ func (f Field) IsSortable() bool {
 
 // IsSearchable returns true if this field type should be searchable by default.
 func (f Field) IsSearchable() bool {
+	// Ciphertext is different on every write, so LIKE can never match it.
+	if f.Encrypted {
+		return false
+	}
 	return FieldType(f.Type) == FieldString || FieldType(f.Type) == FieldText || FieldType(f.Type) == FieldSlug || FieldType(f.Type) == FieldRichtext
 }
 

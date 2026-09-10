@@ -148,9 +148,12 @@ func (i *Invoice) GetOwnerID() string { return i.UserID }`} />
         </p>
         <p>
           <strong>Encrypting a column.</strong> Set <code>FIELD_ENCRYPTION_KEY</code> (base64,
-          32 bytes — <code>openssl rand -base64 32</code>) and change a field&apos;s type from{' '}
-          <code>string</code> to <code>crypto.EncryptedString</code>. That&apos;s it — writes
-          encrypt, reads decrypt, and JSON responses stay plaintext. One rule: because every
+          32 bytes, from <code>openssl rand -base64 32</code>) and mark the field when you generate it:{' '}
+          <code>notes:text:encrypted</code> in <code>--fields</code>, or{' '}
+          <code>grit generate field Patient notes:text:encrypted</code> on an existing resource.
+          The model, the request structs and the CSV importer all get the type, writes encrypt,
+          reads decrypt, and JSON responses stay plaintext. Encrypted columns are left out of
+          search, sorting and filters, since ciphertext can never match. One rule: because every
           write uses a fresh nonce the ciphertext is non-deterministic, so an encrypted column
           can&apos;t be queried by equality. Use it for data you store and display but never
           filter on — personal notes, tokens, contact details — not for keys or lookup columns
@@ -159,11 +162,16 @@ func (i *Invoice) GetOwnerID() string { return i.UserID }`} />
           encrypted columns are unrecoverable.
         </p>
         <p>
-          A subtlety the type handles for you: GORM map-based updates
-          (<code>Updates(map[string]any{`{"bio": ...}`})</code>) bypass a column&apos;s encoder
-          unless the value is itself an <code>EncryptedString</code> — pass a bare string and it
-          would store plaintext. The scaffolded handlers wrap the value, and the generated tests
-          check the raw column is ciphertext, so the trap is closed where it matters.
+          A trap the connection closes for you: GORM map-based updates
+          (<code>Updates(map[string]any{`{"notes": ...}`})</code>) skip a column&apos;s encoder
+          unless the value is itself an <code>EncryptedString</code>, so a bare string stores
+          plaintext. Generated update and PATCH handlers write exactly such maps, and until
+          v3.212.0 the first edit to an encrypted column was stored in plaintext, invisibly,
+          because reads pass an unprefixed value straight through. <code>crypto.Install</code>,
+          called when the API connects, now wraps any string headed for an encrypted column, and
+          a test that ships with every project checks the raw column after a map update. It needs
+          the model to know the column: <code>db.Model(&amp;row).Updates</code> is covered, raw
+          SQL is not.
         </p>
       </>
     ),

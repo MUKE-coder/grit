@@ -86,6 +86,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "services", "gdpr_test.go"):          apiGDPRTestGo(),
 		filepath.Join(apiRoot, "internal", "crypto", "field.go"):                apiCryptoFieldGo(),
 		filepath.Join(apiRoot, "internal", "crypto", "field_test.go"):           apiCryptoFieldTestGo(),
+		filepath.Join(apiRoot, "internal", "crypto", "map_update_test.go"):      apiCryptoMapUpdateTestGo(),
 		// v3.31.40 — per-user dashboard customisation
 		filepath.Join(apiRoot, "internal", "models", "dashboard_layout.go"):   dashboardLayoutModelGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "dashboard_layout.go"): strings.ReplaceAll(dashboardLayoutHandlerGo(), "{{MODULE}}", opts.Module()),
@@ -1289,6 +1290,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	"{{MODULE}}/internal/appendonly"
+	"{{MODULE}}/internal/crypto"
 )
 
 // Connect establishes a database connection using the provided DSN.
@@ -1381,6 +1383,14 @@ func Connect(dsn string) (*gorm.DB, error) {
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	// Map-based updates to an EncryptedString column are encrypted too. GORM only
+	// runs a column type's Value() when the value already has that type, and the
+	// generated update and PATCH handlers write maps of plain strings, so without
+	// this the first edit to an encrypted column stored plaintext.
+	if err := crypto.Install(db); err != nil {
+		return nil, fmt.Errorf("installing field encryption for map updates: %w", err)
 	}
 
 	// Append-only tables refuse UPDATE and DELETE through this handle, so GORM

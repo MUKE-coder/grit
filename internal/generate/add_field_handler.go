@@ -91,6 +91,9 @@ func importAssign(f Field) (code string, needStrconv, ok bool) {
 	case FieldBool, FieldToggle:
 		return fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\titem.%s = v == \"true\" || v == \"1\" || v == \"yes\"\n\t\t}", jsonName, goName), false, true
 	default: // string, text, richtext, select
+		if f.Encrypted {
+			return fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\titem.%s = crypto.EncryptedString(v)\n\t\t}", jsonName, goName), false, true
+		}
 		return fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\titem.%s = v\n\t\t}", jsonName, goName), false, true
 	}
 }
@@ -267,7 +270,14 @@ func (g *Generator) injectHandlerField(names Names, f Field) error {
 	if sortableInList(f) {
 		l.addToInlineMap(l.findPrefix(0, "Sortable:"), snake)
 	}
-	l.addToInlineMap(l.findPrefix(0, "Filterable:"), snake)
+	if !f.Encrypted {
+		l.addToInlineMap(l.findPrefix(0, "Filterable:"), snake)
+	}
+	if f.Encrypted && !l.contains("/internal/crypto\"") {
+		if models := l.findPrefix(0, fmt.Sprintf("%q", g.Module+"/internal/models")); models >= 0 {
+			l.insert(models, fmt.Sprintf("\t%q", g.Module+"/internal/crypto"))
+		}
+	}
 
 	if f.NeedsJSONTimeImport() && !l.contains("/internal/jsontime\"") {
 		if models := l.findPrefix(0, fmt.Sprintf("%q", g.Module+"/internal/models")); models >= 0 {
@@ -314,6 +324,11 @@ func (g *Generator) injectImportField(names Names, f Field) {
 		l.lines[hdr] = strings.Replace(l.lines[hdr], `\n")`, ","+snake+`\n")`, 1)
 	}
 
+	if f.Encrypted && !l.contains("/internal/crypto\"") {
+		if models := l.findPrefix(0, fmt.Sprintf("%q", g.Module+"/internal/models")); models >= 0 {
+			l.insert(models, fmt.Sprintf("\t%q", g.Module+"/internal/crypto"))
+		}
+	}
 	if needStrconv && !l.contains("\"strconv\"") {
 		if imp := l.find(0, "import ("); imp >= 0 {
 			l.insert(imp+1, "\t\"strconv\"")
@@ -334,6 +349,9 @@ func (g *Generator) injectServiceSort(names Names, f Field) {
 	if err != nil {
 		return
 	}
+	if f.Encrypted {
+		return // ciphertext sorts as noise
+	}
 	i := l.findPrefix(0, fmt.Sprintf("sortable%s := map[string]bool{", names.Pascal))
 	if i < 0 {
 		return
@@ -352,7 +370,14 @@ func (g *Generator) injectServiceSort(names Names, f Field) {
 // opened_on:date to a ledger account. Every other type grit g field supports is
 // a builtin.
 func (g *Generator) ensureModelImport(names Names, f Field) error {
-	if !f.NeedsJSONTimeImport() {
+	var needed []string
+	if f.NeedsJSONTimeImport() {
+		needed = append(needed, "jsontime")
+	}
+	if f.Encrypted {
+		needed = append(needed, "crypto")
+	}
+	if len(needed) == 0 {
 		return nil
 	}
 	path := filepath.Join(g.APIRoot(), "internal", "models", names.Snake+".go")
@@ -360,17 +385,24 @@ func (g *Generator) ensureModelImport(names Names, f Field) error {
 	if err != nil {
 		return fmt.Errorf("reading the %s model: %w", names.Pascal, err)
 	}
-	if l.contains("/internal/jsontime\"") {
-		return nil
+	changed := false
+	for _, pkg := range needed {
+		if l.contains("/internal/" + pkg + "\"") {
+			continue
+		}
+		imp := fmt.Sprintf("\t%q", g.Module+"/internal/"+pkg)
+		switch ids, open := l.findPrefix(0, fmt.Sprintf("%q", g.Module+"/internal/ids")), l.find(0, "import ("); {
+		case ids >= 0:
+			l.insert(ids+1, imp)
+		case open >= 0:
+			l.insert(open+1, imp)
+		default:
+			return fmt.Errorf("could not add the %s import to models/%s.go: add %s by hand", pkg, names.Snake, imp)
+		}
+		changed = true
 	}
-	imp := fmt.Sprintf("\t%q", g.Module+"/internal/jsontime")
-	switch ids, open := l.findPrefix(0, fmt.Sprintf("%q", g.Module+"/internal/ids")), l.find(0, "import ("); {
-	case ids >= 0:
-		l.insert(ids+1, imp)
-	case open >= 0:
-		l.insert(open+1, imp)
-	default:
-		return fmt.Errorf("could not add the jsontime import to models/%s.go: add %s by hand", names.Snake, imp)
+	if !changed {
+		return nil
 	}
 	return l.write(path)
 }

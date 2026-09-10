@@ -88,6 +88,7 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 	needMoney := false
 	needDatatypes := false
 
+	needCrypto := false
 	for _, f := range g.Definition.Fields {
 		t := FieldType(f.Type)
 		if t == FieldSlug || t == FieldFile || t == FieldFiles ||
@@ -177,10 +178,19 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 			needDatatypes = true
 			assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok && v != \"\" {\n\t\t\titem.%s = datatypes.JSONSlice[string](strings.Split(v, \"|\"))\n\t\t}\n", jsonName, goName))
 		default: // string, text, richtext, select
+			if f.Encrypted {
+				needCrypto = true
+				assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\titem.%s = crypto.EncryptedString(v)\n\t\t}\n", jsonName, goName))
+				continue
+			}
 			assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\titem.%s = v\n\t\t}\n", jsonName, goName))
 		}
 	}
 
+	cryptoImport := ""
+	if needCrypto {
+		cryptoImport = "\n\t\"" + g.Module + "/internal/crypto\""
+	}
 	moneyImport := ""
 	if needMoney {
 		moneyImport = "\n\t\"" + g.Module + "/internal/money\""
@@ -201,7 +211,7 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 		"{{Plural}}", names.Plural,
 		"{{PluralKebab}}", names.PluralKebab,
 		"{{STRCONV}}", strconvImport,
-		"{{DATATYPES}}", datatypesImport+moneyImport,
+		"{{DATATYPES}}", datatypesImport+moneyImport+cryptoImport,
 		"{{ASSIGN}}", assign.String(),
 		"{{HEADERS}}", templateHeaders,
 	)
