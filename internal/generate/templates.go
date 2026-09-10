@@ -752,8 +752,29 @@ func (g *Generator) writeGoHandler(names Names) error {
 		childModel := BuildNames(g.Definition.Items).Pascal
 		reqStructFields := ""
 		assign := ""
+		parent := toPascalCase(g.Definition.Name)
 		for _, cf := range g.Definition.Items.Fields {
-			if cf.IsBelongsTo() || cf.IsSlug() || cf.IsManyToMany() {
+			if cf.IsSlug() || cf.IsManyToMany() {
+				continue
+			}
+			// The FK back to the parent is set by the association on create
+			// and by hand on update, so a client never sends it per row.
+			//
+			// Every other belongs_to is the opposite: it is what the line is
+			// about. An invoice line names a product, a journal line names the
+			// account it posts to. Skipping all of them left the request with
+			// no way to say, and the create loop inserted rows with the column
+			// empty while the model declared it required. Silently, and with
+			// bad rows rather than an error.
+			if cf.IsBelongsTo() {
+				if cf.RelatedModelName() == parent {
+					continue
+				}
+				base := strings.TrimSuffix(cf.Name, "_id")
+				fkName := toPascalCase(base) + "ID"
+				fkJSON := toSnakeCase(base) + "_id"
+				reqStructFields += fmt.Sprintf("\t\t\t%s string `json:\"%s\" binding:\"required\"`\n", fkName, fkJSON)
+				assign += fmt.Sprintf("\t\t\t\t%s: it.%s,\n", fkName, fkName)
 				continue
 			}
 			gName := toPascalCase(cf.Name)
@@ -977,7 +998,16 @@ func (g *Generator) writeGoHandler(names Names) error {
 	needsHandlerJSONTime := false
 	needsHandlerMoney := false
 	hasFileFields := false
-	for _, f := range g.Definition.Fields {
+	// The child's fields as well as the parent's. The inline Items request
+	// struct from --items is written into this same handler file, so a money
+	// or date field on the child needs its import here exactly as one on the
+	// parent does. Scanning only the parent left the handler referring to
+	// money.Money with nothing importing it, and the project did not build.
+	handlerFields := g.Definition.Fields
+	if g.Definition.Items != nil {
+		handlerFields = append(append([]Field{}, handlerFields...), g.Definition.Items.Fields...)
+	}
+	for _, f := range handlerFields {
 		if f.GoType() == "*time.Time" {
 			needsTimeImport = true
 		}
@@ -1228,6 +1258,7 @@ import (
 	"{{MODULE}}/internal/export"{{FILES_IMPORT}}{{DATABASE_IMPORT}}{{WORKFLOW_IMPORT}}
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
+	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/pdf"
 	"{{MODULE}}/internal/services"
 )
@@ -1495,12 +1526,12 @@ func (h *{{Pascal}}Handler) Create(c *gin.Context) {
 {{CREATE_ASSIGN}}	}
 {{OWNER_STAMP}}{{ITEMS_BUILD}}
 	if err := {{CREATE_CALL}}.Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to create {{lower}}",
-			},
-		})
+		// A rule the caller broke becomes 422 with its message, a missing
+		// row 404, anything else the same opaque 500 as before. What is new
+		// is that the error reaches somewhere at all: it used to be bound
+		// and dropped, so a hook refusing a write said nothing to the client
+		// and nothing to the log.
+		respond.WriteError(c, err, "Failed to create {{lower}}")
 		return
 	}
 {{M2M_CREATE}}
@@ -1544,12 +1575,12 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 	updates := map[string]interface{}{}
 {{UPDATE_MAP}}
 	if err := {{UPDATE_CALL}}.Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to update {{lower}}",
-			},
-		})
+		// A rule the caller broke becomes 422 with its message, a missing
+		// row 404, anything else the same opaque 500 as before. What is new
+		// is that the error reaches somewhere at all: it used to be bound
+		// and dropped, so a hook refusing a write said nothing to the client
+		// and nothing to the log.
+		respond.WriteError(c, err, "Failed to update {{lower}}")
 		return
 	}
 {{M2M_UPDATE}}{{ITEMS_UPDATE}}
@@ -1615,12 +1646,12 @@ func (h *{{Pascal}}Handler) Patch(c *gin.Context) {
 
 	if len(updates) > 0 {
 		if err := h.scoped(c).Model(&item).Updates(updates).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": gin.H{
-					"code":    "INTERNAL_ERROR",
-					"message": "Failed to patch {{lower}}",
-				},
-			})
+			// A rule the caller broke becomes 422 with its message, a missing
+			// row 404, anything else the same opaque 500 as before. What is new
+			// is that the error reaches somewhere at all: it used to be bound
+			// and dropped, so a hook refusing a write said nothing to the client
+			// and nothing to the log.
+			respond.WriteError(c, err, "Failed to patch {{lower}}")
 			return
 		}
 	}
@@ -1650,12 +1681,12 @@ func (h *{{Pascal}}Handler) Delete(c *gin.Context) {
 	}
 {{OWNER_GUARD}}
 	if err := h.scoped(c).Delete(&item).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to delete {{lower}}",
-			},
-		})
+		// A rule the caller broke becomes 422 with its message, a missing
+		// row 404, anything else the same opaque 500 as before. What is new
+		// is that the error reaches somewhere at all: it used to be bound
+		// and dropped, so a hook refusing a write said nothing to the client
+		// and nothing to the log.
+		respond.WriteError(c, err, "Failed to delete {{lower}}")
 		return
 	}
 
@@ -1764,12 +1795,7 @@ func (h *{{Pascal}}Handler) Bulk(c *gin.Context) {
 		}
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to " + req.Action + " {{plural}}",
-			},
-		})
+		respond.WriteError(c, err, "Failed to "+req.Action+" {{plural}}")
 		return
 	}
 
@@ -1828,7 +1854,6 @@ func (h *{{Pascal}}Handler) Bulk(c *gin.Context) {
 	content = strings.ReplaceAll(content,
 		"return h.scoped(c).WithContext(c.Request.Context())",
 		"return h.DB.WithContext(c.Request.Context())")
-
 
 	path := filepath.Join(g.APIRoot(), "internal", "handlers", names.Snake+".go")
 	return writeFileWithDirs(path, content)

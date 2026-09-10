@@ -14,12 +14,12 @@ func writeRecoveryFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "sms", "sms.go"):                    smsGo(),
-		filepath.Join(apiRoot, "internal", "sms", "sms_test.go"):               smsTestGo(),
-		filepath.Join(apiRoot, "internal", "models", "recovery_contact.go"):    recoveryModelGo(),
-		filepath.Join(apiRoot, "internal", "services", "recovery.go"):          recoveryServiceGo(),
-		filepath.Join(apiRoot, "internal", "services", "recovery_test.go"):     recoveryServiceTestGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "recovery.go"):          recoveryHandlerGo(),
+		filepath.Join(apiRoot, "internal", "sms", "sms.go"):                 smsGo(),
+		filepath.Join(apiRoot, "internal", "sms", "sms_test.go"):            smsTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "recovery_contact.go"): recoveryModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "recovery.go"):       recoveryServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "recovery_test.go"):  recoveryServiceTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "recovery.go"):       recoveryHandlerGo(),
 	}
 	for path, content := range files {
 		content = strings.ReplaceAll(content, "{{MODULE}}", module)

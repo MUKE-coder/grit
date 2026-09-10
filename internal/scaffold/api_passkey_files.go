@@ -12,10 +12,10 @@ func writePasskeyFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "models", "passkey.go"):          passkeyModelGo(),
-		filepath.Join(apiRoot, "internal", "services", "passkey.go"):        passkeyServiceGo(),
-		filepath.Join(apiRoot, "internal", "services", "passkey_test.go"):   passkeyServiceTestGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "passkey.go"):        passkeyHandlerGo(),
+		filepath.Join(apiRoot, "internal", "models", "passkey.go"):        passkeyModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "passkey.go"):      passkeyServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "passkey_test.go"): passkeyServiceTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "passkey.go"):      passkeyHandlerGo(),
 	}
 	for path, content := range files {
 		content = strings.ReplaceAll(content, "{{MODULE}}", module)

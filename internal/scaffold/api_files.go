@@ -6869,9 +6869,13 @@ func apiRespondGo() string {
 package respond
 
 import (
+	"errors"
+	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // Error is the wire shape of every error envelope.
@@ -6929,6 +6933,60 @@ func Conflict(c *gin.Context, message string) {
 // errors via details map so the frontend can highlight them.
 func Validation(c *gin.Context, message string, fields map[string]string) {
 	fail(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", message, fields)
+}
+
+// RuleError is a business rule the caller broke, phrased for the caller.
+//
+// Errors coming back from a write are mostly not for the client: a driver
+// failure or a constraint violation carries schema details and sometimes SQL,
+// so the handler cannot simply echo what it gets. This is how application code
+// says "this one is different, the message is the point".
+//
+// Return it from a GORM hook, a callback or a service method:
+//
+//	func (e *JournalEntry) BeforeCreate(tx *gorm.DB) error {
+//	    if !balanced(e.Lines) {
+//	        return respond.Rule("debits and credits do not balance")
+//	    }
+//	    return nil
+//	}
+//
+// and the caller gets 422 with that sentence instead of an opaque 500.
+type RuleError struct{ Message string }
+
+func (e *RuleError) Error() string { return e.Message }
+
+// Rule builds a RuleError. Takes a format string because most rules want to
+// quote the values that broke them.
+func Rule(format string, args ...interface{}) error {
+	return &RuleError{Message: fmt.Sprintf(format, args...)}
+}
+
+// IsRule reports whether err is, or wraps, a RuleError.
+func IsRule(err error) (*RuleError, bool) {
+	var rule *RuleError
+	if errors.As(err, &rule) {
+		return rule, true
+	}
+	return nil, false
+}
+
+// WriteError picks the right response for an error returned by a write.
+//
+// A rule the caller broke becomes 422 with its message. A missing row becomes
+// 404. Everything else is logged and comes back as an opaque 500, which is
+// what it was before, minus the part where the error vanished entirely.
+func WriteError(c *gin.Context, err error, fallback string) {
+	if rule, ok := IsRule(err); ok {
+		Validation(c, rule.Message, nil)
+		return
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		NotFound(c, "")
+		return
+	}
+	log.Printf("%s %s: %v", c.Request.Method, c.Request.URL.Path, err)
+	fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", fallback)
 }
 
 // 500 — server fault. Don't echo the raw error; log it and return a
