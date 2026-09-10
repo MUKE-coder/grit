@@ -6,8 +6,10 @@ import "strings"
 func adminFormBuilder() string {
 	return `"use client";
 
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import type { FieldDefinition, FormDefinition } from "@/lib/resource";
+import { displayFormat, displayValue, isDisplayOnly, writableValues } from "@/lib/form-values";
+import { renderCell } from "@/components/tables/cell-renderers";
 import { TextField } from "./fields/text-field";
 import { TextareaField } from "./fields/textarea-field";
 import { NumberField } from "./fields/number-field";
@@ -59,7 +61,7 @@ export function FormBuilder({
   const isTwoColumn = formDef.layout === "two-column";
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit((data) => onSubmit(writableValues(formDef.fields, data)))} className="space-y-6">
       <div
         className={` + "`" + `grid gap-4 ${isTwoColumn ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}` + "`" + `}
       >
@@ -90,6 +92,37 @@ export function FormBuilder({
   );
 }
 
+/**
+ * A field the form shows and never lets anyone write: readOnly, or computed
+ * from the rest of the form. Rendered the way the table renders the column, so
+ * money reads as money, and re-rendered on every change through useWatch so a
+ * computed total keeps up with the lines being typed.
+ */
+function DisplayOnlyField({
+  field,
+  control,
+}: {
+  field: FieldDefinition;
+  control: ReturnType<typeof useForm>["control"];
+}) {
+  const values = (useWatch({ control }) as Record<string, unknown> | undefined) ?? {};
+  const labelId = "display-" + field.key;
+  return (
+    <div className="space-y-1.5">
+      <span id={labelId} className="block text-sm font-medium text-foreground">
+        {field.label}
+      </span>
+      <output
+        aria-labelledby={labelId}
+        className="flex min-h-9 items-center rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm text-text-secondary"
+      >
+        {renderCell({ key: field.key, label: field.label, format: displayFormat(field) }, displayValue(field, values), values)}
+      </output>
+      {field.description && <p className="text-xs text-text-muted">{field.description}</p>}
+    </div>
+  );
+}
+
 export function FieldRenderer({
   field,
   control,
@@ -102,6 +135,12 @@ export function FieldRenderer({
   errors: Record<string, any>;
   getValues?: ReturnType<typeof useForm>["getValues"];
 }) {
+  // Display-only fields are not inputs: shown the way the table shows them,
+  // and left out of what the form submits.
+  if (isDisplayOnly(field)) {
+    return <DisplayOnlyField field={field} control={control} />;
+  }
+
   const error = errors[field.key]?.message as string | undefined;
 
   // A field with generate() gets a "Generate" button whose click runs the
@@ -693,6 +732,7 @@ func adminFormStepper() string {
 import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { FieldDefinition, FormDefinition } from "@/lib/resource";
+import { writableValues } from "@/lib/form-values";
 import { FieldRenderer, buildDefaults } from "./form-builder";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Check, ChevronLeft, ChevronRight, Loader2 } from "@/lib/icons";
@@ -841,7 +881,7 @@ export function FormStepper({
 
     setSavingStep(currentStep);
     try {
-      await onStepSave(patch);
+      await onStepSave(writableValues(formDef.fields, patch));
       setBaseline((prev) => ({ ...prev, ...patch }));
     } catch {
       // The mutation already surfaced the error. Leave the baseline alone so
@@ -859,7 +899,7 @@ export function FormStepper({
 
   const handlePrev = () => setCurrentStep((s) => Math.max(0, s - 1));
 
-  const handleFinalSubmit = handleSubmit(onSubmit);
+  const handleFinalSubmit = handleSubmit((data) => onSubmit(writableValues(formDef.fields, data)));
 
   return (
     <div className={isVertical ? "flex gap-8" : "space-y-6"}>
@@ -1234,6 +1274,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { ResourceDefinition, FieldDefinition, GroupDefinition } from "@/lib/resource";
+import { writableValues } from "@/lib/form-values";
 import { FieldRenderer } from "@/components/forms/form-builder";
 import { useResourceItem, usePatchResource } from "@/hooks/use-resource";
 import { ChevronLeft, Loader2 } from "@/lib/icons";
@@ -1341,7 +1382,7 @@ function GroupCard({ resource, group, record, id }: GroupCardProps) {
   const onSave = handleSubmit((values) => {
     // Send only the values belonging to this group — that's the whole
     // point of PATCH-per-group.
-    patch({ id, body: values }, { onSuccess: () => setIsDirty(false) });
+    patch({ id, body: writableValues(groupFields, values) }, { onSuccess: () => setIsDirty(false) });
   });
 
   return (

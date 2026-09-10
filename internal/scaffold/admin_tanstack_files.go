@@ -359,6 +359,7 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "lib", "utils.ts"):        adminUtils(),
 		filepath.Join(adminRoot, "components.json"):               viteComponentsJSON(),
 		filepath.Join(adminRoot, "src", "lib", "resource.ts"):     adminResourceTypes(),
+		filepath.Join(adminRoot, "src", "lib", "form-values.ts"):  adminFormValues(),
 		filepath.Join(adminRoot, "src", "lib", "icons.ts"):        adminIconMap(),
 		filepath.Join(adminRoot, "src", "lib", "formatters.ts"):   adminFormatters(),
 		// Compat shim: maps next/link, next/image, next/navigation, next/dynamic
@@ -583,6 +584,9 @@ func adminTanStackPackageJSON(opts Options) string {
     "@repo/upload": "workspace:*"
   },
   "devDependencies": {
+    "jsdom": "^25.0.0",
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/user-event": "^14.5.0",
     "@tanstack/react-router-devtools": "^1.93.0",
     "@tanstack/router-vite-plugin": "^1.93.0",
     "@types/react": "^19.0.0",

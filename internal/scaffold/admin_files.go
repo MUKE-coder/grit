@@ -324,6 +324,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "lib", "utils.ts"):        adminUtils(),
 		filepath.Join(adminRoot, "components.json"):        nextComponentsJSON(),
 		filepath.Join(adminRoot, "lib", "resource.ts"):     adminResourceTypes(),
+		filepath.Join(adminRoot, "lib", "form-values.ts"):  adminFormValues(),
 		filepath.Join(adminRoot, "lib", "icons.ts"):        adminIconMap(),
 		filepath.Join(adminRoot, "lib", "formatters.ts"):   adminFormatters(),
 		filepath.Join(adminRoot, "lib", "file-accepts.ts"): adminFileAcceptsLib(),

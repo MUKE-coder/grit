@@ -48,6 +48,7 @@ func Upgrade(uOpts UpgradeOptions) error {
 		ProjectName: projectName,
 		Style:       readProjectStyle(root),
 		Version:     uOpts.Version,
+		Frontend:    readProjectFrontend(root),
 	}
 	opts.Normalize()
 
@@ -234,7 +235,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 	}
 
 	// --- Web app (landing page — always safe to fully regenerate) ---
-	if hasWeb {
+	if hasWeb && opts.Frontend == FrontendTanStack {
+		skipViteApp("web")
+	} else if hasWeb {
 		spinner.Printf("  → Updating web app (landing page)...\n")
 		if err := writeWebFiles(root, opts); err != nil {
 			return fmt.Errorf("updating web files: %w", err)
@@ -244,7 +247,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 	}
 
 	// --- Admin panel (generic components only — preserves resource definitions) ---
-	if hasAdmin {
+	if hasAdmin && opts.Frontend == FrontendTanStack {
+		skipViteApp("admin")
+	} else if hasAdmin {
 		// Before anything is written: resources moved from resources/<name>.ts
 		// to resources/<name>/<name>.ts in v3.143.0. Writing users/users.ts into
 		// a project still holding a flat users.ts would leave two definitions and

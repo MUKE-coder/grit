@@ -227,6 +227,44 @@ export default defineResource({
             </div>
 
             <div className="prose-grit">
+              <h3 id="read-only-and-computed">Read-only and computed fields</h3>
+              <p>
+                Set <code>readOnly: true</code> to show a value without making it an input: a
+                column the server computes, a status another process owns. Give a field{' '}
+                <code>compute</code> instead to derive it from the rest of the form, recomputed as
+                anything it reads changes. Both are rendered the way the table renders the column,
+                so <code>type: &quot;money&quot;</code> shows money and a date shows a date.
+              </p>
+              <p>
+                Neither is ever submitted. That matters more than it looks: a read-only field over a
+                real column is a column the PATCH allow-list may name, and sending the displayed
+                value back would overwrite the server&apos;s figure with a stale copy. It holds for
+                every way a form saves, including the step-by-step form&apos;s per-step saves and
+                grouped editing. A <code>compute</code> that throws on a half-filled form shows
+                nothing rather than breaking the form.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="Read-only and computed fields" code={`// Shown from the record, never sent back.
+{ key: 'balance', label: 'Balance', type: 'money', readOnly: true },
+
+// Derived from the line items as they are typed.
+{
+  key: 'difference',
+  label: 'Debits minus credits',
+  type: 'money',
+  description: 'Must be zero before the entry can be posted.',
+  compute: (values) => {
+    const lines = (values.items as JournalLine[] | undefined) ?? [];
+    const amount = lines.reduce(
+      (sum, l) => sum + (l.debit?.amount ?? 0) - (l.credit?.amount ?? 0), 0);
+    return { amount, currency: lines[0]?.debit?.currency ?? 'USD' };
+  },
+}`} />
+            </div>
+
+            <div className="prose-grit">
               <h3>Select</h3>
               <p>
                 A dropdown select menu. The <code>options</code> property accepts either an
