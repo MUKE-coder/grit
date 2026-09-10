@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { Callout } from '@/components/callout'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/request-lifecycle')
@@ -186,6 +187,13 @@ admin.Use(middleware.RequireRole("ADMIN"))`}
                   </td>
                 </tr>
                 <tr>
+                  <td>An invariant every writer must obey</td>
+                  <td>
+                    A GORM hook or callback, returning{' '}
+                    <code>respond.Rule(...)</code> &mdash; see below
+                  </td>
+                </tr>
+                <tr>
                   <td>Record that something happened</td>
                   <td>
                     <code>services.LogActivity</code> from the handler, after it succeeds
@@ -193,6 +201,47 @@ admin.Use(middleware.RequireRole("ADMIN"))`}
                 </tr>
               </tbody>
             </table>
+
+            <h2 id="invariants">Invariants, and telling the caller why</h2>
+            <p>
+              Most business rules belong in the service layer. Some do not: a rule that
+              must hold no matter who writes the row belongs on the model, because the
+              service layer is not the only thing holding the database handle. GORM Studio
+              ships mounted at <code>/studio</code> and edits tables directly, the CSV
+              importer writes through the same <code>gorm.DB</code>, and so does every
+              handler nobody has written yet. A ledger that balances only when saved
+              through one service method does not balance.
+            </p>
+            <p>
+              Put those in a hook or a callback and return{' '}
+              <code>respond.Rule</code>, which marks an error as one the caller is meant
+              to read:
+            </p>
+            <CodeBlock
+              language="go"
+              filename="apps/api/internal/models/journal_entry.go"
+              code={`func (e *JournalEntry) BeforeCreate(tx *gorm.DB) error {
+    debits, credits := sum(e.Lines)
+    if debits != credits {
+        return respond.Rule("does not balance: debits %s, credits %s", debits, credits)
+    }
+    return nil
+}`}
+            />
+            <p>
+              The generated handlers pass whatever a write returns to{' '}
+              <code>respond.WriteError</code>, which turns a <code>Rule</code> into{' '}
+              <strong>422</strong> carrying that sentence, a missing row into{' '}
+              <strong>404</strong>, and anything else into an opaque <strong>500</strong>{' '}
+              with the error logged.
+            </p>
+            <Callout type="note" title="Why not just return the error">
+              Most errors arriving from a write are not for the caller. A driver failure
+              or a constraint violation carries schema details and sometimes SQL, and
+              echoing those to an API client hands out a map of the database.{' '}
+              <code>Rule</code> is how your code says which errors are the exception. An
+              error you did not mark keeps the generic 500 it always had.
+            </Callout>
 
             <h2 id="adding">Adding your own middleware</h2>
             <p>

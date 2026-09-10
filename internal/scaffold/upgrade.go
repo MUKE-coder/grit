@@ -168,6 +168,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeMoneyFiles(root, opts); err != nil {
 			return fmt.Errorf("updating money files: %w", err)
 		}
+		// Same reason as money: the generator writes calls into this package,
+		// so an older copy of it means generated code that does not compile.
+		if err := writeRespondFiles(root, opts); err != nil {
+			return fmt.Errorf("updating respond files: %w", err)
+		}
 		if err := writeOutboxFiles(root, opts); err != nil {
 			return fmt.Errorf("updating outbox files: %w", err)
 		}
@@ -184,12 +189,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 			return fmt.Errorf("updating media files: %w", err)
 		}
 		// The browser half of realtime: one shared socket, reconnection, and
-	// the React Query bindings. The hub has shipped for a long time with
-	// nothing on the client able to consume it.
-	if err := writeRealtimeClientFiles(root, opts); err != nil {
-		return err
-	}
-	if err := writeStorageFiles(root, opts); err != nil {
+		// the React Query bindings. The hub has shipped for a long time with
+		// nothing on the client able to consume it.
+		if err := writeRealtimeClientFiles(root, opts); err != nil {
+			return err
+		}
+		if err := writeStorageFiles(root, opts); err != nil {
 			return fmt.Errorf("updating storage files: %w", err)
 		}
 		green.Printf("  ✓ Media pipeline updated\n")

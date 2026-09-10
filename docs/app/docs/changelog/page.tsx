@@ -29,6 +29,98 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.206.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.206.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A rule your model enforces now reaches the caller</h3>
+                <p>
+                  Every generated handler bound the error from a write and never
+                  used it:
+                </p>
+                <p>
+                  <code>
+                    if err := h.scoped(c).Create(&amp;item).Error; err != nil
+                    &#123; c.JSON(500, ... &quot;Failed to create invoice&quot;) &#125;
+                  </code>
+                </p>
+                <p>
+                  So a rule enforced in a GORM hook, which is where a rule has to live
+                  if GORM Studio and the CSV importer are to respect it as well as your
+                  service layer, reached neither the client nor the log. Found building
+                  a double-entry ledger, where{' '}
+                  <code>USD does not balance: debits 100.00 USD, credits 99.99 USD</code>{' '}
+                  arrived as <code>Failed to create journalentry</code> with status 500.
+                </p>
+                <p>
+                  Errors from a write are mostly not for the caller: a driver failure or
+                  a constraint violation carries schema details and sometimes SQL, so the
+                  handler cannot simply echo what it gets. <code>respond.Rule</code> is
+                  how your code marks the ones that are. Return it from a hook, a
+                  callback or a service method and the caller gets <strong>422</strong>{' '}
+                  with that sentence. A missing row gives <strong>404</strong>. Anything
+                  unmarked keeps the same opaque <strong>500</strong> it had before, and
+                  is now logged on the way, which it was not.
+                </p>
+                <p>
+                  Documented under{' '}
+                  <a href="/docs/backend/request-lifecycle#invariants">
+                    Invariants, and telling the caller why
+                  </a>
+                  .
+                </p>
+
+                <h3>--items generated a handler that did not compile</h3>
+                <p>
+                  The inline <code>Items</code> request struct is built from the child&apos;s
+                  fields and written into the parent&apos;s handler, so a{' '}
+                  <code>money</code> field on the child puts <code>money.Money</code> in
+                  that file. The import scan walked only the parent&apos;s fields, so
+                  nothing added the import and the project failed to build with{' '}
+                  <code>undefined: money</code>. The same hole covered jsontime,
+                  datatypes and time. The scan now covers both.
+                </p>
+
+                <h3>--items silently dropped the child&apos;s belongs_to</h3>
+                <p>
+                  The builder skipped every <code>belongs_to</code> on the child, on the
+                  grounds that the foreign key back to the parent is set by the
+                  association and clients never send it per row. True of the parent&apos;s
+                  key. Not true of one pointing anywhere else, and those are exactly the
+                  ones the client has to send: the account a journal line posts to, the
+                  product an invoice line bills.
+                </p>
+                <p>
+                  So the request had no way to say which account, the create loop set
+                  nothing, and every line was inserted with an empty{' '}
+                  <code>account_id</code> while the model declared the column required.
+                  No error, just wrong rows. Only the parent&apos;s own key is skipped now.
+                </p>
+
+                <h3>grit upgrade left a project unable to build</h3>
+                <p>
+                  Upgrade does not regenerate API code in general, deliberately. But the
+                  generator writes calls into <code>internal/respond</code>, so a project
+                  carrying an older copy got freshly generated handlers referring to a
+                  helper it did not have. Upgrade reported &quot;Updated 268 files&quot;
+                  and success, and the build failed on five undefined references with
+                  nothing connecting them to the command that claimed to have handled it.
+                </p>
+                <p>
+                  <code>internal/respond</code> now upgrades alongside{' '}
+                  <code>internal/money</code>, for the same reason: these are the packages
+                  the generator emits calls into. Both are manifest-guarded, so a project
+                  that edited them is reported as a conflict rather than overwritten.
+                </p>
+              </div>
+            </div>
+
             {/* v3.205.1 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
