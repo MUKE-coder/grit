@@ -446,6 +446,10 @@ export default function CLICheatsheetPage() {
                     desc="Scope every row to its owner: a caller sees and edits only their own"
                   />
                   <TerminalCard
+                    cmd='grit g resource JournalEntry --fields "reference:string,memo:text" --append-only'
+                    desc="Created and read, never changed or deleted: for ledgers and audit trails"
+                  />
+                  <TerminalCard
                     cmd='grit g resource Post --fields "title:string,views:int" --faker --count 50'
                     desc="Also generate a seeder that inserts 50 fake rows"
                   />
@@ -490,6 +494,11 @@ export default function CLICheatsheetPage() {
                           flag: "--owned-by",
                           type: "string",
                           desc: "Scope rows to their owner (e.g. user). Adds the field if absent; ADMIN is exempt",
+                        },
+                        {
+                          flag: "--append-only",
+                          type: "bool",
+                          desc: "Rows are created and read, never changed or deleted: read and create routes, a GORM guard and a database trigger",
                         },
                         {
                           flag: "--seed",

@@ -300,6 +300,7 @@ export default function HomePage() {
               { icon: Activity, label: 'Observability (Pulse)', href: '/docs/backend/pulse' },
               { icon: Shield, label: 'WAF & rate limiting', href: '/docs/security' },
               { icon: FileCheck, label: 'Tamper-evident audit log', href: '/docs/security' },
+              { icon: Database, label: 'Append-only records', href: '/docs/backend/append-only' },
               { icon: Building2, label: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
               { icon: Webhook, label: 'Webhooks', href: '/docs/backend/webhooks' },
               { icon: Flag, label: 'Feature flags', href: '/docs/backend/feature-flags' },

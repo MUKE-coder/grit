@@ -483,6 +483,9 @@ export interface RelatedResource {
  */
 export interface ResourceDetailController<T = Record<string, unknown>> {
   resource: ResourceDefinition;
+  /** Whether the resource's table allows this action. The detail page asks
+   *  before offering Edit or Delete, the same question the list asks. */
+  can: (action: TableAction) => boolean;
   id: string;
 
   // ── data ────────────────────────────────────────────────────────────

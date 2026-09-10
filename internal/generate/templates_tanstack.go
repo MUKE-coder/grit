@@ -108,7 +108,7 @@ func (g *Generator) buildTSFields(names Names) string {
 // Uses the same builder as the Next.js admin — both consume the identical
 // lib/resource.ts defineResource(), so the content must not diverge.
 func (g *Generator) writeResourceDefinitionTanStack(names Names) error {
-	content := g.resourceDefinitionFileContent(names)
+	content := g.adminDefinitionContent(names)
 	root := g.tanStackResourcesRoot()
 
 	// A folder per resource, matching the Next generator and the built-in

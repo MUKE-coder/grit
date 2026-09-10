@@ -130,6 +130,7 @@ const navItems: NavItem[] = [
       { title: 'The Request Lifecycle', href: '/docs/backend/request-lifecycle' },
       { title: 'Migrations', href: '/docs/backend/migrations' },
       { title: 'Invoices & Line Items', href: '/docs/backend/invoices' },
+      { title: 'Append-only Records', href: '/docs/backend/append-only' },
       { title: 'Product Variants', href: '/docs/backend/variants' },
       { title: 'Seeders', href: '/docs/backend/seeders' },
       { title: 'RBAC & Roles', href: '/docs/backend/rbac' },

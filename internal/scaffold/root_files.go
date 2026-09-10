@@ -263,6 +263,8 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 GORM_STUDIO_ENABLED=true
 GORM_STUDIO_USERNAME=admin
 GORM_STUDIO_PASSWORD=studio
+GORM_STUDIO_READ_ONLY=false
+GORM_STUDIO_DISABLE_SQL=false
 
 # ============================================
 # Optional modules
@@ -463,6 +465,8 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 GORM_STUDIO_ENABLED=true
 GORM_STUDIO_USERNAME=admin              # Login username for the Studio UI
 GORM_STUDIO_PASSWORD=studio             # Login password for the Studio UI
+GORM_STUDIO_READ_ONLY=false             # Refuse every write from Studio
+GORM_STUDIO_DISABLE_SQL=false           # The SQL editor bypasses every GORM guard
 
 # AI — Vercel AI Gateway (one key, hundreds of models)
 AI_GATEWAY_API_KEY=                           # Get from vercel.com/ai-gateway
@@ -554,6 +558,8 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 GORM_STUDIO_ENABLED=true
 GORM_STUDIO_USERNAME=admin               # Login username for the Studio UI
 GORM_STUDIO_PASSWORD=change-me-in-prod   # Login password — CHANGE THIS in production!
+GORM_STUDIO_READ_ONLY=false             # Refuse every write from Studio
+GORM_STUDIO_DISABLE_SQL=true            # The SQL editor bypasses every GORM guard
 
 # ─── AI (Vercel AI Gateway) ──────────────────────────
 AI_GATEWAY_API_KEY=your-gateway-key  # Get from vercel.com/ai-gateway

@@ -108,6 +108,12 @@ func (g *Generator) resourceRoutesSource(names Names) (string, error) {
 		fmt.Fprintf(&b, "\n")
 	}
 
+	// Append-only resources get read and create, and nothing else.
+	if g.Definition.AppendOnly {
+		g.writeAppendOnlyRoutes(&b, names)
+		return b.String(), nil
+	}
+
 	if len(g.Roles) > 0 {
 		roleArgs := make([]string, len(g.Roles))
 		for i, r := range g.Roles {

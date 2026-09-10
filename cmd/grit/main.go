@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.206.0"
+var version = "3.207.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -771,6 +771,7 @@ func generateResourceCmd() *cobra.Command {
 	var tree bool
 	var ownedBy string
 	var tenantOwned bool
+	var appendOnly bool
 
 	cmd := &cobra.Command{
 		Use:   "resource <Name>",
@@ -868,6 +869,7 @@ func generateResourceCmd() *cobra.Command {
 			gen.Definition.Tree = tree
 			gen.Definition.OwnedBy = ownedBy
 			gen.Definition.TenantOwned = tenantOwned
+			gen.Definition.AppendOnly = appendOnly
 
 			// The flag only helps somebody who knows it exists. When the
 			// plugin is installed and it was not passed, name it once: a
@@ -935,6 +937,8 @@ func generateResourceCmd() *cobra.Command {
 		"Scope the resource to an organization (requires the multitenant plugin): embeds tenant.Owned, so queries are filtered by the active org and OrgID is stamped on insert")
 	cmd.Flags().StringVar(&ownedBy, "owned-by", "",
 		"Scope the resource to its owner: the named belongs_to-User field decides who may read or write each row (e.g. --owned-by user). Adds the field if absent. ADMIN is exempt")
+	cmd.Flags().BoolVar(&appendOnly, "append-only", false,
+		"Rows are created and read, never changed or deleted: no update or delete routes, a GORM guard, and a database trigger installed by grit migrate. For ledgers, audit trails and consent records")
 	cmd.Flags().IntVar(&seedCount, "count", 10, "Number of rows for the faker seeder")
 	cmd.Flags().BoolVar(&force, "force", false, "Generate even when the name collides with a built-in model (overwrites it)")
 

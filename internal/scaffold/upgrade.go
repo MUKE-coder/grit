@@ -173,6 +173,15 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeRespondFiles(root, opts); err != nil {
 			return fmt.Errorf("updating respond files: %w", err)
 		}
+		// The generator writes calls into appendonly for --append-only, and a
+		// model registering with a guard the project never installs protects
+		// nothing. So the package, and the two calls that install it.
+		if err := writeAppendOnlyFiles(root, opts); err != nil {
+			return fmt.Errorf("updating append-only files: %w", err)
+		}
+		if err := EnsureAppendOnlyWiring(opts.APIRoot(root), opts.Module()); err != nil {
+			fmt.Printf("  ⚠ %v\n", err)
+		}
 		if err := writeOutboxFiles(root, opts); err != nil {
 			return fmt.Errorf("updating outbox files: %w", err)
 		}
