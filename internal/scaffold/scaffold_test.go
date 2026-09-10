@@ -1007,9 +1007,11 @@ func TestRestoreTruncatesBeforeReplay(t *testing.T) {
 	if !strings.Contains(src, "RESTART IDENTITY CASCADE") {
 		t.Error("restore TRUNCATE should use RESTART IDENTITY CASCADE to reset sequences and satisfy foreign keys")
 	}
-	// The replay loop runs tx.Exec(s) over the dump statements. Truncation must
-	// come first, or it wipes the rows it just restored.
-	replayAt := strings.Index(src, "for _, s := range stmts")
+	// The replay loop runs tx.Exec(s) over the dump statements, in foreign-key
+	// order since v3.212.0. Truncation must come first, or it wipes the rows it
+	// just restored. Matched on the replay itself: replayOrder has a loop over
+	// stmts of its own, which only groups them.
+	replayAt := strings.Index(src, "for _, s := range replayOrder(tx, stmts)")
 	if replayAt < 0 {
 		t.Fatal("could not locate the statement-replay loop")
 	}

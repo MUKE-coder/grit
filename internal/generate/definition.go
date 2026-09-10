@@ -180,7 +180,7 @@ func PromptInteractive(name string) (*ResourceDefinition, error) {
 	fmt.Printf("  Defining fields for %s\n", name)
 	fmt.Println("  Enter fields as name:type[:modifiers] (e.g., title:string, slug:slug:name)")
 	fmt.Printf("  Valid types: %s\n", strings.Join(ValidFieldTypes(), ", "))
-	fmt.Println("  Valid modifiers: unique, required, optional")
+	fmt.Println("  Valid modifiers: unique, required, optional, auto, encrypted")
 	fmt.Println("  Slug fields: slug:slug (auto-detect source) or slug:slug:name (explicit source)")
 	fmt.Println("  Relationships: category:belongs_to or author:belongs_to:User, tags:many_to_many:Tag")
 	fmt.Println("  Press Enter with no input when done.")
@@ -447,6 +447,7 @@ func parseFieldInput(input string) (Field, error) {
 
 	// Parse optional modifiers (parts[2], parts[3], etc.). Index-based so `auto`
 	// can consume an optional prefix that follows it (name:string:auto:INV).
+	encrypted := false
 	mods := parts[2:]
 	for i := 0; i < len(mods); i++ {
 		mod := strings.TrimSpace(mods[i])
@@ -466,10 +467,23 @@ func parseFieldInput(input string) (Field, error) {
 				autoPrefix = strings.TrimSpace(mods[i+1])
 				i++
 			}
+		case "encrypted":
+			encrypted = true
 		case "":
 			// ignore empty modifiers
 		default:
-			return Field{}, fmt.Errorf("invalid modifier %q for field %q (valid: unique, required, optional, auto)", mod, name)
+			return Field{}, fmt.Errorf("invalid modifier %q for field %q (valid: unique, required, optional, auto, encrypted)", mod, name)
+		}
+	}
+
+	if encrypted {
+		switch typ {
+		case "string", "text", "richtext":
+		default:
+			return Field{}, fmt.Errorf("field %q: encrypted is only valid on string, text and richtext fields (got %q)", name, typ)
+		}
+		if unique {
+			return Field{}, fmt.Errorf("field %q: an encrypted column cannot be unique: every write produces different ciphertext, so the index could never catch a duplicate", name)
 		}
 	}
 
@@ -484,6 +498,7 @@ func parseFieldInput(input string) (Field, error) {
 		Unique:     unique,
 		Auto:       auto,
 		AutoPrefix: autoPrefix,
+		Encrypted:  encrypted,
 	}, nil
 }
 

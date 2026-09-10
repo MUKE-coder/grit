@@ -99,6 +99,7 @@ export default function FieldTypesPage() {
                   {[
                     ['Modifiers', 'name:string:unique — append :unique, :required, or :optional. String fields default to required; everything else defaults to optional.'],
                     ['Auto-number', 'number:string:auto:INV (string only) — the server fills it from an atomic, gap-free counter (INV-202607-0001) in BeforeCreate. Optional and hidden from the form; the prefix is optional. Shorthand for grit generate sequence; use that command directly for yearly/never resets or a custom width.'],
+                    ['Encrypted', 'notes:text:encrypted (string, text and richtext only). Stored with AES-256-GCM at rest, plaintext in code and over the API; needs FIELD_ENCRYPTION_KEY. Cannot be :unique, and is left out of search, sorting and filters, because ciphertext changes on every write.'],
                     ['Options', 'status:select:draft=Draft|sent=Sent (select / radio / check) — pipe-separated choices. Labels are OPTIONAL: status:select:draft|sent|paid generates the labels by capitalizing each value (in_progress → In Progress). Use value=Label only when the label differs from the stored value.'],
                     ['Slug source', 'slug:slug:title — the 3rd segment is the field to slugify. Slugs are auto-unique and generated on save.'],
                     ['belongs_to', 'category:belongs_to (model inferred → Category) or author:belongs_to:User (explicit). Creates a <name>_id UUID foreign-key column.'],

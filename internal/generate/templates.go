@@ -109,6 +109,12 @@ func (g *Generator) writeGoModel(names Names) error {
 	}
 
 	projImports := []string{}
+	for _, f := range fields {
+		if f.Encrypted {
+			projImports = append(projImports, fmt.Sprintf("\"%s/internal/crypto\"", g.Module))
+			break
+		}
+	}
 	if needsFiles {
 		projImports = append(projImports, fmt.Sprintf("\"%s/internal/files\"", g.Module))
 	}
@@ -594,8 +600,8 @@ func (g *Generator) buildSortableSet() string {
 	}
 	for _, f := range g.Definition.Fields {
 		switch {
-		case f.IsFile(), f.IsFiles(), f.IsManyToMany(), f.IsStringArray():
-			// not a sortable scalar column
+		case f.Encrypted, f.IsFile(), f.IsFiles(), f.IsManyToMany(), f.IsStringArray():
+			// not a sortable scalar column (ciphertext sorts as noise)
 			continue
 		case f.IsBelongsTo():
 			base := strings.TrimSuffix(toSnakeCase(f.Name), "_id")
@@ -898,6 +904,10 @@ func (g *Generator) writeGoHandler(names Names) error {
 		if f.IsManyToMany() {
 			continue
 		}
+		// Ciphertext cannot be matched, so an encrypted column is not a filter.
+		if f.Encrypted {
+			continue
+		}
 		col := toSnakeCase(f.Name)
 		if f.IsBelongsTo() {
 			col = f.FKColumnName()
@@ -999,6 +1009,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 	needsHandlerDatatypes := false
 	needsHandlerJSONTime := false
 	needsHandlerMoney := false
+	needsHandlerCrypto := false
 	hasFileFields := false
 	// The child's fields as well as the parent's. The inline Items request
 	// struct from --items is written into this same handler file, so a money
@@ -1018,6 +1029,9 @@ func (g *Generator) writeGoHandler(names Names) error {
 		}
 		if FieldType(f.Type) == FieldMoney {
 			needsHandlerMoney = true
+		}
+		if f.Encrypted {
+			needsHandlerCrypto = true
 		}
 		if f.NeedsDatatypesImport() {
 			needsHandlerDatatypes = true
@@ -1051,6 +1065,9 @@ func (g *Generator) writeGoHandler(names Names) error {
 	}
 	if needsHandlerMoney {
 		jsonTimeImport += "\n\t\"" + g.Module + "/internal/money\""
+	}
+	if needsHandlerCrypto {
+		jsonTimeImport += "\n\t\"" + g.Module + "/internal/crypto\""
 	}
 	filesImport := ""
 	handlerStorageField := ""

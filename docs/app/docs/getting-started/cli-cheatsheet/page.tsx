@@ -454,6 +454,10 @@ export default function CLICheatsheetPage() {
                     desc="A background job with its handler registered, run every night at 23:30"
                   />
                   <TerminalCard
+                    cmd='grit g resource Patient --fields "name:string,notes:text:encrypted"'
+                    desc="Encrypt a column at rest: plaintext in code and the API, ciphertext in the database"
+                  />
+                  <TerminalCard
                     cmd='grit g resource Post --fields "title:string,views:int" --faker --count 50'
                     desc="Also generate a seeder that inserts 50 fake rows"
                   />

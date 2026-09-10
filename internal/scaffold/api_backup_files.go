@@ -675,7 +675,131 @@ import (
 	"strings"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
+
+	"{{MODULE}}/internal/appendonly"
+	"{{MODULE}}/internal/models"
 )
+
+// insertTable returns the table an INSERT statement writes to, or "" for any
+// other statement.
+func insertTable(stmt string) string {
+	s := strings.TrimSpace(stmt)
+	const prefix = "INSERT INTO \""
+	if !strings.HasPrefix(s, prefix) {
+		return ""
+	}
+	rest := s[len(prefix):]
+	if i := strings.Index(rest, "\""); i > 0 {
+		return rest[:i]
+	}
+	return ""
+}
+
+// replayOrder puts a dump's INSERTs into an order the foreign keys accept.
+//
+// The dump writes tables in models.Models() order, and the resource generator
+// registers an --items child before its parent, so a straight replay inserted
+// journal_lines before the journal_entries they point at and failed on the
+// foreign key. Every project with line items had backups it could not restore.
+// Reordering here rather than only in the backup rescues archives that were
+// already written.
+func replayOrder(db *gorm.DB, stmts []string) []string {
+	groups := map[string][]string{}
+	var tables, others []string
+	for _, s := range stmts {
+		t := insertTable(s)
+		if t == "" {
+			others = append(others, s)
+			continue
+		}
+		if _, seen := groups[t]; !seen {
+			tables = append(tables, t)
+		}
+		groups[t] = append(groups[t], s)
+	}
+	out := append([]string{}, others...)
+	for _, t := range dependencyOrder(db, tables) {
+		out = append(out, groups[t]...)
+	}
+	return out
+}
+
+// dependencyOrder sorts tables so each comes after the tables its foreign keys
+// point at, read from the models' own relationships. Unrelated tables keep the
+// order they had, and a cycle, which a foreign key cannot form without a
+// nullable column, falls back to that order for the tables caught in it.
+func dependencyOrder(db *gorm.DB, tables []string) []string {
+	needs := map[string]map[string]bool{}
+	link := func(child, parent string) {
+		if child == "" || parent == "" || child == parent {
+			return
+		}
+		if needs[child] == nil {
+			needs[child] = map[string]bool{}
+		}
+		needs[child][parent] = true
+	}
+	for _, m := range models.Models() {
+		stmt := &gorm.Statement{DB: db}
+		if err := stmt.Parse(m); err != nil {
+			continue
+		}
+		s := stmt.Schema
+		for _, rel := range s.Relationships.Relations {
+			if rel.FieldSchema == nil {
+				continue
+			}
+			switch rel.Type {
+			case schema.BelongsTo:
+				link(s.Table, rel.FieldSchema.Table)
+			case schema.HasOne, schema.HasMany:
+				link(rel.FieldSchema.Table, s.Table)
+			case schema.Many2Many:
+				if rel.JoinTable != nil {
+					link(rel.JoinTable.Table, s.Table)
+					link(rel.JoinTable.Table, rel.FieldSchema.Table)
+				}
+			}
+		}
+	}
+
+	present := map[string]bool{}
+	for _, t := range tables {
+		present[t] = true
+	}
+	placed := map[string]bool{}
+	var out []string
+	for len(out) < len(tables) {
+		progressed := false
+		for _, t := range tables {
+			if placed[t] {
+				continue
+			}
+			ready := true
+			for p := range needs[t] {
+				if present[p] && !placed[p] {
+					ready = false
+					break
+				}
+			}
+			if ready {
+				out = append(out, t)
+				placed[t] = true
+				progressed = true
+			}
+		}
+		if !progressed {
+			for _, t := range tables {
+				if !placed[t] {
+					out = append(out, t)
+					placed[t] = true
+				}
+			}
+		}
+	}
+	return out
+}
 
 // SplitStatements splits our generated dump.sql into executable statements.
 //
@@ -818,6 +942,13 @@ func Restore(db *gorm.DB, zipPath string) (Manifest, error) {
 		// derived from models.Models() — never user input — so this is not an
 		// injection surface. RESTART IDENTITY resets sequences; CASCADE handles
 		// foreign keys regardless of order.
+		// Append-only tables refuse TRUNCATE by trigger, which is right for every
+		// writer except this one: a restore rewrites them wholesale. Suspended for
+		// this transaction only, and switched back on before it commits.
+		resume, err := appendonly.Suspend(tx)
+		if err != nil {
+			return err
+		}
 		if len(man.Tables) > 0 {
 			quoted := make([]string, len(man.Tables))
 			for i, t := range man.Tables {
@@ -828,7 +959,7 @@ func Restore(db *gorm.DB, zipPath string) (Manifest, error) {
 			}
 		}
 
-		for _, s := range stmts {
+		for _, s := range replayOrder(tx, stmts) {
 			switch strings.ToUpper(strings.TrimSpace(s)) {
 			case "BEGIN", "COMMIT":
 				continue // we own the transaction
@@ -841,7 +972,7 @@ func Restore(db *gorm.DB, zipPath string) (Manifest, error) {
 				return fmt.Errorf("executing %q: %w", head, err)
 			}
 		}
-		return nil
+		return resume()
 	})
 }
 `

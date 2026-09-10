@@ -101,7 +101,7 @@ func TestAddFieldRefusesWithoutACreateRequest(t *testing.T) {
 
 // scalarHandlerParts and importAssign are copies of the generator's rules.
 // These fail the day either copy stops matching what a fresh generate emits.
-var addFieldTypes = "s:string,tx:text,rt:richtext,n:int,u:uint,fl:float,b:bool,tg:toggle,sel:select:a=A|b=B,d:date,dt:datetime"
+var addFieldTypes = "s:string,tx:text,rt:richtext,n:int,u:uint,fl:float,b:bool,tg:toggle,sel:select:a=A|b=B,d:date,dt:datetime,sec:text:encrypted"
 
 func TestAddFieldMatchesTheGenerator(t *testing.T) {
 	const module = "ledger/apps/api"
