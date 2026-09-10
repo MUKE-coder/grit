@@ -23,6 +23,11 @@ func writeFrontendTestFiles(root string, opts Options) error {
 		files[filepath.Join(adminRoot, "vitest.setup.ts")] = vitestSetup()
 		files[filepath.Join(adminRoot, "__tests__", "login.test.tsx")] = adminLoginTest()
 		files[filepath.Join(adminRoot, "__tests__", "utils.test.ts")] = adminUtilsTest()
+		libImport := "@/lib"
+		if opts.Frontend == FrontendTanStack {
+			libImport = "@/src/lib"
+		}
+		files[filepath.Join(adminRoot, "__tests__", "form-values.test.ts")] = adminFormValuesTest(libImport)
 	}
 
 	if opts.ShouldIncludeWeb() || opts.ShouldIncludeAdmin() {
@@ -46,6 +51,10 @@ import { resolve } from "path";
 
 export default defineConfig({
   plugins: [react()],
+  // Tests do not need the app's PostCSS. An inline, empty config also stops
+  // Vite walking up the tree for one, which is how a Vite app's tests came to
+  // load a stray root config and fail on a plugin nobody had installed.
+  css: { postcss: { plugins: [] } },
   test: {
     environment: "jsdom",
     globals: true,
@@ -69,6 +78,10 @@ import { resolve } from "path";
 
 export default defineConfig({
   plugins: [react()],
+  // Tests do not need the app's PostCSS. An inline, empty config also stops
+  // Vite walking up the tree for one, which is how a Vite app's tests came to
+  // load a stray root config and fail on a plugin nobody had installed.
+  css: { postcss: { plugins: [] } },
   test: {
     environment: "jsdom",
     globals: true,
@@ -122,7 +135,6 @@ describe("Navbar", () => {
     render(<NavStub projectName="My App" />);
     expect(screen.getByRole("link", { name: /home/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /blog/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /components/i })).toBeInTheDocument();
   });
 });
 `

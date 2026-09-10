@@ -332,6 +332,20 @@ export interface FieldDefinition {
   // resource definition; the generator never emits it.
   generate?: (values: Record<string, unknown>) => string | number | Promise<string | number>;
 
+  /**
+   * Shown, never sent. The value comes from the record, a column the server
+   * computes or a status another process owns, and the form displays it the way
+   * the table would. It is left out of what the form submits, so saving cannot
+   * write the displayed value back over the server's.
+   */
+  readOnly?: boolean;
+  /**
+   * Derived from the other values in the form and recomputed as they change: a
+   * line total, a balance, the difference between debits and credits. Implies
+   * readOnly. Formatted by the field's type, so type: "money" shows money.
+   */
+  compute?: (values: Record<string, unknown>) => unknown;
+
   // ── Inline line-items (type === "line-items") ──────────────────────
   // Renders a child resource as an editable table INSIDE the parent form
   // (e.g. an Invoice's items). The rows are submitted as an array under

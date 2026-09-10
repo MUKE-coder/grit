@@ -69,6 +69,11 @@ func webTanStackPackageJSON(opts Options) string {
     "@repo/upload": "workspace:*"
   },
   "devDependencies": {
+    "vitest": "^2.1.0",
+    "jsdom": "^25.0.0",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/user-event": "^14.5.0",
     "@tanstack/react-router-devtools": "^1.93.0",
     "@tanstack/router-vite-plugin": "^1.93.0",
     "@types/react": "^19.0.0",

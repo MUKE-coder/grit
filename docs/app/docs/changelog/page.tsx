@@ -29,6 +29,83 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.210.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.210.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit upgrade wrecked TanStack projects</h3>
+                <p>
+                  Upgrade never read which frontend a project uses. It built its options from the
+                  name, the style and the version, and an unset frontend defaults to Next.js, so
+                  every project was upgraded as though its apps were Next apps. On a TanStack
+                  project that wrote the Next admin and web apps, <code>package.json</code>{' '}
+                  included, over the Vite ones: both came out depending on <code>next</code>, with{' '}
+                  <code>vite</code> and the router gone and two apps&apos; worth of files in each
+                  directory.
+                </p>
+                <p>
+                  Upgrade now reads the frontend from <code>grit.json</code>, falling back to a{' '}
+                  <code>vite.config.ts</code> on disk for projects older than that field. The
+                  refresh it performs is written for the Next layout, so on a Vite app it now
+                  leaves the app exactly as it is and says so; a Vite equivalent is still to come.
+                  The API, shared packages and the security and passkey pages, which already knew
+                  how to write for Vite once told, are upgraded as before. Verified both ways: on a
+                  fresh TanStack project both apps kept <code>vite</code> and gained no Next files,
+                  and a Next project was refreshed as it always was.
+                </p>
+
+                <h3>The Vite apps&apos; tests could not start</h3>
+                <p>
+                  Every Vite admin and Vite web app shipped with <code>pnpm test</code> failing
+                  before a single test ran. The shared setup file imports{' '}
+                  <code>@testing-library/jest-dom</code>, the tests use{' '}
+                  <code>@testing-library/user-event</code> in a <code>jsdom</code> environment, and
+                  none of the three was declared. Under that, vitest walked up the tree for a
+                  PostCSS config and found one at the repository root, in Tailwind v3 style, which
+                  no app used and which named <code>autoprefixer</code>, never installed.
+                </p>
+                <p>
+                  Both Vite apps now declare their test libraries, the vitest configs pin an empty
+                  PostCSS setup, and the root config is no longer scaffolded. On a fresh TanStack
+                  project the admin&apos;s suite now runs and passes. An existing project can
+                  delete its root <code>postcss.config.mjs</code>: nothing reads it.
+                </p>
+
+                <h3>The web navbar test could not pass</h3>
+                <p>
+                  The navbar test shipped to every web app asserted a &quot;Components&quot; link,
+                  left over from the components page removed in v3.31.78, and the navbar it renders
+                  has no such link. <code>pnpm test</code> in <code>apps/web</code> had failed on
+                  every fresh Next project since. A check now fails the build if the test asks for
+                  a link it does not render.
+                </p>
+
+                <h3>Read-only and computed admin fields</h3>
+                <p>
+                  A form field can now be <code>readOnly</code>, or carry{' '}
+                  <code>compute: (values) =&gt; ...</code> to derive its value from the rest of the
+                  form, recomputed as it changes. Both are shown the way the table shows the
+                  column, so a <code>money</code> field reads as money, and both are left out of
+                  what the form submits, across the standard form, the step-by-step form, its
+                  per-step saves and grouped editing.
+                </p>
+                <p>
+                  That second half is the fix as much as the feature. The only way to show a value
+                  was a disabled input, which is still sent, and over a column the server computes
+                  and the PATCH allow-list names, saving the form wrote the displayed figure back
+                  over the server&apos;s. Found on a ledger, where the journal form now shows debits
+                  minus credits as the lines are typed. See{' '}
+                  <a href="/docs/admin/forms#read-only-and-computed">read-only and computed fields</a>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.209.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

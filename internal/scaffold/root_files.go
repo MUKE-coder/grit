@@ -45,7 +45,6 @@ func writeRootFiles(root string, opts Options) error {
 		files[filepath.Join(root, "turbo.json")] = turboJSON()
 		files[filepath.Join(root, "package.json")] = rootPackageJSON(opts)
 		files[filepath.Join(root, "grit.config.ts")] = gritConfig(opts)
-		files[filepath.Join(root, "postcss.config.mjs")] = rootPostCSSConfig()
 		files[filepath.Join(root, ".npmrc")] = rootNpmrc()
 	}
 
@@ -762,16 +761,6 @@ func turboJSON() string {
     }
   }
 }
-`
-}
-
-func rootPostCSSConfig() string {
-	return `export default {
-  plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
-  },
-};
 `
 }
 
