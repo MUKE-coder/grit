@@ -237,16 +237,18 @@ SOCIAL_AUTH_ENABLED=true`} />
             </div>
 
             <div className="mb-10">
-              <CodeBlock language="bash" filename=".env" code={`# Redis — Cache and job queue
-REDIS_URL=redis://localhost:6380`} />
+              <CodeBlock language="bash" filename=".env" code={`# Redis: cache and job queue
+REDIS_PORT=6380                  # the host port docker-compose publishes
+# REDIS_URL=redis://localhost:6380   # unset: built from REDIS_PORT`} />
               <div className="mt-4 space-y-3">
                 <div className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                   <div className="flex items-center gap-2 mb-1">
                     <code className="text-sm font-mono text-primary/70 font-medium">REDIS_URL</code>
-                    <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">redis://localhost:6380</span>
+                    <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">built from REDIS_PORT</span>
                   </div>
                   <p className="text-xs text-muted-foreground/60 leading-relaxed">
-                    Redis connection URL. For local Docker, Grit maps Redis to host port 6380 (not the default 6379) to avoid collisions with a local Redis. For cloud Redis (Upstash), use the <code className="text-xs font-mono text-primary/50">rediss://</code> protocol (with double s) and include the password: <code className="text-xs font-mono text-primary/50">rediss://default:password@endpoint:6379</code>.
+                    Redis connection URL. Leave it unset locally and the API connects to localhost on{' '}
+                    <code className="text-xs font-mono text-primary/50">REDIS_PORT</code>, so moving the port moves the connection with it; a URL left pointing at the old port reaches whichever project holds it now, and the API warns at startup when the two disagree. Set it to empty to run without Redis. For cloud Redis (Upstash), use the <code className="text-xs font-mono text-primary/50">rediss://</code> protocol (with double s) and include the password: <code className="text-xs font-mono text-primary/50">rediss://default:password@endpoint:6379</code>.
                   </p>
                 </div>
               </div>
@@ -299,8 +301,8 @@ NEXT_PUBLIC_ADMIN_URL=http://localhost:3001`} />
               <CodeBlock language="bash" filename=".env" code={`# Storage — Which provider to use: minio, s3, r2, b2
 STORAGE_DRIVER=minio
 
-# MinIO — Local S3-compatible storage (default for development)
-MINIO_ENDPOINT=http://localhost:9002
+# MinIO: local S3-compatible storage (default for development)
+# MINIO_ENDPOINT=http://localhost:9002   # unset: built from MINIO_PORT
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
 MINIO_BUCKET=myapp-uploads
@@ -333,7 +335,7 @@ B2_REGION=us-west-004        # Must match your bucket region`} />
               <div className="mt-4 space-y-3">
                 {[
                   { variable: 'STORAGE_DRIVER', default: 'minio', desc: 'Which storage provider to use. Options: minio (local dev with Docker), s3 (AWS S3), r2 (Cloudflare R2), b2 (Backblaze B2). Only the variables for the active driver need to be set.' },
-                  { variable: 'MINIO_ENDPOINT', default: 'http://localhost:9002', desc: 'MinIO server URL. Grit maps MinIO to host port 9002 (API) and 9003 (web console) to avoid the default 9000/9001 colliding with other services.' },
+                  { variable: 'MINIO_ENDPOINT', default: 'built from MINIO_PORT', desc: 'MinIO server URL. Unset, the API uses localhost on MINIO_PORT (9002 by default, with the console on MINIO_CONSOLE_PORT), so moving the port moves the endpoint. Set it only for a MinIO somewhere else.' },
                   { variable: 'MINIO_ACCESS_KEY / MINIO_SECRET_KEY', default: 'minioadmin', desc: 'Default MinIO credentials. These match the Docker Compose configuration. Change in production if running your own MinIO instance.' },
                   { variable: 'S3_ENDPOINT', default: '(empty)', desc: 'AWS S3 endpoint. Leave empty to use the AWS regional default (s3.<region>.amazonaws.com) with virtual-hosted-style addressing. Only used when STORAGE_DRIVER=s3.' },
                   { variable: 'S3_ACCESS_KEY / S3_SECRET_KEY / S3_REGION', default: '(IAM fallback)', desc: 'AWS credentials and region. Fall back to AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION, so leaving them empty lets an attached IAM role supply the credentials automatically.' },
@@ -681,8 +683,8 @@ GITHUB_CLIENT_SECRET=
 OAUTH_FRONTEND_URL=http://localhost:3001
 SOCIAL_AUTH_ENABLED=true
 
-# Redis
-REDIS_URL=redis://localhost:6380
+# Redis (built from REDIS_PORT unless set)
+# REDIS_URL=redis://localhost:6380
 
 # Frontend & Public URLs
 API_URL=http://localhost:8080
@@ -691,8 +693,8 @@ NEXT_PUBLIC_ADMIN_URL=http://localhost:3001
 # Storage — minio, s3, r2, b2
 STORAGE_DRIVER=minio
 
-# MinIO (local dev)
-MINIO_ENDPOINT=http://localhost:9002
+# MinIO (local dev; built from MINIO_PORT unless set)
+# MINIO_ENDPOINT=http://localhost:9002
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
 MINIO_BUCKET=myapp-uploads

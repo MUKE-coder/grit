@@ -1363,11 +1363,12 @@ AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
 All batteries are configured via environment variables in .env:
 
 ` + "```bash" + `
-# Redis
-REDIS_URL=localhost:6380
+# Redis: built from REDIS_PORT unless REDIS_URL is set
+REDIS_PORT=6380
+# REDIS_URL=redis://localhost:6380
 
-# S3 Storage
-S3_ENDPOINT=localhost:9002
+# S3 Storage (MinIO locally, built from MINIO_PORT unless MINIO_ENDPOINT is set)
+S3_ENDPOINT=
 S3_ACCESS_KEY=minioadmin
 S3_SECRET_KEY=minioadmin
 S3_BUCKET=uploads

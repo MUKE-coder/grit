@@ -46,6 +46,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 	"strconv"
 	"strings"
 )
@@ -151,6 +152,72 @@ func (m Money) MulInt(n int64) Money {
 // the value is eventually printed.
 func (m Money) MulFloat(rate float64) Money {
 	return New(int64(math.Round(float64(m.Amount)*rate)), m.currencyOrDefault())
+}
+
+// Convert changes currency at an exchange rate.
+//
+// The rate is major units of the target currency per major unit of this one,
+// the way rates are quoted, and it is a decimal string ("1.0837", "148.2")
+// rather than a float64. A float cannot hold most rates exactly, 1.005 is
+// 1.00499999999999989 in binary, and an FX rate is multiplied by the largest
+// amounts in the system, which is where that error stops being invisible. The
+// string is parsed as an exact fraction, multiplied once and rounded once, half
+// away from zero, the same rule MulFloat uses.
+//
+// The minor-unit exponents are handled here. USD has two decimals and JPY none,
+// so 10.00 USD at 148.2 is 1482 JPY. Multiplying the amount by the rate and
+// relabelling the currency gives 148200: a hundred times too much, silently.
+func (m Money) Convert(to, rate string) (Money, error) {
+	to = strings.ToUpper(strings.TrimSpace(to))
+	if len(to) != 3 {
+		return Money{}, ErrBadCurrency
+	}
+	r, ok := new(big.Rat).SetString(strings.TrimSpace(rate))
+	if !ok || r.Sign() <= 0 {
+		return Money{}, fmt.Errorf("exchange rate must be a positive decimal, got %q", rate)
+	}
+
+	v := new(big.Rat).SetInt64(m.Amount)
+	v.Mul(v, r)
+	shift := Exponent(to) - Exponent(m.currencyOrDefault())
+	if shift != 0 {
+		exp := shift
+		if exp < 0 {
+			exp = -exp
+		}
+		scale := new(big.Rat).SetInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(exp)), nil))
+		if shift > 0 {
+			v.Mul(v, scale)
+		} else {
+			v.Quo(v, scale)
+		}
+	}
+
+	n, err := roundHalfAway(v)
+	if err != nil {
+		return Money{}, err
+	}
+	return New(n, to), nil
+}
+
+// roundHalfAway rounds an exact fraction to the nearest whole number, with
+// halves going away from zero.
+func roundHalfAway(v *big.Rat) (int64, error) {
+	num := new(big.Int).Set(v.Num())
+	neg := num.Sign() < 0
+	num.Abs(num)
+	q, rem := new(big.Int).QuoRem(num, v.Denom(), new(big.Int))
+	// rem/den is at least a half exactly when 2*rem >= den.
+	if new(big.Int).Lsh(rem, 1).Cmp(v.Denom()) >= 0 {
+		q.Add(q, big.NewInt(1))
+	}
+	if neg {
+		q.Neg(q)
+	}
+	if !q.IsInt64() {
+		return 0, fmt.Errorf("converted amount does not fit in minor units")
+	}
+	return q.Int64(), nil
 }
 
 // Allocate splits an amount into n parts without losing or inventing a minor
@@ -267,6 +334,60 @@ import (
 	"encoding/json"
 	"testing"
 )
+
+// USD has two decimals, JPY none and KWD three. Relabelling a USD amount as yen
+// is off by a factor of a hundred; Convert moves the decimal point for you.
+func TestConvertHandlesMinorUnitExponents(t *testing.T) {
+	cases := []struct {
+		from       Money
+		to, rate   string
+		wantAmount int64
+	}{
+		{New(1000, "USD"), "JPY", "148.2", 1482},     // 10.00 USD -> 1482 JPY
+		{New(1482, "JPY"), "USD", "0.0067476", 1000}, // 1482 JPY -> 10.00 USD
+		{New(1000, "USD"), "KWD", "0.3075", 3075},    // 10.00 USD -> 3.075 KWD
+		{New(1000, "USD"), "EUR", "0.9227", 923},     // 10.00 USD -> 9.23 EUR
+	}
+	for _, c := range cases {
+		got, err := c.from.Convert(c.to, c.rate)
+		if err != nil {
+			t.Fatalf("%s -> %s: %v", c.from, c.to, err)
+		}
+		if got.Amount != c.wantAmount || got.Currency != c.to {
+			t.Errorf("%s at %s -> %s: got %d %s, want %d", c.from, c.rate, c.to, got.Amount, got.Currency, c.wantAmount)
+		}
+	}
+}
+
+// 1.005 is not representable in binary, so a float rate turns 100.5 cents into
+// 100.49999999999999 and rounds it down. The rate is a string for this reason.
+func TestConvertRoundsTheExactValue(t *testing.T) {
+	got, err := New(100, "USD").Convert("EUR", "1.005")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Amount != 101 {
+		t.Errorf("1.00 USD at 1.005 is 100.5 cents, which rounds to 101: got %d", got.Amount)
+	}
+	neg, err := New(-1, "USD").Convert("EUR", "2.5")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if neg.Amount != -3 {
+		t.Errorf("halves round away from zero: -2.5 should be -3, got %d", neg.Amount)
+	}
+}
+
+func TestConvertRefusesNonsense(t *testing.T) {
+	for _, rate := range []string{"", "abc", "0", "-1.2"} {
+		if _, err := New(100, "USD").Convert("EUR", rate); err == nil {
+			t.Errorf("rate %q was accepted", rate)
+		}
+	}
+	if _, err := New(100, "USD").Convert("EU", "1.1"); err != ErrBadCurrency {
+		t.Errorf("a two-letter currency was accepted: %v", err)
+	}
+}
 
 // The reason the package exists. In float64 this sum is 0.30000000000000004,
 // and after enough of them the ledger stops balancing.

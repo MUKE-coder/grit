@@ -103,7 +103,8 @@ POSTGRES_PORT=5434
 #
 # What docker-compose binds on your machine. Every Grit project defaults to
 # the same numbers, so the second one you start fails with "port is already
-# allocated". Change them here and both compose and the URLs above follow.
+# allocated". Change them here: compose binds them, and the API builds its
+# Postgres, Redis and MinIO addresses from them unless a URL below is set.
 #
 # Only the host side moves. Inside the compose network the services keep
 # their standard ports, so nothing else needs to know.
@@ -166,9 +167,11 @@ LOGIN_LOCKOUT_MINUTES=15
 REQUIRE_EMAIL_VERIFICATION=false
 
 # Redis
-# Set this to empty (REDIS_URL=) to run without Redis at all — cache,
-# background jobs and cron then stay off instead of retrying a dial in a loop.
-REDIS_URL=redis://localhost:6380
+# Unset, the API connects to localhost on REDIS_PORT above, so moving the port
+# moves the connection with it. Set REDIS_URL for an external Redis, or to empty
+# (REDIS_URL=) to run without Redis at all: cache, background jobs and cron then
+# stay off instead of retrying a dial in a loop.
+# REDIS_URL=redis://localhost:6380
 
 # Public API URL — baked into Next.js bundles at build time
 API_URL=http://localhost:8080
@@ -192,7 +195,8 @@ STORAGE_DRIVER=minio
 # uploads and image display will be blocked by CSP.
 
 # MinIO (local development — used when STORAGE_DRIVER=minio)
-MINIO_ENDPOINT=http://localhost:9002
+# Unset, built from MINIO_PORT above. Set it only for a MinIO somewhere else.
+# MINIO_ENDPOINT=http://localhost:9002
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
 MINIO_BUCKET=%s-uploads
@@ -367,7 +371,8 @@ POSTGRES_PORT=5434                   # host port; 5432 inside docker network
 #
 # What docker-compose binds on your machine. Every Grit project defaults to
 # the same numbers, so the second one you start fails with "port is already
-# allocated". Change them here and both compose and the URLs above follow.
+# allocated". Change them here: compose binds them, and the API builds its
+# Postgres, Redis and MinIO addresses from them unless a URL below is set.
 #
 # Only the host side moves. Inside the compose network the services keep
 # their standard ports, so nothing else needs to know.
@@ -404,9 +409,11 @@ GITHUB_CLIENT_SECRET=                # GitHub OAuth App Client Secret
 OAUTH_FRONTEND_URL=http://localhost:3001  # Where to redirect after OAuth
 
 # Redis — Cache and job queue
-# Set this to empty (REDIS_URL=) to run without Redis at all — cache,
-# background jobs and cron then stay off instead of retrying a dial in a loop.
-REDIS_URL=redis://localhost:6380
+# Unset, the API connects to localhost on REDIS_PORT above, so moving the port
+# moves the connection with it. Set REDIS_URL for an external Redis, or to empty
+# (REDIS_URL=) to run without Redis at all: cache, background jobs and cron then
+# stay off instead of retrying a dial in a loop.
+# REDIS_URL=redis://localhost:6380
 
 # Public API URL — baked into Next.js bundles at build time
 API_URL=https://api.example.com
@@ -415,7 +422,8 @@ API_URL=https://api.example.com
 STORAGE_DRIVER=minio                 # Change to "s3", "r2", or "b2" to switch providers
 
 # MinIO — Local S3-compatible storage (default for development)
-MINIO_ENDPOINT=http://localhost:9002
+# Unset, built from MINIO_PORT above. Set it only for a MinIO somewhere else.
+# MINIO_ENDPOINT=http://localhost:9002
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
 MINIO_BUCKET=myapp-uploads

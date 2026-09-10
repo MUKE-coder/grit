@@ -236,6 +236,32 @@ parts := money.New(1000, "USD").Allocate(3)`}
                 </Callout>
               </div>
 
+              {/* Converting currencies */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">Converting between currencies</h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  <code>Convert</code> takes the target currency and the rate, quoted the usual
+                  way: units of the target per one unit of the source. The rate is a string, not a
+                  float, and the conversion handles each currency&apos;s number of decimals.
+                </p>
+                <CodeBlock
+                  language="go"
+                  code={`usd := money.New(1000, "USD")          // 10.00 USD
+
+jpy, err := usd.Convert("JPY", "148.2")  // 1482 JPY: yen have no minor unit
+kwd, err := usd.Convert("KWD", "0.3075") // 3.075 KWD: dinar have three`}
+                />
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Both details are where improvised conversions go wrong. Multiplying the amount by
+                  the rate and relabelling the currency gives 148200 yen for ten dollars, a hundred
+                  times too much, because the amount is stored in cents and yen have no cents. And
+                  a float cannot hold most rates exactly: 1.005 is 1.00499999999999989 in binary,
+                  so a dollar at that rate comes out as 100 cents where the right answer is 101.{' '}
+                  <code>Convert</code> parses the rate as an exact fraction, multiplies once and
+                  rounds once, half away from zero.
+                </p>
+              </div>
+
               {/* Admin */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">In the admin</h2>

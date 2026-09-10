@@ -283,9 +283,15 @@ c.Enqueue(ctx, "invoice:generate", payload, EnqueueOption{
                   Adding Custom Jobs
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  To add a new job type, define the task type constant, create a payload struct,
-                  add an enqueue method to the client, write the handler function, and register it
-                  in the worker mux.
+                  Generate it:{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate job InvoiceGenerate</code>{' '}
+                  writes <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">internal/jobs/invoice_generate.go</code>{' '}
+                  with the task type, a payload struct, a typed enqueue method and the handler you
+                  fill in, and registers the handler with the worker. Add{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--cron &quot;30 23 * * *&quot;</code>{' '}
+                  to run it on a schedule as well. A job whose handler is not registered is
+                  accepted by Redis and then fails on the worker, far from the line that caused it,
+                  which is why the command does both. What it writes is below, for doing it by hand.
                 </p>
 
                 <CodeBlock language="go" filename="custom-job-example.go" code={`// 1. Add task type constant
@@ -319,6 +325,42 @@ func handleInvoiceGenerate(deps WorkerDeps) func(ctx context.Context, task *asyn
 
 // 5. Register in worker mux (in StartWorker)
 mux.HandleFunc(TypeInvoiceGenerate, handleInvoiceGenerate(deps))`} />
+              </div>
+
+              {/* Batches */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Batches, and running each piece exactly once
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Large work fans out: a nightly job queues one task per account rather than doing
+                  every account in one long task that a single failure restarts from the top. The
+                  risk with fan-out is running a piece twice, when the scheduler fires on two
+                  replicas or somebody retries the batch by hand. Give every task an{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">IdempotencyKey</code>{' '}
+                  that names the piece of work, and the second enqueue of the same key is refused
+                  with <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">jobs.ErrDuplicateTask</code>{' '}
+                  instead of running.
+                </p>
+                <CodeBlock language="go" filename="internal/jobs/reconcile_ledger.go" code={`// The nightly task, scheduled with --cron, fans out one task per account.
+for _, id := range accountIDs {
+    err := client.EnqueueReconcileAccount(ctx, ReconcileAccountPayload{AccountID: id, Day: day},
+        EnqueueOption{IdempotencyKey: "reconcile:" + id + ":" + day})
+    if errors.Is(err, ErrDuplicateTask) {
+        continue // already queued for this account and day
+    }
+    if err != nil {
+        return err // retried with backoff; the keys make the retry safe
+    }
+}`} />
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The key blocks re-enqueues for 24 hours by default; set{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Window</code>{' '}
+                  to change it. It guards the queue, not your table, so a handler that writes
+                  should still write idempotently: an upsert keyed on the same account and day
+                  costs nothing and covers the case where a task ran and then failed before it
+                  could report success.
+                </p>
               </div>
 
               {/* Admin Jobs Dashboard */}
