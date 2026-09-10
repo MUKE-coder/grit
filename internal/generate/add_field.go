@@ -53,6 +53,9 @@ func AddField(resourceName, spec string) error {
 	if err := g.injectModelField(names, f); err != nil {
 		return err
 	}
+	if err := g.ensureModelImport(names, f); err != nil {
+		return err
+	}
 	if err := g.injectZodField(names, f); err != nil {
 		return err
 	}
@@ -62,6 +65,14 @@ func AddField(resourceName, spec string) error {
 	if err := g.injectAdminField(names, f); err != nil {
 		return err
 	}
+	// The API last, and not optional. Generated handlers copy request fields
+	// into the model one by one, so a column the handler never heard of is
+	// shown in the admin, sent by it, and dropped by the API without a word.
+	if err := g.injectHandlerField(names, f); err != nil {
+		return err
+	}
+	g.injectImportField(names, f)
+	g.injectServiceSort(names, f)
 	return nil
 }
 

@@ -29,6 +29,85 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.208.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.208.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit generate field reaches the API</h3>
+                <p>
+                  <code>grit generate field Account notes:text</code> added the column to the
+                  model, the Zod schemas, the TypeScript type and the admin, and stopped there.
+                  Generated handlers do not bind into the model: they bind into{' '}
+                  <code>CreateAccountRequest</code> and <code>UpdateAccountRequest</code> and copy
+                  fields across one by one, and PATCH writes only what an allow-list names. So the
+                  admin showed the new field and sent it, and the API threw it away:
+                </p>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Request</th>
+                      <th>Before</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <code>POST</code> with <code>notes</code>
+                      </td>
+                      <td>201, notes came back empty</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <code>PUT</code>
+                      </td>
+                      <td>200, ignored</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <code>PATCH</code>
+                      </td>
+                      <td>422, not a writable field</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p>
+                  with the column sitting empty in Postgres. The field now goes everywhere the
+                  generator would have put it: both request structs, the create literal, the
+                  update map, the PATCH and bulk-edit allow-lists, the list&apos;s sort and filter
+                  whitelists, and the CSV importer and its template. The rest of each file is left
+                  as you had it, and the command is safe to run twice. The rules are copies of the
+                  generator&apos;s, pinned to it by a test that fails the day either changes.
+                  Verified against Postgres: create, update, patch and a CSV import each stored the
+                  new value.
+                </p>
+
+                <h3>A date field broke the build</h3>
+                <p>
+                  The same command put <code>*jsontime.Date</code> into a model that did not import{' '}
+                  <code>jsontime</code>, so adding a <code>date</code> or <code>datetime</code> field
+                  stopped the project building with <code>undefined: jsontime</code>. Both types
+                  were listed as supported. The import is added with the field now.
+                </p>
+
+                <h3>v3.205.0 pointed you the wrong way</h3>
+                <p>
+                  When a regenerate refuses because you have edited a resource&apos;s files, the
+                  message said to add the field to the model by hand and run{' '}
+                  <code>grit sync</code>. That has the same hole: sync updates the types, the
+                  schemas and the admin, and never the handler, so the field was shown, submitted
+                  and dropped. The message and the generated-files page now send you to{' '}
+                  <code>grit generate field</code>, and say why the hand-edited route is not
+                  enough on its own.
+                </p>
+              </div>
+            </div>
+
             {/* v3.207.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -70,11 +70,11 @@ func (g *Generator) checkEditedFiles(names Names) error {
 	}
 	b.WriteString("\nRegenerating rewrites those files whole, so anything you added to them\n")
 	b.WriteString("would be gone with nothing to restore it from.\n\n")
-	b.WriteString("To add a field without losing your work, edit the model and let sync\n")
-	b.WriteString("carry it through the admin, the types and the schemas:\n\n")
-	fmt.Fprintf(&b, "  1. add the field to apps/api/internal/models/%s.go\n", names.Snake)
-	b.WriteString("  2. grit sync\n")
-	b.WriteString("  3. grit migrate\n\n")
-	b.WriteString("Or pass --force to overwrite them, having committed first.")
+	b.WriteString("To add a field without losing your work, add it in place. It reaches the\n")
+	b.WriteString("model, the API, the types, the schemas and the admin:\n\n")
+	fmt.Fprintf(&b, "  grit generate field %s <name:type>\n", names.Pascal)
+	b.WriteString("  grit migrate\n\n")
+	b.WriteString("That covers scalar, select and toggle fields. For a relationship or a file,\n")
+	b.WriteString("commit first and pass --force to regenerate.")
 	return fmt.Errorf("%s", b.String())
 }
