@@ -426,12 +426,16 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001`} />
               <CodeBlock language="bash" filename=".env" code={`# GORM Studio — Visual database browser
 GORM_STUDIO_ENABLED=true
 GORM_STUDIO_USERNAME=admin              # Login username for the Studio UI
-GORM_STUDIO_PASSWORD=studio             # Login password for the Studio UI`} />
+GORM_STUDIO_PASSWORD=studio             # Login password for the Studio UI
+GORM_STUDIO_READ_ONLY=false             # Refuse every write from Studio
+GORM_STUDIO_DISABLE_SQL=false           # Turn off the raw SQL editor`} />
               <div className="mt-4 space-y-3">
                 {[
                   { variable: 'GORM_STUDIO_ENABLED', default: 'true', desc: 'Enable or disable GORM Studio. Set to true in development for visual database browsing. Set to false in production to disable the browser and prevent unauthorized access to your data.' },
                   { variable: 'GORM_STUDIO_USERNAME', default: 'admin', desc: 'Login username for the Studio UI.' },
                   { variable: 'GORM_STUDIO_PASSWORD', default: 'studio', desc: 'Login password for the Studio UI. Change it if you keep Studio enabled outside local development.' },
+                  { variable: 'GORM_STUDIO_READ_ONLY', default: 'false', desc: 'Refuse every create, update and delete from Studio, on every table. Browsing still works.' },
+                  { variable: 'GORM_STUDIO_DISABLE_SQL', default: 'false', desc: 'Turn off the raw SQL editor. It sends statements straight to the database, past every GORM callback, which is why the production template sets it to true. Append-only tables are protected by a trigger either way.' },
                 ].map((item) => (
                   <div key={item.variable} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                     <div className="flex items-center gap-2 mb-1">

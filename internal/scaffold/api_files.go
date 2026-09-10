@@ -805,6 +805,13 @@ type Config struct {
 	GORMStudioUsername string
 	GORMStudioPassword string
 
+	// Studio's write paths. The SQL editor runs any UPDATE or DELETE it is
+	// given through a raw Exec that no GORM callback sees, so production
+	// turns it off. internal/appendonly guards tables that must never
+	// change even with it on.
+	GORMStudioReadOnly   bool
+	GORMStudioDisableSQL bool
+
 	// AI (Vercel AI Gateway)
 	AIGatewayAPIKey string
 	AIGatewayModel  string
@@ -893,6 +900,9 @@ func Load() (*Config, error) {
 		GORMStudioEnabled:  getEnv("GORM_STUDIO_ENABLED", "true") == "true",
 		GORMStudioUsername: getEnv("GORM_STUDIO_USERNAME", "admin"),
 		GORMStudioPassword: getEnv("GORM_STUDIO_PASSWORD", "studio"),
+
+		GORMStudioReadOnly:   getEnv("GORM_STUDIO_READ_ONLY", "false") == "true",
+		GORMStudioDisableSQL: getEnv("GORM_STUDIO_DISABLE_SQL", "false") == "true",
 
 		AIGatewayAPIKey: getEnv("AI_GATEWAY_API_KEY", ""),
 		AIGatewayModel:  getEnv("AI_GATEWAY_MODEL", "anthropic/claude-sonnet-4-6"),
@@ -1234,6 +1244,8 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"{{MODULE}}/internal/appendonly"
 )
 
 // Connect establishes a database connection using the provided DSN.
@@ -1328,6 +1340,13 @@ func Connect(dsn string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
+	// Append-only tables refuse UPDATE and DELETE through this handle, so GORM
+	// Studio's row editor, the CSV importer and every handler are bound by it,
+	// not just the one service that remembered. See internal/appendonly.
+	if err := appendonly.Install(db); err != nil {
+		return nil, fmt.Errorf("installing append-only guard: %w", err)
+	}
+
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
@@ -1400,6 +1419,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	"{{MODULE}}/internal/appendonly"
 	"{{MODULE}}/internal/crypto"
 )
 
@@ -1632,6 +1652,12 @@ func Migrate(db *gorm.DB) error {
 	// must work on a freshly migrated database, without anyone remembering to
 	// run "grit seed". SeedRoles is idempotent and never overwrites an existing
 	// role's grants.
+	// And at the database, for whatever does not go through GORM: the SQL
+	// editor in Studio, psql, a script somebody writes next year.
+	if err := appendonly.InstallTriggers(db); err != nil {
+		return fmt.Errorf("installing append-only triggers: %w", err)
+	}
+
 	if err := SeedRoles(db); err != nil {
 		return fmt.Errorf("seeding default roles: %w", err)
 	}
@@ -8378,7 +8404,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// Mount GORM Studio
 	if cfg.GORMStudioEnabled {
 		studioCfg := studio.Config{
-			Prefix: "/studio",
+			Prefix:     "/studio",
+			ReadOnly:   cfg.GORMStudioReadOnly,
+			DisableSQL: cfg.GORMStudioDisableSQL,
 		}
 		if cfg.GORMStudioUsername != "" && cfg.GORMStudioPassword != "" {
 			studioCfg.AuthMiddleware = gin.BasicAuth(gin.Accounts{

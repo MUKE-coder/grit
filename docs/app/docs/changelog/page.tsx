@@ -29,6 +29,65 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.207.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.207.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Append-only records, and a ledger nobody can rewrite from a web page</h3>
+                <p>
+                  Found building a double-entry ledger. The generator gave a journal entry{' '}
+                  <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>, bulk and import
+                  routes, a soft-delete column and an admin with Edit and Delete: the right shape
+                  for a CRUD resource and the wrong one for a posted accounting record. Hand-rolling
+                  the fix took a package of GORM callbacks and an edit to <code>main.go</code> the
+                  framework offered no place for.
+                </p>
+                <p>
+                  And it still lost. The callbacks stopped the API, the importer and GORM
+                  Studio&apos;s row editor. Then{' '}
+                  <code>UPDATE journal_lines SET debit_amount = 1</code>, typed into the Studio SQL
+                  editor, returned 200 and unbalanced the books. That editor sends statements to{' '}
+                  <code>db.Exec</code>, and a raw statement never passes a GORM callback.
+                </p>
+                <p>
+                  <code>grit generate resource X --append-only</code> now does all of it: read and
+                  create routes only, a GORM guard that answers 422 with the reason, a trigger on
+                  the table installed by <code>grit migrate</code> for everything that is not GORM,
+                  and an admin that offers create and view. An <code>--items</code> child is
+                  append-only with its parent. Against Postgres, the API, the Studio row editor, the
+                  Studio SQL editor and psql were each refused, and the row was unchanged.
+                </p>
+                <p>
+                  New projects make the two calls that install the guard. <code>grit upgrade</code>{' '}
+                  adds them to older ones, and the generator does too the first time the flag is
+                  used, or stops and names the call if it cannot find where it goes. A model
+                  registering with a guard nobody installs would look protected and not be. See{' '}
+                  <a href="/docs/backend/append-only">Append-only records</a>.
+                </p>
+
+                <h3>GORM Studio&apos;s write switches are reachable</h3>
+                <p>
+                  gorm-studio has always had <code>ReadOnly</code> and <code>DisableSQL</code>, and
+                  nothing in a Grit project could set them. They are{' '}
+                  <code>GORM_STUDIO_READ_ONLY</code> and <code>GORM_STUDIO_DISABLE_SQL</code> now,
+                  and the production environment template turns the SQL editor off.
+                </p>
+
+                <h3>The admin detail page ignored table.actions</h3>
+                <p>
+                  The list page asks whether a resource allows edit and delete before offering
+                  them. The detail page never did, so a resource that removed both from its table
+                  still showed the buttons one click further in. It asks the same question now.
+                </p>
+              </div>
+            </div>
+
             {/* v3.206.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

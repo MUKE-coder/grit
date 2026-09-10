@@ -243,6 +243,7 @@ func (g *Generator) injectAll(names Names) error {
 			base, names.Lower, names.Pascal, names.Pascal,
 			base, names.Lower)
 
+		docsRoutes = g.appendOnlyDocs(docsRoutes)
 		if err := injectBefore(docsFile, "// grit:docs:routes:end", docsRoutes); err == nil {
 			fmt.Println("  ✓ Documented the endpoints at /docs")
 		}

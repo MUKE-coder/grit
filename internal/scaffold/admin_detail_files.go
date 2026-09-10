@@ -18,6 +18,7 @@ import type {
   RelatedResource,
   ResourceDefinition,
   ResourceDetailController,
+  TableAction,
 } from "@/lib/resource";
 import { useResourceItem, useDeleteResource } from "@/hooks/use-resource";
 import { apiClient } from "@/lib/api-client";
@@ -58,6 +59,11 @@ export function useResourceDetailController<T = Record<string, unknown>>(
   const [editing, setEditing] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isPdfBusy, setPdfBusy] = useState(false);
+
+  // The same actions the list honours. Without this the detail page offered
+  // Edit and Delete on a resource that had removed both from its table.
+  const actions = resource.table.actions ?? ["create", "view", "edit", "delete"];
+  const can = (action: TableAction) => actions.includes(action);
 
   const singular = resource.label?.singular ?? resource.name;
   const { mutate: deleteItem, isPending: isDeleting } = useDeleteResource(resource.endpoint, singular);
@@ -127,6 +133,7 @@ export function useResourceDetailController<T = Record<string, unknown>>(
     lineItemFields,
     related,
 
+    can,
     edit: () => setEditing(true),
     remove: () => setConfirmOpen(true),
     print: () => window.print(),
@@ -272,12 +279,15 @@ function ResourceDetailView({ resource, id }: ResourceDetailPageProps) {
           >
             <Printer className="h-4 w-4" /> Print
           </button>
+          {c.can("edit") && (
           <button
             onClick={() => setEditing(true)}
             className={buttonClasses()}
           >
             <Pencil className="h-4 w-4" /> Edit
           </button>
+          )}
+          {c.can("delete") && (
           <button
             disabled={isDeleting}
             onClick={() => setConfirmDelete(true)}
@@ -285,6 +295,7 @@ function ResourceDetailView({ resource, id }: ResourceDetailPageProps) {
           >
             <Trash2 className="h-4 w-4" /> Delete
           </button>
+          )}
         </div>
       </div>
 

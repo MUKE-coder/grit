@@ -70,6 +70,16 @@ type ResourceDefinition struct {
 	// and a shared reference table scoped by accident becomes invisible to
 	// every query with no error to explain it.
 	TenantOwned bool `yaml:"tenant_owned,omitempty"`
+
+	// AppendOnly makes rows immutable once written, set by --append-only. The
+	// API gets create and read routes only, GORM refuses updates and deletes on
+	// the table, and grit migrate installs a trigger so raw SQL is refused too.
+	// A correction is a new row that reverses the old one.
+	//
+	// For journals, audit trails and consent records: anything whose history
+	// is the point, and where an edit in place is exactly what an auditor
+	// would ask you to prove never happened.
+	AppendOnly bool `yaml:"append_only,omitempty"`
 }
 
 // OwnerField returns the field ownership is checked against, or nil when the

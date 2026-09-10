@@ -248,6 +248,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Turn a status select into a process the server enforces: named transitions, per-transition permissions, endpoints that make an illegal jump unrepresentable, and a domain event per action.',
   },
+  '/docs/backend/append-only': {
+    title: 'Append-only records',
+    description:
+      'grit generate resource --append-only: rows created and read, never changed or deleted. Read and create routes, a GORM guard, and a database trigger that stops raw SQL too.',
+  },
   '/docs/backend/rbac': {
     title: 'RBAC',
     description:

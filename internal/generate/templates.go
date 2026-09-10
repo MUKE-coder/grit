@@ -128,6 +128,7 @@ func (g *Generator) writeGoModel(names Names) error {
 	if g.Definition.TenantOwned {
 		projImports = append(projImports, fmt.Sprintf("\"%s/internal/tenant\"", g.Module))
 	}
+	projImports = g.appendOnlyImports(projImports)
 	if len(projImports) > 0 {
 		imports = fmt.Sprintf("import (\n\t%s\n\n\t%s\n\n\t%s\n)", stdImports, extImports, strings.Join(projImports, "\n\t"))
 	} else {
@@ -387,6 +388,7 @@ func (m *%s) BeforeUpdate(tx *gorm.DB) error {
 	return nil
 }
 `, names.Pascal)
+	content += g.appendOnlyModelInit(names)
 
 	// GetOwnerID makes the model satisfy authz.Ownable, which is what lets the
 	// handlers check ownership on a row fetched by id. Without it the helper
@@ -2660,13 +2662,13 @@ func (g *Generator) writeResourceDefinition(names Names) error {
 	// moves it: silently writing a second copy in a folder would leave two
 	// definitions and a registry pointing at the stale one.
 	if flat := filepath.Join(root, names.PluralKebab+".ts"); fileExists(flat) {
-		if err := writeFileWithDirs(flat, g.resourceDefinitionFileContent(names)); err != nil {
+		if err := writeFileWithDirs(flat, g.adminDefinitionContent(names)); err != nil {
 			return err
 		}
 		return writeResourceCustomStub(root, names)
 	}
 	dir, path := scaffold.ResourceDefPath(root, names.PluralKebab)
-	if err := writeFileWithDirs(path, g.resourceDefinitionFileContent(names)); err != nil {
+	if err := writeFileWithDirs(path, g.adminDefinitionContent(names)); err != nil {
 		return err
 	}
 	return writeResourceCustomStub(dir, names)

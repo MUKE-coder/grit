@@ -123,6 +123,7 @@ const searchIndex: SearchItem[] = [
   { title: 'API Response Format', href: '/docs/backend/response-format', section: 'Backend (Go API)', keywords: 'json response error pagination format api envelope respond meta data message error code apiErrorMessage' },
   { title: 'Migrations', href: '/docs/backend/migrations', section: 'Backend (Go API)', keywords: 'migrate database schema table create alter fresh automigrate column diff verbose' },
   { title: 'Seeders', href: '/docs/backend/seeders', section: 'Backend (Go API)', keywords: 'seed data demo users populate database initial fixtures' },
+  { title: 'Append-only Records', href: '/docs/backend/append-only', section: 'Backend (Go API)', keywords: 'append only immutable ledger journal audit trail trigger never update delete regulator correction reversal studio sql' },
   { title: 'RBAC & Roles', href: '/docs/backend/rbac', section: 'Backend (Go API)', keywords: 'roles rbac admin editor user permissions access control require role middleware' },
 
   // Admin Panel

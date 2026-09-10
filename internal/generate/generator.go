@@ -133,6 +133,16 @@ func (g *Generator) Run() error {
 		}
 	}
 
+	// --append-only depends on two calls the project makes, one when it
+	// connects and one when it migrates. A project scaffolded before the flag
+	// existed makes neither, and a model registering with a guard nobody
+	// installs would protect nothing while looking finished.
+	if g.Definition.AppendOnly {
+		if err := g.prepareAppendOnly(); err != nil {
+			return err
+		}
+	}
+
 	fmt.Printf("\n  Generating resource: %s\n\n", names.Pascal)
 
 	// Everything this resource writes is attributed to the resource, not to the
@@ -154,6 +164,11 @@ func (g *Generator) Run() error {
 	// parent detail page's items table). The child carries Hidden=true, so it
 	// stays out of the sidebar and is managed inline / via the detail page.
 	if g.Definition.Items != nil {
+		// A line of an append-only record is part of that record. An entry
+		// that cannot change, holding lines that can, is not append-only.
+		if g.Definition.AppendOnly {
+			g.Definition.Items.AppendOnly = true
+		}
 		childGen := &Generator{
 			Root:         g.Root,
 			Module:       g.Module,
