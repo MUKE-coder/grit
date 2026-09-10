@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.208.0"
+var version = "3.209.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -343,6 +343,7 @@ func generateCmd() *cobra.Command {
 	cmd.AddCommand(generateSeederCmd())
 	cmd.AddCommand(generatePerfCmd())
 	cmd.AddCommand(generateFieldCmd())
+	cmd.AddCommand(generateJobCmd())
 
 	return cmd
 }
@@ -511,6 +512,36 @@ Examples:
 	cmd.Flags().StringVar(&reset, "reset", "monthly", "When the counter resets: monthly, yearly, never")
 	cmd.Flags().IntVar(&width, "width", 4, "Zero-padded width of the numeric portion")
 
+	return cmd
+}
+
+func generateJobCmd() *cobra.Command {
+	var cronSpec string
+
+	cmd := &cobra.Command{
+		Use:   "job <Name>",
+		Short: "Generate a background job, optionally run on a cron schedule",
+		Long: `Generate a background job and register it with the worker.
+
+Writes internal/jobs/<name>.go with the task type, a payload struct, a typed
+Enqueue<Name> method and the handler you fill in, and registers the handler
+with the worker. With --cron it is also scheduled, and listed on the admin's
+Cron page.
+
+Examples:
+  grit generate job ReconcileLedger
+  grit generate job ReconcileLedger --cron "30 23 * * *"
+  grit generate job SyncRates --cron "@every 15m"
+  grit generate job WeeklyDigest --cron @weekly`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+			cmd.SilenceUsage = true
+			return generate.GenerateJob(generate.JobOptions{Name: args[0], Cron: cronSpec})
+		},
+	}
+
+	cmd.Flags().StringVar(&cronSpec, "cron", "", `Also run it on a schedule: five fields like "30 23 * * *", or @daily, @hourly, "@every 15m"`)
 	return cmd
 }
 

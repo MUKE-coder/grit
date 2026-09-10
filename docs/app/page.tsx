@@ -301,6 +301,7 @@ export default function HomePage() {
               { icon: Shield, label: 'WAF & rate limiting', href: '/docs/security' },
               { icon: FileCheck, label: 'Tamper-evident audit log', href: '/docs/security' },
               { icon: Database, label: 'Append-only records', href: '/docs/backend/append-only' },
+              { icon: TrendingUp, label: 'Exact multi-currency money', href: '/docs/concepts/money' },
               { icon: Building2, label: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
               { icon: Webhook, label: 'Webhooks', href: '/docs/backend/webhooks' },
               { icon: Flag, label: 'Feature flags', href: '/docs/backend/feature-flags' },

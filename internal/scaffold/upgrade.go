@@ -182,6 +182,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := EnsureAppendOnlyWiring(opts.APIRoot(root), opts.Module()); err != nil {
 			fmt.Printf("  ⚠ %v\n", err)
 		}
+		// Read-only. .env holds secrets and is the developer's, so a URL that
+		// disagrees with the port compose binds is reported, not rewritten.
+		for _, w := range envPortDrift(root) {
+			fmt.Printf("  ⚠ %s\n", w)
+		}
 		if err := writeOutboxFiles(root, opts); err != nil {
 			return fmt.Errorf("updating outbox files: %w", err)
 		}

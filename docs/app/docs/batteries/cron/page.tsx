@@ -285,8 +285,10 @@ RegisteredTasks = append(RegisteredTasks, Task{
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   The <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">// grit:cron-tasks</code> comment in <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">cron.go</code> is
-                  a marker used by the code generator. When you use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit add cron</code> or
-                  future CLI extensions, new cron tasks are injected at this marker position. You can
+                  a marker used by the code generator.{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate job NightlyReport --cron &quot;30 23 * * *&quot;</code>{' '}
+                  writes the job, registers its handler with the worker, and injects the schedule at
+                  this marker, where it also joins the list on the admin Cron page. You can
                   add tasks manually either above or below it -- just do not remove the marker.
                 </p>
 

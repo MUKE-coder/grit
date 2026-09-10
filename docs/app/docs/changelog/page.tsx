@@ -29,6 +29,81 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.209.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.209.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Two projects on one machine were sharing a Redis</h3>
+                <p>
+                  v3.205.0 moved the host ports into <code>.env</code> so a second project could
+                  start, and said the service addresses would follow. Only Postgres did: its URL is
+                  built from <code>POSTGRES_*</code>. <code>REDIS_URL</code> and{' '}
+                  <code>MINIO_ENDPOINT</code> were written into <code>.env</code> with the default
+                  ports baked in, so a project that moved <code>REDIS_PORT</code> kept dialling
+                  6380. With another Grit project running, that is the other project&apos;s Redis,
+                  and nothing fails, because it answers.
+                </p>
+                <p>
+                  Found on a ledger whose API had been using a storefront&apos;s Redis and MinIO
+                  while its own containers sat idle. The two shared a cache, a bucket host, and a
+                  job queue whose queue names are the same in every project, so either
+                  project&apos;s worker could pick up the other&apos;s tasks.
+                </p>
+                <p>
+                  Both addresses are now built from <code>REDIS_PORT</code> and{' '}
+                  <code>MINIO_PORT</code> unless you set them, and new projects leave them unset.
+                  An explicit localhost URL that disagrees with its port is named in a warning at
+                  startup. <code>grit upgrade</code> reads an existing <code>.env</code> and prints
+                  the exact line to set, without rewriting the file.{' '}
+                  <strong>If you moved either port on v3.205.0 or later, run grit upgrade</strong>{' '}
+                  or check those two lines by hand. Verified on a fresh project with every port
+                  moved: its own Redis went from empty to holding the worker&apos;s keys at startup.
+                </p>
+
+                <h3>grit generate job</h3>
+                <p>
+                  The cron page said new scheduled tasks are added &quot;when you use grit add
+                  cron&quot;. That command did not exist. A custom job was five hand edits across
+                  two framework files, and the worker&apos;s handler list had no marker to anchor
+                  on, so the step most likely to be missed was the one that made the job run.
+                </p>
+                <p>
+                  <code>grit generate job ReconcileLedger --cron &quot;30 23 * * *&quot;</code>{' '}
+                  writes the job with its payload, a typed enqueue method and the handler, registers
+                  the handler with the worker, and schedules it where the admin&apos;s Cron page
+                  lists it. It never overwrites a job you have written, and on a project from before
+                  the marker it registers the handler anyway and leaves the marker behind.
+                </p>
+                <p>
+                  Load-tested on the ledger as an end-of-day reconciliation: 1,000 tasks fanned out
+                  one per account, then the same 1,000 queued again. The second thousand were
+                  refused as duplicates by their idempotency keys, every account was reconciled
+                  exactly once, the queue drained in under nine seconds, and nothing was left
+                  retrying or archived. The jobs page now covers batches like this.
+                </p>
+
+                <h3>Converting between currencies</h3>
+                <p>
+                  The money package had no conversion, and the improvised one is wrong twice.{' '}
+                  <code>MulFloat</code> keeps the currency&apos;s decimals, so 10.00 USD at 148.2
+                  relabelled as yen is 148,200 yen, a hundred times too much. And a float cannot
+                  hold most rates: 1.005 is 1.00499999999999989 in binary, so a dollar at that rate
+                  comes out as 100 cents instead of 101.
+                </p>
+                <p>
+                  <code>money.Convert(to, rate)</code> takes the rate as a decimal string, parses it
+                  as an exact fraction, moves the decimal point for each currency&apos;s minor unit,
+                  and rounds once, half away from zero. Its tests ship with every project.
+                </p>
+              </div>
+            </div>
+
             {/* v3.208.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -450,6 +450,10 @@ export default function CLICheatsheetPage() {
                     desc="Created and read, never changed or deleted: for ledgers and audit trails"
                   />
                   <TerminalCard
+                    cmd='grit g job ReconcileLedger --cron "30 23 * * *"'
+                    desc="A background job with its handler registered, run every night at 23:30"
+                  />
+                  <TerminalCard
                     cmd='grit g resource Post --fields "title:string,views:int" --faker --count 50'
                     desc="Also generate a seeder that inserts 50 fake rows"
                   />

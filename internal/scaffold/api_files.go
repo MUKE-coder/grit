@@ -660,6 +660,7 @@ func apiConfigGo() string {
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -1011,13 +1012,55 @@ func (c *Config) IsDevelopment() bool {
 func resolveRedisURL() string {
 	v, ok := os.LookupEnv("REDIS_URL")
 	if !ok {
-		return "redis://localhost:6380"
+		// Built from the port docker-compose binds, so moving REDIS_PORT in
+		// .env moves the connection with it. This used to be a fixed 6380,
+		// so a project that moved its port kept dialling the old one, which
+		// on a machine running a second Grit project is that project's
+		// Redis: the two then shared a cache and a job queue.
+		return fmt.Sprintf("redis://%s:%s", getEnv("REDIS_HOST", "localhost"), getEnv("REDIS_PORT", "6380"))
 	}
 	if strings.TrimSpace(v) == "" {
 		log.Println("REDIS_URL is empty: cache, background jobs and cron are disabled")
 		return ""
 	}
+	warnPortMismatch("REDIS_URL", v, "REDIS_PORT")
 	return v
+}
+
+// resolveMinioEndpoint follows the same rule for MinIO: an explicit
+// MINIO_ENDPOINT wins, and without one the endpoint follows MINIO_PORT.
+func resolveMinioEndpoint() string {
+	if v := os.Getenv("MINIO_ENDPOINT"); v != "" {
+		warnPortMismatch("MINIO_ENDPOINT", v, "MINIO_PORT")
+		return v
+	}
+	return fmt.Sprintf("http://%s:%s", getEnv("MINIO_HOST", "localhost"), getEnv("MINIO_PORT", "9002"))
+}
+
+// warnPortMismatch says so when a URL names localhost on a different port from
+// the one docker-compose was told to publish this project's service on.
+//
+// That combination almost always means the URL is left over from before the
+// port moved, and that it now reaches some other project's container. Nothing
+// fails: the other Redis answers, the other MinIO stores the file. So it is
+// said once, loudly, at boot.
+func warnPortMismatch(urlVar, raw, portVar string) {
+	want := os.Getenv(portVar)
+	if want == "" {
+		return
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		return
+	}
+	host := u.Hostname()
+	if host != "localhost" && host != "127.0.0.1" {
+		return
+	}
+	if got := u.Port(); got != "" && got != want {
+		log.Printf("WARNING: %s points at %s:%s, but %s is %s. This project's container is published on %s, so %s is probably another project's. Set %s to port %s, or remove it from .env to follow %s.",
+			urlVar, host, got, portVar, want, want, got, urlVar, want, portVar)
+	}
 }
 
 func resolveDatabaseURL() string {
@@ -1079,7 +1122,7 @@ func resolveStorage(driver string) StorageConfig {
 		}
 	default: // minio
 		return StorageConfig{
-			Endpoint:  getEnv("MINIO_ENDPOINT", "http://localhost:9002"),
+			Endpoint:  resolveMinioEndpoint(),
 			AccessKey: getEnv("MINIO_ACCESS_KEY", "minioadmin"),
 			SecretKey: getEnv("MINIO_SECRET_KEY", "minioadmin"),
 			Bucket:    getEnv("MINIO_BUCKET", "uploads"),
