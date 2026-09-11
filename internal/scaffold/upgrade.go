@@ -224,6 +224,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 				return fmt.Errorf("updating the audit chain: %w", err)
 			}
 		}
+		// Replicas behind a load balancer kept separate permission caches and
+		// SSO registries, and each ran every scheduled job. The package and the
+		// files that use it go first: the SSO files below import it.
+		if err := writeClusterFiles(root, opts); err != nil {
+			return fmt.Errorf("updating replica coordination: %w", err)
+		}
 		// Enterprise SSO trusted a customer's identity provider for any email
 		// address, so it could sign in as your own administrator. Only where
 		// SSO is already there.
@@ -231,6 +237,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 			if err := writeSSOFiles(root, opts); err != nil {
 				return fmt.Errorf("updating SSO: %w", err)
 			}
+		}
+		if err := ensureClusterWiring(opts.APIRoot(root), opts.Module()); err != nil {
+			fmt.Printf("  ⚠ %v\n", err)
 		}
 		// Read-only. .env holds secrets and is the developer's, so a URL that
 		// disagrees with the port compose binds is reported, not rewritten.

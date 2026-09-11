@@ -253,6 +253,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -261,6 +262,7 @@ import (
 	"github.com/markbates/goth/providers/openidConnect"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/cluster"
 	"{{MODULE}}/internal/models"
 )
 
@@ -397,6 +399,38 @@ func ConnectionForEmail(db *gorm.DB, email string) (*models.SSOConnection, error
 		}
 	}
 	return nil, nil
+}
+
+// WatchSSO rebuilds this replica's SSO registries when another replica changes
+// a connection. The registries are built in each process, so a connection
+// created or disabled through one API instance was unknown to, or still live
+// on, the others until they restarted.
+func WatchSSO(db *gorm.DB, oidc *SSORegistry, samlReg *SAMLRegistry) {
+	w := cluster.NewWatch(db, "sso", 2*time.Second)
+	go func() {
+		t := time.NewTicker(2 * time.Second)
+		defer t.Stop()
+		for range t.C {
+			if !w.Changed() {
+				continue
+			}
+			for _, err := range oidc.Reload(db) {
+				log.Printf("sso: %v", err)
+			}
+			if samlReg != nil {
+				for _, err := range samlReg.Reload(db) {
+					log.Printf("saml: %v", err)
+				}
+			}
+		}
+	}()
+}
+
+// AnnounceSSOChange tells the other replicas to rebuild their registries.
+func AnnounceSSOChange(db *gorm.DB) {
+	if err := cluster.Bump(db, "sso"); err != nil {
+		log.Printf("sso: could not tell the other replicas about a connection change: %v", err)
+	}
 }
 
 // GroupRoleNames maps the IdP groups on a login to local role names, using the
@@ -1167,6 +1201,7 @@ func (h *SSOHandler) reload() {
 			log.Printf("sso: %v", err)
 		}
 	}
+	services.AnnounceSSOChange(h.DB)
 }
 
 func randomState() (string, error) {

@@ -29,6 +29,60 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.218.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.218.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A revoked permission kept working on the other replicas</h3>
+                <p>
+                  Found running two copies of an API behind one database, as a load balancer would.
+                  Each copy caches who may do what, and a role change cleared the cache only in the copy
+                  that made it. Reproduced: a permission revoked through one copy was still granted by
+                  the other ten seconds later, and would have been until it restarted.
+                </p>
+                <p>
+                  Copies now share a small <code>cluster_generations</code> table. A role change bumps
+                  it, and every copy checks it at most once a second and drops its cache when it moves.
+                  The same table carries SSO: a connection created through one copy was unknown to the
+                  others, and now every copy rebuilds its identity-provider connections when another
+                  saves one.
+                </p>
+
+                <h3>Every replica ran every scheduled job</h3>
+                <p>
+                  asynq&apos;s schedulers do not coordinate, and every copy started one, so each copy ran
+                  the token sweep, the orphan-upload cleanup and the log prune. Only the copy holding a
+                  Redis lock runs the scheduler now. The lock is a 30-second lease renewed every 10, so
+                  if that copy dies another takes over.
+                </p>
+
+                <h3>Running more than one instance</h3>
+                <p>
+                  A new page, <Link href="/docs/deployment/multiple-instances" className="text-primary hover:underline">Running more than one instance</Link>,
+                  covers what the copies must share, what is already shared between them, and what is
+                  still counted per copy. Realtime needed nothing: one event caused on one copy reached
+                  1,000 sockets on another in 0.16 seconds, through the Redis backplane that was already
+                  there. Sentinel&apos;s per-IP rate limits are still per copy, which is filed as{' '}
+                  <a href="https://github.com/MUKE-coder/sentinel/issues/18" className="text-primary hover:underline">Sentinel #18</a>.
+                </p>
+                <p>
+                  <code>grit upgrade</code> adds the cluster package, updates the permission cache and
+                  the SSO service, wires both into <code>routes.go</code>, and patches the four
+                  generated lines of <code>cron.go</code> that start the scheduler. Verified with two
+                  copies after the upgrade: a revoked permission stopped working on the other copy within
+                  three seconds, where before it was still granted ten seconds later; a new SSO connection
+                  worked on the other copy within a few seconds; one copy held the cron lock, and when it
+                  was stopped the other took over 25 seconds later.
+                </p>
+              </div>
+            </div>
+
             {/* v3.217.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
