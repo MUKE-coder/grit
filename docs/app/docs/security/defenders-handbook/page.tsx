@@ -713,11 +713,15 @@ const BONUS: Bonus[] = [
         </p>
         <p>
           Or let the generator do it. <code>--owned-by</code> names the field that
-          says who a row belongs to, and wires all four access paths: the list is
-          scoped to the caller, read, update and delete check ownership by id, and
-          create stamps the owner from the session rather than trusting the request
-          body. An <code>ADMIN</code> is exempt from all four, because the admin
-          panel calls the same endpoints.
+          says who a row belongs to, and wires every path that reaches a row: the
+          list, the export and bulk actions are scoped to the caller; read, PDF,
+          update, patch and delete check ownership by id, as does a workflow
+          transition; create stamps the owner from the session rather than
+          trusting the request body, and so does the CSV importer. An{' '}
+          <code>ADMIN</code> is exempt throughout, because the admin panel calls the
+          same endpoints, and is the only role that may name another owner in an
+          import. <code>--tree</code> cannot be combined with it yet, because the
+          tree endpoints have no notion of an owner.
         </p>
         <CodeBlock
           language="bash"

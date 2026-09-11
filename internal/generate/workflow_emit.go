@@ -85,6 +85,22 @@ func (g *Generator) writeWorkflowService(names Names, field *Field) error {
 	col := toSnakeCase(field.Name)
 	goField := toPascalCase(field.Name)
 
+	// An owned resource's transition route sits on the authenticated group like
+	// every other, and it loaded the row by id with no check, so any account
+	// could move anyone's record through its workflow.
+	ownerCheck, authzImport := "", ""
+	if g.Definition.IsOwned() {
+		authzImport = "\t\"" + g.Module + "/internal/authz\"\n"
+		ownerCheck = `
+	// --owned-by: only the owner may move a row, ADMIN excepted, and somebody
+	// else's row is not found rather than forbidden. c is nil when a job or a
+	// command makes the move, and those are trusted.
+	if c != nil && !authz.IsAdmin(c) && item.GetOwnerID() != authz.CurrentUserID(c) {
+		return nil, gorm.ErrRecordNotFound
+	}
+`
+	}
+
 	body := `package services
 
 import (
@@ -93,7 +109,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"` + g.Module + `/internal/events"
+` + authzImport + `	"` + g.Module + `/internal/events"
 	"` + g.Module + `/internal/models"
 	"` + g.Module + `/internal/workflow"
 )
@@ -111,7 +127,7 @@ func Transition` + names.Pascal + `(db *gorm.DB, c *gin.Context, id, action stri
 	if err := db.First(&item, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
-
+` + ownerCheck + `
 	from := item.` + goField + `
 	transition, err := workflow.` + names.Pascal + `Workflow.Check(from, action)
 	if err != nil {
@@ -199,6 +215,25 @@ func (g *Generator) ensureWorkflowRoutes(names Names) error {
 		return nil
 	}
 	content := string(data)
+
+	// A project with a route file per resource mounts both routes in that file.
+	// This injection is the fallback for a project from before route files, and
+	// it used to run regardless: it wrote referralHandler.Transition into
+	// routes.go, where no referralHandler exists, and the API stopped
+	// compiling. A re-run takes those lines back out.
+	if fileExists(filepath.Join(g.APIRoot(), "internal", "routes", names.Snake+"_routes.go")) {
+		if !strings.Contains(content, names.Camel+"Handler.Transition") {
+			return nil
+		}
+		for _, stale := range []string{names.Camel + "Handler.Workflow)", names.Camel + "Handler.Transition)"} {
+			if err := removeLinesContaining(path, stale); err != nil {
+				fmt.Printf("  Could not remove %s from routes.go: %v\n", stale, err)
+			}
+		}
+		manifest.Refresh(path)
+		fmt.Println("  ✓ Removed the transition routes an earlier run put in routes.go")
+		return nil
+	}
 
 	// Both routes in one injection. gin's tree prefers a static segment over a
 	// param at the same position, so /orders/workflow and /orders/:id coexist.

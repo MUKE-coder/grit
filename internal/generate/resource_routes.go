@@ -124,7 +124,7 @@ func (g *Generator) resourceRoutesSource(names Names) (string, error) {
 		fmt.Fprintf(&b, "\t\tg.Use(middleware.RequireRole(%s))\n", strings.Join(roleArgs, ", "))
 		// Every verb on the group, so the role guard cannot be true of some
 		// routes on this resource and not others.
-		for _, r := range []string{
+		routes := []string{
 			`g.GET("", h.List)`,
 			`g.GET("/export", h.Export)`,
 			`g.GET("/:id", h.GetByID)`,
@@ -134,7 +134,12 @@ func (g *Generator) resourceRoutesSource(names Names) (string, error) {
 			`g.PATCH("/:id", h.Patch)`,
 			`g.DELETE("/:id", h.Delete)`,
 			`g.POST("/bulk", h.Bulk)`,
-		} {
+		}
+		if g.Definition.WorkflowField() != nil {
+			routes = append(routes, `g.GET("/workflow", h.Workflow)`,
+				`g.POST("/:id/transitions/:action", h.Transition)`)
+		}
+		for _, r := range routes {
 			fmt.Fprintf(&b, "\t\t%s\n", r)
 		}
 	} else {
@@ -147,6 +152,12 @@ func (g *Generator) resourceRoutesSource(names Names) (string, error) {
 		fmt.Fprintf(&b, "\t\tm.Protected.POST(\"/%s\", h.Create)\n", names.Plural)
 		fmt.Fprintf(&b, "\t\tm.Protected.PUT(\"/%s/:id\", h.Update)\n", names.Plural)
 		fmt.Fprintf(&b, "\t\tm.Protected.PATCH(\"/%s/:id\", h.Patch)\n", names.Plural)
+		if g.Definition.WorkflowField() != nil {
+			// The service checks each transition's permission, and the owner
+			// when the resource has one, so the route itself can be protected.
+			fmt.Fprintf(&b, "\t\tm.Protected.GET(\"/%s/workflow\", h.Workflow)\n", names.Plural)
+			fmt.Fprintf(&b, "\t\tm.Protected.POST(\"/%s/:id/transitions/:action\", h.Transition)\n", names.Plural)
+		}
 		fmt.Fprintf(&b, "\n")
 		// Bulk sits with DELETE rather than with PATCH: it can delete, and a
 		// route is only as protected as its most destructive branch.

@@ -23,6 +23,9 @@ import (
 //   - file / files columns are skipped (upload images in the app instead).
 //   - a belongs_to is given by NAME (column "category", not "category_id"):
 //     the related record is looked up by name and created if it doesn't exist.
+//     A user is the exception: it must already exist, or the row fails.
+//   - an --owned-by resource's rows belong to whoever imports them. Only an
+//     ADMIN may name a different owner in the CSV.
 //   - rows that violate a unique constraint are skipped (ON CONFLICT DO NOTHING),
 //     so re-importing the same file is safe. Other failures are reported per-row.
 //
@@ -89,6 +92,7 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 	needDatatypes := false
 
 	needCrypto := false
+	owned := false
 	for _, f := range g.Definition.Fields {
 		t := FieldType(f.Type)
 		if t == FieldSlug || t == FieldFile || t == FieldFiles ||
@@ -108,6 +112,26 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 			assignExpr := "rel.ID"
 			if relModel == toPascalCase(g.Definition.Name) {
 				assignExpr = "&rel.ID"
+			}
+
+			if relModel == "User" {
+				col, where := base+"_id", "id"
+				if lookup.ByName {
+					col, where = base, lookup.NaturalKeyJSON
+				}
+				headers = append(headers, col)
+				cond := ""
+				if owner := g.Definition.OwnerField(); owner != nil && owner.Name == f.Name {
+					owned = true
+					cond = " && canAssignOwner"
+					assign.WriteString(fmt.Sprintf(
+						"\t\t// --owned-by %s: a row belongs to whoever imports it. An ADMIN may\n"+
+							"\t\t// name another owner in the %s column; for anyone else it is\n"+
+							"\t\t// ignored, or a CSV could file records under somebody else's name.\n"+
+							"\t\titem.%s = ownerID\n", f.Name, col, fkGo))
+				}
+				assign.WriteString(importUserLookup(col, where, fkGo, cond))
+				continue
 			}
 
 			if lookup.ByName {
@@ -205,6 +229,13 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 	}
 	templateHeaders := strings.Join(headers, ",")
 
+	ownerArgs, ownerParams, authzImport := "", "", ""
+	if owned {
+		ownerArgs = ", authz.CurrentUserID(c), authz.IsAdmin(c)"
+		ownerParams = ", ownerID string, canAssignOwner bool"
+		authzImport = "\"" + g.Module + "/internal/authz\"\n\t"
+	}
+
 	rep := strings.NewReplacer(
 		"{{MODULE}}", g.Module,
 		"{{Pascal}}", names.Pascal,
@@ -214,6 +245,9 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 		"{{DATATYPES}}", datatypesImport+moneyImport+cryptoImport,
 		"{{ASSIGN}}", assign.String(),
 		"{{HEADERS}}", templateHeaders,
+		"{{OWNER_ARGS}}", ownerArgs,
+		"{{OWNER_PARAMS}}", ownerParams,
+		"{{AUTHZ_IMPORT}}", authzImport,
 	)
 
 	content := rep.Replace(`package handlers
@@ -230,7 +264,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm/clause"{{DATATYPES}}
 
-	"{{MODULE}}/internal/models"
+	{{AUTHZ_IMPORT}}"{{MODULE}}/internal/models"
 )
 
 // Import kicks off a BACKGROUND CSV import of {{Plural}}. It streams the upload
@@ -287,7 +321,7 @@ func (h *{{Pascal}}Handler) Import(c *gin.Context) {
 	}
 
 	// Process in the background so a large file never blocks the request.
-	go h.runImport{{Pascal}}(job.ID, tmpPath)
+	go h.runImport{{Pascal}}(job.ID, tmpPath{{OWNER_ARGS}})
 
 	c.JSON(http.StatusAccepted, gin.H{
 		"data":    gin.H{"job_id": job.ID, "total": total},
@@ -327,7 +361,7 @@ func countCSVRows{{Pascal}}(path string) (int, error) {
 // updating the ImportJob as it goes. belongs_to columns are resolved by their
 // natural key (or id); unique-conflict rows are skipped; per-row failures are
 // recorded. The temp file is removed when done.
-func (h *{{Pascal}}Handler) runImport{{Pascal}}(jobID, tmpPath string) {
+func (h *{{Pascal}}Handler) runImport{{Pascal}}(jobID, tmpPath string{{OWNER_PARAMS}}) {
 	defer os.Remove(tmpPath)
 	// This runs in a bare goroutine, so gin.Recovery() does NOT cover it — an
 	// unrecovered panic here would crash the whole server. Recover, and mark
@@ -472,4 +506,22 @@ func (h *{{Pascal}}Handler) Template(c *gin.Context) {
 
 	path := filepath.Join(g.APIRoot(), "internal", "handlers", names.Snake+"_import.go")
 	return writeFileWithDirs(path, content)
+}
+
+// importUserLookup resolves a CSV cell to an existing user and fails the row
+// when there is none. It never creates one: a users row is an account, and an
+// importer that made one per unrecognised email let any signed-in caller mint
+// accounts around registration, with no password and nothing verified.
+func importUserLookup(col, where, fkGo, cond string) string {
+	return fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok && v != \"\"%s {\n"+
+		"\t\t\tvar rel models.User\n"+
+		"\t\t\tif err := h.DB.Where(%q, v).First(&rel).Error; err != nil {\n"+
+		"\t\t\t\tfailed++\n"+
+		"\t\t\t\tif len(rowErrors) < 50 {\n"+
+		"\t\t\t\t\trowErrors = append(rowErrors, map[string]interface{}{\"row\": rowNum, \"message\": fmt.Sprintf(\"no user with %s %%q\", v)})\n"+
+		"\t\t\t\t}\n"+
+		"\t\t\t\tcontinue\n"+
+		"\t\t\t}\n"+
+		"\t\t\titem.%s = rel.ID\n"+
+		"\t\t}\n", col, cond, where+" = ?", where, fkGo)
 }

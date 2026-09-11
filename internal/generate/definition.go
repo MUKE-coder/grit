@@ -101,6 +101,23 @@ func (d *ResourceDefinition) OwnerField() *Field {
 // IsOwned reports whether ownership scoping should be generated.
 func (d *ResourceDefinition) IsOwned() bool { return d.OwnerField() != nil }
 
+// ApplyFlags merges the command-line flags into the definition. A flag can add
+// to what a --from file declares and never takes it away.
+//
+// The flags used to be assigned over the definition, so a flag left at its
+// default erased the file's value: owned_by: user in a YAML file generated a
+// resource every signed-in account could read and edit, with no warning, and
+// tree, public, tenant_owned and append_only were dropped the same way.
+func (d *ResourceDefinition) ApplyFlags(public, tree bool, ownedBy string, tenantOwned, appendOnly bool) {
+	d.Public = d.Public || public
+	d.Tree = d.Tree || tree
+	if ownedBy != "" {
+		d.OwnedBy = ownedBy
+	}
+	d.TenantOwned = d.TenantOwned || tenantOwned
+	d.AppendOnly = d.AppendOnly || appendOnly
+}
+
 // TreeParentField returns the field the tree hangs from, adding it if --tree was
 // passed without one.
 //

@@ -44,7 +44,7 @@ export default function CodeGenerationPage() {
                 <div className="space-y-3 mb-6">
                   {[
                     { step: '1', title: 'Detect project root', desc: 'Walks up from the current directory looking for docker-compose.yml or turbo.json. Reads the Go module path from apps/api/go.mod.' },
-                    { step: '2', title: 'Parse definition', desc: 'Reads the resource definition from --fields, --from (YAML), or -i (interactive). Validates all field names and types.' },
+                    { step: '2', title: 'Parse definition', desc: 'Reads the resource definition from --fields, --from (YAML), or -i (interactive). Validates all field names and types. A YAML file may also set owned_by, tree, public, append_only and tenant_owned; a flag adds to those, and never removes one the file set.' },
                     { step: '3', title: 'Generate new files', desc: 'Creates 8 new files using string template replacement. Each template uses placeholders like {{Pascal}}, {{plural}}, {{MODULE}} that get replaced with the actual resource names.' },
                     { step: '4', title: 'Inject into existing files', desc: 'Finds marker comments in existing files (e.g., // grit:models) and injects code at those locations. This wires up routes, imports, model registration, and more.' },
                   ].map((item) => (

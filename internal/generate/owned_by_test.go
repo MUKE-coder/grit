@@ -54,10 +54,11 @@ func TestOwnedResourceScopesEveryAccessPath(t *testing.T) {
 		t.Error("List is not scoped to the owner, so every row is returned to " +
 			"every authenticated caller")
 	}
-	// GetByID, Update and Delete each load a row by id and each need the check.
-	if n := strings.Count(h, "authz.OwnsOr404(c, &item)"); n != 3 {
-		t.Errorf("ownership is checked on %d of the 3 by-id handlers "+
-			"(GetByID, Update, Delete)", n)
+	// GetByID, PDF, Update, Patch and Delete each load a row by id and each
+	// need the check. PDF and Patch were generated without it.
+	if n := strings.Count(h, "authz.OwnsOr404(c, &item)"); n != 5 {
+		t.Errorf("ownership is checked on %d of the 5 by-id handlers "+
+			"(GetByID, PDF, Update, Patch, Delete)", n)
 	}
 	if !strings.Contains(h, "item.UserID = authz.CurrentUserID(c)") {
 		t.Error("Create does not stamp the owner from the session")
