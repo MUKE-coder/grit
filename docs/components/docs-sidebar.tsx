@@ -165,6 +165,7 @@ const navItems: NavItem[] = [
       { title: 'Web App (Next.js)', href: '/docs/frontend/web-app' },
       { title: 'TanStack Router (Vite)', href: '/docs/frontend/tanstack-router' },
       { title: 'React Query Hooks', href: '/docs/frontend/hooks' },
+      { title: 'Internationalisation', href: '/docs/frontend/i18n' },
       { title: 'UI Components', href: '/docs/frontend/ui-components' },
       { title: 'Shared Package', href: '/docs/frontend/shared-package' },
     ],

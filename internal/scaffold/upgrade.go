@@ -79,6 +79,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 	hasExpo := dirExists(filepath.Join(root, "apps", "expo"))
 	hasDocs := dirExists(filepath.Join(root, "apps", "docs"))
 	hasShared := dirExists(filepath.Join(root, "packages", "shared"))
+	// Before anything is rewritten: whether i18n was set up, since the files
+	// that say so (package.json, the layouts) are among those replaced below.
+	hadI18n := i18nInstalled(root)
 
 	var updated int
 
@@ -313,6 +316,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		skipViteApp("web")
 	} else if hasWeb {
 		spinner.Printf("  → Updating web app (landing page)...\n")
+		if adoptNextTSConfig(filepath.Join(root, "apps", "web"), webFileMap(root, opts)) > 0 {
+			green.Printf("  ✓ web tsconfig.json differed only by Next.js's own rewrite and is Grit's again\n")
+		}
+		if adopted := adoptI18nWired(filepath.Join(root, "apps", "web"), webFileMap(root, opts)); adopted > 0 {
+			green.Printf("  ✓ %d web file(s) differed only by Grit's i18n wiring and are Grit's again\n", adopted)
+		}
 		if err := writeWebFiles(root, opts); err != nil {
 			return fmt.Errorf("updating web files: %w", err)
 		}
@@ -374,6 +383,18 @@ func Upgrade(uOpts UpgradeOptions) error {
 	if saveErr := release(); saveErr != nil {
 		spinner.Printf("  Could not write .grit/manifest.json: %v\n", saveErr)
 	}
+	// An i18n project had next-intl wired into files this upgrade may just have
+	// replaced with the plain templates. Wiring is idempotent, so it is simply
+	// done again, which also mounts the switcher and replaces one from before
+	// v3.222.0 that never compiled.
+	if hadI18n {
+		if _, err := AddI18n(root, false); err != nil {
+			fmt.Printf("  ⚠ Re-applying i18n: %v\n", err)
+		} else {
+			fmt.Println("  ✓ i18n wiring re-applied")
+		}
+	}
+
 	finished = true
 	_ = updated // superseded by the guard's count, which counts actual writes
 
@@ -489,6 +510,16 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 		files[path] = body
 	}
 
+	// Read before the rewrite: package.json is refreshed below, and a pristine
+	// one loses next-intl until i18n is wired again at the end of the upgrade.
+	keepI18n := fileContains(filepath.Join(adminRoot, "package.json"), `"next-intl"`)
+	if adoptNextTSConfig(adminRoot, files) > 0 {
+		green.Printf("  ✓ admin tsconfig.json differed only by Next.js's own rewrite and is Grit's again\n")
+	}
+	if adopted := adoptI18nWired(adminRoot, files); adopted > 0 {
+		green.Printf("  ✓ %d admin file(s) differed only by Grit's i18n wiring and are Grit's again\n", adopted)
+	}
+
 	n, err := writeUpgradeFiles(files, uOpts.Force)
 	if err != nil {
 		return 0, err
@@ -510,7 +541,9 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 	}
 
 	n += pruneAdminStrays(adminRoot)
-	n += pruneUnwiredI18n(adminRoot)
+	if !keepI18n {
+		n += pruneUnwiredI18n(adminRoot)
+	}
 
 	green.Printf("  ✓ Admin panel updated (%d files)\n", n)
 	return n, nil
@@ -865,6 +898,21 @@ func isUserOwnedAdminFile(adminRoot, path string) bool {
 	// The demo Blog resource, which people delete or rewrite.
 	if strings.Contains(rel, "/blogs/") {
 		return true
+	}
+	return false
+}
+
+// i18nInstalled reports whether grit add i18n has run on this project.
+func i18nInstalled(root string) bool {
+	for _, app := range []string{"admin", "web"} {
+		if fileContains(filepath.Join(root, "apps", app, "package.json"), `"next-intl"`) {
+			return true
+		}
+	}
+	for _, api := range []string{filepath.Join(root, "apps", "api"), root} {
+		if fileExists(filepath.Join(api, "internal", "i18n", "i18n.go")) {
+			return true
+		}
 	}
 	return false
 }

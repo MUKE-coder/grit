@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
 // AddI18n installs internationalisation into an existing Grit project.
@@ -37,6 +39,22 @@ func AddI18n(projectRoot string, force bool) (*I18nResult, error) {
 
 	res := &I18nResult{}
 
+	// Record what this writes and edits, so grit upgrade can tell Grit's files
+	// from yours. Before v3.222.0 nothing was recorded, and every upgrade of an
+	// i18n project reported six files as edited by you and never updated them.
+	// grit new --i18n calls this after the scaffold's own recording has
+	// stopped; inside grit upgrade it joins that recording.
+	release, err := manifest.Start(projectRoot, DefaultVersion, "i18n")
+	if err != nil {
+		return nil, err
+	}
+	released := false
+	defer func() {
+		if !released {
+			_ = release()
+		}
+	}()
+
 	files := map[string]string{}
 
 	// ── API side ────────────────────────────────────────────────────
@@ -61,6 +79,10 @@ func AddI18n(projectRoot string, force bool) (*I18nResult, error) {
 		files[filepath.Join(root, "messages", "en.json")] = i18nMessagesEN()
 		files[filepath.Join(root, "messages", "fr.json")] = i18nMessagesFR()
 		files[filepath.Join(root, "messages", "sw.json")] = i18nMessagesSW()
+		// The admin's translation seam, for a project older than it.
+		if filepath.Base(root) == "admin" {
+			files[filepath.Join(root, "lib", "i18n.tsx")] = adminI18nLib()
+		}
 	}
 
 	module, err := detectModule(layout.APIRoot)
@@ -69,7 +91,19 @@ func AddI18n(projectRoot string, force bool) (*I18nResult, error) {
 	}
 
 	for path, body := range files {
-		if !force && fileExists(path) {
+		if !force && fileExists(path) && !brokenSwitcher(path) {
+			// A catalogue is yours to edit, so it is never replaced, but keys
+			// added in a later release are merged in so they are not shown in
+			// English in the middle of a translated page.
+			if isCatalogue(path) {
+				added, err := mergeCatalogue(path, strings.ReplaceAll(body, "{{MODULE}}", module))
+				if err != nil {
+					return nil, err
+				}
+				if added {
+					res.Wired = append(res.Wired, filepath.Base(filepath.Dir(filepath.Dir(path)))+"/"+filepath.Base(path)+" new keys")
+				}
+			}
 			res.Skipped = append(res.Skipped, path)
 			continue
 		}
@@ -80,13 +114,43 @@ func AddI18n(projectRoot string, force bool) (*I18nResult, error) {
 		if err := os.WriteFile(path, []byte(body), 0644); err != nil {
 			return nil, fmt.Errorf("writing %s: %w", path, err)
 		}
+		manifest.Note(path, body)
 		res.Written = append(res.Written, path)
 	}
 
 	if err := wireI18n(layout, res); err != nil {
 		return nil, err
 	}
+	released = true
+	if err := release(); err != nil {
+		return nil, fmt.Errorf("recording the i18n files: %w", err)
+	}
 	return res, nil
+}
+
+// brokenSwitcher reports a language switcher from before v3.222.0, which
+// imported a dropdown-menu component neither app has and so failed the type
+// check of every --i18n project. Replacing it can only fix things: while that
+// component is missing, the file cannot compile, customised or not.
+func brokenSwitcher(path string) bool {
+	return filepath.Base(path) == "language-switcher.tsx" &&
+		fileContains(path, "@/components/ui/dropdown-menu") &&
+		!fileExists(filepath.Join(filepath.Dir(path), "ui", "dropdown-menu.tsx"))
+}
+
+// writeEdit saves an edit to a file Grit may track. The edited file is adopted
+// into the manifest only when it was exactly what Grit last wrote, so it stays
+// Grit's and the next upgrade can refresh it. A file somebody changed stays
+// theirs, and upgrade goes on leaving it alone.
+func writeEdit(path, content string) error {
+	pristine := manifest.IsUnchanged(path)
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		return err
+	}
+	if pristine {
+		manifest.Refresh(path)
+	}
+	return nil
 }
 
 // i18nLayout is the set of places i18n has to reach in whichever architecture
@@ -160,7 +224,7 @@ func wireI18n(l *i18nLayout, res *I18nResult) error {
 
 		// ── package.json: the dependency
 		if err := injectJSONDep(filepath.Join(root, "package.json"),
-			`"next-intl": "^3.26.0",`, &res.Wired, name+" dependency"); err != nil {
+			`"next-intl": "^4.14.0",`, &res.Wired, name+" dependency"); err != nil {
 			return err
 		}
 
@@ -184,7 +248,86 @@ func wireI18n(l *i18nLayout, res *I18nResult) error {
 		if err := wireLayout(filepath.Join(root, "app", "layout.tsx"), &res.Wired, name); err != nil {
 			return err
 		}
+
+		// ── the admin's own components read the catalogue through lib/i18n,
+		// which cannot import next-intl, so the layout hands it the messages.
+		if fileExists(filepath.Join(root, "lib", "i18n.tsx")) {
+			if err := wireAdminMessages(filepath.Join(root, "app", "layout.tsx"), &res.Wired, name); err != nil {
+				return err
+			}
+		}
+
+		// ── the switcher, where people can reach it. It was written and never
+		// mounted, so nothing a user could click changed the language.
+		header := filepath.Join(root, "components", "chrome", "PageHeader.tsx")
+		if err := injectAfterLine(header, `import { DarkModeToggle } from "./DarkModeToggle";`,
+			`import { LanguageSwitcher } from "@/components/language-switcher";`, &res.Wired, name+" switcher import"); err != nil {
+			return err
+		}
+		if err := injectAfterLine(header, "<DarkModeToggle />", "          <LanguageSwitcher />",
+			&res.Wired, name+" switcher"); err != nil {
+			return err
+		}
+		navbar := filepath.Join(root, "components", "navbar.tsx")
+		if err := injectAfterLine(navbar, `from "lucide-react";`,
+			`import { LanguageSwitcher } from "@/components/language-switcher";`, &res.Wired, name+" switcher import"); err != nil {
+			return err
+		}
+		if err := injectBeforeLine(navbar, "Admin CTA", "          <LanguageSwitcher />",
+			&res.Wired, name+" switcher"); err != nil {
+			return err
+		}
 	}
+	return nil
+}
+
+// injectBeforeLine adds code on the line before the first line containing marker.
+func injectBeforeLine(path, marker, code string, wired *[]string, label string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil // the file is optional for this architecture
+	}
+	content := string(data)
+	norm := func(x string) string { return strings.Join(strings.Fields(x), " ") }
+	if strings.Contains(norm(content), norm(code)) {
+		return nil
+	}
+	lines := strings.Split(content, "\n")
+	for i, line := range lines {
+		if strings.Contains(line, marker) {
+			out := append([]string{}, lines[:i]...)
+			out = append(out, code)
+			out = append(out, lines[i:]...)
+			if err := writeEdit(path, strings.Join(out, "\n")); err != nil {
+				return fmt.Errorf("writing %s: %w", path, err)
+			}
+			*wired = append(*wired, label)
+			return nil
+		}
+	}
+	return nil
+}
+
+// wireAdminMessages gives the admin's lib/i18n the same catalogue next-intl
+// has, inside the provider wireLayout added.
+func wireAdminMessages(path string, wired *[]string, label string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	content := string(data)
+	const open = "<NextIntlClientProvider locale={locale} messages={messages}>"
+	if strings.Contains(content, "<I18nProvider") || !strings.Contains(content, open) {
+		return nil
+	}
+	content = strings.Replace(content, open, open+"\n          <I18nProvider messages={messages}>", 1)
+	content = strings.Replace(content, "</NextIntlClientProvider>", "</I18nProvider>\n        </NextIntlClientProvider>", 1)
+	content = strings.Replace(content, `import { NextIntlClientProvider } from "next-intl";`,
+		`import { NextIntlClientProvider } from "next-intl";`+"\n"+`import { I18nProvider } from "@/lib/i18n";`, 1)
+	if err := writeEdit(path, content); err != nil {
+		return fmt.Errorf("writing %s: %w", path, err)
+	}
+	*wired = append(*wired, label+" admin catalogue")
 	return nil
 }
 
@@ -207,7 +350,7 @@ func injectAfterLine(path, marker, code string, wired *[]string, label string) e
 			out := append([]string{}, lines[:i+1]...)
 			out = append(out, code)
 			out = append(out, lines[i+1:]...)
-			if err := os.WriteFile(path, []byte(strings.Join(out, "\n")), 0644); err != nil {
+			if err := writeEdit(path, strings.Join(out, "\n")); err != nil {
 				return fmt.Errorf("writing %s: %w", path, err)
 			}
 			*wired = append(*wired, label)
@@ -230,7 +373,7 @@ func replaceOnce(path, old, new string, wired *[]string, label string) error {
 		return nil
 	}
 	content = strings.Replace(content, old, new, 1)
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+	if err := writeEdit(path, content); err != nil {
 		return fmt.Errorf("writing %s: %w", path, err)
 	}
 	*wired = append(*wired, label)
@@ -249,6 +392,16 @@ func injectJSONDep(path, dep string, wired *[]string, label string) error {
 	}
 	content := string(data)
 	if strings.Contains(content, `"next-intl"`) {
+		// next-intl 3 predates Next 16, whose builds run on Turbopack, and its
+		// plugin never registers its config there: every production build of
+		// an --i18n app stopped with "Couldn't find next-intl config file".
+		// 4 supports Next 16 and needs nothing else changed here.
+		if bumped := nextIntl3.ReplaceAllString(content, `"next-intl": "^4.14.0"`); bumped != content {
+			if err := writeEdit(path, bumped); err != nil {
+				return fmt.Errorf("writing %s: %w", path, err)
+			}
+			*wired = append(*wired, label+" next-intl 4")
+		}
 		return nil
 	}
 	marker := `"dependencies": {`
@@ -258,7 +411,7 @@ func injectJSONDep(path, dep string, wired *[]string, label string) error {
 	}
 	at := idx + len(marker)
 	content = content[:at] + "\n    " + dep + content[at:]
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+	if err := writeEdit(path, content); err != nil {
 		return fmt.Errorf("writing %s: %w", path, err)
 	}
 	*wired = append(*wired, label)
@@ -330,7 +483,7 @@ import { getLocale, getMessages } from "next-intl/server";`, 1)
 		return fmt.Errorf("%s: provider wrap produced nothing", path)
 	}
 
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+	if err := writeEdit(path, content); err != nil {
 		return fmt.Errorf("writing %s: %w", path, err)
 	}
 	*wired = append(*wired, label+" layout provider")

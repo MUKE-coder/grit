@@ -117,6 +117,23 @@ func Refresh(absPath string) {
 	recording.manifest.Record(rel, existing.Generator, recording.grit, string(data))
 }
 
+// IsUnchanged reports whether a tracked file still holds exactly what Grit last
+// wrote. For an edit that should adopt its result only when nobody else has
+// touched the file: check before editing, then Refresh after. False when not
+// recording, and for files Grit does not track.
+func IsUnchanged(absPath string) bool {
+	recording.mu.Lock()
+	defer recording.mu.Unlock()
+	if !recording.active {
+		return false
+	}
+	rel, inside := Rel(recording.root, absPath)
+	if !inside {
+		return false
+	}
+	return recording.manifest.StatusOf(recording.root, rel) == Unchanged
+}
+
 // Drop removes a path from the recording, for a generator that deletes a file
 // it previously wrote.
 func Drop(absPath string) {

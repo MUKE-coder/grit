@@ -84,70 +84,51 @@ export function setLocaleCookie(locale: Locale) {
 func i18nSwitcherTSX() string {
 	return `'use client'
 
-import { useState, useTransition } from 'react'
+import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import { Check, Languages } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
 
-import {
-  Button,
-} from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { LOCALES, setLocaleCookie, type Locale } from '@/lib/locale'
+import { LOCALES, isSupported, setLocaleCookie } from '@/lib/locale'
 
 /*
  * The language switcher.
  *
+ * A native <select>, on purpose. Neither app ships a dropdown menu primitive,
+ * and before v3.222.0 this file imported one anyway, which failed the type
+ * check of every project scaffolded with --i18n. A select needs no library and
+ * is reachable by keyboard and announced by screen readers without any work.
+ *
  * Writes the cookie, then router.refresh() so the server components re-render
  * with the new catalogue. The URL does not change, which is the point of the
  * cookie strategy: the page you are on stays the page you are on.
- *
- * useTransition keeps the control responsive while the server round-trips,
- * rather than leaving a menu that looks broken for a beat after the click.
  */
 export function LanguageSwitcher() {
   const router = useRouter()
   const active = useLocale()
+  const t = useTranslations('common')
   const [pending, startTransition] = useTransition()
-  const [open, setOpen] = useState(false)
-
-  const choose = (code: Locale) => {
-    if (code === active) return setOpen(false)
-    setLocaleCookie(code)
-    setOpen(false)
-    startTransition(() => router.refresh())
-  }
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Change language"
-          disabled={pending}
-        >
-          <Languages className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[10rem]">
+    <label className="inline-flex items-center">
+      <span className="sr-only">{t('language')}</span>
+      <select
+        value={active}
+        disabled={pending}
+        onChange={(e) => {
+          const code = e.target.value
+          if (!isSupported(code) || code === active) return
+          setLocaleCookie(code)
+          startTransition(() => router.refresh())
+        }}
+        className="h-9 rounded-lg border border-border bg-bg-tertiary px-2 text-sm text-text-secondary transition-colors hover:bg-bg-hover focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-60"
+      >
         {LOCALES.map((l) => (
-          <DropdownMenuItem
-            key={l.code}
-            onSelect={() => choose(l.code)}
-            className="flex items-center justify-between gap-2"
-          >
+          <option key={l.code} value={l.code}>
             {l.label}
-            {l.code === active && <Check className="h-4 w-4" aria-hidden="true" />}
-          </DropdownMenuItem>
+          </option>
         ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </select>
+    </label>
   )
 }
 `
@@ -166,6 +147,7 @@ func i18nMessagesEN() string {
     "roles": "Roles",
     "settings": "Settings",
     "system": "System",
+    "systemHub": "System Hub",
     "signOut": "Sign out"
   },
   "table": {
@@ -175,11 +157,21 @@ func i18nMessagesEN() string {
     "export": "Export",
     "import": "Import",
     "selected": "{count} selected",
-    "empty": "Nothing here yet",
+    "empty": "No records found",
     "rowsPerPage": "Rows per page",
     "of": "of",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "prev": "Prev",
+    "first": "First",
+    "last": "Last",
+    "actions": "Actions",
+    "view": "View",
+    "new": "New {name}",
+    "showing": "Showing {start}–{end} of {total}",
+    "perPage": "{size} / page",
+    "emptyHint": "Try adjusting your search or filters",
+    "searchPlaceholder": "Search..."
   },
   "form": {
     "save": "Save",
@@ -190,7 +182,11 @@ func i18nMessagesEN() string {
     "edit": "Edit",
     "confirmDelete": "Delete this permanently?",
     "required": "Required",
-    "optional": "Optional"
+    "optional": "Optional",
+    "update": "Update",
+    "editTitle": "Edit {name}",
+    "createTitle": "Create {name}",
+    "backTo": "Back to {name}"
   },
   "auth": {
     "signIn": "Sign in",
@@ -219,6 +215,7 @@ func i18nMessagesFR() string {
     "roles": "Rôles",
     "settings": "Paramètres",
     "system": "Système",
+    "systemHub": "Centre système",
     "signOut": "Se déconnecter"
   },
   "table": {
@@ -228,11 +225,21 @@ func i18nMessagesFR() string {
     "export": "Exporter",
     "import": "Importer",
     "selected": "{count} sélectionné(s)",
-    "empty": "Rien ici pour l'instant",
+    "empty": "Aucun enregistrement",
     "rowsPerPage": "Lignes par page",
     "of": "sur",
     "previous": "Précédent",
-    "next": "Suivant"
+    "next": "Suivant",
+    "prev": "Préc.",
+    "first": "Début",
+    "last": "Fin",
+    "actions": "Actions",
+    "view": "Voir",
+    "new": "Ajouter {name}",
+    "showing": "{start} à {end} sur {total}",
+    "perPage": "{size} par page",
+    "emptyHint": "Essayez de modifier votre recherche ou vos filtres",
+    "searchPlaceholder": "Rechercher..."
   },
   "form": {
     "save": "Enregistrer",
@@ -243,7 +250,11 @@ func i18nMessagesFR() string {
     "edit": "Modifier",
     "confirmDelete": "Supprimer définitivement ?",
     "required": "Obligatoire",
-    "optional": "Facultatif"
+    "optional": "Facultatif",
+    "update": "Mettre à jour",
+    "editTitle": "Modifier {name}",
+    "createTitle": "Créer {name}",
+    "backTo": "Retour à {name}"
   },
   "auth": {
     "signIn": "Se connecter",
@@ -272,6 +283,7 @@ func i18nMessagesSW() string {
     "roles": "Majukumu",
     "settings": "Mipangilio",
     "system": "Mfumo",
+    "systemHub": "Kitovu cha mfumo",
     "signOut": "Toka"
   },
   "table": {
@@ -281,11 +293,21 @@ func i18nMessagesSW() string {
     "export": "Hamisha",
     "import": "Ingiza",
     "selected": "{count} zimechaguliwa",
-    "empty": "Hakuna kitu bado",
+    "empty": "Hakuna rekodi",
     "rowsPerPage": "Safu kwa ukurasa",
     "of": "kati ya",
     "previous": "Iliyotangulia",
-    "next": "Ifuatayo"
+    "next": "Ifuatayo",
+    "prev": "Nyuma",
+    "first": "Mwanzo",
+    "last": "Mwisho",
+    "actions": "Vitendo",
+    "view": "Tazama",
+    "new": "Ongeza {name}",
+    "showing": "{start}–{end} kati ya {total}",
+    "perPage": "{size} kwa ukurasa",
+    "emptyHint": "Jaribu kubadilisha utafutaji au vichujio",
+    "searchPlaceholder": "Tafuta..."
   },
   "form": {
     "save": "Hifadhi",
@@ -296,7 +318,11 @@ func i18nMessagesSW() string {
     "edit": "Hariri",
     "confirmDelete": "Futa hii kabisa?",
     "required": "Inahitajika",
-    "optional": "Si lazima"
+    "optional": "Si lazima",
+    "update": "Sasisha",
+    "editTitle": "Hariri {name}",
+    "createTitle": "Tengeneza {name}",
+    "backTo": "Rudi kwa {name}"
   },
   "auth": {
     "signIn": "Ingia",

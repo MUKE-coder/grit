@@ -4,6 +4,7 @@ package scaffold
 func adminDataTable() string {
 	return `"use client";
 
+import { useT } from "@/lib/i18n";
 import { useState, type MouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 import type { ColumnDefinition, RowActionDefinition } from "@/lib/resource";
@@ -125,6 +126,7 @@ export function DataTable<T extends object = Record<string, unknown>>({
   const data = dataProp as unknown as Record<string, unknown>[];
   const onView = onViewProp as ((item: Record<string, unknown>) => void) | undefined;
   const onEdit = onEditProp as ((item: Record<string, unknown>) => void) | undefined;
+  const t = useT();
 
   if (isLoading) {
     return <TableSkeleton columns={columns.length + (onSelectRows ? 1 : 0) + (onView || onEdit || onDelete || (rowActions && rowActions.length) ? 1 : 0)} />;
@@ -177,7 +179,7 @@ export function DataTable<T extends object = Record<string, unknown>>({
             ))}
             {(onView || onEdit || onDelete || (rowActions && rowActions.length > 0)) && (
               <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider w-[140px]">
-                Actions
+                {t("table.actions", "Actions")}
               </th>
             )}
           </tr>
@@ -227,7 +229,7 @@ export function DataTable<T extends object = Record<string, unknown>>({
                         <button
                           onClick={() => onView(row)}
                           className="rounded-md p-1.5 text-text-secondary hover:text-info hover:bg-info/10 transition-colors"
-                          title="View"
+                          title={t("table.view", "View")}
                         >
                           <Eye className="h-3.5 w-3.5" />
                         </button>
@@ -237,7 +239,7 @@ export function DataTable<T extends object = Record<string, unknown>>({
                           onClick={() => onEdit(row)}
                           className="text-xs text-text-secondary hover:text-accent transition-colors"
                         >
-                          Edit
+                          {t("form.edit", "Edit")}
                         </button>
                       )}
                       {onDelete && (
@@ -245,7 +247,7 @@ export function DataTable<T extends object = Record<string, unknown>>({
                           onClick={() => onDelete(id)}
                           className="text-xs text-text-secondary hover:text-danger transition-colors"
                         >
-                          Delete
+                          {t("form.delete", "Delete")}
                         </button>
                       )}
                       {(rowActions ?? [])
@@ -883,6 +885,7 @@ function FilterControl({
 func adminTableToolbar() string {
 	return `"use client";
 
+import { useT } from "@/lib/i18n";
 import { useState } from "react";
 import type { ResourceDefinition, ColumnDefinition } from "@/lib/resource";
 import { Search, Plus, Upload, Columns3 } from "@/lib/icons";
@@ -930,6 +933,7 @@ export function TableToolbar({
   onImport,
 }: TableToolbarProps) {
   const [columnsOpen, setColumnsOpen] = useState(false);
+  const t = useT();
 
   // Date filter is on by default; opt-out via { enabled: false }.
   const dateFilterCfg = resource.table.dateFilter;
@@ -950,7 +954,7 @@ export function TableToolbar({
             type="text"
             value={search}
             onChange={(e) => onSearch(e.target.value)}
-            placeholder={resource.table.searchPlaceholder ?? "Search..."}
+            placeholder={resource.table.searchPlaceholder ?? t("table.searchPlaceholder", "Search...")}
             className="w-48 bg-transparent text-sm text-foreground placeholder:text-text-muted focus:outline-none"
           />
         </div>
@@ -978,7 +982,7 @@ export function TableToolbar({
         <button
           onClick={() => setColumnsOpen(!columnsOpen)}
           className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-hover transition-colors"
-          title="Toggle columns"
+          title={t("table.columns", "Toggle columns")}
         >
           <Columns3 className="h-3.5 w-3.5" />
         </button>
@@ -1015,7 +1019,7 @@ export function TableToolbar({
           title="Import from Excel"
         >
           <Upload className="h-3.5 w-3.5" />
-          Import
+          {t("table.import", "Import")}
         </button>
       )}
 
@@ -1037,7 +1041,7 @@ export function TableToolbar({
           className={buttonClasses({ size: "sm" })}
         >
           <Plus className="h-3.5 w-3.5" />
-          New {resource.label?.singular ?? resource.name}
+          {t("table.new", "New {name}", { name: resource.label?.singular ?? resource.name })}
         </button>
       )}
     </div>
@@ -1048,7 +1052,9 @@ export function TableToolbar({
 
 // adminTablePagination returns the pagination component.
 func adminTablePagination() string {
-	return `interface TablePaginationProps {
+	return `import { useT } from "@/lib/i18n";
+
+interface TablePaginationProps {
   page: number;
   pageSize: number;
   total: number;
@@ -1065,6 +1071,7 @@ export function TablePagination({
   onPageChange,
   onPageSizeChange,
 }: TablePaginationProps) {
+  const t = useT();
   if (total === 0) return null;
 
   const start = (page - 1) * pageSize + 1;
@@ -1074,7 +1081,7 @@ export function TablePagination({
     <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border p-4">
       <div className="flex items-center gap-3">
         <p className="text-sm text-text-muted">
-          Showing {start}–{end} of {total}
+          {t("table.showing", "Showing {start}–{end} of {total}", { start, end, total })}
         </p>
         {/* Toolbar chrome, not a form field — the input slot sets w-full,
             which would stretch this to fill the row. */}
@@ -1085,7 +1092,7 @@ export function TablePagination({
         >
           {[10, 20, 50, 100].map((size) => (
             <option key={size} value={size}>
-              {size} / page
+              {t("table.perPage", "{size} / page", { size })}
             </option>
           ))}
         </select>
@@ -1097,14 +1104,14 @@ export function TablePagination({
           disabled={page <= 1}
           className="rounded-lg border border-border bg-bg-tertiary px-2.5 py-1.5 text-sm text-text-secondary hover:bg-bg-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          First
+          {t("table.first", "First")}
         </button>
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
           className="rounded-lg border border-border bg-bg-tertiary px-2.5 py-1.5 text-sm text-text-secondary hover:bg-bg-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          Prev
+          {t("table.prev", "Prev")}
         </button>
 
         {generatePageNumbers(page, totalPages).map((p, i) =>
@@ -1130,14 +1137,14 @@ export function TablePagination({
           disabled={page >= totalPages}
           className="rounded-lg border border-border bg-bg-tertiary px-2.5 py-1.5 text-sm text-text-secondary hover:bg-bg-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          Next
+          {t("table.next", "Next")}
         </button>
         <button
           onClick={() => onPageChange(totalPages)}
           disabled={page >= totalPages}
           className="rounded-lg border border-border bg-bg-tertiary px-2.5 py-1.5 text-sm text-text-secondary hover:bg-bg-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          Last
+          {t("table.last", "Last")}
         </button>
       </div>
     </div>
@@ -1199,16 +1206,18 @@ export function TableSkeleton({ columns, rows = 5 }: TableSkeletonProps) {
 // adminTableEmptyState returns the empty state component.
 func adminTableEmptyState() string {
 	return `import { Database } from "@/lib/icons";
+import { useT } from "@/lib/i18n";
 
 export function TableEmptyState() {
+  const t = useT();
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
       <div className="rounded-full bg-bg-tertiary p-4 mb-4">
         <Database className="h-8 w-8 text-text-muted" />
       </div>
-      <h3 className="text-sm font-medium text-foreground mb-1">No records found</h3>
+      <h3 className="text-sm font-medium text-foreground mb-1">{t("table.empty", "No records found")}</h3>
       <p className="text-sm text-text-muted">
-        Try adjusting your search or filters
+        {t("table.emptyHint", "Try adjusting your search or filters")}
       </p>
     </div>
   );

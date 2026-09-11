@@ -1058,6 +1058,7 @@ import { BulkEditModal } from "@/components/tables/bulk-edit-modal";
 import { exportToFile } from "@/lib/excel-utils";
 // grit:resource:imports
 import { buttonClasses } from "@/components/ui/button";
+import { useLocalizedResource, useT } from "@/lib/i18n";
 
 // Lazy-load modal/form components — they are only shown conditionally and
 // would otherwise inflate the initial page bundle for every admin resource.
@@ -1088,6 +1089,13 @@ const ImportModal = dynamic(() =>
   import("@/components/tables/import-modal").then((m) => m.ImportModal)
 );
 
+// NewLabel is the create button's text. Its own component, so the translated
+// "New" costs the list view no hook of its own.
+function NewLabel({ name }: { name: string }) {
+  const t = useT();
+  return <>{t("table.new", "New {name}", { name })}</>;
+}
+
 interface ResourcePageProps {
   resource: ResourceDefinition;
 }
@@ -1098,7 +1106,10 @@ interface ResourcePageProps {
 // sat below the form-mode early returns — meaning the hook count varied
 // between renders, which React 19 strict mode errors on. Splitting into two
 // components keeps each function\'s hook list stable.
-export function ResourcePage({ resource }: ResourcePageProps) {
+export function ResourcePage({ resource: definition }: ResourcePageProps) {
+  // Labels translated once, here, so the table, forms and headings below read
+  // them without knowing about translation.
+  const resource = useLocalizedResource(definition);
   const searchParams = useSearchParams();
 
   // A Page slot replaces this entire component. It is checked first and
@@ -1174,7 +1185,7 @@ function ResourceListView({ resource }: ResourcePageProps) {
   const headerActions = c.can("create") ? (
     <button onClick={c.create} className={buttonClasses({ size: "sm" })}>
       <span className="text-base leading-none">+</span>
-      New {c.singularName}
+      <NewLabel name={c.singularName} />
     </button>
   ) : undefined;
 

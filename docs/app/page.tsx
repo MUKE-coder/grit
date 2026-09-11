@@ -306,6 +306,7 @@ export default function HomePage() {
               { icon: Layers, label: 'Runs as many replicas', href: '/docs/deployment/multiple-instances' },
               { icon: Layers, label: 'Transactional workflow hooks', href: '/docs/backend/workflows#hooks' },
               { icon: Database, label: 'Durable events (outbox)', href: '/docs/backend/workflows#durable' },
+              { icon: Layers, label: 'Translated admin panel', href: '/docs/frontend/i18n#admin' },
               { icon: TrendingUp, label: 'Exact multi-currency money', href: '/docs/concepts/money' },
               { icon: Building2, label: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
               { icon: Webhook, label: 'Webhooks', href: '/docs/backend/webhooks' },

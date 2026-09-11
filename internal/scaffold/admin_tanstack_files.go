@@ -361,6 +361,7 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "lib", "resource.ts"):     adminResourceTypes(),
 		filepath.Join(adminRoot, "src", "lib", "form-values.ts"):  adminFormValues(),
 		filepath.Join(adminRoot, "src", "lib", "icons.ts"):        adminIconMap(),
+		filepath.Join(adminRoot, "src", "lib", "i18n.tsx"):        nextToTanStack(adminI18nLib()),
 		filepath.Join(adminRoot, "src", "lib", "formatters.ts"):   adminFormatters(),
 		// Compat shim: maps next/link, next/image, next/navigation, next/dynamic
 		// onto TanStack Router so the shared admin components run under Vite (#69).
