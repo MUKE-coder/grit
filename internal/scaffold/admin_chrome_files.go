@@ -678,6 +678,14 @@ export function CollapsibleSidebar({
 
   const { can, isLoading: permsLoading } = usePermissions();
 
+  // The System Hub fronts operations pages that each need a permission. Shown
+  // to an ADMIN, or to anyone holding one of them: by role name alone it put an
+  // EDITOR in front of pages the API then refused.
+  const showSystem =
+    user.role === "ADMIN" ||
+    (!permsLoading &&
+      ["system.view", "jobs.view", "backups.view", "audit.view", "roles.view"].some((p) => can(p)));
+
   // Permission gating, on top of the adminOnly check.
   //
   // Only applied once permissions have loaded: can() fails closed while the
@@ -806,7 +814,7 @@ export function CollapsibleSidebar({
               anything plugins add). They're grouped into tabs inside the hub at
               /system rather than crowding the rail. Admin-only, matching the
               surfaces it fronts. Highlights for /system/* and /settings/*. */}
-          {isAdmin && (
+          {showSystem && (
             <div className="pt-3">
               <SidebarLink
                 href="/system"

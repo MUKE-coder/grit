@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -61,8 +62,13 @@ func (g *Generator) resourceRoutesSource(names Names) (string, error) {
 	// Imports. Built as a list rather than a template with holes: a resource
 	// with no roles must not import middleware, and an unused import is a
 	// compile error rather than a warning in Go.
+	// Delete and bulk go on the staff group, asking for the resource's delete
+	// permission, where the project has that group. Role-restricted and
+	// append-only resources have their own arrangements.
+	needStaff := g.projectHasStaffGroup() && len(g.Roles) == 0 && !g.Definition.AppendOnly
+
 	imports := []string{fmt.Sprintf("%q", g.Module+"/internal/handlers")}
-	if len(g.Roles) > 0 {
+	if len(g.Roles) > 0 || needStaff {
 		imports = append(imports, fmt.Sprintf("%q", g.Module+"/internal/middleware"))
 	}
 
@@ -79,7 +85,12 @@ func (g *Generator) resourceRoutesSource(names Names) (string, error) {
 	fmt.Fprintf(&b, "// deleting this file; nothing else refers to it.\n")
 	fmt.Fprintf(&b, "//\n")
 	fmt.Fprintf(&b, "// m.Public is outside the auth middleware and behind an API key, m.Protected\n")
-	fmt.Fprintf(&b, "// takes a JWT or an API key, and m.Admin also requires the ADMIN role.\n")
+	if needStaff {
+		fmt.Fprintf(&b, "// takes a JWT or an API key, and m.Staff also requires the permission its\n")
+		fmt.Fprintf(&b, "// route names (an ADMIN holds every one).\n")
+	} else {
+		fmt.Fprintf(&b, "// takes a JWT or an API key, and m.Admin also requires the ADMIN role.\n")
+	}
 	fmt.Fprintf(&b, "func init() {\n")
 	fmt.Fprintf(&b, "\tRegisterRoutes(func(m *Mount) {\n")
 
@@ -161,8 +172,15 @@ func (g *Generator) resourceRoutesSource(names Names) (string, error) {
 		fmt.Fprintf(&b, "\n")
 		// Bulk sits with DELETE rather than with PATCH: it can delete, and a
 		// route is only as protected as its most destructive branch.
-		fmt.Fprintf(&b, "\t\tm.Admin.DELETE(\"/%s/:id\", h.Delete)\n", names.Plural)
-		fmt.Fprintf(&b, "\t\tm.Admin.POST(\"/%s/bulk\", h.Bulk)\n", names.Plural)
+		if needStaff {
+			// A role granted <resource>.delete can delete without being made a
+			// full admin. Bulk can delete too, so it asks for the same.
+			fmt.Fprintf(&b, "\t\tm.Staff.DELETE(\"/%s/:id\", middleware.RequireRole(\"ADMIN\", \"perm:%s.delete\"), h.Delete)\n", names.Plural, names.Plural)
+			fmt.Fprintf(&b, "\t\tm.Staff.POST(\"/%s/bulk\", middleware.RequireRole(\"ADMIN\", \"perm:%s.delete\"), h.Bulk)\n", names.Plural, names.Plural)
+		} else {
+			fmt.Fprintf(&b, "\t\tm.Admin.DELETE(\"/%s/:id\", h.Delete)\n", names.Plural)
+			fmt.Fprintf(&b, "\t\tm.Admin.POST(\"/%s/bulk\", h.Bulk)\n", names.Plural)
+		}
 	}
 
 	fmt.Fprintf(&b, "\t})\n}\n")
@@ -183,3 +201,12 @@ func removeResourceRoutes(apiRoot, snake string) (bool, error) {
 	}
 	return true, nil
 }
+
+// projectHasStaffGroup reports whether the project's route registry has the
+// staff group, which a project from before v3.220.0 does not.
+func (g *Generator) projectHasStaffGroup() bool {
+	data, err := os.ReadFile(filepath.Join(g.APIRoot(), "internal", "routes", "resources.go"))
+	return err == nil && staffField.Match(data)
+}
+
+var staffField = regexp.MustCompile(`Staff\s+\*gin\.RouterGroup`)

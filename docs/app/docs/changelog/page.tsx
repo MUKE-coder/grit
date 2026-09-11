@@ -29,6 +29,50 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.220.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.220.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A custom role could not reach a single admin endpoint</h3>
+                <p>
+                  Found building a marketplace with a support team who should see users and nothing
+                  else. Every admin route sat in one group behind the <code>ADMIN</code> role, so the{' '}
+                  <code>perm:</code> guards written on some of them never ran: a role granted{' '}
+                  <code>users.view</code> was refused by <code>GET /api/users</code>, and the seeded{' '}
+                  <code>EDITOR</code> was shown admin pages the API then refused. The same was true of
+                  generated deletes: granting <code>products.delete</code> did nothing.
+                </p>
+                <p>
+                  New projects split the admin API in two. A <code>staff</code> group admits anyone
+                  holding a permission, and every route on it names the one it needs: users, roles,
+                  access reviews, the audit log, jobs, backups, blogs, the Sentinel and Pulse
+                  summaries, and the per-resource dashboard stats (which ask for the view permission of
+                  the resource in the URL). The <code>admin</code> group stays ADMIN-only for routes
+                  that name no permission, such as SSO connections, form sharing and writing settings,
+                  so anything that forgets one, a plugin&apos;s route included, fails closed. Generated
+                  delete and bulk routes go on the staff group and ask for{' '}
+                  <code>&lt;resource&gt;.delete</code>. The sidebar shows the System Hub by permission
+                  instead of by role name.
+                </p>
+                <p>
+                  Verified on a fresh project: the <code>EDITOR</code> lists users and is refused
+                  deleting one, backups, jobs, SSO and settings; a <code>USER</code> is refused at the
+                  gate; a custom role granted <code>products.delete</code> deletes a product and still
+                  cannot list users. <code>grit upgrade</code> does not restructure an existing{' '}
+                  <code>routes.go</code>; it says so, and the{' '}
+                  <a href="/docs/security/authorization#staff-routes" className="text-primary hover:underline">Roles &amp; permissions</a>{' '}
+                  page shows the change. Until then generated deletes on such a project stay ADMIN-only,
+                  as before.
+                </p>
+              </div>
+            </div>
+
             {/* v3.219.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
