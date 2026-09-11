@@ -38,6 +38,9 @@ interface AuditEntry {
   ip_address: string;
   user_agent: string;
   duration_ms: number;
+  resource?: string;
+  resource_ids?: string;
+  record_count?: number;
   prev_hash: string;
   hash: string;
   created_at: string;
@@ -55,6 +58,7 @@ interface ChainStatus {
 
 const METHOD_TONE: Record<string, string> = {
   SECURITY: "bg-warning/15 text-warning",
+  GET: "bg-accent/10 text-accent",
   POST: "bg-success/15 text-success",
   PUT: "bg-info/15 text-info",
   PATCH: "bg-info/15 text-info",
@@ -119,14 +123,16 @@ function ResealPanel({ fromId, onDone }: { fromId?: string; onDone: () => void }
 export default function AuditLogPage() {
   const [method, setMethod] = useState("");
   const [path, setPath] = useState("");
+  const [record, setRecord] = useState("");
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["audit-log", method, path, page],
+    queryKey: ["audit-log", method, path, record, page],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), page_size: "25" });
       if (method) params.set("method", method);
       if (path) params.set("path", path);
+      if (record) params.set("record", record);
       const { data: res } = await apiClient.get("/api/admin/activity?" + params.toString());
       return res as { data: AuditEntry[]; meta?: { total: number; pages: number } };
     },
@@ -148,7 +154,7 @@ export default function AuditLogPage() {
     <div>
       <PageHeader
         title="Audit log"
-        subtitle="Every authenticated write, hash-chained so a changed row can be detected."
+        subtitle="Every authenticated write, and every read of a resource generated with --audit-reads, hash-chained so a changed row can be detected."
       />
 
       <div className="px-6 py-6 space-y-5">
@@ -226,7 +232,14 @@ export default function AuditLogPage() {
               className="w-72 rounded-lg border border-border bg-bg-primary py-2 pl-9 pr-3 text-sm text-foreground"
             />
           </div>
-          {["", "POST", "PUT", "PATCH", "DELETE"].map((m) => (
+          <input
+            value={record}
+            onChange={(e) => { setRecord(e.target.value); setPage(1); }}
+            placeholder="Record id"
+            aria-label="Show everyone who read or changed this record"
+            className="w-64 rounded-lg border border-border bg-bg-primary px-3 py-2 font-mono text-xs text-foreground"
+          />
+          {["", "GET", "POST", "PUT", "PATCH", "DELETE", "SECURITY"].map((m) => (
             <button
               key={m || "all"}
               type="button"
@@ -253,7 +266,7 @@ export default function AuditLogPage() {
                   <th className="px-4 py-3 font-medium">Request</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Who</th>
-                  <th className="px-4 py-3 font-medium">Body digest</th>
+                  <th className="px-4 py-3 font-medium">Digest</th>
                 </tr>
               </thead>
               <tbody>
@@ -267,7 +280,7 @@ export default function AuditLogPage() {
                 {!isLoading && entries.length === 0 && (
                   <tr>
                     <td colSpan={5} className="px-4 py-8 text-center text-text-muted">
-                      No entries yet. Every authenticated create, update or delete lands here.
+                      No entries yet. Every authenticated create, update or delete lands here, and every read of a resource generated with --audit-reads.
                     </td>
                   </tr>
                 )}
@@ -286,6 +299,14 @@ export default function AuditLogPage() {
                         {e.method}
                       </span>
                       <span className="font-mono text-xs text-foreground">{e.path}</span>
+                      {e.resource && (
+                        <span className="ml-2 text-xs text-text-muted">
+                          {e.resource}
+                          {typeof e.record_count === "number" && e.record_count > 0
+                            ? " · " + e.record_count.toLocaleString() + (e.record_count === 1 ? " row" : " rows")
+                            : ""}
+                        </span>
+                      )}
                     </td>
                     <td className={"px-4 py-3 font-mono text-xs " + statusTone(e.status)}>
                       {e.status}
@@ -336,7 +357,8 @@ export default function AuditLogPage() {
 
         <p className="text-xs text-text-muted">
           Request bodies are stored as a SHA-256 digest, not verbatim — evidence of what was
-          sent without keeping the personal data in it. This log is append-only; the weekly{" "}
+          sent without keeping the personal data in it. Reads keep a digest of the query string,
+          so a name typed into a search box is not stored either. This log is append-only; the weekly{" "}
           <code>audit:prune</code> job trims old entries and re-anchors the chain.
         </p>
       </div>

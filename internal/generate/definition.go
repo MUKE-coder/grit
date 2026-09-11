@@ -80,6 +80,12 @@ type ResourceDefinition struct {
 	// is the point, and where an edit in place is exactly what an auditor
 	// would ask you to prove never happened.
 	AppendOnly bool `yaml:"append_only,omitempty"`
+
+	// AuditReads records every read of this resource in the tamper-evident
+	// activity log, set by --audit-reads: who read which rows, when, and from
+	// where. For health records, and anything else where access itself has to
+	// be accountable. Off by default, because reads are most of all traffic.
+	AuditReads bool `yaml:"audit_reads,omitempty"`
 }
 
 // OwnerField returns the field ownership is checked against, or nil when the
@@ -108,7 +114,7 @@ func (d *ResourceDefinition) IsOwned() bool { return d.OwnerField() != nil }
 // default erased the file's value: owned_by: user in a YAML file generated a
 // resource every signed-in account could read and edit, with no warning, and
 // tree, public, tenant_owned and append_only were dropped the same way.
-func (d *ResourceDefinition) ApplyFlags(public, tree bool, ownedBy string, tenantOwned, appendOnly bool) {
+func (d *ResourceDefinition) ApplyFlags(public, tree bool, ownedBy string, tenantOwned, appendOnly, auditReads bool) {
 	d.Public = d.Public || public
 	d.Tree = d.Tree || tree
 	if ownedBy != "" {
@@ -116,6 +122,7 @@ func (d *ResourceDefinition) ApplyFlags(public, tree bool, ownedBy string, tenan
 	}
 	d.TenantOwned = d.TenantOwned || tenantOwned
 	d.AppendOnly = d.AppendOnly || appendOnly
+	d.AuditReads = d.AuditReads || auditReads
 }
 
 // TreeParentField returns the field the tree hangs from, adding it if --tree was

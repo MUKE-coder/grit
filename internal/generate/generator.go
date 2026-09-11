@@ -151,6 +151,11 @@ func (g *Generator) Run() error {
 			return err
 		}
 	}
+	if g.Definition.AuditReads {
+		if err := g.prepareReadAudit(); err != nil {
+			return err
+		}
+	}
 
 	fmt.Printf("\n  Generating resource: %s\n\n", names.Pascal)
 
@@ -177,6 +182,10 @@ func (g *Generator) Run() error {
 		// that cannot change, holding lines that can, is not append-only.
 		if g.Definition.AppendOnly {
 			g.Definition.Items.AppendOnly = true
+		}
+		// The lines of an audited record are part of what was read.
+		if g.Definition.AuditReads {
+			g.Definition.Items.AuditReads = true
 		}
 		childGen := &Generator{
 			Root:         g.Root,
@@ -818,6 +827,17 @@ func (g *Generator) checkFlagCombinations() error {
 		return fmt.Errorf("--tree and --owned-by cannot be combined yet: the tree " +
 			"endpoints are not scoped to an owner, so every signed-in user could read " +
 			"and rearrange every row. Generate it with one or the other")
+	}
+	// Public reads are anonymous and the tree endpoints return the whole
+	// hierarchy at once, so neither could say who read which rows.
+	if g.Definition.AuditReads && g.Definition.Public {
+		return fmt.Errorf("--audit-reads and --public cannot be combined: public reads " +
+			"are anonymous, so there is nobody to record. Serve the resource to signed-in " +
+			"callers, or leave its reads unaudited")
+	}
+	if g.Definition.AuditReads && g.Definition.Tree {
+		return fmt.Errorf("--audit-reads and --tree cannot be combined yet: the tree " +
+			"endpoints return the whole hierarchy without recording who read it")
 	}
 	return nil
 }

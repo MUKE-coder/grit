@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.215.0"
+var version = "3.216.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -803,6 +803,7 @@ func generateResourceCmd() *cobra.Command {
 	var ownedBy string
 	var tenantOwned bool
 	var appendOnly bool
+	var auditReads bool
 
 	cmd := &cobra.Command{
 		Use:   "resource <Name>",
@@ -898,7 +899,7 @@ func generateResourceCmd() *cobra.Command {
 			gen.Force = force
 			// Merged, not assigned: a flag left at its default must not erase
 			// what a --from file declared.
-			gen.Definition.ApplyFlags(publicRead, tree, ownedBy, tenantOwned, appendOnly)
+			gen.Definition.ApplyFlags(publicRead, tree, ownedBy, tenantOwned, appendOnly, auditReads)
 			def = gen.Definition
 
 			// The flag only helps somebody who knows it exists. When the
@@ -969,6 +970,8 @@ func generateResourceCmd() *cobra.Command {
 		"Scope the resource to its owner: the named belongs_to-User field decides who may read or write each row (e.g. --owned-by user). Adds the field if absent. ADMIN is exempt")
 	cmd.Flags().BoolVar(&appendOnly, "append-only", false,
 		"Rows are created and read, never changed or deleted: no update or delete routes, a GORM guard, and a database trigger installed by grit migrate. For ledgers, audit trails and consent records")
+	cmd.Flags().BoolVar(&auditReads, "audit-reads", false,
+		"Record every read of this resource in the tamper-evident activity log: who read which rows, when, from where. For health records and other data where access itself must be accountable")
 	cmd.Flags().IntVar(&seedCount, "count", 10, "Number of rows for the faker seeder")
 	cmd.Flags().BoolVar(&force, "force", false, "Generate even when the name collides with a built-in model (overwrites it)")
 

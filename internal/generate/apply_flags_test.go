@@ -18,6 +18,7 @@ tree: true
 public: true
 append_only: true
 tenant_owned: true
+audit_reads: true
 fields:
   - name: body
     type: text
@@ -31,15 +32,15 @@ fields:
 	}
 
 	// Every flag at its default, as when only --from is passed.
-	def.ApplyFlags(false, false, "", false, false)
-	if def.OwnedBy != "user" || !def.Tree || !def.Public || !def.AppendOnly || !def.TenantOwned {
+	def.ApplyFlags(false, false, "", false, false, false)
+	if def.OwnedBy != "user" || !def.Tree || !def.Public || !def.AppendOnly || !def.TenantOwned || !def.AuditReads {
 		t.Errorf("a default flag erased the file's value: %+v", def)
 	}
 
 	// A flag still adds to a definition that did not say.
 	plain := &ResourceDefinition{Name: "Post"}
-	plain.ApplyFlags(true, true, "author", true, true)
-	if plain.OwnedBy != "author" || !plain.Tree || !plain.Public || !plain.AppendOnly || !plain.TenantOwned {
+	plain.ApplyFlags(true, true, "author", true, true, true)
+	if plain.OwnedBy != "author" || !plain.Tree || !plain.Public || !plain.AppendOnly || !plain.TenantOwned || !plain.AuditReads {
 		t.Errorf("a flag did not apply: %+v", plain)
 	}
 }

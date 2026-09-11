@@ -56,6 +56,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "sync.go"):                    apiSyncHandlerGo(),
 		filepath.Join(apiRoot, "internal", "models", "activity_log.go"):              apiActivityLogModelGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "activity.go"):              apiActivityMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "activity_read_test.go"):    apiActivityReadTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "activity.go"):                apiActivityHandlerGo(),
 		filepath.Join(apiRoot, "internal", "respond", "respond.go"):                  apiRespondGo(),
 		filepath.Join(apiRoot, "internal", "audit", "audit.go"):                      apiAuditGo(),
@@ -5039,6 +5040,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -5096,6 +5098,46 @@ func ComputeHash(prevHash string, canonical []byte) string {
 	h.Write([]byte(prevHash))
 	h.Write(canonical)
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+// MaxReadIDs caps how many ids one read entry lists. A page is a few hundred
+// rows at most; an export is recorded as a count instead.
+const MaxReadIDs = 1000
+
+const readKey = "audit.read"
+
+// ReadMark is what a handler served, for the activity middleware to record.
+type ReadMark struct {
+	Resource string
+	IDs      []string
+	Count    int
+}
+
+// Read marks the request as having served these rows of resource. The
+// activity middleware records it in the chain once the response has gone out
+// with a 2xx. Handlers generated with --audit-reads call it; any handler can.
+func Read(c *gin.Context, resource string, ids ...string) {
+	mark := ReadMark{Resource: resource, Count: len(ids)}
+	if len(ids) > MaxReadIDs {
+		ids = ids[:MaxReadIDs]
+	}
+	mark.IDs = append([]string(nil), ids...)
+	c.Set(readKey, mark)
+}
+
+// ReadCount marks a read too large to list row by row: an export.
+func ReadCount(c *gin.Context, resource string, n int) {
+	c.Set(readKey, ReadMark{Resource: resource, Count: n})
+}
+
+// ReadMarkOf returns what the handler marked, if it marked anything.
+func ReadMarkOf(c *gin.Context) (ReadMark, bool) {
+	v, ok := c.Get(readKey)
+	if !ok {
+		return ReadMark{}, false
+	}
+	mark, ok := v.(ReadMark)
+	return mark, ok
 }
 
 // Precision is what every supported database keeps of a timestamp: Postgres
@@ -6720,7 +6762,7 @@ func ActivityLogger(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		switch c.Request.Method {
 		case http.MethodGet, http.MethodHead, http.MethodOptions:
-			c.Next()
+			recordRead(c)
 			return
 		}
 
@@ -6763,11 +6805,46 @@ func ActivityLogger(db *gorm.DB) gin.HandlerFunc {
 			IPAddress:     resolveClientIP(c),
 			UserAgent:     c.Request.UserAgent(),
 			DurationMS:    time.Since(started).Milliseconds(),
+			// Which record the write touched, so the log answers "who changed
+			// this record" as well as "who read it". Empty on routes without one.
+			ResourceIDs: c.Param("id"),
 		}
 		// Non-blocking. The writer stamps created_at and chains the entry;
 		// with a full backlog it is dropped rather than stalling the request.
 		audit.Enqueue(entry)
 	}
+}
+
+// recordRead runs a read and, when the handler marked what it served, records it.
+//
+// Only marked reads: handlers generated with --audit-reads mark the rows they
+// returned, and nothing else is recorded, because reads are most of all
+// traffic and logging every page load would bury the writes.
+func recordRead(c *gin.Context) {
+	started := time.Now()
+	c.Next()
+
+	mark, ok := audit.ReadMarkOf(c)
+	if !ok || c.Writer.Status() < 200 || c.Writer.Status() >= 300 {
+		return
+	}
+	userID, _ := c.Get("user_id")
+	uid, _ := userID.(string)
+	audit.Enqueue(models.ActivityLog{
+		UserID: uid,
+		Method: c.Request.Method,
+		Path:   c.FullPath(),
+		Status: c.Writer.Status(),
+		// The query can hold what was searched for, a patient's name typed
+		// into a search box, so only its digest is kept.
+		PayloadDigest: digestBody([]byte(c.Request.URL.RawQuery)),
+		IPAddress:     resolveClientIP(c),
+		UserAgent:     c.Request.UserAgent(),
+		DurationMS:    time.Since(started).Milliseconds(),
+		Resource:      mark.Resource,
+		ResourceIDs:   strings.Join(mark.IDs, ","),
+		RecordCount:   mark.Count,
+	})
 }
 
 // v3.31.49 -- mirror of services.ResolveClientIP. Inlined here
@@ -6833,15 +6910,21 @@ func NewActivityHandler(db *gorm.DB) *ActivityHandler {
 }
 
 // List returns activity log entries, newest first. Supports filtering
-// by user_id, method, and path prefix via query params.
+// by user_id, method, resource, path prefix and record id via query params.
 func (h *ActivityHandler) List(c *gin.Context) {
 	q := h.DB.Model(&models.ActivityLog{}).Order("created_at desc")
 	params := paginate.Bind(c).
 		With("user_id", c.Query("user_id")).
-		With("method", c.Query("method"))
+		With("method", c.Query("method")).
+		With("resource", c.Query("resource"))
 
 	if pathPrefix := c.Query("path"); pathPrefix != "" {
 		q = q.Where("path LIKE ?", pathPrefix+"%")
+	}
+	// Everyone who read or changed one record: the question an access review
+	// asks about a patient's chart.
+	if record := c.Query("record"); record != "" {
+		q = q.Where("resource_ids LIKE ?", "%"+record+"%")
 	}
 
 	res, err := paginate.List[models.ActivityLog](q, params, paginate.Config{
