@@ -54,6 +54,7 @@ interface ChainStatus {
 }
 
 const METHOD_TONE: Record<string, string> = {
+  SECURITY: "bg-warning/15 text-warning",
   POST: "bg-success/15 text-success",
   PUT: "bg-info/15 text-info",
   PATCH: "bg-info/15 text-info",
@@ -64,6 +65,55 @@ function statusTone(status: number): string {
   if (status >= 500) return "text-danger";
   if (status >= 400) return "text-warning";
   return "text-success";
+}
+
+// A reseal trusts every entry from the break onward as it stands now, so it
+// is deliberate: the id has to be typed, and the server records who did it.
+function ResealPanel({ fromId, onDone }: { fromId?: string; onDone: () => void }) {
+  const [confirm, setConfirm] = useState("");
+  const reseal = useMutation({
+    mutationFn: async () => {
+      const { data: res } = await apiClient.post("/api/admin/activity/reseal", { from_id: fromId });
+      return res as { data: { resealed: number } };
+    },
+    onSuccess: () => onDone(),
+  });
+  if (!fromId) return null;
+  const short = fromId.slice(0, 8);
+  const failure = (reseal.error as { response?: { data?: { error?: { message?: string } } } } | null)
+    ?.response?.data?.error?.message;
+
+  return (
+    <div className="mt-3 rounded-lg border border-border bg-bg-primary p-3">
+      <p className="text-xs text-foreground-secondary">
+        If nobody changed these entries, you can reseal from this one. A chain written before
+        v3.215.0 on Postgres or MySQL fails on its first entry, because the database rounded the
+        timestamps it was hashed with. A reseal trusts every entry from here on as it stands now,
+        and is itself recorded in the chain under your name. Type{" "}
+        <code className="text-foreground">{short}</code> to confirm.
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <input
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          placeholder={short}
+          aria-label="Type the first eight characters of the entry id to confirm the reseal"
+          className="w-40 rounded-lg border border-border bg-bg-secondary px-3 py-1.5 font-mono text-xs text-foreground"
+        />
+        <Button onClick={() => reseal.mutate()} loading={reseal.isPending} disabled={confirm !== short}>
+          Reseal from this entry
+        </Button>
+      </div>
+      {reseal.isError && (
+        <p className="mt-2 text-xs text-danger">{failure ?? "Could not reseal the chain."}</p>
+      )}
+      {reseal.isSuccess && (
+        <p className="mt-2 text-xs text-success">
+          Resealed {reseal.data.data.resealed.toLocaleString()} entries.
+        </p>
+      )}
+    </div>
+  );
 }
 
 export default function AuditLogPage() {
@@ -151,6 +201,7 @@ export default function AuditLogPage() {
                   <p className="pt-1">
                     Everything before that position is still trustworthy.
                   </p>
+                  <ResealPanel fromId={result.broken_at_id} onDone={() => verify.mutate()} />
                 </div>
               )}
             </div>

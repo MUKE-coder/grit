@@ -209,6 +209,10 @@ func registerAPIDocs(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	docs.Route("GET /api/v1/admin/activity/integrity").
 		Summary("Verify the activity-log hash chain").
 		Response(200, handlers.ChainStatusResponse{}, "Valid, or the position and id of the first bad row")
+	docs.Route("POST /api/v1/admin/activity/reseal").
+		Summary("Reseal the activity-log chain from its first bad entry").
+		RequestBody(handlers.ResealRequest{}).
+		Response(200, handlers.ResealResponse{}, "How many entries were resealed")
 	docs.Route("GET /api/v1/admin/jobs/stats").
 		Summary("Background-queue counts").
 		Response(200, handlers.MessageResponse{}, "Active, pending, completed, failed and retry totals").
