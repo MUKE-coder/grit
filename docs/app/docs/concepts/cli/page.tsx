@@ -491,6 +491,12 @@ grit rm resource <Name>`} />
     grit upgrade --diff     # see what the new version would change
     grit upgrade --force    # take the new version and lose your edits`} />
                 <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+                  It also raises the libraries every API mounts, Sentinel, GORM Studio and Pulse, to
+                  at least the versions this CLI was tested with. One below its floor is raised with{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">go get</code>{' '}
+                  and named, with the reason; one above it is left alone. It never lowers a version.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--diff</code>{' '}
                   prints a unified diff of your version against the new one, so you can port the
                   parts you want by hand.{' '}

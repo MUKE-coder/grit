@@ -257,9 +257,8 @@ go 1.21
 
 require (
 	github.com/MUKE-coder/gin-docs v0.0.0-20260222113017-4d647cb4e7aa
-	github.com/MUKE-coder/gorm-studio v1.0.1
-	// Pinned to the v1.0.0 commit on main.
-	github.com/MUKE-coder/pulse v0.0.0-20260529025319-478cdfa8ce5f
+	github.com/MUKE-coder/gorm-studio v1.1.0
+	github.com/MUKE-coder/pulse v1.0.0
 	github.com/aws/aws-sdk-go-v2 v1.43.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.31
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.30
@@ -287,7 +286,7 @@ require (
 	github.com/hibiken/asynq v0.24.1
 	github.com/markbates/goth v1.80.0
 	github.com/joho/godotenv v1.5.1
-	github.com/redis/go-redis/v9 v9.6.3
+	github.com/redis/go-redis/v9 v9.22.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/xuri/excelize/v2 v2.10.0
 	golang.org/x/crypto v0.53.0
@@ -299,7 +298,10 @@ require (
 	// session in ten 403'd at random). v2.2.0 adds ValidateConfig, which
 	// Mount runs at startup so dead config shows up in the boot log rather
 	// than as a 403 weeks later. Do not downgrade below v2.1.1.
-	github.com/MUKE-coder/sentinel/v2 v2.2.1
+	// v2.2.2 is a security release (client-IP spoofing behind a proxy, a
+	// sort_by SQL injection, SSRF bypasses), and v2.5.0 keeps rate limits and
+	// lockouts in Redis, so every replica counts against the same numbers.
+	github.com/MUKE-coder/sentinel/v2 v2.5.0
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
@@ -836,6 +838,7 @@ type Config struct {
 	SentinelUsername       string
 	SentinelPassword       string
 	SentinelSecretKey      string
+	SentinelAuditKey       string
 	// Sentinel v2.0 — CIDRs allowed to send X-Forwarded-For / X-Real-IP.
 	// Empty (default) means "ignore those headers entirely" — safe when
 	// the app speaks to the public internet directly; populate when
@@ -928,6 +931,7 @@ func Load() (*Config, error) {
 		SentinelUsername:       getEnv("SENTINEL_USERNAME", "admin"),
 		SentinelPassword:       getEnv("SENTINEL_PASSWORD", "sentinel"),
 		SentinelSecretKey:      getEnv("SENTINEL_SECRET_KEY", "sentinel-secret-change-me"),
+		SentinelAuditKey:       getEnv("SENTINEL_AUDIT_KEY", ""),
 		SentinelTrustedProxies: splitCSV(getEnv("SENTINEL_TRUSTED_PROXIES", "")),
 
 		PulseEnabled:    getEnv("PULSE_ENABLED", "true") == "true",
@@ -8716,6 +8720,7 @@ import (
 	"github.com/MUKE-coder/gorm-studio/studio"
 	"github.com/MUKE-coder/pulse/pulse"
 	sentinel "github.com/MUKE-coder/sentinel/v2"
+	"github.com/MUKE-coder/sentinel/v2/redisstore"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
@@ -8904,12 +8909,35 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		if !strings.HasPrefix(cfg.DatabaseURL, "sqlite:") {
 			sentinelStorage = sentinel.StorageConfig{Driver: sentinel.Postgres, DSN: cfg.DatabaseURL}
 		}
+		// Keys the audit log's hash chain: an entry edited by someone with the
+		// database but not this key fails verification on the dashboard.
+		sentinelStorage.AuditKey = cfg.SentinelAuditKey
+
+		// Rate limits and AuthShield lockouts counted in Redis, so replicas
+		// share them. Counted per process, N replicas gave a client N times
+		// every limit and N times the failed logins before a lockout.
+		var sentinelCounters sentinel.CounterStore
+		if svc.Cache != nil {
+			sentinelCounters = redisstore.New(svc.Cache.Client())
+		}
 
 		// Sentinel v2 — use MountE so we can recover gracefully on
 		// misconfiguration in dev instead of log.Fatalf-ing the host.
 		// Mount runs sentinel.ValidateConfig and logs any dead config.
 		if err := sentinel.MountE(r, db, sentinel.Config{
-			Storage: sentinelStorage,
+			Storage:  sentinelStorage,
+			Counters: sentinelCounters,
+			// Who made each request, for the Users page, the GDPR report and
+			// anomaly detection, which sees nothing without it. Sentinel reads
+			// it after the handler chain, by when the auth middleware has put
+			// the caller on the context.
+			UserExtractor: func(c *gin.Context) *sentinel.UserContext {
+				id := c.GetString("user_id")
+				if id == "" {
+					return nil
+				}
+				return &sentinel.UserContext{ID: id, Email: c.GetString("user_email"), Role: c.GetString("user_role")}
+			},
 			Dashboard: sentinel.DashboardConfig{
 				Username:               cfg.SentinelUsername,
 				Password:               cfg.SentinelPassword,
@@ -8976,7 +9004,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		}); err != nil {
 			log.Printf("Warning: Sentinel mount failed: %v", err)
 		} else {
-			log.Println("Sentinel v2.2.0 mounted at /sentinel")
+			log.Println("Sentinel mounted at /sentinel")
 		}
 	}
 

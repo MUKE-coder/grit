@@ -555,13 +555,15 @@ PULSE_PASSWORD=pulse                 # Generated per-scaffold. Rotate: openssl r
 SENTINEL_ENABLED=true                # Set to "false" to disable Sentinel entirely
 SENTINEL_USERNAME=admin              # Dashboard login username
 SENTINEL_PASSWORD=sentinel           # Generated per-scaffold. Rotate: openssl rand -hex 16
-SENTINEL_SECRET_KEY=change-me        # Generated per-scaffold (>=32 bytes). Rotate: openssl rand -hex 32`} />
+SENTINEL_SECRET_KEY=change-me        # Generated per-scaffold (>=32 bytes). Rotate: openssl rand -hex 32
+SENTINEL_AUDIT_KEY=change-me         # Generated per-scaffold. Keys the audit log hash chain`} />
               <div className="mt-4 space-y-3">
                 {[
                   { variable: 'SENTINEL_ENABLED', default: 'true', desc: 'Turn Sentinel on or off. Set to false to disable the WAF, rate limiting, and threat detection entirely.' },
                   { variable: 'SENTINEL_USERNAME', default: 'admin', desc: 'Login username for the Sentinel dashboard.' },
                   { variable: 'SENTINEL_PASSWORD', default: '(generated)', desc: 'Login password for the Sentinel dashboard. Generated per-scaffold. Rotate with openssl rand -hex 16.' },
                   { variable: 'SENTINEL_SECRET_KEY', default: '(generated)', desc: 'Secret used to sign the Sentinel dashboard JWT sessions. Needs at least 32 bytes of entropy; generated per-scaffold. Rotate with openssl rand -hex 32.' },
+                  { variable: 'SENTINEL_AUDIT_KEY', default: '(generated)', desc: 'Keys the Sentinel audit log hash chain, so an entry edited by someone with database access but not this key fails verification. Keep it: entries written under one key verify only with that key.' },
                 ].map((item) => (
                   <div key={item.variable} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                     <div className="flex items-center gap-2 mb-1">

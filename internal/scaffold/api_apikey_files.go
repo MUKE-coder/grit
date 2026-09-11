@@ -868,7 +868,7 @@ func (h *APIKeyHandler) Create(c *gin.Context) {
 			"key":   issued.Record,
 			"token": issued.Token,
 		},
-		"message": "Copy this key now — it will not be shown again.",
+		"message": "Copy this key now: it will not be shown again.",
 	})
 }
 
