@@ -65,8 +65,6 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "concurrency", "concurrency.go"):          apiConcurrencyGo(),
 		filepath.Join(apiRoot, "internal", "concurrency", "concurrency_test.go"):     apiConcurrencyTestGo(),
 		filepath.Join(apiRoot, "internal", "webhooks", "verifiers.go"):               apiWebhooksVerifiersGo(),
-		filepath.Join(apiRoot, "internal", "models", "feature_flag.go"):              apiFeatureFlagModelGo(),
-		filepath.Join(apiRoot, "internal", "flags", "flags.go"):                      apiFlagsGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "flags.go"):                   apiFlagsHandlerGo(),
 
 		// v3.30 — semantic UserActivity log + ticket system
@@ -6231,6 +6229,13 @@ type FlagRules struct {
 	EnabledFrom       *time.Time ` + "`" + `json:"enabled_from,omitempty"` + "`" + `        // before this, flag is off (date window)
 	EnabledUntil      *time.Time ` + "`" + `json:"enabled_until,omitempty"` + "`" + `       // after this, flag is off
 	Variants          []string   ` + "`" + `json:"variants,omitempty"` + "`" + `            // when set, A/B mode — Variant() returns one of these
+
+	// Attributes restrict the flag to subjects whose attributes match:
+	// {"business_unit": ["eu", "ke"]} is on only for a subject whose
+	// business_unit is eu or ke. Every key listed must match, ignoring case.
+	// A subject without the attribute does not match, so a rule on something
+	// the app never supplies fails closed. See flags.AttributesFor.
+	Attributes map[string][]string ` + "`" + `json:"attributes,omitempty"` + "`" + `
 }
 
 // ParsedRules decodes the Rules JSON. Returns a zero FlagRules on
@@ -6316,6 +6321,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -6353,6 +6359,7 @@ func New(db *gorm.DB, hub *realtime.Hub) *Engine {
 		log.Printf("[flags] initial refresh failed: %v", err)
 	}
 	go e.refreshLoop()
+	setDefault(e)
 	return e
 }
 
@@ -6410,28 +6417,147 @@ func (e *Engine) refreshLoop() {
 	}
 }
 
+// Subject is who a flag is checked for: a user, and whatever attributes
+// the rules can target (a business unit, a region, a plan).
+type Subject struct {
+	UserID     string
+	Attributes map[string]string
+}
+
+// AttributesFor supplies the attributes of the user making a request, for
+// rules that target them. The default knows the role the auth middleware
+// set. Replace it at boot to target anything else your users carry:
+//
+//	flags.AttributesFor = func(c *gin.Context) map[string]string {
+//	    return map[string]string{"business_unit": businessUnitOf(c)}
+//	}
+var AttributesFor = func(c *gin.Context) map[string]string {
+	attrs := map[string]string{}
+	if c == nil {
+		return attrs
+	}
+	if v, ok := c.Get("user_role"); ok {
+		if role, ok := v.(string); ok && role != "" {
+			attrs["role"] = role
+		}
+	}
+	return attrs
+}
+
+func subjectFrom(c *gin.Context) Subject {
+	return Subject{UserID: userIDFrom(c), Attributes: AttributesFor(c)}
+}
+
 // IsEnabled returns true when the flag is on for the current user.
 // Always returns false for unknown flags (fail closed).
 func (e *Engine) IsEnabled(c *gin.Context, name string) bool {
-	return e.evaluate(userIDFrom(c), name) == "enabled"
+	return e.evaluate(subjectFrom(c), name) == "enabled"
 }
 
 // Variant returns the assigned variant for an A/B flag. For boolean
 // flags, returns "enabled" or "disabled". For unknown flags, returns
 // the empty string.
 func (e *Engine) Variant(c *gin.Context, name string) string {
-	return e.evaluate(userIDFrom(c), name)
+	return e.evaluate(subjectFrom(c), name)
 }
 
 // IsEnabledForUser is the explicit form for backend code that has the
-// user_id directly (e.g. cron jobs operating on a specific user).
+// user_id directly (e.g. cron jobs operating on a specific user). It has
+// no attributes, so a flag with attribute rules is off for it: use
+// IsEnabledFor with a Subject for those.
 func (e *Engine) IsEnabledForUser(userID, name string) bool {
-	return e.evaluate(userID, name) == "enabled"
+	return e.evaluate(Subject{UserID: userID}, name) == "enabled"
 }
 
 // VariantForUser is the explicit form of Variant.
 func (e *Engine) VariantForUser(userID, name string) string {
-	return e.evaluate(userID, name)
+	return e.evaluate(Subject{UserID: userID}, name)
+}
+
+// IsEnabledFor checks a flag for a subject built by the caller: a job that
+// knows the user and their business unit, say.
+func (e *Engine) IsEnabledFor(s Subject, name string) bool {
+	return e.evaluate(s, name) == "enabled"
+}
+
+// VariantFor is the explicit form of Variant for a subject.
+func (e *Engine) VariantFor(s Subject, name string) string {
+	return e.evaluate(s, name)
+}
+
+// ── Package-level ────────────────────────────────────────────────────────
+//
+// The engine routes.Setup starts, reachable from any handler, service or job
+// without threading it through. Before v3.223.0 the package comment showed
+// flags.IsEnabled(c, ...) and no such function existed: the only engine was
+// a local variable in routes.Setup, so application code could not check a
+// flag at all.
+
+var (
+	defaultMu     sync.RWMutex
+	defaultEngine *Engine
+)
+
+func setDefault(e *Engine) {
+	defaultMu.Lock()
+	defaultEngine = e
+	defaultMu.Unlock()
+}
+
+func current() *Engine {
+	defaultMu.RLock()
+	defer defaultMu.RUnlock()
+	return defaultEngine
+}
+
+// IsEnabled reports whether a flag is on for the request's user. False
+// before the engine has started and for a flag that does not exist: a check
+// that cannot be answered fails closed.
+func IsEnabled(c *gin.Context, name string) bool {
+	if e := current(); e != nil {
+		return e.IsEnabled(c, name)
+	}
+	return false
+}
+
+// Variant returns the request user's variant, or "" when it cannot be answered.
+func Variant(c *gin.Context, name string) string {
+	if e := current(); e != nil {
+		return e.Variant(c, name)
+	}
+	return ""
+}
+
+// IsEnabledForUser is IsEnabled for code with a user ID and no request.
+func IsEnabledForUser(userID, name string) bool {
+	if e := current(); e != nil {
+		return e.IsEnabledForUser(userID, name)
+	}
+	return false
+}
+
+// VariantForUser is Variant for code with a user ID and no request.
+func VariantForUser(userID, name string) string {
+	if e := current(); e != nil {
+		return e.VariantForUser(userID, name)
+	}
+	return ""
+}
+
+// IsEnabledFor is IsEnabled for a subject built by the caller.
+func IsEnabledFor(s Subject, name string) bool {
+	if e := current(); e != nil {
+		return e.IsEnabledFor(s, name)
+	}
+	return false
+}
+
+// VariantFor is Variant for a subject built by the caller.
+func VariantFor(s Subject, name string) string {
+	if e := current(); e != nil {
+		return e.VariantFor(s, name)
+	}
+	return ""
 }
 
 // evaluate is the core decision routine. Returns:
@@ -6444,7 +6570,8 @@ func (e *Engine) VariantForUser(userID, name string) string {
 // flag struct + ID. All decision logic (date checks, allowlist scans,
 // bucketing) runs unlocked. Under sustained read load this turns the
 // flag check into a near-zero-contention path.
-func (e *Engine) evaluate(userID, name string) string {
+func (e *Engine) evaluate(s Subject, name string) string {
+	userID := s.UserID
 	e.mu.RLock()
 	cached, ok := e.flags[name]
 	if !ok {
@@ -6477,6 +6604,13 @@ func (e *Engine) evaluate(userID, name string) string {
 	// Blocklist always wins.
 	for _, b := range rules.BlocklistUserIDs {
 		if b == userID {
+			return "disabled"
+		}
+	}
+
+	// Attributes restrict the flag to matching subjects, every key listed.
+	for key, allowed := range rules.Attributes {
+		if !attributeMatches(s.Attributes[key], allowed) {
 			return "disabled"
 		}
 	}
@@ -6566,11 +6700,29 @@ func bucketFor(userID, name string) int {
 // userIDFrom reads "user_id" from the gin context (set by the auth
 // middleware). Empty string for anonymous requests.
 func userIDFrom(c *gin.Context) string {
+	if c == nil {
+		return ""
+	}
 	if v, ok := c.Get("user_id"); ok {
 		s, _ := v.(string)
 		return s
 	}
 	return ""
+}
+
+// attributeMatches reports whether a subject's value is one of a rule's.
+// Case-insensitive, because these are typed in by hand. An empty value
+// matches nothing.
+func attributeMatches(value string, allowed []string) bool {
+	if value == "" {
+		return false
+	}
+	for _, a := range allowed {
+		if strings.EqualFold(a, value) {
+			return true
+		}
+	}
+	return false
 }
 `
 }
