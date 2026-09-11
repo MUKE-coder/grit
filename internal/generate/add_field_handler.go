@@ -289,6 +289,58 @@ func (g *Generator) injectHandlerField(names Names, f Field) error {
 		return fmt.Errorf("writing %s: %w", rel, err)
 	}
 	fmt.Printf("  ✓ %s  (create, update, patch)\n", rel)
+
+	// From v3.224.0 the writable columns and the list's whitelists live in
+	// the service, which owns the queries. A handler from before still has
+	// them, and was handled above.
+	if l.findPrefix(0, "Sortable:") < 0 {
+		return g.injectServiceWhitelists(names, f, p.patchKey)
+	}
+	return nil
+}
+
+// injectServiceWhitelists adds f to a service's writable columns and to the
+// list's sort and filter whitelists.
+func (g *Generator) injectServiceWhitelists(names Names, f Field, patchKey string) error {
+	rel := filepath.ToSlash(filepath.Join("apps", "api", "internal", "services", names.Snake+".go"))
+	path := filepath.Join(g.APIRoot(), "internal", "services", names.Snake+".go")
+	l, err := readGoLines(path)
+	if err != nil {
+		// Best effort, like the CSV import: the handler already has the field,
+		// and a service reshaped by hand is reported rather than fatal.
+		fmt.Printf("  ⚠ %s: could not read it, so add %q to its writable columns and list whitelists by hand\n",
+			rel, toSnakeCase(f.Name))
+		return nil
+	}
+	snake := toSnakeCase(f.Name)
+
+	if l.find(0, fmt.Sprintf("var writable%s = map[string]bool{", names.Pascal)) < 0 {
+		fmt.Printf("  ⚠ %s: no writable%s map, so PATCH will not accept %q until it is added there\n",
+			rel, names.Pascal, snake)
+	}
+	if open := l.find(0, fmt.Sprintf("var writable%s = map[string]bool{", names.Pascal)); open >= 0 {
+		if end := l.closeOf(open); end >= 0 {
+			already := false
+			for i := open; i < end; i++ {
+				if strings.Contains(l.lines[i], fmt.Sprintf("%q:", snake)) {
+					already = true
+				}
+			}
+			if !already {
+				l.insert(end, "\t"+patchKey)
+			}
+		}
+	}
+	if sortableInList(f) {
+		l.addToInlineMap(l.findPrefix(0, "Sortable:"), snake)
+	}
+	if !f.Encrypted {
+		l.addToInlineMap(l.findPrefix(0, "Filterable:"), snake)
+	}
+	if err := l.write(path); err != nil {
+		return fmt.Errorf("writing %s: %w", rel, err)
+	}
+	fmt.Printf("  ✓ %s  (writable, sortable, filterable)\n", rel)
 	return nil
 }
 

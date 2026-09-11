@@ -28,6 +28,10 @@ func WriteConcurrencyPackage(apiRoot, module string, overwrite bool) error {
 	return nil
 }
 
+// APIConcurrencyGo is exported so the generator can bring an older project's
+// copy up to date: generated services take a concurrency.Precondition.
+func APIConcurrencyGo() string { return apiConcurrencyGo() }
+
 func apiConcurrencyGo() string {
 	return `// Package concurrency is optimistic locking for update routes.
 //
@@ -99,6 +103,70 @@ func WriteConflict(c *gin.Context, current int) {
 func Tag(version int) string {
 	return ` + "`" + `W/"` + "`" + ` + strconv.Itoa(version) + ` + "`" + `"` + "`" + `
 }
+
+// ── Without a request ────────────────────────────────────────────────────
+//
+// IfMatch and Conflicted read the gin context, so only a handler can use
+// them. A service has to run the same update from a job, a command or a test,
+// so it takes a Precondition instead: the handler reads it with FromRequest,
+// the service scopes its update with it, and a miss comes back as an
+// ErrConflict for the handler to answer with WriteConflict.
+//
+//	pre := concurrency.FromRequest(c)              // in the handler
+//	res := db.Model(&item).Scopes(pre.Scope).Updates(updates)
+//	if pre.Missed(res) {                           // in the service
+//	    return &concurrency.ErrConflict{Current: current}
+//	}
+
+// Precondition is the version a client said it read, sent as If-Match. Nil
+// means it sent none, so the write applies whatever the version is.
+type Precondition struct {
+	Version int
+	// Unreadable is an If-Match that was not a version. It matches no row, so
+	// the client gets a conflict rather than a blind write.
+	Unreadable bool
+}
+
+// FromRequest reads If-Match. Nil when the header is absent or "*".
+func FromRequest(c *gin.Context) *Precondition {
+	raw := strings.TrimSpace(c.GetHeader("If-Match"))
+	if raw == "" || raw == "*" {
+		return nil
+	}
+	version, err := strconv.Atoi(strings.Trim(strings.TrimPrefix(raw, "W/"), "\""))
+	if err != nil {
+		return &Precondition{Unreadable: true}
+	}
+	return &Precondition{Version: version}
+}
+
+// Scope limits an update to a row still at the expected version. A nil
+// Precondition scopes nothing, so it can be passed to Scopes unconditionally.
+func (p *Precondition) Scope(db *gorm.DB) *gorm.DB {
+	switch {
+	case p == nil:
+		return db
+	case p.Unreadable:
+		return db.Where("1 = 0")
+	}
+	return db.Where("version = ?", p.Version)
+}
+
+// Missed reports whether an update scoped by p changed no row: the record
+// moved on after the client read it.
+func (p *Precondition) Missed(res *gorm.DB) bool {
+	return p != nil && res.Error == nil && res.RowsAffected == 0
+}
+
+// ErrConflict is a write whose precondition failed. Current is the version
+// the record is at now, for the answer.
+type ErrConflict struct {
+	Current int
+}
+
+func (e *ErrConflict) Error() string {
+	return "the record is at version " + strconv.Itoa(e.Current) + ", not the one the client read"
+}
 `
 }
 
@@ -114,6 +182,46 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
+
+// The same guarantee with no request at all, which is how a service sees it:
+// a Precondition rather than a gin context.
+func TestAPreconditionNeedsNoRequest(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := db.AutoMigrate(&lot{}); err != nil {
+		t.Fatalf("migrate: %v", err)
+	}
+	item := lot{Bid: 100, Version: 1}
+	db.Create(&item)
+
+	read := &Precondition{Version: 1}
+	res := db.Model(&lot{ID: item.ID}).Scopes(read.Scope).Updates(map[string]interface{}{"bid": 110})
+	if res.Error != nil || read.Missed(res) {
+		t.Fatalf("the first writer of version 1 was refused: %v", res.Error)
+	}
+	res = db.Model(&lot{ID: item.ID}).Scopes(read.Scope).Updates(map[string]interface{}{"bid": 105})
+	if !read.Missed(res) {
+		t.Fatal("a stale precondition overwrote the first writer")
+	}
+
+	var none *Precondition
+	res = db.Model(&lot{ID: item.ID}).Scopes(none.Scope).Updates(map[string]interface{}{"bid": 120})
+	if res.Error != nil || none.Missed(res) {
+		t.Error("an update with no precondition was refused")
+	}
+
+	if FromRequest(ctxWith("")) != nil {
+		t.Error("no If-Match read as a precondition")
+	}
+	if p := FromRequest(ctxWith(Tag(3))); p == nil || p.Version != 3 {
+		t.Errorf("W/\"3\" read as %+v", p)
+	}
+	if p := FromRequest(ctxWith("junk")); p == nil || !p.Unreadable {
+		t.Error("an unreadable If-Match was not marked unreadable")
+	}
+}
 
 type lot struct {
 	ID      uint

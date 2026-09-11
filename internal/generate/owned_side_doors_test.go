@@ -34,24 +34,22 @@ func mustParse(t *testing.T, name, src string) {
 // nothing else. Reproduced on a live project: a second ordinary account printed
 // the first account's record as a PDF and rewrote it with PATCH.
 func TestOwnedResourceGuardsTheSideDoors(t *testing.T) {
-	const module = "shop/apps/api"
-	root := setupMinimalProject(t, module)
-	g, names := ownedGenerator(t, root, module)
-	if err := g.writeGoHandler(names); err != nil {
-		t.Fatalf("handler: %v", err)
-	}
-	h := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "handlers", "invoice.go"))
-	mustParse(t, "invoice.go", h)
+	_, _, h, s := ownedFiles(t)
 
-	for _, fn := range []string{"PDF", "Patch"} {
-		if !strings.Contains(method(t, h, "func (h *InvoiceHandler) "+fn+"("), "authz.OwnsOr404(c, &item)") {
-			t.Errorf("%s loads a row by id without checking who owns it", fn)
-		}
+	// PDF reads through the guarded GetByID; Patch loads through the guarded load.
+	if !strings.Contains(method(t, h, "func (h *InvoiceHandler) PDF("), "h.service().GetByID(") {
+		t.Error("PDF loads a row by id without checking who owns it")
 	}
-	if !strings.Contains(method(t, h, "func (h *InvoiceHandler) Export("), `authz.ScopeToOwner(c, query, "user_id")`) {
+	if !strings.Contains(method(t, s, "func (s *InvoiceService) Patch("), "s.load(ctx, id)") {
+		t.Error("Patch loads a row by id without checking who owns it")
+	}
+	if !strings.Contains(method(t, s, "func (s *InvoiceService) load("), "authz.Owns(ctx, &item)") {
+		t.Error("the write path's load does not check who owns the row")
+	}
+	if !strings.Contains(method(t, s, "func (s *InvoiceService) Export("), `authz.ScopeOwned(ctx, query, "user_id")`) {
 		t.Error("Export is not scoped, so it returns every row in the table")
 	}
-	if !strings.Contains(method(t, h, "func (h *InvoiceHandler) Bulk("), `authz.ScopeToOwner(c, scope, "user_id")`) {
+	if !strings.Contains(method(t, s, "func (s *InvoiceService) Bulk("), `authz.ScopeOwned(ctx, scope, "user_id")`) {
 		t.Error("Bulk is not scoped, so a role allowed to reach it acts on anyone's rows")
 	}
 }
@@ -69,22 +67,33 @@ func TestExportReadsTheBatchItWasGiven(t *testing.T) {
 	if err := g.writeGoHandler(g.Names()); err != nil {
 		t.Fatalf("handler: %v", err)
 	}
+	if err := g.writeGoService(g.Names()); err != nil {
+		t.Fatalf("service: %v", err)
+	}
 	h := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "handlers", "product.go"))
-	mustParse(t, "product.go", h)
-	export := method(t, h, "func (h *ProductHandler) Export(")
+	s := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "services", "product.go"))
+	mustParse(t, "handlers/product.go", h)
+	mustParse(t, "services/product.go", s)
+	export := method(t, s, "func (s *ProductService) Export(")
 
 	if strings.Contains(export, "tx.Scan(") {
 		t.Error("Export re-reads each batch through tx.Scan, which finds nothing")
 	}
-	if strings.Count(export, "FindInBatches(&rows,") != 2 {
-		t.Error("CSV and XLSX should both read the slice FindInBatches fills")
+	if !strings.Contains(export, "return each(rows)") || strings.Count(export, "FindInBatches(&rows,") != 1 {
+		t.Error("Export does not hand on the slice FindInBatches fills")
 	}
 	// A sort in front of the key FindInBatches pages by repeats rows.
 	if strings.Contains(export, ".Order(") {
 		t.Error("Export sorts ahead of the primary key it pages by")
 	}
-	if strings.Contains(export, "_ = err") {
-		t.Error("Export still discards its error")
+	handlerExport := method(t, h, "func (h *ProductHandler) Export(")
+	if strings.Count(handlerExport, "h.service().Export(") != 2 {
+		t.Error("CSV and XLSX should both read through the service's batches")
+	}
+	for _, src := range []string{export, handlerExport} {
+		if strings.Contains(src, "_ = err") {
+			t.Error("Export still discards its error")
+		}
 	}
 }
 

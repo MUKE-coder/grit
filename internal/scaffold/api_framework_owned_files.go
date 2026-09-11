@@ -43,6 +43,12 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 
 		filepath.Join(apiRoot, "internal", "models", "outbox_message.go"): apiOutboxModelGo(),
 
+		// The actor on the context, which generated services scope owned rows
+		// by. A new file beside authz.go, so a project whose authz.go was
+		// edited still gets it.
+		filepath.Join(apiRoot, "internal", "authz", "actor.go"):      authzActorGo(),
+		filepath.Join(apiRoot, "internal", "authz", "actor_test.go"): authzActorTestGo(),
+
 		// Feature flags: the rules model and the engine that reads it, a
 		// set like the webhook cluster. In the API map they were written once
 		// and never again, so no flag fix reached an existing project.

@@ -24,500 +24,291 @@ export default function ServicesPage() {
                 Services
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Services contain your application&apos;s business logic. They sit between handlers
-                and the database, making your code testable, reusable, and maintainable.
-                Handlers should be thin -- services should be fat.
+                A service owns every database read and write for its resource. The one{' '}
+                <code>grit generate resource</code> writes is complete: list, export, get, create,
+                update, patch, delete and bulk, with the resource&apos;s whitelists, ownership rules
+                and transactions. The <Link href="/docs/backend/handlers">handler</Link> calls it, and
+                so can a job, a command or a test.
               </p>
             </div>
 
             <div className="prose-grit">
-              {/* ── When to Use Services ─────────────────────────────── */}
-              <h2 id="when-to-use">When to Use Services vs. Handlers</h2>
-              <p>
-                Not every handler needs a service. Here is the rule of thumb:
-              </p>
-
+              {/* ── Handler or service ─────────────────────────────── */}
+              <h2 id="when-to-use">Handler or Service?</h2>
               <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-6">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border/30 bg-accent/20">
-                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Scenario</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Concern</th>
                       <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Where</th>
                     </tr>
                   </thead>
                   <tbody className="text-muted-foreground">
                     <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5">Simple CRUD (fetch, save, delete)</td>
-                      <td className="px-4 py-2.5">Handler is fine</td>
+                      <td className="px-4 py-2.5">Binding and validating the request body</td>
+                      <td className="px-4 py-2.5">Handler</td>
                     </tr>
                     <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5">Multiple DB operations in one request</td>
-                      <td className="px-4 py-2.5">Use a service with a transaction</td>
+                      <td className="px-4 py-2.5">Status codes, headers, rendering CSV or PDF</td>
+                      <td className="px-4 py-2.5">Handler</td>
                     </tr>
                     <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5">Logic shared between handlers</td>
-                      <td className="px-4 py-2.5">Extract into a service</td>
+                      <td className="px-4 py-2.5">Any query, however simple</td>
+                      <td className="px-4 py-2.5">Service</td>
                     </tr>
                     <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5">Complex query building (filters, joins)</td>
-                      <td className="px-4 py-2.5">Service or helper function</td>
+                      <td className="px-4 py-2.5">Several writes that must land together</td>
+                      <td className="px-4 py-2.5">Service, in a transaction</td>
                     </tr>
                     <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5">External API calls (email, storage, AI)</td>
-                      <td className="px-4 py-2.5">Dedicated service</td>
+                      <td className="px-4 py-2.5">Who may see or change a row</td>
+                      <td className="px-4 py-2.5">Service, from the caller on the context</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5">Business rules beyond binding tags</td>
+                      <td className="px-4 py-2.5">Service, returning <code>respond.Rule</code></td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-2.5">Business rules and validation beyond binding tags</td>
-                      <td className="px-4 py-2.5">Service layer</td>
+                      <td className="px-4 py-2.5">External calls: email, storage, AI</td>
+                      <td className="px-4 py-2.5">A dedicated service</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
-              <p>
-                Grit ships with two built-in services: <code>AuthService</code> (JWT token operations)
-                and a pattern you can follow for any new service.
-              </p>
-
               <LaneFlow
                 id="svc-layers"
-                lanes={['HTTP layer', 'Business layer', 'Data & external']}
+                lanes={['Callers', 'Business layer', 'Data & external']}
                 nodes={[
-                  { id: 'handler', lane: 0, row: 1, title: 'Handler', sub: 'parse · respond', tone: 'cyan' },
-                  { id: 'service', lane: 1, row: 1, title: 'Service', sub: 'logic · transactions', tone: 'primary' },
+                  { id: 'handler', lane: 0, row: 0, title: 'Handler', sub: 'HTTP request', tone: 'cyan' },
+                  { id: 'job', lane: 0, row: 1, title: 'Job · Command', sub: 'no request', tone: 'cyan' },
+                  { id: 'test', lane: 0, row: 2, title: 'Test', sub: 'no request', tone: 'cyan' },
+                  { id: 'service', lane: 1, row: 1, title: 'Service', sub: 'rules · transactions', tone: 'primary' },
                   { id: 'gorm', lane: 2, row: 0, title: 'GORM', sub: 'queries', tone: 'green' },
                   { id: 'ext', lane: 2, row: 1, title: 'Email · Storage', sub: 'external APIs', tone: 'violet' },
                   { id: 'jobs', lane: 2, row: 2, title: 'AI · Jobs', sub: 'async work', tone: 'amber' },
                 ]}
                 edges={[
-                  { from: 'handler', to: 'service', label: 'delegates', tone: 'primary' },
+                  { from: 'handler', to: 'service', label: 'ctx', tone: 'primary' },
+                  { from: 'job', to: 'service', label: 'ctx', tone: 'primary' },
+                  { from: 'test', to: 'service', label: 'ctx', tone: 'primary' },
                   { from: 'service', to: 'gorm', label: 'query', tone: 'green' },
                   { from: 'service', to: 'ext', label: 'call', tone: 'violet' },
                   { from: 'service', to: 'jobs', label: 'enqueue', tone: 'amber' },
                 ]}
                 legend={[
-                  { tone: 'cyan', label: 'Thin HTTP handler' },
+                  { tone: 'cyan', label: 'Callers' },
                   { tone: 'primary', label: 'Service (logic)' },
                   { tone: 'green', label: 'Data & external' },
                 ]}
-                caption="Handlers stay thin; services own transactions, business rules, and every external call"
+                caption="Every caller gets the same rules, because the rules are in the service"
               />
 
-              {/* ── Service Pattern ─────────────────────────────── */}
-              <h2 id="service-pattern">Service Pattern</h2>
+              {/* ── The generated service ─────────────────────────────── */}
+              <h2 id="service-pattern">The Generated Service</h2>
               <p>
-                A Grit service is a struct with a <code>DB</code> field (and any other dependencies)
-                plus methods that contain business logic. Services live in
-                <code>apps/api/internal/services/</code>.
+                Services live in <code>apps/api/internal/services/</code>, one file per resource. The
+                top of a generated one:
               </p>
-              <CodeBlock language="go" filename="apps/api/internal/services/post.go" code={`package services
-
-import (
-    "fmt"
-    "math"
-
-    "gorm.io/gorm"
-
-    "myapp/apps/api/internal/models"
-)
-
-// PostService handles business logic for posts.
+              <CodeBlock language="go" filename="apps/api/internal/services/post.go" code={`// PostService owns every database read and write for posts.
 type PostService struct {
     DB *gorm.DB
 }
 
-// NewPostService creates a new PostService.
-func NewPostService(db *gorm.DB) *PostService {
-    return &PostService{DB: db}
-}`} />
-              <p>
-                Inject the service into your handler:
-              </p>
-              <CodeBlock language="go" filename="routes/routes.go" code={`postService := services.NewPostService(db)
-postHandler := &handlers.PostHandler{
-    DB:      db,
-    Service: postService,
-}`} />
-
-              {/* ── ListParams ─────────────────────────────── */}
-              <h2 id="list-params">ListParams Struct</h2>
-              <p>
-                For list operations, define a <code>ListParams</code> struct that encapsulates all
-                pagination, search, sort, and filter parameters. This keeps service method
-                signatures clean and makes it easy to add new filters.
-              </p>
-              <CodeBlock language="go" filename="services/post.go" code={`// ListParams holds pagination, search, and sort parameters.
-type ListParams struct {
-    Page      int
-    PageSize  int
-    Search    string
-    SortBy    string
-    SortOrder string
-    Filters   map[string]string // e.g., {"status": "published"}
+// postListConfig is what a client may search, sort and filter posts
+// by. Whitelisted, because each name ends up in SQL.
+var postListConfig = paginate.Config{
+    Searchable: []string{"title", "body"},
+    Sortable:   map[string]bool{"id": true, "created_at": true, "title": true, "published": true},
+    Filterable: map[string]bool{"id": true, "title": true, "published": true},
 }
 
-// ListResult holds paginated query results.
-type ListResult struct {
-    Data  interface{} \`json:"data"\`
-    Total int64       \`json:"total"\`
-    Page  int         \`json:"page"\`
-    Size  int         \`json:"page_size"\`
-    Pages int         \`json:"pages"\`
+// writablePost is every column Patch and Bulk may write. id, the
+// timestamps and the version are the framework's, and are dropped.
+var writablePost = map[string]bool{
+    "title":     true,
+    "body":      true,
+    "published": true,
 }
 
-// ClampDefaults ensures pagination values are within safe bounds.
-func (p *ListParams) ClampDefaults() {
-    if p.Page < 1 {
-        p.Page = 1
-    }
-    if p.PageSize < 1 || p.PageSize > 100 {
-        p.PageSize = 20
-    }
-    if p.SortOrder != "asc" && p.SortOrder != "desc" {
-        p.SortOrder = "desc"
-    }
-    if p.SortBy == "" {
-        p.SortBy = "created_at"
-    }
+// db binds the database to ctx, so whatever a middleware put there reaches
+// GORM's callbacks: the multitenant plugin scopes by it.
+func (s *PostService) db(ctx context.Context) *gorm.DB {
+    return s.DB.WithContext(ctx)
+}`} />
+              <p>And the methods it comes with:</p>
+              <CodeBlock language="go" filename="services/post.go (methods)" code={`List(ctx, p paginate.Params, archived string) (paginate.Result[models.Post], error)
+Export(ctx, search string, each func(rows []models.Post) error) error
+GetByID(ctx, id string) (*models.Post, error)
+Create(ctx, item *models.Post) error
+Update(ctx, id string, updates map[string]interface{}, pre *concurrency.Precondition) (*models.Post, error)
+Patch(ctx, id string, body map[string]interface{}, pre *concurrency.Precondition) (*models.Post, map[string]interface{}, error)
+Delete(ctx, id string) (*models.Post, error)
+Bulk(ctx, action string, ids []string, patch map[string]interface{}) (PostBulkResult, error)`} />
+              <p>
+                <code>grit generate field</code> adds a new column to the whitelists as well as the
+                model and the handler, so a field added later can be filtered and patched like one
+                generated with the resource.
+              </p>
+
+              {/* ── The context ─────────────────────────────── */}
+              <h2 id="context">The Context Carries the Caller</h2>
+              <p>
+                Every method takes a <code>context.Context</code> first. It carries who is asking,
+                which an owned resource (<code>--owned-by</code>) scopes its rows by, as well as the
+                organization the multitenant plugin resolved and the cancellation when a client goes
+                away.
+              </p>
+              <CodeBlock language="go" filename="three ways to call a service" code={`// In a handler. The generated ctx helper does exactly this.
+ctx := authz.WithActor(c.Request.Context(), authz.ActorOf(c))
+
+// In a job or a command, acting for the system: every row, like ADMIN.
+ctx := authz.AsSystem(context.Background())
+
+// Acting for one user, so owned rows are scoped to them.
+ctx := authz.WithActor(context.Background(), authz.Actor{UserID: userID})`} />
+              <p>
+                On an owned resource a context with no caller on it matches nothing. That is on
+                purpose: a job that forgot to say who it acts for gets an empty list, not every
+                user&apos;s rows. Somebody else&apos;s row comes back as{' '}
+                <code>gorm.ErrRecordNotFound</code>, so a wrong guess at an id cannot be told from a
+                right one.
+              </p>
+              <CodeBlock language="go" filename="jobs/overdue.go" code={`svc := &services.InvoiceService{DB: db}
+ctx := authz.AsSystem(context.Background())
+
+// nil precondition: no version check. A job is not editing a copy it read earlier.
+if _, err := svc.Update(ctx, id, map[string]interface{}{"status": "overdue"}, nil); err != nil {
+    return fmt.Errorf("marking invoice %s overdue: %w", id, err)
 }`} />
 
-              {/* ── Query Building ─────────────────────────────── */}
-              <h2 id="query-building">Query Building</h2>
+              {/* ── Versions ─────────────────────────────── */}
+              <h2 id="versions">Writes and Versions</h2>
               <p>
-                Services build GORM queries step by step. This pattern keeps complex queries
-                readable and composable.
+                <code>Update</code> and <code>Patch</code> take a <code>*concurrency.Precondition</code>.
+                A handler builds it from the request&apos;s <code>If-Match</code> header with{' '}
+                <code>concurrency.FromRequest(c)</code>; with one, the write lands only if the row is
+                still at that version, and otherwise the method returns a{' '}
+                <code>*concurrency.ErrConflict</code> naming the version it is at. <code>nil</code>{' '}
+                means no check.
               </p>
-              <CodeBlock language="go" filename="services/post.go -- List" code={`// AllowedSorts defines which columns can be sorted on.
-var postAllowedSorts = map[string]bool{
-    "id": true, "title": true, "created_at": true, "published": true,
-}
+              <p>
+                <code>Update</code> writes the columns in the map it is given. The generated handler
+                builds that map from its typed request; if you call it yourself, use column names.{' '}
+                <code>Patch</code> takes a raw body and keeps only the writable columns.
+              </p>
 
-// List returns a paginated, filtered list of posts.
-func (s *PostService) List(params ListParams) (*ListResult, error) {
-    params.ClampDefaults()
-
-    // Validate sort column against whitelist
-    if !postAllowedSorts[params.SortBy] {
-        params.SortBy = "created_at"
-    }
-
-    query := s.DB.Model(&models.Post{})
-
-    // ── Search ──────────────────────────────────────
-    if params.Search != "" {
-        query = query.Where(
-            "title ILIKE ? OR body ILIKE ?",
-            "%"+params.Search+"%",
-            "%"+params.Search+"%",
-        )
-    }
-
-    // ── Filters ─────────────────────────────────────
-    if status, ok := params.Filters["status"]; ok {
-        switch status {
-        case "published":
-            query = query.Where("published = ?", true)
-        case "draft":
-            query = query.Where("published = ?", false)
-        }
-    }
-
-    if authorID, ok := params.Filters["author_id"]; ok {
-        query = query.Where("author_id = ?", authorID)
-    }
-
-    // ── Count ───────────────────────────────────────
-    var total int64
-    if err := query.Count(&total).Error; err != nil {
-        return nil, fmt.Errorf("counting posts: %w", err)
-    }
-
-    // ── Fetch ───────────────────────────────────────
-    var posts []models.Post
-    offset := (params.Page - 1) * params.PageSize
-
-    err := query.
-        Order(params.SortBy + " " + params.SortOrder).
-        Offset(offset).
-        Limit(params.PageSize).
-        Preload("Author").
-        Find(&posts).Error
-
+              {/* ── Your own methods ─────────────────────────────── */}
+              <h2 id="business-logic">Adding Your Own Methods</h2>
+              <p>
+                Put them in a file of your own in the same package, such as{' '}
+                <code>services/invoice_billing.go</code>. It is the same type, so your methods can use{' '}
+                <code>s.db(ctx)</code> and the owner-checked <code>s.load</code>, and regenerating the
+                resource never touches your file.
+              </p>
+              <CodeBlock language="go" filename="services/invoice_billing.go" code={`// MarkPaid records a payment. The rule lives here, so the route, the
+// nightly reconciliation job and a test all get the same answer.
+func (s *InvoiceService) MarkPaid(ctx context.Context, id string) (*models.Invoice, error) {
+    item, err := s.load(ctx, id) // not found if the caller may not see it
     if err != nil {
-        return nil, fmt.Errorf("fetching posts: %w", err)
+        return nil, err
     }
-
-    pages := int(math.Ceil(float64(total) / float64(params.PageSize)))
-
-    return &ListResult{
-        Data:  posts,
-        Total: total,
-        Page:  params.Page,
-        Size:  params.PageSize,
-        Pages: pages,
-    }, nil
+    if item.PaidAt != nil {
+        return nil, respond.Rule("invoice %s is already paid", item.Number) // 422
+    }
+    now := time.Now()
+    if err := s.db(ctx).Model(item).Update("paid_at", now).Error; err != nil {
+        return nil, fmt.Errorf("marking invoice paid: %w", err)
+    }
+    item.PaidAt = &now
+    return item, nil
 }`} />
-              <p>
-                The handler becomes much simpler when it delegates to a service:
-              </p>
-              <CodeBlock language="go" filename="handlers/post.go -- using service" code={`func (h *PostHandler) List(c *gin.Context) {
-    page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-    pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-
-    params := services.ListParams{
-        Page:      page,
-        PageSize:  pageSize,
-        Search:    c.Query("search"),
-        SortBy:    c.DefaultQuery("sort_by", "created_at"),
-        SortOrder: c.DefaultQuery("sort_order", "desc"),
-        Filters: map[string]string{
-            "status":    c.Query("status"),
-            "author_id": c.Query("author_id"),
-        },
-    }
-
-    result, err := h.Service.List(params)
+              <p>The handler for it is four lines of HTTP:</p>
+              <CodeBlock language="go" filename="handlers/invoice_billing.go" code={`func (h *InvoiceHandler) MarkPaid(c *gin.Context) {
+    item, err := h.service().MarkPaid(h.ctx(c), c.Param("id"))
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{
-            "error": gin.H{
-                "code":    "INTERNAL_ERROR",
-                "message": "Failed to fetch posts",
-            },
-        })
+        h.fail(c, err, "Failed to mark invoice paid")
         return
     }
-
-    c.JSON(http.StatusOK, gin.H{
-        "data": result.Data,
-        "meta": gin.H{
-            "total":     result.Total,
-            "page":      result.Page,
-            "page_size": result.Size,
-            "pages":     result.Pages,
-        },
-    })
-}`} />
-
-              {/* ── Business Logic Examples ─────────────────────────────── */}
-              <h2 id="business-logic">Business Logic Examples</h2>
-              <p>
-                Services are the right place for any logic that goes beyond simple CRUD.
-                Here are common patterns.
-              </p>
-
-              <h3 id="publish-post">Publishing a Post</h3>
-              <p>
-                A publish action might need to validate the post, update its status, and send a
-                notification. All of this belongs in a service:
-              </p>
-              <CodeBlock language="go" filename="services/post.go -- Publish" code={`// Publish marks a post as published after validation.
-func (s *PostService) Publish(postID uint) (*models.Post, error) {
-    var post models.Post
-    if err := s.DB.First(&post, postID).Error; err != nil {
-        return nil, fmt.Errorf("post not found: %w", err)
-    }
-
-    if post.Published {
-        return nil, fmt.Errorf("post is already published")
-    }
-
-    if len(post.Title) < 10 {
-        return nil, fmt.Errorf("title must be at least 10 characters to publish")
-    }
-
-    if len(post.Body) < 100 {
-        return nil, fmt.Errorf("body must be at least 100 characters to publish")
-    }
-
-    post.Published = true
-    if err := s.DB.Save(&post).Error; err != nil {
-        return nil, fmt.Errorf("publishing post: %w", err)
-    }
-
-    return &post, nil
-}`} />
-
-              <h3 id="user-stats">Aggregation / Statistics</h3>
-              <CodeBlock language="go" filename="services/user.go -- Stats" code={`// UserStats holds aggregated user statistics.
-type UserStats struct {
-    Total       int64 \`json:"total"\`
-    Active      int64 \`json:"active"\`
-    Admins      int64 \`json:"admins"\`
-    NewThisWeek int64 \`json:"new_this_week"\`
-}
-
-// GetStats returns aggregated user statistics.
-func (s *UserService) GetStats() (*UserStats, error) {
-    var stats UserStats
-
-    if err := s.DB.Model(&models.User{}).Count(&stats.Total).Error; err != nil {
-        return nil, fmt.Errorf("counting total users: %w", err)
-    }
-
-    s.DB.Model(&models.User{}).Where("active = ?", true).Count(&stats.Active)
-    s.DB.Model(&models.User{}).Where("role = ?", "admin").Count(&stats.Admins)
-    s.DB.Model(&models.User{}).
-        Where("created_at >= NOW() - INTERVAL '7 days'").
-        Count(&stats.NewThisWeek)
-
-    return &stats, nil
+    c.JSON(http.StatusOK, gin.H{"data": item, "message": "Invoice marked paid"})
 }`} />
 
               {/* ── Transaction Handling ─────────────────────────────── */}
-              <h2 id="transactions">Transaction Handling</h2>
+              <h2 id="transactions">Transactions</h2>
               <p>
-                When a service method performs multiple database operations that must succeed or
-                fail together, wrap them in a GORM transaction. If any step returns an error,
-                the entire transaction is rolled back.
+                When a method makes several writes that must succeed or fail together, run them in a
+                GORM transaction. The generated service does this wherever a write has more than one
+                statement: a row and its many-to-many links, a row and its line items, a bulk action.
               </p>
-              <CodeBlock language="go" filename="services/order.go -- CreateOrder" code={`// CreateOrder creates an order and decrements product stock atomically.
-func (s *OrderService) CreateOrder(order *models.Order, items []models.OrderItem) error {
-    return s.DB.Transaction(func(tx *gorm.DB) error {
-        // Step 1: Create the order
+              <CodeBlock language="go" filename="services/order.go (CreateOrder)" code={`// CreateOrder creates an order and decrements product stock atomically.
+func (s *OrderService) CreateOrder(ctx context.Context, order *models.Order, items []models.OrderItem) error {
+    return s.db(ctx).Transaction(func(tx *gorm.DB) error {
         if err := tx.Create(order).Error; err != nil {
             return fmt.Errorf("creating order: %w", err)
         }
 
-        // Step 2: Create order items and decrement stock
         for i := range items {
             items[i].OrderID = order.ID
-
             if err := tx.Create(&items[i]).Error; err != nil {
                 return fmt.Errorf("creating order item: %w", err)
             }
 
-            // Decrement stock
             result := tx.Model(&models.Product{}).
                 Where("id = ? AND stock >= ?", items[i].ProductID, items[i].Quantity).
                 Update("stock", gorm.Expr("stock - ?", items[i].Quantity))
-
             if result.Error != nil {
                 return fmt.Errorf("updating stock: %w", result.Error)
             }
             if result.RowsAffected == 0 {
-                return fmt.Errorf("insufficient stock for product %d", items[i].ProductID)
+                return respond.Rule("not enough stock for product %s", items[i].ProductID)
             }
         }
-
-        // Step 3: Calculate total
-        var total float64
-        for _, item := range items {
-            total += item.Price * float64(item.Quantity)
-        }
-        if err := tx.Model(order).Update("total", total).Error; err != nil {
-            return fmt.Errorf("updating order total: %w", err)
-        }
-
         return nil // commit
     })
 }`} />
-              <p>Key points about GORM transactions:</p>
               <ul>
-                <li>Use <code>tx</code> (the transaction handle) for all queries inside the callback, not <code>s.DB</code>.</li>
-                <li>If the callback returns <code>nil</code>, the transaction commits.</li>
-                <li>If the callback returns an error, the transaction rolls back automatically.</li>
-                <li>If a panic occurs inside the callback, GORM recovers and rolls back.</li>
+                <li>Use <code>tx</code> for every query inside the callback, not <code>s.DB</code>.</li>
+                <li>Returning <code>nil</code> commits; returning an error rolls everything back.</li>
+                <li>A panic inside the callback is recovered and rolled back.</li>
+                <li>Start from <code>s.db(ctx)</code>, so the transaction carries the request&apos;s context.</li>
               </ul>
 
-              {/* ── Auth Service ─────────────────────────────── */}
-              <h2 id="auth-service">Built-in AuthService</h2>
+              {/* ── Errors ─────────────────────────────── */}
+              <h2 id="errors">Errors</h2>
               <p>
-                Grit ships with an <code>AuthService</code> that handles all JWT token operations.
-                It is the canonical example of a well-structured service.
+                Return Go errors, never HTTP codes; the handler&apos;s <code>fail</code> picks the
+                status. Three have a meaning of their own:
               </p>
-              <CodeBlock language="go" filename="apps/api/internal/services/auth.go" code={`type AuthService struct {
-    Secret        string
-    AccessExpiry  time.Duration
-    RefreshExpiry time.Duration
-}
-
-type TokenPair struct {
-    AccessToken  string \`json:"access_token"\`
-    RefreshToken string \`json:"refresh_token"\`
-    ExpiresAt    int64  \`json:"expires_at"\`
-}
-
-type Claims struct {
-    UserID uint   \`json:"user_id"\`
-    Email  string \`json:"email"\`
-    Role   string \`json:"role"\`
-    jwt.RegisteredClaims
-}
-
-// GenerateTokenPair creates access + refresh tokens.
-func (s *AuthService) GenerateTokenPair(
-    userID uint, email, role string,
-) (*TokenPair, error) {
-    accessToken, expiresAt, err := s.generateToken(
-        userID, email, role, s.AccessExpiry,
-    )
-    if err != nil {
-        return nil, fmt.Errorf("generating access token: %w", err)
-    }
-
-    refreshToken, _, err := s.generateToken(
-        userID, email, role, s.RefreshExpiry,
-    )
-    if err != nil {
-        return nil, fmt.Errorf("generating refresh token: %w", err)
-    }
-
-    return &TokenPair{
-        AccessToken:  accessToken,
-        RefreshToken: refreshToken,
-        ExpiresAt:    expiresAt,
-    }, nil
-}
-
-// ValidateToken parses and validates a JWT token.
-func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
-    token, err := jwt.ParseWithClaims(
-        tokenString, &Claims{},
-        func(token *jwt.Token) (interface{}, error) {
-            if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-                return nil, fmt.Errorf("unexpected signing method")
-            }
-            return []byte(s.Secret), nil
-        },
-    )
-    if err != nil {
-        return nil, fmt.Errorf("parsing token: %w", err)
-    }
-
-    claims, ok := token.Claims.(*Claims)
-    if !ok || !token.Valid {
-        return nil, fmt.Errorf("invalid token")
-    }
-
-    return claims, nil
-}`} />
+              <ul>
+                <li><code>gorm.ErrRecordNotFound</code> becomes a 404.</li>
+                <li><code>*concurrency.ErrConflict</code> becomes a 409 naming the current version.</li>
+                <li>
+                  <code>respond.Rule(&quot;...&quot;)</code> becomes a 422 carrying your message: use it
+                  for a rule the caller broke. Anything else is logged and answered with a plain 500,
+                  so wrap it with <code>fmt.Errorf(&quot;context: %w&quot;, err)</code> for the log.
+                </li>
+              </ul>
 
               {/* ── Best Practices ─────────────────────────────── */}
               <h2 id="best-practices">Best Practices</h2>
               <ul>
                 <li>
-                  <strong>One service per resource.</strong> <code>PostService</code>, <code>UserService</code>,
-                  <code>OrderService</code> -- each in its own file.
+                  <strong>One service per resource</strong>, each in its own file, with your additions
+                  in files of your own beside it.
                 </li>
                 <li>
-                  <strong>Return errors, not HTTP codes.</strong> Services should return Go errors.
-                  The handler decides the HTTP status code.
+                  <strong>Context first, always.</strong> Query through <code>s.db(ctx)</code>; a query
+                  on <code>s.DB</code> directly cannot see the caller, the organization or a
+                  cancelled request.
                 </li>
                 <li>
-                  <strong>Wrap errors with context.</strong> Use <code>fmt.Errorf(&quot;context: %w&quot;, err)</code> so
-                  error messages tell you where things went wrong.
+                  <strong>Say who a job acts for.</strong> <code>authz.AsSystem</code> or{' '}
+                  <code>authz.WithActor</code>; a bare <code>context.Background()</code> sees nothing
+                  of an owned resource.
                 </li>
                 <li>
-                  <strong>Use transactions for multi-step operations.</strong> If one step fails, everything
-                  rolls back cleanly.
-                </li>
-                <li>
-                  <strong>Keep services independent.</strong> A service should not import another service.
-                  If two services need to collaborate, the handler orchestrates them.
-                </li>
-                <li>
-                  <strong>Validate business rules here.</strong> Binding tags handle field-level validation.
-                  Services handle business rules like &quot;a post must have at least 100 characters to be published.&quot;
+                  <strong>Keep services independent.</strong> When two need to collaborate, the caller
+                  orchestrates them.
                 </li>
               </ul>
             </div>

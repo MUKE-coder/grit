@@ -15,7 +15,8 @@ import (
 // Create<X>Request and Update<X>Request and copy fields across one by one, so
 // after adding notes to an Account the admin showed and sent the field, POST
 // returned 201 with notes empty, PUT ignored it, PATCH refused it with 422, and
-// the column sat empty in Postgres.
+// the column sat empty in Postgres. From v3.224.0 the writable columns and the
+// list's whitelists live in the service, so the field has to reach it too.
 
 func accountWithHandler(t *testing.T) (*Generator, string) {
 	t.Helper()
@@ -25,7 +26,15 @@ func accountWithHandler(t *testing.T) (*Generator, string) {
 	if err := g.writeGoHandler(g.Names()); err != nil {
 		t.Fatalf("handler: %v", err)
 	}
+	if err := g.writeGoService(g.Names()); err != nil {
+		t.Fatalf("service: %v", err)
+	}
 	return g, filepath.Join(root, "apps", "api", "internal", "handlers", "account.go")
+}
+
+// serviceOf is the service beside a handler.
+func serviceOf(handlerPath string) string {
+	return filepath.Join(filepath.Dir(filepath.Dir(handlerPath)), "services", filepath.Base(handlerPath))
 }
 
 func oneField(t *testing.T, spec string) Field {
@@ -51,11 +60,20 @@ func TestAddFieldReachesTheHandler(t *testing.T) {
 			t.Errorf("the field never reached the %s", what)
 		}
 	}
-	// PATCH's allow-list and bulk edit's copy of it.
-	if n := strings.Count(src, `"notes": true,`); n < 2 {
-		t.Errorf(`"notes" is in %d allow-list(s), want the PATCH and bulk ones`, n)
-	}
 	assertParses(t, src)
+
+	// PATCH's and bulk edit's writable columns, and the list's filter, are the
+	// service's.
+	svc := readTestFile(t, serviceOf(path))
+	for what, re := range map[string]string{
+		"writable columns": `(?s)var writableAccount = map\[string\]bool\{[^}]*"notes": true,`,
+		"filter whitelist": `Filterable:\s+map\[string\]bool\{[^}]*"notes": true`,
+	} {
+		if !regexp.MustCompile(re).MatchString(svc) {
+			t.Errorf("the field never reached the service's %s", what)
+		}
+	}
+	assertParses(t, svc)
 }
 
 // grit g field is re-runnable; the second run must not add the field twice.
@@ -69,6 +87,9 @@ func TestAddFieldHandlerInjectionIsIdempotent(t *testing.T) {
 	}
 	if n := strings.Count(readTestFile(t, path), "`json:\"notes\"`"); n != 2 {
 		t.Errorf("notes appears in %d request fields, want exactly 2 (create and update)", n)
+	}
+	if n := strings.Count(readTestFile(t, serviceOf(path)), `"notes": true,`); n != 1 {
+		t.Errorf("notes appears %d times in the writable columns, want once", n)
 	}
 }
 
@@ -111,17 +132,24 @@ func TestAddFieldMatchesTheGenerator(t *testing.T) {
 	if err := g.writeGoHandler(g.Names()); err != nil {
 		t.Fatalf("handler: %v", err)
 	}
-	generated := squash(readTestFile(t, filepath.Join(root, "apps", "api", "internal", "handlers", "account.go")))
+	if err := g.writeGoService(g.Names()); err != nil {
+		t.Fatalf("service: %v", err)
+	}
+	handler := squash(readTestFile(t, filepath.Join(root, "apps", "api", "internal", "handlers", "account.go")))
+	service := squash(readTestFile(t, filepath.Join(root, "apps", "api", "internal", "services", "account.go")))
 
 	for _, f := range def.Fields {
 		p := scalarHandlerParts(f)
 		for what, part := range map[string]string{
 			"create field": p.createField, "create assign": p.createAssign,
-			"patch key": p.patchKey, "update field": p.updateField, "update set": p.updateSet,
+			"update field": p.updateField, "update set": p.updateSet,
 		} {
-			if !strings.Contains(generated, squash(part)) {
+			if !strings.Contains(handler, squash(part)) {
 				t.Errorf("%s: the %s no longer matches the generator:\n  %s", f.Name, what, part)
 			}
+		}
+		if !strings.Contains(service, squash(p.patchKey)) {
+			t.Errorf("%s: the writable column no longer matches the generator:\n  %s", f.Name, p.patchKey)
 		}
 	}
 }

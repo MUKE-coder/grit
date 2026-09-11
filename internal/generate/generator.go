@@ -161,6 +161,28 @@ func (g *Generator) Run() error {
 	if err := scaffold.WriteConcurrencyPackage(g.APIRoot(), g.Module, false); err != nil {
 		return err
 	}
+	// Generated services take a concurrency.Precondition, which a copy of the
+	// package from before it existed does not declare. Refreshed only when the
+	// manifest proves nobody has edited it.
+	if path := filepath.Join(g.APIRoot(), "internal", "concurrency", "concurrency.go"); !fileContainsText(path, "func FromRequest(") {
+		body := strings.ReplaceAll(scaffold.APIConcurrencyGo(), "{{MODULE}}", g.Module)
+		if g.refreshIfUnchanged(path, body) {
+			fmt.Println("  ✓ Updated internal/concurrency/concurrency.go")
+		} else {
+			fmt.Println("  ⚠ internal/concurrency/concurrency.go predates concurrency.FromRequest, which")
+			fmt.Println("    generated services use. Run grit upgrade, or replace it with the current template.")
+		}
+	}
+	// Generated services scope owned rows by the actor on the context. That
+	// helper is a file of its own, so a project from before it simply gets the
+	// file, whatever it has done to authz.go.
+	actorPath := filepath.Join(g.APIRoot(), "internal", "authz", "actor.go")
+	if !fileExists(actorPath) && fileExists(filepath.Join(g.APIRoot(), "internal", "authz", "authz.go")) {
+		if err := writeFileWithDirs(actorPath, strings.ReplaceAll(scaffold.APIAuthzActorGo(), "{{MODULE}}", g.Module)); err != nil {
+			return fmt.Errorf("adding internal/authz/actor.go: %w", err)
+		}
+		fmt.Println("  ✓ Added internal/authz/actor.go")
+	}
 
 	fmt.Printf("\n  Generating resource: %s\n\n", names.Pascal)
 
