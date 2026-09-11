@@ -29,6 +29,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.216.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.216.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Who read a record: --audit-reads</h3>
+                <p>
+                  Found building a patient-records app. The activity log recorded every write and
+                  skipped every read, so the first question an access review asks,{' '}
+                  <em>who looked at this patient&apos;s chart</em>, had no answer.
+                </p>
+                <p>
+                  A resource generated with <code>--audit-reads</code> now records every read in the
+                  same tamper-evident chain as the writes. A list records the ids on the page it
+                  returned, a read by id and its PDF record that id, and an export records its row
+                  count. The query string is kept as a digest, because a name typed into a search
+                  box is personal data too, and only successful reads count. Writes now record the
+                  id of the record they changed, so the admin audit page&apos;s new{' '}
+                  <em>Record id</em> filter lists everyone who read or changed a record. Also in a
+                  YAML definition as <code>audit_reads: true</code>, and inherited by line items.
+                </p>
+                <p>
+                  Off by default, since reads are most of all traffic. Refused with{' '}
+                  <code>--public</code>, whose reads are anonymous, and with <code>--tree</code>,
+                  whose endpoints return the whole hierarchy at once. A project from before this
+                  release is told to run <code>grit upgrade</code> first rather than getting
+                  handlers whose reads nothing would record. Verified on a live project: an
+                  ordinary account&apos;s list, search, record read, PDF and export each landed in
+                  the log with who, which rows and when, the search term was stored nowhere, a
+                  search by record id found the reads and the edit, and the chain still verified.
+                </p>
+              </div>
+            </div>
+
             {/* v3.215.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

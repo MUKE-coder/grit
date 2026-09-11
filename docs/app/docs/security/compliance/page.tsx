@@ -160,6 +160,56 @@ canonical(entry) = deleted_user_id | actor_id | actor_email |
               </p>
             </div>
 
+            {/* ──────────────────────── Read access ──────────────────────── */}
+            <h2 id="read-access" className="mt-12">Who read a record</h2>
+            <p>
+              Health-records rules, and most privacy regimes, ask a question the write log cannot
+              answer: <em>who looked at this person&apos;s record?</em> Generate the resource with{' '}
+              <code>--audit-reads</code> and every read goes into the same tamper-evident activity
+              log as the writes: who asked, when, from where, and which rows they were shown.
+            </p>
+            <CodeBlock
+              language="bash"
+              code={`grit generate resource LabResult --fields "test:string,result:text" --owned-by user --audit-reads`}
+            />
+            <ul>
+              <li>
+                <strong>A list or search</strong> records the ids of the rows on the page it
+                returned, up to 1,000 per entry.
+              </li>
+              <li>
+                <strong>A read by id, and its PDF,</strong> record that one id.
+              </li>
+              <li>
+                <strong>An export</strong> records how many rows it held rather than every id,
+                which would make one entry the size of the table.
+              </li>
+              <li>
+                <strong>The query string is kept as a digest,</strong> not verbatim: a name typed
+                into a search box is personal data too.
+              </li>
+              <li>
+                <strong>Only successful reads count.</strong> A 404 served nothing, so it is not
+                recorded.
+              </li>
+            </ul>
+            <p>
+              Writes record the id of the record they changed as well, so the admin audit page can
+              answer both halves: type a record&apos;s id into its <em>Record id</em> filter and it
+              lists everyone who read or changed it. The same filter is{' '}
+              <code>GET /api/admin/activity?record=&lt;id&gt;</code>, and{' '}
+              <code>?resource=lab_results</code> narrows to one resource. Line items generated
+              with <code>--items</code> inherit the flag from their parent.
+            </p>
+            <p>
+              Reads are off by default because they are most of all traffic, and a log of every
+              page load buries the writes. <code>--audit-reads</code> cannot be combined with{' '}
+              <code>--public</code>, whose reads are anonymous, or with <code>--tree</code>, whose
+              endpoints return the whole hierarchy at once. A project from before v3.216.0 needs{' '}
+              <code>grit upgrade</code> first; the generator says so rather than writing handlers
+              whose reads nothing would record.
+            </p>
+
             {/* ──────────────────────── Access Reviews ──────────────────────── */}
             <h2 id="access-reviews" className="mt-12">Access Reviews</h2>
             <p>

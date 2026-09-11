@@ -1231,6 +1231,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 			"\n\tscope = authz.ScopeToOwner(c, scope, \"" + col + "\")\n"
 	}
 
+	ar := g.auditReadSnippets(names)
 	r := strings.NewReplacer(
 		"{{AUTHZ_IMPORT}}", authzImport,
 		"{{OWNER_SCOPE}}", ownerScope,
@@ -1238,6 +1239,13 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{OWNER_STAMP}}", ownerStamp,
 		"{{OWNER_EXPORT_SCOPE}}", ownerExportScope,
 		"{{OWNER_BULK_SCOPE}}", ownerBulkScope,
+		"{{AUDIT_IMPORT}}", ar.Import,
+		"{{AUDIT_READ_LIST}}", ar.List,
+		"{{AUDIT_READ_ONE}}", ar.One,
+		"{{AUDIT_EXPORT_DECL}}", ar.ExportDecl,
+		"{{AUDIT_EXPORT_COUNT}}", ar.ExportCount,
+		"{{AUDIT_EXPORT_MARK}}", ar.ExportMark,
+		"{{AUDIT_XLSX_MARK}}", ar.XLSXMark,
 		"{{OPTIONAL_ID_HELPER}}", optionalIDHelper,
 		"{{FK_FILTERS}}", fkFilters,
 		"{{UPPER_LABEL}}", strings.ToUpper(strings.Join(splitPascal(names.Pascal), " ")),
@@ -1294,7 +1302,7 @@ import (
 	"github.com/gin-gonic/gin"{{DATATYPES_IMPORT}}
 	"gorm.io/gorm"{{CLAUSE_IMPORT}}
 
-	{{AUTHZ_IMPORT}}"{{MODULE}}/internal/events"
+	{{AUTHZ_IMPORT}}{{AUDIT_IMPORT}}"{{MODULE}}/internal/events"
 	"{{MODULE}}/internal/export"{{FILES_IMPORT}}{{DATABASE_IMPORT}}{{WORKFLOW_IMPORT}}
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
@@ -1361,7 +1369,7 @@ func (h *{{Pascal}}Handler) List(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, res)
+{{AUDIT_READ_LIST}}	c.JSON(http.StatusOK, res)
 }
 
 // Export streams the full filtered list as CSV (default) or XLSX.
@@ -1425,7 +1433,7 @@ func (h *{{Pascal}}Handler) Export(c *gin.Context) {
 			respond.WriteError(c, err, "Failed to export {{plural}}")
 			return
 		}
-		c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+{{AUDIT_XLSX_MARK}}		c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 		c.Header("Content-Disposition", ` + "`" + `attachment; filename="{{plural}}.xlsx"` + "`" + `)
 		if err := export.XLSX(c.Writer, all, opts); err != nil {
 			log.Printf("export {{plural}} as xlsx: %v", err)
@@ -1438,9 +1446,9 @@ func (h *{{Pascal}}Handler) Export(c *gin.Context) {
 	c.Header("Content-Type", "text/csv")
 	c.Header("Content-Disposition", ` + "`" + `attachment; filename="{{plural}}.csv"` + "`" + `)
 
-	headerWritten := false
+{{AUDIT_EXPORT_DECL}}	headerWritten := false
 	err := query.FindInBatches(&rows, exportBatchSize, func(tx *gorm.DB, batch int) error {
-		if !headerWritten {
+{{AUDIT_EXPORT_COUNT}}		if !headerWritten {
 			headerWritten = true
 			return export.CSV(c.Writer, rows, opts)
 		}
@@ -1461,7 +1469,7 @@ func (h *{{Pascal}}Handler) Export(c *gin.Context) {
 		// so a truncated file has an explanation somewhere.
 		log.Printf("export {{plural}}: %v", err)
 	}
-}
+{{AUDIT_EXPORT_MARK}}}
 
 // GetByID returns a single {{lower}} by ID.
 func (h *{{Pascal}}Handler) GetByID(c *gin.Context) {
@@ -1477,7 +1485,7 @@ func (h *{{Pascal}}Handler) GetByID(c *gin.Context) {
 		})
 		return
 	}
-{{OWNER_GUARD}}
+{{OWNER_GUARD}}{{AUDIT_READ_ONE}}
 	c.JSON(http.StatusOK, gin.H{
 		"data": item,
 	})
@@ -1500,7 +1508,7 @@ func (h *{{Pascal}}Handler) PDF(c *gin.Context) {
 		})
 		return
 	}
-{{OWNER_GUARD}}
+{{OWNER_GUARD}}{{AUDIT_READ_ONE}}
 	appName := os.Getenv("APP_NAME")
 	if appName == "" {
 		appName = "{{Pascal}}"

@@ -446,6 +446,10 @@ export default function CLICheatsheetPage() {
                     desc="Scope every row to its owner: a caller sees and edits only their own"
                   />
                   <TerminalCard
+                    cmd='grit g resource LabResult --fields "test:string,result:text" --owned-by user --audit-reads'
+                    desc="Record every read: who opened which rows, in the tamper-evident activity log"
+                  />
+                  <TerminalCard
                     cmd='grit g resource JournalEntry --fields "reference:string,memo:text" --append-only'
                     desc="Created and read, never changed or deleted: for ledgers and audit trails"
                   />
@@ -502,6 +506,11 @@ export default function CLICheatsheetPage() {
                           flag: "--owned-by",
                           type: "string",
                           desc: "Scope rows to their owner (e.g. user). Adds the field if absent; ADMIN is exempt",
+                        },
+                        {
+                          flag: "--audit-reads",
+                          type: "bool",
+                          desc: "Record every read (who, which rows, when) in the tamper-evident activity log",
                         },
                         {
                           flag: "--append-only",
@@ -1720,6 +1729,7 @@ grit upgrade`}
 │   │   ├── -i, --interactive # Interactive field prompts
 │   │   ├── --roles "..."     # Restrict routes to roles
 │   │   ├── --owned-by user  # Each row belongs to a user; scope every route to them
+│   │   ├── --audit-reads    # Record every read in the tamper-evident activity log
 │   │   ├── --seed            # Also generate a seeder (one example row)
 │   │   ├── --faker           # Also generate a gofakeit seeder (implies --seed)
 │   │   └── --count <n>       # Rows for the faker seeder (default 10)
