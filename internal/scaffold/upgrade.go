@@ -230,6 +230,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeClusterFiles(root, opts); err != nil {
 			return fmt.Errorf("updating replica coordination: %w", err)
 		}
+		// Generated update routes call this package for If-Match; a resource
+		// generated after this release does not compile without it.
+		if err := WriteConcurrencyPackage(opts.APIRoot(root), opts.Module(), true); err != nil {
+			return fmt.Errorf("updating the concurrency package: %w", err)
+		}
 		// Enterprise SSO trusted a customer's identity provider for any email
 		// address, so it could sign in as your own administrator. Only where
 		// SSO is already there.

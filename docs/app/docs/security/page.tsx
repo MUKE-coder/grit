@@ -271,6 +271,7 @@ if errors.Is(err, safefetch.ErrBlocked) {
         <ul className="list-disc pl-6 my-3">
           <li><strong>Webhook signatures</strong> — the <code>internal/webhooks</code> framework verifies HMAC signatures (Stripe, GitHub, Twilio, generic) before any business logic runs.</li>
           <li><strong>Idempotency-Key middleware</strong> — caches the response on the first non-safe request and replays it on retries, preventing duplicate writes from at-least-once delivery.</li>
+          <li><strong>If-Match on generated updates</strong>: a <code>PUT</code> or <code>PATCH</code> carrying the version the client read lands only if the record is still at that version, and gets a <code>409</code> otherwise, so two people saving the same record cannot silently overwrite each other.</li>
           <li><strong>Activity-log hash chain</strong> — every mutation is appended to a SHA-256 chain so retroactive tampering with audit logs breaks verification.</li>
           <li><strong>Frontend supply chain</strong> — <code>pnpm install --frozen-lockfile</code> in CI; lockfile committed; Dependabot raises PRs on changes.</li>
         </ul>

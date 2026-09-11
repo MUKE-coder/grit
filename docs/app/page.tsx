@@ -302,6 +302,8 @@ export default function HomePage() {
               { icon: FileCheck, label: 'Tamper-evident audit log', href: '/docs/security' },
               { icon: Eye, label: 'Read-access audit', href: '/docs/security/compliance#read-access' },
               { icon: Database, label: 'Append-only records', href: '/docs/backend/append-only' },
+              { icon: Lock, label: 'Optimistic locking (If-Match)', href: '/docs/deployment/multiple-instances#concurrent-writes' },
+              { icon: Layers, label: 'Runs as many replicas', href: '/docs/deployment/multiple-instances' },
               { icon: TrendingUp, label: 'Exact multi-currency money', href: '/docs/concepts/money' },
               { icon: Building2, label: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
               { icon: Webhook, label: 'Webhooks', href: '/docs/backend/webhooks' },

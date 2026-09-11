@@ -63,6 +63,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "audit", "chain_test.go"):                 apiAuditChainTestGo(),
 		filepath.Join(apiRoot, "internal", "cluster", "cluster.go"):                  apiClusterGo(),
 		filepath.Join(apiRoot, "internal", "cluster", "cluster_test.go"):             apiClusterTestGo(),
+		filepath.Join(apiRoot, "internal", "concurrency", "concurrency.go"):          apiConcurrencyGo(),
+		filepath.Join(apiRoot, "internal", "concurrency", "concurrency_test.go"):     apiConcurrencyTestGo(),
 		filepath.Join(apiRoot, "internal", "webhooks", "verifiers.go"):               apiWebhooksVerifiersGo(),
 		filepath.Join(apiRoot, "internal", "models", "feature_flag.go"):              apiFeatureFlagModelGo(),
 		filepath.Join(apiRoot, "internal", "flags", "flags.go"):                      apiFlagsGo(),

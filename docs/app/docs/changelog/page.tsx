@@ -29,6 +29,42 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.219.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.219.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Two people saving the same record: the second silently won</h3>
+                <p>
+                  Found building a bidding marketplace. Every generated record carried a{' '}
+                  <code>version</code> that each update incremented, and nothing ever checked it, so two
+                  people who loaded a lot at the same version and both saved got last-write-wins with
+                  no word to the first. For a bid, that is a lost bid.
+                </p>
+                <p>
+                  Generated <code>PUT</code> and <code>PATCH</code> routes now honour{' '}
+                  <code>If-Match</code>. Reads return the version as an <code>ETag</code>; a write
+                  carrying it lands only if the record is still at that version, and otherwise gets a{' '}
+                  <code>409 VERSION_CONFLICT</code> naming the current one. The check is the{' '}
+                  <code>WHERE</code> clause of the update, so it holds under contention and across
+                  replicas. Without the header nothing changes. Verified with twenty simultaneous bids on
+                  version 1 split across two copies of the API: one landed, nineteen were refused, the
+                  stored bid was the winner&apos;s, and the same twenty without the header all went
+                  through as before.
+                </p>
+                <p>
+                  Resources generated from this release on get it. <code>grit upgrade</code> adds the{' '}
+                  <code>internal/concurrency</code> package; regenerate an existing resource to give its
+                  routes the check.
+                </p>
+              </div>
+            </div>
+
             {/* v3.218.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
