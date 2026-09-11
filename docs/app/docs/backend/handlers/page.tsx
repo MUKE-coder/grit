@@ -24,9 +24,10 @@ export default function HandlersPage() {
                 Handlers
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Handlers are the HTTP layer of your Grit API. They receive requests, validate input,
-                call services or the database, and return JSON responses. Handlers should stay thin --
-                delegate business logic to services.
+                Handlers are the HTTP layer of your Grit API. A generated handler reads the request,
+                calls its <Link href="/docs/backend/services">service</Link>, and writes the answer.
+                It runs no query of its own: every read and write belongs to the service, so the same
+                logic is there for a background job, a command or a test that has no request at all.
               </p>
             </div>
 
@@ -41,11 +42,11 @@ export default function HandlersPage() {
                 lanes={['Client', 'Go API', 'Data']}
                 groups={[{ lane: 1, rows: [0, 4], label: 'Request pipeline', tone: 'primary' }]}
                 nodes={[
-                  { id: 'req', lane: 0, row: 0, title: 'HTTP Request', sub: 'GET /api/posts', tone: 'blue', badge: 1 },
+                  { id: 'req', lane: 0, row: 0, title: 'HTTP Request', sub: 'GET /api/v1/posts', tone: 'blue', badge: 1 },
                   { id: 'router', lane: 1, row: 0, title: 'Gin Router', sub: 'matches route', tone: 'primary', badge: 2 },
                   { id: 'mw', lane: 1, row: 1, title: 'Middleware', sub: 'CORS · Auth · Log', tone: 'primary', badge: 3 },
-                  { id: 'handler', lane: 1, row: 2, title: 'Handler', sub: 'thin HTTP layer', tone: 'primary', badge: 4 },
-                  { id: 'service', lane: 1, row: 3, title: 'Service', sub: 'business logic', tone: 'primary', badge: 5 },
+                  { id: 'handler', lane: 1, row: 2, title: 'Handler', sub: 'bind · respond', tone: 'primary', badge: 4 },
+                  { id: 'service', lane: 1, row: 3, title: 'Service', sub: 'every query', tone: 'primary', badge: 5 },
                   { id: 'gorm', lane: 1, row: 4, title: 'GORM Model', sub: 'query builder', tone: 'primary', badge: 6 },
                   { id: 'pg', lane: 2, row: 4, title: 'PostgreSQL', sub: ':5434', tone: 'green' },
                   { id: 'resp', lane: 0, row: 5, title: 'JSON response', sub: '{ data, meta }', tone: 'blue', badge: 7 },
@@ -54,7 +55,7 @@ export default function HandlersPage() {
                   { from: 'req', to: 'router', label: 'route', tone: 'blue' },
                   { from: 'router', to: 'mw', tone: 'primary' },
                   { from: 'mw', to: 'handler', tone: 'primary' },
-                  { from: 'handler', to: 'service', label: 'calls', tone: 'primary' },
+                  { from: 'handler', to: 'service', label: 'ctx + input', tone: 'primary' },
                   { from: 'service', to: 'gorm', tone: 'primary' },
                   { from: 'gorm', to: 'pg', label: 'SQL', tone: 'green' },
                   { from: 'pg', to: 'resp', label: 'JSON', dashed: true, tone: 'blue' },
@@ -64,75 +65,150 @@ export default function HandlersPage() {
                   { tone: 'primary', label: 'Go layers' },
                   { tone: 'green', label: 'Data' },
                 ]}
-                caption="Request flows down the Go layers; the JSON response bubbles back up"
+                caption="The handler talks HTTP; the service talks to the database"
               />
 
               {/* ── Handler Pattern ─────────────────────────────── */}
               <h2 id="handler-pattern">Handler Pattern</h2>
               <p>
-                Every handler in Grit is a struct with a <code>DB</code> field (and optionally other
-                dependencies). Methods on the struct correspond to HTTP endpoints.
+                A generated handler is a struct with the handler&apos;s dependencies and three small
+                helpers. Its other methods are the endpoints.
               </p>
-              <CodeBlock language="go" filename="apps/api/internal/handlers/post.go" code={`package handlers
-
-import (
-    "github.com/gin-gonic/gin"
-    "gorm.io/gorm"
-)
-
-// PostHandler handles post-related endpoints.
+              <CodeBlock language="go" filename="apps/api/internal/handlers/post.go" code={`// PostHandler serves the post endpoints. It reads the request, asks
+// services.PostService, and writes the answer; it runs no query of its
+// own, so everything a route does is also available to a job or a test.
 type PostHandler struct {
     DB *gorm.DB
 }
 
-// Each method on the struct is a handler function:
-// func (h *PostHandler) List(c *gin.Context)    { ... }
-// func (h *PostHandler) GetByID(c *gin.Context) { ... }
-// func (h *PostHandler) Create(c *gin.Context)  { ... }
-// func (h *PostHandler) Update(c *gin.Context)  { ... }
-// func (h *PostHandler) Delete(c *gin.Context)  { ... }`} />
-              <p>
-                Handlers are instantiated in <code>routes/routes.go</code> and wired to their endpoints:
-              </p>
-              <CodeBlock language="go" filename="apps/api/internal/routes/routes.go" code={`postHandler := &handlers.PostHandler{DB: db}
+// service is the post service over this handler's database.
+func (h *PostHandler) service() *services.PostService {
+    return &services.PostService{DB: h.DB}
+}
 
-// Wire to routes
-protected.GET("/posts", postHandler.List)
-protected.GET("/posts/:id", postHandler.GetByID)
-protected.POST("/posts", postHandler.Create)
-protected.PUT("/posts/:id", postHandler.Update)
-protected.DELETE("/posts/:id", postHandler.Delete)`} />
+// ctx is the request's context with the caller on it, which the service
+// scopes owned rows by. The organization the multitenant plugin resolved and
+// the cancellation when the client goes away travel with it.
+func (h *PostHandler) ctx(c *gin.Context) context.Context {
+    return authz.WithActor(c.Request.Context(), authz.ActorOf(c))
+}
+
+// fail answers an error from the service: a version conflict with the version
+// the record is at, a missing row with 404, a broken rule with 422 and its
+// message, and anything else as an opaque 500 that is logged.
+func (h *PostHandler) fail(c *gin.Context, err error, fallback string) {
+    var conflict *concurrency.ErrConflict
+    switch {
+    case errors.As(err, &conflict):
+        concurrency.WriteConflict(c, conflict.Current)
+    case errors.Is(err, gorm.ErrRecordNotFound):
+        c.JSON(http.StatusNotFound, gin.H{
+            "error": gin.H{"code": "NOT_FOUND", "message": "Post not found"},
+        })
+    default:
+        respond.WriteError(c, err, fallback)
+    }
+}`} />
+              <p>
+                The handler keeps its <code>DB</code> field and builds the service from it on each
+                call, so the routes file constructs it exactly as it always has. The generated routes
+                (excerpt):
+              </p>
+              <CodeBlock language="go" filename="apps/api/internal/routes/post_routes.go" code={`m.Protected.GET("/posts", h.List)
+m.Protected.GET("/posts/export", h.Export)
+m.Protected.GET("/posts/:id", h.GetByID)
+m.Protected.POST("/posts", h.Create)
+m.Protected.PUT("/posts/:id", h.Update)
+m.Protected.PATCH("/posts/:id", h.Patch)
+m.Staff.DELETE("/posts/:id", middleware.RequireRole("ADMIN", "perm:posts.delete"), h.Delete)
+m.Staff.POST("/posts/bulk", middleware.RequireRole("ADMIN", "perm:posts.delete"), h.Bulk)`} />
+
+              {/* ── What stays in the handler ─────────────────────────────── */}
+              <h2 id="what-stays">What Stays in the Handler</h2>
+              <p>
+                Everything that is about HTTP, and nothing that is about the data:
+              </p>
+              <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-6">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/30 bg-accent/20">
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Handler</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Service</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-muted-foreground">
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5">Binding and validating the body</td>
+                      <td className="px-4 py-2.5">Every query, and every transaction</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5">Turning the request into a row or an update map</td>
+                      <td className="px-4 py-2.5">What may be searched, sorted, filtered and patched</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5">Reading <code>If-Match</code>, writing <code>ETag</code></td>
+                      <td className="px-4 py-2.5">Refusing a write against a stale version</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5">Putting the caller on the context</td>
+                      <td className="px-4 py-2.5">Scoping owned rows to that caller</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5">Mapping an error to a status code</td>
+                      <td className="px-4 py-2.5">Returning the error: not found, a conflict, a broken rule</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5">Rendering: JSON, CSV, XLSX, PDF; emitting the activity event</td>
+                      <td className="px-4 py-2.5">Handing over rows, a batch at a time for an export</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
 
               {/* ── Request Binding ─────────────────────────────── */}
               <h2 id="request-binding">Request Binding with Gin</h2>
               <p>
-                Gin&apos;s <code>ShouldBindJSON</code> method parses the request body into a Go struct
-                and validates it using <code>binding</code> struct tags. If validation fails, it
-                returns an error that you can send back to the client.
+                Gin&apos;s <code>ShouldBindJSON</code> parses the body into a struct and validates it
+                with its <code>binding</code> tags. The generated <code>Create</code> binds, builds the
+                row, and hands it to the service:
               </p>
-              <CodeBlock language="go" filename="request_binding.go" code={`type createPostRequest struct {
-    Title     string \`json:"title" binding:"required,min=3,max=255"\`
-    Body      string \`json:"body" binding:"required"\`
+              <CodeBlock language="go" filename="handlers/post.go (Create)" code={`// CreatePostRequest is the JSON body accepted by POST /posts.
+type CreatePostRequest struct {
+    Title     string \`json:"title" binding:"required"\`
+    Body      string \`json:"body"\`
     Published bool   \`json:"published"\`
 }
 
 func (h *PostHandler) Create(c *gin.Context) {
-    var req createPostRequest
+    var req CreatePostRequest
     if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(http.StatusUnprocessableEntity, gin.H{
-            "error": gin.H{
-                "code":    "VALIDATION_ERROR",
-                "message": err.Error(),
-            },
+            "error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
         })
         return
     }
 
-    // req is now validated and ready to use
+    item := models.Post{
+        Title:     req.Title,
+        Body:      req.Body,
+        Published: req.Published,
+    }
+
+    if err := h.service().Create(h.ctx(c), &item); err != nil {
+        h.fail(c, err, "Failed to create post")
+        return
+    }
+
+    events.Emitted(c, "posts", "Post", "created", item.ID, item.Title, "", nil, item)
+
+    c.JSON(http.StatusCreated, gin.H{
+        "data":    item,
+        "message": "Post created successfully",
+    })
 }`} />
               <p>
-                Define request structs as private types (lowercase first letter) inside the handler
-                file. This keeps them close to the handler that uses them and prevents external access.
+                Request structs are named types, not anonymous ones, so the API reference can reflect
+                over them and document the body.
               </p>
 
               {/* ── Validation Tags ─────────────────────────────── */}
@@ -190,255 +266,96 @@ func (h *PostHandler) Create(c *gin.Context) {
                 </table>
               </div>
 
-              {/* ── Pagination Pattern ─────────────────────────────── */}
-              <h2 id="pagination">Pagination Pattern</h2>
+              {/* ── Lists ─────────────────────────────── */}
+              <h2 id="search-sort-filter">Pagination, Search, Sort and Filter</h2>
               <p>
-                All list endpoints in Grit use a consistent pagination pattern. Query parameters
-                control the page number and page size, and the response includes a <code>meta</code> object
-                with pagination details.
+                The handler reads the query string with <code>paginate.Bind</code> and passes it on.
+                Which columns a client may search, sort and filter by is the service&apos;s decision,
+                whitelisted in its list config, because each name ends up in SQL.
               </p>
-              <CodeBlock language="go" filename="pagination.go" code={`func (h *PostHandler) List(c *gin.Context) {
-    page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-    pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-
-    // Clamp values
-    if page < 1 {
-        page = 1
+              <CodeBlock language="go" filename="handlers/post.go (List)" code={`func (h *PostHandler) List(c *gin.Context) {
+    res, err := h.service().List(h.ctx(c), paginate.Bind(c), c.Query("archived"))
+    if err != nil {
+        h.fail(c, err, "Failed to fetch posts")
+        return
     }
-    if pageSize < 1 || pageSize > 100 {
-        pageSize = 20
-    }
-
-    query := h.DB.Model(&models.Post{})
-
-    // Count total records
-    var total int64
-    query.Count(&total)
-
-    // Fetch paginated results
-    var posts []models.Post
-    offset := (page - 1) * pageSize
-    query.Offset(offset).Limit(pageSize).Find(&posts)
-
-    pages := int(math.Ceil(float64(total) / float64(pageSize)))
-
-    c.JSON(http.StatusOK, gin.H{
-        "data": posts,
-        "meta": gin.H{
-            "total":     total,
-            "page":      page,
-            "page_size": pageSize,
-            "pages":     pages,
-        },
-    })
+    c.JSON(http.StatusOK, res) // { data, meta }
 }`} />
-              <p>The client calls the endpoint like this:</p>
-              <CodeBlock terminal code="GET /api/posts?page=2&page_size=10" />
-
-              {/* ── Search, Sort & Filter ─────────────────────────────── */}
-              <h2 id="search-sort-filter">Search, Sort & Filter</h2>
-              <p>
-                The Grit handler pattern supports search, sort, and filter out of the box.
-                The built-in <code>UserHandler.List</code> demonstrates the full pattern:
-              </p>
-              <CodeBlock language="go" filename="search_sort_filter.go" code={`func (h *UserHandler) List(c *gin.Context) {
-    page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-    pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-    search := c.Query("search")
-    sortBy := c.DefaultQuery("sort_by", "created_at")
-    sortOrder := c.DefaultQuery("sort_order", "desc")
-
-    // Validate sort order (prevent SQL injection)
-    if sortOrder != "asc" && sortOrder != "desc" {
-        sortOrder = "desc"
-    }
-
-    // Whitelist allowed sort columns
-    allowedSorts := map[string]bool{
-        "id": true, "first_name": true, "last_name": true,
-        "email": true, "role": true, "created_at": true,
-    }
-    if !allowedSorts[sortBy] {
-        sortBy = "created_at"
-    }
-
-    query := h.DB.Model(&models.User{})
-
-    // Search across multiple fields
-    if search != "" {
-        query = query.Where(
-            "first_name ILIKE ? OR last_name ILIKE ? OR email ILIKE ?",
-            "%"+search+"%", "%"+search+"%", "%"+search+"%",
-        )
-    }
-
-    // Count then paginate
-    var total int64
-    query.Count(&total)
-
-    var users []models.User
-    offset := (page - 1) * pageSize
-    query.Order(sortBy + " " + sortOrder).
-        Offset(offset).
-        Limit(pageSize).
-        Find(&users)
-
-    pages := int(math.Ceil(float64(total) / float64(pageSize)))
-
-    c.JSON(http.StatusOK, gin.H{
-        "data": users,
-        "meta": gin.H{
-            "total":     total,
-            "page":      page,
-            "page_size": pageSize,
-            "pages":     pages,
-        },
-    })
-}`} />
-
               <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-6">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border/30 bg-accent/20">
                       <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Query Param</th>
-                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Default</th>
                       <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Description</th>
                     </tr>
                   </thead>
                   <tbody className="text-muted-foreground">
                     <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5 font-mono text-xs">page</td>
-                      <td className="px-4 py-2.5 font-mono text-xs">1</td>
-                      <td className="px-4 py-2.5">Page number (1-based)</td>
-                    </tr>
-                    <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5 font-mono text-xs">page_size</td>
-                      <td className="px-4 py-2.5 font-mono text-xs">20</td>
-                      <td className="px-4 py-2.5">Records per page (max 100)</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">page, page_size</td>
+                      <td className="px-4 py-2.5">Page number (1-based) and rows per page, clamped</td>
                     </tr>
                     <tr className="border-b border-border/20">
                       <td className="px-4 py-2.5 font-mono text-xs">search</td>
-                      <td className="px-4 py-2.5 font-mono text-xs">(empty)</td>
-                      <td className="px-4 py-2.5">Full-text search across first_name + last_name + email</td>
+                      <td className="px-4 py-2.5">Matched against the service&apos;s <code>Searchable</code> columns</td>
                     </tr>
                     <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5 font-mono text-xs">sort_by</td>
-                      <td className="px-4 py-2.5 font-mono text-xs">created_at</td>
-                      <td className="px-4 py-2.5">Column to sort by (whitelisted)</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">sort_by, sort_order</td>
+                      <td className="px-4 py-2.5">A column in <code>Sortable</code>, and asc or desc</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs">any column, e.g. status=paid</td>
+                      <td className="px-4 py-2.5">An equality filter, if the column is in <code>Filterable</code></td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs">created_from, created_to</td>
+                      <td className="px-4 py-2.5">A date window, both ends inclusive</td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-2.5 font-mono text-xs">sort_order</td>
-                      <td className="px-4 py-2.5 font-mono text-xs">desc</td>
-                      <td className="px-4 py-2.5">Sort direction: asc or desc</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">archived</td>
+                      <td className="px-4 py-2.5"><code>true</code> for archived rows only, <code>all</code> for both</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
               {/* ── Full CRUD Handler ─────────────────────────────── */}
-              <h2 id="crud-handler">Full CRUD Handler</h2>
-              <p>
-                Here is a complete handler with all five CRUD operations. This is the pattern that
-                <code>grit generate resource</code> produces for every new resource.
-              </p>
-
-              <h3 id="create">Create</h3>
-              <CodeBlock language="go" filename="handlers/post.go -- Create" code={`type createPostRequest struct {
-    Title     string \`json:"title" binding:"required,min=3,max=255"\`
-    Body      string \`json:"body" binding:"required"\`
-    Published bool   \`json:"published"\`
-}
-
-func (h *PostHandler) Create(c *gin.Context) {
-    var req createPostRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusUnprocessableEntity, gin.H{
-            "error": gin.H{
-                "code":    "VALIDATION_ERROR",
-                "message": err.Error(),
-            },
-        })
-        return
-    }
-
-    // Get authenticated user from context
-    userID, _ := c.Get("user_id")
-
-    post := models.Post{
-        Title:     req.Title,
-        Body:      req.Body,
-        Published: req.Published,
-        AuthorID:  userID.(string),
-    }
-
-    if err := h.DB.Create(&post).Error; err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{
-            "error": gin.H{
-                "code":    "INTERNAL_ERROR",
-                "message": "Failed to create post",
-            },
-        })
-        return
-    }
-
-    c.JSON(http.StatusCreated, gin.H{
-        "data":    post,
-        "message": "Post created successfully",
-    })
-}`} />
+              <h2 id="crud-handler">Reads and Writes</h2>
 
               <h3 id="get-by-id">GetByID</h3>
-              <CodeBlock language="go" filename="handlers/post.go -- GetByID" code={`func (h *PostHandler) GetByID(c *gin.Context) {
-    id := c.Param("id")
-
-    var post models.Post
-    if err := h.DB.Preload("Author").First(&post, id).Error; err != nil {
-        c.JSON(http.StatusNotFound, gin.H{
-            "error": gin.H{
-                "code":    "NOT_FOUND",
-                "message": "Post not found",
-            },
-        })
+              <CodeBlock language="go" filename="handlers/post.go (GetByID)" code={`func (h *PostHandler) GetByID(c *gin.Context) {
+    item, err := h.service().GetByID(h.ctx(c), c.Param("id"))
+    if err != nil {
+        h.fail(c, err, "Failed to load post")
         return
     }
 
-    c.JSON(http.StatusOK, gin.H{
-        "data": post,
-    })
+    // The version to send back as If-Match when saving.
+    c.Header("ETag", concurrency.Tag(item.Version))
+    c.JSON(http.StatusOK, gin.H{"data": item})
 }`} />
 
               <h3 id="update">Update</h3>
-              <CodeBlock language="go" filename="handlers/post.go -- Update" code={`func (h *PostHandler) Update(c *gin.Context) {
-    id := c.Param("id")
+              <p>
+                The handler turns the typed request into the columns to write, and passes on the
+                version the client read. The service writes only if the row is still at that version.
+              </p>
+              <CodeBlock language="go" filename="handlers/post.go (Update)" code={`// UpdatePostRequest is the JSON body accepted by PUT /posts/:id.
+// Every field is optional: only what the client sends is applied.
+type UpdatePostRequest struct {
+    Title     string \`json:"title"\`
+    Body      string \`json:"body"\`
+    Published *bool  \`json:"published"\`
+}
 
-    var post models.Post
-    if err := h.DB.First(&post, id).Error; err != nil {
-        c.JSON(http.StatusNotFound, gin.H{
-            "error": gin.H{
-                "code":    "NOT_FOUND",
-                "message": "Post not found",
-            },
-        })
-        return
-    }
-
-    var req struct {
-        Title     string \`json:"title"\`
-        Body      string \`json:"body"\`
-        Published *bool  \`json:"published"\`
-    }
-
+func (h *PostHandler) Update(c *gin.Context) {
+    var req UpdatePostRequest
     if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(http.StatusUnprocessableEntity, gin.H{
-            "error": gin.H{
-                "code":    "VALIDATION_ERROR",
-                "message": err.Error(),
-            },
+            "error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
         })
         return
     }
 
-    // Build updates map (only include non-zero fields)
     updates := map[string]interface{}{}
     if req.Title != "" {
         updates["title"] = req.Title
@@ -450,90 +367,104 @@ func (h *PostHandler) Create(c *gin.Context) {
         updates["published"] = *req.Published
     }
 
-    if err := h.DB.Model(&post).Updates(updates).Error; err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{
-            "error": gin.H{
-                "code":    "INTERNAL_ERROR",
-                "message": "Failed to update post",
-            },
-        })
+    item, err := h.service().Update(h.ctx(c), c.Param("id"), updates, concurrency.FromRequest(c))
+    if err != nil {
+        h.fail(c, err, "Failed to update post") // 409 on a stale If-Match
         return
     }
 
-    h.DB.First(&post, id) // reload
-
+    c.Header("ETag", concurrency.Tag(item.Version))
     c.JSON(http.StatusOK, gin.H{
-        "data":    post,
+        "data":    item,
         "message": "Post updated successfully",
     })
 }`} />
               <p>
-                Notice the use of a <strong>pointer</strong> for boolean fields (<code>*bool</code>).
-                This lets you distinguish between &quot;not sent&quot; (<code>nil</code>) and &quot;sent as false&quot;.
-                Without the pointer, Go&apos;s zero value (<code>false</code>) would always overwrite the field.
+                Notice the <strong>pointer</strong> for the boolean (<code>*bool</code>). It tells
+                &quot;not sent&quot; (<code>nil</code>) from &quot;sent as false&quot;; without it,
+                Go&apos;s zero value would overwrite the field on every save.
               </p>
 
               <h3 id="delete">Delete</h3>
-              <CodeBlock language="go" filename="handlers/post.go -- Delete" code={`func (h *PostHandler) Delete(c *gin.Context) {
-    id := c.Param("id")
-
-    var post models.Post
-    if err := h.DB.First(&post, id).Error; err != nil {
-        c.JSON(http.StatusNotFound, gin.H{
-            "error": gin.H{
-                "code":    "NOT_FOUND",
-                "message": "Post not found",
-            },
-        })
+              <CodeBlock language="go" filename="handlers/post.go (Delete)" code={`func (h *PostHandler) Delete(c *gin.Context) {
+    item, err := h.service().Delete(h.ctx(c), c.Param("id"))
+    if err != nil {
+        h.fail(c, err, "Failed to delete post")
         return
     }
 
-    if err := h.DB.Delete(&post).Error; err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{
-            "error": gin.H{
-                "code":    "INTERNAL_ERROR",
-                "message": "Failed to delete post",
-            },
-        })
-        return
-    }
-
-    c.JSON(http.StatusOK, gin.H{
-        "message": "Post deleted successfully",
-    })
+    events.Emitted(c, "posts", "Post", "deleted", item.ID, item.Title, "", item, nil)
+    c.JSON(http.StatusOK, gin.H{"message": "Post deleted successfully"})
 }`} />
               <p>
-                Because the <code>Post</code> model includes <code>gorm.DeletedAt</code>, calling
-                <code>db.Delete()</code> performs a <strong>soft delete</strong>. The row remains in the
-                database with a <code>deleted_at</code> timestamp, but is excluded from all future queries.
+                Models carry <code>gorm.DeletedAt</code>, so this is a <strong>soft delete</strong>:
+                the row stays with a <code>deleted_at</code> timestamp and drops out of every query.
+              </p>
+
+              {/* ── Errors ─────────────────────────────── */}
+              <h2 id="errors">Errors</h2>
+              <p>
+                The service returns Go errors and never an HTTP status. <code>fail</code> decides the
+                status:
+              </p>
+              <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-6">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/30 bg-accent/20">
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">The service returns</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">The client gets</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-muted-foreground">
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs">*concurrency.ErrConflict</td>
+                      <td className="px-4 py-2.5">409 <code>VERSION_CONFLICT</code>, with the version the row is at</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs">gorm.ErrRecordNotFound</td>
+                      <td className="px-4 py-2.5">404, also for somebody else&apos;s row on an owned resource</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs">respond.Rule(&quot;...&quot;)</td>
+                      <td className="px-4 py-2.5">422 with that message</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-mono text-xs">anything else</td>
+                      <td className="px-4 py-2.5">500 with the fallback message; the error is logged, not sent</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* ── Existing projects ─────────────────────────────── */}
+              <h2 id="existing-projects">Resources Generated Before v3.224.0</h2>
+              <p>
+                Until v3.224.0 the generated handler ran its own queries, and the service beside it
+                was never called. <code>grit upgrade</code> does not rewrite your API code, so a
+                resource generated before then keeps that handler until you regenerate it. The
+                CSV import, the public read endpoints and the tree endpoints still query from their
+                own handler files; they move to the service next.
               </p>
 
               {/* ── Best Practices ─────────────────────────────── */}
               <h2 id="best-practices">Best Practices</h2>
               <ul>
                 <li>
-                  <strong>Keep handlers thin.</strong> A handler should parse input, call a service or the DB, and
-                  return a response. If your handler exceeds 50 lines, extract logic into a service.
+                  <strong>No query in a handler.</strong> If a handler needs data, it asks a service
+                  method for it. A rule written in a handler is a rule a job can skip.
                 </li>
                 <li>
-                  <strong>Always validate sort columns.</strong> Use a whitelist of allowed column names to prevent
-                  SQL injection through the <code>sort_by</code> parameter.
+                  <strong>Pass <code>h.ctx(c)</code>, not <code>context.Background()</code>.</strong> The
+                  caller, the organization and the cancellation are on the request&apos;s context, and a
+                  service given anything else cannot see them.
                 </li>
                 <li>
-                  <strong>Use pointers for optional boolean/numeric fields</strong> in update requests.
-                  This distinguishes &quot;not provided&quot; from &quot;set to zero/false.&quot;
+                  <strong>Use pointers for optional fields</strong> in update requests, so &quot;not
+                  provided&quot; is not &quot;set to zero&quot;.
                 </li>
                 <li>
-                  <strong>Return consistent error responses.</strong> Always use the standard error envelope
-                  with <code>code</code> and <code>message</code> fields.
-                </li>
-                <li>
-                  <strong>Preload relationships only when needed.</strong> Use <code>db.Preload(&quot;Author&quot;)</code> in
-                  GetByID but not necessarily in List to keep list queries fast.
-                </li>
-                <li>
-                  <strong>Clamp pagination values.</strong> Always enforce <code>page {'>'}= 1</code> and
-                  <code>pageSize {'<'}= 100</code> to prevent abuse.
+                  <strong>Send errors through <code>fail</code>.</strong> It keeps the standard error
+                  envelope, and it keeps database errors out of responses.
                 </li>
               </ul>
             </div>

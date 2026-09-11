@@ -32,23 +32,25 @@ func TestGeneratedHandlerDoesNotSwallowWriteErrors(t *testing.T) {
 	}
 	src := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "handlers", "invoice.go"))
 
-	// Every write path hands its error somewhere.
+	// Every write path hands the service's error to fail.
 	for _, want := range []string{
-		`respond.WriteError(c, err, "Failed to create invoice")`,
-		`respond.WriteError(c, err, "Failed to update invoice")`,
-		`respond.WriteError(c, err, "Failed to patch invoice")`,
-		`respond.WriteError(c, err, "Failed to delete invoice")`,
+		`h.fail(c, err, "Failed to create invoice")`,
+		`h.fail(c, err, "Failed to update invoice")`,
+		`h.fail(c, err, "Failed to patch invoice")`,
+		`h.fail(c, err, "Failed to delete invoice")`,
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("missing: %s", want)
 		}
 	}
-
+	// And fail passes on whatever it does not answer itself: a broken rule as
+	// 422 with its message, anything else as a logged 500.
+	if !strings.Contains(method(t, src, "func (h *InvoiceHandler) fail("), "respond.WriteError(c, err, fallback)") {
+		t.Error("fail does not hand the error to respond.WriteError")
+	}
 	if !strings.Contains(src, module+"/internal/respond") {
 		t.Error("the handler calls respond and does not import it")
 	}
-
-	// And none of the old drop-the-error blocks survive on a write path.
 	if strings.Contains(src, `"message": "Failed to create invoice",`) {
 		t.Error("create still returns a constant 500 and discards err")
 	}

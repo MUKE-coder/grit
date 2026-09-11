@@ -27,6 +27,8 @@ func writeSecurityFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "safefetch", "safefetch_test.go"): safefetchTestGo(),
 		filepath.Join(apiRoot, "internal", "authz", "authz.go"):              authzGo(),
 		filepath.Join(apiRoot, "internal", "authz", "authz_test.go"):         authzTestGo(),
+		filepath.Join(apiRoot, "internal", "authz", "actor.go"):              authzActorGo(),
+		filepath.Join(apiRoot, "internal", "authz", "actor_test.go"):         authzActorTestGo(),
 		// Permission catalog + matcher. Roles are bags of these keys; routes
 		// check a key rather than a role name, so adding a role no longer means
 		// editing every route.

@@ -74,12 +74,15 @@ func TestMoneyGeneratesEmbeddedColumnsAndWhitelists(t *testing.T) {
 		t.Error("model lost the plain float field")
 	}
 
-	// The handler interpolates these names straight into ORDER BY and WHERE.
+	// The service interpolates these names straight into ORDER BY and WHERE.
 	// "price" is not a column, and asking for it is a 500.
+	service := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "services", "product.go"))
+	assertContains(t, "service", service, `"price_amount": true`, `"price_currency": true`)
 	handler := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "handlers", "product.go"))
-	assertContains(t, "handler", handler, `"price_amount": true`, `"price_currency": true`)
-	if strings.Contains(handler, `"price": true`) {
-		t.Error(`handler whitelists "price", which is not a column on the table`)
+	for name, src := range map[string]string{"service": service, "handler": handler} {
+		if strings.Contains(src, `"price": true`) {
+			t.Errorf(`the %s whitelists "price", which is not a column on the table`, name)
+		}
 	}
 
 	// The shared type and schema name Money, so they have to import it.

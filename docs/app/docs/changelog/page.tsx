@@ -29,6 +29,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.224.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.224.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Generated handlers ran every query themselves, and the service beside them was never called</h3>
+                <p>
+                  Reported by a user: in a new Grit app every handler talked to the database. It was
+                  worse than a matter of style. A generated handler made 27 GORM calls, and the{' '}
+                  <code>services/</code> file generated beside it had its own <code>List</code>,{' '}
+                  <code>Create</code>, <code>Update</code> and <code>Delete</code> that nothing called,
+                  so a job that wanted the resource&apos;s rules had no way to get them.
+                </p>
+                <p>
+                  The service is now the resource&apos;s data layer: list, export, get, create, update,
+                  patch, delete and bulk, holding the list whitelists, the writable columns, the{' '}
+                  <code>--owned-by</code> scoping, the <code>If-Match</code> version check and every
+                  transaction. Each method takes a <code>context.Context</code>. The handler puts the
+                  caller on it with <code>authz.WithActor</code>, a job uses{' '}
+                  <code>authz.AsSystem</code>, and on an owned resource a context with no caller matches
+                  nothing. The handler binds the request, calls the service, answers its error with
+                  409, 404, 422 or 500, and sets the <code>ETag</code>. It runs no query.
+                </p>
+                <p>
+                  The move turned up two more bugs, both fixed. A many-to-many id that matched nothing
+                  was dropped, so a PUT whose only tag id was mistyped answered 200 and left the row
+                  with no tags; it is refused with 422 now, and nothing is written. And the first live
+                  build failed on an import cycle, the service reaching for the <code>database</code>{' '}
+                  package that already imports <code>services</code>; single-statement writes are
+                  methods on the service instead, and a new test checks every generated file&apos;s
+                  imports against what it uses.
+                </p>
+                <p>
+                  Verified on a fresh project with ten resources covering relations, money, encrypted
+                  and file fields, line items, a tree, audited reads, a public API and an owned
+                  workflow. <code>go build</code>, <code>go vet</code> and the generated tests pass,
+                  and so do 58 live checks against Postgres. They include 20 simultaneous saves of one
+                  version, where one landed and 19 got 409, and a staff user with delete permission who
+                  still could not delete another user&apos;s row.
+                </p>
+                <p>
+                  Existing resources keep their handlers until regenerated: <code>grit upgrade</code>{' '}
+                  does not rewrite API code. It does add <code>internal/authz/actor.go</code> and the
+                  new <code>concurrency</code> helpers, which <code>grit generate</code> also adds when
+                  they are missing. Not moved yet: the CSV import, public and tree endpoints, and the
+                  built-in handlers (auth, two-factor, uploads and the rest), which still query
+                  directly. They are next.
+                </p>
+              </div>
+            </div>
+
             {/* v3.223.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

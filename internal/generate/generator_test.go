@@ -375,14 +375,18 @@ func TestWriteGoService_BasicFields(t *testing.T) {
 		"package services",
 		module,
 		"PostService",
-		"PostListParams",
-		"func (s *PostService) List(",
+		"func (s *PostService) List(ctx context.Context, p paginate.Params, archived string)",
 		"func (s *PostService) GetByID(",
 		"func (s *PostService) Create(",
 		"func (s *PostService) Update(",
+		"func (s *PostService) Patch(",
 		"func (s *PostService) Delete(",
-		"LOWER(title) LIKE LOWER(?)", // search on string field, portable across Postgres + SQLite
+		"func (s *PostService) Bulk(",
+		"func (s *PostService) Export(",
+		`Searchable: []string{"title"`,
+		"LOWER(\" + col + \") LIKE LOWER(?)", // search, portable across Postgres + SQLite
 	}
+	mustParse(t, "services/post.go", got)
 	for _, want := range checks {
 		if !strings.Contains(got, want) {
 			t.Errorf("service missing %q:\n%s", want, got)

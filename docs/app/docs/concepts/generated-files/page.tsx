@@ -120,17 +120,33 @@ func (p *Product) BeforeCreate(tx *gorm.DB) error {
                     {
                       filename: 'internal/handlers/product.go',
                       language: 'go',
-                      code: `// List returns a paginated, filterable, searchable page of products.
+                      code: `// List returns a paginated list of products. The handler reads the
+// request and writes the answer; the service runs the query.
 func (h *ProductHandler) List(c *gin.Context) {
-    result, err := generic.List[models.Product](c, h.DB, generic.Config{
-        Searchable: []string{"name"},
-        Preload:    []string{"Category"},
-    })
+    res, err := h.service().List(h.ctx(c), paginate.Bind(c), c.Query("archived"))
     if err != nil {
-        response.Error(c, err)
+        h.fail(c, err, "Failed to fetch products")
         return
     }
-    response.Paginated(c, result.Data, result.Meta)
+    c.JSON(http.StatusOK, res)
+}`,
+                    },
+                    {
+                      filename: 'internal/services/product.go',
+                      language: 'go',
+                      code: `// productListConfig is what a client may search, sort and filter
+// products by. Whitelisted, because each name ends up in SQL.
+var productListConfig = paginate.Config{
+    Searchable: []string{"name"},
+    Sortable:   map[string]bool{"id": true, "created_at": true, "name": true, "price": true},
+    Filterable: map[string]bool{"id": true, "name": true, "price": true, "category_id": true},
+}
+
+// List returns one page of products.
+func (s *ProductService) List(ctx context.Context, p paginate.Params, archived string) (paginate.Result[models.Product], error) {
+    query := s.db(ctx).Model(&models.Product{}).Preload("Category")
+    // ...archived filter...
+    return paginate.List[models.Product](query, p, productListConfig)
 }`,
                     },
                     {
