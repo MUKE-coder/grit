@@ -237,6 +237,7 @@ const navItems: NavItem[] = [
       { title: 'Enterprise SSO', href: '/docs/security/sso' },
       { title: 'Privacy & Compliance (GDPR)', href: '/docs/security/compliance' },
       { title: "Defender's Handbook ↔ Grit", href: '/docs/security/defenders-handbook' },
+      { title: 'Project audit (grit doctor)', href: '/docs/security/doctor' },
       { title: 'Performance & Pentest Testing', href: '/docs/testing' },
       { title: 'Benchmarks overview', href: '/docs/benchmarks' },
       { title: '↳ vs Laravel', href: '/docs/benchmarks/laravel' },

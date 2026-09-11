@@ -355,6 +355,11 @@ export const docsMetadata: Record<string, DocPage> = {
       "Let each customer's team sign in with their own identity provider. One OIDC connection per organisation, routed by email domain, configured at runtime in the admin: works with Okta, Entra ID, Auth0, Keycloak, Google Workspace, Ping and OneLogin. Users are provisioned on first login, roles are derived from IdP groups and re-applied on every sign-in, identities are linked by the provider's immutable subject rather than email, and client secrets are encrypted at rest and never returned by the API.",
   },
 
+  '/docs/security/doctor': {
+    title: 'Project audit: grit doctor',
+    description:
+      'grit doctor audits a Grit project for the mistakes that fail silently: an encrypted field with no FIELD_ENCRYPTION_KEY, a resource nothing scopes to its owner, a method that lost its scoping, the owner accepted from a request body, a table shared across organizations with the multitenant plugin, PII in a plain column, an append-only resource still mounting writes, GORM Studio with no login or a default password, default dashboard credentials and a weak JWT secret, framework libraries behind their security floors, Sentinel counting rate limits per process, and a public allowlist publishing a held-back column. Exits non-zero on errors, so CI can run it.',
+  },
   '/docs/security/compliance': {
     title: 'Privacy & Compliance: GDPR Toolkit + Access Reviews',
     description:

@@ -29,6 +29,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.227.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.227.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit doctor: the mistakes that do not announce themselves</h3>
+                <p>
+                  A build catches a type error and a test catches a wrong answer. Neither catches an
+                  encrypted column with no key, a list that was never scoped to its owner, or a
+                  database browser whose password is still <code>studio</code>. Those work, which is
+                  the problem, and every one of them was found the hard way once.{' '}
+                  <Link href="/docs/security/doctor"><code>grit doctor</code></Link> turns that into
+                  13 checks over a project&apos;s models, handlers, services, routes,{' '}
+                  <code>.env</code> and <code>go.mod</code>.
+                </p>
+                <p>
+                  It reports an unset <code>FIELD_ENCRYPTION_KEY</code> against encrypted fields, an
+                  encrypted column in a search or sort whitelist, an owned resource nothing scopes or
+                  one method that lost its scoping while the others kept it, the owner accepted from a
+                  request body, a resource that references a user and is scoped to nobody, a resource
+                  with no <code>tenant.Owned</code> in a multitenant project, PII-shaped columns left
+                  in the clear, an append-only resource still mounting writes, Studio with no login or
+                  a default password, default dashboard credentials and weak JWT secrets, framework
+                  libraries below their floors, Sentinel counting rate limits per process while Redis
+                  is configured, and a public allowlist publishing a held-back column. Each finding
+                  names its check and a fix; errors exit non-zero, so CI can run it, and{' '}
+                  <code>--json</code> prints the report for a machine.
+                </p>
+                <p>
+                  The first thing it found was in the scaffold: every project shipped{' '}
+                  <code>GORM_STUDIO_PASSWORD=studio</code>, a known password on a tool that browses
+                  and edits every table, while the Sentinel and Pulse passwords beside it were
+                  generated per project. That is fixed here, so a new project reports nothing at all.
+                </p>
+                <p>
+                  A linter that cries wolf gets turned off, so quiet on a correct project is a tested
+                  property, and the framework&apos;s own tables are not audited as resources: asked
+                  the loose way it called four of them possibly-owned in every project, including one
+                  with no resources of its own. Verified live: a fresh project reports nothing; a
+                  project with ten resources reported one real error and five real warnings; and on a
+                  generated owned resource, deleting the scoping from one method was reported as that
+                  method, with exit code 1.
+                </p>
+              </div>
+            </div>
+
             {/* v3.226.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

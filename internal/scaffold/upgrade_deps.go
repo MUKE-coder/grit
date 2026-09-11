@@ -17,9 +17,17 @@ import (
 // Nothing moved them before. grit upgrade rewrites framework files, not
 // go.mod, so a project scaffolded on Sentinel v2.2.1 stayed there after the
 // scaffold moved on, and v2.2.2 is a security release.
-var frameworkDeps = []struct {
+// FrameworkDep is one library every generated API mounts, with the lowest
+// version a project should run and why that version.
+type FrameworkDep struct {
 	Path, Floor, Why string
-}{
+}
+
+// FrameworkDepFloors returns those libraries, for a caller that reports on
+// them rather than changes them: grit doctor names a project left behind.
+func FrameworkDepFloors() []FrameworkDep { return frameworkDeps }
+
+var frameworkDeps = []FrameworkDep{
 	{"github.com/MUKE-coder/sentinel/v2", "v2.5.0",
 		"security fixes from v2.2.2 (client-IP spoofing behind a proxy, a sort_by SQL injection, SSRF bypasses)"},
 	{"github.com/MUKE-coder/gorm-studio", "v1.1.0",
@@ -67,6 +75,11 @@ func raiseFrameworkDeps(apiRoot string) ([]string, error) {
 	}
 	return raised, nil
 }
+
+// VersionBelow reports whether current is lower than floor, by the same rule
+// grit upgrade raises a dependency by. Exported for grit doctor, which reports
+// on the same floors without changing anything.
+func VersionBelow(current, floor string) bool { return versionLess(current, floor) }
 
 // versionLess reports whether semantic version a is lower than b. As much of
 // semver as go.mod needs: numbers compare as numbers, and a pre-release sorts
