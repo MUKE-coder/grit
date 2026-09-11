@@ -525,6 +525,17 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 		return 0, err
 	}
 
+	// The dashboard widgets and chart builder are written by writers of their
+	// own rather than the map above, and upgrade used to run neither, so a fix
+	// to them reached new projects only: v3.222.0's stat cards still asked by
+	// the admin slug in every project that upgraded to it. The same list the
+	// scaffold runs, so the two cannot drift apart again.
+	for _, write := range adminExtraWriters {
+		if err := write(root, opts); err != nil {
+			return n, err
+		}
+	}
+
 	// resources/users.ts now imports ./users.custom, so the overlay has to be
 	// there or the admin will not compile after an upgrade. createIfMissing,
 	// never write: the whole promise of that file is that it is never
