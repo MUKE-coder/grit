@@ -109,6 +109,19 @@ func TestSAMLIdentity_FallsBackToEmailSubject(t *testing.T) {
 	assert.Equal(t, "bob@acme.com", id.Subject)
 }
 
+// A transient NameID is new on every login. Used as the subject, every sign-in
+// was a stranger and linked another identity, so it is passed over for the email.
+func TestSAMLIdentity_TransientNameIDIsNotTheSubject(t *testing.T) {
+	conn := &models.SSOConnection{Slug: "acme", Protocol: "saml"}
+	a := assertionWith("_8b66f45a3784b352011a", map[string][]string{"email": {"bob@acme.com"}})
+	a.Subject.NameID.Format = "urn:oasis:names:tc:SAML:2.0:nameid-format:transient"
+	assert.Equal(t, "bob@acme.com", samlIdentity(conn, a).Subject)
+
+	p := assertionWith("okta-sub-1", map[string][]string{"email": {"bob@acme.com"}})
+	p.Subject.NameID.Format = "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"
+	assert.Equal(t, "okta-sub-1", samlIdentity(conn, p).Subject, "a persistent NameID is still the subject")
+}
+
 // An assertion carrying nothing usable must produce empty fields, which the
 // handler turns into a clean "your IdP released no email" rather than a crash.
 func TestSAMLIdentity_EmptyAssertionIsSafe(t *testing.T) {

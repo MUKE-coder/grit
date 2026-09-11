@@ -123,7 +123,12 @@ type SSOConnection struct {
 	// on a cross-site cookie surviving the IdP's POST back. The assertion is
 	// still signature-checked, audience-restricted and time-bounded; turn it off
 	// if you require every login to begin at this app.
-	AllowIDPInitiated bool ~json:"allow_idp_initiated"~
+	//
+	// The column is allow_id_p_initiated: that is what GORM made of the field
+	// name when this shipped, and the update wrote allow_idp_initiated, so
+	// turning the flag off failed with a 500 and left it on. Pinned, so nothing
+	// depends on that guess again.
+	AllowIDPInitiated bool ~gorm:"column:allow_id_p_initiated" json:"allow_idp_initiated"~
 
 	LastUsedAt *time.Time ~json:"last_used_at"~
 
@@ -156,6 +161,22 @@ func (s *SSOConnection) DomainList() []string {
 		}
 	}
 	return out
+}
+
+// OwnsEmail reports whether an address is at one of the connection's domains:
+// the only addresses its identity provider is trusted to vouch for.
+func (s *SSOConnection) OwnsEmail(email string) bool {
+	at := strings.LastIndex(email, "@")
+	if at < 0 || at == len(email)-1 {
+		return false
+	}
+	domain := strings.ToLower(strings.TrimSpace(email[at+1:]))
+	for _, d := range s.DomainList() {
+		if d == domain {
+			return true
+		}
+	}
+	return false
 }
 
 // ScopeList returns the requested scopes. "openid" is implied and always first.
@@ -286,7 +307,10 @@ func (r *SSORegistry) CallbackURL(slug string) string {
 // customer's misconfigured IdP must not stop everyone else signing in.
 func (r *SSORegistry) Reload(db *gorm.DB) []error {
 	var conns []models.SSOConnection
-	if err := db.Where("enabled = ?", true).Find(&conns).Error; err != nil {
+	// SAML connections have their own registry; building them here logged a
+	// "client id and secret are required" error for each one on every reload.
+	if err := db.Where("enabled = ? AND (protocol IS NULL OR protocol <> ?)", true, "saml").
+		Find(&conns).Error; err != nil {
 		return []error{fmt.Errorf("loading sso connections: %w", err)}
 	}
 
@@ -747,6 +771,12 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 		if err := h.DB.Where("id = ?", identity.UserID).First(&user).Error; err != nil {
 			return nil, fmt.Errorf("Your account could not be found.")
 		}
+		// The account must still be one this connection can vouch for. A link
+		// made before v3.217.0 could point anywhere, your own administrator
+		// included, and this is what stops such a link from working.
+		if !conn.OwnsEmail(user.Email) {
+			return nil, fmt.Errorf("This account is not at a domain this sign-in method can vouch for.")
+		}
 		if !user.Active {
 			return nil, fmt.Errorf("Your account has been disabled.")
 		}
@@ -755,6 +785,14 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 	}
 	if err != gorm.ErrRecordNotFound {
 		return nil, fmt.Errorf("Could not complete sign-in.")
+	}
+
+	// The customer's identity provider is trusted for the customer's domains
+	// and nothing else. Linking by email, and provisioning, used to take its
+	// word for any address: one customer's IdP admin could assert
+	// admin@yourapp.com and be signed in as your administrator.
+	if !conn.OwnsEmail(email) {
+		return nil, fmt.Errorf("%s is not at a domain this sign-in method can vouch for.", email)
 	}
 
 	var user models.User
@@ -810,17 +848,21 @@ func (h *SSOHandler) applyGroupRoles(conn *models.SSOConnection, user *models.Us
 	names := services.GroupRoleNames(conn, external.Groups)
 
 	if len(names) == 0 {
-		if strings.TrimSpace(conn.GroupMappings) != "" {
-			return nil // mapping configured but nothing matched — leave as-is
+		switch {
+		case conn.DefaultRoleID != "":
+			var role models.Role
+			if err := h.DB.Where("id = ?", conn.DefaultRoleID).First(&role).Error; err != nil {
+				return err
+			}
+			names = []string{role.Name}
+		case strings.TrimSpace(conn.GroupMappings) != "":
+			// In none of the mapped groups any more: back to the base role. This
+			// used to leave the old role in place, so removing someone from the
+			// directory group never revoked what it had granted.
+			names = []string{models.RoleUser}
+		default:
+			return nil // no mapping and no default: manual grants are left alone
 		}
-		if conn.DefaultRoleID == "" {
-			return nil
-		}
-		var role models.Role
-		if err := h.DB.Where("id = ?", conn.DefaultRoleID).First(&role).Error; err != nil {
-			return err
-		}
-		names = []string{role.Name}
 	}
 
 	var roles []models.Role
@@ -922,6 +964,10 @@ func (h *SSOHandler) Create(c *gin.Context) {
 		respond.BadRequest(c, "issuer_url, client_id and client_secret are required for OIDC")
 		return
 	}
+	if domain, owner := h.domainTaken(in.Domains, ""); domain != "" {
+		respond.BadRequest(c, fmt.Sprintf("%s is already routed to %s: an email domain can belong to one connection", domain, owner))
+		return
+	}
 
 	conn := models.SSOConnection{
 		Protocol:        protocol,
@@ -965,23 +1011,45 @@ func (h *SSOHandler) Update(c *gin.Context) {
 		return
 	}
 
+	raw, err := c.GetRawData()
+	if err != nil {
+		respond.BadRequest(c, err.Error())
+		return
+	}
 	var in SSOConnectionRequest
-	if err := c.ShouldBindJSON(&in); err != nil {
+	if err := json.Unmarshal(raw, &in); err != nil {
+		respond.BadRequest(c, err.Error())
+		return
+	}
+	// Which keys were sent, so a field left out keeps its value. A partial
+	// update used to clear the metadata URL, the group mappings and the
+	// attribute names, and a SAML connection went offline over an unrelated edit.
+	var sent map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &sent); err != nil {
 		respond.BadRequest(c, err.Error())
 		return
 	}
 
 	updates := map[string]interface{}{}
+	setIfSent := func(key string, value interface{}) {
+		if _, ok := sent[key]; ok {
+			updates[key] = value
+		}
+	}
 	if in.Name != "" {
 		updates["name"] = in.Name
 	}
 	if in.Domains != "" {
+		if domain, owner := h.domainTaken(in.Domains, conn.ID); domain != "" {
+			respond.BadRequest(c, fmt.Sprintf("%s is already routed to %s: an email domain can belong to one connection", domain, owner))
+			return
+		}
 		updates["domains"] = in.Domains
 	}
 	if in.IssuerURL != "" {
 		updates["issuer_url"] = in.IssuerURL
 	}
-	updates["discovery_url"] = in.DiscoveryURL
+	setIfSent("discovery_url", in.DiscoveryURL)
 	if in.ClientID != "" {
 		updates["client_id"] = in.ClientID
 	}
@@ -1000,21 +1068,21 @@ func (h *SSOHandler) Update(c *gin.Context) {
 	if in.JITProvisioning != nil {
 		updates["jit_provisioning"] = *in.JITProvisioning
 	}
-	updates["default_role_id"] = in.DefaultRoleID
+	setIfSent("default_role_id", in.DefaultRoleID)
 	if in.GroupsClaim != "" {
 		updates["groups_claim"] = in.GroupsClaim
 	}
-	updates["group_mappings"] = in.GroupMappings
-	updates["metadata_url"] = in.MetadataURL
+	setIfSent("group_mappings", in.GroupMappings)
+	setIfSent("metadata_url", in.MetadataURL)
 	if in.MetadataXML != "" {
 		updates["metadata_xml"] = in.MetadataXML
 	}
-	updates["email_attribute"] = in.EmailAttribute
-	updates["first_name_attribute"] = in.FirstNameAttribute
-	updates["last_name_attribute"] = in.LastNameAttribute
-	updates["groups_attribute"] = in.GroupsAttribute
+	setIfSent("email_attribute", in.EmailAttribute)
+	setIfSent("first_name_attribute", in.FirstNameAttribute)
+	setIfSent("last_name_attribute", in.LastNameAttribute)
+	setIfSent("groups_attribute", in.GroupsAttribute)
 	if in.AllowIDPInitiated != nil {
-		updates["allow_idp_initiated"] = *in.AllowIDPInitiated
+		updates["allow_id_p_initiated"] = *in.AllowIDPInitiated
 	}
 
 	if err := h.DB.Model(&conn).Updates(updates).Error; err != nil {
@@ -1058,9 +1126,41 @@ func (h *SSOHandler) Test(c *gin.Context) {
 	}})
 }
 
+// domainTaken returns a domain in domains that another connection already
+// claims, and that connection's name. Discovery sends an address to the first
+// connection claiming its domain, so two claiming one made sign-in depend on
+// row order.
+func (h *SSOHandler) domainTaken(domains, exceptID string) (string, string) {
+	wanted := map[string]bool{}
+	for _, d := range (&models.SSOConnection{Domains: domains}).DomainList() {
+		wanted[d] = true
+	}
+	if len(wanted) == 0 {
+		return "", ""
+	}
+	var others []models.SSOConnection
+	q := h.DB
+	if exceptID != "" {
+		q = q.Where("id <> ?", exceptID)
+	}
+	if err := q.Find(&others).Error; err != nil {
+		return "", ""
+	}
+	for _, o := range others {
+		for _, d := range o.DomainList() {
+			if wanted[d] {
+				return d, o.Name
+			}
+		}
+	}
+	return "", ""
+}
+
 func (h *SSOHandler) reload() {
-	for _, err := range h.Registry.Reload(h.DB) {
-		log.Printf("sso: %v", err)
+	if h.Registry != nil {
+		for _, err := range h.Registry.Reload(h.DB) {
+			log.Printf("sso: %v", err)
+		}
 	}
 	if h.SAML != nil {
 		for _, err := range h.SAML.Reload(h.DB) {

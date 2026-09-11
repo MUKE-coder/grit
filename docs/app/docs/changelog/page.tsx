@@ -29,6 +29,84 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.217.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.217.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A customer&apos;s identity provider could sign in as your administrator</h3>
+                <p>
+                  Found testing enterprise SSO end to end against a mock identity provider. After
+                  matching on the IdP&apos;s subject, sign-in fell back to linking any existing
+                  account with the same email address, and never checked that the address belonged
+                  to one of the connection&apos;s domains. The customer controls their IdP, so the
+                  customer&apos;s IdP admin could assert <code>admin@yourapp.com</code>: reproduced,
+                  it signed in as the app&apos;s ADMIN. The same gap let it provision accounts at any
+                  domain.
+                </p>
+                <p>
+                  A connection&apos;s email domains are now the only addresses its provider is trusted
+                  for. Linking by email and provisioning both refuse any other address, and so does
+                  an existing link, so an identity an attacker linked before this release stops
+                  working too. A connection with no domains can sign nobody in. If you ran SSO
+                  before this release, look through <code>user_identities</code> for links to
+                  accounts outside their connection&apos;s domains.
+                </p>
+
+                <h3>Leaving a directory group did not revoke its role</h3>
+                <p>
+                  The docs promised that removing someone from a mapped group revokes the role on
+                  their next sign-in. Moving to another mapped group did; leaving every mapped group
+                  kept the old role. They now drop to the connection&apos;s default role, or{' '}
+                  <code>USER</code>.
+                </p>
+
+                <h3>Six more</h3>
+                <ul>
+                  <li>
+                    <strong>IdP-initiated SAML sign-in could not be turned off.</strong> GORM named the
+                    column <code>allow_id_p_initiated</code> and the update wrote{' '}
+                    <code>allow_idp_initiated</code>, so switching it off returned a 500 and left it
+                    on. The column name is now pinned.
+                  </li>
+                  <li>
+                    <strong>Once it could be, it would have refused every login,</strong> including
+                    the ones that started here: responses were checked against no request ids at
+                    all. Each sign-in now remembers its request, and the response has to answer it.
+                  </li>
+                  <li>
+                    <strong>Two connections could claim one email domain,</strong> and discovery sent
+                    the address to whichever row came first. A domain now belongs to one connection.
+                  </li>
+                  <li>
+                    <strong>A transient SAML NameID was used as the identity,</strong> so every
+                    sign-in linked another one. Transient ids are now passed over for the email.
+                  </li>
+                  <li>
+                    <strong>A partial update of a connection wiped the fields it did not send,</strong>{' '}
+                    the metadata URL among them, which took a SAML connection offline over an
+                    unrelated edit.
+                  </li>
+                  <li>
+                    <strong>Every reload logged an error for each SAML connection,</strong> from the
+                    OIDC registry trying to build it.
+                  </li>
+                </ul>
+                <p>
+                  <code>grit upgrade</code> carries all six to existing projects. Verified end to end
+                  against a mock OpenID Connect provider and a SimpleSAMLphp identity provider:
+                  provisioning, group mapping and revocation, an address renamed at the IdP, IdP- and
+                  SP-initiated SAML with IdP-initiated sign-in on and off, and the attempts to sign in
+                  as the administrator or outside the connection&apos;s domains, which are refused.
+                </p>
+              </div>
+            </div>
+
             {/* v3.216.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

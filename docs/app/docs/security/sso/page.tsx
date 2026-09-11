@@ -60,8 +60,11 @@ export default function SSOPage() {
                 <strong>Slug</strong> — appears in the callback URL and can&apos;t change later.
               </li>
               <li>
-                <strong>Email domains</strong> — comma-separated. Anyone signing in with an address
-                at these domains is sent to this provider.
+                <strong>Email domains</strong>: comma-separated. Anyone signing in with an address
+                at these domains is sent to this provider, and these are the only addresses the
+                provider is trusted for. A sign-in whose IdP asserts any other address is refused,
+                even when an account with that address exists, so a connection with no domains
+                can sign nobody in.
               </li>
               <li>
                 <strong>Issuer URL</strong> — discovery is fetched from{' '}
@@ -121,7 +124,9 @@ SP metadata:  https://your-app.com/api/auth/saml/<slug>/metadata`} />
               is how most enterprise users actually sign in — rather than requiring every login to
               begin at your login page. The assertion is still signature-checked, audience-restricted
               and time-bounded; what&apos;s relaxed is only the requirement that <em>we</em> started
-              the exchange. Turn it off if your threat model requires every login to originate here.
+              the exchange. Turn it off if your threat model requires every login to originate here:
+              each sign-in that starts here remembers its request, and the response has to answer
+              that request.
             </p>
             <h3>Attributes</h3>
             <p>
@@ -163,8 +168,11 @@ SP metadata:  https://your-app.com/api/auth/saml/<slug>/metadata`} />
                 data instead of silently getting a second one.
               </li>
               <li>
-                <strong>By email</strong>, which links the identity on first use. This is also how
-                an existing password user is adopted the day their company turns SSO on.
+                <strong>By email</strong>, which links the identity on first use, and only for an
+                address at one of the connection&apos;s domains. This is also how an existing
+                password user is adopted the day their company turns SSO on. Without the domain
+                check, one customer&apos;s IdP could assert <em>your</em> administrator&apos;s
+                address and be signed in as them.
               </li>
               <li>
                 <strong>Create the account</strong>, if just-in-time provisioning is on. Turn it off
@@ -187,7 +195,9 @@ SP metadata:  https://your-app.com/api/auth/saml/<slug>/metadata`} />
               Mapped roles are <strong>re-applied on every login</strong>, replacing what was there.
               That is the point: removing somebody from a group in the customer&apos;s directory
               revokes their role here the next time they sign in, without anyone touching your admin.
-              Connections with no mapping configured are left alone, so manual grants survive.
+              Someone in none of the mapped groups drops to the connection&apos;s default role, or to{' '}
+              <code>USER</code> when it has none. Connections with no mapping configured are left
+              alone, so manual grants survive.
             </p>
             <div className="mt-6 rounded-lg border border-amber-500/25 bg-amber-500/5 p-4">
               <p className="!mb-0 text-sm">
@@ -214,6 +224,10 @@ GET    /api/v1/sso/connections       admin only
 POST   /api/v1/sso/connections
 PUT    /api/v1/sso/connections/:id
 DELETE /api/v1/sso/connections/:id`} />
+            <p>
+              <code>PUT</code> changes only the fields it is sent; leaving a field out keeps its
+              value. The client secret works the same way.
+            </p>
             <p>
               The callback issues exactly the same session cookies a password login does, so
               everything downstream — refresh, server-side sessions, revoke-all, the activity log —
