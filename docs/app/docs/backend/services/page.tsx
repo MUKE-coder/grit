@@ -150,6 +150,29 @@ Bulk(ctx, action string, ids []string, patch map[string]interface{}) (PostBulkRe
                 model and the handler, so a field added later can be filtered and patched like one
                 generated with the resource.
               </p>
+              <p>The flags add their own queries, in the same place:</p>
+              <ul>
+                <li>
+                  <strong><code>--public</code></strong> adds <code>ListPublic</code>,{' '}
+                  <code>GetPublic</code>, <code>RelatedPublic</code> when the resource has a parent,
+                  and <code>PublicSubtreeIDs</code> and <code>PublicTreeRows</code> for a tree. What
+                  a caller may filter by stays in the public handler, where you edit it, and is
+                  handed to <code>ListPublic</code>.
+                </li>
+                <li>
+                  <strong>The CSV import</strong> lives in <code>services/post_import.go</code>:{' '}
+                  <code>StartImport</code> records the job, and <code>ImportCSV</code> reads the rows,
+                  resolves their relations and writes them in batches. It runs after the response,
+                  so the handler gives it <code>context.WithoutCancel(h.ctx(c))</code>: the caller
+                  and the organization, without the cancellation.
+                </li>
+                <li>
+                  <strong><code>--tree</code></strong> has its hierarchy on a{' '}
+                  <code>PostTreeService</code> in <code>services/post_tree.go</code>, whose methods
+                  take the context too. <code>Move</code> with a nil parent keeps the one the node
+                  has, which is how a reorder is sent.
+                </li>
+              </ul>
 
               {/* ── The context ─────────────────────────────── */}
               <h2 id="context">The Context Carries the Caller</h2>

@@ -90,6 +90,7 @@ func (g *Generator) targetFiles(names Names) []string {
 		join("internal", "services", names.Snake+".go"),
 		join("internal", "handlers", names.Snake+".go"),
 		join("internal", "handlers", names.Snake+"_import.go"),
+		join("internal", "services", names.Snake+"_import.go"),
 		join("internal", "routes", names.Snake+"_routes.go"),
 	}
 }

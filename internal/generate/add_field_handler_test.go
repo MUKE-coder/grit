@@ -162,7 +162,8 @@ func TestAddFieldImportMatchesTheGenerator(t *testing.T) {
 	if err := g.writeGoImportHandler(g.Names()); err != nil {
 		t.Fatalf("import handler: %v", err)
 	}
-	generated := squash(readTestFile(t, filepath.Join(root, "apps", "api", "internal", "handlers", "account_import.go")))
+	// The rows are built by the service since v3.225.0.
+	generated := squash(readTestFile(t, filepath.Join(root, "apps", "api", "internal", "services", "account_import.go")))
 
 	for _, f := range def.Fields {
 		code, _, ok := importAssign(f)

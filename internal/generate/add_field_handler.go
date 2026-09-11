@@ -346,14 +346,22 @@ func (g *Generator) injectServiceWhitelists(names Names, f Field, patchKey strin
 
 // injectImportField teaches the CSV importer the new column. Best effort: the
 // importer is a convenience, and a hand-reshaped one is reported, not fatal.
+//
+// The rows are built in services/<name>_import.go from v3.225.0 and in the
+// handler before it, so the file holding them is found rather than assumed.
+// The downloadable template's header row is the handler's either way.
 func (g *Generator) injectImportField(names Names, f Field) {
 	code, needStrconv, ok := importAssign(f)
 	if !ok {
 		return
 	}
-	rel := filepath.ToSlash(filepath.Join("apps", "api", "internal", "handlers", names.Snake+"_import.go"))
-	path := filepath.Join(g.APIRoot(), "internal", "handlers", names.Snake+"_import.go")
-	l, err := readGoLines(path)
+	handlerPath := filepath.Join(g.APIRoot(), "internal", "handlers", names.Snake+"_import.go")
+	rowsPath := filepath.Join(g.APIRoot(), "internal", "services", names.Snake+"_import.go")
+	if !fileExists(rowsPath) {
+		rowsPath = handlerPath
+	}
+	rel := relFromRoot(g.Root, rowsPath)
+	l, err := readGoLines(rowsPath)
 	if err != nil {
 		return
 	}
@@ -370,12 +378,6 @@ func (g *Generator) injectImportField(names Names, f Field) {
 	}
 	l.insert(batch, code)
 
-	// The downloadable template's header row.
-	tmpl := l.findPrefix(0, fmt.Sprintf("func (h *%sHandler) Template(", names.Pascal))
-	if hdr := l.findPrefix(tmpl, "c.String(http.StatusOK, \""); hdr >= 0 {
-		l.lines[hdr] = strings.Replace(l.lines[hdr], `\n")`, ","+snake+`\n")`, 1)
-	}
-
 	if f.Encrypted && !l.contains("/internal/crypto\"") {
 		if models := l.findPrefix(0, fmt.Sprintf("%q", g.Module+"/internal/models")); models >= 0 {
 			l.insert(models, fmt.Sprintf("\t%q", g.Module+"/internal/crypto"))
@@ -386,9 +388,20 @@ func (g *Generator) injectImportField(names Names, f Field) {
 			l.insert(imp+1, "\t\"strconv\"")
 		}
 	}
-	if err := l.write(path); err != nil {
+	if err := l.write(rowsPath); err != nil {
 		fmt.Printf("  ⚠ %s: %v\n", rel, err)
 		return
+	}
+
+	// The downloadable template's header row.
+	if h, err := readGoLines(handlerPath); err == nil {
+		tmpl := h.findPrefix(0, fmt.Sprintf("func (h *%sHandler) Template(", names.Pascal))
+		if hdr := h.findPrefix(tmpl, "c.String(http.StatusOK, \""); hdr >= 0 {
+			h.lines[hdr] = strings.Replace(h.lines[hdr], `\n")`, ","+snake+`\n")`, 1)
+			if err := h.write(handlerPath); err != nil {
+				fmt.Printf("  ⚠ %s: %v\n", relFromRoot(g.Root, handlerPath), err)
+			}
+		}
 	}
 	fmt.Printf("  ✓ %s  (CSV import)\n", rel)
 }

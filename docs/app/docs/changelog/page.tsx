@@ -29,6 +29,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.225.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.225.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The import, public and tree endpoints query through the service too</h3>
+                <p>
+                  v3.224.0 moved a resource&apos;s CRUD into its service, and three generated surfaces
+                  still queried from their own handlers. The CSV import ran every lookup and insert
+                  from a goroutine in the handler, the <code>--public</code> endpoints read through{' '}
+                  <code>h.DB</code>, and the tree handler looked a node&apos;s parent up itself before a
+                  reorder, outside the move&apos;s transaction. None of them passed the request&apos;s
+                  context down, which the multitenant plugin needs: it refuses a tenant-owned query
+                  that carries no organization.
+                </p>
+                <p>
+                  The import&apos;s handler now takes the upload and answers 202, and{' '}
+                  <code>services/&lt;name&gt;_import.go</code> reads the rows, resolves their relations
+                  and writes them in batches. It runs on <code>context.WithoutCancel</code> of the
+                  request&apos;s context, so it keeps the caller and the organization and is not
+                  cancelled when the response goes out; an owned resource&apos;s rows still belong to
+                  whoever imports them. The public reads are service methods, with the allowlist left
+                  in the public handler you edit and passed in; a public handler you already have is
+                  kept as it is. Every tree service method takes a context, and <code>Move</code>{' '}
+                  takes the parent as a pointer, where nil keeps the one the node has.
+                </p>
+                <p>
+                  Verified on a fresh project with 29 live checks against Postgres: moves, reorders
+                  and a rebuild on a tree; the public list, slug lookup, related items, category tree
+                  and subtree ids behind an API key; a CSV import that finds or creates categories by
+                  name; and owned imports, where an ordinary account&apos;s file cannot name another
+                  owner and an admin&apos;s can. <code>grit upgrade</code> on that project left every
+                  handler and service untouched. The generator&apos;s tests now check every generated
+                  handler for a stray query and every generated file&apos;s imports against what it
+                  uses.
+                </p>
+                <p>
+                  The checks turned up one thing that is by design: public responses are cached by
+                  URL for <code>cache.public_ttl_seconds</code> (60 by default), so an archived
+                  product can stay in a cached list for up to a minute. Still to move are the
+                  framework&apos;s own handlers: auth, two-factor, uploads and the rest.
+                </p>
+              </div>
+            </div>
+
             {/* v3.224.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

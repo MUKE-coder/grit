@@ -238,13 +238,7 @@ func (g *Generator) publicHandlerSource(names Names, included []Field) string {
 		}
 	}
 
-	slugField := "id"
-	for _, f := range included {
-		if FieldType(f.Type) == FieldSlug {
-			slugField = toSnakeCase(f.Name)
-			break
-		}
-	}
+	slugField := publicSlugColumn(included)
 
 	std, third, local := publicImports(g.Module, included)
 	// The related endpoint clamps ?limit, which needs strconv. Only emitted
@@ -294,32 +288,24 @@ func toPublic` + names.Pascal + `(m models.` + names.Pascal + `) public` + names
 // equality filters on the published columns, and a ?x_min= / ?x_max= window on
 // the numeric ones.
 func (h *` + names.Pascal + `Handler) ListPublic(c *gin.Context) {
-	// Scoped before paginate sees it, and archived_at is deliberately absent
-	// from the filter lists below: a column listed there is settable from the
-	// query string, so ?archived=true would hand back rows somebody took down
-	// on purpose.
-	query := h.DB.Model(&models.` + names.Pascal + `{}).Where("archived_at IS NULL")
-
-	res, err := paginate.List[models.` + names.Pascal + `](
-		query,
-		paginate.Bind(c),
-		paginate.Config{
-			Searchable: []string{` + strings.Join(searchable, ", ") + `},
-			Sortable:   map[string]bool{` + strings.Join(sortable, ", ") + `},
-			// Published columns only, plus foreign keys. Anything not listed
-			// is ignored rather than rejected, so an unknown query param is
-			// never an error.
-			Filterable:      map[string]bool{` + strings.Join(filterable, ", ") + `},
-			RangeFilterable: map[string]bool{` + strings.Join(rangeFilterable, ", ") + `},
-			// Foreign keys accept a comma-separated list, so one request can
-			// ask for a whole category subtree.
-			InFilterable: map[string]bool{` + strings.Join(inFilterable, ", ") + `},
-		},
-	)
+	// ListPublic never returns an archived row, and archived_at is deliberately
+	// absent from the filter lists below: a column listed there is settable
+	// from the query string, so ?archived=true would hand back rows somebody
+	// took down on purpose.
+	res, err := h.service().ListPublic(c.Request.Context(), paginate.Bind(c), paginate.Config{
+		Searchable: []string{` + strings.Join(searchable, ", ") + `},
+		Sortable:   map[string]bool{` + strings.Join(sortable, ", ") + `},
+		// Published columns only, plus foreign keys. Anything not listed is
+		// ignored rather than rejected, so an unknown query param is never an
+		// error.
+		Filterable:      map[string]bool{` + strings.Join(filterable, ", ") + `},
+		RangeFilterable: map[string]bool{` + strings.Join(rangeFilterable, ", ") + `},
+		// Foreign keys accept a comma-separated list, so one request can ask
+		// for a whole category subtree.
+		InFilterable: map[string]bool{` + strings.Join(inFilterable, ", ") + `},
+	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to fetch ` + names.Plural + `",
-		}})
+		h.fail(c, err, "Failed to fetch ` + names.Plural + `")
 		return
 	}
 
@@ -335,18 +321,14 @@ func (h *` + names.Pascal + `Handler) ListPublic(c *gin.Context) {
 // Looks up by ` + slugField + `, so a public URL reads as something a person
 // could type rather than a UUID.
 func (h *` + names.Pascal + `Handler) GetPublic(c *gin.Context) {
-	var item models.` + names.Pascal + `
-	err := h.DB.Where("` + slugField + ` = ? AND archived_at IS NULL", c.Param("key")).
-		First(&item).Error
+	item, err := h.service().GetPublic(c.Request.Context(), c.Param("key"))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{
-			"code": "NOT_FOUND", "message": "` + names.Pascal + ` not found",
-		}})
+		h.fail(c, err, "Failed to load ` + names.Lower + `")
 		return
 	}
 ` + treeGetPublicPrelude(names, g.Definition) + `	c.JSON(http.StatusOK, gin.H{"data": ` + detailPayload(names, g.Definition) + `})
 }
-` + treePublic(names, g.Definition) + relatedPublic(names, g.Definition, slugField)
+` + treePublic(names, g.Definition) + relatedPublic(names, g.Definition)
 }
 
 // hasParent reports whether the resource has a belongs_to for the related
@@ -367,54 +349,24 @@ func hasParent(def *ResourceDefinition) bool {
 // relation defines "similar" is the generator's choice and not the caller's:
 // that keeps it a single bounded query, and stops the endpoint becoming a way
 // to filter on a column nobody published.
-func relatedPublic(names Names, def *ResourceDefinition, slugField string) string {
-	var parent *Field
-	for i := range def.Fields {
-		if def.Fields[i].IsBelongsTo() {
-			parent = &def.Fields[i]
-			break
-		}
-	}
-	if parent == nil {
+func relatedPublic(names Names, def *ResourceDefinition) string {
+	rel, ok := relatedParent(names, def)
+	if !ok {
 		return ""
 	}
-
-	// Derived the same way the model does it, from the same base name, rather
-	// than by PascalCasing the column: toPascalCase("category_id") gives
-	// CategoryId, and the model field is CategoryID.
-	base := strings.TrimSuffix(parent.Name, "_id")
-	fk := toSnakeCase(base) + "_id"
-	fkField := toPascalCase(base) + "ID"
-
-	// A self-referential parent is a nullable *string, every other one is a
-	// plain string, so the emitted comparison differs. A tree resource with a
-	// related endpoint would otherwise not compile:
-	//   invalid operation: item.ParentID != "" (mismatched types *string and untyped string)
-	selfRef := parent.RelatedModelName() == toPascalCase(def.Name)
-	parentSet := "item." + fkField + ` != ""`
-	parentValue := "item." + fkField
-	if selfRef {
-		parentSet = "item." + fkField + " != nil && *item." + fkField + ` != ""`
-		parentValue = "*item." + fkField
-	}
-
 	return `
 // RelatedPublic handles GET /api/v1/public/` + names.Plural + `/:key/related.
 //
 // The "similar items" strip on a detail page: others sharing this one's
-// ` + parent.Name + `, newest first, this one excluded.
+// ` + rel.name + `, newest first, this one excluded.
 //
 // Capped at 24 however large ?limit= asks, because this endpoint exists to
 // fill a row of cards and an uncapped limit on a public route is a free way
 // to make the database do work.
 func (h *` + names.Pascal + `Handler) RelatedPublic(c *gin.Context) {
-	var item models.` + names.Pascal + `
-	err := h.DB.Where("` + slugField + ` = ? AND archived_at IS NULL", c.Param("key")).
-		First(&item).Error
+	item, err := h.service().GetPublic(c.Request.Context(), c.Param("key"))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{
-			"code": "NOT_FOUND", "message": "` + names.Pascal + ` not found",
-		}})
+		h.fail(c, err, "Failed to load ` + names.Lower + `")
 		return
 	}
 
@@ -428,20 +380,9 @@ func (h *` + names.Pascal + `Handler) RelatedPublic(c *gin.Context) {
 		limit = 24
 	}
 
-	query := h.DB.Model(&models.` + names.Pascal + `{}).
-		Where("id <> ? AND archived_at IS NULL", item.ID)
-	// A row with no ` + parent.Name + ` has no siblings, and an empty strip on
-	// a detail page looks broken. Falling back to the newest rows is a worse
-	// recommendation than a real match and a better one than nothing.
-	if ` + parentSet + ` {
-		query = query.Where("` + fk + ` = ?", ` + parentValue + `)
-	}
-
-	var rows []models.` + names.Pascal + `
-	if err := query.Order("created_at desc").Limit(limit).Find(&rows).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to fetch related ` + names.Plural + `",
-		}})
+	rows, err := h.service().RelatedPublic(c.Request.Context(), item, limit)
+	if err != nil {
+		h.fail(c, err, "Failed to fetch related ` + names.Plural + `")
 		return
 	}
 
@@ -452,6 +393,136 @@ func (h *` + names.Pascal + `Handler) RelatedPublic(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": out})
 }
 `
+}
+
+// relatedParentExpr is the belongs_to the related endpoint keys on, and the
+// Go that tests it and reads it off an item.
+type relatedParentExpr struct {
+	name  string // the field, for the comments
+	fk    string // its column
+	set   string // "item has a parent"
+	value string // the parent's id
+}
+
+// relatedParent returns the first belongs_to, or false when there is none.
+func relatedParent(names Names, def *ResourceDefinition) (relatedParentExpr, bool) {
+	var parent *Field
+	for i := range def.Fields {
+		if def.Fields[i].IsBelongsTo() {
+			parent = &def.Fields[i]
+			break
+		}
+	}
+	if parent == nil {
+		return relatedParentExpr{}, false
+	}
+
+	// Derived the same way the model does it, from the same base name, rather
+	// than by PascalCasing the column: toPascalCase("category_id") gives
+	// CategoryId, and the model field is CategoryID.
+	base := strings.TrimSuffix(parent.Name, "_id")
+	fkField := toPascalCase(base) + "ID"
+	e := relatedParentExpr{
+		name:  parent.Name,
+		fk:    toSnakeCase(base) + "_id",
+		set:   "item." + fkField + ` != ""`,
+		value: "item." + fkField,
+	}
+	// A self-referential parent is a nullable *string, every other one is a
+	// plain string, so the emitted comparison differs. A tree resource with a
+	// related endpoint would otherwise not compile:
+	//   invalid operation: item.ParentID != "" (mismatched types *string and untyped string)
+	if parent.RelatedModelName() == toPascalCase(def.Name) {
+		e.set = "item." + fkField + " != nil && *item." + fkField + ` != ""`
+		e.value = "*item." + fkField
+	}
+	return e, true
+}
+
+// publicSlugColumn is the column GetPublic looks a row up by: the first
+// published slug, or the id when there is none.
+func publicSlugColumn(included []Field) string {
+	for _, f := range included {
+		if FieldType(f.Type) == FieldSlug {
+			return toSnakeCase(f.Name)
+		}
+	}
+	return "id"
+}
+
+// publicServiceMethods returns the queries behind the --public endpoints, as
+// methods on the resource's service, or nothing.
+//
+// What a client may search, sort and filter by stays in the public handler,
+// where the developer edits it, and is handed to ListPublic. What the queries
+// are is the service's, like every other query the resource has.
+func (g *Generator) publicServiceMethods(names Names) string {
+	if !g.Definition.Public {
+		return ""
+	}
+	included, _ := PublicFields(g.Definition.Fields)
+	slug := publicSlugColumn(included)
+	p := names.Pascal
+
+	out := `
+// ListPublic returns one page of what the public surface may list, which is
+// never an archived row. cfg is the public allowlist the public handler keeps.
+func (s *` + p + `Service) ListPublic(ctx context.Context, params paginate.Params, cfg paginate.Config) (paginate.Result[models.` + p + `], error) {
+	query := s.db(ctx).Model(&models.` + p + `{}).Where("archived_at IS NULL")
+	return paginate.List[models.` + p + `](query, params, cfg)
+}
+
+// GetPublic returns the live ` + names.Lower + ` whose ` + slug + ` is key.
+func (s *` + p + `Service) GetPublic(ctx context.Context, key string) (*models.` + p + `, error) {
+	var item models.` + p + `
+	if err := s.db(ctx).Where("` + slug + ` = ? AND archived_at IS NULL", key).First(&item).Error; err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+`
+	if g.Definition.Tree {
+		out += `
+// PublicSubtreeIDs returns the ids of the live rows at or under path: a node
+// and everything below it, in one indexed LIKE on the materialized path.
+func (s *` + p + `Service) PublicSubtreeIDs(ctx context.Context, path string) ([]string, error) {
+	var ids []string
+	err := s.db(ctx).Model(&models.` + p + `{}).
+		Where("path LIKE ? AND archived_at IS NULL", path+"%").
+		Pluck("id", &ids).Error
+	return ids, err
+}
+
+// PublicTreeRows returns every live row, parents before their children and
+// siblings in the order the admin arranged, for the public tree to assemble.
+func (s *` + p + `Service) PublicTreeRows(ctx context.Context) ([]models.` + p + `, error) {
+	var rows []models.` + p + `
+	err := s.db(ctx).Where("archived_at IS NULL").
+		Order("depth asc, position asc, name asc").
+		Find(&rows).Error
+	return rows, err
+}
+`
+	}
+	if rel, ok := relatedParent(names, g.Definition); ok {
+		out += `
+// RelatedPublic returns up to limit live ` + names.Plural + ` sharing item's
+// ` + rel.name + `, newest first, item excluded. A row with no ` + rel.name + ` has no
+// siblings, so it gets the newest rows instead: a worse recommendation than a
+// real match, and a better one than an empty strip.
+func (s *` + p + `Service) RelatedPublic(ctx context.Context, item *models.` + p + `, limit int) ([]models.` + p + `, error) {
+	query := s.db(ctx).Model(&models.` + p + `{}).
+		Where("id <> ? AND archived_at IS NULL", item.ID)
+	if ` + rel.set + ` {
+		query = query.Where("` + rel.fk + ` = ?", ` + rel.value + `)
+	}
+	var rows []models.` + p + `
+	err := query.Order("created_at desc").Limit(limit).Find(&rows).Error
+	return rows, err
+}
+`
+	}
+	return out
 }
 
 // publicGoType maps a field to the Go type the view struct uses.
@@ -622,7 +693,7 @@ func (g *Generator) ensurePublicRoutes(names Names) error {
 // per level.
 func detailPayload(names Names, def *ResourceDefinition) string {
 	if !def.Tree {
-		return "toPublic" + names.Pascal + "(item)"
+		return "toPublic" + names.Pascal + "(*item)"
 	}
 	return "out"
 }
@@ -635,12 +706,13 @@ func treeGetPublicPrelude(names Names, def *ResourceDefinition) string {
 	return `
 	// This node and everything under it, which is what "products in Electronics"
 	// means to a customer. One indexed LIKE on the materialized path.
-	out := toPublic` + names.Pascal + `(item)
-	var descendantIDs []string
-	h.DB.Model(&models.` + names.Pascal + `{}).
-		Where("path LIKE ? AND archived_at IS NULL", item.Path+"%").
-		Pluck("id", &descendantIDs)
-	out.DescendantIDs = descendantIDs
+	out := toPublic` + names.Pascal + `(*item)
+	descendantIDs, err := h.service().PublicSubtreeIDs(c.Request.Context(), item.Path)
+	if err != nil {
+		h.fail(c, err, "Failed to load ` + names.Lower + `")
+		return
+	}
+out.DescendantIDs = descendantIDs
 `
 }
 
@@ -693,14 +765,9 @@ type public` + names.Pascal + `Node struct {
 // so a parent is always in the map before its children arrive, then by position
 // and name so the order matches what the admin arranged.
 func (h *` + names.Pascal + `Handler) TreePublic(c *gin.Context) {
-	var rows []models.` + names.Pascal + `
-	err := h.DB.Where("archived_at IS NULL").
-		Order("depth asc, position asc, name asc").
-		Find(&rows).Error
+	rows, err := h.service().PublicTreeRows(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to load the tree",
-		}})
+		h.fail(c, err, "Failed to load the tree")
 		return
 	}
 
