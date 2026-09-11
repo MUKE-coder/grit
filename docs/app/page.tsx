@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { Activity, ArrowRight, Bot, Building2, Check, ChevronDown, Database, FileCheck, Flag, Github, HardDrive, Heart, Layers, LayoutDashboard, Lock, Mail, Monitor, Radio, Rocket, Server, Shield, Smartphone, Terminal, TestTube2, TrendingUp, UploadCloud, UserCheck, Webhook, Zap } from 'lucide-react'
+import { Activity, ArrowRight, Bot, Building2, Check, ChevronDown, Database, Eye, FileCheck, Flag, Github, HardDrive, Heart, Layers, LayoutDashboard, Lock, Mail, Monitor, Radio, Rocket, Server, Shield, Smartphone, Terminal, TestTube2, TrendingUp, UploadCloud, UserCheck, Webhook, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { CodeBlock } from '@/components/code-block'
@@ -300,6 +300,7 @@ export default function HomePage() {
               { icon: Activity, label: 'Observability (Pulse)', href: '/docs/backend/pulse' },
               { icon: Shield, label: 'WAF & rate limiting', href: '/docs/security' },
               { icon: FileCheck, label: 'Tamper-evident audit log', href: '/docs/security' },
+              { icon: Eye, label: 'Read-access audit', href: '/docs/security/compliance#read-access' },
               { icon: Database, label: 'Append-only records', href: '/docs/backend/append-only' },
               { icon: TrendingUp, label: 'Exact multi-currency money', href: '/docs/concepts/money' },
               { icon: Building2, label: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
@@ -489,8 +490,9 @@ export default function HomePage() {
             </h2>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
               GDPR export and erasure with a tamper-evident journal, SSO per customer over OIDC
-              or SAML, access-review campaigns for SOC 2, and a hash-chained audit trail that
-              exports to your SIEM. Built in, not bought later.
+              or SAML, access-review campaigns for SOC 2, and a hash-chained audit trail of every
+              write, and of every read where access itself has to be accounted for, that exports
+              to your SIEM. Built in, not bought later.
             </p>
           </div>
 

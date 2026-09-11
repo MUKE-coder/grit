@@ -102,12 +102,13 @@ POST   /api/v1/access-reviews/:id/complete          // freeze it
     icon: FileSearch,
     headline: 'Two logs, because they answer different questions',
     blurb:
-      'A hash-chained record of every authenticated mutation for evidence, and a readable event timeline for operators. Both export to a SIEM in OCSF.',
+      'A hash-chained record of every authenticated mutation, and of every read you ask it to keep, for evidence; and a readable event timeline for operators. Both export to a SIEM in OCSF.',
     points: [
       'Every authenticated POST/PUT/PATCH/DELETE is chained: prev hash, this hash',
+      'Resources generated with --audit-reads add every read: who, which rows, when, with the search terms kept only as a digest',
       'Bodies are stored as a SHA-256 digest: evidence of what was sent, without the PII',
       'One button replays the chain and names the first row that fails: the screenshot is a real detection, after a row was edited straight in the database',
-      'Written by a single goroutine off a buffered channel, so the chain cannot race',
+      'Stamped at the precision the database stores and written under a database lock, so the chain verifies on Postgres and MySQL and cannot fork across replicas',
       'GET /audit/ocsf streams newline-delimited OCSF 1.3.0 for Splunk, Sentinel or Panther',
     ],
     image: '/images/system/audit.png',
