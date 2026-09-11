@@ -23,6 +23,7 @@ import (
 func (g *Generator) ensureEventsSupport() error {
 	apiRoot := g.APIRoot()
 
+	eventsPath := filepath.Join(apiRoot, "internal", "events", "events.go")
 	for _, f := range []struct {
 		path string
 		body string
@@ -30,12 +31,25 @@ func (g *Generator) ensureEventsSupport() error {
 		// earlier release can exist and still be missing it, which fails the
 		// build with an undefined reference rather than anything explanatory.
 		needs string
+		// what names the missing piece in the warning.
+		what string
+		// requires, when set, is a symbol events.go must have before this file
+		// is written: durable.go uses what a current events.go declares, so
+		// writing it beside an old one would break the build instead of fixing it.
+		requires string
 	}{
-		{filepath.Join(apiRoot, "internal", "events", "events.go"), scaffold.APIEventsGo(), "func Emitted("},
-		{filepath.Join(apiRoot, "internal", "services", "event_subscribers.go"), scaffold.APIEventsSubscribersGo(), "func RegisterEventSubscribers("},
+		{eventsPath, scaffold.APIEventsGo(), "wantDurable", "Durable delivery", ""},
+		{filepath.Join(apiRoot, "internal", "events", "durable.go"), scaffold.APIEventsDurableGo(), "func EmitTx(", "EmitTx", "wantDurable"},
+		{filepath.Join(apiRoot, "internal", "outbox", "outbox.go"), scaffold.APIOutboxGo(), "func Enqueue(", "Enqueue", ""},
+		{filepath.Join(apiRoot, "internal", "outbox", "relay.go"), scaffold.APIOutboxRelayGo(), "TopicPrefix", "the relay's TopicPrefix", ""},
+		{filepath.Join(apiRoot, "internal", "models", "outbox_message.go"), scaffold.APIOutboxModelGo(), "type OutboxMessage struct", "OutboxMessage", ""},
+		{filepath.Join(apiRoot, "internal", "services", "event_subscribers.go"), scaffold.APIEventsSubscribersGo(), "func RegisterEventSubscribers(", "RegisterEventSubscribers", ""},
 	} {
 		body := strings.ReplaceAll(f.body, "{{MODULE}}", g.Module)
 		rel := strings.TrimPrefix(filepath.ToSlash(f.path), filepath.ToSlash(apiRoot)+"/")
+		if f.requires != "" && !fileContainsText(eventsPath, f.requires) {
+			continue
+		}
 
 		if !fileExists(f.path) {
 			if err := writeFileWithDirs(f.path, body); err != nil {
@@ -54,7 +68,7 @@ func (g *Generator) ensureEventsSupport() error {
 		// has edited it, on the same rule the upgrade guard follows: no
 		// evidence is not permission.
 		if !g.refreshIfUnchanged(f.path, body) {
-			color.New(color.FgHiYellow).Printf("\n  ⚠ %s is from an earlier release and is missing %s\n", rel, strings.TrimSuffix(f.needs, "("))
+			color.New(color.FgHiYellow).Printf("\n  ⚠ %s is from an earlier release and is missing %s\n", rel, f.what)
 			fmt.Println("    The build will fail with an undefined reference. Replace that file")
 			fmt.Println("    with the current template, or delete it and generate again.")
 			fmt.Println()
@@ -80,6 +94,12 @@ func (g *Generator) ensureEventsBoot() error {
 	}
 	content := string(data)
 	if strings.Contains(content, "events.Init(") {
+		// Started before Durable delivery existed: add the relay.
+		if changed, err := scaffold.EnsureEventRelay(g.APIRoot()); err != nil {
+			color.New(color.FgHiYellow).Printf("\n  ⚠ %v\n\n", err)
+		} else if changed {
+			fmt.Println("  ✓ Started the event relay in routes.Setup")
+		}
 		return nil
 	}
 
@@ -102,6 +122,9 @@ func (g *Generator) ensureEventsBoot() error {
 		"\t// realtime and (when installed) webhooks subscribe.\n" +
 		"\tevents.Init(4)\n" +
 		"\tservices.RegisterEventSubscribers(db, realtimeHub, nil)"
+	if fileContainsText(filepath.Join(g.APIRoot(), "internal", "events", "durable.go"), "func StartRelay(") {
+		boot += "\n\tevents.StartRelay(db)"
+	}
 	content = content[:insertAt] + boot + content[insertAt:]
 
 	// The import has to come with it, or the file stops compiling.
@@ -122,4 +145,10 @@ func (g *Generator) ensureEventsBoot() error {
 	manifest.Refresh(path)
 	fmt.Println("  ✓ Started the event bus in routes.Setup")
 	return nil
+}
+
+// fileContainsText reports whether a file exists and contains a string.
+func fileContainsText(path, needle string) bool {
+	data, err := os.ReadFile(path)
+	return err == nil && strings.Contains(string(data), needle)
 }

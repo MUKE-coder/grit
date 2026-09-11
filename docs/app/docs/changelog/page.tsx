@@ -29,6 +29,52 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.221.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.221.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A workflow could change a status, and nothing else</h3>
+                <p>
+                  Found building an ERP, where approving a purchase request has to draw down the
+                  department&apos;s budget and reserve the stock, and fulfilling it has to reach the HR
+                  ledger. A generated transition was one <code>UPDATE</code> and an in-memory event.
+                  Work belonging to the move could only go in a subscriber, which ran after the approval
+                  had committed, could not refuse it, and, being async, was lost on a restart or a full
+                  queue and never retried. The outbox that would have made it reliable was scaffolded
+                  into every project, and nothing started its relay.
+                </p>
+                <p>
+                  Transitions now run in a transaction. Hooks registered with{' '}
+                  <code>workflow.OnTransition</code> run inside it, after the status changes: what they
+                  write commits or rolls back with the move, and <code>workflow.Refuse</code> undoes it
+                  with a 422 carrying your reason. A new <code>Durable</code> delivery, with{' '}
+                  <code>events.OnDurable</code> for subscribers that write to the database, writes the
+                  event to the outbox in that same transaction, and a relay started at boot delivers it
+                  with retries, across restarts and replicas. <code>events.On</code> called from an{' '}
+                  <code>init()</code>, which used to be dropped silently because it ran before the bus
+                  existed, now takes effect. A transition that failed for any unrecognised reason
+                  answered 403; it is now a 500, with the detail in the log.
+                </p>
+                <p>
+                  Verified on Postgres with a purchase-request workflow: an over-budget approval and one
+                  without stock were refused, the second rolling back its budget draw-down; ten
+                  simultaneous approvals of 100 against a budget of 600 approved six and left it at
+                  zero; twenty simultaneous approvals of one request drew it down once; seven
+                  fulfilments reached the ledger through a subscriber that failed its first two
+                  deliveries, once each; and one the ledger refused until the API was restarted was
+                  delivered by the restarted process. <code>grit upgrade</code> adds the files and starts
+                  the relay in an existing <code>routes.go</code>; regenerate a workflow resource to give
+                  its transitions the transaction.
+                </p>
+              </div>
+            </div>
+
             {/* v3.220.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

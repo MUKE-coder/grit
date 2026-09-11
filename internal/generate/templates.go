@@ -1964,26 +1964,20 @@ func (h *` + names.Pascal + `Handler) Transition(c *gin.Context) {
 
 	item, err := services.Transition` + names.Pascal + `(h.DB, c, id, action, can)
 	if err != nil {
-		switch err.(type) {
-		case workflow.ErrInvalidTransition, workflow.ErrUnknownAction:
-			// 422, not 400 and not 500. The request was well-formed and the
-			// server is fine; the process does not allow this move, and the
-			// message says which moves it does allow.
-			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
-				"code":    "INVALID_TRANSITION",
-				"message": err.Error(),
-			}})
-		default:
-			if err == gorm.ErrRecordNotFound {
-				c.JSON(http.StatusNotFound, gin.H{"error": gin.H{
-					"code": "NOT_FOUND", "message": "` + names.Pascal + ` not found",
-				}})
-				return
-			}
-			c.JSON(http.StatusForbidden, gin.H{"error": gin.H{
-				"code": "FORBIDDEN", "message": err.Error(),
-			}})
+		// An illegal move or one a hook refused is a 422 saying why, a missing
+		// permission a 403. Anything else is a 500 whose detail stays in the
+		// log: it used to be answered as a 403, so a database failure read as
+		// "you are not allowed".
+		status, code := workflow.Classify(err)
+		message := err.Error()
+		switch status {
+		case http.StatusNotFound:
+			message = "` + names.Pascal + ` not found"
+		case http.StatusInternalServerError:
+			log.Printf("transition %s on ` + names.Lower + ` %s: %v", action, id, err)
+			message = "The transition could not be completed"
 		}
+		c.JSON(status, gin.H{"error": gin.H{"code": code, "message": message}})
 		return
 	}
 

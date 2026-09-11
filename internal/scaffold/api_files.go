@@ -46,7 +46,6 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):                apiRealtimeHandlerGo(),
 		filepath.Join(apiRoot, "internal", "sync", "registry.go"):                    apiSyncRegistryGo(),
 		filepath.Join(apiRoot, "internal", "sync", "policy.go"):                      apiSyncPolicyGo(),
-		filepath.Join(apiRoot, "internal", "workflow", "workflow.go"):                apiWorkflowGo(),
 		filepath.Join(apiRoot, "internal", "settings", "settings.go"):                apiSettingsRegistryGo(),
 		filepath.Join(apiRoot, "internal", "settings", "store.go"):                   apiSettingsStoreGo(),
 		filepath.Join(apiRoot, "internal", "settings", "defaults.go"):                apiSettingsDefaultsGo(),
@@ -8964,6 +8963,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// (when the plugin is installed) outbound webhooks.
 	events.Init(4)
 	services.RegisterEventSubscribers(db, realtimeHub, nil)
+	// Durable subscribers are delivered from the outbox by this relay. Every
+	// replica runs one; row claims keep two from delivering a message twice.
+	events.StartRelay(db)
 
 	// Settings: declare, then open the store. Declaring after Init would mean
 	// a setting the first cache load never saw.
