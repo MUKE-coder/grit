@@ -29,6 +29,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.215.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.215.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The activity log never verified on Postgres or MySQL</h3>
+                <p>
+                  Found while adding read auditing to a patient-records app: the integrity check
+                  reported the chain broken at its very first entry, on two projects whose logs
+                  nobody had touched. The hash covers each entry&apos;s timestamp. The writer
+                  stamped it in nanoseconds and Postgres stores microseconds, so the row read
+                  back never hashes the way it was written. Proven by taking a stored row and
+                  finding the 400 nanoseconds that reproduce its stored hash exactly. MySQL keeps
+                  milliseconds and failed the same way; SQLite keeps what it is given, which is
+                  why no test ever saw it.
+                </p>
+                <p>
+                  Entries are now stamped by the writer itself, at millisecond precision and
+                  strictly after the entry before, so verification walks them in the order they
+                  were written. Each batch also takes a database lock and reads the latest hash
+                  from the database. Before, every process kept the latest hash in memory, so two
+                  API replicas would each have chained off their own and forked the log.
+                </p>
+
+                <h3>Security events were written outside the chain</h3>
+                <p>
+                  <code>LogSecurityEvent</code> inserted rows with no hash at all. Nothing in a
+                  stock project calls it yet, but the first call would have broken verification,
+                  and the unique index on the hash column would have refused every event after it.
+                  It now writes through the chain like everything else.
+                </p>
+
+                <h3>Logs written before this release</h3>
+                <p>
+                  <code>grit upgrade</code> installs the new writer. Entries written before it can
+                  never verify, through no one&apos;s tampering, so the admin audit page now offers
+                  a reseal from the first bad entry. You type the entry&apos;s id to confirm; the
+                  reseal recomputes the chain from there and records itself in it, with who did
+                  it and a digest of every hash it replaced. A reseal trusts the rows as they
+                  stand, so it is never automatic. Verified on both projects: each chain failed at
+                  its first entry after the upgrade, verified after a reseal, and still verified
+                  after 50 concurrent writes.
+                </p>
+              </div>
+            </div>
+
             {/* v3.214.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

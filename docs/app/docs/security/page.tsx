@@ -296,6 +296,16 @@ if errors.Is(err, safefetch.ErrBlocked) {
           a retroactive deletion breaks the chain at verification time).
         </p>
         <p>
+          The hash covers each entry&apos;s timestamp, so entries are stamped at millisecond
+          precision, which every supported database stores exactly, and each one strictly after
+          the last. Before v3.215.0 the stamp carried nanoseconds, Postgres and MySQL rounded them
+          away, and verification failed on the first entry of every such log. A chain written
+          then can be resealed from the admin audit page, or with{' '}
+          <code>POST /api/admin/activity/reseal</code> naming the first bad entry. A reseal trusts
+          every entry from that point as it stands, so it is never automatic, and it is recorded in
+          the chain itself, with who did it and a digest of every hash it replaced.
+        </p>
+        <p>
           <strong>Alerting</strong> is wired through Sentinel&apos;s AuthShield + Anomaly
           modules and visible in the <code>/sentinel/ui</code> dashboard. Hook external
           alerting (PagerDuty, Slack, email) via Sentinel webhooks for spikes in failed

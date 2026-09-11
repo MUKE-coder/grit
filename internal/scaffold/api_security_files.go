@@ -730,6 +730,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/audit"
 	"{{MODULE}}/internal/models"
 )
 
@@ -759,6 +760,10 @@ const (
 // activity log already provides (a deleted security event breaks the
 // chain at verify time), without a separate model to maintain.
 //
+// Written through the chain, so it is linked and stamped like every other
+// entry. It used to be inserted directly with no hash at all: the first event
+// broke verification, and the unique index on hash refused every event after.
+//
 // Database errors are logged but never returned — failing a login or
 // logout because the audit log had a hiccup turns audit infrastructure
 // into a DoS amplifier. The request itself was usually fine.
@@ -773,7 +778,7 @@ func LogSecurityEvent(ctx context.Context, db *gorm.DB, userID, event, ip, userA
 		IPAddress: ip,
 		UserAgent: userAgent,
 	}
-	if err := db.WithContext(ctx).Create(&entry).Error; err != nil {
+	if err := audit.AppendChained(db.WithContext(ctx), &entry); err != nil {
 		log.Printf("security_log: failed to record %s: %v", event, err)
 	}
 }

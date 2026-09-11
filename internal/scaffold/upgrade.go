@@ -216,6 +216,14 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairResourceHandlers(root, opts); err != nil {
 			fmt.Printf("  ⚠ repairing resource handlers: %v\n", err)
 		}
+		// The activity-log chain was hashed at a precision Postgres and MySQL
+		// do not store, so it failed verification on its first row. Only where
+		// the audit package is already there.
+		if fileExists(filepath.Join(opts.APIRoot(root), "internal", "audit", "audit.go")) {
+			if err := writeAuditChainFiles(root, opts); err != nil {
+				return fmt.Errorf("updating the audit chain: %w", err)
+			}
+		}
 		// Read-only. .env holds secrets and is the developer's, so a URL that
 		// disagrees with the port compose binds is reported, not rewritten.
 		for _, w := range envPortDrift(root) {

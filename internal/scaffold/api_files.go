@@ -59,6 +59,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "activity.go"):                apiActivityHandlerGo(),
 		filepath.Join(apiRoot, "internal", "respond", "respond.go"):                  apiRespondGo(),
 		filepath.Join(apiRoot, "internal", "audit", "audit.go"):                      apiAuditGo(),
+		filepath.Join(apiRoot, "internal", "audit", "chain_test.go"):                 apiAuditChainTestGo(),
 		filepath.Join(apiRoot, "internal", "webhooks", "verifiers.go"):               apiWebhooksVerifiersGo(),
 		filepath.Join(apiRoot, "internal", "models", "feature_flag.go"):              apiFeatureFlagModelGo(),
 		filepath.Join(apiRoot, "internal", "flags", "flags.go"):                      apiFlagsGo(),
@@ -4980,6 +4981,12 @@ type ActivityLog struct {
 	IPAddress     string    ` + "`" + `gorm:"size:45" json:"ip_address"` + "`" + `
 	UserAgent     string    ` + "`" + `gorm:"size:500" json:"user_agent"` + "`" + `
 	DurationMS    int64     ` + "`" + `json:"duration_ms"` + "`" + `
+	// What an audited read served, or what a reseal covered. Empty on every
+	// other entry, and left out of the hash when empty, so entries written
+	// before these fields existed hash exactly as they did.
+	Resource    string ` + "`" + `gorm:"size:100;index" json:"resource,omitempty"` + "`" + `
+	ResourceIDs string ` + "`" + `gorm:"type:text" json:"resource_ids,omitempty"` + "`" + `
+	RecordCount int    ` + "`" + `json:"record_count,omitempty"` + "`" + `
 	PrevHash      string    ` + "`" + `gorm:"size:64" json:"prev_hash"` + "`" + ` // hex sha256, "" for the genesis row
 	Hash          string    ` + "`" + `gorm:"size:64;uniqueIndex" json:"hash"` + "`" + ` // hex sha256(prev_hash || canonical)
 	CreatedAt     time.Time ` + "`" + `gorm:"index" json:"created_at"` + "`" + `
@@ -5024,8 +5031,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
+	"sync"
+	"sync/atomic"
 	"time"
+	"unicode/utf8"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -5050,6 +5062,9 @@ func Canonical(e *models.ActivityLog) ([]byte, error) {
 		// Use unix-nano so the canonical bytes are stable across tz
 		// changes / TIMESTAMPTZ formatting differences.
 		CreatedAtUnixNano: e.CreatedAt.UTC().UnixNano(),
+		Resource:          e.Resource,
+		ResourceIDs:       e.ResourceIDs,
+		RecordCount:       e.RecordCount,
 	}
 	return json.Marshal(c)
 }
@@ -5066,6 +5081,11 @@ type canonicalEntry struct {
 	UserAgent         string ` + "`" + `json:"user_agent"` + "`" + `
 	DurationMS        int64  ` + "`" + `json:"duration_ms"` + "`" + `
 	CreatedAtUnixNano int64  ` + "`" + `json:"created_at_unix_nano"` + "`" + `
+	// Appended, and omitted when empty, so every entry written before they
+	// existed has the same bytes and old chains still verify.
+	Resource    string ` + "`" + `json:"resource,omitempty"` + "`" + `
+	ResourceIDs string ` + "`" + `json:"resource_ids,omitempty"` + "`" + `
+	RecordCount int    ` + "`" + `json:"record_count,omitempty"` + "`" + `
 }
 
 // ComputeHash returns hex(sha256(prevHash || canonical)) — the prev
@@ -5078,33 +5098,264 @@ func ComputeHash(prevHash string, canonical []byte) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// AppendChained inserts a new ActivityLog with PrevHash + Hash filled
-// in. Intended for ad-hoc / one-off audit writes from app code (NOT
-// the hot-path middleware — that uses the buffered worker pattern).
+// Precision is what every supported database keeps of a timestamp: Postgres
+// stores microseconds and MySQL, as GORM creates the column, milliseconds.
+// The hash covers created_at, so a stamp finer than the column gives a hash
+// nobody can recompute from the stored row. Before v3.215.0 every entry carried
+// nanoseconds, and the chain failed verification on its first row on both.
+const Precision = time.Millisecond
+
+// chainLockKey is the Postgres advisory lock every chain writer takes, so two
+// API replicas never read the same latest hash and fork the chain.
+const chainLockKey int64 = 0x677269745f617564
+
+var (
+	queue     = make(chan models.ActivityLog, 4096)
+	startOnce sync.Once
+	dropped   atomic.Uint64
+)
+
+// Start runs this process's chain writer. Safe to call more than once.
 //
-// Concurrency note: this function takes a row-level FOR UPDATE lock
-// on the latest row to serialize concurrent callers. Use sparingly;
-// for any high-throughput audit source, route through the middleware's
-// channel writer instead.
+// One writer fed by a bounded channel, so a burst of requests never waits on
+// the database or spawns a goroutine per entry. It is not what keeps the chain
+// whole across processes: every batch takes the chain lock and reads the latest
+// hash from the database, so each replica can run one.
+func Start(db *gorm.DB) {
+	startOnce.Do(func() { go writer(db) })
+}
+
+// Enqueue hands an entry to the writer without blocking, and reports false
+// when the backlog was full and the entry was dropped. Losing an audit row is
+// better than stalling the request path; Dropped says how often it happened.
+func Enqueue(entry models.ActivityLog) bool {
+	select {
+	case queue <- entry:
+		return true
+	default:
+		dropped.Add(1)
+		return false
+	}
+}
+
+// Dropped is how many entries Enqueue has dropped since the process started.
+// Sustained growth means the writer cannot keep up.
+func Dropped() uint64 { return dropped.Load() }
+
+func writer(db *gorm.DB) {
+	for first := range queue {
+		batch := []models.ActivityLog{first}
+	drain:
+		for len(batch) < 256 {
+			select {
+			case e := <-queue:
+				batch = append(batch, e)
+			default:
+				break drain
+			}
+		}
+		if err := appendBatch(db, batch); err != nil {
+			// One bad entry must not take the rest of the batch with it.
+			for _, e := range batch {
+				if err := appendBatch(db, []models.ActivityLog{e}); err != nil {
+					log.Printf("[audit] could not record %s %s: %v", e.Method, e.Path, err)
+				}
+			}
+		}
+	}
+}
+
+// AppendChained writes one entry and returns once it is stored, for a caller
+// that must know it landed: a security event, a reseal. Same lock and same
+// stamping as the writer, so the two never fork the chain between them.
 func AppendChained(db *gorm.DB, entry *models.ActivityLog) error {
+	batch := []models.ActivityLog{*entry}
+	if err := appendBatch(db, batch); err != nil {
+		return err
+	}
+	*entry = batch[0]
+	return nil
+}
+
+// appendBatch chains entries onto the latest stored one, in one transaction
+// holding the chain lock. created_at is stamped here rather than by the caller:
+// at the precision every database keeps, and strictly after the entry before,
+// so VerifyChain's (created_at, id) order is the order the chain was written.
+func appendBatch(db *gorm.DB, entries []models.ActivityLog) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		var prev models.ActivityLog
-		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Order("created_at desc, id desc").
-			Limit(1).
-			First(&prev).Error
-		if err != nil && err != gorm.ErrRecordNotFound {
+		head, err := lockAndReadHead(tx)
+		if err != nil {
 			return err
 		}
-
-		canonical, err := Canonical(entry)
-		if err != nil {
-			return fmt.Errorf("canonicalize: %w", err)
+		prevHash, last := head.Hash, head.CreatedAt
+		for i := range entries {
+			e := &entries[i]
+			clipToColumns(e)
+			e.CreatedAt = nextStamp(last)
+			canonical, err := Canonical(e)
+			if err != nil {
+				return fmt.Errorf("canonicalize: %w", err)
+			}
+			e.PrevHash = prevHash
+			e.Hash = ComputeHash(prevHash, canonical)
+			if err := tx.Create(e).Error; err != nil {
+				return err
+			}
+			prevHash, last = e.Hash, e.CreatedAt
 		}
-		entry.PrevHash = prev.Hash
-		entry.Hash = ComputeHash(prev.Hash, canonical)
-		return tx.Create(entry).Error
+		return nil
 	})
+}
+
+// lockAndReadHead takes the chain lock and returns the latest entry, or a zero
+// entry for an empty log. Postgres takes an advisory lock held until the
+// transaction ends; MySQL a locking read, which sees the latest committed row
+// once granted; SQLite serialises writers on its own.
+func lockAndReadHead(tx *gorm.DB) (models.ActivityLog, error) {
+	var head models.ActivityLog
+	q := tx.Order("created_at desc, id desc").Limit(1)
+	switch tx.Dialector.Name() {
+	case "postgres":
+		if err := tx.Exec("SELECT pg_advisory_xact_lock(?)", chainLockKey).Error; err != nil {
+			return head, fmt.Errorf("taking the audit chain lock: %w", err)
+		}
+	case "mysql":
+		q = q.Clauses(clause.Locking{Strength: "UPDATE"})
+	}
+	if err := q.Find(&head).Error; err != nil {
+		return head, fmt.Errorf("reading the chain head: %w", err)
+	}
+	return head, nil
+}
+
+// nextStamp is now at the chain's precision, and strictly after prev.
+func nextStamp(prev time.Time) time.Time {
+	now := time.Now().UTC().Truncate(Precision)
+	if !prev.IsZero() {
+		if floor := prev.UTC().Truncate(Precision).Add(Precision); now.Before(floor) {
+			now = floor
+		}
+	}
+	return now
+}
+
+// clipToColumns trims what could overflow its column, before hashing, so the
+// stored row is the hashed row. An oversized user agent used to fail the insert
+// and lose the entry.
+func clipToColumns(e *models.ActivityLog) {
+	e.Method = clip(e.Method, 10)
+	e.Path = clip(e.Path, 500)
+	e.IPAddress = clip(e.IPAddress, 45)
+	e.UserAgent = clip(e.UserAgent, 500)
+	e.Resource = clip(e.Resource, 100)
+}
+
+// clip shortens s to at most n bytes without splitting a character, which a
+// database would refuse as invalid UTF-8.
+func clip(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	s = s[:n]
+	for len(s) > 0 && !utf8.ValidString(s) {
+		s = s[:len(s)-1]
+	}
+	return s
+}
+
+// ErrChainIntact is returned by Reseal when the chain verifies.
+var ErrChainIntact = errors.New("the chain verifies: there is nothing to reseal")
+
+// ErrNotTheBreak is returned by Reseal when the entry named is not the first
+// one that fails verification.
+var ErrNotTheBreak = errors.New("that is not the first entry that fails verification")
+
+// Reseal recomputes the chain from its first bad entry, and records that it did.
+//
+// For a log that fails through no one's tampering: before v3.215.0 every entry
+// was hashed with a timestamp finer than Postgres and MySQL store, so those
+// chains fail on their first row and always will. A reseal trusts the rows as
+// they stand now, which is exactly what makes it dangerous, so it is never
+// automatic. The caller names the first bad entry, which is checked against a
+// fresh verification, and the reseal appends a SECURITY entry naming who did
+// it, from which entry, how many it covered, and a digest of every hash it
+// replaced. Changing that entry afterwards breaks the chain like any other.
+func Reseal(ctx context.Context, db *gorm.DB, fromID, userID, ip, userAgent string) (int, error) {
+	status, err := VerifyChain(ctx, db)
+	if err != nil {
+		return 0, err
+	}
+	if status.Valid {
+		return 0, ErrChainIntact
+	}
+	if status.BrokenAtID != fromID {
+		return 0, fmt.Errorf("%w: the chain first fails at %s", ErrNotTheBreak, status.BrokenAtID)
+	}
+
+	resealed := 0
+	err = db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if _, err := lockAndReadHead(tx); err != nil {
+			return err
+		}
+		var from models.ActivityLog
+		if err := tx.First(&from, "id = ?", fromID).Error; err != nil {
+			return fmt.Errorf("loading %s: %w", fromID, err)
+		}
+		// The entry before the break is the last one that verified.
+		var before models.ActivityLog
+		if err := tx.Where("(created_at, id) < (?, ?)", from.CreatedAt, from.ID).
+			Order("created_at desc, id desc").Limit(1).Find(&before).Error; err != nil {
+			return fmt.Errorf("loading the entry before %s: %w", fromID, err)
+		}
+
+		prevHash := before.Hash
+		replaced := sha256.New()
+		cond, args := "(created_at, id) >= (?, ?)", []interface{}{from.CreatedAt, from.ID}
+		for {
+			var batch []models.ActivityLog
+			if err := tx.Where(cond, args...).Order("created_at asc, id asc").
+				Limit(verifyBatchSize).Find(&batch).Error; err != nil {
+				return err
+			}
+			for i := range batch {
+				e := &batch[i]
+				canonical, err := Canonical(e)
+				if err != nil {
+					return err
+				}
+				hash := ComputeHash(prevHash, canonical)
+				replaced.Write([]byte(e.Hash))
+				if err := tx.Model(&models.ActivityLog{}).Where("id = ?", e.ID).
+					Updates(map[string]interface{}{"prev_hash": prevHash, "hash": hash}).Error; err != nil {
+					return fmt.Errorf("resealing %s: %w", e.ID, err)
+				}
+				prevHash = hash
+				resealed++
+			}
+			if len(batch) < verifyBatchSize {
+				break
+			}
+			last := batch[len(batch)-1]
+			cond, args = "(created_at, id) > (?, ?)", []interface{}{last.CreatedAt, last.ID}
+		}
+
+		return appendBatch(tx, []models.ActivityLog{{
+			UserID:        userID,
+			Method:        "SECURITY",
+			Path:          "audit.chain.resealed",
+			Status:        200,
+			PayloadDigest: hex.EncodeToString(replaced.Sum(nil)),
+			IPAddress:     ip,
+			UserAgent:     userAgent,
+			Resource:      "activity_logs",
+			ResourceIDs:   fromID,
+			RecordCount:   resealed,
+		}})
+	})
+	if err != nil {
+		return 0, err
+	}
+	return resealed, nil
 }
 
 // ChainStatus is the result of VerifyChain.
@@ -6437,10 +6688,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"io"
-	"log"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -6466,7 +6715,8 @@ import (
 // the hash chain — only one goroutine ever appends — and the bounded
 // channel caps memory + goroutine count under traffic spikes.
 func ActivityLogger(db *gorm.DB) gin.HandlerFunc {
-	auditOnce.Do(func() { go startAuditWorker(db) })
+	// One chain writer per process, shared with the security-event log.
+	audit.Start(db)
 	return func(c *gin.Context) {
 		switch c.Request.Method {
 		case http.MethodGet, http.MethodHead, http.MethodOptions:
@@ -6513,17 +6763,10 @@ func ActivityLogger(db *gorm.DB) gin.HandlerFunc {
 			IPAddress:     resolveClientIP(c),
 			UserAgent:     c.Request.UserAgent(),
 			DurationMS:    time.Since(started).Milliseconds(),
-			CreatedAt:     time.Now(), // explicit — Canonical hashes this field
 		}
-		// Non-blocking enqueue. Channel is bounded so a runaway request
-		// rate can't spawn unbounded goroutines or exhaust the DB pool.
-		// On overflow we drop — better to lose an audit row than to
-		// stall the request path or OOM the process.
-		select {
-		case auditChan <- entry:
-		default:
-			auditDropped.Add(1)
-		}
+		// Non-blocking. The writer stamps created_at and chains the entry;
+		// with a full backlog it is dropped rather than stalling the request.
+		audit.Enqueue(entry)
 	}
 }
 
@@ -6545,69 +6788,11 @@ func resolveClientIP(c *gin.Context) string {
 	return ip
 }
 
-// auditChan is the bounded backlog for the single audit writer. 4096
-// is enough to absorb a few-second burst (10k req/s for 0.4s) without
-// blocking. The single-worker design also removes the need for a
-// row-level FOR UPDATE lock on every write — chain integrity comes
-// for free from sequential writes.
-var (
-	auditChan    = make(chan models.ActivityLog, 4096)
-	auditOnce    sync.Once
-	auditDropped atomicCounter
-)
-
-// auditDropped is exported via the integrity endpoint so ops can
-// monitor when the audit channel saturates (signal to scale or
-// reduce log noise).
-type atomicCounter struct {
-	mu sync.Mutex
-	n  uint64
-}
-
-func (c *atomicCounter) Add(n uint64) {
-	c.mu.Lock()
-	c.n += n
-	c.mu.Unlock()
-}
-
-// AuditDroppedCount returns the number of audit entries dropped due
-// to channel saturation. Read this from a /healthz or admin endpoint
-// to detect sustained back-pressure.
+// AuditDroppedCount returns the number of audit entries dropped because the
+// writer's backlog was full. Read it from a /healthz or admin endpoint to spot
+// sustained back-pressure.
 func AuditDroppedCount() uint64 {
-	auditDropped.mu.Lock()
-	defer auditDropped.mu.Unlock()
-	return auditDropped.n
-}
-
-// startAuditWorker drains auditChan and writes each entry to the
-// database with the hash chain attached. Single goroutine — no lock
-// contention, no goroutine explosion, deterministic ordering.
-//
-// On boot the worker reads the latest persisted hash so the chain
-// continues across restarts.
-func startAuditWorker(db *gorm.DB) {
-	var prev models.ActivityLog
-	prevHash := ""
-	if err := db.Order("created_at desc, id desc").Limit(1).First(&prev).Error; err == nil {
-		prevHash = prev.Hash
-	}
-
-	for entry := range auditChan {
-		canonical, err := audit.Canonical(&entry)
-		if err != nil {
-			log.Printf("[audit] canonicalize failed: %v", err)
-			continue
-		}
-		entry.PrevHash = prevHash
-		entry.Hash = audit.ComputeHash(prevHash, canonical)
-		if err := db.Create(&entry).Error; err != nil {
-			log.Printf("[audit] insert failed: %v", err)
-			// Don't advance prevHash on failure — the next successful
-			// write should chain off the last persisted row.
-			continue
-		}
-		prevHash = entry.Hash
-	}
+	return audit.Dropped()
 }
 
 func digestBody(b []byte) string {
@@ -6625,6 +6810,7 @@ func apiActivityHandlerGo() string {
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -6701,6 +6887,53 @@ func (h *ActivityHandler) VerifyIntegrity(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, status)
+}
+
+// ResealRequest names the entry a reseal starts from: the first one that
+// fails verification, as the integrity check reports it.
+type ResealRequest struct {
+	FromID string ` + "`" + `json:"from_id" binding:"required"` + "`" + `
+}
+
+// ResealResponse says how many entries were resealed.
+type ResealResponse struct {
+	Data struct {
+		Resealed int ` + "`" + `json:"resealed"` + "`" + `
+	} ` + "`" + `json:"data"` + "`" + `
+	Message string ` + "`" + `json:"message"` + "`" + `
+}
+
+// Reseal recomputes the chain from its first bad entry and records who did.
+// See audit.Reseal for when that is right, and why it is never automatic.
+//
+//	POST /api/admin/activity/reseal  {"from_id": "<broken_at_id>"}
+func (h *ActivityHandler) Reseal(c *gin.Context) {
+	var req ResealRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
+		})
+		return
+	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)
+	defer cancel()
+
+	userID, _ := c.Get("user_id")
+	uid, _ := userID.(string)
+	n, err := audit.Reseal(ctx, h.DB, req.FromID, uid, c.ClientIP(), c.Request.UserAgent())
+	switch {
+	case errors.Is(err, audit.ErrChainIntact), errors.Is(err, audit.ErrNotTheBreak):
+		c.JSON(http.StatusConflict, gin.H{
+			"error": gin.H{"code": "RESEAL_REFUSED", "message": err.Error()},
+		})
+		return
+	case err != nil:
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"resealed": n}, "message": "Chain resealed"})
 }
 `
 }
@@ -9032,6 +9265,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// Activity audit log + tamper-evident chain verification
 		admin.GET("/admin/activity", activityHandler.List)
 		admin.GET("/admin/activity/integrity", activityHandler.VerifyIntegrity)
+		admin.POST("/admin/activity/reseal", activityHandler.Reseal)
 
 		// v3.30 — semantic user activity dashboard (action + IP + severity).
 		// Separate from /admin/activity above which is the HTTP audit log.
