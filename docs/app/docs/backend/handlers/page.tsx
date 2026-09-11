@@ -441,9 +441,12 @@ func (h *PostHandler) Update(c *gin.Context) {
               <p>
                 Until v3.224.0 the generated handler ran its own queries, and the service beside it
                 was never called. <code>grit upgrade</code> does not rewrite your API code, so a
-                resource generated before then keeps that handler until you regenerate it. The
-                CSV import, the public read endpoints and the tree endpoints still query from their
-                own handler files; they move to the service next.
+                resource generated before then keeps that handler until you regenerate it. Since
+                v3.225.0 the CSV import, the public read endpoints and the tree endpoints work the
+                same way. One exception: a public handler you already have is kept on purpose,
+                because its allowlist is yours, so it goes on querying for itself until you delete
+                it and regenerate. The framework&apos;s own handlers (auth, two-factor, uploads and
+                the rest) still query directly.
               </p>
 
               {/* ── Best Practices ─────────────────────────────── */}

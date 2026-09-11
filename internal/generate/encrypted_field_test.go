@@ -54,7 +54,8 @@ func TestEncryptedFieldIsTypedThroughout(t *testing.T) {
 	api := filepath.Join(root, "apps", "api", "internal")
 	model := readTestFile(t, filepath.Join(api, "models", "patient.go"))
 	handler := readTestFile(t, filepath.Join(api, "handlers", "patient.go"))
-	importer := readTestFile(t, filepath.Join(api, "handlers", "patient_import.go"))
+	// The rows are built by the service since v3.225.0.
+	importer := readTestFile(t, filepath.Join(api, "services", "patient_import.go"))
 
 	for name, src := range map[string]string{"model": model, "handler": handler, "importer": importer} {
 		if !strings.Contains(src, `"clinic/apps/api/internal/crypto"`) {

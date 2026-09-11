@@ -680,6 +680,8 @@ func (g *Generator) serviceSource(names Names) string {
 		"{{UPDATE_SNAPSHOT}}", updateSnapshot,
 		"{{UPDATE_BODY}}", updateBody,
 		"{{UPDATE_CLEANUP}}", updateCleanup,
+		// Final text: a Replacer does not rescan what it puts in.
+		"{{PUBLIC_METHODS}}", g.publicServiceMethods(names),
 		"{{PATCH_M2M}}", p.patchM2M,
 		"{{Pascal}}", names.Pascal,
 		"{{camel}}", names.Camel,
@@ -951,7 +953,7 @@ func (s *{{Pascal}}Service) Bulk(ctx context.Context, action string, ids []strin
 	}
 	return result, nil
 }
-`)
+{{PUBLIC_METHODS}}`)
 }
 
 // writeGoHandler writes handlers/<resource>.go: the HTTP edge of the resource,

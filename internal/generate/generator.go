@@ -296,10 +296,11 @@ func (g *Generator) Run() error {
 	fmt.Printf("  ✓ %sinternal/handlers/%s.go\n", apiPrefix, names.Snake)
 
 	if err := g.writeGoImportHandler(names); err != nil {
-		return fmt.Errorf("writing Go import handler: %w", err)
+		return fmt.Errorf("writing the CSV import: %w", err)
 	}
 
 	fmt.Printf("  ✓ %sinternal/handlers/%s_import.go\n", apiPrefix, names.Snake)
+	fmt.Printf("  ✓ %sinternal/services/%s_import.go\n", apiPrefix, names.Snake)
 
 	// --tree: the hierarchy queries. Written before the public surface so a
 	// public tree endpoint has a service to call.

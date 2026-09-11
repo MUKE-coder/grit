@@ -47,6 +47,7 @@ func RemoveResource(name string) error {
 		filepath.Join(apiRoot, "internal", "services", names.Snake+".go"),
 		filepath.Join(apiRoot, "internal", "handlers", names.Snake+".go"),
 		filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_import.go"),
+		filepath.Join(apiRoot, "internal", "services", names.Snake+"_import.go"),
 		// The --public handler, and the variant files if `grit add variants`
 		// was run against this resource.
 		//

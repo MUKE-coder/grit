@@ -100,6 +100,9 @@ func TestExportReadsTheBatchItWasGiven(t *testing.T) {
 // The importer took the owner from a CSV column, so an ordinary account could
 // file records under anyone's name, and it created a user for every email it
 // did not recognise.
+//
+// The owner comes from the caller on the context: the handler puts it there,
+// and hands the service a context that outlives the request.
 func TestOwnedImportBelongsToTheImporter(t *testing.T) {
 	const module = "shop/apps/api"
 	root := setupMinimalProject(t, module)
@@ -107,20 +110,27 @@ func TestOwnedImportBelongsToTheImporter(t *testing.T) {
 	if err := g.writeGoImportHandler(names); err != nil {
 		t.Fatalf("import handler: %v", err)
 	}
-	src := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "handlers", "invoice_import.go"))
-	mustParse(t, "invoice_import.go", src)
+	dir := filepath.Join(root, "apps", "api", "internal")
+	h := readTestFile(t, filepath.Join(dir, "handlers", "invoice_import.go"))
+	s := readTestFile(t, filepath.Join(dir, "services", "invoice_import.go"))
+	importsMatchUse(t, "handlers/invoice_import.go", h)
+	importsMatchUse(t, "services/invoice_import.go", s)
 
+	if !strings.Contains(h, "go h.service().ImportCSV(context.WithoutCancel(h.ctx(c)), job.ID, tmpPath)") {
+		t.Error("the handler does not hand the import, with its caller, to the service")
+	}
 	for _, want := range []string{
-		"go h.runImportInvoice(job.ID, tmpPath, authz.CurrentUserID(c), authz.IsAdmin(c))",
+		"actor, _ := authz.ActorFrom(ctx)",
+		"ownerID, canAssignOwner := actor.UserID, actor.Admin",
 		"item.UserID = ownerID",
 		`ok && v != "" && canAssignOwner {`,
 		`"shop/apps/api/internal/authz"`,
 	} {
-		if !strings.Contains(src, want) {
+		if !strings.Contains(s, want) {
 			t.Errorf("the owned importer is missing %s", want)
 		}
 	}
-	if strings.Contains(src, "rel = models.User{") {
+	if strings.Contains(s, "rel = models.User{") {
 		t.Error("the importer still creates users")
 	}
 }
@@ -136,7 +146,7 @@ func TestImportNeverCreatesUsers(t *testing.T) {
 	if err := g.writeGoImportHandler(g.Names()); err != nil {
 		t.Fatalf("import handler: %v", err)
 	}
-	src := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "handlers", "post_import.go"))
+	src := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "services", "post_import.go"))
 	mustParse(t, "post_import.go", src)
 	if strings.Contains(src, "rel = models.User{") || strings.Contains(src, "canAssignOwner") {
 		t.Error("a shared resource's importer creates users or grew owner logic")

@@ -103,23 +103,32 @@ func TestPublicHandlerSource(t *testing.T) {
 		{Name: "slug", Type: "slug"},
 		{Name: "price", Type: "float"},
 	}
+	g.Definition.Fields = included
 	src := g.publicHandlerSource(g.Names(), included)
+	svc := g.publicServiceMethods(g.Names())
 
 	for _, want := range []string{
 		"type publicProduct struct",
 		"func toPublicProduct(",
 		"func (h *ProductHandler) ListPublic(",
 		"func (h *ProductHandler) GetPublic(",
-		// Looked up by slug, so a public URL reads as something a person could
-		// type rather than a UUID.
-		`Where("slug = ? AND archived_at IS NULL"`,
+		"h.service().ListPublic(c.Request.Context(), paginate.Bind(c), paginate.Config{",
+		`h.service().GetPublic(c.Request.Context(), c.Param("key"))`,
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("generated handler missing %q", want)
 		}
 	}
+	if strings.Contains(src, "h.DB.") {
+		t.Error("the public handler still runs a query of its own")
+	}
 
-	if !strings.Contains(src, "archived_at IS NULL") {
+	// The queries are the service's. Looked up by slug, so a public URL reads
+	// as something a person could type rather than a UUID.
+	if !strings.Contains(svc, `Where("slug = ? AND archived_at IS NULL"`) {
+		t.Error("GetPublic does not look the row up by its slug")
+	}
+	if !strings.Contains(svc, `Model(&models.Product{}).Where("archived_at IS NULL")`) {
 		t.Error("a public list must exclude archived rows")
 	}
 	// archived_at is scoped in Go and must never become a query parameter, or
@@ -158,7 +167,8 @@ func TestPublicFiltersOnlyPublishedColumns(t *testing.T) {
 	src := g.publicHandlerSource(g.Names(), included)
 
 	filters := src[strings.Index(src, "Filterable:"):]
-	filters = filters[:strings.Index(filters, "},\n\t\t},")+1]
+	// The allowlist is handed to the service as the call's last argument.
+	filters = filters[:strings.Index(filters, "},\n\t})")+1]
 
 	for _, want := range []string{
 		`"name": true`,
@@ -187,7 +197,8 @@ func TestPublicFiltersOnlyPublishedColumns(t *testing.T) {
 }
 
 // The similar-items strip. Keyed on a relation the generator picks, so it
-// cannot be turned into a filter on something unpublished.
+// cannot be turned into a filter on something unpublished. The query itself is
+// the service's: TestPublicQueriesAreTheServices.
 func TestPublicRelatedEndpoint(t *testing.T) {
 	withParent := &Generator{
 		Module: "shopfront/apps/api",
@@ -206,11 +217,7 @@ func TestPublicRelatedEndpoint(t *testing.T) {
 
 	for _, want := range []string{
 		"func (h *ProductHandler) RelatedPublic(",
-		// The model spells it CategoryID, not CategoryId.
-		"item.CategoryID",
-		`Where("category_id = ?"`,
-		// Excludes itself, or the strip shows the page you are already on.
-		`Where("id <> ? AND archived_at IS NULL"`,
+		"h.service().RelatedPublic(c.Request.Context(), item, limit)",
 		// Uncapped limits on a public route are a free way to make the
 		// database work.
 		"if limit > 24 {",

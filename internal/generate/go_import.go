@@ -6,16 +6,21 @@ import (
 	"strings"
 )
 
-// writeGoImportHandler generates internal/handlers/<name>_import.go — a bulk CSV
-// import endpoint plus a template endpoint. It lives in its own file so its
-// extra imports don't touch the main handler. Generated for every architecture;
-// POST /<plural>/import and GET /<plural>/import/template are wired by injectAll.
+// writeGoImportHandler generates the bulk CSV import of a resource, in two files.
 //
-// The import runs in the BACKGROUND: the handler reads the upload, creates an
-// ImportJob row, then processes the CSV in a goroutine and returns 202 with the
-// job id immediately. Clients poll GET /imports/:id (shared handler) for a live
-// progress bar and the final counts — so a large file never blocks the request
-// and the app can leave the screen while it runs.
+// internal/handlers/<name>_import.go is the HTTP half: it takes the upload,
+// counts its rows, starts the job and returns 202, and it serves the template.
+// internal/services/<name>_import.go is the rest: it reads the rows, resolves
+// their relations and writes them in batches, so the import runs no query from
+// the handler. Their own files, so their extra imports don't touch the main
+// handler and service. POST /<plural>/import and GET /<plural>/import/template
+// are wired by injectAll.
+//
+// The import runs in the BACKGROUND: the handler streams the upload to a temp
+// file, starts an ImportJob, hands the file to the service in a goroutine and
+// returns 202 with the job id at once. Clients poll GET /imports/:id (shared
+// handler) for a live progress bar and the final counts, so a large file never
+// blocks the request and the app can leave the screen while it runs.
 //
 // The CSV header row uses json field names. Recognised columns map to typed
 // fields; unknown columns and the auto-managed id/slug are ignored. Everything
@@ -33,7 +38,7 @@ import (
 // When ByName is true the related record is matched (and created if missing)
 // on the NaturalKeyJSON/NaturalKeyGo string column; otherwise the CSV cell is
 // treated as the related record's ID (no phantom-create). ByName is only
-// chosen when the related model actually HAS a usable string column — this is
+// chosen when the related model actually HAS a usable string column: this is
 // what stops `belongs_to:User` (no Name field) from emitting an uncompilable
 // `models.User{Name: v}`.
 type belongsToLookup struct {
@@ -47,7 +52,7 @@ type belongsToLookup struct {
 // human-friendly natural key (name/title/slug/label/email/username), then any
 // other string field. If the model file can't be read or has no string field
 // (e.g. a pure join/lookup model), it falls back to ID-based resolution so the
-// generated handler always compiles.
+// generated code always compiles.
 func (g *Generator) resolveBelongsToLookup(relModel string) belongsToLookup {
 	path := filepath.Join(g.APIRoot(), "internal", "models", toSnakeCase(relModel)+".go")
 	structs, err := parseGoStructs(path)
@@ -135,20 +140,20 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 			}
 
 			if lookup.ByName {
-				// The related model has a usable string column — resolve by
+				// The related model has a usable string column: resolve by
 				// that natural key and create the record if it's missing.
 				// Column is the relation name (e.g. "category").
 				headers = append(headers, base)
 				assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok && v != \"\" {\n"+
 					"\t\t\tvar rel models.%s\n"+
-					"\t\t\tif err := h.DB.Where(%q, v).First(&rel).Error; err != nil {\n"+
+					"\t\t\tif err := db.Where(%q, v).First(&rel).Error; err != nil {\n"+
 					"\t\t\t\trel = models.%s{%s: v}\n"+
-					"\t\t\t\th.DB.Create(&rel)\n"+
+					"\t\t\t\tdb.Create(&rel)\n"+
 					"\t\t\t}\n"+
 					"\t\t\titem.%s = "+assignExpr+"\n"+
 					"\t\t}\n", base, relModel, lookup.NaturalKeyJSON+" = ?", relModel, lookup.NaturalKeyGo, fkGo))
 			} else {
-				// No natural-key string column (e.g. belongs_to:User) —
+				// No natural-key string column (e.g. belongs_to:User):
 				// resolve by the related record's ID. Column is "<base>_id".
 				// The related record is NOT auto-created; an unknown or empty
 				// id simply leaves the foreign key unset.
@@ -156,7 +161,7 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 				headers = append(headers, idCol)
 				assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok && v != \"\" {\n"+
 					"\t\t\tvar rel models.%s\n"+
-					"\t\t\tif err := h.DB.Where(\"id = ?\", v).First(&rel).Error; err == nil {\n"+
+					"\t\t\tif err := db.Where(\"id = ?\", v).First(&rel).Error; err == nil {\n"+
 					"\t\t\t\titem.%s = rel.ID\n"+
 					"\t\t\t}\n"+
 					"\t\t}\n", idCol, relModel, fkGo))
@@ -229,10 +234,14 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 	}
 	templateHeaders := strings.Join(headers, ",")
 
-	ownerArgs, ownerParams, authzImport := "", "", ""
+	ownerSetup, authzImport := "", ""
 	if owned {
-		ownerArgs = ", authz.CurrentUserID(c), authz.IsAdmin(c)"
-		ownerParams = ", ownerID string, canAssignOwner bool"
+		// From the caller on the context rather than from parameters: the
+		// handler puts it there, and a job importing for somebody says who.
+		ownerSetup = "\t// --owned-by: rows belong to whoever imports them. Only an ADMIN may\n" +
+			"\t// name another owner in the CSV.\n" +
+			"\tactor, _ := authz.ActorFrom(ctx)\n" +
+			"\townerID, canAssignOwner := actor.UserID, actor.Admin\n"
 		authzImport = "\"" + g.Module + "/internal/authz\"\n\t"
 	}
 
@@ -245,32 +254,36 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 		"{{DATATYPES}}", datatypesImport+moneyImport+cryptoImport,
 		"{{ASSIGN}}", assign.String(),
 		"{{HEADERS}}", templateHeaders,
-		"{{OWNER_ARGS}}", ownerArgs,
-		"{{OWNER_PARAMS}}", ownerParams,
+		"{{OWNER_SETUP}}", ownerSetup,
 		"{{AUTHZ_IMPORT}}", authzImport,
 	)
 
-	content := rep.Replace(`package handlers
+	handlerPath := filepath.Join(g.APIRoot(), "internal", "handlers", names.Snake+"_import.go")
+	if err := writeFileWithDirs(handlerPath, rep.Replace(importHandlerTemplate)); err != nil {
+		return err
+	}
+	servicePath := filepath.Join(g.APIRoot(), "internal", "services", names.Snake+"_import.go")
+	return writeFileWithDirs(servicePath, rep.Replace(importServiceTemplate))
+}
+
+// importHandlerTemplate is the HTTP half of the import: the upload, the job,
+// the 202, and the template download. It runs no query.
+const importHandlerTemplate = `package handlers
 
 import (
+	"context"
 	"encoding/csv"
-	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
-	"os"{{STRCONV}}
-	"strings"
+	"os"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm/clause"{{DATATYPES}}
-
-	{{AUTHZ_IMPORT}}"{{MODULE}}/internal/models"
 )
 
 // Import kicks off a BACKGROUND CSV import of {{Plural}}. It streams the upload
-// to a temp file (so a large file never sits in memory), creates an ImportJob,
-// then processes rows in a goroutine and returns 202 immediately. Poll
-// GET /imports/:id for progress and the result.
+// to a temp file (so a large file never sits in memory), starts an ImportJob,
+// then hands the file to the service in a goroutine and returns 202
+// immediately. Poll GET /imports/:id for progress and the result.
 func (h *{{Pascal}}Handler) Import(c *gin.Context) {
 	file, _, err := c.Request.FormFile("file")
 	if err != nil {
@@ -281,7 +294,7 @@ func (h *{{Pascal}}Handler) Import(c *gin.Context) {
 	}
 	defer file.Close()
 
-	// Stream the upload to a temp file — never ReadAll a large CSV into memory.
+	// Stream the upload to a temp file: never ReadAll a large CSV into memory.
 	tmp, err := os.CreateTemp("", "grit-import-*.csv")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -311,8 +324,8 @@ func (h *{{Pascal}}Handler) Import(c *gin.Context) {
 		return
 	}
 
-	job := models.ImportJob{Resource: "{{Plural}}", Status: "processing", Total: total}
-	if err := h.DB.Create(&job).Error; err != nil {
+	job, err := h.service().StartImport(h.ctx(c), total)
+	if err != nil {
 		os.Remove(tmpPath)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "JOB_ERROR", "message": "Could not start import"},
@@ -320,8 +333,10 @@ func (h *{{Pascal}}Handler) Import(c *gin.Context) {
 		return
 	}
 
-	// Process in the background so a large file never blocks the request.
-	go h.runImport{{Pascal}}(job.ID, tmpPath{{OWNER_ARGS}})
+	// In the background, so a large file never blocks the request. The context
+	// keeps the caller and the organization and drops the cancellation: the
+	// request is over as soon as this returns, and the import has only begun.
+	go h.service().ImportCSV(context.WithoutCancel(h.ctx(c)), job.ID, tmpPath)
 
 	c.JSON(http.StatusAccepted, gin.H{
 		"data":    gin.H{"job_id": job.ID, "total": total},
@@ -357,27 +372,70 @@ func countCSVRows{{Pascal}}(path string) (int, error) {
 	return n, nil
 }
 
-// runImport{{Pascal}} streams the temp CSV, creating {{Plural}} in batches and
-// updating the ImportJob as it goes. belongs_to columns are resolved by their
-// natural key (or id); unique-conflict rows are skipped; per-row failures are
-// recorded. The temp file is removed when done.
-func (h *{{Pascal}}Handler) runImport{{Pascal}}(jobID, tmpPath string{{OWNER_PARAMS}}) {
-	defer os.Remove(tmpPath)
-	// This runs in a bare goroutine, so gin.Recovery() does NOT cover it — an
+// Template returns a ready-to-fill CSV template (header row) for importing {{Plural}}.
+// belongs_to columns use the related record's natural key (e.g. "category"), or
+// its id column ("<relation>_id") when the related model has no natural key.
+func (h *{{Pascal}}Handler) Template(c *gin.Context) {
+	c.Header("Content-Type", "text/csv")
+	c.Header("Content-Disposition", ` + "`" + `attachment; filename="{{PluralKebab}}-template.csv"` + "`" + `)
+	c.String(http.StatusOK, "{{HEADERS}}\n")
+}
+`
+
+// importServiceTemplate is the rest of the import: the job, and the rows.
+const importServiceTemplate = `package services
+
+import (
+	"context"
+	"encoding/csv"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"{{STRCONV}}
+	"strings"
+
+	"gorm.io/gorm/clause"{{DATATYPES}}
+
+	{{AUTHZ_IMPORT}}"{{MODULE}}/internal/models"
+)
+
+// StartImport records a CSV import of {{Plural}} about to run: the job a client
+// polls for progress.
+func (s *{{Pascal}}Service) StartImport(ctx context.Context, total int) (*models.ImportJob, error) {
+	job := models.ImportJob{Resource: "{{Plural}}", Status: "processing", Total: total}
+	if err := s.db(ctx).Create(&job).Error; err != nil {
+		return nil, fmt.Errorf("starting the {{Plural}} import: %w", err)
+	}
+	return &job, nil
+}
+
+// ImportCSV streams the CSV at path, creating {{Plural}} in batches and
+// updating the ImportJob jobID as it goes. belongs_to columns are resolved by
+// their natural key (or id); unique-conflict rows are skipped; per-row failures
+// are recorded. The file is removed when done.
+//
+// It outlives the request that started it, so give it a context that is not
+// cancelled with the response. context.WithoutCancel of the request's keeps the
+// caller, whom an owned resource's rows belong to, and the organization the
+// multitenant plugin stamps them with.
+func (s *{{Pascal}}Service) ImportCSV(ctx context.Context, jobID, path string) {
+	db := s.db(ctx)
+{{OWNER_SETUP}}	defer os.Remove(path)
+	// This runs in a bare goroutine, so gin.Recovery() does NOT cover it: an
 	// unrecovered panic here would crash the whole server. Recover, and mark
 	// the job failed so the client's poll terminates instead of hanging.
 	defer func() {
 		if r := recover(); r != nil {
-			h.DB.Model(&models.ImportJob{}).Where("id = ?", jobID).Updates(map[string]interface{}{
+			db.Model(&models.ImportJob{}).Where("id = ?", jobID).Updates(map[string]interface{}{
 				"status":  "failed",
 				"message": fmt.Sprintf("import crashed: %v", r),
 			})
 		}
 	}()
 
-	f, err := os.Open(tmpPath)
+	f, err := os.Open(path)
 	if err != nil {
-		h.DB.Model(&models.ImportJob{}).Where("id = ?", jobID).Updates(map[string]interface{}{
+		db.Model(&models.ImportJob{}).Where("id = ?", jobID).Updates(map[string]interface{}{
 			"status": "failed", "message": "could not reopen upload",
 		})
 		return
@@ -389,7 +447,7 @@ func (h *{{Pascal}}Handler) runImport{{Pascal}}(jobID, tmpPath string{{OWNER_PAR
 
 	headers, err := reader.Read()
 	if err != nil {
-		h.DB.Model(&models.ImportJob{}).Where("id = ?", jobID).Updates(map[string]interface{}{
+		db.Model(&models.ImportJob{}).Where("id = ?", jobID).Updates(map[string]interface{}{
 			"status": "failed", "message": "empty or invalid CSV",
 		})
 		return
@@ -411,7 +469,7 @@ func (h *{{Pascal}}Handler) runImport{{Pascal}}(jobID, tmpPath string{{OWNER_PAR
 	// checkpoint writes current progress so the client's poll sees movement.
 	checkpoint := func(status, message string) {
 		errsJSON, _ := json.Marshal(rowErrors)
-		h.DB.Model(&models.ImportJob{}).Where("id = ?", jobID).Updates(map[string]interface{}{
+		db.Model(&models.ImportJob{}).Where("id = ?", jobID).Updates(map[string]interface{}{
 			"status":    status,
 			"processed": created + skipped + failed,
 			"created":   created,
@@ -442,14 +500,14 @@ func (h *{{Pascal}}Handler) runImport{{Pascal}}(jobID, tmpPath string{{OWNER_PAR
 		for i := range batch {
 			items[i] = batch[i].item
 		}
-		res := h.DB.Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(items, len(items))
+		res := db.Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(items, len(items))
 		if res.Error == nil {
 			created += int(res.RowsAffected)
 			skipped += len(items) - int(res.RowsAffected)
 		} else {
 			for i := range batch {
 				one := batch[i].item
-				r := h.DB.Clauses(clause.OnConflict{DoNothing: true}).Create(&one)
+				r := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&one)
 				switch {
 				case r.Error != nil:
 					failed++
@@ -493,20 +551,7 @@ func (h *{{Pascal}}Handler) runImport{{Pascal}}(jobID, tmpPath string{{OWNER_PAR
 
 	checkpoint("completed", fmt.Sprintf("Imported %d, skipped %d, failed %d", created, skipped, failed))
 }
-
-// Template returns a ready-to-fill CSV template (header row) for importing {{Plural}}.
-// belongs_to columns use the related record's natural key (e.g. "category"), or
-// its id column ("<relation>_id") when the related model has no natural key.
-func (h *{{Pascal}}Handler) Template(c *gin.Context) {
-	c.Header("Content-Type", "text/csv")
-	c.Header("Content-Disposition", ` + "`" + `attachment; filename="{{PluralKebab}}-template.csv"` + "`" + `)
-	c.String(http.StatusOK, "{{HEADERS}}\n")
-}
-`)
-
-	path := filepath.Join(g.APIRoot(), "internal", "handlers", names.Snake+"_import.go")
-	return writeFileWithDirs(path, content)
-}
+`
 
 // importUserLookup resolves a CSV cell to an existing user and fails the row
 // when there is none. It never creates one: a users row is an account, and an
@@ -515,7 +560,7 @@ func (h *{{Pascal}}Handler) Template(c *gin.Context) {
 func importUserLookup(col, where, fkGo, cond string) string {
 	return fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok && v != \"\"%s {\n"+
 		"\t\t\tvar rel models.User\n"+
-		"\t\t\tif err := h.DB.Where(%q, v).First(&rel).Error; err != nil {\n"+
+		"\t\t\tif err := db.Where(%q, v).First(&rel).Error; err != nil {\n"+
 		"\t\t\t\tfailed++\n"+
 		"\t\t\t\tif len(rowErrors) < 50 {\n"+
 		"\t\t\t\t\trowErrors = append(rowErrors, map[string]interface{}{\"row\": rowNum, \"message\": fmt.Sprintf(\"no user with %s %%q\", v)})\n"+

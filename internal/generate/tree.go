@@ -140,6 +140,7 @@ func treeServiceSource(module string, names Names) string {
 	return fmt.Sprintf(`package services
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -152,12 +153,22 @@ import (
 //
 // Every query here is one round trip. A tree rendered by walking parents is the
 // N+1 that makes people give up on hierarchies.
+//
+// Each method takes the context it runs in, so a query carries the
+// organization the multitenant plugin resolved: without it, the plugin
+// refuses the query outright.
 type %[1]sTreeService struct {
 	DB *gorm.DB
 }
 
 func New%[1]sTreeService(db *gorm.DB) *%[1]sTreeService {
 	return &%[1]sTreeService{DB: db}
+}
+
+// db binds the database to ctx, so whatever a middleware put there reaches
+// GORM's callbacks.
+func (s *%[1]sTreeService) db(ctx context.Context) *gorm.DB {
+	return s.DB.WithContext(ctx)
 }
 
 // %[3]sParentOf looks a row's parent up in the node map, treating NULL and ""
@@ -185,9 +196,9 @@ type %[1]sNode struct {
 //
 // Ordered by depth so a parent is always seen before its children, then by
 // position and name so siblings come back in the order the admin arranged them.
-func (s *%[1]sTreeService) Tree() ([]*%[1]sNode, error) {
+func (s *%[1]sTreeService) Tree(ctx context.Context) ([]*%[1]sNode, error) {
 	var rows []models.%[1]s
-	err := s.DB.Where("archived_at IS NULL").
+	err := s.db(ctx).Where("archived_at IS NULL").
 		Order("depth asc, position asc, name asc").
 		Find(&rows).Error
 	if err != nil {
@@ -220,18 +231,18 @@ func (s *%[1]sTreeService) Tree() ([]*%[1]sNode, error) {
 // NULL counts as no parent, not just the empty string. Adding --tree to a
 // resource that already has rows is the normal case, and AutoMigrate fills the
 // new column with NULL, so a query testing only for '' finds nothing at all.
-func (s *%[1]sTreeService) Roots() ([]models.%[1]s, error) {
+func (s *%[1]sTreeService) Roots(ctx context.Context) ([]models.%[1]s, error) {
 	var rows []models.%[1]s
-	err := s.DB.Where("(parent_id = '' OR parent_id IS NULL) AND archived_at IS NULL").
+	err := s.db(ctx).Where("(parent_id = '' OR parent_id IS NULL) AND archived_at IS NULL").
 		Order("position asc, name asc").
 		Find(&rows).Error
 	return rows, err
 }
 
 // Children returns one level below a node.
-func (s *%[1]sTreeService) Children(id string) ([]models.%[1]s, error) {
+func (s *%[1]sTreeService) Children(ctx context.Context, id string) ([]models.%[1]s, error) {
 	var rows []models.%[1]s
-	err := s.DB.Where("parent_id = ? AND archived_at IS NULL", id).
+	err := s.db(ctx).Where("parent_id = ? AND archived_at IS NULL", id).
 		Order("position asc, name asc").
 		Find(&rows).Error
 	return rows, err
@@ -241,13 +252,13 @@ func (s *%[1]sTreeService) Children(id string) ([]models.%[1]s, error) {
 //
 // The LIKE is anchored at the start with a delimited prefix, so /1/ matches
 // /1/2/ and /1/2/3/ and never /11/.
-func (s *%[1]sTreeService) Descendants(id string) ([]models.%[1]s, error) {
+func (s *%[1]sTreeService) Descendants(ctx context.Context, id string) ([]models.%[1]s, error) {
 	var node models.%[1]s
-	if err := s.DB.Select("id", "path").Where("id = ?", id).First(&node).Error; err != nil {
+	if err := s.db(ctx).Select("id", "path").Where("id = ?", id).First(&node).Error; err != nil {
 		return nil, fmt.Errorf("%[3]s %%s not found: %%w", id, err)
 	}
 	var rows []models.%[1]s
-	err := s.DB.Where("path LIKE ? AND id <> ? AND archived_at IS NULL", node.Path+"%%", id).
+	err := s.db(ctx).Where("path LIKE ? AND id <> ? AND archived_at IS NULL", node.Path+"%%", id).
 		Order("depth asc, position asc, name asc").
 		Find(&rows).Error
 	return rows, err
@@ -256,13 +267,13 @@ func (s *%[1]sTreeService) Descendants(id string) ([]models.%[1]s, error) {
 // DescendantIDs returns the node's id plus every id below it, which is what a
 // filter wants: "products in Electronics" means Electronics and everything
 // under it.
-func (s *%[1]sTreeService) DescendantIDs(id string) ([]string, error) {
+func (s *%[1]sTreeService) DescendantIDs(ctx context.Context, id string) ([]string, error) {
 	var node models.%[1]s
-	if err := s.DB.Select("id", "path").Where("id = ?", id).First(&node).Error; err != nil {
+	if err := s.db(ctx).Select("id", "path").Where("id = ?", id).First(&node).Error; err != nil {
 		return nil, fmt.Errorf("%[3]s %%s not found: %%w", id, err)
 	}
 	var ids []string
-	err := s.DB.Model(&models.%[1]s{}).
+	err := s.db(ctx).Model(&models.%[1]s{}).
 		Where("path LIKE ? AND archived_at IS NULL", node.Path+"%%").
 		Pluck("id", &ids).Error
 	return ids, err
@@ -273,9 +284,9 @@ func (s *%[1]sTreeService) DescendantIDs(id string) ([]string, error) {
 // The ids come from the stored path, so this is one IN query however deep the
 // tree is, and the result is re-sorted into path order because IN does not
 // promise one.
-func (s *%[1]sTreeService) Breadcrumbs(id string) ([]models.%[1]s, error) {
+func (s *%[1]sTreeService) Breadcrumbs(ctx context.Context, id string) ([]models.%[1]s, error) {
 	var node models.%[1]s
-	if err := s.DB.Where("id = ?", id).First(&node).Error; err != nil {
+	if err := s.db(ctx).Where("id = ?", id).First(&node).Error; err != nil {
 		return nil, fmt.Errorf("%[3]s %%s not found: %%w", id, err)
 	}
 	ids := strings.Split(strings.Trim(node.Path, "/"), "/")
@@ -284,7 +295,7 @@ func (s *%[1]sTreeService) Breadcrumbs(id string) ([]models.%[1]s, error) {
 	}
 
 	var rows []models.%[1]s
-	if err := s.DB.Where("id IN ?", ids).Find(&rows).Error; err != nil {
+	if err := s.db(ctx).Where("id IN ?", ids).Find(&rows).Error; err != nil {
 		return nil, err
 	}
 	byID := make(map[string]models.%[1]s, len(rows))
@@ -315,15 +326,18 @@ func (s *%[1]sTreeService) Breadcrumbs(id string) ([]models.%[1]s, error) {
 //
 // Refuses a move that would make the node its own ancestor. Without that check
 // the subtree is detached from the tree and no query finds it again.
-func (s *%[1]sTreeService) Move(id, newParentID string, position int) error {
+//
+// newParentID nil keeps the parent the node has, which is a reorder among
+// its siblings; a pointer to "" moves it to the root.
+func (s *%[1]sTreeService) Move(ctx context.Context, id string, newParentID *string, position int) error {
 	if id == "" {
 		return fmt.Errorf("id is required")
 	}
-	if id == newParentID {
+	if newParentID != nil && *newParentID == id {
 		return fmt.Errorf("a %[3]s cannot be its own parent")
 	}
 
-	return s.DB.Transaction(func(tx *gorm.DB) error {
+	return s.db(ctx).Transaction(func(tx *gorm.DB) error {
 		var node models.%[1]s
 		if err := tx.Where("id = ?", id).First(&node).Error; err != nil {
 			return fmt.Errorf("%[3]s %%s not found: %%w", id, err)
@@ -331,12 +345,22 @@ func (s *%[1]sTreeService) Move(id, newParentID string, position int) error {
 		oldPath := node.Path
 		oldDepth := node.Depth
 
+		// No parent given: the node keeps the one it has. Read here, inside the
+		// transaction, rather than by the caller beforehand, so a move that
+		// lands in between cannot be undone by this one.
+		parentID := ""
+		if newParentID != nil {
+			parentID = *newParentID
+		} else if node.ParentID != nil {
+			parentID = *node.ParentID
+		}
+
 		newPath := "/" + id + "/"
 		newDepth := 0
-		if newParentID != "" {
+		if parentID != "" {
 			var parent models.%[1]s
-			if err := tx.Select("id", "path", "depth").Where("id = ?", newParentID).First(&parent).Error; err != nil {
-				return fmt.Errorf("parent %%s does not exist: %%w", newParentID, err)
+			if err := tx.Select("id", "path", "depth").Where("id = ?", parentID).First(&parent).Error; err != nil {
+				return fmt.Errorf("parent %%s does not exist: %%w", parentID, err)
 			}
 			if strings.Contains(parent.Path, "/"+id+"/") {
 				return fmt.Errorf("cannot move a %[3]s under its own descendant")
@@ -347,8 +371,8 @@ func (s *%[1]sTreeService) Move(id, newParentID string, position int) error {
 
 		// nil, not "": the FK constraint accepts one and rejects the other.
 		var parentValue any
-		if newParentID != "" {
-			parentValue = newParentID
+		if parentID != "" {
+			parentValue = parentID
 		}
 		err := tx.Model(&models.%[1]s{}).Where("id = ?", id).Updates(map[string]any{
 			"parent_id": parentValue,
@@ -396,8 +420,8 @@ func (s *%[1]sTreeService) Move(id, newParentID string, position int) error {
 // "parent_id = ''" matched none of them. The reorder then returned 200 having
 // updated nothing, which is the worst kind of bug, the one that looks like it
 // worked.
-func (s *%[1]sTreeService) Reorder(parentID string, orderedIDs []string) error {
-	return s.DB.Transaction(func(tx *gorm.DB) error {
+func (s *%[1]sTreeService) Reorder(ctx context.Context, parentID string, orderedIDs []string) error {
+	return s.db(ctx).Transaction(func(tx *gorm.DB) error {
 		for position, id := range orderedIDs {
 			q := tx.Model(&models.%[1]s{}).Where("id = ?", id)
 			if parentID == "" {
@@ -440,8 +464,8 @@ func (s *%[1]sTreeService) Reorder(parentID string, orderedIDs []string) error {
 // So: one read, the arithmetic in Go, one UPDATE per row, all in a transaction.
 // This runs rarely, on a table with hundreds of rows, and being obviously
 // correct on all three dialects is worth more here than being fast.
-func (s *%[1]sTreeService) RebuildPaths() error {
-	return s.DB.Transaction(func(tx *gorm.DB) error {
+func (s *%[1]sTreeService) RebuildPaths(ctx context.Context) error {
+	return s.db(ctx).Transaction(func(tx *gorm.DB) error {
 		return s.rebuildPathsInGo(tx)
 	})
 }
@@ -521,7 +545,7 @@ func (g *Generator) writeTreeService(names Names) error {
 	if err := writeFileWithDirs(testPath, treeTestSource(g.Module, names)); err != nil {
 		return fmt.Errorf("writing tree tests: %w", err)
 	}
-	fmt.Printf("  ✓ internal/services/%s_tree_test.go (8 tests: paths, move, cycles, rebuild)\n", names.Snake)
+	fmt.Printf("  ✓ internal/services/%s_tree_test.go (10 tests: paths, move, reorder, cycles, rebuild)\n", names.Snake)
 
 	// Routes are NOT mounted here. ensureTreeRoutes runs after injectAll,
 	// because injectAll decides a resource is already wired by finding its
@@ -555,6 +579,7 @@ import (
 
 // %[1]sTreeHandler serves the hierarchy: the whole tree for a picker, the
 // breadcrumbs for a detail page, and the two writes a drag-and-drop tree makes.
+// Every query is the tree service's; this reads the request and answers.
 type %[1]sTreeHandler struct {
 	DB   *gorm.DB
 	Tree *services.%[1]sTreeService
@@ -566,7 +591,7 @@ func New%[1]sTreeHandler(db *gorm.DB) *%[1]sTreeHandler {
 
 // GetTree handles GET /api/v1/%[3]s/tree.
 func (h *%[1]sTreeHandler) GetTree(c *gin.Context) {
-	nodes, err := h.Tree.Tree()
+	nodes, err := h.Tree.Tree(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
 			"code": "INTERNAL_ERROR", "message": "Failed to load the tree",
@@ -578,7 +603,7 @@ func (h *%[1]sTreeHandler) GetTree(c *gin.Context) {
 
 // GetBreadcrumbs handles GET /api/v1/%[3]s/:id/breadcrumbs.
 func (h *%[1]sTreeHandler) GetBreadcrumbs(c *gin.Context) {
-	rows, err := h.Tree.Breadcrumbs(c.Param("id"))
+	rows, err := h.Tree.Breadcrumbs(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{
 			"code": "NOT_FOUND", "message": err.Error(),
@@ -605,19 +630,8 @@ func (h *%[1]sTreeHandler) Move(c *gin.Context) {
 		return
 	}
 
-	id := c.Param("id")
-	parentID := ""
-	if req.ParentID != nil {
-		parentID = *req.ParentID
-	} else {
-		// Field absent: keep the parent it has, and treat this as a reorder.
-		var current struct{ ParentID string }
-		if err := h.DB.Table("%[4]s").Select("parent_id").Where("id = ?", id).Scan(&current).Error; err == nil {
-			parentID = current.ParentID
-		}
-	}
-
-	if err := h.Tree.Move(id, parentID, req.Position); err != nil {
+	// parent_id absent (nil) keeps the parent the node has: a reorder.
+	if err := h.Tree.Move(c.Request.Context(), c.Param("id"), req.ParentID, req.Position); err != nil {
 		// A refused move is the caller's mistake, not a server fault: it is
 		// almost always an attempt to drop a node inside its own subtree.
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
@@ -634,7 +648,7 @@ func (h *%[1]sTreeHandler) Move(c *gin.Context) {
 // had rows, so every one of them has a NULL path and the tree renders flat.
 // Also the repair for a bulk import that went around the hooks.
 func (h *%[1]sTreeHandler) RebuildPaths(c *gin.Context) {
-	if err := h.Tree.RebuildPaths(); err != nil {
+	if err := h.Tree.RebuildPaths(c.Request.Context()); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
 			"code": "INTERNAL_ERROR", "message": err.Error(),
 		}})
@@ -656,7 +670,7 @@ func (h *%[1]sTreeHandler) Reorder(c *gin.Context) {
 		}})
 		return
 	}
-	if err := h.Tree.Reorder(req.ParentID, req.IDs); err != nil {
+	if err := h.Tree.Reorder(c.Request.Context(), req.ParentID, req.IDs); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
 			"code": "INTERNAL_ERROR", "message": "Failed to reorder",
 		}})
@@ -664,7 +678,7 @@ func (h *%[1]sTreeHandler) Reorder(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Reordered"})
 }
-`, names.Pascal, module, names.Plural, names.PluralSnake)
+`, names.Pascal, module, names.Plural)
 }
 
 // ensureTreeRoutes mounts the tree endpoints.
@@ -746,6 +760,7 @@ func treeTestSource(module string, names Names) string {
 	return fmt.Sprintf(`package services_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -834,13 +849,14 @@ func Test%[1]sTreeRefusesAMissingParent(t *testing.T) {
 func Test%[1]sTreeQueries(t *testing.T) {
 	db := %[1]sTreeTestDB(t)
 	svc := services.New%[1]sTreeService(db)
+	ctx := context.Background()
 
 	top := make%[1]s(t, db, "Top", "")
 	middle := make%[1]s(t, db, "Middle", top.ID)
 	bottom := make%[1]s(t, db, "Bottom", middle.ID)
 	make%[1]s(t, db, "Other", "")
 
-	roots, err := svc.Roots()
+	roots, err := svc.Roots(ctx)
 	if err != nil {
 		t.Fatalf("Roots: %%v", err)
 	}
@@ -848,7 +864,7 @@ func Test%[1]sTreeQueries(t *testing.T) {
 		t.Errorf("Roots = %%d, want 2", len(roots))
 	}
 
-	desc, err := svc.Descendants(top.ID)
+	desc, err := svc.Descendants(ctx, top.ID)
 	if err != nil {
 		t.Fatalf("Descendants: %%v", err)
 	}
@@ -857,7 +873,7 @@ func Test%[1]sTreeQueries(t *testing.T) {
 	}
 
 	// What a filter wants: this node AND everything under it.
-	ids, err := svc.DescendantIDs(top.ID)
+	ids, err := svc.DescendantIDs(ctx, top.ID)
 	if err != nil {
 		t.Fatalf("DescendantIDs: %%v", err)
 	}
@@ -865,7 +881,7 @@ func Test%[1]sTreeQueries(t *testing.T) {
 		t.Errorf("DescendantIDs = %%d, want 3 (self + 2)", len(ids))
 	}
 
-	crumbs, err := svc.Breadcrumbs(bottom.ID)
+	crumbs, err := svc.Breadcrumbs(ctx, bottom.ID)
 	if err != nil {
 		t.Fatalf("Breadcrumbs: %%v", err)
 	}
@@ -873,7 +889,7 @@ func Test%[1]sTreeQueries(t *testing.T) {
 		t.Errorf("Breadcrumbs came back wrong: %%+v", crumbs)
 	}
 
-	tree, err := svc.Tree()
+	tree, err := svc.Tree(ctx)
 	if err != nil {
 		t.Fatalf("Tree: %%v", err)
 	}
@@ -894,13 +910,14 @@ func Test%[1]sTreeQueries(t *testing.T) {
 func Test%[1]sTreeMoveCarriesTheSubtree(t *testing.T) {
 	db := %[1]sTreeTestDB(t)
 	svc := services.New%[1]sTreeService(db)
+	ctx := context.Background()
 
 	top := make%[1]s(t, db, "Top", "")
 	middle := make%[1]s(t, db, "Middle", top.ID)
 	bottom := make%[1]s(t, db, "Bottom", middle.ID)
 	other := make%[1]s(t, db, "Other", "")
 
-	if err := svc.Move(middle.ID, other.ID, 0); err != nil {
+	if err := svc.Move(ctx, middle.ID, &other.ID, 0); err != nil {
 		t.Fatalf("Move: %%v", err)
 	}
 
@@ -917,10 +934,10 @@ func Test%[1]sTreeMoveCarriesTheSubtree(t *testing.T) {
 		t.Errorf("descendant: path=%%q depth=%%d, want %%q depth 2", movedBottom.Path, movedBottom.Depth, want)
 	}
 
-	if ids, _ := svc.DescendantIDs(other.ID); len(ids) != 3 {
+	if ids, _ := svc.DescendantIDs(ctx, other.ID); len(ids) != 3 {
 		t.Errorf("the new parent should hold 3 ids, holds %%d", len(ids))
 	}
-	if ids, _ := svc.DescendantIDs(top.ID); len(ids) != 1 {
+	if ids, _ := svc.DescendantIDs(ctx, top.ID); len(ids) != 1 {
 		t.Errorf("the old parent should be alone, holds %%d", len(ids))
 	}
 }
@@ -928,11 +945,13 @@ func Test%[1]sTreeMoveCarriesTheSubtree(t *testing.T) {
 func Test%[1]sTreeMoveToRoot(t *testing.T) {
 	db := %[1]sTreeTestDB(t)
 	svc := services.New%[1]sTreeService(db)
+	ctx := context.Background()
 
 	top := make%[1]s(t, db, "Top", "")
 	child := make%[1]s(t, db, "Child", top.ID)
 
-	if err := svc.Move(child.ID, "", 0); err != nil {
+	toRoot := ""
+	if err := svc.Move(ctx, child.ID, &toRoot, 0); err != nil {
 		t.Fatalf("Move to root: %%v", err)
 	}
 	var moved models.%[1]s
@@ -947,15 +966,16 @@ func Test%[1]sTreeMoveToRoot(t *testing.T) {
 func Test%[1]sTreeRefusesACycle(t *testing.T) {
 	db := %[1]sTreeTestDB(t)
 	svc := services.New%[1]sTreeService(db)
+	ctx := context.Background()
 
 	top := make%[1]s(t, db, "Top", "")
 	middle := make%[1]s(t, db, "Middle", top.ID)
 	bottom := make%[1]s(t, db, "Bottom", middle.ID)
 
-	if err := svc.Move(top.ID, bottom.ID, 0); err == nil {
+	if err := svc.Move(ctx, top.ID, &bottom.ID, 0); err == nil {
 		t.Error("moving a node under its own descendant must be refused")
 	}
-	if err := svc.Move(top.ID, top.ID, 0); err == nil {
+	if err := svc.Move(ctx, top.ID, &top.ID, 0); err == nil {
 		t.Error("a node cannot be its own parent")
 	}
 
@@ -973,13 +993,14 @@ func Test%[1]sTreeRefusesACycle(t *testing.T) {
 func Test%[1]sTreeToleratesNullParents(t *testing.T) {
 	db := %[1]sTreeTestDB(t)
 	svc := services.New%[1]sTreeService(db)
+	ctx := context.Background()
 
 	a := make%[1]s(t, db, "A", "")
 	b := make%[1]s(t, db, "B", "")
 	// Exactly what adding --tree to an existing table leaves behind.
 	db.Exec("UPDATE %[3]s SET parent_id = NULL")
 
-	roots, err := svc.Roots()
+	roots, err := svc.Roots(ctx)
 	if err != nil {
 		t.Fatalf("Roots: %%v", err)
 	}
@@ -987,10 +1008,10 @@ func Test%[1]sTreeToleratesNullParents(t *testing.T) {
 		t.Errorf("Roots with NULL parents = %%d, want 2", len(roots))
 	}
 
-	if err := svc.Reorder("", []string{b.ID, a.ID}); err != nil {
+	if err := svc.Reorder(ctx, "", []string{b.ID, a.ID}); err != nil {
 		t.Fatalf("Reorder: %%v", err)
 	}
-	ordered, _ := svc.Roots()
+	ordered, _ := svc.Roots(ctx)
 	if len(ordered) != 2 || ordered[0].Name != "B" {
 		names := []string{}
 		for _, r := range ordered {
@@ -1010,6 +1031,7 @@ func Test%[1]sTreeToleratesNullParents(t *testing.T) {
 func Test%[1]sTreeMoveOfAPathlessNodeLeavesOthersAlone(t *testing.T) {
 	db := %[1]sTreeTestDB(t)
 	svc := services.New%[1]sTreeService(db)
+	ctx := context.Background()
 
 	top := make%[1]s(t, db, "Top", "")
 	middle := make%[1]s(t, db, "Middle", top.ID)
@@ -1020,7 +1042,7 @@ func Test%[1]sTreeMoveOfAPathlessNodeLeavesOthersAlone(t *testing.T) {
 	db.Model(&models.%[1]s{}).Where("id = ?", stray.ID).
 		Updates(map[string]any{"path": "", "depth": 0, "parent_id": nil})
 
-	if err := svc.Move(stray.ID, top.ID, 0); err != nil {
+	if err := svc.Move(ctx, stray.ID, &top.ID, 0); err != nil {
 		t.Fatalf("Move: %%v", err)
 	}
 
@@ -1047,16 +1069,17 @@ func Test%[1]sTreeMoveOfAPathlessNodeLeavesOthersAlone(t *testing.T) {
 func Test%[1]sTreeReorderAndRebuild(t *testing.T) {
 	db := %[1]sTreeTestDB(t)
 	svc := services.New%[1]sTreeService(db)
+	ctx := context.Background()
 
 	root := make%[1]s(t, db, "Root", "")
 	a := make%[1]s(t, db, "A", root.ID)
 	b := make%[1]s(t, db, "B", root.ID)
 	c := make%[1]s(t, db, "C", root.ID)
 
-	if err := svc.Reorder(root.ID, []string{c.ID, a.ID, b.ID}); err != nil {
+	if err := svc.Reorder(ctx, root.ID, []string{c.ID, a.ID, b.ID}); err != nil {
 		t.Fatalf("Reorder: %%v", err)
 	}
-	children, _ := svc.Children(root.ID)
+	children, _ := svc.Children(ctx, root.ID)
 	if got := fmt.Sprintf("%%s,%%s,%%s", children[0].Name, children[1].Name, children[2].Name); got != "C,A,B" {
 		t.Errorf("order = %%s, want C,A,B", got)
 	}
@@ -1064,7 +1087,7 @@ func Test%[1]sTreeReorderAndRebuild(t *testing.T) {
 	// A bulk import that went around the hooks leaves paths empty, and Rebuild
 	// has to reconstruct them from parent_id alone.
 	db.Exec("UPDATE %[3]s SET path = '', depth = 0")
-	if err := svc.RebuildPaths(); err != nil {
+	if err := svc.RebuildPaths(ctx); err != nil {
 		t.Fatalf("RebuildPaths: %%v", err)
 	}
 	var rebuilt models.%[1]s
@@ -1073,6 +1096,26 @@ func Test%[1]sTreeReorderAndRebuild(t *testing.T) {
 		t.Errorf("rebuilt: path=%%q depth=%%d, want %%q depth 1", rebuilt.Path, rebuilt.Depth, want)
 	}
 	_ = b
+}
+
+// A move with no parent is a reorder: the node keeps the parent it has. The
+// handler used to look that parent up itself, outside the move's transaction.
+func Test%[1]sTreeMoveWithoutAParentKeepsIt(t *testing.T) {
+	db := %[1]sTreeTestDB(t)
+	svc := services.New%[1]sTreeService(db)
+	ctx := context.Background()
+
+	top := make%[1]s(t, db, "Top", "")
+	child := make%[1]s(t, db, "Child", top.ID)
+
+	if err := svc.Move(ctx, child.ID, nil, 3); err != nil {
+		t.Fatalf("Move: %%v", err)
+	}
+	var moved models.%[1]s
+	db.Where("id = ?", child.ID).First(&moved)
+	if moved.ParentID == nil || *moved.ParentID != top.ID || moved.Position != 3 {
+		t.Errorf("the reorder lost the parent or the position: parent=%%v position=%%d", moved.ParentID, moved.Position)
+	}
 }
 `, names.Pascal, module, names.PluralSnake)
 }

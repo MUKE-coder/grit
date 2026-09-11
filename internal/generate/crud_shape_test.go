@@ -34,6 +34,8 @@ func TestEveryShapeRendersAThinHandlerAndAService(t *testing.T) {
 			d.Fields = append(d.Fields, Field{Name: "user", Type: "belongs_to", RelatedModel: "User"})
 		}},
 		{"Audited", "name:string", func(d *ResourceDefinition) { d.AuditReads = true }},
+		{"Storefront", "name:string,slug:slug,price:float,category:belongs_to:Category", func(d *ResourceDefinition) { d.Public = true }},
+		{"Menu", "name:string,slug:slug", func(d *ResourceDefinition) { d.Public = true; d.Tree = true }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			root := setupMinimalProject(t, module)
@@ -52,25 +54,58 @@ func TestEveryShapeRendersAThinHandlerAndAService(t *testing.T) {
 			if err := g.writeGoHandler(names); err != nil {
 				t.Fatalf("handler: %v", err)
 			}
-			s := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "services", names.Snake+".go"))
-			h := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "handlers", names.Snake+".go"))
-			importsMatchUse(t, "service", s)
-			importsMatchUse(t, "handler", h)
+			if err := g.writeGoImportHandler(names); err != nil {
+				t.Fatalf("import: %v", err)
+			}
+			if err := g.writeTreeService(names); err != nil {
+				t.Fatalf("tree: %v", err)
+			}
+			if err := g.writePublicResource(names); err != nil {
+				t.Fatalf("public: %v", err)
+			}
 
-			for _, q := range []string{".Where(", ".First(", ".Find(", ".Transaction(", ".Association(", "FindInBatches("} {
-				if strings.Contains(h, q) {
-					t.Errorf("the handler still runs a query (%s)", q)
+			// Every file the resource has, by the suffix after its name.
+			dir := filepath.Join(root, "apps", "api", "internal")
+			handlerFiles, serviceFiles := []string{"", "_import"}, []string{"", "_import"}
+			if def.Tree {
+				handlerFiles = append(handlerFiles, "_tree")
+				serviceFiles = append(serviceFiles, "_tree")
+			}
+			if def.Public {
+				handlerFiles = append(handlerFiles, "_public")
+			}
+
+			for _, suffix := range handlerFiles {
+				name := "handlers/" + names.Snake + suffix + ".go"
+				h := readTestFile(t, filepath.Join(dir, "handlers", names.Snake+suffix+".go"))
+				importsMatchUse(t, name, h)
+				for _, q := range []string{"h.DB.", ".Where(", ".First(", ".Find(", ".Transaction(", ".Association(", "FindInBatches(", ".Pluck("} {
+					if strings.Contains(h, q) {
+						t.Errorf("%s still runs a query (%s)", name, q)
+					}
+				}
+				// {{NAME}}, not any "}}": gin.H{"error": gin.H{...}} closes with one.
+				if regexp.MustCompile(`\{\{[A-Za-z_]+\}\}`).MatchString(h) {
+					t.Errorf("%s has an unreplaced placeholder", name)
 				}
 			}
-			// The database package imports services for its seeders, so a
-			// service that imports database back does not build. Parsing does
-			// not catch it; the first live project did.
-			if strings.Contains(s, module+`/internal/database"`) {
-				t.Error("the service imports the database package, which imports services: an import cycle")
-			}
-			for _, placeholder := range []string{"{{", "}}"} {
-				if strings.Contains(s, placeholder) || strings.Contains(h, placeholder) {
-					t.Errorf("an unreplaced placeholder survived (%s)", placeholder)
+			for _, suffix := range serviceFiles {
+				name := "services/" + names.Snake + suffix + ".go"
+				s := readTestFile(t, filepath.Join(dir, "services", names.Snake+suffix+".go"))
+				importsMatchUse(t, name, s)
+				// The database package imports services for its seeders, so a
+				// service that imports database back does not build. Parsing
+				// does not catch it; the first live project did.
+				if strings.Contains(s, module+`/internal/database"`) {
+					t.Errorf("%s imports the database package, which imports services: an import cycle", name)
+				}
+				if regexp.MustCompile(`\{\{[A-Za-z_]+\}\}`).MatchString(s) {
+					t.Errorf("%s has an unreplaced placeholder", name)
+				}
+				for _, line := range strings.Split(s, "\n") {
+					if strings.Contains(line, "s.DB.") && !strings.Contains(line, "return s.DB.WithContext(ctx)") {
+						t.Errorf("%s queries around the request context:\n  %s", name, strings.TrimSpace(line))
+					}
 				}
 			}
 		})
