@@ -309,6 +309,7 @@ export default function HomePage() {
               { icon: Layers, label: 'Translated admin panel', href: '/docs/frontend/i18n#admin' },
               { icon: Layers, label: 'Flags by business unit', href: '/docs/backend/feature-flags#attributes' },
               { icon: Database, label: 'Services own every query', href: '/docs/backend/services' },
+              { icon: FileCheck, label: 'grit doctor project audit', href: '/docs/security/doctor' },
               { icon: TrendingUp, label: 'Exact multi-currency money', href: '/docs/concepts/money' },
               { icon: Building2, label: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
               { icon: Webhook, label: 'Webhooks', href: '/docs/backend/webhooks' },

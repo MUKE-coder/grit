@@ -74,6 +74,7 @@ func envFile(opts Options) string {
 	sentinelSecretKey := randomHex(32)
 	sentinelAuditKey := randomHex(32)
 	pulsePassword := randomHex(16)
+	studioPassword := randomHex(16)
 	postgresPassword := randomHex(24) // strong default; new project just works
 
 	return fmt.Sprintf(`# %s: Environment Variables
@@ -264,9 +265,11 @@ SUPPORT_EMAIL=
 CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
 # GORM Studio
+# Studio browses and edits every table, so its password is generated per
+# scaffold like the dashboard ones. Rotate with: openssl rand -hex 16
 GORM_STUDIO_ENABLED=true
 GORM_STUDIO_USERNAME=admin
-GORM_STUDIO_PASSWORD=studio
+GORM_STUDIO_PASSWORD=%s
 GORM_STUDIO_READ_ONLY=false
 GORM_STUDIO_DISABLE_SQL=false
 
@@ -348,7 +351,8 @@ SOCIAL_AUTH_ENABLED=false
 		opts.ProjectName, opts.ProjectName, // banner + APP_NAME
 		postgresPassword, opts.ProjectName, // POSTGRES_PASSWORD + POSTGRES_DB
 		jwtSecret,
-		opts.ProjectName, opts.ProjectName, opts.ProjectName, // MINIO_BUCKET + MAIL_FROM + TOTP_ISSUER
+		opts.ProjectName, opts.ProjectName, // MINIO_BUCKET + MAIL_FROM
+		studioPassword, opts.ProjectName, // GORM_STUDIO_PASSWORD + TOTP_ISSUER
 		pulsePassword, sentinelPassword, sentinelSecretKey, sentinelAuditKey,
 		opts.Theme, // THEME — picked by --theme at scaffold time, defaults to atlas
 	)
@@ -476,7 +480,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 # GORM Studio — Visual database browser
 GORM_STUDIO_ENABLED=true
 GORM_STUDIO_USERNAME=admin              # Login username for the Studio UI
-GORM_STUDIO_PASSWORD=studio             # Login password for the Studio UI
+GORM_STUDIO_PASSWORD=                    # Generated per-scaffold in .env. Rotate: openssl rand -hex 16
 GORM_STUDIO_READ_ONLY=false             # Refuse every write from Studio
 GORM_STUDIO_DISABLE_SQL=false           # The SQL editor bypasses every GORM guard
 
