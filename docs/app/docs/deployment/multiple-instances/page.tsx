@@ -127,6 +127,25 @@ cluster_generations   one row per shared cache: authz, sso`} />
               </li>
             </ul>
 
+            <h2 id="concurrent-writes">Two people saving the same record</h2>
+            <p>
+              Every generated record carries a <code>version</code> that each update increments, and
+              every read returns it as an <code>ETag</code>. Send it back as <code>If-Match</code> on a{' '}
+              <code>PUT</code> or <code>PATCH</code>, and the write lands only if nobody saved in
+              between; otherwise the answer is a <code>409</code> naming the version the record is at
+              now, so the client can reload and decide. Without the header, the last write wins, as it
+              always did.
+            </p>
+            <CodeBlock language="text" code={`GET   /api/v1/lots/42          ETag: W/"7"
+PATCH /api/v1/lots/42          If-Match: W/"7"   {"current_bid": 210}
+  200 when the lot is still at version 7
+  409 {"error": {"code": "VERSION_CONFLICT", "details": {"current_version": 8}}}`} />
+            <p>
+              The check is the <code>WHERE</code> clause of the update itself, not a read before it, so
+              it holds under any amount of contention and across any number of copies. Measured: twenty
+              simultaneous bids on version 1, split across two copies, landed one and refused nineteen.
+            </p>
+
             <h2 id="your-code">In your own code</h2>
             <p>
               Anything you keep in a package-level variable is per copy. If you cache something that

@@ -156,6 +156,11 @@ func (g *Generator) Run() error {
 			return err
 		}
 	}
+	// Update routes honour If-Match through this package, which a project
+	// from before v3.219.0 does not have.
+	if err := scaffold.WriteConcurrencyPackage(g.APIRoot(), g.Module, false); err != nil {
+		return err
+	}
 
 	fmt.Printf("\n  Generating resource: %s\n\n", names.Pascal)
 

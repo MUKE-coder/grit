@@ -850,7 +850,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 		!hasAutoField
 
 	createCall := "h.DB.Create(&item)"
-	updateCall := "h.DB.Model(&item).Updates(updates)"
+	updateCall := "h.DB.Model(&item).Scopes(concurrency.IfMatch(c)).Updates(updates)"
 	createReload := reloadLine
 	updateReload := reloadLine
 	clauseImport := ""
@@ -874,7 +874,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 		// and on MySQL it is the difference between a complete record and a
 		// half-empty one.
 		createCall = "database.Write(h.DB).Create(&item)"
-		updateCall = "database.Write(h.DB).Model(&item).Updates(updates)"
+		updateCall = "database.Write(h.DB).Model(&item).Scopes(concurrency.IfMatch(c)).Updates(updates)"
 		guard := "\tif !database.SupportsReturning(h.DB) {\n\t"
 		createReload = guard + reloadLine + "\n\t}"
 		updateReload = guard + reloadLine + "\n\t}"
@@ -1302,7 +1302,8 @@ import (
 	"github.com/gin-gonic/gin"{{DATATYPES_IMPORT}}
 	"gorm.io/gorm"{{CLAUSE_IMPORT}}
 
-	{{AUTHZ_IMPORT}}{{AUDIT_IMPORT}}"{{MODULE}}/internal/events"
+	{{AUTHZ_IMPORT}}{{AUDIT_IMPORT}}"{{MODULE}}/internal/concurrency"
+	"{{MODULE}}/internal/events"
 	"{{MODULE}}/internal/export"{{FILES_IMPORT}}{{DATABASE_IMPORT}}{{WORKFLOW_IMPORT}}
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
@@ -1325,6 +1326,14 @@ type {{Pascal}}Handler struct {
 // for any of those finds nothing there.
 func (h *{{Pascal}}Handler) scoped(c *gin.Context) *gorm.DB {
 	return h.DB.WithContext(c.Request.Context())
+}
+
+// writeConflict answers a write whose If-Match named a version the record has
+// moved past, with the version it is at now.
+func (h *{{Pascal}}Handler) writeConflict(c *gin.Context, id string) {
+	var current models.{{Pascal}}
+	h.scoped(c).Select("version").First(&current, "id = ?", id)
+	concurrency.WriteConflict(c, current.Version)
 }
 
 {{OPTIONAL_ID_HELPER}}
@@ -1486,6 +1495,8 @@ func (h *{{Pascal}}Handler) GetByID(c *gin.Context) {
 		return
 	}
 {{OWNER_GUARD}}{{AUDIT_READ_ONE}}
+	// The version to send back as If-Match when saving.
+	c.Header("ETag", concurrency.Tag(item.Version))
 	c.JSON(http.StatusOK, gin.H{
 		"data": item,
 	})
@@ -1619,7 +1630,8 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 {{UPDATE_SNAPSHOT}}
 	updates := map[string]interface{}{}
 {{UPDATE_MAP}}
-	if err := {{UPDATE_CALL}}.Error; err != nil {
+	written := {{UPDATE_CALL}}
+	if err := written.Error; err != nil {
 		// A rule the caller broke becomes 422 with its message, a missing
 		// row 404, anything else the same opaque 500 as before. What is new
 		// is that the error reaches somewhere at all: it used to be bound
@@ -1628,11 +1640,18 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 		respond.WriteError(c, err, "Failed to update {{lower}}")
 		return
 	}
+	// If-Match named a version this record has moved past: someone else saved
+	// first. A 409 rather than overwriting their change.
+	if concurrency.Conflicted(c, written) {
+		h.writeConflict(c, item.ID)
+		return
+	}
 {{M2M_UPDATE}}{{ITEMS_UPDATE}}
 {{UPDATE_RELOAD}}{{UPDATE_CLEANUP}}
 
 	events.Emitted(c, "{{plural}}", "{{Pascal}}", "updated", item.ID, {{IDENT_EXPR}}, services.DiffSummary(updates), nil, item)
 
+	c.Header("ETag", concurrency.Tag(item.Version))
 	c.JSON(http.StatusOK, gin.H{
 		"data":    item,
 		"message": "{{Pascal}} updated successfully",
@@ -1690,7 +1709,8 @@ func (h *{{Pascal}}Handler) Patch(c *gin.Context) {
 	}
 
 	if len(updates) > 0 {
-		if err := h.scoped(c).Model(&item).Updates(updates).Error; err != nil {
+		written := h.scoped(c).Model(&item).Scopes(concurrency.IfMatch(c)).Updates(updates)
+		if err := written.Error; err != nil {
 			// A rule the caller broke becomes 422 with its message, a missing
 			// row 404, anything else the same opaque 500 as before. What is new
 			// is that the error reaches somewhere at all: it used to be bound
@@ -1699,11 +1719,16 @@ func (h *{{Pascal}}Handler) Patch(c *gin.Context) {
 			respond.WriteError(c, err, "Failed to patch {{lower}}")
 			return
 		}
+		if concurrency.Conflicted(c, written) {
+			h.writeConflict(c, item.ID)
+			return
+		}
 	}
 {{RELOAD}}
 
 	events.Emitted(c, "{{plural}}", "{{Pascal}}", "updated", item.ID, {{IDENT_EXPR}}, services.DiffSummary(updates), nil, item)
 
+	c.Header("ETag", concurrency.Tag(item.Version))
 	c.JSON(http.StatusOK, gin.H{
 		"data":    item,
 		"message": "{{Pascal}} updated successfully",
