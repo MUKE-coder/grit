@@ -29,6 +29,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.226.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.226.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Sentinel v2.5.0, GORM Studio v1.1.0 and Pulse v1.0.0, and grit upgrade raises them</h3>
+                <p>
+                  Every new project pinned Sentinel v2.2.1, and v2.2.2 is a security release. Behind a
+                  trusted proxy a client could choose its own IP through <code>X-Forwarded-For</code>{' '}
+                  and slip per-IP rate limits, blocks and lockouts; <code>sort_by</code> on the
+                  dashboard&apos;s threat listing reached <code>ORDER BY</code> as it was sent; and
+                  several SSRF bypasses were open. Existing projects were worse off.{' '}
+                  <code>grit upgrade</code> rewrote framework files and never <code>go.mod</code>, so
+                  nothing would ever have moved them.
+                </p>
+                <p>
+                  New projects pin Sentinel v2.5.0, GORM Studio v1.1.0 (read-only SQL enforced on the
+                  read path, fail-closed imports, composite keys matched in full) and Pulse v1.0.0,
+                  the tagged release of the commit already pinned. <code>grit upgrade</code> now
+                  raises each of the three to at least that version, never lowers one, and says why.
+                  On a project scaffolded with the old pins it raised all three, and the project
+                  still built, vetted and passed its tests.
+                </p>
+                <p>
+                  New projects also use what the new Sentinel offers. When Redis is configured, rate
+                  limits and AuthShield lockouts are counted there, so replicas share them: counted
+                  per process, N replicas gave a client N times every limit. Two production replicas
+                  sharing one Redis refused the sixth failed login on a replica that had itself seen
+                  only three. The audit log&apos;s hash chain is keyed by a generated{' '}
+                  <code>SENTINEL_AUDIT_KEY</code>, and a <code>UserExtractor</code> reads the caller
+                  from the context, without which anomaly detection sees nothing. Both replicas booted
+                  with no Sentinel config warnings.
+                </p>
+                <p>
+                  An existing project&apos;s <code>routes.go</code> is its own, so the counters, the
+                  audit key and the extractor are not added to it; the{' '}
+                  <Link href="/docs/batteries/security#replicas">Sentinel page</Link> has the lines to
+                  add.
+                </p>
+              </div>
+            </div>
+
             {/* v3.225.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -72,6 +72,7 @@ func envFile(opts Options) string {
 	jwtSecret := randomHex(32)
 	sentinelPassword := randomHex(16)
 	sentinelSecretKey := randomHex(32)
+	sentinelAuditKey := randomHex(32)
 	pulsePassword := randomHex(16)
 	postgresPassword := randomHex(24) // strong default; new project just works
 
@@ -318,6 +319,10 @@ SENTINEL_ENABLED=true
 SENTINEL_USERNAME=admin
 SENTINEL_PASSWORD=%s
 SENTINEL_SECRET_KEY=%s
+# Keys the security audit log's hash chain, so an entry edited by someone with
+# database access but not this key fails verification. Keep it: entries
+# written under one key verify only with that key.
+SENTINEL_AUDIT_KEY=%s
 
 # ─── Theme (v3.28+) ────────────────────────────────────────────────────
 # Picks the visual identity for auth pages and the dashboard. Options:
@@ -344,7 +349,7 @@ SOCIAL_AUTH_ENABLED=false
 		postgresPassword, opts.ProjectName, // POSTGRES_PASSWORD + POSTGRES_DB
 		jwtSecret,
 		opts.ProjectName, opts.ProjectName, opts.ProjectName, // MINIO_BUCKET + MAIL_FROM + TOTP_ISSUER
-		pulsePassword, sentinelPassword, sentinelSecretKey,
+		pulsePassword, sentinelPassword, sentinelSecretKey, sentinelAuditKey,
 		opts.Theme, // THEME — picked by --theme at scaffold time, defaults to atlas
 	)
 }
@@ -493,6 +498,7 @@ SENTINEL_ENABLED=true                # Set to "false" to disable Sentinel entire
 SENTINEL_USERNAME=admin              # Dashboard login username
 SENTINEL_PASSWORD=sentinel           # Dashboard login password (change in production!)
 SENTINEL_SECRET_KEY=change-me        # Secret for dashboard JWT sessions
+SENTINEL_AUDIT_KEY=                  # Keys the audit log hash chain (openssl rand -hex 32)
 `
 }
 
@@ -586,6 +592,7 @@ SENTINEL_ENABLED=true
 SENTINEL_USERNAME=admin
 SENTINEL_PASSWORD=change-me-in-production
 SENTINEL_SECRET_KEY=generate-a-random-string-here
+SENTINEL_AUDIT_KEY=generate-a-random-string-here
 `, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 

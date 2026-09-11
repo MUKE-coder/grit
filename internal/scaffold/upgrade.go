@@ -289,6 +289,15 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeStorageFiles(root, opts); err != nil {
 			return fmt.Errorf("updating storage files: %w", err)
 		}
+		// The libraries every API mounts. A project below the floor misses
+		// security fixes; one above it is left alone.
+		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {
+			fmt.Printf("  ⚠ %v\n", err)
+		} else {
+			for _, r := range raised {
+				green.Printf("  ✓ Raised %s\n", r)
+			}
+		}
 		green.Printf("  ✓ Media pipeline updated\n")
 		green.Printf("    Then run: cd apps/api && go mod tidy\n")
 		updated += 3

@@ -97,7 +97,8 @@ export default function SecurityPage() {
 SENTINEL_ENABLED=true
 SENTINEL_USERNAME=admin
 SENTINEL_PASSWORD=sentinel
-SENTINEL_SECRET_KEY=change-me-in-production`} />
+SENTINEL_SECRET_KEY=change-me-in-production
+SENTINEL_AUDIT_KEY=change-me-in-production`} />
 
                 <div className="mb-6">
                   <table className="w-full border-collapse text-sm">
@@ -114,6 +115,7 @@ SENTINEL_SECRET_KEY=change-me-in-production`} />
                         { name: 'SENTINEL_USERNAME', def: 'admin', desc: 'Dashboard login username' },
                         { name: 'SENTINEL_PASSWORD', def: 'sentinel', desc: 'Dashboard login password' },
                         { name: 'SENTINEL_SECRET_KEY', def: 'sentinel-secret...', desc: 'Secret for dashboard JWT sessions' },
+                        { name: 'SENTINEL_AUDIT_KEY', def: '(generated)', desc: 'Keys the audit log hash chain, so an entry edited with database access alone fails verification' },
                       ].map((row) => (
                         <tr key={row.name} className="border-b border-border/50">
                           <td className="py-2 pr-4 font-mono text-xs text-primary/60">{row.name}</td>
@@ -124,6 +126,55 @@ SENTINEL_SECRET_KEY=change-me-in-production`} />
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+              {/* Replicas */}
+              <div className="mb-12" id="replicas">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Replicas, the audit key and the caller
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  A project scaffolded from v3.226.0 counts rate limits and AuthShield lockouts in
+                  Redis when Redis is configured, so every replica counts against the same numbers:
+                  counted per process, N replicas gave a client N times every limit. It keys the audit
+                  log with{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">SENTINEL_AUDIT_KEY</code>,
+                  and it tells Sentinel who made each request, which anomaly detection needs to see
+                  anything at all.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  An older project gets the new Sentinel from{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit upgrade</code>,
+                  but its <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">routes.go</code>{' '}
+                  is its own, so these are yours to add to the{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">sentinel.MountE</code> call
+                  (and <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">SentinelAuditKey</code>{' '}
+                  to the config, read from{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">SENTINEL_AUDIT_KEY</code>):
+                </p>
+                <CodeBlock language="go" filename="apps/api/internal/routes/routes.go" code={`import "github.com/MUKE-coder/sentinel/v2/redisstore"
+
+sentinelStorage.AuditKey = cfg.SentinelAuditKey
+
+// Shared by every replica. Without Redis, each process counts alone.
+var sentinelCounters sentinel.CounterStore
+if svc.Cache != nil {
+    sentinelCounters = redisstore.New(svc.Cache.Client())
+}
+
+err := sentinel.MountE(r, db, sentinel.Config{
+    Storage:  sentinelStorage,
+    Counters: sentinelCounters,
+    // Read after the handler chain, when the auth middleware has set the caller.
+    UserExtractor: func(c *gin.Context) *sentinel.UserContext {
+        id := c.GetString("user_id")
+        if id == "" {
+            return nil
+        }
+        return &sentinel.UserContext{ID: id, Email: c.GetString("user_email"), Role: c.GetString("user_role")}
+    },
+    // ...the rest of the config as it was
+})`} />
               </div>
 
               {/* How It Works */}
