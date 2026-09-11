@@ -56,6 +56,12 @@ type Mount struct {
 	Public    *gin.RouterGroup
 	Protected *gin.RouterGroup
 	Admin     *gin.RouterGroup
+
+	// Staff admits anyone holding a permission, and a route on it names the one
+	// it needs: middleware.RequireRole("ADMIN", "perm:<key>"). A routes.go from
+	// before it existed leaves it nil; mountResources then hands such routes the
+	// Admin group, so they stay ADMIN-only rather than failing.
+	Staff *gin.RouterGroup
 }
 
 // mounts is every resource route file that has registered itself.
@@ -79,6 +85,9 @@ func RegisterRoutes(fn func(*Mount)) {
 // mountResources runs every registered resource file. Called once from Setup,
 // after the groups exist and before the legacy alias fallback.
 func mountResources(m *Mount) {
+	if m.Staff == nil {
+		m.Staff = m.Admin
+	}
 	for _, mount := range mounts {
 		mount(m)
 	}

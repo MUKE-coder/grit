@@ -81,6 +81,7 @@ func ensureMountResourcesCall(path string) error {
 		{"Public:    publicAPI,", "publicAPI :="},
 		{"Protected: protected,", "protected :="},
 		{"Admin:     admin,", "admin :="},
+		{"Staff:     staff,", "staff :="},
 	} {
 		if strings.Contains(content, g.decl) {
 			fields = append(fields, "\t\t"+g.field)

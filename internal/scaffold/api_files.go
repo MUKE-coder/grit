@@ -3279,6 +3279,57 @@ func RequireRole(rolesOrPerms ...string) gin.HandlerFunc {
 		c.Abort()
 	}
 }
+
+// RequireStaff admits anyone who can do something in the admin: the ADMIN
+// role, or any permission at all. It is a gate, not a guard. Every route behind
+// it names the permission it needs, and routes that name none stay in the ADMIN
+// group, so one that forgets fails closed.
+func RequireStaff() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if role, _ := c.Get("user_role"); role == "ADMIN" {
+			c.Next()
+			return
+		}
+		if grants, ok := c.Get("user_grants"); ok {
+			if list, ok := grants.([]string); ok && len(list) > 0 {
+				c.Next()
+				return
+			}
+		}
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": gin.H{
+				"code":    "FORBIDDEN",
+				"message": "You do not have permission to access this resource",
+			},
+		})
+		c.Abort()
+	}
+}
+
+// RequirePermissionFor guards a route whose resource is in the URL. The
+// dashboard's stats and charts take it as :resource, so the permission they
+// need is that resource's, which a route written once cannot name in advance.
+func RequirePermissionFor(param, action string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if role, _ := c.Get("user_role"); role == "ADMIN" {
+			c.Next()
+			return
+		}
+		if grants, ok := c.Get("user_grants"); ok {
+			if list, ok := grants.([]string); ok && authz.Granted(list, c.Param(param)+"."+action) {
+				c.Next()
+				return
+			}
+		}
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": gin.H{
+				"code":    "FORBIDDEN",
+				"message": "You do not have permission to access this resource",
+			},
+		})
+		c.Abort()
+	}
+}
 `
 }
 
@@ -9345,130 +9396,115 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		profile.DELETE("", userHandler.DeleteProfile)
 	}
 
-	// Admin routes
+	// Staff routes: anyone who holds a permission reaches this group, and each
+	// route names the one it needs. Before v3.220.0 all of these sat behind the
+	// ADMIN role, so a custom role granted users.view was refused by every admin
+	// endpoint. The admin group below stays ADMIN-only, so a route that names no
+	// permission, a plugin's included, fails closed there.
+	staff := v1.Group("")
+	staff.Use(middleware.APIKeyOrAuth(db, middleware.Auth(db, authService)))
+	staff.Use(middleware.RequireStaff())
+	{
+		staff.GET("/users", middleware.RequireRole("ADMIN", "perm:users.view"), userHandler.List)
+		staff.POST("/users", middleware.RequireRole("ADMIN", "perm:users.create"), userHandler.Create)
+		staff.PUT("/users/:id", middleware.RequireRole("ADMIN", "perm:users.edit"), userHandler.Update)
+		staff.DELETE("/users/:id", middleware.RequireRole("ADMIN", "perm:users.delete"), userHandler.Delete)
+		staff.PUT("/users/:id/roles", middleware.RequireRole("ADMIN", "perm:users.edit"), roleHandler.AssignUserRoles)
+		staff.POST("/users/:id/unlock", middleware.RequireRole("ADMIN", "perm:users.edit"), userHandler.Unlock)
+
+		// GDPR right-to-erasure: anonymize a user and hard-delete their PII, with
+		// the erasure recorded in a tamper-evident deletion journal.
+		staff.POST("/users/:id/gdpr-erase", middleware.RequireRole("ADMIN", "perm:users.delete"), gdprHandler.Erase)
+		staff.GET("/gdpr/journal", middleware.RequireRole("ADMIN", "perm:audit.view"), gdprHandler.Journal)
+
+		// Activity: the tamper-evident log and its verification, the semantic
+		// activity feed, and its OCSF export for SIEMs. Resealing is admin-only.
+		staff.GET("/admin/activity", middleware.RequireRole("ADMIN", "perm:audit.view"), activityHandler.List)
+		staff.GET("/admin/activity/integrity", middleware.RequireRole("ADMIN", "perm:audit.view"), activityHandler.VerifyIntegrity)
+		staff.GET("/user-activity", middleware.RequireRole("ADMIN", "perm:audit.view"), userActivityHandler.List)
+		staff.GET("/user-activity/stats", middleware.RequireRole("ADMIN", "perm:audit.view"), userActivityHandler.Stats)
+		staff.GET("/audit/ocsf", middleware.RequireRole("ADMIN", "perm:audit.view"), ocsfHandler.Export)
+
+		// Roles, the permission catalog, and access reviews over the grants.
+		staff.GET("/permissions", middleware.RequireRole("ADMIN", "perm:roles.view"), roleHandler.Catalog)
+		staff.GET("/roles", middleware.RequireRole("ADMIN", "perm:roles.view"), roleHandler.List)
+		staff.POST("/roles", middleware.RequireRole("ADMIN", "perm:roles.create"), roleHandler.Create)
+		staff.GET("/roles/:id", middleware.RequireRole("ADMIN", "perm:roles.view"), roleHandler.Get)
+		staff.PUT("/roles/:id", middleware.RequireRole("ADMIN", "perm:roles.edit"), roleHandler.Update)
+		staff.DELETE("/roles/:id", middleware.RequireRole("ADMIN", "perm:roles.delete"), roleHandler.Delete)
+		staff.GET("/access-reviews", middleware.RequireRole("ADMIN", "perm:roles.view"), accessReviewHandler.List)
+		staff.POST("/access-reviews", middleware.RequireRole("ADMIN", "perm:roles.edit"), accessReviewHandler.Open)
+		staff.GET("/access-reviews/:id", middleware.RequireRole("ADMIN", "perm:roles.view"), accessReviewHandler.Get)
+		staff.POST("/access-reviews/:id/items/:itemId/decision", middleware.RequireRole("ADMIN", "perm:roles.edit"), accessReviewHandler.Decide)
+		staff.POST("/access-reviews/:id/complete", middleware.RequireRole("ADMIN", "perm:roles.edit"), accessReviewHandler.Complete)
+
+		// Operations: jobs and the schedule, and the dashboards over Sentinel,
+		// Pulse, webhooks and feature flags. Changing any of those is admin-only.
+		staff.GET("/admin/jobs/stats", middleware.RequireRole("ADMIN", "perm:jobs.view"), jobsHandler.Stats)
+		staff.GET("/admin/jobs/:status", middleware.RequireRole("ADMIN", "perm:jobs.view"), jobsHandler.ListByStatus)
+		staff.POST("/admin/jobs/:id/retry", middleware.RequireRole("ADMIN", "perm:jobs.edit"), jobsHandler.Retry)
+		staff.DELETE("/admin/jobs/queue/:queue", middleware.RequireRole("ADMIN", "perm:jobs.edit"), jobsHandler.ClearQueue)
+		staff.GET("/admin/cron/tasks", middleware.RequireRole("ADMIN", "perm:jobs.view"), cronHandler.ListTasks)
+		staff.GET("/admin/security/summary", middleware.RequireRole("ADMIN", "perm:system.view"), securityHandler.Summary)
+		staff.GET("/admin/observability/summary", middleware.RequireRole("ADMIN", "perm:system.view"), observabilityHandler.Summary)
+		staff.GET("/admin/webhooks", middleware.RequireRole("ADMIN", "perm:system.view"), webhookHandler.List)
+		staff.GET("/admin/flags", middleware.RequireRole("ADMIN", "perm:system.view"), featureFlagHandler.List)
+		staff.GET("/admin/flags/:id/exposures", middleware.RequireRole("ADMIN", "perm:system.view"), featureFlagHandler.Exposures)
+
+		// Blog management.
+		staff.GET("/admin/blogs", middleware.RequireRole("ADMIN", "perm:blogs.view"), blogHandler.List)
+		staff.GET("/admin/blogs/:id", middleware.RequireRole("ADMIN", "perm:blogs.view"), blogHandler.GetByID)
+		staff.POST("/admin/blogs", middleware.RequireRole("ADMIN", "perm:blogs.create"), blogHandler.Create)
+		staff.PUT("/admin/blogs/:id", middleware.RequireRole("ADMIN", "perm:blogs.edit"), blogHandler.Update)
+		staff.DELETE("/admin/blogs/:id", middleware.RequireRole("ADMIN", "perm:blogs.delete"), blogHandler.Delete)
+
+		// Per-resource dashboard stats and charts. The resource is in the URL, so
+		// the permission is that resource's view. Only resources registered in
+		// the stats and chart dispatchers are reachable at all.
+		staff.GET("/admin/dashboard/resource-stats/:resource", middleware.RequirePermissionFor("resource", "view"), resourceStatsHandler.Get)
+		staff.GET("/admin/dashboard/chart/:resource", middleware.RequirePermissionFor("resource", "view"), chartHandler.Get)
+
+		// Full-database backups: a weekly cron writes them, and an operator can
+		// take one on demand (once a day) and download it through a short-lived
+		// pre-signed URL. The settings live at their own path so they do not
+		// collide with the /backups/:id wildcard.
+		staff.GET("/backups", middleware.RequireRole("ADMIN", "perm:backups.view"), backupHandler.List)
+		staff.POST("/backups/generate", middleware.RequireRole("ADMIN", "perm:backups.create"), backupHandler.Generate)
+		staff.GET("/backups/:id/download", middleware.RequireRole("ADMIN", "perm:backups.view"), backupHandler.Download)
+		staff.GET("/backup-settings", middleware.RequireRole("ADMIN", "perm:backups.view"), backupHandler.GetSettings)
+		staff.PUT("/backup-settings", middleware.RequireRole("ADMIN", "perm:backups.edit"), backupHandler.UpdateSettings)
+	}
+
+	// Admin routes: the ADMIN role and nothing less. Anything that should be
+	// grantable to a custom role belongs in the staff group above, naming its
+	// permission.
 	admin := v1.Group("")
 	admin.Use(middleware.APIKeyOrAuth(db, middleware.Auth(db, authService)))
 	admin.Use(middleware.RequireRole("ADMIN"))
 	{
-		admin.GET("/users", userHandler.List)
-		admin.POST("/users", userHandler.Create)
-		admin.PUT("/users/:id", userHandler.Update)
-		admin.DELETE("/users/:id", userHandler.Delete)
-
-		// Activity audit log + tamper-evident chain verification
-		admin.GET("/admin/activity", activityHandler.List)
-		admin.GET("/admin/activity/integrity", activityHandler.VerifyIntegrity)
 		admin.POST("/admin/activity/reseal", activityHandler.Reseal)
-
-		// v3.30 — semantic user activity dashboard (action + IP + severity).
-		// Separate from /admin/activity above which is the HTTP audit log.
-		admin.GET("/user-activity", userActivityHandler.List)
-		admin.GET("/user-activity/stats", userActivityHandler.Stats)
-
-		// OCSF audit export — the semantic activity log in the vendor-neutral
-		// shape SIEMs ingest. Cursor-paginated NDJSON; poll to resume.
-		admin.GET("/audit/ocsf", ocsfHandler.Export)
-
-		// Access reviews (recertification) — snapshot every grant, certify or
-		// revoke each, sign off. Admin-only; revocations hit the audit trail.
-		admin.GET("/access-reviews", accessReviewHandler.List)
-		admin.POST("/access-reviews", accessReviewHandler.Open)
-		admin.GET("/access-reviews/:id", accessReviewHandler.Get)
-		admin.POST("/access-reviews/:id/items/:itemId/decision", accessReviewHandler.Decide)
-		admin.POST("/access-reviews/:id/complete", accessReviewHandler.Complete)
-
-		// GDPR right-to-erasure: anonymize a user + hard-delete their PII, recorded
-		// in a tamper-evident deletion journal. Admin-only; the journal is verifiable.
-		admin.POST("/users/:id/gdpr-erase", gdprHandler.Erase)
-		admin.GET("/gdpr/journal", gdprHandler.Journal)
-
-		// Webhook receiver admin (review + replay failed events)
-		admin.GET("/admin/webhooks", webhookHandler.List)
 		admin.POST("/admin/webhooks/:id/replay", webhookHandler.Replay)
-
-		// Feature flags + A/B testing
-		admin.GET("/admin/flags", featureFlagHandler.List)
 		admin.POST("/admin/flags", featureFlagHandler.Create)
 		admin.PUT("/admin/flags/:id", featureFlagHandler.Update)
 		admin.DELETE("/admin/flags/:id", featureFlagHandler.Delete)
-		admin.GET("/admin/flags/:id/exposures", featureFlagHandler.Exposures)
 
-		// Admin system routes
-		admin.GET("/admin/jobs/stats", jobsHandler.Stats)
-		admin.GET("/admin/jobs/:status", jobsHandler.ListByStatus)
-		admin.POST("/admin/jobs/:id/retry", jobsHandler.Retry)
-		admin.DELETE("/admin/jobs/queue/:queue", jobsHandler.ClearQueue)
-		admin.GET("/admin/cron/tasks", cronHandler.ListTasks)
+		// SSO connections. Client secrets are write-only: they go in on create
+		// and update and are never returned, so a compromised admin session
+		// cannot read a customer's IdP credentials back out.
+		admin.GET("/sso/connections", ssoHandler.List)
+		admin.POST("/sso/connections", ssoHandler.Create)
+		admin.PUT("/sso/connections/:id", ssoHandler.Update)
+		admin.DELETE("/sso/connections/:id", ssoHandler.Delete)
+		admin.GET("/sso/connections/:id/test", ssoHandler.Test)
 
-		// Blog management (admin)
-		admin.GET("/admin/blogs", blogHandler.List)
-		admin.GET("/admin/blogs/:id", blogHandler.GetByID)
-		admin.POST("/admin/blogs", blogHandler.Create)
-		admin.PUT("/admin/blogs/:id", blogHandler.Update)
-		admin.DELETE("/admin/blogs/:id", blogHandler.Delete)
-
-
-		// In-app Security dashboard — aggregates Sentinel APIs into one
-		// envelope so the React page does a single round-trip. Operators
-		// who want to dig deeper open /sentinel/ui directly.
-		admin.GET("/admin/security/summary", securityHandler.Summary)
-		// In-app Observability dashboard — same pattern against Pulse.
-		// Operators who want a flame graph or the full SLO timeline open
-		// /pulse/ui directly.
-		admin.GET("/admin/observability/summary", observabilityHandler.Summary)
-
-		// v3.31.20 — public form sharing admin
-		// SSO connections — admin only. Client secrets are write-only: they go
-		// in on create/update and are never returned, so a compromised admin
-		// session can't read a customer's IdP credentials back out.
-		admin.GET("/sso/connections", middleware.RequireRole("ADMIN"), ssoHandler.List)
-		admin.POST("/sso/connections", middleware.RequireRole("ADMIN"), ssoHandler.Create)
-		admin.PUT("/sso/connections/:id", middleware.RequireRole("ADMIN"), ssoHandler.Update)
-		admin.DELETE("/sso/connections/:id", middleware.RequireRole("ADMIN"), ssoHandler.Delete)
-		admin.GET("/sso/connections/:id/test", middleware.RequireRole("ADMIN"), ssoHandler.Test)
-
+		// Public form sharing, its field preview, and the log of submissions.
 		admin.GET("/admin/form-shares", formShareHandler.List)
 		admin.POST("/admin/form-shares", formShareHandler.Create)
 		admin.PATCH("/admin/form-shares/:id", formShareHandler.Update)
 		admin.DELETE("/admin/form-shares/:id", formShareHandler.Delete)
-		// v3.31.50 — dropdown source + field preview for the New
-		// Share / Edit Share modal. Both read-only.
 		admin.GET("/admin/form-shares/resources", formShareHandler.Resources)
 		admin.GET("/admin/form-shares/resources/:resource/fields", formShareHandler.FieldsPreview)
-		// v3.31.25 — audit log of public submissions
 		admin.GET("/admin/form-submissions", formShareHandler.ListSubmissions)
-
-		// v3.31.44 — per-resource dashboard stats: Total + 30-day
-		// sparkline + Latest N. Dispatched server-side; only resources
-		// registered in services/resource_stats_dispatch.go are reachable.
-		admin.GET("/admin/dashboard/resource-stats/:resource", resourceStatsHandler.Get)
-
-		// v3.31.47 — Preset Chart builder. Same dispatch boundary;
-		// only resources registered in chart_dispatch.go reachable.
-		admin.GET("/admin/dashboard/chart/:resource", chartHandler.Get)
-
-		// v3.31.77 — full-database backups. Weekly cron writes them; an
-		// operator can also take one on demand (rate-limited to 1/24h) and
-		// download it via a short-lived pre-signed URL straight from storage.
-		admin.GET("/backups", backupHandler.List)
-		admin.POST("/backups/generate", backupHandler.Generate)
-		admin.GET("/backups/:id/download", backupHandler.Download)
-		// Separate path (not /backups/settings) so it doesn't collide with the
-		// /backups/:id wildcard segment in Gin's router.
-		admin.GET("/backup-settings", backupHandler.GetSettings)
-		admin.PUT("/backup-settings", backupHandler.UpdateSettings)
-
-		// Roles & permissions. Guarded by permission as well as the group's
-		// ADMIN role, so a custom role can be given role-management rights
-		// without being made a full admin.
-		admin.GET("/permissions", roleHandler.Catalog)
-		admin.GET("/roles", middleware.RequireRole("ADMIN", "perm:roles.view"), roleHandler.List)
-		admin.POST("/roles", middleware.RequireRole("ADMIN", "perm:roles.create"), roleHandler.Create)
-		admin.GET("/roles/:id", middleware.RequireRole("ADMIN", "perm:roles.view"), roleHandler.Get)
-		admin.PUT("/roles/:id", middleware.RequireRole("ADMIN", "perm:roles.edit"), roleHandler.Update)
-		admin.DELETE("/roles/:id", middleware.RequireRole("ADMIN", "perm:roles.delete"), roleHandler.Delete)
-		admin.PUT("/users/:id/roles", middleware.RequireRole("ADMIN", "perm:users.edit"), roleHandler.AssignUserRoles)
-		admin.POST("/users/:id/unlock", middleware.RequireRole("ADMIN", "perm:users.edit"), userHandler.Unlock)
 
 		// Writing settings. Per-setting permissions are checked inside the
 		// handler, because which permission applies depends on which setting
@@ -9507,6 +9543,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		Public:    publicAPI,
 		Protected: protected,
 		Admin:     admin,
+		Staff:     staff,
 	})
 
 	mountLegacyAPIAlias(r)

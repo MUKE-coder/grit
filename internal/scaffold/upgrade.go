@@ -246,6 +246,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := ensureClusterWiring(opts.APIRoot(root), opts.Module()); err != nil {
 			fmt.Printf("  ⚠ %v\n", err)
 		}
+		// Custom roles reach the admin API through the staff group a new
+		// routes.go has. An existing routes.go is not restructured, so say so.
+		if f := filepath.Join(opts.APIRoot(root), "internal", "routes", "routes.go"); fileExists(f) && !fileContains(f, "RequireStaff()") {
+			fmt.Println("  • Custom roles cannot reach the admin API in this project yet: its routes.go\n" +
+				"    predates the staff group. The Roles & permissions docs show the change (Staff routes).")
+		}
 		// Read-only. .env holds secrets and is the developer's, so a URL that
 		// disagrees with the port compose binds is reported, not rewritten.
 		for _, w := range envPortDrift(root) {

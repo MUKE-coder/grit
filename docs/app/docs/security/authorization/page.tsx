@@ -72,17 +72,51 @@ products.*    every action on products
               argument matches:
             </p>
             <CodeBlock language="go" filename="internal/routes/routes.go" code={`// Permission-based (preferred)
-admin.DELETE("/products/:id",
+staff.DELETE("/products/:id",
     middleware.RequireRole("perm:products.delete"),
     productHandler.Delete)
 
-// Mixed — useful while migrating. Either passes.
-admin.PUT("/users/:id",
+// Mixed: an ADMIN passes, and so does any role granted users.edit.
+staff.PUT("/users/:id",
     middleware.RequireRole("ADMIN", "perm:users.edit"),
     userHandler.Update)
 
 // Role-only still works. Nothing existing had to change.
 admin.Use(middleware.RequireRole("ADMIN"))`} />
+
+            <h2 id="staff-routes">Staff routes: how a custom role reaches the admin API</h2>
+            <p>
+              <code>routes.go</code> has two groups for the admin API, and which one a route is on
+              decides who can reach it:
+            </p>
+            <ul>
+              <li>
+                <code>staff</code> admits anyone who holds at least one permission, and every route
+                on it names the permission it needs. Users, roles, the audit log, jobs, backups,
+                blogs and the dashboards live here, so a role granted <code>users.view</code> can
+                list users and nothing more.
+              </li>
+              <li>
+                <code>admin</code> requires the <code>ADMIN</code> role and nothing less. Routes that
+                name no permission stay here (SSO connections, form sharing, writing settings,
+                changing feature flags), and so does anything a plugin adds, so a route that forgets
+                its permission fails closed.
+              </li>
+            </ul>
+            <p>
+              Generated resources follow the same split. Reading and writing a record is on the
+              protected group; delete and bulk are on the staff group and ask for{' '}
+              <code>&lt;resource&gt;.delete</code>, so a role can be allowed to delete products
+              without being made an admin.
+            </p>
+            <CodeBlock language="go" filename="internal/routes/product_routes.go" code={`m.Staff.DELETE("/products/:id", middleware.RequireRole("ADMIN", "perm:products.delete"), h.Delete)
+m.Staff.POST("/products/bulk", middleware.RequireRole("ADMIN", "perm:products.delete"), h.Bulk)`} />
+            <p>
+              Before v3.220.0 there was only the admin group. Every route on it sat behind the{' '}
+              <code>ADMIN</code> role, so the <code>perm:</code> guards on them never ran, and a
+              custom role was refused by every admin endpoint whatever it was granted. The admin
+              panel showed an <code>EDITOR</code> pages the API then refused.
+            </p>
 
             <p>
               Inside a handler, use <code>authz.Can</code> for conditional logic:
@@ -159,6 +193,32 @@ admin.Use(middleware.RequireRole("ADMIN"))`} />
               Adopt permissions route by route: add a <code>perm:</code> argument alongside
               the role name, then drop the role name once every caller has a role that
               grants it.
+            </p>
+            <p>
+              A project scaffolded before v3.220.0 has no staff group, and{' '}
+              <code>grit upgrade</code> does not restructure <code>routes.go</code>, so it says so
+              instead. Its generated deletes stay ADMIN-only until you add the group. To add it,
+              create the group beside the admin one, move each route you want grantable onto it
+              with the permission it needs, and hand it to generated resources:
+            </p>
+            <CodeBlock language="go" filename="internal/routes/routes.go" code={`staff := v1.Group("")
+staff.Use(middleware.APIKeyOrAuth(db, middleware.Auth(db, authService)))
+staff.Use(middleware.RequireStaff())
+{
+    staff.GET("/users", middleware.RequireRole("ADMIN", "perm:users.view"), userHandler.List)
+}
+
+mountResources(&Mount{
+    // ...
+    Admin:     admin,
+    Staff:     staff,
+})`} />
+            <p>
+              <code>grit upgrade</code> does not rewrite <code>internal/middleware/auth.go</code> or{' '}
+              <code>internal/routes/resources.go</code> either. Copy <code>RequireStaff</code> and{' '}
+              <code>RequirePermissionFor</code> from a new project into the first, and add{' '}
+              <code>Staff *gin.RouterGroup</code> to the <code>Mount</code> in the second. Regenerate a
+              resource afterwards and its delete and bulk routes move to the staff group.
             </p>
 
             <h2>Multiple roles per user</h2>
