@@ -29,6 +29,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.213.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.213.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Erasing a user left the records they owned</h3>
+                <p>
+                  Found building a patient-records app. Right-to-erasure deleted rows from a fixed
+                  list of nine framework tables and anonymized the user. A provider&apos;s notes,
+                  generated with <code>--owned-by user</code>, stayed exactly where they were, while
+                  the deletion journal recorded the erasure as complete.
+                </p>
+                <p>
+                  What erasure deletes is now a registry. The framework&apos;s own tables register
+                  from one file, and every resource generated with <code>--owned-by</code> registers
+                  from its model file, so the rows a person owns go with them. Append-only resources
+                  are not registered: their rows cannot be deleted, and which of retention or erasure
+                  wins is left to the project rather than decided quietly. Verified on a live
+                  project: two notes owned by the erased user went, and another user&apos;s note
+                  stayed.
+                </p>
+
+                <h3>Restoring a backup brought erased people back</h3>
+                <p>
+                  A backup taken before someone was erased still holds them, and restoring it put
+                  them back. Worse, it replaced the deletion journal with the archive&apos;s older
+                  copy, so the entry proving the erasure had happened disappeared too.
+                </p>
+                <p>
+                  Restore now reads the journal before clearing anything, puts back the entries the
+                  archive is missing exactly as they were, and erases those people again. Verified by
+                  erasing a user and then restoring a backup taken while they were present: the
+                  restore reported one erasure re-applied, the user stayed anonymized with their
+                  records gone, and the journal still verified with its original hash. The journal
+                  lives in the same database, so a restore into an empty one has nothing to consult;
+                  the compliance page covers exporting it.
+                </p>
+                <p>
+                  <code>grit upgrade</code> carries both to existing projects.
+                </p>
+              </div>
+            </div>
+
             {/* v3.212.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

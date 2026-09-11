@@ -78,6 +78,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/erasure"
 	"{{MODULE}}/internal/models"
 )
 
@@ -134,27 +135,9 @@ func ExportUserData(db *gorm.DB, userID string) (*UserExport, error) {
 	return out, nil
 }
 
-// erasableTables are the tables whose rows exist only to serve the user and
-// carry no independent compliance value — safe to hard-delete on erasure.
-func erasableTargets() []struct {
-	name  string
-	model interface{}
-} {
-	return []struct {
-		name  string
-		model interface{}
-	}{
-		{"uploads", &models.Upload{}},
-		{"sessions", &models.Session{}},
-		{"password_reset_tokens", &models.PasswordResetToken{}},
-		{"user_roles", &models.UserRole{}},
-		{"two_factor_configs", &models.TwoFactorConfig{}},
-		{"trusted_devices", &models.TrustedDevice{}},
-		{"totp_pending_tokens", &models.TOTPPendingToken{}},
-		{"dashboard_layouts", &models.DashboardLayout{}},
-		{"notifications", &models.Notification{}},
-	}
-}
+// The tables erasure deletes from are registered with internal/erasure:
+// the framework's own in models/erasable.go, and every resource generated
+// with --owned-by from its model file.
 
 // EraseUser fulfils a right-to-erasure request in one transaction: hard-delete
 // the user's child PII, anonymize the user row, and append a tamper-evident
@@ -173,47 +156,13 @@ func EraseUser(db *gorm.DB, targetID, actorID, actorEmail, reason string) (*mode
 			return err
 		}
 
-		// Unscoped is essential: several of these models carry gorm.DeletedAt, and a
-		// normal Delete would only *soft*-delete — setting deleted_at while the row
-		// (and its PII) physically remains. That is not erasure. Unscoped removes the
-		// row for real, and counts physical rows so the journal reflects what was
-		// actually destroyed.
-		counts := map[string]int64{}
-		total := 0
-		for _, t := range erasableTargets() {
-			var n int64
-			if err := tx.Unscoped().Model(t.model).Where("user_id = ?", targetID).Count(&n).Error; err != nil {
-				return fmt.Errorf("counting %s: %w", t.name, err)
-			}
-			if n > 0 {
-				if err := tx.Unscoped().Where("user_id = ?", targetID).Delete(t.model).Error; err != nil {
-					return fmt.Errorf("deleting %s: %w", t.name, err)
-				}
-			}
-			counts[t.name] = n
-			total += int(n)
-		}
-
-		// Anonymize the user row in place: scrub every PII column, keep the id so
-		// references resolve to a tombstone. The email keeps a unique, non-routable
-		// value so the unique index stays satisfiable if the row is re-read.
-		tomb := "erased-" + user.ID + "@deleted.invalid"
-		if err := tx.Model(&models.User{}).Where("id = ?", targetID).Updates(map[string]interface{}{
-			"first_name":  "Erased",
-			"last_name":   "User",
-			"email":       tomb,
-			"password":    "",
-			"avatar":      "",
-			"job_title":   "",
-			"bio":         "",
-			"ip_address":  "",
-			"mac_address": "",
-			"google_id":   "",
-			"github_id":   "",
-			"active":      false,
-			"role":        "USER",
-		}).Error; err != nil {
-			return fmt.Errorf("anonymizing user: %w", err)
+		// What goes is whatever registered with the erasure package: the
+		// framework's own tables and every resource generated with --owned-by.
+		// This was a list of nine framework tables, and erasing a user left every
+		// app record they owned in place while the journal called it done.
+		counts, total, err := erasure.Scrub(tx, targetID)
+		if err != nil {
+			return err
 		}
 
 		countsJSON, _ := json.Marshal(counts)

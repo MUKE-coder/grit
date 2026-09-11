@@ -201,6 +201,14 @@ func Upgrade(uOpts UpgradeOptions) error {
 				return fmt.Errorf("updating backup files: %w", err)
 			}
 		}
+		// Erasure became a registry so owned resources are erased with their
+		// owner, and restore re-applies later erasures through it. Only where the
+		// GDPR service is already there.
+		if fileExists(filepath.Join(opts.APIRoot(root), "internal", "services", "gdpr.go")) {
+			if err := writeErasureFiles(root, opts); err != nil {
+				return fmt.Errorf("updating erasure files: %w", err)
+			}
+		}
 		// Read-only. .env holds secrets and is the developer's, so a URL that
 		// disagrees with the port compose binds is reported, not rewritten.
 		for _, w := range envPortDrift(root) {
