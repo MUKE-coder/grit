@@ -42,6 +42,13 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "webhooks", "dedup_test.go"):  apiWebhookDedupTestGo(),
 
 		filepath.Join(apiRoot, "internal", "models", "outbox_message.go"): apiOutboxModelGo(),
+
+		// Feature flags: the rules model and the engine that reads it, a
+		// set like the webhook cluster. In the API map they were written once
+		// and never again, so no flag fix reached an existing project.
+		filepath.Join(apiRoot, "internal", "models", "feature_flag.go"): apiFeatureFlagModelGo(),
+		filepath.Join(apiRoot, "internal", "flags", "flags.go"):         apiFlagsGo(),
+		filepath.Join(apiRoot, "internal", "flags", "flags_test.go"):    apiFlagsTestGo(),
 	}
 
 	for path, content := range files {

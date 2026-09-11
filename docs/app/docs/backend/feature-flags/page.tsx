@@ -198,6 +198,7 @@ type FlagRules struct {
     EnabledFrom       *time.Time \`json:"enabled_from,omitempty"\`       // date window start
     EnabledUntil      *time.Time \`json:"enabled_until,omitempty"\`      // date window end
     Variants          []string   \`json:"variants,omitempty"\`           // set = A/B mode
+    Attributes        map[string][]string \`json:"attributes,omitempty"\` // {"business_unit": ["eu"]}
 }`}
                 />
 
@@ -234,12 +235,55 @@ type FlagRules struct {
                       <tr className="border-b border-border/50"><td className="px-4 py-2">1</td><td className="px-4 py-2">Master <code>Enabled</code> is false</td><td className="px-4 py-2 text-muted-foreground">disabled (short-circuit)</td></tr>
                       <tr className="border-b border-border/50"><td className="px-4 py-2">2</td><td className="px-4 py-2">Now &lt; <code>EnabledFrom</code> or &gt; <code>EnabledUntil</code></td><td className="px-4 py-2 text-muted-foreground">disabled</td></tr>
                       <tr className="border-b border-border/50"><td className="px-4 py-2">3</td><td className="px-4 py-2">User in <code>BlocklistUserIDs</code></td><td className="px-4 py-2 text-muted-foreground">disabled (always wins)</td></tr>
-                      <tr className="border-b border-border/50"><td className="px-4 py-2">4</td><td className="px-4 py-2"><code>AllowlistUserIDs</code> set &amp; user not in it</td><td className="px-4 py-2 text-muted-foreground">disabled</td></tr>
-                      <tr className="border-b border-border/50"><td className="px-4 py-2">5</td><td className="px-4 py-2"><code>Variants</code> set (A/B mode)</td><td className="px-4 py-2 text-muted-foreground">variants[bucket % len]</td></tr>
-                      <tr><td className="px-4 py-2">6</td><td className="px-4 py-2">bucket &lt; <code>RolloutPercentage</code> (or allowlisted)</td><td className="px-4 py-2 text-muted-foreground">enabled, else disabled</td></tr>
+                      <tr className="border-b border-border/50"><td className="px-4 py-2">4</td><td className="px-4 py-2">A key in <code>Attributes</code> whose values do not include the subject&apos;s</td><td className="px-4 py-2 text-muted-foreground">disabled</td></tr>
+                      <tr className="border-b border-border/50"><td className="px-4 py-2">5</td><td className="px-4 py-2"><code>AllowlistUserIDs</code> set &amp; user not in it</td><td className="px-4 py-2 text-muted-foreground">disabled</td></tr>
+                      <tr className="border-b border-border/50"><td className="px-4 py-2">6</td><td className="px-4 py-2"><code>Variants</code> set (A/B mode)</td><td className="px-4 py-2 text-muted-foreground">variants[bucket % len]</td></tr>
+                      <tr><td className="px-4 py-2">7</td><td className="px-4 py-2">bucket &lt; <code>RolloutPercentage</code> (or allowlisted)</td><td className="px-4 py-2 text-muted-foreground">enabled, else disabled</td></tr>
                     </tbody>
                   </table>
                 </div>
+
+                <h3 id="attributes" className="text-lg font-semibold tracking-tight mb-2 mt-6">
+                  Targeting a business unit
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  <code>Attributes</code> turns a flag on for subjects whose attributes match, rather
+                  than for a list of user IDs you would have to keep in step with your staff. With{' '}
+                  <code>{'{"business_unit": ["eu", "ke"]}'}</code> the flag is on only for someone whose
+                  business unit is eu or ke. Every key listed must match, ignoring case, and a subject
+                  without the attribute does not match, so a rule on something your app never supplies
+                  fails closed.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Where the attributes come from is yours to say. <code>flags.AttributesFor</code>{' '}
+                  reports the user&apos;s role by default; replace it at boot with whatever your users
+                  carry. Code without a request, such as a job, builds the subject itself:
+                </p>
+                <CodeBlock
+                  language="go"
+                  code={`// At boot: what the rules can target.
+flags.AttributesFor = func(c *gin.Context) map[string]string {
+    return map[string]string{"business_unit": businessUnitOf(c)}
+}
+
+// In any handler or service.
+if flags.IsEnabled(c, "eu_approvals") {
+    // ...
+}
+
+// In a job, with no request.
+eu := flags.Subject{UserID: id, Attributes: map[string]string{"business_unit": "eu"}}
+if flags.IsEnabledFor(eu, "eu_approvals") {
+    // ...
+}`}
+                />
+                <p className="text-muted-foreground leading-relaxed mb-4 mt-4">
+                  The package-level functions use the engine <code>routes.Setup</code> starts, and
+                  answer false before it has. Before v3.223.0 the package documented{' '}
+                  <code>flags.IsEnabled(c, ...)</code> without it existing, so code outside the routes
+                  file could not check a flag. Flags are still managed through the API: the admin has
+                  no flags screen yet.
+                </p>
 
                 <h3 className="text-lg font-semibold tracking-tight mb-2 mt-6">
                   Sticky bucketing

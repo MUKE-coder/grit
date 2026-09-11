@@ -29,6 +29,46 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.223.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.223.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Feature flags could not target a business unit, or be checked at all</h3>
+                <p>
+                  Found building an ERP whose configuration differs by business unit. A flag could
+                  target individual user IDs, a percentage and a date window, so &quot;on for the EU
+                  unit&quot; meant listing every EU employee by hand and keeping the list in step with
+                  hiring. Worse, the <code>flags</code> package documented{' '}
+                  <code>flags.IsEnabled(c, ...)</code> and <code>flags.Variant(c, ...)</code>, and
+                  neither existed: the only engine was a local variable inside{' '}
+                  <code>routes.Setup</code>, so no handler, service or job could check a flag.
+                </p>
+                <p>
+                  Flag rules take <code>attributes</code> now, such as{' '}
+                  <code>{'{"business_unit": ["eu", "ke"]}'}</code>, matched against the attributes{' '}
+                  <code>flags.AttributesFor</code> supplies for the request (the user&apos;s role by
+                  default; replace it with whatever your users carry). A subject without the attribute
+                  does not match, so the rule fails closed. <code>flags.IsEnabled</code>,{' '}
+                  <code>Variant</code> and <code>IsEnabledFor</code> work from anywhere, and answer
+                  false before the engine has started. Both files moved to the set{' '}
+                  <code>grit upgrade</code> refreshes; in the API&apos;s own file list, no flag fix had
+                  ever reached an existing project.
+                </p>
+                <p>
+                  Every project gets <code>internal/flags/flags_test.go</code>, which checks a
+                  business-unit rule and the package-level API against a real engine; it passed in the
+                  ERP project after the upgrade. Flags are still managed through the API: the admin has
+                  no flags screen yet.
+                </p>
+              </div>
+            </div>
+
             {/* v3.222.1 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
