@@ -326,6 +326,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "lib", "resource.ts"):     adminResourceTypes(),
 		filepath.Join(adminRoot, "lib", "form-values.ts"):  adminFormValues(),
 		filepath.Join(adminRoot, "lib", "icons.ts"):        adminIconMap(),
+		filepath.Join(adminRoot, "lib", "i18n.tsx"):        adminI18nLib(),
 		filepath.Join(adminRoot, "lib", "formatters.ts"):   adminFormatters(),
 		filepath.Join(adminRoot, "lib", "file-accepts.ts"): adminFileAcceptsLib(),
 		// v3.31.35 — SheetJS-backed Excel/CSV/JSON helpers used by the
@@ -694,14 +695,14 @@ func adminTSConfig() string {
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
   "exclude": ["node_modules", "vitest.config.ts", "vitest.setup.ts", "playwright.config.ts", "**/__tests__/**", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "e2e"]
 }
 `

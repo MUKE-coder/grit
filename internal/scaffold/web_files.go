@@ -6,9 +6,20 @@ import (
 )
 
 func writeWebFiles(root string, opts Options) error {
+	for path, content := range webFileMap(root, opts) {
+		if err := writeFile(path, content); err != nil {
+			return fmt.Errorf("writing %s: %w", path, err)
+		}
+	}
+	return writeBrandLogo(filepath.Join(root, "apps", "web", "public"), "grit_logo.png")
+}
+
+// webFileMap is the web app's framework files, by path. Separate from the
+// writer so upgrade can compare a project's files with them before writing.
+func webFileMap(root string, opts Options) map[string]string {
 	webRoot := filepath.Join(root, "apps", "web")
 
-	files := map[string]string{
+	return map[string]string{
 		filepath.Join(webRoot, "package.json"):             webPackageJSON(opts),
 		filepath.Join(webRoot, "next.config.ts"):           webNextConfig(),
 		filepath.Join(webRoot, "postcss.config.js"):        postCSSConfigFor(webRoot),
@@ -42,18 +53,6 @@ func writeWebFiles(root string, opts Options) error {
 		filepath.Join(webRoot, "app", "forms", "[token]", "page.tsx"): webPublicFormPage(),
 		filepath.Join(webRoot, "public", ".gitkeep"):                  "",
 	}
-
-	for path, content := range files {
-		if err := writeFile(path, content); err != nil {
-			return fmt.Errorf("writing %s: %w", path, err)
-		}
-	}
-
-	if err := writeBrandLogo(filepath.Join(webRoot, "public"), "grit_logo.png"); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func webPackageJSON(opts Options) string {
@@ -222,14 +221,14 @@ func webTSConfig() string {
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
   "exclude": ["node_modules", "vitest.config.ts", "vitest.setup.ts", "playwright.config.ts", "**/__tests__/**", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "e2e"]
 }
 `

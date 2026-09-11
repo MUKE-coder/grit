@@ -74,6 +74,25 @@ func stopGuard() (written int, skipped []SkippedFile) {
 	return written, skipped
 }
 
+// guardAdopt tells the guard a file is Grit's after all, as it stands now.
+// The guard reads the manifest once, when the upgrade starts, so a file
+// adopted during the upgrade would otherwise still be held back and reported
+// as edited by you in the same run that adopted it.
+func guardAdopt(path, content string) {
+	guard.mu.Lock()
+	defer guard.mu.Unlock()
+	if !guard.active || guard.manifest == nil {
+		return
+	}
+	rel, inside := manifest.Rel(guard.root, path)
+	if !inside {
+		return
+	}
+	if entry, tracked := guard.manifest.Files[rel]; tracked {
+		guard.manifest.Record(rel, entry.Generator, "", content)
+	}
+}
+
 // guardAllows decides whether a write may proceed, and records the decision.
 //
 // The rule is narrow on purpose: only a file Grit is recorded as having

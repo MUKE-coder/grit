@@ -85,7 +85,10 @@ export function ResourceStatCard({ resource, dateRange }: Props) {
       const search = new URLSearchParams(params).toString();
       const url =
         "/api/admin/dashboard/resource-stats/" +
-        resource.slug +
+        // The API registers stats under its own resource name, the last
+        // segment of the endpoint (purchase_requests), not the admin slug
+        // (purchase-requests), so every multi-word resource's card failed.
+        resource.endpoint.split("/").filter(Boolean).pop() +
         (search ? "?" + search : "");
       const { data } = await apiClient.get<ResourceStatsResponse>(url);
       return data.data;
@@ -263,7 +266,10 @@ export function ResourceLatestTable({ resource, dateRange, limit = 5 }: Props) {
       const search = new URLSearchParams(params).toString();
       const url =
         "/api/admin/dashboard/resource-stats/" +
-        resource.slug +
+        // The API registers stats under its own resource name, the last
+        // segment of the endpoint (purchase_requests), not the admin slug
+        // (purchase-requests), so every multi-word resource's card failed.
+        resource.endpoint.split("/").filter(Boolean).pop() +
         (search ? "?" + search : "");
       const { data } = await apiClient.get<ResourceStatsResponse>(url);
       return data.data;

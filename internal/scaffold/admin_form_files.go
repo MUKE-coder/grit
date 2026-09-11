@@ -6,6 +6,7 @@ import "strings"
 func adminFormBuilder() string {
 	return `"use client";
 
+import { useT } from "@/lib/i18n";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import type { FieldDefinition, FormDefinition } from "@/lib/resource";
 import { displayFormat, displayValue, isDisplayOnly, writableValues } from "@/lib/form-values";
@@ -47,8 +48,9 @@ export function FormBuilder({
   onSubmit,
   onCancel,
   isSubmitting,
-  submitLabel = "Save",
+  submitLabel,
 }: FormBuilderProps) {
+  const t = useT();
   const {
     control,
     handleSubmit,
@@ -82,10 +84,10 @@ export function FormBuilder({
 
       <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
         <Button variant="outline" onClick={onCancel}>
-          Cancel
+          {t("form.cancel", "Cancel")}
         </Button>
         <Button type="submit" loading={isSubmitting}>
-          {submitLabel}
+          {submitLabel ?? t("form.save", "Save")}
         </Button>
       </div>
     </form>
@@ -445,6 +447,7 @@ export function buildDefaults(
 func adminFormModal() string {
 	return `"use client";
 
+import { useT } from "@/lib/i18n";
 import type { ResourceDefinition } from "@/lib/resource";
 import { FormBuilder } from "./form-builder";
 import { useCreateResource, useUpdateResource } from "@/hooks/use-resource";
@@ -472,6 +475,7 @@ export function FormModal<T extends object = Record<string, unknown>>({
   // Erased once at the boundary — the body reads values by string key.
   const item = itemProp as Record<string, unknown> | null;
   const isEdit = item !== null;
+  const t = useT();
   const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint, resource.label?.singular ?? resource.name);
   const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint, resource.label?.singular ?? resource.name);
 
@@ -494,7 +498,9 @@ export function FormModal<T extends object = Record<string, unknown>>({
       <div className="relative z-10 w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-bg-secondary shadow-2xl">
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <h2 className="text-lg font-semibold text-foreground">
-            {isEdit ? "Edit" : "Create"} {resource.label?.singular ?? resource.name}
+            {isEdit
+              ? t("form.editTitle", "Edit {name}", { name: resource.label?.singular ?? resource.name })
+              : t("form.createTitle", "Create {name}", { name: resource.label?.singular ?? resource.name })}
           </h2>
           <button
             onClick={onClose}
@@ -511,7 +517,7 @@ export function FormModal<T extends object = Record<string, unknown>>({
             onSubmit={handleSubmit}
             onCancel={onClose}
             isSubmitting={isCreating || isUpdating}
-            submitLabel={isEdit ? "Update" : "Create"}
+            submitLabel={isEdit ? t("form.update", "Update") : t("form.create", "Create")}
           />
         </div>
       </div>
@@ -528,6 +534,7 @@ export function FormModal<T extends object = Record<string, unknown>>({
 func adminFormSheet() string {
 	return `"use client";
 
+import { useT } from "@/lib/i18n";
 import { useState } from "react";
 import type { ResourceDefinition } from "@/lib/resource";
 import { FormBuilder } from "./form-builder";
@@ -551,6 +558,7 @@ export function FormSheet<T extends object = Record<string, unknown>>({
 }: FormSheetProps<T>) {
   const item = itemProp as Record<string, unknown> | null;
   const isEdit = item !== null;
+  const t = useT();
   // The drawer opens at half the viewport width; the maximize toggle widens it
   // to 80% for forms with wide content (inline line-item tables, two-column
   // layouts). A resource can override the default via form.sheetWidth.
@@ -584,7 +592,9 @@ export function FormSheet<T extends object = Record<string, unknown>>({
       >
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <h2 className="text-lg font-semibold text-foreground">
-            {isEdit ? "Edit" : "Create"} {resource.label?.singular ?? resource.name}
+            {isEdit
+              ? t("form.editTitle", "Edit {name}", { name: resource.label?.singular ?? resource.name })
+              : t("form.createTitle", "Create {name}", { name: resource.label?.singular ?? resource.name })}
           </h2>
           <div className="flex items-center gap-1">
             <button
@@ -611,7 +621,7 @@ export function FormSheet<T extends object = Record<string, unknown>>({
             onSubmit={handleSubmit}
             onCancel={onClose}
             isSubmitting={isCreating || isUpdating}
-            submitLabel={isEdit ? "Update" : "Create"}
+            submitLabel={isEdit ? t("form.update", "Update") : t("form.create", "Create")}
           />
         </div>
       </div>
@@ -625,6 +635,7 @@ export function FormSheet<T extends object = Record<string, unknown>>({
 func adminFormPage() string {
 	return `"use client";
 
+import { useLocalizedResource, useT } from "@/lib/i18n";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { ResourceDefinition } from "@/lib/resource";
 import { FormBuilder } from "@/components/forms/form-builder";
@@ -635,7 +646,9 @@ interface FormPageProps {
   resource: ResourceDefinition;
 }
 
-export function FormPage({ resource }: FormPageProps) {
+export function FormPage({ resource: definition }: FormPageProps) {
+  const resource = useLocalizedResource(definition);
+  const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
@@ -673,7 +686,7 @@ export function FormPage({ resource }: FormPageProps) {
             className="flex items-center gap-2 text-text-secondary hover:text-foreground transition-colors"
           >
             <ChevronLeft className="h-4 w-4" />
-            Back to {pluralName}
+            {t("form.backTo", "Back to {name}", { name: pluralName })}
           </button>
         </div>
         <div className="rounded-xl border border-border bg-bg-secondary p-8">
@@ -696,13 +709,15 @@ export function FormPage({ resource }: FormPageProps) {
           className="flex items-center gap-2 text-text-secondary hover:text-foreground transition-colors"
         >
           <ChevronLeft className="h-4 w-4" />
-          Back to {pluralName}
+          {t("form.backTo", "Back to {name}", { name: pluralName })}
         </button>
       </div>
 
       <div>
         <h1 className="text-2xl font-bold text-foreground">
-          {isEdit ? "Edit" : "Create"} {singularName}
+          {isEdit
+            ? t("form.editTitle", "Edit {name}", { name: singularName })
+            : t("form.createTitle", "Create {name}", { name: singularName })}
         </h1>
         <p className="text-text-secondary mt-1">
           {isEdit ? ` + "`" + `Update this ${singularName.toLowerCase()}'s details` + "`" + ` : ` + "`" + `Add a new ${singularName.toLowerCase()} to your application` + "`" + `}
@@ -716,7 +731,7 @@ export function FormPage({ resource }: FormPageProps) {
           onSubmit={handleSubmit}
           onCancel={() => router.back()}
           isSubmitting={isCreating || isUpdating}
-          submitLabel={isEdit ? "Update" : "Create"}
+          submitLabel={isEdit ? t("form.update", "Update") : t("form.create", "Create")}
         />
       </div>
     </div>

@@ -12,6 +12,7 @@ func adminExportMenu() string {
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n";
 import { ChevronDown, Download, Loader2 } from "@/lib/icons";
 import type { ColumnDefinition, ResourceDefinition } from "@/lib/resource";
 import {
@@ -54,6 +55,7 @@ export function ExportMenu({
   const [busy, setBusy] = useState<ExportFormat | null>(null);
   const [progress, setProgress] = useState<{ loaded: number; total: number } | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   const cfg = resource.table.export;
   if (cfg === false) return null;
@@ -130,7 +132,7 @@ export function ExportMenu({
           ? "Loading " + progress.loaded + "/" + progress.total
           : busy
             ? "Exporting…"
-            : "Export"}
+            : t("table.export", "Export")}
       </button>
       {formats.length > 1 && (
         <button

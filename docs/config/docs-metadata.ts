@@ -336,6 +336,12 @@ export const docsMetadata: Record<string, DocPage> = {
       "Every middleware a request passes through in a Grit API, in the exact order they execute: maintenance mode, security headers, body limit, request ID, logging, panic recovery, CORS, gzip, CSRF, idempotency, then Sentinel's WAF and Pulse's tracing, then per-group auth, role checks and the activity logger. Explains where to hook your own logic, why CSRF only enforces on cookie-authenticated mutations, why order matters for CORS and recovery, and the specific ordering mistakes that cause the CORS/CSP/WAF bugs people actually hit.",
   },
 
+  '/docs/frontend/i18n': {
+    title: 'Internationalisation: One Cookie for the API, Web App and Admin',
+    description:
+      'How grit new --i18n and grit add i18n translate a Grit project: the grit_locale cookie the API, web app and admin share, next-intl catalogues in English, French and Swahili, the language switcher, translating the admin through t(key, fallback), your resources’ labels under resources.<slug>, adding a language, and what grit upgrade repairs in projects from before v3.222.0.',
+  },
+
   '/docs/deployment/multiple-instances': {
     title: 'Running More Than One Instance: Replicas Behind a Load Balancer',
     description:

@@ -29,6 +29,69 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.222.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.222.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>--i18n projects did not compile, and the admin was English-only anyway</h3>
+                <p>
+                  Found building an ERP for a multi-region workforce. A project scaffolded with{' '}
+                  <code>--i18n</code> failed its type check in both the admin and the web app: the
+                  language switcher imported a dropdown menu component neither app ships, and even with
+                  that fixed, every production build stopped with &quot;Couldn&apos;t find next-intl config
+                  file&quot;: the scaffold pinned next-intl 3, which supports Next up to 15, on Next 16. It
+                  pins next-intl 4 now, and an upgrade moves an existing pin up. The switcher
+                  was also never mounted anywhere, and not one admin component read the catalogues that
+                  were written, so nothing a user could do changed the language. Every upgrade then
+                  reported the six files i18n edits as edited by you and never updated them again,
+                  because the edits were never recorded.
+                </p>
+                <p>
+                  The switcher is a native <code>select</code> now, mounted in the admin&apos;s page header
+                  and the web app&apos;s navbar. The admin translates through a small{' '}
+                  <code>t(key, fallback)</code> in <code>lib/i18n</code> that needs no dependency and
+                  returns the English it always showed until i18n supplies a catalogue: the sidebar,
+                  toolbar, pagination, empty state, row actions and form buttons and headings, plus each
+                  resource&apos;s own name, column headers and field labels, keyed under{' '}
+                  <code>resources.&lt;slug&gt;</code> and falling back to the definition&apos;s label.{' '}
+                  <code>grit add i18n</code> records what it writes, adopting its edits only in files
+                  that were untouched, so a file you edited stays yours.
+                </p>
+                <p>
+                  <code>grit upgrade</code> repairs an existing i18n project: it replaces the broken
+                  switcher, mounts it, feeds the admin its catalogue, and takes back the files that
+                  differ from its template only by its own i18n wiring. It does the same for a{' '}
+                  <code>tsconfig.json</code> that <code>next build</code> rewrote: Next 16 sets{' '}
+                  <code>&quot;jsx&quot;: &quot;react-jsx&quot;</code> and adds its dev types on the first
+                  build, which made the file read as edited by you from then on. The templates carry
+                  those values now, and a rewritten file that means exactly what the template means is
+                  taken back. Catalogues are yours to edit and are still never replaced, but keys
+                  added in a later release are merged into them, so an upgraded project does not show
+                  English in the middle of a translated page.
+                </p>
+                <p>
+                  Two more things the same project turned up. The dashboard&apos;s stat cards and custom
+                  charts asked the API for a resource by its admin slug (<code>purchase-requests</code>)
+                  while the API registers it under its own name (<code>purchase_requests</code>), so
+                  they failed for every resource with a two-word name; they ask by the API&apos;s name
+                  now. And a generated resource was labelled with its Go type name, so the sidebar read
+                  &quot;InventoryItems&quot;; new resources are labelled &quot;Inventory Items&quot;.
+                </p>
+                <p>
+                  Verified on an ERP project
+                  scaffolded with <code>--i18n</code> before this release: both apps failed their type
+                  check, one upgrade adopted all six files and re-wired them, both apps then type-checked
+                  clean, and a second upgrade left nothing alone.
+                </p>
+              </div>
+            </div>
+
             {/* v3.221.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -560,6 +560,7 @@ import { resources } from "@/resources";
 import { brand } from "@repo/shared/brand";
 import { useLogout } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useT } from "@/lib/i18n";
 import {
   getIcon,
   ChevronDown,
@@ -677,6 +678,7 @@ export function CollapsibleSidebar({
   }, [pathname]);
 
   const { can, isLoading: permsLoading } = usePermissions();
+  const t = useT();
 
   // The System Hub fronts operations pages that each need a permission. Shown
   // to an ADMIN, or to anyone holding one of them: by role name alone it put an
@@ -752,7 +754,7 @@ export function CollapsibleSidebar({
           <SidebarLink
             href="/dashboard"
             icon={<LayoutDashboard className="h-5 w-5" />}
-            label="Dashboard"
+            label={t("nav.dashboard", "Dashboard")}
             active={pathname === "/dashboard"}
             collapsed={collapsed}
             onClick={onMobileClose}
@@ -765,7 +767,7 @@ export function CollapsibleSidebar({
                 key={r.slug}
                 href={"/resources/" + r.slug}
                 icon={<Icon className="h-5 w-5" />}
-                label={r.label?.plural ?? r.name}
+                label={t("resources." + r.slug + ".plural", r.label?.plural ?? r.name)}
                 active={pathname.startsWith("/resources/" + r.slug)}
                 collapsed={collapsed}
                 onClick={onMobileClose}
@@ -799,7 +801,7 @@ export function CollapsibleSidebar({
                       key={r.slug}
                       href={"/resources/" + r.slug}
                       icon={<Icon className="h-5 w-5" />}
-                      label={r.label?.plural ?? r.name}
+                      label={t("resources." + r.slug + ".plural", r.label?.plural ?? r.name)}
                       active={pathname.startsWith("/resources/" + r.slug)}
                       collapsed={collapsed}
                       onClick={onMobileClose}
@@ -819,7 +821,7 @@ export function CollapsibleSidebar({
               <SidebarLink
                 href="/system"
                 icon={<LayoutGrid className="h-5 w-5" />}
-                label="System Hub"
+                label={t("nav.systemHub", "System Hub")}
                 active={pathname.startsWith("/system") || pathname.startsWith("/settings")}
                 collapsed={collapsed}
                 onClick={onMobileClose}

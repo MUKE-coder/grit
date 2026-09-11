@@ -173,6 +173,7 @@ import { DataTable } from "@/components/tables/data-table";
 import { FormSheet } from "@/components/forms/form-sheet";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { ArrowLeft, Pencil, Trash2, Loader2, Printer, Plus, FileText } from "@/lib/icons";
+import { useLocalizedResource } from "@/lib/i18n";
 import { buttonClasses } from "@/components/ui/button";
 
 interface ResourceDetailPageProps {
@@ -189,7 +190,8 @@ function itemColumns(itemFields: FieldDefinition[]): ColumnDefinition[] {
 // v3.145.0: a thin router, the same split ResourcePage has. A DetailPage slot
 // replaces everything below, so it is checked first and unconditionally:
 // somebody who has supplied a whole page owns its header and its dialogs too.
-export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
+export function ResourceDetailPage({ resource: definition, id }: ResourceDetailPageProps) {
+  const resource = useLocalizedResource(definition);
   const CustomPage = resource.components?.DetailPage;
   if (CustomPage) return <CustomPage resource={resource} id={id} />;
   return <ResourceDetailView resource={resource} id={id} />;

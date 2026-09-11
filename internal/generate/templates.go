@@ -2704,7 +2704,9 @@ export const %sResource = defineResource({
 		hiddenLine,
 		names.Plural,
 		icon,
-		names.Pascal, names.PluralPascal,
+		// Spaced, because this is what the sidebar, the page title and every
+		// form heading show: "Inventory Items", not "InventoryItems".
+		strings.Join(splitPascal(names.Pascal), " "), strings.Join(splitPascal(names.PluralPascal), " "),
 		columns,
 		filters,
 		formFields,

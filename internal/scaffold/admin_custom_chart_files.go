@@ -47,6 +47,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { apiClient } from "@/lib/api-client";
+import { resources } from "@/resources";
 import { dateRangeToQueryParams, type DateRange } from "@/components/tables/date-filter";
 import { AlertCircle, TrendingUp } from "@/lib/icons";
 import type { CustomChart, ChartViz } from "@/lib/dashboard-catalog";
@@ -81,6 +82,13 @@ const PIE_COLORS = [
 ];
 
 export function CustomChartCard({ chart, dateRange }: Props) {
+  // A chart is saved with the admin slug (purchase-requests), and the API
+  // registers charts under its own resource name (purchase_requests), the
+  // last segment of the endpoint. Asking by slug failed every multi-word
+  // resource.
+  const apiName =
+    resources.find((r) => r.slug === chart.resource)?.endpoint.split("/").filter(Boolean).pop() ??
+    chart.resource;
   const params = {
     preset: chart.preset,
     ...(chart.field ? { field: chart.field } : {}),
@@ -95,7 +103,7 @@ export function CustomChartCard({ chart, dateRange }: Props) {
       const search = new URLSearchParams(params).toString();
       const url =
         "/api/admin/dashboard/chart/" +
-        chart.resource +
+        apiName +
         (search ? "?" + search : "");
       const { data } = await apiClient.get<ChartResponse>(url);
       return data.data;
