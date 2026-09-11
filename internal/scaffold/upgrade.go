@@ -224,6 +224,14 @@ func Upgrade(uOpts UpgradeOptions) error {
 				return fmt.Errorf("updating the audit chain: %w", err)
 			}
 		}
+		// Enterprise SSO trusted a customer's identity provider for any email
+		// address, so it could sign in as your own administrator. Only where
+		// SSO is already there.
+		if fileExists(filepath.Join(opts.APIRoot(root), "internal", "handlers", "sso.go")) {
+			if err := writeSSOFiles(root, opts); err != nil {
+				return fmt.Errorf("updating SSO: %w", err)
+			}
+		}
 		// Read-only. .env holds secrets and is the developer's, so a URL that
 		// disagrees with the port compose binds is reported, not rewritten.
 		for _, w := range envPortDrift(root) {

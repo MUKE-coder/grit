@@ -384,12 +384,20 @@ func SAMLAttributeValues(assertion *saml.Assertion, names ...string) []string {
 // of the rename-safety a persistent identifier gives.
 func SAMLSubject(assertion *saml.Assertion, emailNames ...string) string {
 	if assertion.Subject != nil && assertion.Subject.NameID != nil {
-		if v := strings.TrimSpace(assertion.Subject.NameID.Value); v != "" {
+		id := assertion.Subject.NameID
+		// A transient NameID is a new random value on every login, which is what
+		// the format means. Used as the subject it made every sign-in a stranger
+		// and linked another identity each time, so it is passed over for the
+		// email, exactly as an absent NameID is.
+		if v := strings.TrimSpace(id.Value); v != "" && id.Format != TransientNameID {
 			return v
 		}
 	}
 	return SAMLAttribute(assertion, emailNames...)
 }
+
+// TransientNameID is the NameID format whose value changes on every login.
+const TransientNameID = "urn:oasis:names:tc:SAML:2.0:nameid-format:transient"
 `
 	return strings.ReplaceAll(src, "~", "`")
 }
@@ -451,15 +459,40 @@ func (h *SSOHandler) SAMLBegin(c *gin.Context) {
 		return
 	}
 
-	authURL, err := sp.MakeRedirectAuthenticationRequest("")
+	req, err := sp.MakeAuthenticationRequest(sp.GetSSOBindingLocation(saml.HTTPRedirectBinding),
+		saml.HTTPRedirectBinding, saml.HTTPPostBinding)
+	if err != nil {
+		log.Printf("saml %s: authn request: %v", slug, err)
+		h.failLogin(c, "Could not reach the identity provider.")
+		return
+	}
+	authURL, err := req.Redirect("", sp)
 	if err != nil {
 		log.Printf("saml %s: authn request: %v", slug, err)
 		h.failLogin(c, "Could not reach the identity provider.")
 		return
 	}
 
+	// Remember which request this was, so the response can be matched to it.
+	// The ACS used to check responses against no request ids at all, so turning
+	// IdP-initiated sign-in off refused every login, including the ones that
+	// started here. The IdP posts back cross-site, which only a SameSite=None
+	// cookie survives, and browsers accept that only over HTTPS; over plain
+	// HTTP, which is local development, the IdP and the app share a site.
+	secure := isSecureRequest(c)
+	if secure {
+		c.SetSameSite(http.SameSiteNoneMode)
+	} else {
+		c.SetSameSite(http.SameSiteLaxMode)
+	}
+	c.SetCookie(samlRequestCookie, slug+":"+req.ID, 600, ssoCookiePath, "", secure, true)
+
 	c.Redirect(http.StatusFound, authURL.String())
 }
+
+// samlRequestCookie carries the id of the authentication request a login sent,
+// for the ACS to match the IdP's response against.
+const samlRequestCookie = "grit_saml_request"
 
 // SAMLACS is the Assertion Consumer Service — where the IdP POSTs the signed
 // assertion once the user has authenticated.
@@ -492,10 +525,17 @@ func (h *SSOHandler) SAMLACS(c *gin.Context) {
 		return
 	}
 
-	// No tracked request IDs: an IdP-initiated login has no request to match,
-	// and crewjam skips the InResponseTo check when the connection allows that.
-	// With it disallowed, an unsolicited assertion is refused here.
-	assertion, err := sp.ParseResponse(c.Request, []string{})
+	// The request this response answers, when the login started here. An
+	// IdP-initiated login has none: crewjam accepts that only when the
+	// connection allows it, and otherwise requires InResponseTo to match.
+	var requestIDs []string
+	if raw, err := c.Cookie(samlRequestCookie); err == nil {
+		if forSlug, id, ok := strings.Cut(raw, ":"); ok && forSlug == slug && id != "" {
+			requestIDs = append(requestIDs, id)
+		}
+		c.SetCookie(samlRequestCookie, "", -1, ssoCookiePath, "", isSecureRequest(c), true)
+	}
+	assertion, err := sp.ParseResponse(c.Request, requestIDs)
 	if err != nil {
 		log.Printf("saml %s: assertion rejected: %v", slug, err)
 		h.failLogin(c, "Sign-in could not be verified. Please try again.")
