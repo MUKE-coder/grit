@@ -1192,6 +1192,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 	// three are empty for a shared resource, which is every resource
 	// generated without the flag.
 	ownerScope, ownerGuard, ownerStamp, authzImport := "", "", "", ""
+	ownerExportScope, ownerBulkScope := "", ""
 	if owner := g.Definition.OwnerField(); owner != nil {
 		col := toSnakeCase(owner.Name) + "_id"
 		field := toPascalCase(owner.Name) + "ID"
@@ -1215,6 +1216,19 @@ func (g *Generator) writeGoHandler(names Names) error {
 			"\n\t// the request body would let a caller create rows that" +
 			"\n\t// belong to somebody else." +
 			"\n\titem." + field + " = authz.CurrentUserID(c)\n"
+
+		// Export, PDF, PATCH and Bulk reach rows too. They were generated
+		// without these, so an ordinary account could export the whole table,
+		// print or edit anyone's record by id, and bulk-act on it.
+		ownerExportScope = "\n\t// --owned-by " + owner.Name +
+			": an export is the list without pages, scoped the" +
+			"\n\t// same way. ADMIN is exempt." +
+			"\n\tquery = authz.ScopeToOwner(c, query, \"" + col + "\")\n"
+
+		ownerBulkScope = "\t// --owned-by " + owner.Name +
+			": only the caller's own rows are acted on, and" +
+			"\n\t// somebody else's id drops out as if it did not exist. ADMIN is exempt." +
+			"\n\tscope = authz.ScopeToOwner(c, scope, \"" + col + "\")\n"
 	}
 
 	r := strings.NewReplacer(
@@ -1222,6 +1236,8 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{OWNER_SCOPE}}", ownerScope,
 		"{{OWNER_GUARD}}", ownerGuard,
 		"{{OWNER_STAMP}}", ownerStamp,
+		"{{OWNER_EXPORT_SCOPE}}", ownerExportScope,
+		"{{OWNER_BULK_SCOPE}}", ownerBulkScope,
 		"{{OPTIONAL_ID_HELPER}}", optionalIDHelper,
 		"{{FK_FILTERS}}", fkFilters,
 		"{{UPPER_LABEL}}", strings.ToUpper(strings.Join(splitPascal(names.Pascal), " ")),
@@ -1272,6 +1288,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 	content := r.Replace(`package handlers
 
 import (
+	"log"
 	"net/http"{{TIME_IMPORT}}
 
 	"github.com/gin-gonic/gin"{{DATATYPES_IMPORT}}
@@ -1365,7 +1382,10 @@ func (h *{{Pascal}}Handler) Export(c *gin.Context) {
 	format := c.DefaultQuery("format", "csv")
 	search := c.Query("search")
 
-	query := h.scoped(c).Model(&models.{{Pascal}}{}){{PRELOADS}}.Order("created_at desc")
+	// No ORDER BY of its own: FindInBatches pages by primary key, which is
+	// creation order for the time-ordered ids Grit issues, and a sort in front
+	// of that key repeated rows from the second batch on.
+	query := h.scoped(c).Model(&models.{{Pascal}}{}){{PRELOADS}}
 	if search != "" && len([]string{{{SEARCH_COLS}}}) > 0 {
 		// Reuse the same searchable columns as List.
 		searchable := []string{{{SEARCH_COLS}}}
@@ -1381,7 +1401,7 @@ func (h *{{Pascal}}Handler) Export(c *gin.Context) {
 		}
 		query = query.Where(clause, args...)
 	}
-
+{{OWNER_EXPORT_SCOPE}}
 	opts := export.Options{
 		Sheet: "{{Plural}}",
 		Columns: []export.Column{
@@ -1389,63 +1409,57 @@ func (h *{{Pascal}}Handler) Export(c *gin.Context) {
 		},
 	}
 
-	// Stream rows in batches via GORM's FindInBatches. CSV writes each
-	// batch straight to the wire; XLSX accumulates into a slice (no
-	// streaming API in excelize) but at least we never load the whole
-	// table at once.
+	// Read in batches, so a large table is never in memory at once.
+	// FindInBatches fills rows and pages by primary key. The tx it hands the
+	// callback is a fresh session with no query on it, so each batch is read
+	// from rows: re-reading it through tx.Scan found nothing, and every export
+	// was an empty file with a 200.
+	var rows []models.{{Pascal}}
 	if format == "xlsx" {
-		c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-		c.Header("Content-Disposition", ` + "`" + `attachment; filename="{{plural}}.xlsx"` + "`" + `)
+		// excelize has no streaming writer, so the sheet is built in memory.
 		var all []models.{{Pascal}}
-		if err := query.FindInBatches(&[]models.{{Pascal}}{}, exportBatchSize, func(tx *gorm.DB, batch int) error {
-			var rows []models.{{Pascal}}
-			if err := tx.Scan(&rows).Error; err != nil {
-				return err
-			}
+		if err := query.FindInBatches(&rows, exportBatchSize, func(tx *gorm.DB, batch int) error {
 			all = append(all, rows...)
 			return nil
 		}).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": gin.H{"code": "EXPORT_FAILED", "message": err.Error()},
-			})
+			respond.WriteError(c, err, "Failed to export {{plural}}")
 			return
 		}
+		c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+		c.Header("Content-Disposition", ` + "`" + `attachment; filename="{{plural}}.xlsx"` + "`" + `)
 		if err := export.XLSX(c.Writer, all, opts); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": gin.H{"code": "EXPORT_FAILED", "message": err.Error()},
-			})
+			log.Printf("export {{plural}} as xlsx: %v", err)
 		}
 		return
 	}
 
-	// CSV path — true streaming. Write headers once, then each batch
-	// flushes its rows directly to the response writer.
+	// CSV streams: the header with the first batch, then each batch as it is
+	// read.
 	c.Header("Content-Type", "text/csv")
 	c.Header("Content-Disposition", ` + "`" + `attachment; filename="{{plural}}.csv"` + "`" + `)
 
 	headerWritten := false
-	if err := query.FindInBatches(&[]models.{{Pascal}}{}, exportBatchSize, func(tx *gorm.DB, batch int) error {
-		var rows []models.{{Pascal}}
-		if err := tx.Scan(&rows).Error; err != nil {
-			return err
-		}
+	err := query.FindInBatches(&rows, exportBatchSize, func(tx *gorm.DB, batch int) error {
 		if !headerWritten {
-			if err := export.CSV(c.Writer, rows, opts); err != nil {
-				return err
-			}
 			headerWritten = true
-		} else {
-			// Subsequent batches: write rows only, no header.
-			if err := export.CSVRows(c.Writer, rows, opts); err != nil {
-				return err
-			}
+			return export.CSV(c.Writer, rows, opts)
 		}
-		return nil
-	}).Error; err != nil {
-		// Headers already sent — best we can do is log + truncate.
-		// The client will see a malformed CSV; ops should re-run.
-		// (We don't write a JSON error body once streaming has begun.)
-		_ = err
+		return export.CSVRows(c.Writer, rows, opts)
+	}).Error
+	if err == nil && !headerWritten {
+		// Nothing matched: still a CSV, with its header row.
+		err = export.CSV(c.Writer, rows, opts)
+	}
+	if err != nil {
+		if !c.Writer.Written() {
+			c.Writer.Header().Del("Content-Type")
+			c.Writer.Header().Del("Content-Disposition")
+			respond.WriteError(c, err, "Failed to export {{plural}}")
+			return
+		}
+		// Rows are already on the wire, so the status cannot change. Logged,
+		// so a truncated file has an explanation somewhere.
+		log.Printf("export {{plural}}: %v", err)
 	}
 }
 
@@ -1486,7 +1500,7 @@ func (h *{{Pascal}}Handler) PDF(c *gin.Context) {
 		})
 		return
 	}
-
+{{OWNER_GUARD}}
 	appName := os.Getenv("APP_NAME")
 	if appName == "" {
 		appName = "{{Pascal}}"
@@ -1634,7 +1648,7 @@ func (h *{{Pascal}}Handler) Patch(c *gin.Context) {
 		})
 		return
 	}
-
+{{OWNER_GUARD}}
 	var body map[string]interface{}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -1758,7 +1772,7 @@ func (h *{{Pascal}}Handler) Bulk(c *gin.Context) {
 	} else if req.Action == "archive" {
 		scope = scope.Where("archived_at IS NULL")
 	}
-	if err := scope.Find(&items).Error; err != nil {
+{{OWNER_BULK_SCOPE}}	if err := scope.Find(&items).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to load {{plural}}"},
 		})

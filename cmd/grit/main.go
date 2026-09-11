@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.213.0"
+var version = "3.214.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -896,17 +896,16 @@ func generateResourceCmd() *cobra.Command {
 			// to do instead.
 			cmd.SilenceUsage = true
 			gen.Force = force
-			gen.Definition.Public = publicRead
-			gen.Definition.Tree = tree
-			gen.Definition.OwnedBy = ownedBy
-			gen.Definition.TenantOwned = tenantOwned
-			gen.Definition.AppendOnly = appendOnly
+			// Merged, not assigned: a flag left at its default must not erase
+			// what a --from file declared.
+			gen.Definition.ApplyFlags(publicRead, tree, ownedBy, tenantOwned, appendOnly)
+			def = gen.Definition
 
 			// The flag only helps somebody who knows it exists. When the
 			// plugin is installed and it was not passed, name it once: a
 			// shared table is a legitimate thing to generate, so this is a
 			// note rather than a refusal.
-			if !tenantOwned && generate.PluginInstalled(gen.Root, "multitenant") {
+			if !def.TenantOwned && generate.PluginInstalled(gen.Root, "multitenant") {
 				fmt.Printf("  • multitenant is installed and %s is shared: every "+
 					"organization will see every row.\n"+
 					"    Pass --tenant-owned to scope it.\n",
@@ -917,21 +916,21 @@ func generateResourceCmd() *cobra.Command {
 			// adds its parent: making somebody write both --owned-by user and
 			// --fields "user:belongs_to:User" is asking for one fact twice,
 			// with a spelling that silently generates an unscoped resource.
-			if ownedBy != "" && gen.Definition.OwnerField() == nil {
-				gen.Definition.Fields = append(gen.Definition.Fields, generate.Field{
-					Name:         ownedBy,
+			if def.OwnedBy != "" && def.OwnerField() == nil {
+				def.Fields = append(def.Fields, generate.Field{
+					Name:         def.OwnedBy,
 					Type:         "belongs_to",
 					RelatedModel: "User",
 				})
-				fmt.Println("  • --owned-by added " + ownedBy + ":belongs_to:User")
+				fmt.Println("  • --owned-by added " + def.OwnedBy + ":belongs_to:User")
 			}
 
 			// --tree without a self-referential parent field adds one, because
 			// requiring both --tree and --fields "parent:belongs_to:Category" is
 			// asking for the same fact twice, with one spelling that quietly
 			// produces a flat list.
-			if tree && gen.Definition.TreeParentField() == nil {
-				gen.Definition.Fields = append(gen.Definition.Fields, generate.Field{
+			if def.Tree && def.TreeParentField() == nil {
+				def.Fields = append(def.Fields, generate.Field{
 					Name:         "parent",
 					Type:         "belongs_to",
 					RelatedModel: gen.Names().Pascal,

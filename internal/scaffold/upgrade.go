@@ -209,6 +209,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 				return fmt.Errorf("updating erasure files: %w", err)
 			}
 		}
+		// Resource handlers are the developer's and are not regenerated, but
+		// generated text that is still recognisable gets two fixes: owned
+		// resources check the owner on every path that reaches a row, and CSV
+		// export returns its rows. Anything too changed to patch is named.
+		if err := repairResourceHandlers(root, opts); err != nil {
+			fmt.Printf("  ⚠ repairing resource handlers: %v\n", err)
+		}
 		// Read-only. .env holds secrets and is the developer's, so a URL that
 		// disagrees with the port compose binds is reported, not rewritten.
 		for _, w := range envPortDrift(root) {

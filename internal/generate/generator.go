@@ -133,6 +133,10 @@ func (g *Generator) Run() error {
 		}
 	}
 
+	if err := g.checkFlagCombinations(); err != nil {
+		return err
+	}
+
 	// --append-only depends on two calls the project makes, one when it
 	// connects and one when it migrates. A project scaffolded before the flag
 	// existed makes neither, and a model registering with a guard nobody
@@ -431,17 +435,24 @@ func (g *Generator) Run() error {
 
 	fmt.Println()
 	fmt.Printf("  ✅ Resource %s generated successfully!\n\n", names.Pascal)
+	// The server does not migrate on start, so without step 2 the first request
+	// to the new resource is a 500 about a table that does not exist, and these
+	// steps were the only instructions on screen.
 	fmt.Printf("  Next steps:\n")
 	if g.Architecture == "single" {
 		fmt.Printf("    1. go build ./...\n")
-		fmt.Printf("    2. Restart the server\n")
 	} else {
 		fmt.Printf("    1. cd apps/api && go build ./...\n")
-		fmt.Printf("    2. Restart the API server\n")
+	}
+	fmt.Printf("    2. grit migrate   (creates the %s table)\n", names.PluralSnake)
+	if g.Architecture == "single" {
+		fmt.Printf("    3. Restart the server\n")
+	} else {
+		fmt.Printf("    3. Restart the API server\n")
 	}
 	if g.Architecture == "triple" {
 		if wroteAdmin {
-			fmt.Printf("    3. The admin panel will show %s in the sidebar\n", names.PluralPascal)
+			fmt.Printf("    4. The admin panel will show %s in the sidebar\n", names.PluralPascal)
 		} else {
 			fmt.Printf("\n  This project is configured as triple but has no admin app at\n")
 			fmt.Printf("  apps/admin/resources, so the resource definition and its screens\n")
@@ -794,5 +805,19 @@ func (g *Generator) ensureDialectHelper() error {
 		return fmt.Errorf("writing dialect helper: %w", err)
 	}
 	fmt.Println("  ✓ Added internal/database/dialect.go")
+	return nil
+}
+
+// checkFlagCombinations refuses combinations the generated code cannot honour,
+// before anything is written.
+func (g *Generator) checkFlagCombinations() error {
+	// The tree endpoints (the whole tree, breadcrumbs, move, reorder) read and
+	// rearrange rows by id with no notion of an owner. An owned tree would scope
+	// its list and hand its hierarchy to every signed-in user anyway.
+	if g.Definition.Tree && g.Definition.IsOwned() {
+		return fmt.Errorf("--tree and --owned-by cannot be combined yet: the tree " +
+			"endpoints are not scoped to an owner, so every signed-in user could read " +
+			"and rearrange every row. Generate it with one or the other")
+	}
 	return nil
 }

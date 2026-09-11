@@ -29,6 +29,96 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.214.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.214.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Owned resources checked the owner on four doors out of eight</h3>
+                <p>
+                  Found building a patient-records app. A resource generated with{' '}
+                  <code>--owned-by</code> scoped its list and checked ownership on read, update
+                  and delete. Everything else that reaches a row did not. Reproduced with two
+                  ordinary accounts: the second printed the first one&apos;s clinical note through
+                  the PDF endpoint and rewrote it with PATCH. Export had no scope, Bulk had none
+                  for a role allowed to reach it, a workflow transition moved anyone&apos;s row,
+                  and the CSV importer took the owner from a column, so a file could put records
+                  under somebody else&apos;s name.
+                </p>
+                <p>
+                  All of them now check. PDF and PATCH answer 404 on somebody else&apos;s row, as
+                  read does; export and bulk only see the caller&apos;s rows; a transition checks
+                  the owner; imported rows belong to whoever imports them, and only an{' '}
+                  <code>ADMIN</code> may name another owner. <code>--tree</code> with{' '}
+                  <code>--owned-by</code> is refused, because the tree endpoints have no notion
+                  of an owner and would have handed the hierarchy to everyone.
+                </p>
+
+                <h3>Every CSV export was empty</h3>
+                <p>
+                  The same session showed an export returning a 200 with no body, for every
+                  resource. GORM&apos;s <code>FindInBatches</code> hands its callback a fresh
+                  session with no query on it, and the handler re-read each batch through it,
+                  found nothing, and threw the error away. Export now reads each batch from the
+                  slice <code>FindInBatches</code> fills, writes the header even when nothing
+                  matches, and reports a failure instead of discarding it. It also stopped
+                  sorting ahead of the key it pages by, which would have repeated rows past the
+                  first thousand.
+                </p>
+
+                <h3>The importer created an account for every email it did not know</h3>
+                <p>
+                  A <code>belongs_to:User</code> column was resolved by email, and an unknown
+                  one created a user with that email and nothing else. Any signed-in account
+                  could mint accounts around registration that way. A user must now exist, or
+                  the row fails with a message saying which one was not found.
+                </p>
+
+                <h3>owned_by in a --from file was thrown away</h3>
+                <p>
+                  A resource defined in YAML with <code>owned_by: user</code> was generated with
+                  no owner scoping at all, and its create endpoint demanded a{' '}
+                  <code>user_id</code> in the body. The command-line flags were assigned over the
+                  file, so an unset <code>--owned-by</code> erased it, and <code>tree</code>,{' '}
+                  <code>public</code>, <code>append_only</code> and <code>tenant_owned</code> went
+                  the same way. Flags are now merged into the file: they can add, never remove.
+                </p>
+
+                <h3>A resource with a workflow did not compile</h3>
+                <p>
+                  Its transition routes were injected into <code>routes.go</code> against a
+                  handler variable that only projects from before per-resource route files
+                  declare, so the API stopped building the moment the resource was generated.
+                  They now live in the resource&apos;s own route file, behind its role guard when
+                  it has one. Generating the resource again removes the broken lines from{' '}
+                  <code>routes.go</code>.
+                </p>
+
+                <h3>The next steps left out the migration</h3>
+                <p>
+                  The API does not migrate on start, and the steps printed after{' '}
+                  <code>grit generate resource</code> said to build and restart, which leads
+                  straight to a 500 about a missing table. They now say to run{' '}
+                  <code>grit migrate</code> in between.
+                </p>
+
+                <h3>Existing projects</h3>
+                <p>
+                  Upgrade does not regenerate resource code, so <code>grit upgrade</code> patches
+                  the export and ownership fixes into generated handlers, importers and workflow
+                  services wherever the generated text is still recognisable, and names anything
+                  too changed to patch. Verified on the project where this was found: after the
+                  upgrade, all 13 checks passed across two ordinary accounts, and a resource
+                  freshly generated from YAML with an owner and a workflow passed its own.
+                </p>
+              </div>
+            </div>
+
             {/* v3.213.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
