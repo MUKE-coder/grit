@@ -471,22 +471,35 @@ func adminFileMap(root string, opts Options) map[string]string {
 	return files
 }
 
+// adminExtraWriters write framework-owned admin files that live outside the
+// map above: the per-resource dashboard widgets (v3.31.44) and the preset
+// chart builder (v3.31.47). The scaffold and grit upgrade both run this list.
+// Before v3.222.1 upgrade ran neither writer, so no fix to those files ever
+// reached a project that already existed.
+var adminExtraWriters = []func(root string, opts Options) error{
+	func(root string, opts Options) error {
+		if err := writeAdminResourceDashboardWidgets(root, opts); err != nil {
+			return fmt.Errorf("writing resource dashboard widgets: %w", err)
+		}
+		return nil
+	},
+	func(root string, opts Options) error {
+		if err := writeAdminCustomChartFiles(root, opts); err != nil {
+			return fmt.Errorf("writing custom chart files: %w", err)
+		}
+		return nil
+	},
+}
+
 // writeAdminExtras writes the pieces that are generated per-resource or in
 // groups rather than as one entry in the map above.
 func writeAdminExtras(root string, opts Options) error {
 	adminRoot := filepath.Join(root, "apps", "admin")
 
-	// v3.31.44 — per-resource dashboard widgets (Total + sparkline,
-	// Latest N). Lives in its own scaffold file so the widget files
-	// can be added in one place without growing the main map further.
-	if err := writeAdminResourceDashboardWidgets(root, opts); err != nil {
-		return fmt.Errorf("writing resource dashboard widgets: %w", err)
-	}
-	// v3.31.47 — Preset Chart builder client pieces (CustomChartCard
-	// + ChartBuilderForm). Settings panel + dashboard wiring is in
-	// the existing files updated above.
-	if err := writeAdminCustomChartFiles(root, opts); err != nil {
-		return fmt.Errorf("writing custom chart files: %w", err)
+	for _, write := range adminExtraWriters {
+		if err := write(root, opts); err != nil {
+			return err
+		}
 	}
 
 	if err := writeBrandLogo(filepath.Join(adminRoot, "public"), "grit_logo.png"); err != nil {

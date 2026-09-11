@@ -29,6 +29,36 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.222.1 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.222.1
+                </span>
+                <span className="text-sm text-muted-foreground">September 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>v3.222.0&apos;s dashboard fix reached new projects only</h3>
+                <p>
+                  v3.222.0 made the dashboard&apos;s stat cards and custom charts ask the API for a
+                  resource by its own name rather than the admin slug, which had failed every resource
+                  with a two-word name. A project upgraded to it kept failing: the widgets are written by
+                  two writers of their own, outside the admin&apos;s file map, and{' '}
+                  <code>grit upgrade</code> ran neither, so no fix to those files had ever reached a
+                  project that already existed.
+                </p>
+                <p>
+                  Upgrade now runs them, from the same list the scaffold uses, so the two cannot drift
+                  apart again. They are written through the same guard as every other framework file,
+                  so a widget you have edited is still reported rather than overwritten. Verified on the
+                  ERP project: the upgrade rewrote the stat cards and the chart card, and the
+                  dashboard&apos;s requests for its three two-word resources, which had each answered 400,
+                  answered 200.
+                </p>
+              </div>
+            </div>
+
             {/* v3.222.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
