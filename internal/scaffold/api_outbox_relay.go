@@ -32,6 +32,12 @@ type Relay struct {
 	// message when one is stuck.
 	Name string
 
+	// TopicPrefix, when set, limits the relay to messages whose topic starts
+	// with it. The event bus's relay takes "event:" and leaves the rest of the
+	// table to any relay you run for your own topics, so the two never deliver
+	// each other's messages.
+	TopicPrefix string
+
 	// Interval is how often to look when the last poll found nothing. A poll
 	// that found work goes straight round again, so a busy outbox drains at
 	// the speed of delivery rather than the speed of this.
@@ -144,13 +150,17 @@ func (r *Relay) claim(ctx context.Context) ([]Message, error) {
 
 	err := r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var batch []Message
+		// A claim older than the timeout belonged to a process that is no
+		// longer running. Without the second half the messages it held are
+		// stranded. One clause, so the topic filter applies to both halves.
 		q := tx.Model(&Message{}).
-			Where("status = ? AND available_at <= ?", StatusPending, now).
-			// A claim older than the timeout belonged to a process that is no
-			// longer running. Without this the messages it held are stranded.
-			Or("status = ? AND claimed_at < ?", StatusClaimed, now.Add(-r.ClaimTimeout)).
+			Where("(status = ? AND available_at <= ?) OR (status = ? AND claimed_at < ?)",
+				StatusPending, now, StatusClaimed, now.Add(-r.ClaimTimeout)).
 			Order("created_at").
 			Limit(r.Batch)
+		if r.TopicPrefix != "" {
+			q = q.Where("topic LIKE ?", r.TopicPrefix+"%")
+		}
 
 		if r.DB.Dialector.Name() != "sqlite" {
 			q = q.Clauses(clause.Locking{Strength: "UPDATE"})

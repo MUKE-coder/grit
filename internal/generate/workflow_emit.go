@@ -42,6 +42,16 @@ func (g *Generator) writeWorkflow(names Names) error {
 			return fmt.Errorf("writing the workflow package: %w", err)
 		}
 		fmt.Println("  ✓ Added internal/workflow/workflow.go")
+	} else if current, err := os.ReadFile(pkgPath); err == nil && !strings.Contains(string(current), "func RunHooks(") {
+		// The transition service below runs hooks and classifies errors with
+		// functions an older copy does not have.
+		if g.refreshIfUnchanged(pkgPath, scaffold.APIWorkflowGo()) {
+			fmt.Println("  ✓ Updated internal/workflow/workflow.go")
+		} else {
+			fmt.Println("  ⚠ internal/workflow/workflow.go is from an earlier release and has no transition")
+			fmt.Println("    hooks. The generated service will not compile until that file is replaced")
+			fmt.Println("    with the current template (grit upgrade does it when it is unedited).")
+		}
 	}
 
 	options := field.OptionValues()
@@ -134,40 +144,71 @@ func Transition` + names.Pascal + `(db *gorm.DB, c *gin.Context, id, action stri
 		return nil, err
 	}
 	if transition.Permission != "" && can != nil && !can(transition.Permission) {
-		return nil, fmt.Errorf("you do not have permission to %s this ` + names.Lower + `", transition.Label)
-	}
-
-	// Guarded by the current state as well as the id. Two people pressing
-	// Send at the same moment would otherwise both pass the check above and
-	// both write; this makes the second one affect no rows.
-	result := db.Model(&models.` + names.Pascal + `{}).
-		Where("id = ? AND ` + col + ` = ?", id, from).
-		Update("` + col + `", transition.To)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	if result.RowsAffected == 0 {
-		return nil, workflow.ErrInvalidTransition{
-			Resource: "` + names.Plural + `",
-			From:     from,
-			Action:   action,
-			Allowed:  actionsFrom(workflow.` + names.Pascal + `Workflow, from),
+		return nil, workflow.ErrNotPermitted{
+			Resource: "` + names.Plural + `", Action: action, Label: transition.Label, Noun: "` + names.Lower + `",
 		}
 	}
 
-	if err := db.First(&item, "id = ?", id).Error; err != nil {
+	// The status change, the hooks and the durable copy of the event commit
+	// together or not at all. A hook that reserves stock and then finds the
+	// budget short takes the reservation back out with the approval.
+	var ev events.Event
+	err = db.Transaction(func(tx *gorm.DB) error {
+		// Guarded by the current state as well as the id. Two people pressing
+		// Send at the same moment would otherwise both pass the check above and
+		// both write; this makes the second one affect no rows, before any hook
+		// has run for it.
+		result := tx.Model(&models.` + names.Pascal + `{}).
+			Where("id = ? AND ` + col + ` = ?", id, from).
+			Update("` + col + `", transition.To)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return workflow.ErrInvalidTransition{
+				Resource: "` + names.Plural + `",
+				From:     from,
+				Action:   action,
+				Allowed:  actionsFrom(workflow.` + names.Pascal + `Workflow, from),
+			}
+		}
+		if err := tx.First(&item, "id = ?", id).Error; err != nil {
+			return err
+		}
+
+		// Hooks registered with workflow.OnTransition do the rest of the move's
+		// work here, in this transaction, and can refuse it.
+		if err := workflow.RunHooks(tx, workflow.Move{
+			Resource: "` + names.Plural + `", Action: action, From: from, To: transition.To,
+			ID: item.ID, Record: &item, C: c,
+		}); err != nil {
+			return err
+		}
+
+		// The transition is its own event, not an "updated". A subscriber that
+		// cares about invoices being paid should not have to diff two versions
+		// of a record to find out that is what happened. Durable subscribers
+		// get it in this transaction, so it reaches them if and only if the
+		// move commits.
+		ev = events.Event{
+			Name:     "` + names.Plural + `." + action,
+			Resource: "` + names.Plural + `",
+			Entity:   "` + names.Pascal + `",
+			ID:       item.ID,
+			Label:    ` + identExpr(names, g.Definition) + `,
+			Detail:   fmt.Sprintf("%s: %s to %s", transition.Label, from, transition.To),
+			Before:   map[string]interface{}{"` + col + `": from},
+			After:    item,
+		}
+		return events.EmitTx(tx, c, &ev)
+	})
+	if err != nil {
 		return nil, err
 	}
 
-	// The transition is its own event, not an "updated". A subscriber that
-	// cares about invoices being paid should not have to diff two versions of
-	// a record to find out that is what happened.
-	events.Emitted(c, "` + names.Plural + `", "` + names.Pascal + `", action, item.ID,
-		` + identExpr(names, g.Definition) + `,
-		fmt.Sprintf("%s: %s to %s", transition.Label, from, transition.To),
-		map[string]interface{}{"` + col + `": from},
-		item)
-
+	// The activity feed, realtime and webhooks hear about it once it has
+	// committed.
+	events.Emit(c, ev)
 	return &item, nil
 }
 

@@ -280,6 +280,113 @@ GET  /api/v1/orders/workflow      the definition, for a client that draws it`}
                 back in time.
               </p>
 
+              <h2 id="hooks">Doing the rest of the work: transition hooks</h2>
+              <p>
+                A transition in a real process is rarely only a status change. Approving a purchase
+                request draws down the department&apos;s budget and reserves the stock, and if either
+                cannot happen the approval should not happen either. A subscriber is too late for
+                that: by the time it runs the approval has committed, and it cannot refuse it.
+              </p>
+              <p>
+                A hook runs inside the transition&apos;s own transaction, after the status has changed
+                and before anything commits. What it writes through <code className={C}>tx</code>{' '}
+                commits or rolls back with the move. Return{' '}
+                <code className={C}>workflow.Refuse(...)</code> and the caller gets a 422 with your
+                message; any other error is a 500. Either way the move is undone.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock
+                language="go"
+                filename="internal/services/procurement.go"
+                code={`func init() {
+    workflow.OnTransition("purchase_requests", "approve", drawDownBudget)
+    workflow.OnTransition("purchase_requests", "approve", reserveStock)
+}
+
+func drawDownBudget(tx *gorm.DB, m workflow.Move) error {
+    pr := m.Record.(*models.PurchaseRequest)
+    res := tx.Model(&models.Budget{}).
+        Where("department = ? AND remaining >= ?", pr.Department, pr.Total).
+        Update("remaining", gorm.Expr("remaining - ?", pr.Total))
+    if res.Error != nil {
+        return res.Error
+    }
+    if res.RowsAffected == 0 {
+        return workflow.Refuse("the %s budget cannot cover %d", pr.Department, pr.Total)
+    }
+    return nil
+}`}
+              />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                If <code className={C}>reserveStock</code> then refuses, the budget draw-down rolls back
+                with the approval. Two approvals of one request never both run their hooks: the status
+                update is conditional on the state it read, so the second affects no rows and stops
+                before them. Measured on Postgres: ten simultaneous approvals of 100 against a budget of
+                600 approved six, refused four, and left the budget at exactly zero; twenty simultaneous
+                approvals of one request drew it down once.
+              </p>
+
+              <h2 id="durable">Subscribers that must not miss an event</h2>
+              <p>
+                Sync and Async subscribers live in the process. An Async event still queued is gone if
+                the process stops, dropped if the queue is full, and not retried if the subscriber
+                fails. That is right for a realtime push and wrong for &quot;record this spend in the
+                HR ledger&quot;. For those, subscribe <code className={C}>Durable</code>:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock
+                language="go"
+                code={`func init() {
+    events.OnDurable("purchase_requests.fulfill", "record-spend", recordSpend)
+}
+
+func recordSpend(tx *gorm.DB, e events.Event) error {
+    var pr models.PurchaseRequest
+    if err := e.DecodeAfter(&pr); err != nil {
+        return err
+    }
+    // At least once: skip it if this request is already in the ledger.
+    ...
+}`}
+              />
+            </div>
+
+            <div className="prose-grit">
+              <ul>
+                <li>
+                  The event is written to <code className={C}>outbox_messages</code> in the
+                  transition&apos;s transaction, so it reaches the subscriber if and only if the move
+                  commits.
+                </li>
+                <li>
+                  A relay started in <code className={C}>routes.go</code> delivers it, retrying with
+                  backoff until the subscriber returns nil and parking it as failed after twelve
+                  attempts. A delivery survives a restart, and another replica takes it over if this one
+                  dies holding it.
+                </li>
+                <li>
+                  <code className={C}>OnDurable</code> runs the subscriber in its own transaction, so a
+                  failed attempt leaves nothing half written. Delivery is at least once, so make it
+                  idempotent.
+                </li>
+                <li>
+                  Events from generated create, update and delete handlers reach Durable subscribers
+                  too, written straight after their commit.
+                </li>
+              </ul>
+              <p>
+                <code className={C}>events.On</code> and <code className={C}>OnDurable</code> can be
+                called from an <code className={C}>init()</code> function. Before v3.221.0 a
+                subscription made before the bus started was silently dropped.
+              </p>
+
               <h2 id="not-yet">What is not built yet</h2>
               <p>
                 The admin does not render workflow state as a badge with the legal transitions

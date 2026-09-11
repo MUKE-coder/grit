@@ -26,9 +26,15 @@ func apiWorkflowGo() string {
 package workflow
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 	"sort"
 	"strings"
+	"sync"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // Transition is one legal move.
@@ -280,6 +286,123 @@ func All() map[string]Definition {
 		out[k] = v
 	}
 	return out
+}
+
+// ── Transition hooks ─────────────────────────────────────────────────────
+//
+// A transition in a real process is rarely only a status change. Approving a
+// purchase request draws down a budget and reserves the stock; if either
+// cannot happen, the approval should not happen either. An event subscriber is
+// too late for that: the approval has already committed, a subscriber cannot
+// refuse it, and an async one can be lost.
+//
+// A hook runs inside the transition's own transaction, after the status has
+// changed and before anything commits. Whatever it writes through tx commits
+// or rolls back with the move, and an error from it undoes the move. Return
+// Refuse(...) for a business reason ("the budget cannot cover this") and the
+// caller gets a 422 with that message; any other error is a 500.
+//
+//	func init() {
+//	    workflow.OnTransition("purchase_requests", "approve", drawDownBudget)
+//	}
+//
+// Hooks run in the order they were registered, the action's own before any
+// registered for "*". Two transitions of one row never both run their hooks:
+// the status update is conditional on the state it read, so the second
+// affects no rows and stops before its hooks.
+
+// Move is the transition a hook is running for.
+type Move struct {
+	Resource string // "purchase_requests"
+	Action   string // "approve"
+	From     string
+	To       string
+	ID       string
+	// Record is a pointer to the row as it is now, already in To. Assert it to
+	// the model: m.Record.(*models.PurchaseRequest).
+	Record interface{}
+	// C is the request, or nil when a job or a command made the move.
+	C *gin.Context
+}
+
+// Hook does the rest of a transition's work, in its transaction.
+type Hook func(tx *gorm.DB, m Move) error
+
+var (
+	hooksMu sync.RWMutex
+	hooks   = map[string][]Hook{}
+)
+
+// OnTransition registers a hook for one action on a resource, or for every
+// action on it with "*".
+func OnTransition(resource, action string, h Hook) {
+	hooksMu.Lock()
+	defer hooksMu.Unlock()
+	key := resource + "." + action
+	hooks[key] = append(hooks[key], h)
+}
+
+// RunHooks runs a move's hooks, stopping at the first error. Generated
+// transition services call it inside their transaction.
+func RunHooks(tx *gorm.DB, m Move) error {
+	hooksMu.RLock()
+	list := append(append([]Hook{}, hooks[m.Resource+"."+m.Action]...), hooks[m.Resource+".*"]...)
+	hooksMu.RUnlock()
+	for _, h := range list {
+		if err := h(tx, m); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ErrRefused is a hook declining a move for a business reason. The move is
+// rolled back and the caller gets a 422 carrying Message.
+type ErrRefused struct {
+	Message string
+}
+
+func (e ErrRefused) Error() string { return e.Message }
+
+// Refuse declines a move. Return it from a hook.
+func Refuse(format string, args ...interface{}) error {
+	return ErrRefused{Message: fmt.Sprintf(format, args...)}
+}
+
+// ErrNotPermitted is a caller without the permission a transition names.
+type ErrNotPermitted struct {
+	Resource string
+	Action   string
+	Label    string
+	// Noun is how the message names the record: "invoice".
+	Noun string
+}
+
+func (e ErrNotPermitted) Error() string {
+	return fmt.Sprintf("you do not have permission to %s this %s", e.Label, e.Noun)
+}
+
+// Classify maps an error from a transition to the status and code the API
+// answers with. An illegal or refused move is the caller asking for something
+// the process does not allow, a 422. A missing permission is a 403 and a
+// missing row a 404. Anything else is the server's fault, a 500, where it used
+// to be reported as a 403.
+func Classify(err error) (int, string) {
+	var invalid ErrInvalidTransition
+	var unknown ErrUnknownAction
+	var refused ErrRefused
+	var denied ErrNotPermitted
+	switch {
+	case errors.As(err, &invalid), errors.As(err, &unknown):
+		return http.StatusUnprocessableEntity, "INVALID_TRANSITION"
+	case errors.As(err, &refused):
+		return http.StatusUnprocessableEntity, "TRANSITION_REFUSED"
+	case errors.As(err, &denied):
+		return http.StatusForbidden, "FORBIDDEN"
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		return http.StatusNotFound, "NOT_FOUND"
+	}
+	return http.StatusInternalServerError, "INTERNAL_ERROR"
 }
 `
 }

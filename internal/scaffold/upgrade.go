@@ -246,6 +246,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := ensureClusterWiring(opts.APIRoot(root), opts.Module()); err != nil {
 			fmt.Printf("  ⚠ %v\n", err)
 		}
+		if changed, err := EnsureEventRelay(opts.APIRoot(root)); err != nil {
+			fmt.Printf("  ⚠ %v\n", err)
+		} else if changed {
+			fmt.Println("  ✓ Started the event relay, so Durable subscribers are delivered")
+		}
 		// Custom roles reach the admin API through the staff group a new
 		// routes.go has. An existing routes.go is not restructured, so say so.
 		if f := filepath.Join(opts.APIRoot(root), "internal", "routes", "routes.go"); fileExists(f) && !fileContains(f, "RequireStaff()") {

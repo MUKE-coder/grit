@@ -304,6 +304,8 @@ export default function HomePage() {
               { icon: Database, label: 'Append-only records', href: '/docs/backend/append-only' },
               { icon: Lock, label: 'Optimistic locking (If-Match)', href: '/docs/deployment/multiple-instances#concurrent-writes' },
               { icon: Layers, label: 'Runs as many replicas', href: '/docs/deployment/multiple-instances' },
+              { icon: Layers, label: 'Transactional workflow hooks', href: '/docs/backend/workflows#hooks' },
+              { icon: Database, label: 'Durable events (outbox)', href: '/docs/backend/workflows#durable' },
               { icon: TrendingUp, label: 'Exact multi-currency money', href: '/docs/concepts/money' },
               { icon: Building2, label: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
               { icon: Webhook, label: 'Webhooks', href: '/docs/backend/webhooks' },

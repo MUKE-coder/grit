@@ -58,6 +58,11 @@ const (
 	// endpoint that takes four seconds must not make the API take four
 	// seconds.
 	Async
+	// Durable delivers through the transactional outbox: at least once,
+	// retried until the subscriber succeeds, surviving a restart, and taken
+	// over by another replica if this one dies. For work another module
+	// depends on. See durable.go.
+	Durable
 )
 
 // Event is something that happened, described once.
@@ -97,6 +102,10 @@ type Event struct {
 	// Making it nil turns a subtle data race into an obvious nil pointer the
 	// first time anyone tries.
 	C *gin.Context ` + "`" + `json:"-"` + "`" + `
+
+	// durable is set once the event is in the outbox for its Durable
+	// subscribers, so the Emit after the commit does not queue it twice.
+	durable bool
 }
 
 // Handler is a subscriber.
@@ -162,46 +171,34 @@ func (b *Bus) On(pattern string, delivery Delivery, name string, h Handler) {
 // fails is logged and the others still run: a webhook endpoint being down is
 // not a reason to fail the write that has already happened.
 func (b *Bus) Emit(c *gin.Context, e Event) {
-	if e.At.IsZero() {
-		e.At = time.Now().UTC()
-	}
-	if e.Label == "" {
-		e.Label = e.ID
-	}
-	if c != nil {
-		if e.Actor == "" {
-			if v, ok := c.Get("user_id"); ok {
-				if s, ok := v.(string); ok {
-					e.Actor = s
-				}
-			}
-		}
-		if e.Meta == nil {
-			e.Meta = map[string]interface{}{}
-		}
-		e.Meta["ip"] = c.ClientIP()
-		e.Meta["user_agent"] = c.Request.UserAgent()
-	}
+	e.fill(c)
 
 	b.mu.RLock()
 	subs := make([]subscription, len(b.subs))
 	copy(subs, b.subs)
 	b.mu.RUnlock()
 
-	var wantAsync bool
+	var wantAsync, wantDurable bool
 	for _, s := range subs {
 		if !matches(s.pattern, e.Name, e.Resource) {
 			continue
 		}
-		if s.delivery == Sync {
+		switch s.delivery {
+		case Sync:
 			sync := e
 			sync.C = c
 			b.run(s, sync)
-		} else {
+		case Async:
 			wantAsync = true
+		case Durable:
+			// Already queued when the emitter had a transaction.
+			wantDurable = wantDurable || !e.durable
 		}
 	}
 
+	if wantDurable {
+		b.enqueueDurable(e)
+	}
 	if !wantAsync {
 		return
 	}
@@ -323,11 +320,26 @@ func matches(pattern, name, resource string) bool {
 // routes.Setup, and threading it into every handler struct would be a lot of
 // plumbing for a singleton.
 
-var defaultBus *Bus
+var (
+	defaultBus *Bus
 
-// Init creates the process bus. Call once, at boot, before Register.
+	// pending holds subscriptions made before Init. A subscriber is naturally
+	// registered from an init() function, which runs before routes.Setup
+	// calls Init; before v3.221.0 those were silently dropped.
+	pendingMu sync.Mutex
+	pending   []subscription
+)
+
+// Init creates the process bus and adds any subscriptions made before it.
+// Call once, at boot.
 func Init(workers int) *Bus {
+	pendingMu.Lock()
+	defer pendingMu.Unlock()
 	defaultBus = NewBus(workers)
+	for _, s := range pending {
+		defaultBus.On(s.pattern, s.delivery, s.name, s.handler)
+	}
+	pending = nil
 	return defaultBus
 }
 
@@ -343,9 +355,13 @@ func Emit(c *gin.Context, e Event) {
 	defaultBus.Emit(c, e)
 }
 
-// On subscribes on the process bus.
+// On subscribes on the process bus. Called before Init, from an init()
+// function say, the subscription is held until Init adds it.
 func On(pattern string, delivery Delivery, name string, h Handler) {
+	pendingMu.Lock()
+	defer pendingMu.Unlock()
 	if defaultBus == nil {
+		pending = append(pending, subscription{pattern: pattern, delivery: delivery, name: name, handler: h})
 		return
 	}
 	defaultBus.On(pattern, delivery, name, h)
