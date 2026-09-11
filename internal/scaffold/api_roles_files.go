@@ -201,11 +201,14 @@ func authzGrantsGo() string {
 	src := `package authz
 
 import (
+	"log"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/cluster"
 	"{{MODULE}}/internal/models"
 )
 
@@ -222,12 +225,38 @@ var (
 
 // Invalidate drops every cached grant set. Call it after any write that could
 // change authorization: role grants edited, role deleted, user's roles changed.
+//
+// With Share it also tells every other replica. The cache used to be per
+// process, so a permission revoked through one API instance kept working on the
+// others until they restarted.
 func Invalidate() {
+	dropLocal()
+	if sharedDB != nil {
+		if err := cluster.Bump(sharedDB, "authz"); err != nil {
+			log.Printf("authz: could not tell the other replicas about a role change: %v", err)
+		}
+	}
+}
+
+func dropLocal() {
 	generation.Add(1)
 	grantCache.Range(func(k, _ any) bool {
 		grantCache.Delete(k)
 		return true
 	})
+}
+
+var (
+	sharedDB    *gorm.DB
+	sharedWatch *cluster.Watch
+)
+
+// Share makes Invalidate reach every replica through the database they share,
+// and makes each replica drop its cache within a second of another's change.
+// Call it once at start-up, before serving.
+func Share(db *gorm.DB) {
+	sharedDB = db
+	sharedWatch = cluster.NewWatch(db, "authz", time.Second)
 }
 
 type cachedGrants struct {
@@ -241,6 +270,11 @@ type cachedGrants struct {
 func GrantsFor(db *gorm.DB, userID string) ([]string, error) {
 	if userID == "" {
 		return nil, nil
+	}
+
+	// Another replica changed a role: this one's cache is stale too.
+	if sharedWatch != nil && sharedWatch.Changed() {
+		dropLocal()
 	}
 
 	gen := generation.Load()

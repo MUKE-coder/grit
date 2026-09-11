@@ -336,6 +336,12 @@ export const docsMetadata: Record<string, DocPage> = {
       "Every middleware a request passes through in a Grit API, in the exact order they execute: maintenance mode, security headers, body limit, request ID, logging, panic recovery, CORS, gzip, CSRF, idempotency, then Sentinel's WAF and Pulse's tracing, then per-group auth, role checks and the activity logger. Explains where to hook your own logic, why CSRF only enforces on cookie-authenticated mutations, why order matters for CORS and recovery, and the specific ordering mistakes that cause the CORS/CSP/WAF bugs people actually hit.",
   },
 
+  '/docs/deployment/multiple-instances': {
+    title: 'Running More Than One Instance: Replicas Behind a Load Balancer',
+    description:
+      "What it takes to run several copies of a Grit API behind a load balancer: the same database, Redis, JWT secret and field-encryption key, migrations once per deploy, and no sticky sessions. What is shared between copies (sessions, the cache and idempotency keys, API-key rate limits, realtime events through a Redis backplane, the activity-log chain, jobs, permission changes, SSO connections, and scheduled jobs that run on one copy), and what is still counted per copy.",
+  },
+
   // Security — enterprise SSO (OIDC)
   '/docs/security/sso': {
     title: 'Enterprise SSO: OpenID Connect Single Sign-On',

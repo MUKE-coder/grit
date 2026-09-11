@@ -61,6 +61,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "respond", "respond.go"):                  apiRespondGo(),
 		filepath.Join(apiRoot, "internal", "audit", "audit.go"):                      apiAuditGo(),
 		filepath.Join(apiRoot, "internal", "audit", "chain_test.go"):                 apiAuditChainTestGo(),
+		filepath.Join(apiRoot, "internal", "cluster", "cluster.go"):                  apiClusterGo(),
+		filepath.Join(apiRoot, "internal", "cluster", "cluster_test.go"):             apiClusterTestGo(),
 		filepath.Join(apiRoot, "internal", "webhooks", "verifiers.go"):               apiWebhooksVerifiersGo(),
 		filepath.Join(apiRoot, "internal", "models", "feature_flag.go"):              apiFeatureFlagModelGo(),
 		filepath.Join(apiRoot, "internal", "flags", "flags.go"):                      apiFlagsGo(),
@@ -561,7 +563,7 @@ func main() {
 			if err := cs.Start(); err != nil {
 				log.Printf("Warning: Cron scheduler failed to start: %v", err)
 			} else {
-				log.Println("Cron scheduler started")
+				log.Println("Cron scheduler ready: it runs on the replica holding the cron lock")
 			}
 		}
 	}
@@ -8514,6 +8516,7 @@ import (
 	"gorm.io/gorm"
 
 	"` + "{{MODULE}}" + `/internal/ai"
+	"` + "{{MODULE}}" + `/internal/authz"
 	"` + "{{MODULE}}" + `/internal/cache"
 	"` + "{{MODULE}}" + `/internal/config"
 	"` + "{{MODULE}}" + `/internal/database"
@@ -8956,6 +8959,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// v3.31.77 — full-database backups (weekly cron + manual + download)
 	backupHandler := &handlers.BackupHandler{DB: db, Storage: svc.Storage}
 	roleHandler := handlers.NewRoleHandler(db)
+	// Permission caches are per process. Share makes a role change on one
+	// replica reach every other within a second.
+	authz.Share(db)
 	sessionHandler := handlers.NewSessionHandler(db)
 
 	// Enterprise SSO. Providers are built once here (each one performs OIDC
@@ -8972,6 +8978,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		log.Printf("saml: %v", err)
 	}
 	ssoHandler := handlers.NewSSOHandler(db, authService, cfg, ssoRegistry, samlRegistry)
+	// Rebuild the SSO registries when another replica changes a connection.
+	services.WatchSSO(db, ssoRegistry, samlRegistry)
 	// grit:handlers
 
 	// Health check

@@ -13,6 +13,7 @@ func writeCronFiles(root string, opts Options) error {
 	files := map[string]string{
 		filepath.Join(apiRoot, "internal", "cron", "cron.go"):     cronSchedulerGo(),
 		filepath.Join(apiRoot, "internal", "cron", "start.go"):    cronStartGo(),
+		filepath.Join(apiRoot, "internal", "cron", "leader.go"):   cronLeaderGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "cron.go"): cronHandlerGo(),
 	}
 
@@ -31,7 +32,6 @@ func cronSchedulerGo() string {
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/hibiken/asynq"
@@ -50,6 +50,7 @@ var RegisteredTasks []Task
 // Scheduler wraps asynq.Scheduler for cron-like job scheduling.
 type Scheduler struct {
 	scheduler *asynq.Scheduler
+	redisURL  string
 }
 
 // New creates a new cron Scheduler connected to Redis.
@@ -132,22 +133,19 @@ func New(redisURL string) (*Scheduler, error) {
 
 	// grit:cron-tasks
 
-	return &Scheduler{scheduler: scheduler}, nil
+	return &Scheduler{scheduler: scheduler, redisURL: redisURL}, nil
 }
 
-// Start begins executing scheduled tasks.
+// Start runs the scheduler on whichever replica holds the cron lock; see
+// leader.go. Every replica used to run its own, so each job ran once per replica.
 func (s *Scheduler) Start() error {
-	go func() {
-		if err := s.scheduler.Run(); err != nil {
-			log.Printf("Cron scheduler error: %v", err)
-		}
-	}()
+	go s.lead(s.redisURL)
 	return nil
 }
 
 // Stop shuts down the scheduler gracefully.
 func (s *Scheduler) Stop() {
-	s.scheduler.Shutdown()
+	s.shutdown()
 }
 `
 }
@@ -188,7 +186,7 @@ func Start(cfg *config.Config, _ *cache.Cache) (*Scheduler, error) {
 		return nil, err
 	}
 
-	log.Println("Cron scheduler started")
+	log.Println("Cron scheduler ready: it runs on the replica holding the cron lock")
 	return s, nil
 }
 `
