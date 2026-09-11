@@ -672,12 +672,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"strings"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 
 	"{{MODULE}}/internal/appendonly"
+	"{{MODULE}}/internal/erasure"
 	"{{MODULE}}/internal/models"
 )
 
@@ -799,6 +801,43 @@ func dependencyOrder(db *gorm.DB, tables []string) []string {
 		}
 	}
 	return out
+}
+
+// reapplyErasures puts back the deletion-journal entries made after the backup
+// was taken, and erases those people again.
+//
+// The journal is only ever appended to, so the archive's copy is a prefix of
+// the one that was just replaced: the missing entries go back verbatim, hashes
+// and all, and the chain verifies exactly as it did. Each person is then
+// scrubbed again, because the archive holds them as they were before they asked
+// to be forgotten.
+func reapplyErasures(tx *gorm.DB, before []models.DeletionJournal) (int, error) {
+	if len(before) == 0 {
+		return 0, nil
+	}
+	var restored []models.DeletionJournal
+	if err := tx.Select("hash").Find(&restored).Error; err != nil {
+		return 0, fmt.Errorf("reading the restored journal: %w", err)
+	}
+	have := make(map[string]bool, len(restored))
+	for _, j := range restored {
+		have[j.Hash] = true
+	}
+	n := 0
+	for _, j := range before {
+		if have[j.Hash] {
+			continue
+		}
+		entry := j
+		if err := tx.Create(&entry).Error; err != nil {
+			return n, fmt.Errorf("restoring journal entry %s: %w", j.ID, err)
+		}
+		if _, _, err := erasure.Scrub(tx, j.DeletedUserID); err != nil {
+			return n, fmt.Errorf("erasing %s again: %w", j.DeletedUserID, err)
+		}
+		n++
+	}
+	return n, nil
 }
 
 // SplitStatements splits our generated dump.sql into executable statements.
@@ -942,6 +981,17 @@ func Restore(db *gorm.DB, zipPath string) (Manifest, error) {
 		// derived from models.Models() — never user input — so this is not an
 		// injection surface. RESTART IDENTITY resets sequences; CASCADE handles
 		// foreign keys regardless of order.
+		// The deletion journal as it stands, before the archive replaces it. An
+		// erasure made after the backup was taken is here and not in the archive,
+		// and replaying the archive alone brought the person back and lost the
+		// proof they had ever asked to be forgotten.
+		var journal []models.DeletionJournal
+		if tx.Migrator().HasTable(&models.DeletionJournal{}) {
+			if err := tx.Order("created_at asc, id asc").Find(&journal).Error; err != nil {
+				return fmt.Errorf("reading the deletion journal: %w", err)
+			}
+		}
+
 		// Append-only tables refuse TRUNCATE by trigger, which is right for every
 		// writer except this one: a restore rewrites them wholesale. Suspended for
 		// this transaction only, and switched back on before it commits.
@@ -971,6 +1021,13 @@ func Restore(db *gorm.DB, zipPath string) (Manifest, error) {
 				}
 				return fmt.Errorf("executing %q: %w", head, err)
 			}
+		}
+		reapplied, err := reapplyErasures(tx, journal)
+		if err != nil {
+			return err
+		}
+		if reapplied > 0 {
+			log.Printf("Re-applied %d erasure(s) made after this backup was taken", reapplied)
 		}
 		return resume()
 	})

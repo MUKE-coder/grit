@@ -142,6 +142,11 @@ func (g *Generator) Run() error {
 			return err
 		}
 	}
+	if g.Definition.OwnedBy != "" && !g.Definition.AppendOnly {
+		if err := g.prepareErasure(); err != nil {
+			return err
+		}
+	}
 
 	fmt.Printf("\n  Generating resource: %s\n\n", names.Pascal)
 

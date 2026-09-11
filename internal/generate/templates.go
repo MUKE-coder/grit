@@ -109,6 +109,9 @@ func (g *Generator) writeGoModel(names Names) error {
 	}
 
 	projImports := []string{}
+	if g.erasesWithOwner() {
+		projImports = append(projImports, fmt.Sprintf("\"%s/internal/erasure\"", g.Module))
+	}
 	for _, f := range fields {
 		if f.Encrypted {
 			projImports = append(projImports, fmt.Sprintf("\"%s/internal/crypto\"", g.Module))
@@ -410,6 +413,7 @@ func (m *%s) GetOwnerID() string {
 }
 `, owner.Name, names.Pascal, toPascalCase(owner.Name)+"ID")
 	}
+	content += g.erasureModelInit(names)
 
 	// Path resolution, the cycle refusal, and the two accessors a breadcrumb
 	// needs. Reparenting lives in the tree service instead: a move rewrites a

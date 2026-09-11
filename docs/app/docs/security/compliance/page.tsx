@@ -61,14 +61,18 @@ export default function CompliancePage() {
 
             <h3>Erase — the only thing that writes to the journal</h3>
             <p>
-              <code>POST /api/users/:id/gdpr-erase</code> is admin-only and refuses self-erasure.
+              <code>POST /api/v1/users/:id/gdpr-erase</code> is admin-only and refuses self-erasure.
               It runs one transaction that:
             </p>
             <ul>
               <li>
-                <strong>Hard-deletes the user&apos;s child PII</strong> — uploads, sessions,
-                password-reset tokens, role grants, 2FA configs, trusted devices, pending TOTP
-                tokens, dashboard layouts, and notifications — counting each table as it goes.
+                <strong>Hard-deletes everything registered as the user&apos;s</strong>: the
+                framework&apos;s own tables (uploads, sessions, password-reset tokens, role grants,
+                2FA configs, trusted devices, pending TOTP tokens, dashboard layouts and
+                notifications), and every resource generated with <code>--owned-by</code>, so the
+                records a person owns go with them. Each table is counted as it goes. Append-only
+                resources are the exception: their rows cannot be deleted by design, and which of
+                retention or erasure wins is a decision for the project.
               </li>
               <li>
                 <strong>Anonymizes the user row in place</strong> rather than deleting it (so
@@ -92,6 +96,21 @@ export default function CompliancePage() {
               them would break that log&apos;s own hash chain); the erasure itself is additionally
               recorded there as a <code>user.gdpr_erase</code> event so it shows up in the
               dashboard and any SIEM export.
+            </p>
+
+            <h3>Restoring a backup does not undo an erasure</h3>
+            <p>
+              A backup taken before someone was erased still holds them. Restore reads the deletion
+              journal before it clears anything, and after replaying the archive it puts back the
+              journal entries the archive is missing, exactly as they were, and erases each of those
+              people again. The chain verifies afterwards as it did before, and the restore says how
+              many erasures it re-applied.
+            </p>
+            <p>
+              The limit is where the journal lives: in the same database. Restoring into an empty
+              one, on new infrastructure after a total loss, has no journal to consult. If that is a
+              scenario you plan for, export the journal to storage outside the database as part of
+              your backup routine.
             </p>
 
             <h3>Why the journal is &ldquo;tamper-evident&rdquo;</h3>

@@ -118,7 +118,9 @@ grit restore backup.zip --no-migrate`} />
             so a table is always filled after the tables it points at. Append-only tables are let
             through for the length of the restore transaction and guarded again before it commits.
             Both matter more than they sound: before v3.212.0 a project with line items, or with
-            append-only records, took backups it could not restore.
+            append-only records, took backups it could not restore. Erasures made after the backup
+            was taken are re-applied from the deletion journal, so a restore does not bring back
+            someone who asked to be forgotten.
           </p>
 
           <div className="my-8 rounded-xl border border-amber-500/30 bg-amber-500/5 p-6">
