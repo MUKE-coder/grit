@@ -26,6 +26,10 @@ on:
       - "docs/**"
       - "internal/docscheck/**"
       - "internal/generate/**"
+      # The error table on /docs/backend/errors is generated from the catalogue,
+      # and the flows scaffold a project, so both of those sources matter here.
+      - "internal/errorcodes/**"
+      - "internal/scaffold/**"
       - "cmd/grit/**"
       - "tools/docsamples/**"
       - "tests/docs/**"
@@ -36,6 +40,10 @@ on:
       - "docs/**"
       - "internal/docscheck/**"
       - "internal/generate/**"
+      # The error table on /docs/backend/errors is generated from the catalogue,
+      # and the flows scaffold a project, so both of those sources matter here.
+      - "internal/errorcodes/**"
+      - "internal/scaffold/**"
       - "cmd/grit/**"
       - "tools/docsamples/**"
       - "tests/docs/**"
