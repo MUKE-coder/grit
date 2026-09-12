@@ -33,7 +33,7 @@ import (
 func SyncAdminResource(root string, s GoStruct) (added int, warnings []string, err error) {
 	plural := Pluralize(toSnakeCase(s.Name))
 	kebab := strings.ReplaceAll(plural, "_", "-")
-	resourcesRoot := filepath.Join(root, "apps", "admin", "resources")
+	resourcesRoot := filepath.Join(adminRootFrom(root), "resources")
 	path := scaffold.FindResourceDef(resourcesRoot, kebab)
 	if path == "" {
 		// No definition in either layout. Not an error: the operator may have

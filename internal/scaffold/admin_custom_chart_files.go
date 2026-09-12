@@ -14,12 +14,11 @@ import (
 )
 
 func writeAdminCustomChartFiles(root string, opts Options) error {
-	_ = opts
 	adminRoot := adminCodeRoot(root, opts)
 
 	files := map[string]string{
-		filepath.Join(adminRoot, "components", "dashboard", "CustomChartCard.tsx"):  adminCustomChartCardTSX(),
-		filepath.Join(adminRoot, "components", "dashboard", "ChartBuilderForm.tsx"): adminChartBuilderFormTSX(),
+		filepath.Join(adminRoot, "components", "dashboard", "CustomChartCard.tsx"):  adminFlavoured(opts, adminCustomChartCardTSX()),
+		filepath.Join(adminRoot, "components", "dashboard", "ChartBuilderForm.tsx"): adminFlavoured(opts, adminChartBuilderFormTSX()),
 	}
 	for path, content := range files {
 		if err := writeFile(path, content); err != nil {

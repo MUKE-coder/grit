@@ -57,6 +57,13 @@ export default function SingleArchitecturePage() {
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">frontend/src/</code>{' '}
                 -- there is no pnpm workspace, so no shared package.
               </p>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                The admin panel is in there too, as a section of the same SPA at{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/admin/dashboard</code>{' '}
+                (v3.236.0). Same dashboard, resource CRUD, system hub, settings and account
+                security a three-app project has: 35 screens, its own layout and sidebar, and the
+                site&apos;s navbar steps aside for it. One binary still serves all of it.
+              </p>
 
               <div className="rounded-lg border border-border/40 bg-accent/20 p-5 mb-6">
                 <h4 className="text-sm font-semibold text-foreground mb-3">Scaffold command</h4>
@@ -122,6 +129,10 @@ export default function SingleArchitecturePage() {
                     <tr className="border-b border-border/20">
                       <td className="px-4 py-2.5 font-mono text-xs">Shared types</td>
                       <td className="px-4 py-2.5">Mirrored into frontend/src/shared/ (no packages/shared)</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs">Admin panel</td>
+                      <td className="px-4 py-2.5">A section of the same SPA at /admin/dashboard, code under frontend/src/admin-panel/</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-2.5 font-mono text-xs">Deployment</td>
@@ -189,11 +200,13 @@ export default function SingleArchitecturePage() {
                     <Folder name="routes" comment="TanStack Router file-based routes" defaultOpen>
                       <File name="__root.tsx" />
                       <File name="index.tsx" />
+                      <Folder name="admin" comment="The panel's routes, at /admin/*" />
                       <File name="..." icon={<span className="inline-block h-3.5 w-3.5 shrink-0" />} />
                     </Folder>
                     <Folder name="components" />
                     <Folder name="hooks" />
                     <Folder name="lib" />
+                    <Folder name="admin-panel" comment="The admin panel's pages, components and resources (@admin)" />
                     <Folder name="shared" comment="Zod schemas + TS types (aliased as @repo/shared)" />
                   </Folder>
                 </Folder>
@@ -568,7 +581,7 @@ ssh yourserver 'cd /opt/myapp && ./myapp'`} />
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-muted-foreground/50 mt-0.5">-</span>
-                      Projects that need a separate admin panel (use triple instead)
+                      Teams that deploy the admin panel separately from the app, on its own domain or behind its own network rules (use triple)
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-muted-foreground/50 mt-0.5">-</span>

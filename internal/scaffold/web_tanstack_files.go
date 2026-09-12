@@ -252,6 +252,41 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 }
 
 func webTanStackRootRoute(opts Options) string {
+	// With the admin panel in this same router, the root cannot wrap everything in
+	// the site chrome: the panel has a sidebar and a topbar of its own, and the
+	// marketing navbar on top of them is one header too many.
+	if opts.ShouldEmbedAdminInSPA() {
+		return `import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router'
+import { Navbar } from '@/components/navbar'
+import { Footer } from '@/components/footer'
+
+export const Route = createRootRoute({
+  component: RootLayout,
+})
+
+function RootLayout() {
+  // The panel owns its chrome. Everything else gets the site's.
+  const inAdmin = useRouterState({
+    select: (s) => s.location.pathname === '/admin' || s.location.pathname.startsWith('/admin/'),
+  })
+
+  if (inAdmin) {
+    return <Outlet />
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <Navbar />
+      <main className="flex-1">
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  )
+}
+`
+	}
+
 	return fmt.Sprintf(`import { createRootRoute, Outlet } from '@tanstack/react-router'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'

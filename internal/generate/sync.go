@@ -24,7 +24,7 @@ func Sync() error {
 		return fmt.Errorf("models directory not found at %s", modelsDir)
 	}
 
-	sharedRoot := filepath.Join(root, "packages", "shared")
+	sharedRoot := sharedRootFrom(root)
 	if !dirExists(sharedRoot) {
 		return fmt.Errorf("shared package not found at %s: sync requires a monorepo project", sharedRoot)
 	}
@@ -89,7 +89,7 @@ func Sync() error {
 				// resolved that to edit the file; resolve it again to name it,
 				// rather than printing a path built from the slug that is
 				// wrong in whichever layout the guess did not pick.
-				def := scaffold.FindResourceDef(filepath.Join(root, "apps", "admin", "resources"), pluralKebab)
+				def := scaffold.FindResourceDef(filepath.Join(adminRootFrom(root), "resources"), pluralKebab)
 				fmt.Printf("  ✓ %s  (added %d field%s to columns + form)\n",
 					relFromRoot(root, def), added, plural(added))
 				adminFieldsAdded += added

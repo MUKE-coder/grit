@@ -2,6 +2,7 @@ package generate
 
 import (
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -24,13 +25,52 @@ func (g *Generator) EmbedsAdmin() bool {
 	return g.Architecture == "double"
 }
 
+// EmbedsAdminInSPA reports whether the panel lives inside the single binary's SPA.
+//
+// The third shape. Its panel is a TanStack Router app like the --vite admin, so
+// the screens are the same; what differs is where they go and that the router is
+// the SPA's, so every route id carries the /admin segment.
+func (g *Generator) EmbedsAdminInSPA() bool {
+	return g.Architecture == "single"
+}
+
+// AdminIsTanStack reports whether the panel is a TanStack Router app, which
+// decides whether a screen is one page file or a page plus a route shim.
+func (g *Generator) AdminIsTanStack() bool {
+	if g.EmbedsAdminInSPA() {
+		return true
+	}
+	return dirExists(filepath.Join(g.Root, "apps", "admin", "src", "routes"))
+}
+
+// adminTanStackRoot is where a TanStack panel keeps its own code.
+func (g *Generator) adminTanStackRoot() string {
+	if g.EmbedsAdminInSPA() {
+		return filepath.Join(g.Root, "frontend", "src", "admin-panel")
+	}
+	return filepath.Join(g.Root, "apps", "admin", "src")
+}
+
+// adminTanStackRoutesRoot is the directory its route files live under. In the SPA
+// that is the SPA's own route tree, under the segment the panel owns.
+func (g *Generator) adminTanStackRoutesRoot() string {
+	if g.EmbedsAdminInSPA() {
+		return filepath.Join(g.Root, "frontend", "src", "routes", "admin")
+	}
+	return filepath.Join(g.Root, "apps", "admin", "src", "routes")
+}
+
 // AdminCodeRoot is where the admin's components, lib, hooks and resource
 // definitions live.
 func (g *Generator) AdminCodeRoot() string {
-	if g.EmbedsAdmin() {
+	switch {
+	case g.EmbedsAdmin():
 		return filepath.Join(g.Root, "apps", "web", "admin-panel")
+	case g.EmbedsAdminInSPA():
+		return filepath.Join(g.Root, "frontend", "src", "admin-panel")
+	default:
+		return filepath.Join(g.Root, "apps", "admin")
 	}
-	return filepath.Join(g.Root, "apps", "admin")
 }
 
 // AdminRoutesRoot is the directory the admin's routes live under.
@@ -49,12 +89,36 @@ func (g *Generator) AdminRoutesRoot() string {
 // a triple project and for every file that is not an admin screen.
 func embeddedAdminFileContent(path, content string) string {
 	slashed := filepath.ToSlash(path)
+	if strings.Contains(slashed, "/frontend/src/admin-panel/") ||
+		strings.Contains(slashed, "/frontend/src/routes/admin/") {
+		return repointSPAAdminContent(content)
+	}
 	if !strings.Contains(slashed, "/apps/web/admin-panel/") &&
 		!strings.Contains(slashed, "/apps/web/app/admin/") {
 		return content
 	}
 	return repointAdminContent(content)
 }
+
+// repointSPAAdminContent is the same rewrite for a panel inside the SPA, plus
+// the one thing only that shape needs: the id a file route declares has to equal
+// its path, and its path now starts with /admin.
+func repointSPAAdminContent(content string) string {
+	content = repointAdminContent(content)
+	content = strings.ReplaceAll(content, `"@/pages/`, `"@admin/pages/`)
+	content = strings.ReplaceAll(content, `'@/pages/`, `'@admin/pages/`)
+	content = routeIDPattern.ReplaceAllStringFunc(content, func(match string) string {
+		id := routeIDPattern.FindStringSubmatch(match)[1]
+		if strings.HasPrefix(id, "/admin") {
+			return match
+		}
+		return "createFileRoute('/admin" + id + "')"
+	})
+	return content
+}
+
+// routeIDPattern finds the id a TanStack file route declares.
+var routeIDPattern = regexp.MustCompile(`createFileRoute\('([^']*)'\)`)
 
 // adminContent repoints a generated admin file for a project whose panel is
 // embedded, and returns it unchanged for one whose admin is its own app.
@@ -80,6 +144,33 @@ func repointAdminContent(content string) string {
 		}
 	}
 	return strings.ReplaceAll(content, "/admin/admin/", "/admin/")
+}
+
+// adminRootFrom finds a project's admin panel with nothing but its root.
+//
+// The commands that take a root and no Options, like sync and remove, cannot ask
+// which shape the project is. Reading the layout off the disk answers it: exactly
+// one of these three directories exists in any project that has a panel.
+func adminRootFrom(root string) string {
+	for _, candidate := range []string{
+		filepath.Join(root, "apps", "admin"),
+		filepath.Join(root, "apps", "web", "admin-panel"),
+		filepath.Join(root, "frontend", "src", "admin-panel"),
+	} {
+		if dirExists(candidate) {
+			return candidate
+		}
+	}
+	return filepath.Join(root, "apps", "admin")
+}
+
+// relativeToRoot renders a path for the screen, relative to the project root.
+func relativeToRoot(root, path string) string {
+	rel, err := filepath.Rel(root, path)
+	if err != nil {
+		return path
+	}
+	return filepath.ToSlash(rel)
 }
 
 // writeAdminFile writes a generated admin file, repointed if the panel is

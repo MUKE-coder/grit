@@ -36,20 +36,20 @@ const (
 
 // Options holds the scaffolding configuration.
 type Options struct {
-	ProjectName    string
-	Architecture   Architecture
-	Frontend       Frontend
-	Style          string
-	Theme          string // Full theme: atlas (default), aurora, pulse — controls auth pages, dashboard tokens, fonts, brand colors
+	ProjectName  string
+	Architecture Architecture
+	Frontend     Frontend
+	Style        string
+	Theme        string // Full theme: atlas (default), aurora, pulse — controls auth pages, dashboard tokens, fonts, brand colors
 	// DBProvider is the database engine written into .env as DB_PROVIDER:
 	// postgres (the default), mysql, sqlite or memory. Connect has understood all
 	// of them for a long time; until v3.234.0 the only way to pick one was the
 	// prefix of DATABASE_URL, so .env had Postgres settings and no place for
 	// anybody else's.
-	DBProvider string
-	InPlace        bool   // Scaffold into current directory (grit new .)
-	Force          bool   // Allow scaffolding into non-empty directory (--force)
-	IncludeDesktop bool   // Add apps/desktop (Wails client that shares the monorepo API)
+	DBProvider     string
+	InPlace        bool // Scaffold into current directory (grit new .)
+	Force          bool // Allow scaffolding into non-empty directory (--force)
+	IncludeDesktop bool // Add apps/desktop (Wails client that shares the monorepo API)
 
 	// Version is the Grit CLI version that scaffolded this project (e.g. "3.25.2").
 	// Injected by cmd/grit/main.go so scaffolded README + docs reflect the real
@@ -68,7 +68,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.235.0"
+const DefaultVersion = "3.236.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -194,7 +194,7 @@ func (o Options) ShouldIncludeAdmin() bool {
 // an admin panel missing its account-security page while the link to it sat in the
 // user menu.
 func (o Options) HasAdminPanel() bool {
-	return o.ShouldIncludeAdmin() || o.ShouldEmbedAdmin()
+	return o.ShouldIncludeAdmin() || o.ShouldEmbedAdmin() || o.ShouldEmbedAdminInSPA()
 }
 
 // ShouldIncludeSingleSPA returns true if this is a single-app embedded SPA.
@@ -242,6 +242,19 @@ func (o Options) ShouldIncludeDocs() bool {
 // UseTanStack returns true if the frontend uses TanStack Router (Vite).
 func (o Options) UseTanStack() bool {
 	return o.Frontend == FrontendTanStack
+}
+
+// AdminIsTanStack reports whether the admin panel is a TanStack Router app,
+// which decides the shape of every screen written for it: a page plus a route
+// shim rather than one file at its route path, and no next/link.
+//
+// Not the same question as UseTanStack. Frontend picks the web app's framework
+// in a monorepo and is empty for a single project, whose one SPA is a TanStack
+// app whatever that field says. Writers that asked UseTanStack emitted Next code
+// for it, and one of them put a page in an apps/admin directory a single project
+// does not have.
+func (o Options) AdminIsTanStack() bool {
+	return o.UseTanStack() || o.ShouldEmbedAdminInSPA()
 }
 
 // APIRoot returns the base directory for Go API files.
@@ -541,6 +554,16 @@ func Run(opts Options) error {
 		}
 	}
 
+	// A single project has one binary and one SPA, so the panel goes into that
+	// SPA's routes. The Vite admin is the source, because the SPA is a TanStack
+	// Router app and the panel is already written in that dialect.
+	if opts.ShouldEmbedAdminInSPA() {
+		spinner.Printf("  → Scaffolding admin panel into the SPA at /admin...\n")
+		if err := writeEmbeddedSingleAdminFiles(root, opts); err != nil {
+			return fmt.Errorf("writing the embedded admin panel: %w", err)
+		}
+	}
+
 	if opts.ShouldIncludeExpo() {
 		// Write Expo mobile app
 		spinner.Printf("  → Scaffolding Expo mobile app...\n")
@@ -757,6 +780,14 @@ func RunSingle(opts Options) error {
 	spinner.Printf("  → Scaffolding React frontend (Vite + TanStack Router)...\n")
 	if err := writeSingleFrontendFiles(root, opts); err != nil {
 		return fmt.Errorf("writing frontend files: %w", err)
+	}
+
+	// And the admin panel inside it, at /admin. The Vite admin is the source,
+	// because this SPA is a TanStack Router app and the panel already exists in
+	// that dialect: see admin_embedded_single.go.
+	spinner.Printf("  → Scaffolding admin panel into the SPA at /admin...\n")
+	if err := writeEmbeddedSingleAdminFiles(root, opts); err != nil {
+		return fmt.Errorf("writing the embedded admin panel: %w", err)
 	}
 
 	return nil
@@ -982,6 +1013,7 @@ func writeFile(path, content string) error {
 	// panel's screens are written from a dozen different places and every one of
 	// them would have had to remember.
 	content = embeddedAdminContent(path, content)
+	content = embeddedSingleAdminContent(path, content)
 
 	// Record what actually lands on disk, not what the template produced:
 	// codefmt reformats Go on the way out, and a hash of the pre-gofmt text

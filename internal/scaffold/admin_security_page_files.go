@@ -34,9 +34,7 @@ func writeAdminSecurityFiles(root string, opts Options) error {
 	}
 	for path, content := range files {
 		content = strings.ReplaceAll(content, "{{MODULE}}", opts.Module())
-		if opts.UseTanStack() {
-			content = nextToTanStack(content)
-		}
+		content = adminFlavoured(opts, content)
 		if err := writeFile(path, content); err != nil {
 			return fmt.Errorf("writing %s: %w", path, err)
 		}

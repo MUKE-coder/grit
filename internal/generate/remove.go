@@ -21,8 +21,8 @@ func RemoveResource(name string) error {
 	names := gen.Names()
 
 	apiRoot := filepath.Join(root, "apps", "api")
-	sharedRoot := filepath.Join(root, "packages", "shared")
-	adminRoot := filepath.Join(root, "apps", "admin")
+	sharedRoot := sharedRootFrom(root)
+	adminRoot := adminRootFrom(root)
 	webRoot := filepath.Join(root, "apps", "web")
 
 	fmt.Printf("\n  Removing resource: %s\n\n", names.Pascal)
@@ -83,6 +83,12 @@ func RemoveResource(name string) error {
 		filepath.Join(adminRoot, "src", "resources", names.PluralKebab+".ts"),
 		filepath.Join(adminRoot, "src", "routes", "_dashboard", "resources", names.PluralKebab+".tsx"),
 		filepath.Join(adminRoot, "src", "pages", "resources", names.PluralKebab+".tsx"),
+		// --- admin: embedded, where the routes belong to the host app's router ---
+		filepath.Join(adminRoot, "pages", "resources", names.PluralKebab+".tsx"),
+		filepath.Join(webRoot, "app", "admin", "(dashboard)", "resources", names.PluralKebab, "page.tsx"),
+		filepath.Join(root, "frontend", "src", "routes", "admin", "_dashboard", "resources", names.PluralKebab, "index.tsx"),
+		filepath.Join(root, "frontend", "src", "routes", "admin", "_dashboard", "resources", names.PluralKebab, "$id.tsx"),
+		filepath.Join(root, "frontend", "src", "hooks", "use-"+names.PluralKebab+".ts"),
 	}
 
 	for _, f := range filesToDelete {
@@ -135,6 +141,8 @@ func RemoveResource(name string) error {
 		filepath.Join(adminRoot, "resources", names.PluralKebab),
 		filepath.Join(adminRoot, "src", "resources", names.PluralKebab),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", names.PluralKebab),
+		filepath.Join(webRoot, "app", "admin", "(dashboard)", "resources", names.PluralKebab),
+		filepath.Join(root, "frontend", "src", "routes", "admin", "_dashboard", "resources", names.PluralKebab),
 		filepath.Join(webRoot, "app", names.Kebab),
 	}
 	for _, d := range dirsToDelete {

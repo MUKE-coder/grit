@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 7 to 13, 2026",
-    count: 44,
+    count: 45,
     entries: [
+      { version: "3.236.0", title: "A single gets the admin panel too, inside its SPA" },
       { version: "3.235.0", title: "A double gets the admin panel, at /admin" },
       { version: "3.234.0", title: "Say which database, and have it tested" },
       { version: "3.233.0", title: "Three bugs where tenancy, roles and impersonation meet" },

@@ -22,10 +22,30 @@ import "path/filepath"
 // a directory nothing compiles, which is how the embedded panel's first build
 // failed on a dashboard widget that had been written to apps/admin/components.
 func adminCodeRoot(root string, opts Options) string {
-	if opts.ShouldEmbedAdmin() {
+	switch {
+	case opts.ShouldEmbedAdmin():
 		return filepath.Join(root, "apps", "web", "admin-panel")
+	case opts.ShouldEmbedAdminInSPA():
+		// A single project is one binary with a Vite SPA inside it, so the panel
+		// lives in that SPA's source.
+		return filepath.Join(root, "frontend", "src", "admin-panel")
+	default:
+		return filepath.Join(root, "apps", "admin")
 	}
-	return filepath.Join(root, "apps", "admin")
+}
+
+// adminFlavoured converts an admin file to the dialect the app it lands in speaks.
+//
+// The Next.js admin keeps next/link and next/navigation. A Vite app has neither:
+// the TanStack admin's file map runs every entry through nextToTanStack, and a
+// writer that bypasses the map has to do the same or it emits an unresolvable
+// import. That is what shipped three dashboard widgets and a chart builder
+// importing next/link into every Vite admin.
+func adminFlavoured(opts Options, content string) string {
+	if opts.AdminIsTanStack() {
+		return nextToTanStack(content)
+	}
+	return content
 }
 
 // adminComponent returns the path for a component file.
@@ -51,10 +71,18 @@ func adminLib(root string, opts Options, name string) string {
 // components, hooks and lib live inside the web app under admin-panel/ and its
 // routes under app/admin/. See admin_embedded.go.
 func adminPath(root string, opts Options, parts ...string) string {
+	// In the SPA the router is the SPA's. A route file belongs in its tree, under
+	// the segment the panel owns; only the panel's own code lives in admin-panel/.
+	if opts.ShouldEmbedAdminInSPA() && len(parts) > 0 && parts[0] == "routes" {
+		return filepath.Join(append(
+			[]string{root, "frontend", "src", "routes", "admin"}, parts[1:]...)...)
+	}
 	base := filepath.Join(root, "apps", "admin")
 	switch {
 	case opts.ShouldEmbedAdmin():
 		base = filepath.Join(root, "apps", "web", "admin-panel")
+	case opts.ShouldEmbedAdminInSPA():
+		base = filepath.Join(root, "frontend", "src", "admin-panel")
 	case opts.UseTanStack():
 		base = filepath.Join(base, "src")
 	}
@@ -72,7 +100,7 @@ func adminPath(root string, opts Options, parts ...string) string {
 // routePath is the URL under the dashboard, slash-separated. name is the file
 // stem used under src/pages/ for TanStack.
 func adminPageFiles(root string, opts Options, routePath, name, body string) map[string]string {
-	if !opts.UseTanStack() {
+	if !opts.AdminIsTanStack() {
 		parts := append([]string{"app", "(dashboard)"}, splitSlash(routePath)...)
 		parts = append(parts, "page.tsx")
 		return map[string]string{

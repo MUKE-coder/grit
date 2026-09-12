@@ -84,6 +84,10 @@ func adminTanStackAPIClient() string {
 	code = strings.ReplaceAll(code,
 		`process.env.NEXT_PUBLIC_API_URL`,
 		`(import.meta as any).env?.VITE_API_URL`)
+	// Same reason the converter rewrites this: Vite does not polyfill process, so
+	// the dev-only IP hint below threw "process is not defined" in every Vite
+	// admin. This function bypasses nextToTanStack, so it repeats the rewrite.
+	code = strings.ReplaceAll(code, "process.env.NODE_ENV", "import.meta.env.MODE")
 	code += "\n// TanStack route templates import { api }; alias it to the configured instance.\nexport const api = apiClient;\n"
 	return code
 }
@@ -255,6 +259,21 @@ export function dynamic<T extends React.ComponentType<any>>(
 }
 
 func writeAdminTanStackFiles(root string, opts Options) error {
+	for path, content := range adminTanStackFileMap(root, opts) {
+		if err := writeFile(path, content); err != nil {
+			return fmt.Errorf("writing %s: %w", path, err)
+		}
+	}
+	return nil
+}
+
+// adminTanStackFileMap is every file of the Vite admin, by path.
+//
+// Split out of the writer so the single architecture can transform it: a single
+// project has no admin app either, and its SPA is this same TanStack Router app,
+// so the panel goes inside it rather than being written again. See
+// admin_embedded_single.go.
+func adminTanStackFileMap(root string, opts Options) map[string]string {
 	adminRoot := filepath.Join(root, "apps", "admin")
 
 	files := map[string]string{
@@ -524,13 +543,7 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "public", ".gitkeep"): "",
 	}
 
-	for path, content := range files {
-		if err := writeFile(path, content); err != nil {
-			return fmt.Errorf("writing %s: %w", path, err)
-		}
-	}
-
-	return nil
+	return files
 }
 
 func adminTanStackPackageJSON(opts Options) string {
