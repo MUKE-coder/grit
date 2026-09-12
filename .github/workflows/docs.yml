@@ -109,7 +109,9 @@ jobs:
       - name: Run them
         run: |
           mkdir -p /tmp/docsflows
-          WORK=/tmp/docsflows tests/docs/run-flows.sh
+          # Invoked through bash, not executed: a checkout from a Windows clone
+          # can arrive without the execute bit, which is how this failed first time.
+          WORK=/tmp/docsflows bash tests/docs/run-flows.sh
 
       - uses: actions/upload-artifact@v4
         if: failure()
