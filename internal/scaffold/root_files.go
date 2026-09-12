@@ -76,6 +76,10 @@ func envFile(opts Options) string {
 	pulsePassword := randomHex(16)
 	studioPassword := randomHex(16)
 	postgresPassword := randomHex(24) // strong default; new project just works
+	provider := opts.DBProvider
+	if provider == "" {
+		provider = "postgres"
+	}
 
 	return fmt.Sprintf(`# %s: Environment Variables
 
@@ -85,12 +89,22 @@ APP_ENV=development
 APP_PORT=8080
 APP_URL=http://localhost:8080
 
-# ─── Database (Postgres) ────────────────────────────────────────────────
-# Single source of truth: edit ONLY the POSTGRES_* values below.
-#   - docker-compose.yml reads them via ${VAR} substitution
-#   - the Go API builds DATABASE_URL from these parts when DATABASE_URL is empty
-# POSTGRES_PASSWORD is generated per-scaffold so 'grit migrate' works
-# without any editing on a fresh project.
+# ─── Database ───────────────────────────────────────────────────────────
+# Which engine this project talks to. One of:
+#
+#   postgres   the default, and what docker-compose.yml starts for you
+#   mysql      MySQL 8 or MariaDB
+#   sqlite     one file, pure Go, no CGO and no server to run
+#   memory     SQLite in RAM: empty at every boot, for tests and demos
+#
+# Only the block for the provider you choose is read. The others can stay.
+# Picked by 'grit new --db <provider>'; change it here any time.
+DB_PROVIDER=%s
+
+# Postgres — read when DB_PROVIDER=postgres
+# Single source of truth: docker-compose.yml reads the same values via ${VAR},
+# so they cannot drift. POSTGRES_PASSWORD is generated per scaffold, so
+# 'grit migrate' works on a fresh project without any editing.
 POSTGRES_USER=grit
 POSTGRES_PASSWORD=%s
 POSTGRES_DB=%s
@@ -100,6 +114,24 @@ POSTGRES_HOST=localhost
 # why docker-compose.prod.yml overrides POSTGRES_PORT back to 5432 for
 # inter-container traffic.
 POSTGRES_PORT=5434
+# require / verify-full for a managed Postgres that insists on TLS.
+POSTGRES_SSLMODE=disable
+
+# MySQL — read when DB_PROVIDER=mysql
+# Nothing in docker-compose.yml starts MySQL: point these at your own server,
+# or run one with
+#   docker run -d --name mysql -p 3306:3306 \
+#     -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=%s \
+#     -e MYSQL_USER=grit -e MYSQL_PASSWORD=grit mysql:8
+MYSQL_USER=grit
+MYSQL_PASSWORD=grit
+MYSQL_DB=%s
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+
+# SQLite — read when DB_PROVIDER=sqlite
+# A path, relative to apps/api. Add it to .gitignore.
+SQLITE_PATH=./app.db
 # ─── Docker host ports ──────────────────────────────────────────────────
 #
 # What docker-compose binds on your machine. Every Grit project defaults to
@@ -349,7 +381,9 @@ THEME=%s
 SOCIAL_AUTH_ENABLED=false
 `,
 		opts.ProjectName, opts.ProjectName, // banner + APP_NAME
+		provider,                           // DB_PROVIDER
 		postgresPassword, opts.ProjectName, // POSTGRES_PASSWORD + POSTGRES_DB
+		opts.ProjectName, opts.ProjectName, // the MySQL database, in the docker run hint and MYSQL_DB
 		jwtSecret,
 		opts.ProjectName, opts.ProjectName, // MINIO_BUCKET + MAIL_FROM
 		studioPassword, opts.ProjectName, // GORM_STUDIO_PASSWORD + TOTP_ISSUER
@@ -365,7 +399,17 @@ APP_ENV=development         # Environment: development, staging, production
 APP_PORT=8080               # API server port
 APP_URL=http://localhost:8080
 
-# ─── Database (Postgres) ────────────────────────────────────────────────
+# ─── Database ───────────────────────────────────────────────────────────
+# Which engine this project talks to: postgres | mysql | sqlite | memory.
+# Only the block for the one you choose is read.
+#   postgres   the default, and what docker-compose.yml starts
+#   mysql      MySQL 8 or MariaDB, on a server you run
+#   sqlite     one file, pure Go, no CGO and no server
+#   memory     SQLite in RAM, empty at every boot, for tests and demos
+# Pick it at scaffold time with: grit new myapp --db mysql
+DB_PROVIDER=postgres
+
+# Postgres — read when DB_PROVIDER=postgres
 # Single source of truth. Edit ONLY the POSTGRES_* values below — both
 # docker-compose.yml and the Go API read them. ` + "`grit new`" + ` generates a
 # strong random POSTGRES_PASSWORD per project so a fresh scaffold runs
@@ -373,6 +417,14 @@ APP_URL=http://localhost:8080
 POSTGRES_USER=grit
 POSTGRES_PASSWORD=change-me          # MUST change in production
 POSTGRES_DB=myapp
+# MySQL — read when DB_PROVIDER=mysql. Nothing in docker-compose starts MySQL.
+MYSQL_USER=grit
+MYSQL_PASSWORD=change-me
+MYSQL_DB=myapp
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+# SQLite — read when DB_PROVIDER=sqlite. A path, relative to apps/api.
+SQLITE_PATH=./app.db
 POSTGRES_HOST=localhost              # ` + "`postgres`" + ` inside docker-compose.prod.yml
 POSTGRES_PORT=5434                   # host port; 5432 inside docker network
 # ─── Docker host ports ──────────────────────────────────────────────────

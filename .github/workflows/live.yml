@@ -316,3 +316,157 @@ jobs:
           name: tenancy-server-log
           path: /tmp/tenancy/server.log
           retention-days: 14
+
+  engines:
+    name: the fixture on ${{ matrix.engine }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: ["mysql", "sqlite", "memory"]
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: rootpass
+          MYSQL_DATABASE: gritfix
+          MYSQL_USER: grit
+          MYSQL_PASSWORD: gritpass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -ugrit -pgritpass"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+
+    env:
+      APP_PORT: "8080"
+      APP_ENV: development
+      JWT_SECRET: ci-jwt-secret-0123456789abcdef0123456789abcdef
+      FIELD_ENCRYPTION_KEY: K3hQ8vZ2mP5sT7wY0bD4fG6jL9nR1uX3cV5aE8hK2oQ=
+      # No Redis for these: cache, jobs and cron switch off, which also proves a
+      # project runs without it.
+      REDIS_URL: ""
+      DB_PROVIDER: ${{ matrix.engine }}
+      MYSQL_USER: grit
+      MYSQL_PASSWORD: gritpass
+      MYSQL_DB: gritfix
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: "3306"
+      SQLITE_PATH: /tmp/engines/app.db
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.6"
+          check-latest: true
+          cache: true
+
+      - name: Build grit from this commit
+        run: |
+          go build -o /usr/local/bin/grit ./cmd/grit
+          grit version
+
+      # The same shapes as the Postgres fixture, so a failure here is the engine
+      # and not the resource.
+      - name: Scaffold the fixture
+        run: |
+          mkdir -p /tmp/engines && cd /tmp/engines
+          grit new app --api --db ${{ matrix.engine }}
+          cd app
+          grit generate resource Tag --fields "name:string"
+          grit generate resource Lot --fields "title:string,current_bid:int"
+          grit generate resource Note --fields "body:text" --owned-by user
+          grit generate resource Category --fields "name:string,slug:slug" --tree --public
+          grit generate resource Product \
+            --fields "name:string,slug:slug,price:money,secret:text:encrypted,category:belongs_to:Category,tags:many_to_many:Tag" \
+            --public
+          grit generate resource Invoice --fields "number:string" \
+            --items "InvoiceItem:description:string,qty:int,unit_rate:float"
+
+      - name: Build and vet
+        run: |
+          cd /tmp/engines/app/apps/api
+          go build ./...
+          go vet ./...
+
+      # memory migrates inside the server, because the schema cannot outlive the
+      # process that holds it.
+      - name: Migrate
+        if: matrix.engine != 'memory'
+        run: |
+          cd /tmp/engines/app/apps/api
+          go run ./cmd/migrate --grit-version ci
+
+      - name: Start the API
+        run: |
+          cd /tmp/engines/app/apps/api
+          go build -o /tmp/engines/server ./cmd/server
+          /tmp/engines/server > /tmp/engines/server.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:8080/api/health > /dev/null && break
+            sleep 1
+          done
+          curl -sf http://localhost:8080/api/health > /dev/null || { tail -50 /tmp/engines/server.log; exit 1; }
+
+      # MySQL gets the whole suite, including the checks that read the database
+      # directly. SQLite gets them too, through the file. An in-memory database
+      # cannot be read from outside the process, so that one runs the HTTP checks.
+      - name: The live suite
+        run: |
+          case "${{ matrix.engine }}" in
+            mysql)
+              python3 tests/live/verify.py http://localhost:8080 --engine mysql \
+                --db gritfix --db-user grit --db-password gritpass \
+                --db-host 127.0.0.1 --db-port 3306
+              ;;
+            sqlite)
+              sudo apt-get install -y -q sqlite3 > /dev/null
+              python3 tests/live/verify.py http://localhost:8080 --engine sqlite \
+                --db /tmp/engines/app.db
+              ;;
+            memory)
+              python3 - <<'PY'
+          import json, urllib.request, urllib.error, random, sys
+          base = 'http://localhost:8080'
+          def call(method, path, body=None, token=None):
+              data = json.dumps(body).encode() if body is not None else None
+              r = urllib.request.Request(base + path, data=data, method=method)
+              if data: r.add_header('Content-Type', 'application/json')
+              if token: r.add_header('Authorization', 'Bearer ' + token)
+              try:
+                  with urllib.request.urlopen(r, timeout=30) as resp:
+                      return resp.status, json.loads(resp.read() or b'{}')
+              except urllib.error.HTTPError as e:
+                  return e.code, json.loads(e.read() or b'{}')
+          email = 'mem%d@example.com' % random.randint(1, 10**9)
+          status, body = call('POST', '/api/v1/auth/register', {
+              'first_name': 'Mem', 'last_name': 'Test', 'email': email,
+              'password': 'SuperSecret123!'})
+          assert status in (200, 201), (status, body)
+          token = body['data']['tokens']['access_token']
+          status, body = call('POST', '/api/v1/lots', {'title': 'in memory', 'current_bid': 5}, token=token)
+          assert status in (200, 201), (status, body)
+          status, body = call('GET', '/api/v1/lots', token=token)
+          assert status == 200 and len(body.get('data') or []) == 1, (status, body)
+          status, body = call('GET', '/api/v1/lots/00000000-0000-0000-0000-000000000000', token=token)
+          assert status == 404 and body['error']['code'] == 'NOT_FOUND', (status, body)
+          print('in-memory: registered, wrote, read back, and 404s correctly')
+          PY
+              ;;
+          esac
+
+      - name: Server log
+        if: failure()
+        run: tail -200 /tmp/engines/server.log || true
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: engines-${{ matrix.engine }}-log
+          path: /tmp/engines/server.log
+          retention-days: 14

@@ -69,6 +69,7 @@ var checks = []struct {
 	{"resource-could-be-owned", checkUnownedUserResource},
 	{"tenant-shared-resource", checkTenantOwned},
 	{"tenant-middleware-missing", checkTenantMiddleware},
+	{"database-not-durable", checkDatabaseProvider},
 	{"tenant-sso-no-organization", checkTenantSSOProvisioning},
 	{"pii-column-not-encrypted", checkPII},
 	{"append-only-mutable-routes", checkAppendOnlyRoutes},
@@ -441,6 +442,49 @@ func checkTenantOwned(p *project) []Finding {
 		})
 	}
 	return out
+}
+
+// checkDatabaseProvider reports a database that will not survive production.
+//
+// DB_PROVIDER=memory keeps everything in RAM. The app works perfectly until it
+// restarts, at which point every row is gone: there is no error to see and no
+// file to recover, which is why this is an error rather than a warning when
+// APP_ENV says production.
+//
+// SQLite in production is a decision, not a mistake, so it is a warning that
+// names what you are taking on rather than a refusal.
+func checkDatabaseProvider(p *project) []Finding {
+	provider := strings.ToLower(strings.TrimSpace(p.env["DB_PROVIDER"]))
+	if provider == "" {
+		return nil
+	}
+	production := strings.EqualFold(strings.TrimSpace(p.env["APP_ENV"]), "production")
+	if !production {
+		return nil
+	}
+
+	switch provider {
+	case "memory", ":memory:":
+		return []Finding{{
+			Level:    "error",
+			Check:    "database-not-durable",
+			Resource: "DB_PROVIDER",
+			Message: "is memory while APP_ENV is production: the whole database is in RAM and every row " +
+				"is gone at the next restart, with nothing to recover from",
+			Fix: "set DB_PROVIDER to postgres, mysql or sqlite, with the matching settings in .env",
+		}}
+	case "sqlite", "sqlite3", "file":
+		return []Finding{{
+			Level:    "warning",
+			Check:    "database-not-durable",
+			Resource: "DB_PROVIDER",
+			Message: "is sqlite in production: one file on one machine, so no second replica can read it, " +
+				"and a container without a mounted volume loses it on redeploy",
+			Fix: "keep it only if the file is on a persistent volume and one process writes it; otherwise " +
+				"use postgres or mysql",
+		}}
+	}
+	return nil
 }
 
 // checkTenantMiddleware looks for the organization resolver on every

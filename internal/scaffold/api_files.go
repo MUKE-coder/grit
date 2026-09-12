@@ -404,6 +404,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -437,6 +438,19 @@ func main() {
 	db, err := database.Connect(cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	// DB_PROVIDER=memory keeps everything in RAM, so the only process that can
+	// usefully migrate it is this one: a separate migrate command would build the
+	// schema in a
+	// process that then exits, and this one would start on an empty database and
+	// answer "no such table" to every request. Nothing is at risk either way,
+	// because an in-memory database starts empty by definition.
+	if strings.HasPrefix(cfg.DatabaseURL, "sqlite:file::memory:") {
+		log.Println("DB_PROVIDER=memory: migrating in process, because the schema cannot outlive it")
+		if err := models.Migrate(db); err != nil {
+			log.Fatalf("Failed to migrate the in-memory database: %v", err)
+		}
 	}
 
 	// ── Phase 4 Services ─────────────────────────────────────────
@@ -1088,17 +1102,88 @@ func warnPortMismatch(urlVar, raw, portVar string) {
 	}
 }
 
+// resolveDatabaseURL builds the DSN from DB_PROVIDER and that provider's parts.
+//
+// DATABASE_URL still wins: it is the escape hatch for a managed database whose
+// connection string carries options nothing here models (a Neon pooler, an RDS
+// proxy, a TLS mode). When both are set and they disagree about the engine, that
+// is said once at boot rather than silently resolved, because the parts below
+// then describe a database nothing connects to.
+//
+// DB_PROVIDER is named rather than inferred because the engine is a decision, not
+// a detail: before this, the only way to choose one was the prefix of
+// DATABASE_URL, which meant a project had POSTGRES_* variables in .env and no
+// place at all to put MySQL credentials.
 func resolveDatabaseURL() string {
+	provider := strings.ToLower(strings.TrimSpace(getEnv("DB_PROVIDER", "postgres")))
+
 	if v := os.Getenv("DATABASE_URL"); v != "" {
+		warnProviderMismatch(provider, v)
 		return v
 	}
-	user := getEnv("POSTGRES_USER", "grit")
-	pass := getEnv("POSTGRES_PASSWORD", "grit")
-	host := getEnv("POSTGRES_HOST", "localhost")
-	port := getEnv("POSTGRES_PORT", "5432")
-	db := getEnv("POSTGRES_DB", getEnv("APP_NAME", "grit-app"))
-	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		user, pass, host, port, db)
+
+	switch provider {
+	case "postgres", "postgresql", "pg", "":
+		user := getEnv("POSTGRES_USER", "grit")
+		pass := getEnv("POSTGRES_PASSWORD", "grit")
+		host := getEnv("POSTGRES_HOST", "localhost")
+		port := getEnv("POSTGRES_PORT", "5432")
+		db := getEnv("POSTGRES_DB", getEnv("APP_NAME", "grit-app"))
+		return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+			user, pass, host, port, db, getEnv("POSTGRES_SSLMODE", "disable"))
+
+	case "mysql", "mariadb":
+		// go-sql-driver's own DSN shape, not a URL: Connect strips the prefix and
+		// hands the rest over as it is.
+		user := getEnv("MYSQL_USER", "grit")
+		pass := getEnv("MYSQL_PASSWORD", "grit")
+		host := getEnv("MYSQL_HOST", "localhost")
+		port := getEnv("MYSQL_PORT", "3306")
+		db := getEnv("MYSQL_DB", getEnv("APP_NAME", "grit-app"))
+		return fmt.Sprintf("mysql:%s:%s@tcp(%s:%s)/%s", user, pass, host, port, db)
+
+	case "sqlite", "sqlite3", "file":
+		return "sqlite:" + getEnv("SQLITE_PATH", "./app.db")
+
+	case "memory", ":memory:":
+		// Shared cache, not a bare :memory:. GORM pools connections, and a bare
+		// in-memory SQLite gives each connection its own empty database: the
+		// migration runs on one, the first query lands on another, and the table
+		// "does not exist" on a database that was just migrated.
+		return "sqlite:file::memory:?cache=shared"
+
+	default:
+		log.Fatalf("DB_PROVIDER=%q is not one this app knows. Use postgres, mysql, sqlite or memory, or set DATABASE_URL directly.", provider)
+		return ""
+	}
+}
+
+// warnProviderMismatch says so when DATABASE_URL names a different engine from
+// DB_PROVIDER.
+//
+// Nothing breaks: DATABASE_URL wins and the app runs on whatever it names. What
+// misleads is everything else in .env, which now describes a database this
+// process never opens.
+func warnProviderMismatch(provider, dsn string) {
+	engine := "postgres"
+	switch {
+	case strings.HasPrefix(dsn, "mysql:"):
+		engine = "mysql"
+	case strings.HasPrefix(dsn, "sqlite:"):
+		engine = "sqlite"
+	}
+	normalised := map[string]string{
+		"postgresql": "postgres", "pg": "postgres", "": "postgres",
+		"mariadb": "mysql", "sqlite3": "sqlite", "file": "sqlite",
+		"memory": "sqlite", ":memory:": "sqlite",
+	}
+	if n, ok := normalised[provider]; ok {
+		provider = n
+	}
+	if provider != engine {
+		log.Printf("WARNING: DB_PROVIDER is %s and DATABASE_URL points at %s. DATABASE_URL wins, so this app is running on %s and the %s settings in .env are not being used.",
+			provider, engine, engine, strings.ToUpper(provider))
+	}
 }
 
 // resolveStorage returns the StorageConfig for the active driver.

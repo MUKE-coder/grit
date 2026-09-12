@@ -167,6 +167,7 @@ grit studio                            # Open GORM Studio
 grit routes                            # List all registered API routes
 
 # Database
+grit new myapp --db mysql              # postgres (default), mysql, sqlite, memory
 grit migrate                           # Run migrations
 grit migrate --fresh                   # Drop + re-migrate
 grit migrate status                    # What each run changed

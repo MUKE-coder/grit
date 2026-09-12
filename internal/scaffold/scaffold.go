@@ -41,6 +41,12 @@ type Options struct {
 	Frontend       Frontend
 	Style          string
 	Theme          string // Full theme: atlas (default), aurora, pulse — controls auth pages, dashboard tokens, fonts, brand colors
+	// DBProvider is the database engine written into .env as DB_PROVIDER:
+	// postgres (the default), mysql, sqlite or memory. Connect has understood all
+	// of them for a long time; until v3.234.0 the only way to pick one was the
+	// prefix of DATABASE_URL, so .env had Postgres settings and no place for
+	// anybody else's.
+	DBProvider string
 	InPlace        bool   // Scaffold into current directory (grit new .)
 	Force          bool   // Allow scaffolding into non-empty directory (--force)
 	IncludeDesktop bool   // Add apps/desktop (Wails client that shares the monorepo API)
@@ -62,7 +68,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.233.0"
+const DefaultVersion = "3.234.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -101,6 +107,35 @@ func (o *Options) Normalize() {
 
 // ValidStyles lists all supported admin panel style variants.
 var ValidStyles = []string{"default", "modern", "minimal", "glass", "centered"}
+
+// DBProviders are the engines .env can name, with what each one means.
+var DBProviders = map[string]string{
+	"postgres": "PostgreSQL, and what docker-compose.yml starts for you",
+	"mysql":    "MySQL 8 or MariaDB, on a server you run",
+	"sqlite":   "one file, pure Go, no CGO and no server",
+	"memory":   "SQLite in RAM, empty at every boot, for tests and demos",
+}
+
+// ValidateDBProvider checks the --db value, and normalises the spellings people
+// reach for.
+func (o *Options) ValidateDBProvider() error {
+	if o.DBProvider == "" {
+		o.DBProvider = "postgres"
+		return nil
+	}
+	normalised := map[string]string{
+		"postgresql": "postgres", "pg": "postgres", "postgres": "postgres",
+		"mariadb": "mysql", "mysql": "mysql",
+		"sqlite3": "sqlite", "sqlite": "sqlite", "file": "sqlite",
+		"memory": "memory", ":memory:": "memory", "inmemory": "memory",
+	}
+	want := strings.ToLower(strings.TrimSpace(o.DBProvider))
+	if name, ok := normalised[want]; ok {
+		o.DBProvider = name
+		return nil
+	}
+	return fmt.Errorf("--db %q is not a database Grit knows: use postgres, mysql, sqlite or memory", o.DBProvider)
+}
 
 // ValidateStyle checks that the Style field is a supported value.
 // If empty, it defaults to "default".

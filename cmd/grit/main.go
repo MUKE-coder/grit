@@ -31,7 +31,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.233.0"
+var version = "3.234.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -139,7 +139,7 @@ after a major framework upgrade to refresh the rules.`,
 
 func newCmd() *cobra.Command {
 	// New architecture/frontend flags
-	var archFlag, frontendFlag, style, theme string
+	var archFlag, frontendFlag, style, theme, dbProvider string
 	var inPlace, force, includeDesktop, withI18n bool
 
 	// Legacy flags (backward compatibility)
@@ -174,6 +174,7 @@ func newCmd() *cobra.Command {
 				ProjectName:    projectName,
 				Style:          style,
 				Theme:          theme,
+				DBProvider:     dbProvider,
 				InPlace:        inPlace,
 				Force:          force,
 				IncludeDesktop: includeDesktop,
@@ -242,6 +243,9 @@ func newCmd() *cobra.Command {
 			// Final normalization (sets defaults for anything still empty)
 			opts.Normalize()
 
+			if err := opts.ValidateDBProvider(); err != nil {
+				return err
+			}
 			if err := opts.ValidateStyle(); err != nil {
 				return err
 			}
@@ -295,6 +299,7 @@ func newCmd() *cobra.Command {
 	cmd.Flags().StringVar(&archFlag, "arch", "", "Architecture: single, double, triple, api, mobile")
 	cmd.Flags().StringVar(&frontendFlag, "frontend", "", "Frontend framework: next, vite (tanstack)")
 	cmd.Flags().StringVar(&style, "style", "", "Admin panel style variant (default, modern, minimal, glass)")
+	cmd.Flags().StringVar(&dbProvider, "db", "", "Database engine: postgres (default), mysql, sqlite, memory. Writes DB_PROVIDER in .env; sqlite and memory need no database server at all")
 	cmd.Flags().StringVar(&theme, "theme", "", "Full theme: atlas (default), aurora, pulse — controls auth pages, dashboard, fonts, and brand colors. Can also be overridden at runtime via THEME=<name> in .env.")
 
 	// Shorthand architecture flags

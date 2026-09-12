@@ -152,9 +152,36 @@ export default function DatabasePage() {
                   Supported Databases
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Grit reads the scheme off the front of{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">DATABASE_URL</code> and
-                  opens the matching GORM dialector. Three are supported:
+                  Pick the engine with{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">DB_PROVIDER</code> in{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.env</code>, or at
+                  scaffold time with{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit new myapp --db mysql</code>.
+                  Each engine reads its own block of settings, and the blocks for the others can
+                  stay where they are.
+                </p>
+                <CodeBlock language="bash" filename=".env" code={`# postgres | mysql | sqlite | memory
+DB_PROVIDER=mysql
+
+MYSQL_USER=grit
+MYSQL_PASSWORD=secret
+MYSQL_DB=myapp
+MYSQL_HOST=localhost
+MYSQL_PORT=3306`} />
+                <p className="text-muted-foreground leading-relaxed mb-4 mt-4">
+                  Until v3.234.0 there was no such setting: the engine came from the scheme on{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">DATABASE_URL</code>, so a
+                  project had Postgres settings in <code>.env</code> and no place at all to put MySQL
+                  credentials, for an engine that had been supported for months.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">DATABASE_URL</code> still
+                  wins when it is set: it is the escape hatch for a managed database whose connection
+                  string carries options these parts do not model, such as a Neon pooler or an RDS
+                  proxy. When it names a different engine from{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">DB_PROVIDER</code>, the app
+                  says so at boot rather than leaving you to wonder why the settings you edited do
+                  nothing. Four engines:
                 </p>
                 <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-4">
                   <table className="w-full text-sm">
@@ -176,10 +203,19 @@ export default function DatabasePage() {
                         <td className="px-4 py-2.5 font-mono text-xs">mysql://user:pass@tcp(host:3306)/db</td>
                         <td className="px-4 py-2.5">Existing MySQL infrastructure and shared hosting</td>
                       </tr>
-                      <tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">SQLite</td>
                         <td className="px-4 py-2.5 font-mono text-xs">sqlite:./data.db</td>
                         <td className="px-4 py-2.5">Dev, tests, and the desktop app&apos;s local mirror</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2.5 font-mono text-xs">SQLite in memory</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">DB_PROVIDER=memory</td>
+                        <td className="px-4 py-2.5">
+                          Demos and tests. Empty at every boot, so the server migrates it itself:
+                          a separate migrate command would build the schema in a process that then
+                          exits.
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -205,6 +241,15 @@ DATABASE_URL=mysql://grit:grit@tcp(localhost:3306)/myapp
 
 # SQLite
 DATABASE_URL=sqlite:./myapp.db`} />
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  <strong>What is actually tested.</strong> The live suite, 68 checks over a running
+                  app, runs on Postgres 15, 16 and 17, and on MySQL 8 and SQLite, on every push. That
+                  covers ownership, trees, the public surface, money, encryption at rest, CSV import
+                  and optimistic locking on each of them. It is worth saying because the claim used
+                  to rest on the drivers compiling: building a project on MySQL for the first time
+                  found a table AutoMigrate refused outright, an indexed column of 1024 characters,
+                  which is 4096 bytes in utf8mb4 against MySQL&apos;s 3072-byte limit.
+                </p>
                 <p className="text-muted-foreground leading-relaxed mt-4">
                   Nothing else in your project changes. Models, migrations, handlers, and the admin
                   panel are dialect-agnostic, and the one place the difference leaks (Postgres and
