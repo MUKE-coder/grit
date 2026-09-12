@@ -826,7 +826,7 @@ grit deploy`} />
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit add web-auth</td>
-                        <td className="px-4 py-2.5">Add page protection helpers to apps/web/</td>
+                        <td className="px-4 py-2.5">Auth pages, the guard, and the customer area at /account</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit expose form &lt;Resource&gt;</td>

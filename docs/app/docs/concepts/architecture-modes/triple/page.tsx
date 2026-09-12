@@ -152,10 +152,10 @@ grit new myapp --triple --vite`} />
                 { name: 'next.config.js', type: 'file', depth: 2, comment: '(or vite.config.ts for --vite)' },
                 { name: 'tailwind.config.ts', type: 'file', depth: 2 },
                 { name: 'app/', type: 'folder', depth: 2, comment: 'App Router (or src/routes/ for --vite)' },
-                { name: 'layout.tsx', type: 'file', depth: 3, comment: 'Root layout' },
-                { name: 'page.tsx', type: 'file', depth: 3, comment: 'Landing page' },
+                { name: 'layout.tsx', type: 'file', depth: 3, comment: 'The document: fonts, theme, providers' },
+                { name: '(marketing)/', type: 'folder', depth: 3, comment: 'Public site: navbar + footer' },
                 { name: '(auth)/', type: 'folder', depth: 3, comment: 'Auth pages (login, register)' },
-                { name: '(app)/', type: 'folder', depth: 3, comment: 'Protected app pages' },
+                { name: '(app)/', type: 'folder', depth: 3, comment: 'Signed-in customer area: /account' },
                 { name: 'admin/', type: 'folder', depth: 1, comment: 'Admin panel' },
                 { name: 'Dockerfile', type: 'file', depth: 2 },
                 { name: 'package.json', type: 'file', depth: 2 },
@@ -287,10 +287,10 @@ grit new myapp --triple --vite`} />
                     </tr>
                   </thead>
                   <tbody className="text-muted-foreground">
-                    <tr className="border-b border-border/20"><td className="p-3 font-mono text-xs">app/layout.tsx</td><td className="p-3">Root layout: global providers (React Query, theme), font loading, metadata</td></tr>
-                    <tr className="border-b border-border/20"><td className="p-3 font-mono text-xs">app/page.tsx</td><td className="p-3">Landing page — the first page visitors see</td></tr>
-                    <tr className="border-b border-border/20"><td className="p-3 font-mono text-xs">app/(auth)/</td><td className="p-3">Auth route group: login, register, forgot-password pages with shared auth layout</td></tr>
-                    <tr><td className="p-3 font-mono text-xs">app/(app)/</td><td className="p-3">Protected route group: dashboard, settings, and resource pages. Requires JWT token.</td></tr>
+                    <tr className="border-b border-border/20"><td className="p-3 font-mono text-xs">app/layout.tsx</td><td className="p-3">The document and nothing else: global providers (React Query, theme), font loading, metadata. It draws no chrome, so each section below decides its own.</td></tr>
+                    <tr className="border-b border-border/20"><td className="p-3 font-mono text-xs">app/(marketing)/</td><td className="p-3">The public site: the landing page and the blog, wrapped in the navbar and footer by the group&apos;s layout. Put your own public pages here to get the same chrome.</td></tr>
+                    <tr className="border-b border-border/20"><td className="p-3 font-mono text-xs">app/(auth)/</td><td className="p-3">Auth route group: login, register, forgot-password pages with their own full-bleed shell (grit add web-auth)</td></tr>
+                    <tr><td className="p-3 font-mono text-xs">app/(app)/</td><td className="p-3">The signed-in customer area at /account: its own sidebar, header and guard. Overview and profile ship with it; add your product&apos;s pages alongside them (v3.237.0).</td></tr>
                   </tbody>
                 </table>
               </div>

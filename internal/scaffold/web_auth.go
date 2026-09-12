@@ -49,7 +49,13 @@ func AddWebAuth(root string, force bool) error {
 	for _, f := range webAuthFiles(webRoot, opts) {
 		rel, _ := filepath.Rel(root, f.path)
 
-		if _, err := os.Stat(f.path); err == nil && !force {
+		// An existing file is the operator's, unless it is byte-for-byte the one the
+		// scaffold wrote. The navbar is the case that matters: it is a REPLACEMENT
+		// here, and skipping it left the promise below ("the navbar now shows a
+		// UserMenu") false, with no way into the customer area just written.
+		untouched := f.path == filepath.Join(webRoot, "components", "navbar.tsx") &&
+			fileHasContent(f.path, adminHref(webNavbar(opts), opts))
+		if _, err := os.Stat(f.path); err == nil && !force && !untouched {
 			fmt.Printf("  • skipped %s (already exists: pass --force to overwrite)\n", rel)
 			continue
 		}
@@ -79,9 +85,9 @@ func AddWebAuth(root string, force bool) error {
 //   - new files (UserMenu, web-session, useAuth, AuthProvider, the
 //     four (auth) pages, the five themed shells, middleware,
 //     ProtectedWebRoute) — written unless they already exist
-//   - REPLACEMENTS for the base scaffold's plain navbar +
-//     AppChrome with their auth-aware variants — needs --force to
-//     overwrite, since the operator may have customised them
+//   - a REPLACEMENT for the base scaffold's plain navbar, with the
+//     auth-aware variant — needs --force to overwrite, since the
+//     operator may have customised it
 //
 // Keeping the list in one function lets the install + an eventual
 // uninstall command see the same set.
@@ -115,16 +121,21 @@ func webAuthFiles(webRoot string, opts Options) []webAuthFile {
 		// UserMenu drives the navbar's Login/Sign up + avatar dropdown.
 		{filepath.Join(webRoot, "components", "UserMenu.tsx"), webUserMenu()},
 
+		// The customer area: a route group with its own layout, and the two pages
+		// every signed-in customer expects to find. The user menu has linked to
+		// /account since v3.31.42 and middleware.ts has protected it, with nothing
+		// there to protect.
+		{filepath.Join(webRoot, "app", "(app)", "layout.tsx"), webAccountLayout(opts)},
+		{filepath.Join(webRoot, "app", "(app)", "account", "page.tsx"), webAccountOverviewPage()},
+		{filepath.Join(webRoot, "app", "(app)", "account", "profile", "page.tsx"), webAccountProfilePage()},
+
 		// Page protection helpers (the original v3.31.22 contents).
 		{filepath.Join(webRoot, "middleware.ts"), webMiddlewareTS()},
 		{filepath.Join(webRoot, "components", "ProtectedWebRoute.tsx"), webProtectedRouteTSX()},
 
-		// REPLACEMENTS -- the base scaffold ships plain versions of
-		// these; the auth-aware versions add UserMenu (navbar) and
-		// the (auth) chromeless prefixes (AppChrome). --force is
-		// required to overwrite an existing file.
+		// REPLACEMENT -- the base scaffold ships a plain navbar; the auth-aware
+		// one adds the UserMenu. --force is required to overwrite an existing file.
 		{filepath.Join(webRoot, "components", "navbar.tsx"), webNavbarWithAuth(opts)},
-		{filepath.Join(webRoot, "components", "AppChrome.tsx"), webAppChromeWithAuth()},
 	}
 }
 
@@ -315,4 +326,10 @@ export function ProtectedWebRoute({
   return <>{children}</>;
 }
 `
+}
+
+// fileHasContent reports whether the file is byte-for-byte what was passed.
+func fileHasContent(path, content string) bool {
+	data, err := os.ReadFile(path)
+	return err == nil && string(data) == content
 }

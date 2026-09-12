@@ -1,91 +1,35 @@
 package scaffold
 
-// web_chrome_files.go — v3.31.42 scaffold templates for the web
-// app's chrome surface: AppChrome wrapper, UserMenu component, and
-// the web-session marker library. These three pieces work together
-// to give the customer-facing web app a sane auth UX:
+// web_chrome_files.go — the web app's chrome: the layout each section of the app
+// draws around its pages, the user menu in the navbar, and the web-session marker.
 //
-//   - AppChrome hides navbar + footer on auth and public-form-share
-//     pages so they render full-bleed like the admin's auth pages.
-//   - UserMenu shows Login/Sign up CTAs for anonymous visitors and
-//     an avatar dropdown for signed-in users.
-//   - web-session.ts manages a non-HttpOnly marker cookie on the web
-//     origin so the middleware can tell admin sessions apart from
-//     web sessions when both apps run on the same browser.
+//   - webMarketingLayout is the public site's layout: navbar and footer. It is a
+//     route group's layout, so a page gets this chrome by living in the group,
+//     not by matching a path prefix. The prefix list that came before did not
+//     know about /admin, and the panel rendered inside the site's navbar.
+//   - UserMenu shows Login/Sign up CTAs for anonymous visitors and an avatar
+//     dropdown for signed-in users.
+//   - web-session.ts manages a non-HttpOnly marker cookie on the web origin so
+//     the middleware can tell admin sessions apart from web sessions when both
+//     apps run in the same browser.
 
-func webAppChrome() string {
-	// v3.31.48 -- the BASE scaffold's AppChrome. Only `/forms/<token>`
-	// is chromeless (public form share); the auth paths don't exist
-	// in the base scaffold and only get added when `grit add web-auth`
-	// runs, which also overwrites this file with webAppChromeWithAuth.
-	return `"use client";
-
-import { usePathname } from "next/navigation";
-import { Navbar } from "@/components/navbar";
+// webMarketingLayout wraps the public pages: the landing page and the blog.
+//
+// Everything else has a layout of its own. The admin panel draws its sidebar and
+// topbar, the customer area its account shell, the auth pages their full-bleed
+// shell, and a public form share is deliberately bare.
+func webMarketingLayout() string {
+	return `import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 
-// Pathname prefixes that opt out of Navbar + Footer.
-// - /forms/<token> is the public form-share page. It needs to look
-//   like a stand-alone form, not part of the marketing site.
-const CHROMELESS_PREFIXES = [
-  "/forms/",
-];
-
-export function AppChrome({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname() ?? "";
-  const chromeless = CHROMELESS_PREFIXES.some((p) =>
-    pathname === p || pathname.startsWith(p)
-  );
-
-  if (chromeless) {
-    return <main className="min-h-screen">{children}</main>;
-  }
-
-  return (
-    <>
-      <Navbar />
-      <main className="min-h-screen">{children}</main>
-      <Footer />
-    </>
-  );
-}
-`
-}
-
-// v3.31.48 -- webAppChromeWithAuth is written by `grit add web-auth`.
-// Adds the (auth) route group prefixes to CHROMELESS_PREFIXES so the
-// Login/Register/Forgot-Password pages don't double up on chrome
-// (AuthShell already provides their full-bleed layout).
-func webAppChromeWithAuth() string {
-	return `"use client";
-
-import { usePathname } from "next/navigation";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
-
-// Pathname prefixes that opt out of Navbar + Footer.
-// - /login, /register, /forgot-password, /callback come from the (auth)
-//   route group. AuthShell already provides its own full-bleed layout.
-// - /forms/<token> is the public form-share page. It needs to look like
-//   a stand-alone form, not part of the marketing site.
-const CHROMELESS_PREFIXES = [
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/callback",
-  "/forms/",
-];
-
-export function AppChrome({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname() ?? "";
-  const chromeless = CHROMELESS_PREFIXES.some((p) =>
-    pathname === p || pathname.startsWith(p)
-  );
-
-  if (chromeless) {
-    return <main className="min-h-screen">{children}</main>;
-  }
-
+// The public site. Anything under app/(marketing) gets this chrome; the group
+// name is in parentheses, so it is not part of the URL: this file wraps / and
+// /blog, and nothing else in the app.
+export default function MarketingLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <>
       <Navbar />

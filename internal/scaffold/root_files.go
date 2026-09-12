@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"path/filepath"
+	"strings"
 )
 
 // randomHex returns 2*n hex characters of cryptographically random bytes.
@@ -66,6 +67,31 @@ func writeRootFiles(root string, opts Options) error {
 	return nil
 }
 
+// adminURLEnv is the NEXT_PUBLIC_ADMIN_URL block, which depends on where this
+// project's admin panel actually is.
+//
+// It is a URL only when the panel is its own application. In a double it is a
+// route inside the web app, and setting the variable to localhost:3001 pointed
+// the navbar at a port nothing listens on; in a single there is no Next.js app
+// to read it at all. The web app compiles in the right default, so the variable
+// is there to override it, not to restate it.
+func adminURLEnv(opts Options) string {
+	switch {
+	case opts.ShouldIncludeAdmin():
+		return `# The admin panel runs as its own app, on its own port. Set this to your
+# production admin origin (e.g. https://admin.example.com) before shipping.
+NEXT_PUBLIC_ADMIN_URL=http://localhost:3001`
+	case opts.ShouldEmbedAdmin():
+		return `# The admin panel is a route group inside this web app, so the link to it is a
+# path and the app already knows it: /admin/dashboard. Set this only if you move
+# the panel to an origin of its own.
+# NEXT_PUBLIC_ADMIN_URL=`
+	default:
+		// No Next.js web app in this shape, so nothing reads it.
+		return ""
+	}
+}
+
 func envFile(opts Options) string {
 	// Generated per-scaffold so APP_ENV=production works out of the box.
 	// Rotate any of these any time with `openssl rand -hex 32`.
@@ -81,7 +107,7 @@ func envFile(opts Options) string {
 		provider = "postgres"
 	}
 
-	return fmt.Sprintf(`# %s: Environment Variables
+	out := fmt.Sprintf(`# %s: Environment Variables
 
 # App
 APP_NAME=%s
@@ -209,11 +235,7 @@ REQUIRE_EMAIL_VERIFICATION=false
 # Public API URL — baked into Next.js bundles at build time
 API_URL=http://localhost:8080
 
-# v3.31.49 — admin panel URL surfaced in the web app's navbar +
-# landing-page dev links. Defaults to the dev port (3001); set to
-# your production admin origin (e.g. https://admin.example.com)
-# before shipping.
-NEXT_PUBLIC_ADMIN_URL=http://localhost:3001
+{{ADMIN_URL_ENV}}
 
 # Storage — Which provider to use: minio, s3, r2, b2
 STORAGE_DRIVER=minio
@@ -390,8 +412,10 @@ SOCIAL_AUTH_ENABLED=false
 		pulsePassword, sentinelPassword, sentinelSecretKey, sentinelAuditKey,
 		opts.Theme, // THEME — picked by --theme at scaffold time, defaults to atlas
 	)
-}
 
+	// The admin panel's URL is not a URL in every shape: see adminURLEnv.
+	return strings.Replace(out, "{{ADMIN_URL_ENV}}", adminURLEnv(opts), 1)
+}
 func envExampleFile(opts Options) string {
 	return `# App — General application settings
 APP_NAME=myapp              # Application name

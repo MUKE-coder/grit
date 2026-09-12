@@ -66,6 +66,65 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.237.0 */}
+            <div className="mb-12" id="v3.237.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.237.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A web app serves three kinds of page, and now has three layouts</h3>
+                <p>
+                  Somebody opened the admin panel in a two-app project and found the marketing
+                  navbar above its sidebar and the site footer under its tables. The root layout
+                  wrapped every page in that chrome, and a client component took it away again for
+                  a hand-kept list of path prefixes: <code>/login</code>, <code>/register</code>,{' '}
+                  <code>/forms/</code>. The list had never heard of <code>/admin</code>, and a list
+                  that has to be kept in step with the routing table by hand is going to be wrong
+                  eventually.
+                </p>
+                <p>
+                  Next has route groups for exactly this, and they cost nothing at runtime. The
+                  root layout is the document now: fonts, theme, providers, no chrome.{' '}
+                  <code>app/(marketing)/</code> is the public site and its layout draws the navbar
+                  and the footer. <code>app/admin/</code> keeps its own. And{' '}
+                  <code>app/(app)/</code> is the third thing a web app serves and never had a home:
+                  the pages a signed-in customer sees. No URL changes, because a group name in
+                  parentheses is not part of the path.
+                </p>
+                <p>
+                  That customer area was a hole, not a nicety. The user menu has linked to{' '}
+                  <code>/account</code> since v3.31.42 and the middleware has protected{' '}
+                  <code>/account</code> for just as long, and the page did not exist: signing in and
+                  clicking your own name was a 404. <code>grit add web-auth</code> now writes it as
+                  a dashboard, sidebar and all: an overview of the account and a profile page that
+                  edits the name, email, job title and password through{' '}
+                  <code>PUT /api/profile</code>. Add a section by adding a line to one array.
+                </p>
+                <p>
+                  And the Admin link in the navbar, which in a double still pointed at{' '}
+                  <code>http://localhost:3001</code> where nothing runs. v3.235.0 fixed the value
+                  the app compiles in and left <code>.env</code> alone, and <code>.env</code> set{' '}
+                  <code>NEXT_PUBLIC_ADMIN_URL</code> to that port in every project ever scaffolded.
+                  The environment wins over the default, so the fix never showed. That line is
+                  written per architecture now: a URL for a triple, a commented-out override for a
+                  double, absent in a single. <code>grit upgrade</code> retires it in projects that
+                  already exist, moves their public pages into the group, and says which of your own
+                  pages it left behind for you to place.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Verified on a scaffolded double: the admin panel renders with only its own chrome,
+                  the landing page keeps the navbar and footer, a customer registers and lands on a
+                  working account dashboard whose profile form saves, a generated resource appears
+                  in the admin sidebar with a working list screen, and an upgraded project built
+                  before any of this builds green.
+                </p>
+              </div>
+            </div>
+
             {/* v3.236.0 */}
             <div className="mb-12" id="v3.236.0">
               <div className="flex items-center gap-3 mb-4">

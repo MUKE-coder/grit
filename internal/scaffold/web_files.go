@@ -34,35 +34,34 @@ func webFileMap(root string, opts Options) map[string]string {
 	webRoot := filepath.Join(root, "apps", "web")
 
 	return map[string]string{
-		filepath.Join(webRoot, "package.json"):             webPackageJSON(opts),
-		filepath.Join(webRoot, "next.config.ts"):           webNextConfig(),
-		filepath.Join(webRoot, "postcss.config.js"):        postCSSConfigFor(webRoot),
-		filepath.Join(webRoot, "tsconfig.json"):            webTSConfig(),
-		filepath.Join(webRoot, "app", "globals.css"):       webGlobalCSS(),
-		filepath.Join(webRoot, "app", "layout.tsx"):        webRootLayout(opts),
-		filepath.Join(webRoot, "app", "page.tsx"):          webLandingPage(opts),
-		filepath.Join(webRoot, "app", "error.tsx"):         webErrorPage(),
-		filepath.Join(webRoot, "app", "not-found.tsx"):     webNotFoundPage(),
-		filepath.Join(webRoot, "app", "global-error.tsx"):  webGlobalErrorPage(),
-		filepath.Join(webRoot, "lib", "utils.ts"):          webUtils(),
-		filepath.Join(webRoot, "components.json"):          nextComponentsJSON(),
-		filepath.Join(webRoot, "components", "navbar.tsx"): webNavbar(opts),
-		filepath.Join(webRoot, "components", "footer.tsx"): webFooter(opts),
+		filepath.Join(webRoot, "package.json"):       webPackageJSON(opts),
+		filepath.Join(webRoot, "next.config.ts"):     webNextConfig(),
+		filepath.Join(webRoot, "postcss.config.js"):  postCSSConfigFor(webRoot),
+		filepath.Join(webRoot, "tsconfig.json"):      webTSConfig(),
+		filepath.Join(webRoot, "app", "globals.css"): webGlobalCSS(),
+		filepath.Join(webRoot, "app", "layout.tsx"):  webRootLayout(opts),
+		// The public site. A route group, so the URLs are unchanged: / and /blog.
+		filepath.Join(webRoot, "app", "(marketing)", "layout.tsx"): webMarketingLayout(),
+		filepath.Join(webRoot, "app", "(marketing)", "page.tsx"):   webLandingPage(opts),
+		filepath.Join(webRoot, "app", "error.tsx"):                 webErrorPage(),
+		filepath.Join(webRoot, "app", "not-found.tsx"):             webNotFoundPage(),
+		filepath.Join(webRoot, "app", "global-error.tsx"):          webGlobalErrorPage(),
+		filepath.Join(webRoot, "lib", "utils.ts"):                  webUtils(),
+		filepath.Join(webRoot, "components.json"):                  nextComponentsJSON(),
+		filepath.Join(webRoot, "components", "navbar.tsx"):         webNavbar(opts),
+		filepath.Join(webRoot, "components", "footer.tsx"):         webFooter(opts),
 		// v3.31.49 — DevLinks renders every URL the `grit new` welcome
 		// banner prints (API, GORM Studio, Sentinel, Admin, MinIO,
 		// Mailhog, ...) on the landing page, dev-only.
 		filepath.Join(webRoot, "components", "dev-links.tsx"): webDevLinks(),
 		filepath.Join(webRoot, "components", "providers.tsx"): webProviders(),
-		// v3.31.48 -- AppChrome ships in the base scaffold (handles
-		// /forms/<token> chromeless rendering for public form-share).
-		// UserMenu, web-session marker, auth pages, useAuth, auth
-		// shells, and the auth-aware navbar are opt-in via
+		// UserMenu, web-session marker, auth pages, useAuth, auth shells, the
+		// auth-aware navbar and the customer area are opt-in via
 		// `grit add web-auth` -- see webAuthFiles() in web_auth.go.
-		filepath.Join(webRoot, "components", "AppChrome.tsx"):       webAppChrome(),
-		filepath.Join(webRoot, "lib", "api.ts"):                     webAPIClient(),
-		filepath.Join(webRoot, "hooks", "use-blogs.ts"):             webUseBlogsHook(),
-		filepath.Join(webRoot, "app", "blog", "page.tsx"):           webBlogListPage(),
-		filepath.Join(webRoot, "app", "blog", "[slug]", "page.tsx"): webBlogDetailPage(),
+		filepath.Join(webRoot, "lib", "api.ts"):                                    webAPIClient(),
+		filepath.Join(webRoot, "hooks", "use-blogs.ts"):                            webUseBlogsHook(),
+		filepath.Join(webRoot, "app", "(marketing)", "blog", "page.tsx"):           webBlogListPage(),
+		filepath.Join(webRoot, "app", "(marketing)", "blog", "[slug]", "page.tsx"): webBlogDetailPage(),
 		// v3.31.20: public form-share page (Phase 2)
 		filepath.Join(webRoot, "app", "forms", "[token]", "page.tsx"): webPublicFormPage(),
 		filepath.Join(webRoot, "public", ".gitkeep"):                  "",
@@ -608,6 +607,14 @@ body {
 `
 }
 
+// webRootLayout is the document and nothing else: fonts, the theme attribute and
+// the providers every section needs.
+//
+// It used to wrap everything in the marketing navbar and footer, with a client
+// component removing them again for a hand-kept list of path prefixes. The list
+// did not include /admin, so the panel rendered inside the site's chrome. Each
+// section owns its layout now: see webMarketingLayout, the admin section's layout,
+// and the customer area that grit add web-auth writes.
 func webRootLayout(opts Options) string {
 	// v3.28.1: per-theme font loading + data-theme attribute. Mirrors the
 	// admin layout — see the comment there for the trade-off (build-time
@@ -639,7 +646,6 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mon
 	return fmt.Sprintf(`import type { Metadata } from "next";
 %s
 import { Providers } from "@/components/providers";
-import { AppChrome } from "@/components/AppChrome";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -657,9 +663,7 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme={dataTheme} suppressHydrationWarning>
       <body className={`+"`%s "+`font-sans antialiased`+"`"+`}>
-        <Providers>
-          <AppChrome>{children}</AppChrome>
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
@@ -1799,27 +1803,35 @@ export default function Error({
 }
 
 func webNotFoundPage() string {
+	// Next renders not-found.tsx from the app root, outside every route group, so
+	// it has no section layout to inherit chrome from and brings its own.
 	return `import Link from "next/link";
+import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-[60vh] items-center justify-center px-4">
-      <div className="w-full max-w-md text-center">
-        <p className="mb-4 text-7xl font-bold text-primary">404</p>
-        <h2 className="mb-2 text-2xl font-bold text-foreground">Page not found</h2>
-        <p className="mb-8 text-muted-foreground">
-          The page you&apos;re looking for doesn&apos;t exist or has been moved.
-        </p>
-        <div className="flex gap-3 justify-center">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            Home
-          </Link>
+    <>
+      <Navbar />
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <div className="w-full max-w-md text-center">
+          <p className="mb-4 text-7xl font-bold text-primary">404</p>
+          <h2 className="mb-2 text-2xl font-bold text-foreground">Page not found</h2>
+          <p className="mb-8 text-muted-foreground">
+            The page you&apos;re looking for doesn&apos;t exist or has been moved.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Home
+            </Link>
+          </div>
         </div>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 }
 `
