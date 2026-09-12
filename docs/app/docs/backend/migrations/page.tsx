@@ -458,6 +458,73 @@ Migration done — 1 created, 0 altered (+0 column(s)), 2 unchanged.`}
                 </div>
               </div>
 
+              {/* Rolling back */}
+              <div className="mb-12">
+                <h2 id="rolling-back" className="text-2xl font-semibold tracking-tight mb-4">
+                  Rolling Back
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  There are no down scripts in Grit, because there are no up scripts to
+                  write them against: <code>AutoMigrate</code> works out what to change by
+                  comparing your models to the database. What makes a rollback possible
+                  anyway is that it only ever <em>adds</em> &mdash; a table, a column, an
+                  index &mdash; and never drops a column. So each run is recorded by what it
+                  actually changed, taken from the schema before and after, and the reverse
+                  is computed from that.
+                </p>
+
+                <CodeBlock
+                  terminal
+                  code={`grit migrate status      # what each run changed, newest first
+grit migrate down        # undo the last run
+grit migrate down --steps 3
+grit migrate down --dry-run
+grit migrate down --yes  # no prompt, for scripts and CI`}
+                />
+
+                <p className="text-muted-foreground leading-relaxed mb-4 mt-4">
+                  The record lives in two tables in your own database,{' '}
+                  <code>grit_migrations</code> and <code>grit_migration_changes</code>, so the
+                  history is readable with <code>psql</code> and travels with a database dump.
+                  A rollback drops what the run added in the reverse order: indexes, then
+                  columns, then tables. Each drop is skipped if it is already gone, so a
+                  rollback interrupted halfway can simply be run again.
+                </p>
+
+                <CodeBlock
+                  language="bash"
+                  filename="grit migrate down"
+                  code={`Rolling back 1 run(s):
+
+  20260912-034031.905 (2026-09-12 03:40, 2 change(s))
+    DROP INDEX IF EXISTS "idx_widgets_colour";
+    ALTER TABLE "widgets" DROP COLUMN "colour";
+
+Dropping a table or a column does not keep the data in it. This is not reversible.
+Type yes to continue:`}
+                />
+
+                <div className="mt-4 p-4 rounded-lg border border-yellow-500/20 bg-yellow-500/5">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    <strong className="text-yellow-500/90">What this cannot do:</strong> bring
+                    data back. Dropping a column takes everything written into it since the run
+                    that added it, which is why every statement is printed before anything runs
+                    and nothing runs without a confirmation or <code>--yes</code>. Read the
+                    statements; they are the whole plan.
+                  </p>
+                </div>
+
+                <p className="text-muted-foreground leading-relaxed mb-4 mt-4">
+                  The first run on an empty database is the one that built the schema, recorded
+                  as a <strong>baseline</strong>. Rolling that back would drop the database
+                  rather than undo a change, so it is refused and{' '}
+                  <code>grit migrate --fresh</code> is the way to start over. A project
+                  scaffolded before this existed gets its first recorded run the next time it
+                  migrates, and that run is a baseline too: the schema it found was built by
+                  runs nobody recorded.
+                </p>
+              </div>
+
               {/* What AutoMigrate Does */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">

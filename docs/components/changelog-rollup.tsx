@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 7 to 13, 2026",
-    count: 38,
+    count: 39,
     entries: [
+      { version: "3.230.0", title: "Down migrations, for a framework that has no migration files" },
       { version: "3.229.0", title: "A stability matrix per subsystem, and a weekly rollup over 343 releases" },
       { version: "3.228.0", title: "The verification that found the bugs now runs in CI, on three Postgres versions" },
       { version: "3.227.0", title: "grit doctor: the mistakes that do not announce themselves" },

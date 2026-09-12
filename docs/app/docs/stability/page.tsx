@@ -157,6 +157,17 @@ const rows: Row[] = [
     yours: 'Start the relay. grit upgrade wires it for projects that predate it.',
   },
   {
+    area: 'Migrations and rollback',
+    status: 'new',
+    guaranteed:
+      'Every run records what it changed, taken from the schema before and after, and grit migrate down drops exactly that: indexes, then columns, then tables. A drop already done is skipped, so an interrupted rollback can be re-run. The run that built the schema is a baseline and is refused.',
+    proof: 'internal/migrate tests ship in every project, and the live suite adds a column with grit generate field, rolls it back on a real Postgres and checks the column is gone and the table is not',
+    yours:
+      'Read the statements before you answer the prompt. A rollback drops columns, and the data in them is not recoverable: this undoes a schema change, not a deployment.',
+    history:
+      'Shipped in v3.230.0. The first version counted SQLite’s own sqlite_sequence table as part of the schema, so on SQLite no run would have been recognised as the baseline and a rollback would have offered to drop everything.',
+  },
+  {
     area: 'Backups and restore',
     status: 'beta',
     guaranteed: 'A backup streams row by row, and a restore writes parents before children.',

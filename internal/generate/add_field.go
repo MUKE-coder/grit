@@ -56,13 +56,7 @@ func AddField(resourceName, spec string) error {
 	if err := g.ensureModelImport(names, f); err != nil {
 		return err
 	}
-	if err := g.injectZodField(names, f); err != nil {
-		return err
-	}
-	if err := g.injectTSField(names, f); err != nil {
-		return err
-	}
-	if err := g.injectAdminField(names, f); err != nil {
+	if err := g.injectFrontendField(names, f); err != nil {
 		return err
 	}
 	// The API last, and not optional. Generated handlers copy request fields
@@ -99,6 +93,57 @@ func injectAfterAnchor(filePath, anchor, code string) error {
 		}
 	}
 	return fmt.Errorf("anchor %q not found in %s", anchor, filePath)
+}
+
+// injectFrontendField adds the field to the Zod schema, the TypeScript type and
+// the admin resource, for a project that has them.
+//
+// An --api project has no packages/shared and no apps/admin. generate resource
+// has always checked before writing there; this did not, so on an API-only
+// project the command failed on the first missing file, after the model had
+// already been changed: the field was reported as added, the column existed after
+// the next migrate, and the schema, type and admin form were silently absent.
+// adminResourceFiles lists where a resource's admin definition can live: both
+// layouts, both frontends. Missing paths are skipped, so listing all four is
+// cheaper than detecting which one this project uses.
+func (g *Generator) adminResourceFiles(names Names) []string {
+	return []string{
+		filepath.Join(g.AdminRoot(), "resources", names.PluralKebab, names.PluralKebab+".ts"),
+		filepath.Join(g.AdminRoot(), "resources", names.PluralKebab+".ts"),
+		filepath.Join(g.AdminRoot(), "src", "resources", names.PluralKebab, names.PluralKebab+".ts"),
+		filepath.Join(g.AdminRoot(), "src", "resources", names.PluralKebab+".ts"),
+	}
+}
+
+// adminResourceFile returns the first admin definition this resource has.
+func (g *Generator) adminResourceFile(names Names) (string, bool) {
+	for _, path := range g.adminResourceFiles(names) {
+		if fileExists(path) {
+			return path, true
+		}
+	}
+	return "", false
+}
+
+func (g *Generator) injectFrontendField(names Names, f Field) error {
+	if dirExists(filepath.Join(g.Root, "packages", "shared")) {
+		if err := g.injectZodField(names, f); err != nil {
+			return err
+		}
+		if err := g.injectTSField(names, f); err != nil {
+			return err
+		}
+	}
+	// Only when this resource actually has an admin definition. An --api project
+	// that has run grit upgrade has an apps/admin directory without one, and a
+	// resource generated for the API alone never had one: in both cases there is
+	// nothing to inject, which is not the same as a failure.
+	if _, found := g.adminResourceFile(names); found {
+		if err := g.injectAdminField(names, f); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (g *Generator) injectModelField(names Names, f Field) error {
@@ -144,14 +189,7 @@ func (g *Generator) injectTSField(names Names, f Field) error {
 // the Next admin and apps/admin/src/resources for the TanStack admin — inject
 // into whichever exists.
 func (g *Generator) injectAdminField(names Names, f Field) error {
-	candidates := []string{
-		// Both layouts, both frontends. Missing paths are skipped, so listing
-		// all four is cheaper than detecting which one this project uses.
-		filepath.Join(g.AdminRoot(), "resources", names.PluralKebab, names.PluralKebab+".ts"),
-		filepath.Join(g.AdminRoot(), "resources", names.PluralKebab+".ts"),
-		filepath.Join(g.AdminRoot(), "src", "resources", names.PluralKebab, names.PluralKebab+".ts"),
-		filepath.Join(g.AdminRoot(), "src", "resources", names.PluralKebab+".ts"),
-	}
+	candidates := g.adminResourceFiles(names)
 	label := strings.Join(splitPascal(toPascalCase(f.Name)), " ")
 	snake := toSnakeCase(f.Name)
 

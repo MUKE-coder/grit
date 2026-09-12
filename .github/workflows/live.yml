@@ -132,6 +132,56 @@ jobs:
             --db grit --db-user grit --db-password grit \
             --db-host localhost --db-port 5432
 
+      # Down migrations, against a real Postgres.
+      #
+      # AutoMigrate has no down scripts, so a rollback is computed from what a run
+      # recorded. None of that shows up in an HTTP response: the only proof is the
+      # column being there and then not, which is what this checks.
+      - name: Roll back a migration
+        env:
+          PGPASSWORD: grit
+        run: |
+          set -euo pipefail
+
+          column() {
+            psql -h localhost -U grit -d grit -tAc \
+              "select count(*) from information_schema.columns where table_name='tags' and column_name='$1'" \
+              | tr -d '[:space:]'
+          }
+          table() {
+            psql -h localhost -U grit -d grit -tAc \
+              "select count(*) from information_schema.tables where table_name='$1'" \
+              | tr -d '[:space:]'
+          }
+
+          # A column on a table that already has rows, which is the case a rollback
+          # has to get right: dropping the table instead would take the rest.
+          cd /tmp/live/app
+          grit generate field Tag colour:text
+          cd apps/api
+          go run ./cmd/migrate --grit-version ci
+
+          test "$(column colour)" = "1" || { echo "the migration did not add the column"; exit 1; }
+          go run ./cmd/migrate --status | tail -20
+
+          # --dry-run prints the statements and changes nothing.
+          go run ./cmd/migrate --down --dry-run
+          test "$(column colour)" = "1" || { echo "--dry-run dropped the column"; exit 1; }
+
+          go run ./cmd/migrate --down --yes
+          test "$(column colour)" = "0" || { echo "the rollback left the column behind"; exit 1; }
+          test "$(table tags)" = "1" || { echo "the rollback dropped the table, not the column"; exit 1; }
+
+          # With that run undone, the only one left is the baseline that built the
+          # schema, and it is refused rather than dropping the database out from
+          # under the application. (That a half-applied rollback can be re-run is
+          # covered by the tests shipped in internal/migrate.)
+          if go run ./cmd/migrate --down --yes; then
+            echo "rolling back the baseline should have failed"
+            exit 1
+          fi
+          echo "down migrations verified"
+
       # The server log is where a 500 explains itself, and it is gone with the
       # runner unless it is kept.
       - name: Server log
