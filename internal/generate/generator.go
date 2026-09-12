@@ -409,12 +409,13 @@ func (g *Generator) Run() error {
 		if err := g.writeResourcePage(names); err != nil {
 			return fmt.Errorf("writing resource page: %w", err)
 		}
-		fmt.Printf("  ✓ apps/admin/app/(dashboard)/resources/%s/page.tsx\n", names.PluralKebab)
+		routes := relativeToRoot(g.Root, g.AdminRoutesRoot())
+		fmt.Printf("  ✓ %s/(dashboard)/resources/%s/page.tsx\n", routes, names.PluralKebab)
 
 		if err := g.writeResourceDetailPage(names); err != nil {
 			return fmt.Errorf("writing resource detail page: %w", err)
 		}
-		fmt.Printf("  ✓ apps/admin/app/(dashboard)/resources/%s/[id]/page.tsx\n", names.PluralKebab)
+		fmt.Printf("  ✓ %s/(dashboard)/resources/%s/[id]/page.tsx\n", routes, names.PluralKebab)
 	} else if dirExists(adminTanStackResourcesDir) {
 		wroteAdmin = true
 		// TanStack admin

@@ -317,6 +317,7 @@ export default function HomePage() {
               { icon: Shield, label: 'Typed error codes, end to end', href: '/docs/backend/errors' },
               { icon: Database, label: 'Postgres, MySQL or SQLite', href: '/docs/infrastructure/database' },
               { icon: LayoutDashboard, label: 'Admin panel in one app, two or three', href: '/docs/concepts/architecture-modes' },
+              { icon: UserCheck, label: 'A customer account area, built in', href: '/docs/concepts/architecture-modes/double' },
               { icon: TrendingUp, label: 'Exact multi-currency money', href: '/docs/concepts/money' },
               { icon: Building2, label: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
               { icon: Webhook, label: 'Webhooks', href: '/docs/backend/webhooks' },

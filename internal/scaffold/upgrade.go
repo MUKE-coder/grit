@@ -328,6 +328,18 @@ func Upgrade(uOpts UpgradeOptions) error {
 		updated += n
 	}
 
+	// --- The web app's section layouts (v3.237.0) ---
+	//
+	// Before the files are written, because the new map has the landing page and
+	// the blog under app/(marketing) and the old one has them at the app root.
+	// Writing both leaves two pages resolving to "/", which Next refuses to build.
+	if hasWeb && opts.Frontend != FrontendTanStack {
+		migrateWebRouteGroups(root, spinner, green, cyan)
+	}
+	if opts.ShouldEmbedAdmin() || opts.ShouldEmbedAdminInSPA() {
+		retireAdminURLEnv(root, green)
+	}
+
 	// --- Web app (landing page — always safe to fully regenerate) ---
 	if hasWeb && opts.Frontend == FrontendTanStack {
 		skipViteApp("web")
@@ -765,6 +777,110 @@ func pruneAdminStrays(adminRoot string) int {
 		fmt.Printf("  ✓ Removed %d stale duplicate component file(s) from earlier upgrades\n", removed)
 	}
 	return removed
+}
+
+// retireAdminURLEnv comments out a NEXT_PUBLIC_ADMIN_URL this project should not
+// have.
+//
+// The navbar reads that variable and falls back to a value the scaffold compiles
+// in: the admin app's port in a triple, /admin/dashboard where the panel is
+// inside the app. v3.235.0 got the fallback right and left .env alone, and .env
+// set the variable to localhost:3001 in every project ever scaffolded, so the
+// link still pointed at a port with nothing behind it.
+//
+// Only the exact line the scaffold wrote is touched. A value somebody chose is
+// theirs, even if it looks wrong from here.
+func retireAdminURLEnv(root string, green *color.Color) {
+	const stale = "NEXT_PUBLIC_ADMIN_URL=http://localhost:3001"
+	replacement := "# The admin panel is part of this app, so the link to it is a path the app\n" +
+		"# already knows. Set this only if you move the panel to its own origin.\n" +
+		"# NEXT_PUBLIC_ADMIN_URL="
+
+	for _, name := range []string{".env", ".env.example"} {
+		path := filepath.Join(root, name)
+		data, err := os.ReadFile(path)
+		if err != nil || !strings.Contains(string(data), stale) {
+			continue
+		}
+		out := strings.Replace(string(data), stale, replacement, 1)
+		if err := os.WriteFile(path, []byte(out), 0o644); err == nil {
+			green.Printf("  ✓ %s no longer points the Admin link at localhost:3001\n", name)
+		}
+	}
+}
+
+// migrateWebRouteGroups moves a web app from one layout for everything to one
+// layout per section.
+//
+// The old shape wrapped every page in the marketing navbar and footer from the
+// root layout, and a client component took them away again for a list of path
+// prefixes. The list never knew about /admin, so the admin panel rendered inside
+// the site's chrome. The new shape puts the public pages in a route group whose
+// layout draws that chrome, which changes no URL and cannot go stale.
+//
+// The framework's own pages are moved, not rewritten, so local edits survive. A
+// page the project added itself stays where it is: only its author knows whether
+// it is a public page, and it is named rather than guessed at.
+func migrateWebRouteGroups(root string, spinner, green, cyan *color.Color) {
+	app := filepath.Join(root, "apps", "web", "app")
+	marketing := filepath.Join(app, "(marketing)")
+	if !dirExists(app) || fileExists(filepath.Join(marketing, "page.tsx")) {
+		return // never scaffolded, or already migrated
+	}
+
+	moves := [][2]string{
+		{filepath.Join(app, "page.tsx"), filepath.Join(marketing, "page.tsx")},
+		{filepath.Join(app, "blog"), filepath.Join(marketing, "blog")},
+	}
+	moved := 0
+	for _, m := range moves {
+		if _, err := os.Stat(m[0]); err != nil {
+			continue
+		}
+		if _, err := os.Stat(m[1]); err == nil {
+			continue // something is already there; leave both alone
+		}
+		if err := os.MkdirAll(filepath.Dir(m[1]), 0o755); err != nil {
+			continue
+		}
+		if err := os.Rename(m[0], m[1]); err == nil {
+			moved++
+		}
+	}
+	if moved == 0 {
+		return
+	}
+	spinner.Printf("  → Moving the public pages into app/(marketing)...\n")
+	green.Printf("  ✓ The site layout is the (marketing) group's now, so /admin keeps its own\n")
+
+	// AppChrome decided this by path prefix and nothing imports it any more.
+	if err := os.Remove(filepath.Join(root, "apps", "web", "components", "AppChrome.tsx")); err == nil {
+		green.Printf("  ✓ Removed components/AppChrome.tsx: the layouts decide now\n")
+	}
+
+	// Pages this project wrote itself, which are outside every group and so have
+	// no chrome until somebody decides which section they belong to.
+	var orphans []string
+	entries, err := os.ReadDir(app)
+	if err != nil {
+		return
+	}
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		switch e.Name() {
+		case "(marketing)", "(app)", "(auth)", "admin", "forms":
+			continue
+		}
+		if fileExists(filepath.Join(app, e.Name(), "page.tsx")) {
+			orphans = append(orphans, e.Name())
+		}
+	}
+	if len(orphans) > 0 {
+		cyan.Printf("    Your own pages are still at the app root: %s.\n", strings.Join(orphans, ", "))
+		cyan.Printf("    Move the public ones into app/(marketing)/ to give them the navbar and footer.\n")
+	}
 }
 
 // detectArchitecture works out a project's shape from what is on disk.
