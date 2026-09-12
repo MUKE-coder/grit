@@ -85,7 +85,7 @@ export default function ChangelogPage() {
                   nothing in the build knew the docs existed.
                 </p>
                 <p>
-                  Now it does. Every grit command shown anywhere in the docs, 609 of them, is
+                  Now it does. Every grit command shown anywhere in the docs, 586 of them, is
                   resolved against the real command tree: the command has to exist, and so does
                   every flag it is given. Every <code>--fields</code> spec goes through the same
                   parser the generator uses. It found two bugs on its first run: a page telling
@@ -114,8 +114,8 @@ export default function ChangelogPage() {
                   &quot;grit can keep itself current&quot; and a heading read &quot;grit sync:
                   Manual Type Generation&quot;, so it now only reads inside code blocks. And it was
                   missing the first command of every multi-line block, the one sharing a line with{' '}
-                  <code>code=&#123;`</code>, which was most of the commands in these docs: 298
-                  before the fix, 609 after.
+                  <code>code=&#123;`</code>, which was most of the commands in these docs. The
+                  test now fails if that count collapses again.
                 </p>
               </div>
             </div>
