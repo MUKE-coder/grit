@@ -411,7 +411,7 @@ curl -I http://localhost:8080/api/health | grep -iE 'x-frame|x-content|content-s
                 by a person following a page, which is the most expensive way to find it.
               </p>
               <p>
-                So the build reads the docs. Every grit command shown on any page, 609 of them, is
+                So the build reads the docs. Every grit command shown on any page, 586 of them today, is
                 resolved against the real command tree: the command has to exist, and so does
                 every flag it is given. Every <code>--fields</code> spec goes through the same
                 parser the generator uses, so a documented field type that does not exist fails
