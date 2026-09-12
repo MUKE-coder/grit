@@ -1289,13 +1289,13 @@ export const %sResource = defineResource({
 
 // writeResourceDefinition writes the resource definition for the Next.js admin.
 func (g *Generator) writeResourceDefinition(names Names) error {
-	root := filepath.Join(g.Root, "apps", "admin", "resources")
+	root := filepath.Join(g.AdminCodeRoot(), "resources")
 	// One folder per resource. If this project is still flat, the definition
 	// that was there is left where it is and the migration in grit upgrade
 	// moves it: silently writing a second copy in a folder would leave two
 	// definitions and a registry pointing at the stale one.
 	if flat := filepath.Join(root, names.PluralKebab+".ts"); fileExists(flat) {
-		if err := writeFileWithDirs(flat, g.adminDefinitionContent(names)); err != nil {
+		if err := g.writeAdminFile(flat, g.adminDefinitionContent(names)); err != nil {
 			return err
 		}
 		return writeResourceCustomStub(root, names)
@@ -1342,8 +1342,8 @@ export default function %sPage() {
 		names.Camel,
 	)
 
-	path := filepath.Join(g.Root, "apps", "admin", "app", "(dashboard)", "resources", names.PluralKebab, "page.tsx")
-	return writeFileWithDirs(path, content)
+	path := filepath.Join(g.AdminRoutesRoot(), "(dashboard)", "resources", names.PluralKebab, "page.tsx")
+	return g.writeAdminFile(path, content)
 }
 
 // writeResourceDetailPage writes the per-resource [id] detail route (Next.js).
@@ -1365,8 +1365,8 @@ export default function %sDetailPage({ params }: { params: Promise<{ id: string 
 		names.Camel,
 	)
 
-	path := filepath.Join(g.Root, "apps", "admin", "app", "(dashboard)", "resources", names.PluralKebab, "[id]", "page.tsx")
-	return writeFileWithDirs(path, content)
+	path := filepath.Join(g.AdminRoutesRoot(), "(dashboard)", "resources", names.PluralKebab, "[id]", "page.tsx")
+	return g.writeAdminFile(path, content)
 }
 
 // toCamelCase converts snake_case to camelCase.

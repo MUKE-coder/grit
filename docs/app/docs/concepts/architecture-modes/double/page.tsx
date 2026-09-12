@@ -39,7 +39,7 @@ export default function DoubleArchitecturePage() {
               Overview
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              Double architecture strips away the dedicated admin panel and gives you a two-app monorepo.
+              Double architecture drops the separate admin application and gives you a two-app monorepo.
               The Go API handles all backend logic (authentication, CRUD, file uploads, jobs), and a
               single frontend serves both regular users and administrators. Admin functionality is
               implemented through role-protected routes within the web app — users with the ADMIN role
@@ -65,10 +65,10 @@ grit new myapp --double --next`} />
             <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-6">
               <h3 className="text-sm font-semibold text-foreground mb-3">Key differences from Triple</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>No apps/admin/ directory</strong> — the admin panel does not exist as a separate application</li>
-                <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>No admin resource definitions</strong> — no <code className="text-xs font-mono bg-accent/30 px-1 rounded">defineResource()</code>, no DataTable/FormBuilder auto-generation</li>
-                <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>Admin features in web app</strong> — role-protected routes (e.g., <code className="text-xs font-mono bg-accent/30 px-1 rounded">/admin/users</code>) guarded by <code className="text-xs font-mono bg-accent/30 px-1 rounded">RequireRole(&quot;ADMIN&quot;)</code></li>
-                <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>Fewer generated files</strong> — <code className="text-xs font-mono bg-accent/30 px-1 rounded">grit generate</code> creates Go files + shared types + web hooks, but no admin page or resource definition</li>
+                <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>No apps/admin/ directory</strong> — the admin panel is a route group inside the web app instead, at <code className="text-xs font-mono bg-accent/30 px-1 rounded">/admin/dashboard</code>, with its own layout and all the same screens (v3.235.0)</li>
+                <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>Resource definitions live in the web app</strong> — <code className="text-xs font-mono bg-accent/30 px-1 rounded">defineResource()</code> files land in <code className="text-xs font-mono bg-accent/30 px-1 rounded">apps/web/admin-panel/resources/</code>, and the DataTable and FormBuilder work exactly as they do in a triple</li>
+                <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>One app to run and deploy</strong> — one Next.js process serves your pages and the panel. The panel guards itself: its layout redirects anybody who is not signed in, and sends a plain USER role to their profile rather than the dashboard</li>
+                <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>grit generate writes the admin screens too</strong> — the list and detail pages land at <code className="text-xs font-mono bg-accent/30 px-1 rounded">apps/web/app/admin/(dashboard)/resources/&lt;name&gt;/</code> and the resource appears in the sidebar, the same as in a triple</li>
                 <li className="flex items-start gap-2"><span className="text-primary">-</span> <strong>Simpler deployment</strong> — 2 apps instead of 3, fewer Docker images, less infrastructure</li>
               </ul>
             </div>

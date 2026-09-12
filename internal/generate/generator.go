@@ -36,7 +36,15 @@ func (g *Generator) APIRoot() string {
 }
 
 // AdminRoot returns the base directory for admin frontend files.
+// AdminRoot is the admin application's directory.
+//
+// Only meaningful for a project that HAS one: a double's panel is a route group
+// inside the web app, and its code lives at AdminCodeRoot with its routes at
+// AdminRoutesRoot. See admin_embedded.go.
 func (g *Generator) AdminRoot() string {
+	if g.EmbedsAdmin() {
+		return filepath.Join(g.Root, "apps", "web", "admin-panel")
+	}
 	return filepath.Join(g.Root, "apps", "admin")
 }
 
@@ -352,7 +360,7 @@ func (g *Generator) Run() error {
 	}
 
 	// Write admin resource definition + page (if admin app exists)
-	adminResourcesDir := filepath.Join(g.Root, "apps", "admin", "resources")
+	adminResourcesDir := filepath.Join(g.AdminCodeRoot(), "resources")
 	adminTanStackResourcesDir := filepath.Join(g.Root, "apps", "admin", "src", "resources")
 	// Whether the admin half actually ran. The closing message promised a
 	// sidebar entry unconditionally on a triple project, including when there
@@ -815,6 +823,13 @@ func dirExists(path string) bool {
 // writeFileWithDirs writes a generated file, creating parent directories as
 // needed. Go files are gofmt'd on the way out (see internal/codefmt).
 func writeFileWithDirs(path, content string) error {
+	// An admin file landing inside the web app has its imports and links
+	// repointed. Keyed on the destination, because the admin's screens are
+	// written from several places and a rewrite at any one of them would miss the
+	// others: that is how a resource's pages were repointed and its definition was
+	// not, and the build failed on the definition.
+	content = embeddedAdminFileContent(path, content)
+
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("creating directory %s: %w", dir, err)

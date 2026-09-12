@@ -606,7 +606,12 @@ if (existsSync(rootEnv)) {
 const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
-  transpilePackages: ["@repo/shared"],
+  // @repo/upload ships raw TypeScript (its package.json points main at src/),
+  // so Next has to transpile it. lib/api-client.ts has imported it since
+  // v3.31.30 and this list did not mention it: the build fails with "Module
+  // parse failed: Unexpected token" on a type-only import, which is what a
+  // workspace package that is never compiled looks like.
+  transpilePackages: ["@repo/shared", "@repo/upload"],
   // Mirror THEME + SOCIAL_AUTH_ENABLED from .env into the NEXT_PUBLIC_*
   // namespace so server components and the client bundle both see the
   // active theme without a flash of unstyled content. Falls back to the
@@ -768,7 +773,19 @@ func adminGlobalCSS() string {
   }
 }
 
-/* Print: isolate the record. Everything is hidden, then only #print-area (the
+` + adminScreenCSS()
+}
+
+// adminScreenCSS is the part of the admin stylesheet that is about the screens
+// rather than the palette: print isolation for a record page, the toaster, and
+// the dark-mode flip.
+//
+// Split out because the embedded panel needs exactly this and none of the rest:
+// the web app hosting it already declares the same tokens, with the same names and
+// the same values, and declaring them twice would mean two places to change a
+// colour.
+func adminScreenCSS() string {
+	return `/* Print: isolate the record. Everything is hidden, then only #print-area (the
  * detail card + line items) is made visible and floated to the top-left, so the
  * sidebar, navbar and action buttons never reach the paper. Resource detail
  * pages wrap their printable content in #print-area and mark controls .no-print. */

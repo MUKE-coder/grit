@@ -40,7 +40,11 @@ func AddWebAuth(root string, force bool) error {
 	// Project name is used by the auth-aware navbar's logo. We derive
 	// it from the root directory; the alternative is parsing grit.json,
 	// but the dir name is what `grit new` uses anyway.
-	opts := Options{ProjectName: filepath.Base(root)}
+	// The architecture matters here for one reason: the navbar this writes links
+	// to the admin panel, and where that is depends on the shape of the project.
+	// Without it the written file keeps the {{ADMIN_HREF}} placeholder, which is a
+	// link to a page called literally that.
+	opts := Options{ProjectName: filepath.Base(root), Architecture: detectArchitecture(root)}
 
 	for _, f := range webAuthFiles(webRoot, opts) {
 		rel, _ := filepath.Rel(root, f.path)
@@ -53,7 +57,7 @@ func AddWebAuth(root string, force bool) error {
 		if err := os.MkdirAll(filepath.Dir(f.path), 0755); err != nil {
 			return fmt.Errorf("creating directory: %w", err)
 		}
-		if err := os.WriteFile(f.path, []byte(f.content), 0644); err != nil {
+		if err := os.WriteFile(f.path, []byte(adminHref(f.content, opts)), 0644); err != nil {
 			return fmt.Errorf("writing %s: %w", rel, err)
 		}
 		fmt.Printf("  ✓ wrote %s\n", rel)

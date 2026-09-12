@@ -68,7 +68,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.234.0"
+const DefaultVersion = "3.235.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -182,6 +182,19 @@ func (o Options) ShouldIncludeWeb() bool {
 // ShouldIncludeAdmin returns true if the admin panel should be scaffolded.
 func (o Options) ShouldIncludeAdmin() bool {
 	return o.Architecture == ArchTriple
+}
+
+// HasAdminPanel reports whether this project has an admin panel at all, wherever
+// it lives: its own app in a triple, or a route group inside the web app in a
+// double.
+//
+// Distinct from ShouldIncludeAdmin, which is about the separate application: a
+// container, a port, a dev script, a package.json. Every writer that produces a
+// SCREEN wants this one. Asking the other question is how a double ended up with
+// an admin panel missing its account-security page while the link to it sat in the
+// user menu.
+func (o Options) HasAdminPanel() bool {
+	return o.ShouldIncludeAdmin() || o.ShouldEmbedAdmin()
 }
 
 // ShouldIncludeSingleSPA returns true if this is a single-app embedded SPA.
@@ -514,6 +527,17 @@ func Run(opts Options) error {
 			if err := writeAdminFiles(root, opts); err != nil {
 				return fmt.Errorf("writing admin files: %w", err)
 			}
+		}
+	}
+
+	// A double has no admin app, so the admin panel goes inside the web app as a
+	// route group at /admin: the same screens and the same file map, moved and
+	// repointed (see admin_embedded.go). Before this, a double shipped with the
+	// admin link in its navbar and nothing behind it.
+	if opts.ShouldEmbedAdmin() {
+		spinner.Printf("  → Scaffolding admin panel into the web app at /admin...\n")
+		if err := writeEmbeddedAdminFiles(root, opts); err != nil {
+			return fmt.Errorf("writing the embedded admin panel: %w", err)
 		}
 	}
 
@@ -953,6 +977,12 @@ func createDirectories(root string, opts Options) error {
 // way out (see internal/codefmt) so the templates only have to be correct, not
 // aligned; anything else is written byte-for-byte.
 func writeFile(path, content string) error {
+	// An admin file landing inside the web app has its imports and links
+	// repointed. Keyed on the destination rather than on a flag, because the
+	// panel's screens are written from a dozen different places and every one of
+	// them would have had to remember.
+	content = embeddedAdminContent(path, content)
+
 	// Record what actually lands on disk, not what the template produced:
 	// codefmt reformats Go on the way out, and a hash of the pre-gofmt text
 	// would read as an edit the moment anyone looked at the file.

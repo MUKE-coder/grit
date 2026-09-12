@@ -15,6 +15,19 @@ import "path/filepath"
 // for the page. That is how the TanStack admin shipped with no account-security
 // screen, and how three plugins wrote themselves into a directory nothing reads.
 
+// adminCodeRoot is where this project's admin code lives.
+//
+// apps/admin for a triple, apps/web/admin-panel for a double whose panel is a
+// route group inside the web app. Writers that hardcoded the first one wrote into
+// a directory nothing compiles, which is how the embedded panel's first build
+// failed on a dashboard widget that had been written to apps/admin/components.
+func adminCodeRoot(root string, opts Options) string {
+	if opts.ShouldEmbedAdmin() {
+		return filepath.Join(root, "apps", "web", "admin-panel")
+	}
+	return filepath.Join(root, "apps", "admin")
+}
+
 // adminComponent returns the path for a component file.
 //
 //	adminComponent(root, opts, "security", "passkeys.tsx")
@@ -33,9 +46,16 @@ func adminLib(root string, opts Options, name string) string {
 }
 
 // adminPath joins parts under the admin root, adding src/ for TanStack.
+//
+// Three layouts now, not two: a double project has no admin app, so the panel's
+// components, hooks and lib live inside the web app under admin-panel/ and its
+// routes under app/admin/. See admin_embedded.go.
 func adminPath(root string, opts Options, parts ...string) string {
 	base := filepath.Join(root, "apps", "admin")
-	if opts.UseTanStack() {
+	switch {
+	case opts.ShouldEmbedAdmin():
+		base = filepath.Join(root, "apps", "web", "admin-panel")
+	case opts.UseTanStack():
 		base = filepath.Join(base, "src")
 	}
 	return filepath.Join(base, filepath.Join(parts...))
@@ -56,7 +76,7 @@ func adminPageFiles(root string, opts Options, routePath, name, body string) map
 		parts := append([]string{"app", "(dashboard)"}, splitSlash(routePath)...)
 		parts = append(parts, "page.tsx")
 		return map[string]string{
-			adminPathNext(root, parts...): body,
+			adminPathNext(root, opts, parts...): body,
 		}
 	}
 
@@ -68,8 +88,19 @@ func adminPageFiles(root string, opts Options, routePath, name, body string) map
 	}
 }
 
-// adminPathNext joins parts under the Next admin root, ignoring the frontend.
-func adminPathNext(root string, parts ...string) string {
+// adminPathNext joins parts under the Next admin root, ignoring the frontend
+// choice but not the architecture.
+//
+// When the panel is embedded in the web app, app/(dashboard)/x/page.tsx belongs at
+// apps/web/app/admin/(dashboard)/x/page.tsx: the route group keeps its name, so
+// the URL is /admin/x, and the layout that draws the chrome still wraps it.
+func adminPathNext(root string, opts Options, parts ...string) string {
+	if opts.ShouldEmbedAdmin() && len(parts) > 0 && parts[0] == "app" {
+		return filepath.Join(append([]string{root, "apps", "web", "app", "admin"}, parts[1:]...)...)
+	}
+	if opts.ShouldEmbedAdmin() {
+		return filepath.Join(append([]string{root, "apps", "web", "admin-panel"}, parts...)...)
+	}
 	return filepath.Join(append([]string{root, "apps", "admin"}, parts...)...)
 }
 

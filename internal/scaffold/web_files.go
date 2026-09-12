@@ -3,15 +3,29 @@ package scaffold
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 )
 
 func writeWebFiles(root string, opts Options) error {
 	for path, content := range webFileMap(root, opts) {
-		if err := writeFile(path, content); err != nil {
+		if err := writeFile(path, adminHref(content, opts)); err != nil {
 			return fmt.Errorf("writing %s: %w", path, err)
 		}
 	}
 	return writeBrandLogo(filepath.Join(root, "apps", "web", "public"), "grit_logo.png")
+}
+
+// adminHref fills in where the admin panel lives for this architecture.
+//
+// A triple project has an admin app on its own port. A double has the panel as a
+// route group in the web app, so the link is a path and not a URL: a double used
+// to link to http://localhost:3001, where nothing was running.
+func adminHref(content string, opts Options) string {
+	href := "http://localhost:3001"
+	if opts.ShouldEmbedAdmin() {
+		href = "/admin/dashboard"
+	}
+	return strings.ReplaceAll(content, "{{ADMIN_HREF}}", href)
 }
 
 // webFileMap is the web app's framework files, by path. Separate from the
@@ -86,7 +100,7 @@ func webPackageJSON(opts Options) string {
     "@hookform/resolvers": "^3.3.0",
     "js-cookie": "^3.0.5",
     "tailwind-merge": "^2.2.0",
-    "tw-animate-css": "^1.4.0"
+    "tw-animate-css": "^1.4.0"%s
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.4.0",
@@ -107,7 +121,45 @@ func webPackageJSON(opts Options) string {
     "vitest": "^2.0.0"
   }
 }
-`, opts.ProjectName)
+`, opts.ProjectName, webAdminDependencies(opts))
+}
+
+// webAdminDependencies are the packages the admin screens import, for a project
+// whose admin lives inside the web app.
+//
+// The standalone admin app has its own package.json with these in it. Embedded,
+// there is no second package.json: the screens are compiled by the web app, and a
+// missing dependency here is an unresolved import in every file that uses the
+// editor, a chart, the dropzone or the toaster.
+//
+// Empty for every other architecture, so a triple project's web app is
+// byte-identical to what it was before any of this existed.
+func webAdminDependencies(opts Options) string {
+	if !opts.ShouldEmbedAdmin() {
+		return ""
+	}
+	return `,
+    "@react-pdf/renderer": "^4.1.5",
+    "@tiptap/extension-color": "^2.1.0",
+    "@tiptap/extension-highlight": "^2.1.0",
+    "@tiptap/extension-image": "^2.1.0",
+    "@tiptap/extension-link": "^2.1.0",
+    "@tiptap/extension-placeholder": "^2.1.0",
+    "@tiptap/extension-table": "^2.1.0",
+    "@tiptap/extension-table-cell": "^2.1.0",
+    "@tiptap/extension-table-header": "^2.1.0",
+    "@tiptap/extension-table-row": "^2.1.0",
+    "@tiptap/extension-text-align": "^2.1.0",
+    "@tiptap/extension-text-style": "^2.1.0",
+    "@tiptap/extension-underline": "^2.1.0",
+    "@tiptap/pm": "^2.1.0",
+    "@tiptap/react": "^2.1.0",
+    "@tiptap/starter-kit": "^2.1.0",
+    "react-dropzone": "^14.2.0",
+    "recharts": "^2.12.0",
+    "sonner": "^1.3.0",
+    "xlsx": "^0.18.5",
+    "zod": "^3.22.0"`
 }
 
 func webNextConfig() string {
@@ -135,7 +187,7 @@ const nextConfig: NextConfig = {
   // packages/shared ships TypeScript source rather than a built bundle,
   // so Next needs to run it through SWC. Otherwise imports of
   // @repo/shared/types fail with "Cannot find module" at build time.
-  transpilePackages: ["@repo/shared"],
+  transpilePackages: ["@repo/shared", "@repo/upload"],
   // Mirror THEME + SOCIAL_AUTH_ENABLED from .env into the NEXT_PUBLIC_*
   // namespace so the active theme is visible to server components and
   // the client bundle. Defaults keep new apps booting without env edits.
@@ -225,7 +277,8 @@ func webTSConfig() string {
     "incremental": true,
     "plugins": [{ "name": "next" }],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@admin/*": ["./admin-panel/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
@@ -802,7 +855,13 @@ import { usePathname } from "next/navigation";
 import { Menu, X, Github, Shield } from "lucide-react";
 
 const DOCS_URL = "https://gritframework.dev/docs";
-const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+// Where the admin panel is.
+//
+// A triple project runs it as its own app on 3001. A double has no second app:
+// the panel is a route group in THIS app at /admin, and a link to
+// http://localhost:3001 pointed at nothing, which is what a double's navbar did
+// until v3.235.0. NEXT_PUBLIC_ADMIN_URL still overrides both.
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "{{ADMIN_HREF}}";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -945,7 +1004,13 @@ import { Menu, X, Github, Shield } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 
 const DOCS_URL = "https://gritframework.dev/docs";
-const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+// Where the admin panel is.
+//
+// A triple project runs it as its own app on 3001. A double has no second app:
+// the panel is a route group in THIS app at /admin, and a link to
+// http://localhost:3001 pointed at nothing, which is what a double's navbar did
+// until v3.235.0. NEXT_PUBLIC_ADMIN_URL still overrides both.
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "{{ADMIN_HREF}}";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -1147,7 +1212,13 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+// Where the admin panel is.
+//
+// A triple project runs it as its own app on 3001. A double has no second app:
+// the panel is a route group in THIS app at /admin, and a link to
+// http://localhost:3001 pointed at nothing, which is what a double's navbar did
+// until v3.235.0. NEXT_PUBLIC_ADMIN_URL still overrides both.
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "{{ADMIN_HREF}}";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 interface DevLink {

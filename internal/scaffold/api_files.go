@@ -456,13 +456,22 @@ func main() {
 	// ── Phase 4 Services ─────────────────────────────────────────
 
 	// Redis cache
+	//
+	// The driver's own logger goes first: without it, a project started with no
+	// Redis running prints a wall of identical pool failures from inside go-redis
+	// before any line of ours, and they look like a crash rather than a missing
+	// optional service.
+	cache.QuietDriverLogs()
+
 	var cacheService *cache.Cache
+	redisReachable := false
 	if cfg.RedisURL != "" {
 		c, err := cache.New(cfg.RedisURL)
 		if err != nil {
-			log.Printf("Warning: Redis unavailable: %v (caching disabled)", err)
+			log.Printf("Redis is not reachable at %s: caching, background jobs and cron are off. Start it, or set REDIS_URL= in .env to run without it. (%v)", cfg.RedisURL, err)
 		} else {
 			cacheService = c
+			redisReachable = true
 			log.Println("Redis cache connected")
 		}
 	}
@@ -496,8 +505,13 @@ func main() {
 	}
 
 	// Background jobs (asynq)
+	//
+	// Only when Redis actually answered. jobs.NewClient parses the URL and builds
+	// a client without connecting to anything, so "Job queue connected" used to
+	// print on a machine with no Redis at all, two lines after the warning saying
+	// Redis was unavailable.
 	var jobClient *jobs.Client
-	if cfg.RedisURL != "" {
+	if cfg.RedisURL != "" && redisReachable {
 		jc, err := jobs.NewClient(cfg.RedisURL)
 		if err != nil {
 			log.Printf("Warning: Job queue unavailable: %v", err)
@@ -565,8 +579,13 @@ func main() {
 	}
 
 	// Start background worker
+	//
+	// Only when Redis answered: the worker polls in a loop, so without Redis it
+	// writes an asynq error every second or two, forever. That noise was the worst
+	// part of starting a project with no Redis running, and it drowned out the one
+	// line that explained it.
 	var workerStop func()
-	if cfg.RedisURL != "" {
+	if cfg.RedisURL != "" && redisReachable {
 		stop, err := jobs.StartWorker(cfg.RedisURL, jobs.WorkerDeps{
 			DB:      db,
 			Mailer:  mailer,
@@ -581,9 +600,9 @@ func main() {
 		}
 	}
 
-	// Start cron scheduler
+	// Start cron scheduler, for the same reason and on the same condition.
 	var cronScheduler *cron.Scheduler
-	if cfg.RedisURL != "" {
+	if cfg.RedisURL != "" && redisReachable {
 		cs, err := cron.New(cfg.RedisURL)
 		if err != nil {
 			log.Printf("Warning: Cron scheduler failed to start: %v", err)

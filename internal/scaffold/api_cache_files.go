@@ -32,6 +32,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -46,6 +49,43 @@ type Cache struct {
 }
 
 // New creates a new Cache instance connected to the given Redis URL.
+// QuietDriverLogs collapses the Redis driver's own output.
+//
+// go-redis writes pool failures straight to stderr, once per attempt per pool,
+// so a project started without Redis running greets you with a wall of
+// identical "failed to dial after 5 attempts" lines before anything of ours has
+// said a word. Silencing it entirely would hide real trouble later, so each
+// distinct message is printed once and repeats are dropped.
+//
+// Called by the server before it connects, and it covers asynq too, which uses
+// the same driver underneath.
+func QuietDriverLogs() {
+	redis.SetLogger(collapsingLogger{seen: map[string]bool{}})
+}
+
+type collapsingLogger struct {
+	mu   *sync.Mutex
+	seen map[string]bool
+}
+
+func (l collapsingLogger) Printf(ctx context.Context, format string, v ...interface{}) {
+	if l.mu != nil {
+		l.mu.Lock()
+		defer l.mu.Unlock()
+	}
+	if l.seen[format] {
+		return
+	}
+	l.seen[format] = true
+	// The driver's own messages already start with "redis:", so the prefix is
+	// only added when it is missing.
+	prefix := "redis: "
+	if strings.HasPrefix(format, "redis:") {
+		prefix = ""
+	}
+	log.Printf(prefix+format+" (further identical messages suppressed)", v...)
+}
+
 func New(redisURL string) (*Cache, error) {
 	opts, err := redis.ParseURL(redisURL)
 	if err != nil {

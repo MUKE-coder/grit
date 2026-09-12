@@ -53,6 +53,8 @@ const architectures: ArchMode[] = [
       { name: 'apps/', type: 'folder', depth: 0 },
       { name: 'api/', type: 'folder', depth: 1, comment: 'Go backend (Gin + GORM)' },
       { name: 'web/', type: 'folder', depth: 1, comment: 'React frontend (Next.js or TanStack)' },
+      { name: 'app/admin/', type: 'folder', depth: 2, comment: 'The admin panel, at /admin/dashboard' },
+      { name: 'admin-panel/', type: 'folder', depth: 2, comment: 'Its components, lib and resources' },
       { name: 'packages/shared/', type: 'folder', depth: 0, comment: 'Types, schemas, constants' },
       { name: 'turbo.json', type: 'file', depth: 0 },
       { name: 'pnpm-workspace.yaml', type: 'file', depth: 0 },
