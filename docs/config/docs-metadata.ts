@@ -355,6 +355,11 @@ export const docsMetadata: Record<string, DocPage> = {
       "Let each customer's team sign in with their own identity provider. One OIDC connection per organisation, routed by email domain, configured at runtime in the admin: works with Okta, Entra ID, Auth0, Keycloak, Google Workspace, Ping and OneLogin. Users are provisioned on first login, roles are derived from IdP groups and re-applied on every sign-in, identities are linked by the provider's immutable subject rather than email, and client secrets are encrypted at rest and never returned by the API.",
   },
 
+  '/docs/stability': {
+    title: 'Stability and hardening matrix',
+    description:
+      'An honest status per subsystem: stable, beta or new, with what Grit guarantees and the test that proves it, what stays your responsibility, and what went wrong once. Covers auth, two-factor and passkeys, RBAC, generated CRUD, owned resources, optimistic locking, encryption at rest, multitenancy, money, import and export, trees, the public API, append-only resources, realtime, durable events, backups, offline sync, workflows, feature flags, desktop and mobile. Plus how Grit is tested (492 CLI tests, 256 tests shipped into each project, 57 live checks on Postgres 15, 16 and 17, 13 grit doctor checks, gosec, govulncheck, Trivy, CodeQL, Scorecard) and what is not covered yet.',
+  },
   '/docs/security/doctor': {
     title: 'Project audit: grit doctor',
     description:

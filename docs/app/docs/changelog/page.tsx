@@ -5,6 +5,7 @@ import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { changelogRollup } from '@/components/changelog-rollup'
 
 export const metadata = getDocMetadata('/docs/changelog')
 
@@ -29,8 +30,98 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* Releases by week, generated from the entries below it by
+                scripts/changelog-rollup.py. The detail is the point of this page;
+                this is so somebody deciding today can scan it. */}
+            <div className="mb-14 rounded-lg border border-border/30 bg-card/30 p-5">
+              <h2 className="text-lg font-semibold tracking-tight mb-1">Releases by week</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                {changelogRollup.reduce((total, week) => total + week.count, 0)} releases. Every line
+                links to its full entry below.
+              </p>
+              <div className="space-y-4">
+                {changelogRollup.slice(0, 8).map((week) => (
+                  <div key={week.label}>
+                    <div className="flex items-baseline gap-2 mb-1.5">
+                      <h3 className="text-sm font-medium text-foreground/90">{week.label}</h3>
+                      <span className="text-xs text-muted-foreground/70">
+                        {week.count} release{week.count === 1 ? '' : 's'}
+                      </span>
+                    </div>
+                    <ul className="space-y-1">
+                      {week.entries.map((entry) => (
+                        <li key={entry.version} className="text-sm leading-snug">
+                          <a href={`#v${entry.version}`} className="text-primary/80 hover:text-primary font-mono text-xs mr-2">
+                            v{entry.version}
+                          </a>
+                          <span className="text-muted-foreground">{entry.title}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground/70 mt-4">
+                Earlier weeks are in the entries below, newest first.
+              </p>
+            </div>
+
+            {/* v3.229.0 */}
+            <div className="mb-12" id="v3.229.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.229.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A stability matrix per subsystem, and a weekly rollup over 343 releases</h3>
+                <p>
+                  Three of the worst entries on this page were docs asserting a guarantee the code did
+                  not provide. So{' '}
+                  <Link href="/docs/stability">the stability and hardening page</Link> has one rule: a
+                  claim under &quot;Grit guarantees&quot; names the test that would fail if it stopped
+                  being true, and anything without such a test is listed as your responsibility
+                  instead. Twenty subsystems, each with an honest status (stable, beta, new), what is
+                  guaranteed and what proves it, what stays yours, and what went wrong once. It also
+                  gathers the numbers: 492 test functions in the CLI, 256 tests shipped into every
+                  project, 57 live checks on Postgres 15, 16 and 17, 13 <code>grit doctor</code>{' '}
+                  checks, and the scanners.
+                </p>
+                <p>
+                  It says what is not covered, too, because a matrix that lists only strengths is
+                  marketing: no independent security audit, the framework&apos;s own handlers still
+                  query from their handlers, multitenancy is not in the live suite and not at all in
+                  combination with <code>--tree</code> or <code>--public</code>, there is no LTS
+                  channel, no signed desktop release has been verified end to end, and there are no
+                  production case studies yet.
+                </p>
+                <p>
+                  The security guide asserted exactly this kind of guarantee while showing code from
+                  before v3.224.0: <code>authz.MustOwn</code> inside a generated handler. It now shows
+                  where the check actually lives, scoped in SQL for a list or an export and checked
+                  after loading for anything by id, answering 404 rather than 403 so a wrong guess
+                  cannot be told from a right one, with <code>authz.MustOwn</code> kept as the path for
+                  a handler you wrote yourself and the caller travelling on the context. Its
+                  pre-launch checklist gained rows for <code>FIELD_ENCRYPTION_KEY</code>, the Studio
+                  password, <code>SENTINEL_AUDIT_KEY</code>, <code>--owned-by</code> and{' '}
+                  <code>grit doctor</code>, and no longer points at a workflow file that does not
+                  exist.
+                </p>
+                <p>
+                  This page now opens with &quot;Releases by week&quot;, generated from its own entries
+                  by <code>scripts/changelog-rollup.py</code>, which also gave all 343 entries an
+                  anchor to link to. The generator refuses to write a partial result: its first version
+                  required an <code>h3</code> title and would have silently dropped the 160 older
+                  entries that title themselves differently, which is the class of quiet half-success
+                  this changelog keeps recording.
+                </p>
+              </div>
+            </div>
+
             {/* v3.228.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.228.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.228.0
@@ -91,7 +182,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.227.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.227.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.227.0
@@ -142,7 +233,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.226.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.226.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.226.0
@@ -189,7 +280,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.225.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.225.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.225.0
@@ -239,7 +330,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.224.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.224.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.224.0
@@ -295,7 +386,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.223.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.223.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.223.0
@@ -335,7 +426,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.222.1 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.222.1">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.222.1
@@ -365,7 +456,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.222.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.222.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.222.0
@@ -428,7 +519,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.221.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.221.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.221.0
@@ -474,7 +565,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.220.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.220.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.220.0
@@ -518,7 +609,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.219.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.219.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.219.0
@@ -554,7 +645,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.218.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.218.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.218.0
@@ -608,7 +699,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.217.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.217.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.217.0
@@ -686,7 +777,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.216.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.216.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.216.0
@@ -725,7 +816,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.215.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.215.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.215.0
@@ -776,7 +867,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.214.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.214.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.214.0
@@ -866,7 +957,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.213.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.213.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.213.0
@@ -914,7 +1005,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.212.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.212.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.212.0
@@ -988,7 +1079,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.210.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.210.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.210.0
@@ -1065,7 +1156,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.209.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.209.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.209.0
@@ -1140,7 +1231,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.208.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.208.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.208.0
@@ -1219,7 +1310,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.207.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.207.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.207.0
@@ -1278,7 +1369,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.206.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.206.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.206.0
@@ -1370,7 +1461,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.205.1 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.205.1">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.205.1
@@ -1400,7 +1491,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.205.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.205.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.205.0
@@ -1505,7 +1596,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.204.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.204.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.204.0
@@ -1566,7 +1657,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.203.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.203.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.203.0
@@ -1645,7 +1736,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.202.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.202.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.202.0
@@ -1692,7 +1783,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.201.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.201.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.201.0
@@ -1735,7 +1826,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.200.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.200.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.200.0
@@ -1799,7 +1890,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.199.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.199.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.199.0
@@ -1834,7 +1925,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.198.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.198.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.198.0
@@ -1869,7 +1960,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.197.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.197.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.197.0
@@ -1972,7 +2063,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.196.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.196.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.196.0
@@ -2037,7 +2128,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.195.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.195.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.195.0
@@ -2124,7 +2215,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.194.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.194.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.194.0
@@ -2242,7 +2333,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.193.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.193.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.193.0
@@ -2345,7 +2436,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.192.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.192.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.192.0
@@ -2407,7 +2498,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.191.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.191.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.191.0
@@ -2454,7 +2545,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.190.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.190.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.190.0
@@ -2518,7 +2609,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.189.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.189.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.189.0
@@ -2565,7 +2656,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.188.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.188.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.188.0
@@ -2594,7 +2685,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.187.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.187.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.187.0
@@ -2672,7 +2763,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.186.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.186.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.186.0
@@ -2784,7 +2875,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.185.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.185.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.185.0
@@ -2864,7 +2955,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.184.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.184.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.184.0
@@ -2933,7 +3024,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.183.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.183.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.183.0
@@ -2994,7 +3085,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.182.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.182.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.182.0
@@ -3048,7 +3139,7 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.181.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.181.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.181.0
@@ -3103,7 +3194,7 @@ GET  /api/v1/auth/passkeys                   list, rename, remove`} />
             </div>
 
             {/* v3.180.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.180.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.180.0
@@ -3154,7 +3245,7 @@ GET  /api/v1/auth/passkeys                   list, rename, remove`} />
             </div>
 
             {/* v3.179.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.179.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.179.0
@@ -3197,7 +3288,7 @@ GET  /api/v1/auth/passkeys                   list, rename, remove`} />
             </div>
 
             {/* v3.178.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.178.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.178.0
@@ -3261,7 +3352,7 @@ GET  /api/v1/auth/passkeys                   list, rename, remove`} />
             </div>
 
             {/* v3.177.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.177.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.177.0
@@ -3329,7 +3420,7 @@ GET  /api/v1/auth/passkeys                   list, rename, remove`} />
             </div>
 
             {/* v3.176.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.176.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.176.0
@@ -3383,7 +3474,7 @@ GET  /api/v1/auth/passkeys                   list, rename, remove`} />
             </div>
 
             {/* v3.175.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.175.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.175.0
@@ -3433,7 +3524,7 @@ import "@gritframework/upload/styles.css"; // optional
             </div>
 
             {/* v3.174.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.174.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.174.0
@@ -3481,7 +3572,7 @@ import "@gritframework/upload/styles.css"; // optional
             </div>
 
             {/* v3.173.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.173.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.173.0
@@ -3550,7 +3641,7 @@ export const uploader = createUploader({
             </div>
 
             {/* v3.172.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.172.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.172.0
@@ -3608,7 +3699,7 @@ AVIF                downgrades to JPEG     79.9 KB            7544ms`} />
             </div>
 
             {/* v3.171.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.171.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.171.0
@@ -3700,7 +3791,7 @@ AVIF                downgrades to JPEG     79.9 KB            7544ms`} />
             </div>
 
             {/* v3.170.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.170.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.170.0
@@ -3781,7 +3872,7 @@ AVIF                downgrades to JPEG     79.9 KB            7544ms`} />
             </div>
 
             {/* v3.169.1 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.169.1">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.169.1
@@ -3835,7 +3926,7 @@ explicitly to \`false\` to avoid hydration mismatches.
             </div>
 
             {/* v3.169.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.169.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.169.0
@@ -3900,7 +3991,7 @@ explicitly to \`false\` to avoid hydration mismatches.
             </div>
 
             {/* v3.168.1 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.168.1">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.168.1
@@ -3944,7 +4035,7 @@ explicitly to \`false\` to avoid hydration mismatches.
             </div>
 
             {/* v3.168.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.168.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.168.0
@@ -4010,7 +4101,7 @@ apps/api/internal/models and internal/models)`} />
             </div>
 
             {/* v3.167.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.167.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.167.0
@@ -4121,7 +4212,7 @@ apps/api/internal/models and internal/models)`} />
             </div>
 
             {/* v3.166.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.166.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.166.0
@@ -4187,7 +4278,7 @@ npx shadcn@latest add https://ui.gritframework.dev/r/ecommerce-product-grids-gri
             </div>
 
             {/* v3.165.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.165.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.165.0
@@ -4246,7 +4337,7 @@ from type 'Product': stock, category_id, active, created_at, updated_at`} />
             </div>
 
             {/* v3.164.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.164.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.164.0
@@ -4321,7 +4412,7 @@ export interface Category { ... }`} />
             </div>
 
             {/* v3.163.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.163.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.163.0
@@ -4399,7 +4490,7 @@ export interface Category { ... }`} />
             </div>
 
             {/* v3.162.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.162.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.162.0
@@ -4485,7 +4576,7 @@ constraint "fk_categories_children" (SQLSTATE 23503)`} />
             </div>
 
             {/* v3.161.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.161.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.161.0
@@ -4547,7 +4638,7 @@ constraint "fk_categories_children" (SQLSTATE 23503)`} />
             </div>
 
             {/* v3.160.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.160.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.160.0
@@ -4636,7 +4727,7 @@ constraint "fk_categories_children" (SQLSTATE 23503)`} />
             </div>
 
             {/* v3.159.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.159.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.159.0
@@ -4755,7 +4846,7 @@ GET /public/categories/tree          -> the nested menu, one query`} />
             </div>
 
             {/* v3.158.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.158.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.158.0
@@ -4848,7 +4939,7 @@ GET /public/products?archived_at=x    -> all 24 rows`} />
             </div>
 
             {/* v3.157.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.157.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.157.0
@@ -4934,7 +5025,7 @@ productHandler := &handlers.ProductHandler{   // the generator wrote this second
             </div>
 
             {/* v3.156.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.156.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.156.0
@@ -5013,7 +5104,7 @@ productHandler := &handlers.ProductHandler{   // the generator wrote this second
             </div>
 
             {/* v3.155.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.155.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.155.0
@@ -5091,7 +5182,7 @@ curl -X PUT .../api/v1/settings -d '{"values":{"cors.origins":"https://myshop.co
             </div>
 
             {/* v3.154.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.154.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.154.0
@@ -5172,7 +5263,7 @@ curl -X PUT .../api/v1/settings -d '{"values":{"cors.origins":"https://myshop.co
             </div>
 
             {/* v3.153.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.153.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.153.0
@@ -5273,7 +5364,7 @@ curl -X PUT .../api/v1/settings -d '{"values":{"cors.origins":"https://myshop.co
             </div>
 
             {/* v3.152.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.152.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.152.0
@@ -5355,7 +5446,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             </div>
 
             {/* v3.151.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.151.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.151.0
@@ -5446,7 +5537,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             </div>
 
             {/* v3.150.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.150.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.150.0
@@ -5527,7 +5618,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             </div>
 
             {/* v3.149.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.149.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.149.0
@@ -5632,7 +5723,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             </div>
 
             {/* v3.148.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.148.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.148.0
@@ -5703,7 +5794,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             </div>
 
             {/* v3.147.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.147.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.147.0
@@ -5767,7 +5858,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             </div>
 
             {/* v3.146.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.146.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.146.0
@@ -5827,7 +5918,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             </div>
 
             {/* v3.145.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.145.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.145.0
@@ -5874,7 +5965,7 @@ notify := settings.Bool(ctx, "notifications.email_enabled")`} />
             </div>
 
             {/* v3.144.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.144.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.144.0
@@ -5953,7 +6044,7 @@ paginate.Config{
             </div>
 
             {/* v3.143.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.143.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.143.0
@@ -6035,7 +6126,7 @@ paginate.Config{
             </div>
 
             {/* v3.142.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.142.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.142.0
@@ -6148,7 +6239,7 @@ bulkActions: [
             </div>
 
             {/* v3.141.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.141.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.141.0
@@ -6257,7 +6348,7 @@ bulkActions: [
             </div>
 
             {/* v3.140.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.140.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.140.0
@@ -6317,7 +6408,7 @@ export default custom;`}</code>
             </div>
 
             {/* v3.139.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.139.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.139.0
@@ -6387,7 +6478,7 @@ export default custom;`}</code>
             </div>
 
             {/* v3.138.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.138.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.138.0
@@ -6473,7 +6564,7 @@ export default function ProductsPage() {
             </div>
 
             {/* v3.137.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.137.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.137.0
@@ -6528,7 +6619,7 @@ export default function ProductsPage() {
             </div>
 
             {/* v3.134.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.134.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.134.0
@@ -6590,7 +6681,7 @@ commit`}</code>
             </div>
 
             {/* v3.133.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.133.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.133.0
@@ -6647,7 +6738,7 @@ commit`}</code>
             </div>
 
             {/* v3.132.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.132.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.132.0
@@ -6692,7 +6783,7 @@ commit`}</code>
             </div>
 
             {/* v3.131.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.131.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.131.0
@@ -6743,7 +6834,7 @@ commit`}</code>
             </div>
 
             {/* v3.130.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.130.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.130.0
@@ -6791,7 +6882,7 @@ commit`}</code>
             </div>
 
             {/* v3.129.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.129.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.129.0
@@ -6851,7 +6942,7 @@ commit`}</code>
             </div>
 
             {/* v3.128.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.128.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.128.0
@@ -6905,7 +6996,7 @@ commit`}</code>
             </div>
 
             {/* v3.127.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.127.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.127.0
@@ -6962,7 +7053,7 @@ commit`}</code>
             </div>
 
             {/* v3.126.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.126.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.126.0
@@ -7006,7 +7097,7 @@ commit`}</code>
             </div>
 
             {/* v3.125.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.125.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.125.0
@@ -7046,7 +7137,7 @@ commit`}</code>
             </div>
 
             {/* v3.124.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.124.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.124.0
@@ -7082,7 +7173,7 @@ commit`}</code>
             </div>
 
             {/* v3.123.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.123.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.123.0
@@ -7132,7 +7223,7 @@ commit`}</code>
             </div>
 
             {/* v3.122.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.122.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.122.0
@@ -7175,7 +7266,7 @@ commit`}</code>
             </div>
 
             {/* v3.121.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.121.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.121.0
@@ -7226,7 +7317,7 @@ commit`}</code>
             </div>
 
             {/* v3.120.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.120.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.120.0
@@ -7271,7 +7362,7 @@ commit`}</code>
             </div>
 
             {/* v3.119.1 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.119.1">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.119.1
@@ -7297,7 +7388,7 @@ commit`}</code>
             </div>
 
             {/* v3.119.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.119.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.119.0
@@ -7350,7 +7441,7 @@ commit`}</code>
             </div>
 
             {/* v3.118.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.118.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.118.0
@@ -7394,7 +7485,7 @@ commit`}</code>
             </div>
 
             {/* v3.117.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.117.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.117.0
@@ -7444,7 +7535,7 @@ commit`}</code>
             </div>
 
             {/* v3.116.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.116.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.116.0
@@ -7495,7 +7586,7 @@ commit`}</code>
             </div>
 
             {/* v3.115.1 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.115.1">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.115.1
@@ -7543,7 +7634,7 @@ commit`}</code>
             </div>
 
             {/* v3.115.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.115.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.115.0
@@ -7606,7 +7697,7 @@ commit`}</code>
             </div>
 
             {/* v3.114.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.114.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.114.0
@@ -7655,7 +7746,7 @@ commit`}</code>
             </div>
 
             {/* v3.113.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.113.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.113.0
@@ -7701,7 +7792,7 @@ commit`}</code>
             </div>
 
             {/* v3.112.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.112.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.112.0
@@ -7770,7 +7861,7 @@ commit`}</code>
             </div>
 
             {/* v3.111.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.111.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.111.0
@@ -7827,7 +7918,7 @@ commit`}</code>
             </div>
 
             {/* v3.110.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.110.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.110.0
@@ -7891,7 +7982,7 @@ commit`}</code>
             </div>
 
             {/* v3.109.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.109.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.109.0
@@ -7939,7 +8030,7 @@ commit`}</code>
             </div>
 
             {/* v3.108.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.108.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.108.0
@@ -8009,7 +8100,7 @@ commit`}</code>
             </div>
 
             {/* v3.107.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.107.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.107.0
@@ -8062,7 +8153,7 @@ commit`}</code>
             </div>
 
             {/* v3.106.1 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.106.1">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.106.1
@@ -8114,7 +8205,7 @@ commit`}</code>
             </div>
 
             {/* v3.106.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.106.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.106.0
@@ -8191,7 +8282,7 @@ commit`}</code>
             </div>
 
             {/* v3.105.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.105.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.105.0
@@ -8242,7 +8333,7 @@ commit`}</code>
             </div>
 
             {/* v3.104.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.104.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.104.0
@@ -8310,7 +8401,7 @@ commit`}</code>
             </div>
 
             {/* v3.103.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.103.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.103.0
@@ -8348,7 +8439,7 @@ commit`}</code>
             </div>
 
             {/* v3.102.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.102.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.102.0
@@ -8385,7 +8476,7 @@ commit`}</code>
             </div>
 
             {/* v3.101.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.101.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.101.0
@@ -8424,7 +8515,7 @@ commit`}</code>
             </div>
 
             {/* v3.100.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.100.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.100.0
@@ -8472,7 +8563,7 @@ commit`}</code>
             </div>
 
             {/* v3.99.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.99.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.99.0
@@ -8505,7 +8596,7 @@ commit`}</code>
             </div>
 
             {/* v3.98.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.98.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.98.0
@@ -8547,7 +8638,7 @@ commit`}</code>
             </div>
 
             {/* v3.97.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.97.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.97.0
@@ -8596,7 +8687,7 @@ commit`}</code>
             </div>
 
             {/* v3.96.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.96.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.96.0
@@ -8632,7 +8723,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.95.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.95.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.95.0
@@ -8674,7 +8765,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.94.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.94.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.94.0
@@ -8715,7 +8806,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.93.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.93.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.93.0
@@ -8744,7 +8835,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.92.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.92.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.92.0
@@ -8789,7 +8880,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.91.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.91.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.91.0
@@ -8837,7 +8928,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.90.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.90.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.90.0
@@ -8884,7 +8975,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.89.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.89.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.89.0
@@ -8937,7 +9028,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.88.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.88.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.88.0
@@ -9009,7 +9100,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.87.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.87.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.87.0
@@ -9077,7 +9168,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.86.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.86.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.86.0
@@ -9141,7 +9232,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.85.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.85.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.85.0
@@ -9179,7 +9270,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.84.1 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.84.1">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.84.1
@@ -9216,7 +9307,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.84.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.84.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.84.0
@@ -9261,7 +9352,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.83.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.83.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.83.0
@@ -9324,7 +9415,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.82.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.82.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.82.0
@@ -9370,7 +9461,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.81.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.81.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.81.0
@@ -9413,7 +9504,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.80.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.80.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.80.0
@@ -9451,7 +9542,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.79.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.79.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.79.0
@@ -9516,7 +9607,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.78.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.78.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.78.0
@@ -9554,7 +9645,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.77.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.77.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.77.0
@@ -9607,7 +9698,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.76.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.76.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.76.0
@@ -9642,7 +9733,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.75.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.75.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.75.0
@@ -9692,7 +9783,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.74.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.74.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.74.0
@@ -9736,7 +9827,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.73.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.73.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.73.0
@@ -9775,7 +9866,7 @@ grit g field Invoice notes:text`}</code></pre>
             </div>
 
             {/* v3.72.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.72.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.72.0
@@ -9831,7 +9922,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.71.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.71.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.71.0
@@ -9866,7 +9957,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.70.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.70.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.70.0
@@ -9905,7 +9996,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.69.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.69.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.69.0
@@ -9943,7 +10034,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.68.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.68.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.68.0
@@ -9988,7 +10079,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.67.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.67.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.67.0
@@ -10019,7 +10110,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.66.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.66.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.66.0
@@ -10073,7 +10164,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.65.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.65.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.65.0
@@ -10120,7 +10211,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.64.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.64.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.64.0
@@ -10166,7 +10257,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.63.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.63.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.63.0
@@ -10222,7 +10313,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.62.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.62.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.62.0
@@ -10278,7 +10369,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.61.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.61.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.61.0
@@ -10318,7 +10409,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.60.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.60.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.60.0
@@ -10361,7 +10452,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.59.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.59.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.59.0
@@ -10394,7 +10485,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.58.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.58.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.58.0
@@ -10431,7 +10522,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.57.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.57.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.57.0
@@ -10475,7 +10566,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.56.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.56.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.56.0
@@ -10513,7 +10604,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.55.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.55.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.55.0
@@ -10545,7 +10636,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.54.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.54.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.54.0
@@ -10600,7 +10691,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.53.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.53.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.53.0
@@ -10640,7 +10731,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.52.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.52.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.52.0
@@ -10696,7 +10787,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.51.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.51.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.51.0
@@ -10730,7 +10821,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.50.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.50.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.50.0
@@ -10786,7 +10877,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.49.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.49.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.49.0
@@ -10823,7 +10914,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.48.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.48.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.48.0
@@ -10856,7 +10947,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.47.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.47.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.47.0
@@ -10892,7 +10983,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.46.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.46.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.46.0
@@ -10925,7 +11016,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.45.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.45.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.45.0
@@ -10965,7 +11056,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.44.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.44.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.44.0
@@ -11000,7 +11091,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.43.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.43.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.43.0
@@ -11034,7 +11125,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.42.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.42.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.42.0
@@ -11072,7 +11163,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.41.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.41.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.41.0
@@ -11115,7 +11206,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.40.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.40.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.40.0
@@ -11158,7 +11249,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.39.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.39.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.39.0
@@ -11204,7 +11295,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.38.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.38.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.38.0
@@ -11249,7 +11340,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.37.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.37.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.37.0
@@ -11291,7 +11382,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.36.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.36.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.36.0
@@ -11341,7 +11432,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.35.4 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.35.4">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.35.4
@@ -11377,7 +11468,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.35.3 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.35.3">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.35.3
@@ -11414,7 +11505,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.35.2 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.35.2">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.35.2
@@ -11461,7 +11552,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.35.1 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.35.1">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.35.1
@@ -11498,7 +11589,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.35.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.35.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.35.0
@@ -11549,7 +11640,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.34.4 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.34.4">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.34.4
@@ -11594,7 +11685,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.34.3 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.34.3">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.34.3
@@ -11668,7 +11759,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.34.2 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.34.2">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.34.2
@@ -11716,7 +11807,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.34.1 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.34.1">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.34.1
@@ -11771,7 +11862,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.34.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.34.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.34.0
@@ -11795,7 +11886,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.33.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.33.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.33.0
@@ -11823,7 +11914,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.32.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.32.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.32.0
@@ -11879,7 +11970,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.31.83 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.83">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.83
@@ -11903,7 +11994,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.31.82 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.82">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.82
@@ -11931,7 +12022,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.31.81 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.81">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.81
@@ -11952,7 +12043,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.31.80 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.80">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.80
@@ -11975,7 +12066,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.31.79 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.79">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.79
@@ -12017,7 +12108,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.31.78 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.78">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.78
@@ -12046,7 +12137,7 @@ grit plugin remove multitenant`}
             </div>
 
             {/* v3.31.77 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.77">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.77
@@ -12096,7 +12187,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.76 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.76">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.76
@@ -12120,7 +12211,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.75 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.75">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.75
@@ -12143,7 +12234,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.74 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.74">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.74
@@ -12167,7 +12258,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.73 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.73">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.73
@@ -12195,7 +12286,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.72 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.72">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.72
@@ -12225,7 +12316,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.71 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.71">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-danger/15 px-3 py-1 text-sm font-semibold text-danger">
                   v3.31.71 · critical fix
@@ -12260,7 +12351,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.70 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.70">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.70
@@ -12290,7 +12381,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.69 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.69">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.69
@@ -12325,7 +12416,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.68 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.68">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.68
@@ -12365,7 +12456,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.67 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.67">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.67
@@ -12404,7 +12495,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.66 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.66">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.66
@@ -12430,7 +12521,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.65 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.65">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.65
@@ -12454,7 +12545,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.64 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.64">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.64
@@ -12481,7 +12572,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.63 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.63">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.63
@@ -12508,7 +12599,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.62 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.62">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.62
@@ -12538,7 +12629,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.61 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.61">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.61
@@ -12565,7 +12656,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.60 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.60">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.60
@@ -12591,7 +12682,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.59 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.59">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.59
@@ -12628,7 +12719,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.58 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.58">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.58
@@ -12659,7 +12750,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.57 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.57">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.57
@@ -12688,7 +12779,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.56 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.56">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.56
@@ -12739,7 +12830,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.55 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.55">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.55
@@ -12775,7 +12866,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.54 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.54">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.54
@@ -12807,7 +12898,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.53 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.53">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.53
@@ -12846,7 +12937,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.52 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.52">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.52
@@ -12877,7 +12968,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.51 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.51">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.51
@@ -12906,7 +12997,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.50 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.50">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.50
@@ -13028,7 +13119,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.49 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.49">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.49
@@ -13149,7 +13240,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.48 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.48">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.48
@@ -13249,7 +13340,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.47 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.47">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.47
@@ -13414,7 +13505,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.46 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.46">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.46
@@ -13527,7 +13618,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.45 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.45">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.45
@@ -13630,7 +13721,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.44 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.44">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.44
@@ -13723,7 +13814,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.43 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.43">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.43
@@ -13840,7 +13931,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.42 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.42">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.42
@@ -13989,7 +14080,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.41 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.41">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.41
@@ -14082,7 +14173,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.40 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.40">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.40
@@ -14216,7 +14307,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.39 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.39">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.39
@@ -14339,7 +14430,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.38 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.38">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.38
@@ -14431,7 +14522,7 @@ grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></
             </div>
 
             {/* v3.31.37 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.37">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.37
@@ -14558,7 +14649,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             </div>
 
             {/* v3.31.36 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.36">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.36
@@ -14645,7 +14736,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             </div>
 
             {/* v3.31.35 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.35">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.35
@@ -14759,7 +14850,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             </div>
 
             {/* v3.31.34 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.34">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.34
@@ -14867,7 +14958,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             </div>
 
             {/* v3.31.33 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.33">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.33
@@ -14996,7 +15087,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             </div>
 
             {/* v3.31.32 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.32">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.32
@@ -15084,7 +15175,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             </div>
 
             {/* v3.31.31 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.31">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.31
@@ -15217,7 +15308,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             </div>
 
             {/* v3.31.30 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.30">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.30
@@ -15337,7 +15428,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             </div>
 
             {/* v3.31.29 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.29">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.29
@@ -15396,7 +15487,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             </div>
 
             {/* v3.31.28 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.28">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.28
@@ -15445,7 +15536,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             </div>
 
             {/* v3.31.27 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.27">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.27
@@ -15507,7 +15598,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             </div>
 
             {/* v3.31.14 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.14">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.14
@@ -15584,7 +15675,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             </div>
 
             {/* v3.31.26 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.26">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.26
@@ -15667,7 +15758,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             </div>
 
             {/* v3.31.25 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.25">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.25
@@ -15755,7 +15846,7 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
             </div>
 
             {/* v3.31.24 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.24">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.24
@@ -15833,7 +15924,7 @@ grit expose form Contact \\
             </div>
 
             {/* v3.31.23 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.23">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.23
@@ -15898,7 +15989,7 @@ grit expose form Contact \\
             </div>
 
             {/* v3.31.22 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.22">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.22
@@ -15993,7 +16084,7 @@ grit expose form Contact \\
             </div>
 
             {/* v3.31.21 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.21">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.21
@@ -16096,7 +16187,7 @@ grit expose table Contact --to apps/web/app/contacts/page.tsx`}</code></pre>
             </div>
 
             {/* v3.31.20 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.20">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.20
@@ -16204,7 +16295,7 @@ grit expose table Contact --to apps/web/app/contacts/page.tsx`}</code></pre>
             </div>
 
             {/* v3.31.19 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.19">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.19
@@ -16280,7 +16371,7 @@ grit expose table Contact --to apps/web/app/contacts/page.tsx`}</code></pre>
             </div>
 
             {/* v3.31.18 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.18">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.18
@@ -16368,7 +16459,7 @@ grit expose table Contact --to apps/web/app/contacts/page.tsx`}</code></pre>
             </div>
 
             {/* v3.31.17 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.17">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.17
@@ -16446,7 +16537,7 @@ grit expose table Contact --to apps/web/app/contacts/page.tsx`}</code></pre>
             </div>
 
             {/* v3.31.16 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.16">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.16
@@ -16531,7 +16622,7 @@ form: {
             </div>
 
             {/* v3.31.15 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.15">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.15
@@ -16645,7 +16736,7 @@ form: {
             </div>
 
             {/* v3.31.13 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.13">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.13
@@ -16678,7 +16769,7 @@ form: {
             </div>
 
             {/* v3.31.12 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.12
@@ -16705,7 +16796,7 @@ form: {
             </div>
 
             {/* v3.31.11 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.11">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.11
@@ -16733,7 +16824,7 @@ form: {
             </div>
 
             {/* v3.31.10 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.31.10">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.31.10
@@ -16760,7 +16851,7 @@ form: {
             </div>
 
             {/* v3.27.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.27.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.27.0
@@ -16887,7 +16978,7 @@ form: {
             </div>
 
             {/* v3.26.5 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.26.5">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.26.5
@@ -16981,7 +17072,7 @@ form: {
             </div>
 
             {/* v3.26.4 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.26.4">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.26.4
@@ -17035,7 +17126,7 @@ form: {
             </div>
 
             {/* v3.26.3 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.26.3">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.26.3
@@ -17102,7 +17193,7 @@ form: {
             </div>
 
             {/* v3.26.2 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.26.2">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.26.2
@@ -17167,7 +17258,7 @@ form: {
             </div>
 
             {/* v3.26.1 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.26.1">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.26.1
@@ -17237,7 +17328,7 @@ form: {
             </div>
 
             {/* v3.26.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.26.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.26.0
@@ -17320,7 +17411,7 @@ form: {
             </div>
 
             {/* v3.25.2 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.25.2">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.25.2
@@ -17382,7 +17473,7 @@ form: {
             </div>
 
             {/* v3.25.1 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.25.1">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.25.1
@@ -17430,7 +17521,7 @@ form: {
             </div>
 
             {/* v3.25.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.25.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.25.0
@@ -17493,7 +17584,7 @@ grit update`}</code></pre>
             </div>
 
             {/* v3.24.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.24.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.24.0
@@ -17580,7 +17671,7 @@ grit update`}</code></pre>
             </div>
 
             {/* v3.23.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.23.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.23.0
@@ -17817,7 +17908,7 @@ grit update`}</code></pre>
             </div>
 
             {/* v3.22.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.22.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.22.0
@@ -17939,7 +18030,7 @@ grit update`}</code></pre>
             </div>
 
             {/* v3.21.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.21.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.21.0
@@ -18054,7 +18145,7 @@ case "variant_b": /* alternate new flow */
             </div>
 
             {/* v3.20.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.20.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.20.0
@@ -18177,7 +18268,7 @@ func init() {
             </div>
 
             {/* v3.19.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.19.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.19.0
@@ -18288,7 +18379,7 @@ func init() {
             </div>
 
             {/* v3.18.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.18.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.18.0
@@ -18375,7 +18466,7 @@ func init() {
             </div>
 
             {/* v3.17.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.17.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.17.0
@@ -18483,7 +18574,7 @@ Migration done — 1 created, 1 altered (+2 column), 6 unchanged.
             </div>
 
             {/* v3.16.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.16.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.16.0
@@ -18589,7 +18680,7 @@ Migration done — 1 created, 1 altered (+2 column), 6 unchanged.
             </div>
 
             {/* v3.15.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.15.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.15.0
@@ -18712,7 +18803,7 @@ Migration done — 1 created, 1 altered (+2 column), 6 unchanged.
             </div>
 
             {/* v3.14.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.14.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.14.0
@@ -18867,7 +18958,7 @@ Migration done — 1 created, 1 altered (+2 column), 6 unchanged.
             </div>
 
             {/* v3.13.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.13.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.13.0
@@ -18950,7 +19041,7 @@ grit generate sequence Receipt --reset never`}</code></pre>
             </div>
 
             {/* v3.12.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.12.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.12.0
@@ -19063,7 +19154,7 @@ grit generate sequence Receipt --reset never`}</code></pre>
             </div>
 
             {/* v3.11.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.11.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.11.0
@@ -19150,7 +19241,7 @@ grit generate sequence Receipt --reset never`}</code></pre>
             </div>
 
             {/* v3.10.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.10.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.10.0
@@ -19234,7 +19325,7 @@ grit generate sequence Receipt --reset never`}</code></pre>
             </div>
 
             {/* v3.9.2 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.9.2">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.9.2
@@ -19294,7 +19385,7 @@ grit generate sequence Receipt --reset never`}</code></pre>
             </div>
 
             {/* v3.9.1 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.9.1">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.9.1
@@ -19381,7 +19472,7 @@ grit generate sequence Receipt --reset never`}</code></pre>
             </div>
 
             {/* v3.9.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.9.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.9.0
@@ -19465,7 +19556,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v3.8.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.8.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.8.0
@@ -19528,7 +19619,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v3.7.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.7.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.7.0
@@ -19603,7 +19694,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v3.6.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.6.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v3.6.0
@@ -19654,7 +19745,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v3.5.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.5.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v3.5.0
@@ -19708,7 +19799,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v3.4.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.4.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v3.4.0
@@ -19743,7 +19834,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v3.3.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.3.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v3.3.0
@@ -19782,7 +19873,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v3.2.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.2.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v3.2.0
@@ -19818,7 +19909,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v3.1.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.1.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v3.1.0
@@ -19849,7 +19940,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v3.0.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v3.0.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v3.0.0
@@ -19894,7 +19985,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v2.9.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v2.9.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v2.9.0
@@ -19942,7 +20033,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v2.8.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v2.8.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v2.8.0
@@ -19980,7 +20071,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v2.7.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v2.7.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v2.7.0
@@ -20027,7 +20118,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v2.6.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v2.6.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v2.6.0
@@ -20048,7 +20139,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v2.5.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v2.5.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v2.5.0
@@ -20086,7 +20177,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v2.4.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v2.4.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
                   v2.4.0
@@ -20134,7 +20225,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v2.2.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v2.2.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v2.2.0
@@ -20163,7 +20254,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v2.1.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v2.1.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v2.1.0
@@ -20218,7 +20309,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v2.0.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v2.0.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v2.0.0
@@ -20291,7 +20382,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v1.4.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v1.4.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v1.4.0
@@ -20356,7 +20447,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v1.3.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v1.3.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v1.3.0
@@ -20415,7 +20506,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v1.1.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v1.1.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v1.1.0
@@ -20500,7 +20591,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v1.0.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v1.0.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v1.0.0
@@ -20541,7 +20632,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v0.19.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v0.19.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v0.19.0
@@ -20584,7 +20675,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v0.18.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v0.18.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v0.18.0
@@ -20617,7 +20708,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v0.17.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v0.17.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v0.17.0
@@ -20665,7 +20756,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v0.16.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v0.16.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v0.16.0
@@ -20703,7 +20794,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v0.15.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v0.15.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v0.15.0
@@ -20738,7 +20829,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v0.14.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v0.14.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v0.14.0
@@ -20816,7 +20907,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v0.12.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v0.12.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v0.12.0
@@ -20846,7 +20937,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v0.11.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v0.11.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v0.11.0
@@ -20878,7 +20969,7 @@ grit new myapp --api --desktop
             </div>
 
             {/* v0.10.0 */}
-            <div className="mb-12">
+            <div className="mb-12" id="v0.10.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v0.10.0
