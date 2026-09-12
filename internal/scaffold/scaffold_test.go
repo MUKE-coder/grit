@@ -480,7 +480,11 @@ func TestSingleAppFrontendFiles(t *testing.T) {
 		filepath.Join(root, "frontend", "index.html"),
 		filepath.Join(root, "frontend", "src", "main.tsx"),
 		filepath.Join(root, "frontend", "src", "routes", "__root.tsx"),
-		filepath.Join(root, "frontend", "src", "routes", "index.tsx"),
+		// The landing page lives in the public section now: routes/_site wraps it
+		// in the navbar and footer, so the panel and the customer area can have
+		// layouts of their own.
+		filepath.Join(root, "frontend", "src", "routes", "_site.tsx"),
+		filepath.Join(root, "frontend", "src", "routes", "_site", "index.tsx"),
 	} {
 		if _, err := os.Stat(f); err != nil {
 			t.Errorf("expected file %s was not created: %v", f, err)

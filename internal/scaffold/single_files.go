@@ -121,15 +121,19 @@ func singleFrontendOwnFiles(root string, opts Options) map[string]string {
 		filepath.Join(feRoot, "index.html"):     webTanStackIndexHTML(opts),
 		// .cjs (not .js) because package.json sets "type": "module" and PostCSS
 		// config still uses CommonJS module.exports.
-		filepath.Join(feRoot, "postcss.config.cjs"):                 postCSSConfigFor(feRoot),
-		filepath.Join(feRoot, "tsconfig.json"):                      singleFrontendTSConfig(),
-		filepath.Join(feRoot, "src", "main.tsx"):                    webTanStackMain(),
-		filepath.Join(feRoot, "src", "vite-env.d.ts"):               singleViteEnvTypes(),
-		filepath.Join(feRoot, "src", "globals.css"):                 webGlobalCSS(),
-		filepath.Join(feRoot, "src", "routes", "__root.tsx"):        webTanStackRootRoute(opts),
-		filepath.Join(feRoot, "src", "routes", "index.tsx"):         webTanStackIndexRoute(opts),
-		filepath.Join(feRoot, "src", "routes", "blog", "index.tsx"): webTanStackBlogListRoute(),
-		filepath.Join(feRoot, "src", "routes", "blog", "$slug.tsx"): webTanStackBlogDetailRoute(),
+		filepath.Join(feRoot, "postcss.config.cjs"):          postCSSConfigFor(feRoot),
+		filepath.Join(feRoot, "tsconfig.json"):               singleFrontendTSConfig(),
+		filepath.Join(feRoot, "src", "main.tsx"):             webTanStackMain(),
+		filepath.Join(feRoot, "src", "vite-env.d.ts"):        singleViteEnvTypes(),
+		filepath.Join(feRoot, "src", "globals.css"):          webGlobalCSS(),
+		filepath.Join(feRoot, "src", "routes", "__root.tsx"): webTanStackRootRoute(opts),
+		// The public site, as a pathless layout route: the URLs are still / and
+		// /blog, and the navbar and footer come from _site.tsx rather than from
+		// the root deciding which paths deserve them.
+		filepath.Join(feRoot, "src", "routes", "_site.tsx"):                  singleSiteLayoutRoute(),
+		filepath.Join(feRoot, "src", "routes", "_site", "index.tsx"):         siteRouteID(webTanStackIndexRoute(opts)),
+		filepath.Join(feRoot, "src", "routes", "_site", "blog", "index.tsx"): siteRouteID(webTanStackBlogListRoute()),
+		filepath.Join(feRoot, "src", "routes", "_site", "blog", "$slug.tsx"): siteRouteID(webTanStackBlogDetailRoute()),
 		// Vite-flavoured navbar/footer (use TanStack Router's <Link> + useRouterState),
 		// not the Next.js variants from web_files.go which import next/link.
 		filepath.Join(feRoot, "src", "components", "navbar.tsx"):    singleViteNavbar(opts),
@@ -709,4 +713,49 @@ Thumbs.db
 # Air
 tmp/
 `
+}
+
+// singleSiteLayoutRoute is the public site's layout: the navbar and the footer.
+//
+// Pathless, so it adds nothing to the URL. Its children are the landing page and
+// the blog; the panel, the auth pages and the customer area are siblings with
+// layouts of their own, which is why none of them can end up wearing this one.
+func singleSiteLayoutRoute() string {
+	return `import { createFileRoute, Outlet } from '@tanstack/react-router'
+
+import { Navbar } from '@/components/navbar'
+import { Footer } from '@/components/footer'
+
+export const Route = createFileRoute('/_site')({
+  component: SiteLayout,
+})
+
+function SiteLayout() {
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <Navbar />
+      <main className="flex-1">
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  )
+}
+`
+}
+
+// siteRouteID moves a route file into the _site section.
+//
+// TanStack checks that a file route's id equals its path, so a page that moves
+// into a layout route has to say so: '/' becomes '/_site/', '/blog/$slug' becomes
+// '/_site/blog/$slug'. The pages themselves are unchanged, which is the point:
+// the same templates serve the monorepo web app, where there is no _site.
+func siteRouteID(content string) string {
+	return routeIDPattern.ReplaceAllStringFunc(content, func(match string) string {
+		id := routeIDPattern.FindStringSubmatch(match)[1]
+		if strings.HasPrefix(id, "/_site") {
+			return match
+		}
+		return "createFileRoute('/_site" + id + "')"
+	})
 }

@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 7 to 13, 2026",
-    count: 46,
+    count: 47,
     entries: [
+      { version: "3.238.0", title: "The single gets the sign-in pages its auth library never had" },
       { version: "3.237.0", title: "A web app serves three kinds of page, and now has three layouts" },
       { version: "3.236.0", title: "A single gets the admin panel too, inside its SPA" },
       { version: "3.235.0", title: "A double gets the admin panel, at /admin" },

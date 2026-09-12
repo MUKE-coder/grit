@@ -66,6 +66,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.238.0 */}
+            <div className="mb-12" id="v3.238.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.238.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The single gets the sign-in pages its auth library never had</h3>
+                <p>
+                  A single project&apos;s SPA has shipped <code>lib/auth.ts</code> since it
+                  existed: login, register, refresh, logout, the two-factor challenge, and a
+                  session-expiry monitor watching a session nothing could start. There was no
+                  sign-in screen. <code>grit add web-auth</code> writes those screens for a
+                  Next.js web app and refused a single outright, because it looked for{' '}
+                  <code>apps/web</code> and found a binary.
+                </p>
+                <p>
+                  It writes them now, in the dialect that app speaks: <code>/login</code>,{' '}
+                  <code>/register</code>, password reset, and the customer area at{' '}
+                  <code>/account</code> behind a route guard that turns away a visitor with no
+                  token before a screen renders. Same dashboard shape as the two-app and
+                  three-app projects got in v3.237.0, same account overview and profile form,
+                  and the navbar gains the account menu.
+                </p>
+                <p>
+                  The SPA is four sections now, and the root route is none of them: it renders
+                  an outlet and nothing else. <code>routes/_site</code> draws the navbar and
+                  the footer, <code>routes/admin</code> the panel&apos;s sidebar,{' '}
+                  <code>routes/_auth</code> a full-bleed card and <code>routes/account</code>{' '}
+                  the customer shell. The names beginning with an underscore are pathless
+                  layout routes, TanStack&apos;s answer to a route group, so not one URL
+                  changed. The root used to decide by asking whether the path started with{' '}
+                  <code>/admin</code>, which is the hand-kept list the Next.js app stopped
+                  using yesterday, and it was two entries away from being wrong again.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Verified on a scaffolded single: 2,920 modules built with no type errors, a
+                  customer registers and lands on the account dashboard, the profile form saves
+                  (200 on <code>PUT /api/v1/profile</code>), signing out and returning to{' '}
+                  <code>/account</code> lands on <code>/login</code>, the landing page keeps its
+                  chrome and the panel keeps its own. <code>grit upgrade</code> moves an
+                  existing SPA&apos;s pages into the section, rewriting the id inside each one,
+                  and that project builds green too.
+                </p>
+              </div>
+            </div>
+
             {/* v3.237.0 */}
             <div className="mb-12" id="v3.237.0">
               <div className="flex items-center gap-3 mb-4">
