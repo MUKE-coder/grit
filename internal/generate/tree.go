@@ -574,6 +574,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"%[2]s/internal/respond"
 	"%[2]s/internal/services"
 )
 
@@ -593,9 +594,7 @@ func New%[1]sTreeHandler(db *gorm.DB) *%[1]sTreeHandler {
 func (h *%[1]sTreeHandler) GetTree(c *gin.Context) {
 	nodes, err := h.Tree.Tree(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to load the tree",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Failed to load the tree")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": nodes})
@@ -605,9 +604,7 @@ func (h *%[1]sTreeHandler) GetTree(c *gin.Context) {
 func (h *%[1]sTreeHandler) GetBreadcrumbs(c *gin.Context) {
 	rows, err := h.Tree.Breadcrumbs(c.Request.Context(), c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{
-			"code": "NOT_FOUND", "message": err.Error(),
-		}})
+		respond.Fail(c, respond.CodeNotFound, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": rows})
@@ -624,9 +621,7 @@ func (h *%[1]sTreeHandler) Move(c *gin.Context) {
 		Position int     `+"`"+`json:"position"`+"`"+`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
-			"code": "VALIDATION_ERROR", "message": err.Error(),
-		}})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -634,9 +629,7 @@ func (h *%[1]sTreeHandler) Move(c *gin.Context) {
 	if err := h.Tree.Move(c.Request.Context(), c.Param("id"), req.ParentID, req.Position); err != nil {
 		// A refused move is the caller's mistake, not a server fault: it is
 		// almost always an attempt to drop a node inside its own subtree.
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
-			"code": "INVALID_MOVE", "message": err.Error(),
-		}})
+		respond.Fail(c, respond.CodeInvalidMove, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Moved"})
@@ -649,9 +642,7 @@ func (h *%[1]sTreeHandler) Move(c *gin.Context) {
 // Also the repair for a bulk import that went around the hooks.
 func (h *%[1]sTreeHandler) RebuildPaths(c *gin.Context) {
 	if err := h.Tree.RebuildPaths(c.Request.Context()); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": err.Error(),
-		}})
+		respond.Fail(c, respond.CodeInternalError, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Paths rebuilt"})
@@ -665,15 +656,11 @@ func (h *%[1]sTreeHandler) Reorder(c *gin.Context) {
 		IDs      []string `+"`"+`json:"ids" binding:"required"`+"`"+`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
-			"code": "VALIDATION_ERROR", "message": err.Error(),
-		}})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 	if err := h.Tree.Reorder(c.Request.Context(), req.ParentID, req.IDs); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to reorder",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Failed to reorder")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Reordered"})

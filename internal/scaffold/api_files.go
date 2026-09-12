@@ -58,14 +58,20 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "activity_read_test.go"):    apiActivityReadTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "activity.go"):                apiActivityHandlerGo(),
 		filepath.Join(apiRoot, "internal", "respond", "respond.go"):                  apiRespondGo(),
-		filepath.Join(apiRoot, "internal", "audit", "audit.go"):                      apiAuditGo(),
-		filepath.Join(apiRoot, "internal", "audit", "chain_test.go"):                 apiAuditChainTestGo(),
-		filepath.Join(apiRoot, "internal", "cluster", "cluster.go"):                  apiClusterGo(),
-		filepath.Join(apiRoot, "internal", "cluster", "cluster_test.go"):             apiClusterTestGo(),
-		filepath.Join(apiRoot, "internal", "concurrency", "concurrency.go"):          apiConcurrencyGo(),
-		filepath.Join(apiRoot, "internal", "concurrency", "concurrency_test.go"):     apiConcurrencyTestGo(),
-		filepath.Join(apiRoot, "internal", "webhooks", "verifiers.go"):               apiWebhooksVerifiersGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "flags.go"):                   apiFlagsHandlerGo(),
+		// The error catalogue, generated: the typed codes and the status each one
+		// always carries. Here as well as in writeRespondFiles, because that one
+		// runs on upgrade and this map is what a new project gets: generated
+		// handlers call respond.Fail, so a project with only half of this pair
+		// does not compile. Which is how this was found.
+		filepath.Join(apiRoot, "internal", "respond", "codes.go"):                apiRespondCodesGo(),
+		filepath.Join(apiRoot, "internal", "audit", "audit.go"):                  apiAuditGo(),
+		filepath.Join(apiRoot, "internal", "audit", "chain_test.go"):             apiAuditChainTestGo(),
+		filepath.Join(apiRoot, "internal", "cluster", "cluster.go"):              apiClusterGo(),
+		filepath.Join(apiRoot, "internal", "cluster", "cluster_test.go"):         apiClusterTestGo(),
+		filepath.Join(apiRoot, "internal", "concurrency", "concurrency.go"):      apiConcurrencyGo(),
+		filepath.Join(apiRoot, "internal", "concurrency", "concurrency_test.go"): apiConcurrencyTestGo(),
+		filepath.Join(apiRoot, "internal", "webhooks", "verifiers.go"):           apiWebhooksVerifiersGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "flags.go"):               apiFlagsHandlerGo(),
 
 		// v3.30 — semantic UserActivity log + ticket system
 		filepath.Join(apiRoot, "internal", "models", "user_activity.go"): userActivityModelGo(),

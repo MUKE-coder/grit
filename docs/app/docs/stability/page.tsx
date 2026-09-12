@@ -157,6 +157,17 @@ const rows: Row[] = [
     yours: 'Start the relay. grit upgrade wires it for projects that predate it.',
   },
   {
+    area: 'Error responses',
+    status: 'new',
+    guaranteed:
+      'Every error is the same envelope, each code is documented with what it means and what a client should do, and a code always arrives with the same status. The typed codes in Go and the union type in TypeScript are generated from one catalogue, so they cannot disagree.',
+    proof: 'internal/errorcodes walks every template: a code that is not catalogued, or that is returned with a status other than its own, fails the build',
+    yours:
+      'Codes your own handlers invent are yours to document. respond.Rule covers a business rule without adding one.',
+    history:
+      'Shipped in v3.232.0, which reconciled 31 sites. VALIDATION_ERROR was 422 in thirty-eight handlers and 400 in twenty-five, INVALID_TOKEN was both 401 and 400, and an upload that did not exist answered 400.',
+  },
+  {
     area: 'Migrations and rollback',
     status: 'new',
     guaranteed:
@@ -220,6 +231,10 @@ const testing: { label: string; detail: string }[] = [
   {
     label: '57 live checks on Postgres 15, 16 and 17',
     detail: 'CI scaffolds a project, generates the resource shapes past bugs lived in, migrates, starts the server and drives it over HTTP, reading Postgres directly where the database is the only witness.',
+  },
+  {
+    label: '105 error codes, one status each, checked',
+    detail: 'every code a handler returns is resolved against the catalogue, and a code returned with a status other than its own fails the build. That test is why the statuses are consistent: VALIDATION_ERROR was 422 in thirty-eight handlers and 400 in twenty-five.',
   },
   {
     label: 'Every documented command, checked against the CLI',

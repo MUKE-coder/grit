@@ -216,32 +216,54 @@ func (g *Generator) injectAll(names Names) error {
 		}
 
 		base := "/api/" + apiVersion + "/" + names.Plural
+
+		// Which errors each route declares.
+		//
+		// A reader of the reference should not have to trigger an error to find
+		// out it exists. Every route here says what it can answer and names the
+		// code, because the code is what a client branches on: the status only
+		// groups them. See /docs/backend/errors for the full catalogue.
+		unauthorized := ".\n\t\tResponse(401, handlers.ErrorResponse{}, \"UNAUTHORIZED: the access token is missing, expired or rejected\")"
+		validation := ".\n\t\tResponse(422, handlers.ErrorResponse{}, \"VALIDATION_ERROR: a field is missing or not acceptable; error.details maps each field to why\")"
+		notFound := ".\n\t\tResponse(404, handlers.ErrorResponse{}, \"NOT_FOUND: no such row, or none this caller may see\")"
+		conflict := ".\n\t\tResponse(409, handlers.ErrorResponse{}, \"VERSION_CONFLICT: the row changed since the version in If-Match; the body carries the current one\")"
+
+		// 403 is only declared where it is reachable. On a resource nothing
+		// scopes, every authenticated caller may write, so declaring a FORBIDDEN
+		// would be documenting an answer that never comes.
+		forbidden := ""
+		if g.Definition.OwnedBy != "" || len(g.Roles) > 0 || g.Definition.TenantOwned {
+			forbidden = ".\n\t\tResponse(403, handlers.ErrorResponse{}, \"FORBIDDEN: authenticated, and not allowed to do this\")"
+		}
+		// An owned resource answers 404 rather than 403 for somebody else's row,
+		// on purpose: a wrong guess must not be distinguishable from a right one.
+		ownedNote := ""
+		if g.Definition.OwnedBy != "" {
+			ownedNote = " (a row owned by somebody else answers 404, not 403, so a wrong guess cannot be told from a right one)"
+		}
+
 		docsRoutes := fmt.Sprintf(`	docs.Route("GET %s").
 		Summary("List %s").
-		Response(200, []models.%s{}, "A page of %s")
+		Response(200, []models.%s{}, "A page of %s%s")%s%s
 	docs.Route("POST %s").
 		Summary("Create a %s").
 		RequestBody(handlers.Create%sRequest{}).
-		Response(201, models.%s{}, "Created").
-		Response(422, handlers.ErrorResponse{}, "Validation failed")
+		Response(201, models.%s{}, "Created")%s%s%s
 	docs.Route("GET %s/:id").
 		Summary("Get one %s").
-		Response(200, models.%s{}, "The %s").
-		Response(404, handlers.ErrorResponse{}, "Not found")
+		Response(200, models.%s{}, "The %s")%s%s%s
 	docs.Route("PUT %s/:id").
 		Summary("Update a %s").
 		RequestBody(handlers.Update%sRequest{}).
-		Response(200, models.%s{}, "Updated").
-		Response(404, handlers.ErrorResponse{}, "Not found")
+		Response(200, models.%s{}, "Updated")%s%s%s%s%s
 	docs.Route("DELETE %s/:id").
 		Summary("Delete a %s").
-		Response(204, nil, "Deleted").
-		Response(404, handlers.ErrorResponse{}, "Not found")`,
-			base, names.Plural, names.Pascal, names.Plural,
-			base, names.Lower, names.Pascal, names.Pascal,
-			base, names.Lower, names.Pascal, names.Lower,
-			base, names.Lower, names.Pascal, names.Pascal,
-			base, names.Lower)
+		Response(204, nil, "Deleted")%s%s%s`,
+			base, names.Plural, names.Pascal, names.Plural, ownedNote, unauthorized, forbidden,
+			base, names.Lower, names.Pascal, names.Pascal, unauthorized, forbidden, validation,
+			base, names.Lower, names.Pascal, names.Lower, unauthorized, forbidden, notFound,
+			base, names.Lower, names.Pascal, names.Pascal, unauthorized, forbidden, notFound, validation, conflict,
+			base, names.Lower, unauthorized, forbidden, notFound)
 
 		docsRoutes = g.appendOnlyDocs(docsRoutes)
 		if err := injectBefore(docsFile, "// grit:docs:routes:end", docsRoutes); err == nil {

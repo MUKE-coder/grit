@@ -333,7 +333,7 @@ c.JSON(http.StatusUnprocessableEntity, gin.H{
                     <tr className="border-b border-border/20">
                       <td className="px-4 py-2.5 font-mono text-xs text-yellow-400">400</td>
                       <td className="px-4 py-2.5">Bad Request</td>
-                      <td className="px-4 py-2.5">Malformed request body or invalid parameters</td>
+                      <td className="px-4 py-2.5">A body that could not be read at all. A field that failed validation is 422, not this.</td>
                     </tr>
                     <tr className="border-b border-border/20">
                       <td className="px-4 py-2.5 font-mono text-xs text-yellow-400">401</td>

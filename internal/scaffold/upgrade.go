@@ -312,6 +312,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		sharedFiles := map[string]string{
 			filepath.Join(root, "packages", "shared", "package.json"):  sharedPackageJSON(opts),
 			filepath.Join(root, "packages", "shared", "tsconfig.json"): sharedTSConfig(),
+			// Generated, not edited: a frontend switching on a stale list of error
+			// codes is the drift the catalogue exists to end.
+			filepath.Join(root, "packages", "shared", "types", "errors.ts"): sharedErrorsTS(),
 		}
 		n, err = writeUpgradeFiles(sharedFiles, uOpts.Force)
 		if err != nil {

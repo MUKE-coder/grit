@@ -454,6 +454,75 @@ def check_csv_import(alice, admin, alice_id, alice_email, bob, bob_id):
           job.get('status') == 'completed' and owner == alice_id, (job, owner))
 
 
+def check_error_codes(alice, alice_email):
+    """One code, one status, in the running API.
+
+    Each of these was inconsistent before v3.232.0: VALIDATION_ERROR arrived as
+    422 from some handlers and 400 from others, INVALID_TOKEN as both 401 and 400,
+    and an expired one-time link borrowed a 401 it had no business with. A scan of
+    the templates cannot see any of that; this can.
+    """
+    def code_of(body):
+        return (err(body) or {}).get('code')
+
+    # A field that fails validation, and a body that is not JSON at all. Both are
+    # 422 from a generated handler: gin binds and validates in one step.
+    status, _, body = call('POST', '/api/v1/lots', alice, {'current_bid': 5})
+    check('Codes: a missing field is 422 VALIDATION_ERROR',
+          status == 422 and code_of(body) == 'VALIDATION_ERROR', (status, code_of(body)))
+    status, _, body = call('POST', '/api/v1/lots', alice, raw=b'{not json')
+    check('Codes: an unparseable body is 422 VALIDATION_ERROR',
+          status == 422 and code_of(body) == 'VALIDATION_ERROR', (status, code_of(body)))
+
+    # An id nobody has.
+    status, _, body = call('GET', '/api/v1/lots/' + str(uuid.uuid4()), alice)
+    check('Codes: an unknown id is 404 NOT_FOUND',
+          status == 404 and code_of(body) == 'NOT_FOUND', (status, code_of(body)))
+
+    # No credentials, and credentials that are not credentials.
+    status, _, body = call('GET', '/api/v1/lots')
+    check('Codes: no token is 401 UNAUTHORIZED',
+          status == 401 and code_of(body) == 'UNAUTHORIZED', (status, code_of(body)))
+    status, _, body = call('GET', '/api/v1/lots', 'not-a-jwt')
+    check('Codes: a bad token is 401 UNAUTHORIZED',
+          status == 401 and code_of(body) == 'UNAUTHORIZED', (status, code_of(body)))
+
+    # A one-time link is not a credential: 400, and a code of its own, so a client
+    # offers a new link rather than a sign-in form.
+    status, _, body = call('POST', '/api/v1/auth/verify-email', body={'token': 'nope'})
+    check('Codes: a bad verification link is 400 INVALID_LINK',
+          status == 400 and code_of(body) == 'INVALID_LINK', (status, code_of(body)))
+    status, _, body = call('POST', '/api/v1/auth/reset-password',
+                           body={'token': 'nope', 'password': 'SuperSecret123!'})
+    check('Codes: a bad reset link is 400 INVALID_LINK',
+          status == 400 and code_of(body) == 'INVALID_LINK', (status, code_of(body)))
+
+    # Credentials that are wrong, and an address that is taken.
+    status, _, body = call('POST', '/api/v1/auth/login',
+                           body={'email': alice_email, 'password': 'definitely-wrong'})
+    check('Codes: a wrong password is 401 INVALID_CREDENTIALS',
+          status == 401 and code_of(body) == 'INVALID_CREDENTIALS', (status, code_of(body)))
+    status, _, body = call('POST', '/api/v1/auth/register',
+                           body={'first_name': 'Taken', 'last_name': 'Address', 'email': alice_email,
+                                 'password': 'SuperSecret123!'})
+    check('Codes: a taken address is 409 EMAIL_EXISTS',
+          status == 409 and code_of(body) == 'EMAIL_EXISTS', (status, code_of(body)))
+
+    # The envelope itself: the same three keys whatever answered, because a client
+    # reads one shape.
+    status, _, body = call('GET', '/api/v1/lots/' + str(uuid.uuid4()), alice)
+    envelope = err(body)
+    check('Codes: the envelope is code, message and optional details',
+          isinstance(envelope, dict) and envelope.get('code') and envelope.get('message')
+          and set(envelope) <= {'code', 'message', 'details'}, envelope)
+
+    # And details carries the fields, which is what a form needs to mark inputs.
+    status, _, body = call('POST', '/api/v1/invoices', alice, {'number': ''})
+    if status == 422:
+        check('Codes: a validation failure may carry per-field details',
+              isinstance(err(body).get('details', {}), dict), err(body))
+
+
 def check_write_errors(alice):
     """Five write paths bound the error and returned a constant 500, so a rule
     enforced in a GORM hook reached neither the client nor the log."""
@@ -513,6 +582,7 @@ def main():
     check_public_surface(alice, admin, category, product_id)
     check_csv_import(alice, admin, alice_id, alice_email, bob, bob_id)
     check_write_errors(alice)
+    check_error_codes(alice, alice_email)
 
     width = max(len(name) for name, _, _ in results)
     failed = 0

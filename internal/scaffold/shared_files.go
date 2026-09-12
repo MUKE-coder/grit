@@ -9,12 +9,15 @@ func writeSharedFiles(root string, opts Options) error {
 	sharedRoot := filepath.Join(root, "packages", "shared")
 
 	files := map[string]string{
-		filepath.Join(sharedRoot, "package.json"):          sharedPackageJSON(opts),
-		filepath.Join(sharedRoot, "tsconfig.json"):         sharedTSConfig(),
-		filepath.Join(sharedRoot, "schemas", "user.ts"):    sharedUserSchema(),
-		filepath.Join(sharedRoot, "schemas", "index.ts"):   sharedSchemasIndex(),
-		filepath.Join(sharedRoot, "types", "user.ts"):      sharedUserTypes(),
-		filepath.Join(sharedRoot, "types", "api.ts"):       sharedAPITypes(),
+		filepath.Join(sharedRoot, "package.json"):        sharedPackageJSON(opts),
+		filepath.Join(sharedRoot, "tsconfig.json"):       sharedTSConfig(),
+		filepath.Join(sharedRoot, "schemas", "user.ts"):  sharedUserSchema(),
+		filepath.Join(sharedRoot, "schemas", "index.ts"): sharedSchemasIndex(),
+		filepath.Join(sharedRoot, "types", "user.ts"):    sharedUserTypes(),
+		filepath.Join(sharedRoot, "types", "api.ts"):     sharedAPITypes(),
+		// The error catalogue as a union type, generated from the same source as
+		// the API's own codes, so a switch over them can be exhaustive.
+		filepath.Join(sharedRoot, "types", "errors.ts"):    sharedErrorsTS(),
 		filepath.Join(sharedRoot, "types", "index.ts"):     sharedTypesIndex(),
 		filepath.Join(sharedRoot, "constants", "index.ts"): sharedConstants(),
 		filepath.Join(sharedRoot, "types", "upload.ts"):    sharedUploadTypes(),
@@ -301,6 +304,19 @@ export {
   apiErrorCode,
   apiErrorFields,
 } from "./api";
+
+export {
+  type ApiErrorCode,
+  type ApiErrorCategory,
+  type ApiErrorInfo,
+  type ApiErrorEnvelope,
+  API_ERRORS,
+  API_ERROR_CODES,
+  isApiErrorCode,
+  documentedErrorCode,
+  apiErrorAdvice,
+  isRetryable,
+} from "./errors";
 
 export type { Upload } from "./upload";
 export type { Blog } from "./blog";

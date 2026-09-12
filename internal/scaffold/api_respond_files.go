@@ -22,6 +22,10 @@ func writeRespondFiles(root string, opts Options) error {
 
 	files := map[string]string{
 		filepath.Join(apiRoot, "internal", "respond", "respond.go"): apiRespondGo(),
+		// Generated from Grit's error catalogue: the typed codes, the status each
+		// one always carries, and respond.Fail, which takes the status from the
+		// catalogue so a handler cannot pair a code with the wrong one.
+		filepath.Join(apiRoot, "internal", "respond", "codes.go"): apiRespondCodesGo(),
 	}
 	for path, content := range files {
 		content = strings.ReplaceAll(content, "{{MODULE}}", module)

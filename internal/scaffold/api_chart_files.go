@@ -352,7 +352,7 @@ type ChartHandler struct {
 func (h *ChartHandler) Get(c *gin.Context) {
 	resource := c.Param("resource")
 	if resource == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": "resource is required"},
 		})
 		return
@@ -360,7 +360,7 @@ func (h *ChartHandler) Get(c *gin.Context) {
 
 	preset := c.Query("preset")
 	if preset == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": "preset is required"},
 		})
 		return

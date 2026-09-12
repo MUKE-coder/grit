@@ -278,6 +278,8 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+
+	"{{MODULE}}/internal/respond"
 )
 
 // Import kicks off a BACKGROUND CSV import of {{Plural}}. It streams the upload
@@ -287,9 +289,7 @@ import (
 func (h *{{Pascal}}Handler) Import(c *gin.Context) {
 	file, _, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "INVALID_FILE", "message": "No CSV file provided"},
-		})
+		respond.Fail(c, respond.CodeInvalidFile, "No CSV file provided")
 		return
 	}
 	defer file.Close()
@@ -297,18 +297,14 @@ func (h *{{Pascal}}Handler) Import(c *gin.Context) {
 	// Stream the upload to a temp file: never ReadAll a large CSV into memory.
 	tmp, err := os.CreateTemp("", "grit-import-*.csv")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TEMP_ERROR", "message": "Could not buffer the upload"},
-		})
+		respond.Fail(c, respond.CodeTempError, "Could not buffer the upload")
 		return
 	}
 	tmpPath := tmp.Name()
 	if _, err := io.Copy(tmp, file); err != nil {
 		tmp.Close()
 		os.Remove(tmpPath)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "INVALID_CSV", "message": "Could not read the upload"},
-		})
+		respond.Fail(c, respond.CodeInvalidCSV, "Could not read the upload")
 		return
 	}
 	tmp.Close()
@@ -318,18 +314,14 @@ func (h *{{Pascal}}Handler) Import(c *gin.Context) {
 	total, err := countCSVRows{{Pascal}}(tmpPath)
 	if err != nil || total < 0 {
 		os.Remove(tmpPath)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "INVALID_CSV", "message": "Could not read the CSV file"},
-		})
+		respond.Fail(c, respond.CodeInvalidCSV, "Could not read the CSV file")
 		return
 	}
 
 	job, err := h.service().StartImport(h.ctx(c), total)
 	if err != nil {
 		os.Remove(tmpPath)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "JOB_ERROR", "message": "Could not start import"},
-		})
+		respond.Fail(c, respond.CodeJobError, "Could not start import")
 		return
 	}
 

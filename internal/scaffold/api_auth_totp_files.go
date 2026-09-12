@@ -376,7 +376,7 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 	// Verify the code matches the secret
 	valid, err := totp.ValidateCode(req.Secret, req.Code)
 	if err != nil || !valid {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": gin.H{
 				"code":    "INVALID_TOTP_CODE",
 				"message": "Invalid verification code. Make sure your authenticator app is synced.",

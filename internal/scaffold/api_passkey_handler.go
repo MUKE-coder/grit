@@ -94,7 +94,7 @@ func (h *PasskeyHandler) FinishRegistration(c *gin.Context) {
 	raw, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
-			"code": "VALIDATION_ERROR", "message": "Could not read the request",
+			"code": "INVALID_BODY", "message": "Could not read the request",
 		}})
 		return
 	}
@@ -102,7 +102,7 @@ func (h *PasskeyHandler) FinishRegistration(c *gin.Context) {
 	sessionID := c.Query("session")
 	name := c.Query("name")
 	if sessionID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
 			"code": "VALIDATION_ERROR", "message": "session is required",
 		}})
 		return
@@ -149,13 +149,13 @@ func (h *PasskeyHandler) FinishLogin(c *gin.Context) {
 	raw, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
-			"code": "VALIDATION_ERROR", "message": "Could not read the request",
+			"code": "INVALID_BODY", "message": "Could not read the request",
 		}})
 		return
 	}
 	sessionID := c.Query("session")
 	if sessionID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
 			"code": "VALIDATION_ERROR", "message": "session is required",
 		}})
 		return
@@ -212,14 +212,14 @@ func (h *PasskeyHandler) Rename(c *gin.Context) {
 	}
 	var req renamePasskeyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
 			"code": "VALIDATION_ERROR", "message": err.Error(),
 		}})
 		return
 	}
 	name := strings.TrimSpace(req.Name)
 	if name == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
 			"code": "VALIDATION_ERROR", "message": "A name is required",
 		}})
 		return

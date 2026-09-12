@@ -61,7 +61,7 @@ func (h *` + pascal + `VariantHandler) CreateOption(c *gin.Context) {
 		Position     int    ` + "`" + `json:"position"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
 			"code": "VALIDATION_ERROR", "message": err.Error(),
 		}})
 		return
@@ -147,7 +147,7 @@ func (h *` + pascal + `VariantHandler) CreateOptionValue(c *gin.Context) {
 		Position   int     ` + "`" + `json:"position"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
 			"code": "VALIDATION_ERROR", "message": err.Error(),
 		}})
 		return
@@ -200,7 +200,7 @@ func (h *` + pascal + `VariantHandler) SetOptions(c *gin.Context) {
 		OptionIDs []string ` + "`" + `json:"option_ids"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
 			"code": "VALIDATION_ERROR", "message": err.Error(),
 		}})
 		return
@@ -382,7 +382,7 @@ func (h *` + pascal + `VariantHandler) Update(c *gin.Context) {
 		ClearPrice bool ` + "`" + `json:"clear_price"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
 			"code": "VALIDATION_ERROR", "message": err.Error(),
 		}})
 		return
