@@ -267,23 +267,6 @@ func TestSinglePanelHasWhatItImports(t *testing.T) {
 	}
 }
 
-// The site's chrome steps aside for the panel, and only for the panel.
-func TestSingleRootRouteYieldsToThePanel(t *testing.T) {
-	spa := webTanStackRootRoute(singleOptions())
-	if !strings.Contains(spa, "startsWith('/admin/')") {
-		t.Error("the SPA's root route wraps the panel in the site navbar")
-	}
-	if !strings.Contains(spa, "<Navbar />") {
-		t.Error("the SPA's root route lost the site navbar entirely")
-	}
-
-	// A monorepo web app has no panel inside it, so its root route is unchanged.
-	web := webTanStackRootRoute(Options{ProjectName: "app", Architecture: ArchTriple, Frontend: FrontendTanStack})
-	if strings.Contains(web, "/admin") {
-		t.Error("a web app with no embedded panel should not test for /admin")
-	}
-}
-
 // The navbar links to the panel, so it can be found without knowing the URL.
 func TestSingleNavbarLinksToThePanel(t *testing.T) {
 	if !strings.Contains(singleViteNavbar(singleOptions()), `"/admin/dashboard"`) {

@@ -256,34 +256,14 @@ func webTanStackRootRoute(opts Options) string {
 	// the site chrome: the panel has a sidebar and a topbar of its own, and the
 	// marketing navbar on top of them is one header too many.
 	if opts.ShouldEmbedAdminInSPA() {
-		return `import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router'
-import { Navbar } from '@/components/navbar'
-import { Footer } from '@/components/footer'
+		// One SPA, four sections, and the root is not one of them: routes/_site
+		// draws the public chrome, routes/admin the panel's, routes/_auth and
+		// routes/account their own. A page belongs to a section by living in it.
+		return `import { createRootRoute, Outlet } from '@tanstack/react-router'
 
 export const Route = createRootRoute({
-  component: RootLayout,
+  component: () => <Outlet />,
 })
-
-function RootLayout() {
-  // The panel owns its chrome. Everything else gets the site's.
-  const inAdmin = useRouterState({
-    select: (s) => s.location.pathname === '/admin' || s.location.pathname.startsWith('/admin/'),
-  })
-
-  if (inAdmin) {
-    return <Outlet />
-  }
-
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-      <main className="flex-1">
-        <Outlet />
-      </main>
-      <Footer />
-    </div>
-  )
-}
 `
 	}
 

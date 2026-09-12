@@ -32,6 +32,13 @@ import (
 // gated by --force for safety; without --force, those two files are
 // skipped with a notice (the operator can then merge by hand).
 func AddWebAuth(root string, force bool) error {
+	// A single project's frontend is the SPA inside the binary, not a Next.js app
+	// in apps/web. Same command, same screens, written in the dialect that app
+	// speaks. Until now it refused the project outright.
+	if feRoot := filepath.Join(root, "frontend"); dirExists(feRoot) && !dirExists(filepath.Join(root, "apps", "web")) {
+		return addWebAuthSingle(root, feRoot, force)
+	}
+
 	webRoot := filepath.Join(root, "apps", "web")
 	if _, err := os.Stat(webRoot); err != nil {
 		return fmt.Errorf("apps/web not found at %s: this command needs a project with a web frontend", webRoot)
@@ -332,4 +339,45 @@ export function ProtectedWebRoute({
 func fileHasContent(path, content string) bool {
 	data, err := os.ReadFile(path)
 	return err == nil && string(data) == content
+}
+
+// addWebAuthSingle writes the auth pages and the customer area into the SPA.
+//
+// The SPA has shipped lib/auth.ts since it existed, with login, register,
+// refresh, logout and the TOTP challenge, and no screen that called any of it.
+func addWebAuthSingle(root, feRoot string, force bool) error {
+	opts := Options{
+		ProjectName:  filepath.Base(root),
+		Architecture: ArchSingle,
+	}
+
+	for _, f := range singleAuthFiles(feRoot, opts) {
+		rel, _ := filepath.Rel(root, f.path)
+
+		// An existing file is the developer's, unless it is byte-for-byte the one
+		// the scaffold wrote. The navbar is the case that matters: it is a
+		// replacement here, and skipping it leaves no way to reach any of this.
+		untouched := f.path == filepath.Join(feRoot, "src", "components", "navbar.tsx") &&
+			fileHasContent(f.path, singleViteNavbar(opts))
+		if _, err := os.Stat(f.path); err == nil && !force && !untouched {
+			fmt.Printf("  • skipped %s (already exists: pass --force to overwrite)\n", rel)
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(f.path), 0755); err != nil {
+			return fmt.Errorf("creating directory: %w", err)
+		}
+		if err := os.WriteFile(f.path, []byte(f.content), 0644); err != nil {
+			return fmt.Errorf("writing %s: %w", rel, err)
+		}
+		fmt.Printf("  ✓ wrote %s\n", rel)
+	}
+
+	fmt.Println()
+	fmt.Println("  Web-auth is wired in. Next steps:")
+	fmt.Println("    1. /login and /register are live, and /account is behind them.")
+	fmt.Println("    2. The route tree regenerates on the next dev run or build.")
+	fmt.Println("    3. Add a section under frontend/src/routes/account/ and a line to NAV.")
+	fmt.Println()
+	return nil
 }

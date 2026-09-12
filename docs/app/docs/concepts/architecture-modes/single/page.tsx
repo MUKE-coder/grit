@@ -58,6 +58,21 @@ export default function SingleArchitecturePage() {
                 -- there is no pnpm workspace, so no shared package.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
+                One SPA, four sections, each with a layout of its own:{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">routes/_site</code>{' '}
+                is the public site with the navbar and footer,{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">routes/admin</code>{' '}
+                the panel,{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">routes/_auth</code>{' '}
+                the sign-in pages and{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">routes/account</code>{' '}
+                the signed-in customer area. The names starting with an underscore are pathless,
+                so none of this changes a URL. Run{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit add web-auth</code>{' '}
+                to get the last two: login, registration, password reset, and an account
+                dashboard behind them (v3.238.0).
+              </p>
+              <p className="text-muted-foreground leading-relaxed mb-4">
                 The admin panel is in there too, as a section of the same SPA at{' '}
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/admin/dashboard</code>{' '}
                 (v3.236.0). Same dashboard, resource CRUD, system hub, settings and account
@@ -198,8 +213,10 @@ export default function SingleArchitecturePage() {
                   <Folder name="src" defaultOpen>
                     <File name="main.tsx" />
                     <Folder name="routes" comment="TanStack Router file-based routes" defaultOpen>
-                      <File name="__root.tsx" />
-                      <File name="index.tsx" />
+                      <File name="__root.tsx" comment="An outlet: every section owns its layout" />
+                      <Folder name="_site" comment="The public site: navbar + footer" />
+                      <Folder name="_auth" comment="Login and registration (grit add web-auth)" />
+                      <Folder name="account" comment="The signed-in customer area, guarded" />
                       <Folder name="admin" comment="The panel's routes, at /admin/*" />
                       <File name="..." icon={<span className="inline-block h-3.5 w-3.5 shrink-0" />} />
                     </Folder>

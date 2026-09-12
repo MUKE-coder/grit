@@ -393,6 +393,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 	// are not, so those are edited in place and only where an entry is missing.
 	if opts.ShouldEmbedAdminInSPA() && dirExists(filepath.Join(root, "frontend", "src")) {
 		spinner.Printf("  → Adding the admin panel to the SPA at /admin...\n")
+		// Before the files are written: the root route stops drawing the site's
+		// chrome in this version, so the public pages have to be in the section
+		// whose layout draws it, or an upgraded project loses its navbar.
+		migrateSPARouteSections(root, spinner, green)
+
 		embedded := embeddedSingleAdminFileMap(root, opts)
 		for path, body := range singleSharedMirrorFiles(root, opts) {
 			embedded[path] = body
@@ -400,6 +405,8 @@ func Upgrade(uOpts UpgradeOptions) error {
 		// The root route decides whether a page gets the site's navbar, and the
 		// panel's screens must not.
 		embedded[filepath.Join(root, "frontend", "src", "routes", "__root.tsx")] = webTanStackRootRoute(opts)
+		// The public site's layout, which is what draws the navbar and footer now.
+		embedded[filepath.Join(root, "frontend", "src", "routes", "_site.tsx")] = singleSiteLayoutRoute()
 		// The navbar, for the link to the panel.
 		embedded[filepath.Join(root, "frontend", "src", "components", "navbar.tsx")] = singleViteNavbar(opts)
 		n, err := writeUpgradeFiles(embedded, uOpts.Force)
@@ -777,6 +784,61 @@ func pruneAdminStrays(adminRoot string) int {
 		fmt.Printf("  ✓ Removed %d stale duplicate component file(s) from earlier upgrades\n", removed)
 	}
 	return removed
+}
+
+// migrateSPARouteSections moves a single project's public pages under _site.
+//
+// The same change the Next.js web app gets in migrateWebRouteGroups, in the
+// dialect TanStack speaks: a pathless layout route rather than a route group.
+// The files are moved, so local edits survive, and the id each one declares is
+// rewritten because TanStack checks that it equals the file's path.
+func migrateSPARouteSections(root string, spinner, green *color.Color) {
+	routes := filepath.Join(root, "frontend", "src", "routes")
+	site := filepath.Join(routes, "_site")
+	if !dirExists(routes) || fileExists(filepath.Join(site, "index.tsx")) {
+		return // not a single project, or already migrated
+	}
+
+	moved := 0
+	for _, m := range [][2]string{
+		{filepath.Join(routes, "index.tsx"), filepath.Join(site, "index.tsx")},
+		{filepath.Join(routes, "blog"), filepath.Join(site, "blog")},
+	} {
+		if _, err := os.Stat(m[0]); err != nil {
+			continue
+		}
+		if _, err := os.Stat(m[1]); err == nil {
+			continue
+		}
+		if err := os.MkdirAll(filepath.Dir(m[1]), 0o755); err != nil {
+			continue
+		}
+		if err := os.Rename(m[0], m[1]); err == nil {
+			moved++
+		}
+	}
+	if moved == 0 {
+		return
+	}
+
+	// Every file that moved now declares an id one segment short of its path.
+	_ = filepath.Walk(site, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() || !strings.HasSuffix(path, ".tsx") {
+			return nil
+		}
+		body, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return nil
+		}
+		fixed := siteRouteID(string(body))
+		if fixed != string(body) {
+			_ = os.WriteFile(path, []byte(fixed), 0o644)
+		}
+		return nil
+	})
+
+	spinner.Printf("  → Moving the public pages into routes/_site...\n")
+	green.Printf("  ✓ The site layout is _site.tsx now, so /admin and /account keep their own\n")
 }
 
 // retireAdminURLEnv comments out a NEXT_PUBLIC_ADMIN_URL this project should not
