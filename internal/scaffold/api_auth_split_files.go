@@ -149,7 +149,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{
-				"code":    "INVALID_TOKEN",
+				"code":    "INVALID_LINK",
 				"message": "This reset link is invalid or has expired. Request a new one.",
 			},
 		})
@@ -258,7 +258,7 @@ func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 		// them apart tells an attacker which tokens once existed.
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{
-				"code":    "INVALID_TOKEN",
+				"code":    "INVALID_LINK",
 				"message": "That verification link is invalid or has expired. Request a new one.",
 			},
 		})

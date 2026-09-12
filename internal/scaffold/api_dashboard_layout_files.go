@@ -104,7 +104,7 @@ func (h *DashboardLayoutHandler) Get(c *gin.Context) {
 	userID, ok := c.Get("user_id")
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{"code": "UNAUTHENTICATED", "message": "Not signed in"},
+			"error": gin.H{"code": "UNAUTHORIZED", "message": "Not signed in"},
 		})
 		return
 	}
@@ -171,7 +171,7 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 	userID, ok := c.Get("user_id")
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{"code": "UNAUTHENTICATED", "message": "Not signed in"},
+			"error": gin.H{"code": "UNAUTHORIZED", "message": "Not signed in"},
 		})
 		return
 	}

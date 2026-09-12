@@ -67,7 +67,7 @@ func (h *RecoveryHandler) authed(c *gin.Context, password string) (*models.User,
 		return nil, false
 	}
 	if !user.CheckPassword(password) {
-		fail(c, http.StatusForbidden, "INVALID_PASSWORD", "That password is not correct")
+		fail(c, http.StatusUnauthorized, "INVALID_PASSWORD", "That password is not correct")
 		return nil, false
 	}
 	return &user, true
@@ -144,7 +144,7 @@ func maskPhone(number string) string {
 func (h *RecoveryHandler) SetEmail(c *gin.Context) {
 	var req setRecoveryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		fail(c, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+		fail(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", err.Error())
 		return
 	}
 	user, ok := h.authed(c, req.Password)
@@ -154,7 +154,7 @@ func (h *RecoveryHandler) SetEmail(c *gin.Context) {
 
 	address := strings.ToLower(strings.TrimSpace(req.Email))
 	if address == "" || !strings.Contains(address, "@") {
-		fail(c, http.StatusBadRequest, "VALIDATION_ERROR", "A valid email address is required")
+		fail(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "A valid email address is required")
 		return
 	}
 	if err := services.ValidateRecoveryEmail(h.DB, user.ID, user.Email, address); err != nil {
@@ -202,7 +202,7 @@ func (h *RecoveryHandler) VerifyPhone(c *gin.Context) {
 func (h *RecoveryHandler) verify(c *gin.Context, kind models.RecoveryContactKind) {
 	var req verifyRecoveryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		fail(c, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+		fail(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", err.Error())
 		return
 	}
 	destination, err := services.ConsumeRecoveryToken(h.DB, c.GetString("user_id"), kind, strings.TrimSpace(req.Code))
@@ -234,7 +234,7 @@ func (h *RecoveryHandler) ClearPhone(c *gin.Context) {
 func (h *RecoveryHandler) clear(c *gin.Context, kind models.RecoveryContactKind) {
 	var req clearRecoveryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		fail(c, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+		fail(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", err.Error())
 		return
 	}
 	user, ok := h.authed(c, req.Password)
@@ -260,7 +260,7 @@ func (h *RecoveryHandler) SetPhone(c *gin.Context) {
 
 	var req setRecoveryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		fail(c, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+		fail(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", err.Error())
 		return
 	}
 	user, ok := h.authed(c, req.Password)
@@ -270,7 +270,7 @@ func (h *RecoveryHandler) SetPhone(c *gin.Context) {
 
 	number := strings.TrimSpace(req.Phone)
 	if len(number) < 7 {
-		fail(c, http.StatusBadRequest, "VALIDATION_ERROR", "A valid phone number is required")
+		fail(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "A valid phone number is required")
 		return
 	}
 

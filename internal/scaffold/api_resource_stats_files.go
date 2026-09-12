@@ -323,7 +323,7 @@ type ResourceStatsHandler struct {
 func (h *ResourceStatsHandler) Get(c *gin.Context) {
 	resource := c.Param("resource")
 	if resource == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": "resource is required"},
 		})
 		return

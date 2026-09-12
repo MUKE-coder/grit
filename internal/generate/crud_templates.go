@@ -1065,12 +1065,7 @@ func (h *{{Pascal}}Handler) fail(c *gin.Context, err error, fallback string) {
 	case errors.As(err, &conflict):
 		concurrency.WriteConflict(c, conflict.Current)
 	case errors.Is(err, gorm.ErrRecordNotFound):
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{
-				"code":    "NOT_FOUND",
-				"message": "{{Pascal}} not found",
-			},
-		})
+		respond.Fail(c, respond.CodeNotFound, "{{Pascal}} not found")
 	default:
 		respond.WriteError(c, err, fallback)
 	}
@@ -1201,12 +1196,7 @@ func (h *{{Pascal}}Handler) PDF(c *gin.Context) {
 {{PDF_SECTIONS}}
 	out, err := pdf.RenderRecord(rec)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "PDF_ERROR",
-				"message": "could not render the PDF",
-			},
-		})
+		respond.Fail(c, respond.CodePDFError, "could not render the PDF")
 		return
 	}
 
@@ -1233,12 +1223,7 @@ func (h *{{Pascal}}Handler) Create(c *gin.Context) {
 	var req Create{{Pascal}}Request
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -1266,12 +1251,7 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 	var req Update{{Pascal}}Request
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -1298,12 +1278,7 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 func (h *{{Pascal}}Handler) Patch(c *gin.Context) {
 	var body map[string]interface{}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -1356,12 +1331,7 @@ type Bulk{{Pascal}}Request struct {
 func (h *{{Pascal}}Handler) Bulk(c *gin.Context) {
 	var req Bulk{{Pascal}}Request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 

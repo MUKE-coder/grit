@@ -426,6 +426,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Native desktop binary with Wails v2 + React + Tailwind on the front and Go + GORM (SQLite or Postgres) on the back. Local auth, PDF + Excel export, frameless window, draggable panels.',
   },
+  '/docs/backend/errors': {
+    title: 'Error codes',
+    description:
+      'Every error a Grit API returns, with the status it always carries and what a client should do about it. Generated from one catalogue, which also generates the typed codes in Go and the union type in TypeScript.',
+  },
   '/docs/backend/response-format': {
     title: 'API Response Format',
     description:

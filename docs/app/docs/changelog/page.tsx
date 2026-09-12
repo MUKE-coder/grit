@@ -66,6 +66,67 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.232.0 */}
+            <div className="mb-12" id="v3.232.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.232.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>One code, one status: the error taxonomy, end to end</h3>
+                <p>
+                  A client needs two things from an error: a code it can branch on, and the
+                  certainty that the code always arrives with the same status. Grit had the first
+                  and not the second. <code>VALIDATION_ERROR</code> came back as 422 from
+                  thirty-eight handlers and 400 from twenty-five. <code>INVALID_TOKEN</code> was
+                  both 401 and 400. An upload that did not exist answered 400. And no page listed
+                  the codes at all, so the only way to learn one was to trigger it.
+                </p>
+                <p>
+                  There is now one catalogue, and three things are generated from it so they cannot
+                  disagree: <code>internal/respond/codes.go</code> in every project, with a typed
+                  constant and the status for each of the 105 codes;{' '}
+                  <code>packages/shared/types/errors.ts</code> beside it, so a TypeScript switch
+                  over codes is exhaustive and a client that forgets one fails to compile; and{' '}
+                  <Link href="/docs/backend/errors">the error codes page</Link>, which says what
+                  each code means and what a caller should do about it.
+                </p>
+                <p>
+                  The part with teeth is a test that walks every template: a code a handler returns
+                  that is not in the catalogue fails the build, and so does a code returned with a
+                  status other than its own. That test is what made the statuses consistent, by
+                  listing the 31 sites that disagreed. Two of those were worth more than a status
+                  change: a request whose body could not be read is not a validation failure, so it
+                  answers <code>INVALID_BODY</code>, and a one-time link that has expired is not a
+                  credential, so email verification and password reset answer{' '}
+                  <code>INVALID_LINK</code> (400) rather than borrowing a 401.
+                </p>
+                <p>
+                  Generated handlers now write errors through <code>respond.Fail</code>, which takes
+                  the status from the catalogue rather than having one typed beside the code, which
+                  is how the split happened in the first place. And the API reference says, per
+                  route, which errors it can return: a 401 on every authenticated route, a 403 only
+                  on resources where ownership or a role makes it reachable, a 409 on an update that
+                  can conflict, and for an owned resource the note that somebody else&apos;s row
+                  answers 404 rather than 403, on purpose.
+                </p>
+                <p>
+                  Three of the release&apos;s own bugs, each caught before it shipped and each the
+                  same shape: a generated file that compiles in a test and not in a project.{' '}
+                  <code>codes.go</code> was only on the upgrade path, so a new project had generated
+                  handlers calling a function that was not there. The category constant for
+                  &quot;notfound&quot; was generated as <code>CategoryNotfound</code>, which gofmt
+                  parses happily and the compiler does not. And the per-route error responses were
+                  emitted without the dot that continues a method chain. Each now has a test: the
+                  scaffold path as well as the upgrade path, every identifier the generated file
+                  refers to, and a build of a real project.
+                </p>
+              </div>
+            </div>
+
             {/* v3.231.0 */}
             <div className="mb-12" id="v3.231.0">
               <div className="flex items-center gap-3 mb-4">

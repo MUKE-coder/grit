@@ -687,7 +687,7 @@ c.JSON(http.StatusOK, gin.H{
 })
 
 // Error
-c.JSON(http.StatusBadRequest, gin.H{
+c.JSON(http.StatusUnprocessableEntity, gin.H{
     "error": gin.H{
         "code":    "VALIDATION_ERROR",
         "message": "Email is required",

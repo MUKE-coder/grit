@@ -131,7 +131,7 @@ func (h *SettingsHandler) Update(c *gin.Context) {
 	for key, value := range req.Values {
 		declared, ok := settings.Get(key)
 		if !ok {
-			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
+			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{
 				"code": "UNKNOWN_SETTING", "message": "no setting named " + key + " is declared",
 			}})
 			return

@@ -955,7 +955,7 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 
 	var req PresignRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
 		})
 		return
@@ -1035,7 +1035,7 @@ type CompleteUploadRequest struct {
 func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 	var req CompleteUploadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
 		})
 		return
@@ -1064,7 +1064,7 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 	// Content-Length already makes a mismatch hard; this makes it pointless.
 	storedSize, storedType, err := h.Storage.Stat(c.Request.Context(), req.Key)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{"code": "UPLOAD_NOT_FOUND", "message": "No file was uploaded to that key"},
 		})
 		return

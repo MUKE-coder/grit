@@ -253,7 +253,7 @@ func (h *OCSFHandler) Export(c *gin.Context) {
 	if v := c.Query("since"); v != "" {
 		t, err := time.Parse(time.RFC3339, v)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
+			c.JSON(http.StatusUnprocessableEntity, gin.H{
 				"error": gin.H{"code": "VALIDATION_ERROR", "message": "since must be RFC3339, e.g. 2026-07-01T00:00:00Z"},
 			})
 			return

@@ -127,6 +127,7 @@ const navItems: NavItem[] = [
       { title: 'Passkeys', href: '/docs/backend/passkeys' },
       { title: 'Account Security', href: '/docs/backend/account-security' },
       { title: 'API Response Format', href: '/docs/backend/response-format' },
+      { title: 'Error Codes', href: '/docs/backend/errors' },
       { title: 'The Request Lifecycle', href: '/docs/backend/request-lifecycle' },
       { title: 'Migrations', href: '/docs/backend/migrations' },
       { title: 'Invoices & Line Items', href: '/docs/backend/invoices' },
