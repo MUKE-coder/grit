@@ -425,7 +425,6 @@ jobs:
                 --db-host 127.0.0.1 --db-port 3306
               ;;
             sqlite)
-              sudo apt-get install -y -q sqlite3 > /dev/null
               python3 tests/live/verify.py http://localhost:8080 --engine sqlite \
                 --db /tmp/engines/app.db
               ;;
