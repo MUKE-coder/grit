@@ -292,6 +292,43 @@ func GrantsFor(db *gorm.DB, userID string) ([]string, error) {
 	return grants, nil
 }
 
+// GrantsForRole returns the grants of one role.
+//
+// For a per-organization role: the multitenant plugin's middleware reads the
+// membership's role and adds these to the caller's grants for the duration of the
+// request, so a role can mean "an administrator of this organization" without
+// meaning it everywhere. Cached beside GrantsFor and invalidated by the same
+// generation counter, so editing the role takes effect at once.
+func GrantsForRole(db *gorm.DB, roleID string) ([]string, error) {
+	if roleID == "" {
+		return nil, nil
+	}
+
+	if sharedWatch != nil && sharedWatch.Changed() {
+		dropLocal()
+	}
+
+	key := "role:" + roleID
+	gen := generation.Load()
+	if v, ok := grantCache.Load(key); ok {
+		if c, ok := v.(cachedGrants); ok && c.gen == gen {
+			return c.grants, nil
+		}
+	}
+
+	var role models.Role
+	if err := db.Where("id = ?", roleID).First(&role).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	grants := role.GrantsList()
+	grantCache.Store(key, cachedGrants{gen: gen, grants: grants})
+	return grants, nil
+}
+
 func resolveGrants(db *gorm.DB, userID string) ([]string, error) {
 	var roles []models.Role
 	err := db.

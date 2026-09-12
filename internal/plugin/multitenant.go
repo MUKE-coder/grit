@@ -127,6 +127,24 @@ func multitenantInjections(ctx Context) []Injection {
 			Code:   "\tprotected.Use(middleware.Tenant(db))",
 		},
 		{
+			// The staff group carries every DELETE and every bulk route. With the
+			// middleware only on the protected group, those requests never
+			// resolved an organization, so the scoping callback failed closed and
+			// deleting a tenant-owned row answered 500. Found by building a
+			// project with the plugin and trying to delete something.
+			File:   p("internal/routes/routes.go"),
+			Marker: "// grit:middleware:staff",
+			Code:   "\tstaff.Use(middleware.Tenant(db))",
+		},
+		{
+			// And the admin group, for the same reason: an admin-only endpoint
+			// that reads a tenant-owned model needs to know which organization it
+			// is reading.
+			File:   p("internal/routes/routes.go"),
+			Marker: "// grit:middleware:admin",
+			Code:   "\tadmin.Use(middleware.Tenant(db))",
+		},
+		{
 			File:   p("internal/routes/routes.go"),
 			Marker: "// grit:routes:protected",
 			Code: `		// Organizations. Listing and switching are available to any signed-in
@@ -227,10 +245,10 @@ package tenant
 
 import (
 	"context"
-	"errors"
-
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"` + ctx.Module + `/internal/respond"
 )
 
 type ctxKey string
@@ -239,7 +257,21 @@ const orgKey ctxKey = "grit.org_id"
 
 // ErrNoOrganization is returned when an operation needs an active organization
 // and none is set.
-var ErrNoOrganization = errors.New("tenant: no active organization")
+//
+// It carries its own response code, so a handler that simply returns it answers
+// 400 NO_ORGANIZATION with a message the caller can act on. Before that it fell
+// through respond.WriteError to an opaque 500: "Failed to fetch deals", for a
+// request whose only problem was not naming an organization.
+var ErrNoOrganization error = noOrganizationError{}
+
+type noOrganizationError struct{}
+
+func (noOrganizationError) Error() string {
+	return "no active organization: send it as X-Organization-ID, or join one"
+}
+
+// ErrorCode makes this a respond.Coded error.
+func (noOrganizationError) ErrorCode() respond.Code { return respond.CodeNoOrganization }
 
 // Owned marks a model as belonging to an organization.
 //

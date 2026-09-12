@@ -7600,12 +7600,39 @@ func IsRule(err error) (*RuleError, bool) {
 	return nil, false
 }
 
+// Coded is an error that knows what it should look like on the wire.
+//
+// Implement it on a sentinel error when the caller needs to act on it, rather
+// than leaving it to become an opaque 500:
+//
+//	var ErrNoSeatsLeft = seatsError{}
+//
+//	type seatsError struct{}
+//	func (seatsError) Error() string          { return "no seats left on this plan" }
+//	func (seatsError) ErrorCode() respond.Code { return respond.CodeConflict }
+//
+// Anything returned from a service or a GORM hook that implements this is
+// answered with the code's documented status. This exists because
+// tenant.ErrNoOrganization, which means "say which organization you are acting
+// in", arrived as a 500 saying "Failed to fetch deals": respond cannot import
+// the tenant package, and an error that can describe itself does not need it to.
+type Coded interface {
+	error
+	ErrorCode() Code
+}
+
 // WriteError picks the right response for an error returned by a write.
 //
-// A rule the caller broke becomes 422 with its message. A missing row becomes
-// 404. Everything else is logged and comes back as an opaque 500, which is
-// what it was before, minus the part where the error vanished entirely.
+// An error that carries its own code is answered with that code's status. A rule
+// the caller broke becomes 422 with its message. A missing row becomes 404.
+// Everything else is logged and comes back as an opaque 500, which is what it was
+// before, minus the part where the error vanished entirely.
 func WriteError(c *gin.Context, err error, fallback string) {
+	var coded Coded
+	if errors.As(err, &coded) {
+		Fail(c, coded.ErrorCode(), coded.Error())
+		return
+	}
 	if rule, ok := IsRule(err); ok {
 		Validation(c, rule.Message, nil)
 		return
@@ -9610,6 +9637,18 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// permission, a plugin's included, fails closed there.
 	staff := v1.Group("")
 	staff.Use(middleware.APIKeyOrAuth(db, middleware.Auth(db, authService)))
+	// Plugin middleware for the staff group, between authentication and the gate.
+	//
+	// This group carries every DELETE and every bulk route, so a plugin that
+	// scopes queries has to run here: with the multitenant plugin mounted on the
+	// protected group alone, deleting a tenant-owned row answered 500 because no
+	// organization was ever resolved.
+	//
+	// Before the gate, not after, because a plugin can decide what the caller may
+	// do: a role held through an organization membership has to be in hand before
+	// RequireStaff reads the grants, or the answer is 403 for somebody who is
+	// staff of the organization they are acting in.
+	// grit:middleware:staff
 	staff.Use(middleware.RequireStaff())
 	{
 		staff.GET("/users", middleware.RequireRole("ADMIN", "perm:users.view"), userHandler.List)
@@ -9687,6 +9726,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// permission.
 	admin := v1.Group("")
 	admin.Use(middleware.APIKeyOrAuth(db, middleware.Auth(db, authService)))
+	// Plugin middleware for the admin group, for the same reasons and in the same
+	// order as the staff one.
+	// grit:middleware:admin
 	admin.Use(middleware.RequireRole("ADMIN"))
 	{
 		admin.POST("/admin/activity/reseal", activityHandler.Reseal)

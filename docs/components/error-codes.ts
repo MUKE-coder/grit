@@ -166,6 +166,19 @@ export const errorCodeAreas: ErrorCodeArea[] = [
     ],
   },
   {
+    area: 'tenancy',
+    label: 'Organizations (the multitenant plugin)',
+    codes: [
+      {
+        code: 'NO_ORGANIZATION',
+        status: 400,
+        category: 'request',
+        meaning: 'The row belongs to an organization and the request has no active one: the caller belongs to none, or to several and named neither.',
+        client: 'Send the active organization as X-Organization-ID. If the caller belongs to no organization, they cannot read this at all: put them in one, or send them somewhere that does not need one.',
+      },
+    ],
+  },
+  {
     area: 'auth',
     label: 'Sign-in and accounts',
     codes: [
@@ -902,7 +915,7 @@ export const errorCodeAreas: ErrorCodeArea[] = [
 ]
 
 /** How many codes the API documents. Shown on the page, so it cannot be stale. */
-export const errorCodeCount = 105
+export const errorCodeCount = 106
 
 /** Every row, flattened, for searching and for a test that checks coverage. */
 export const errorCodes: ErrorCodeRow[] = errorCodeAreas.flatMap((area) => area.codes)

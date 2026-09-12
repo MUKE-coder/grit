@@ -66,6 +66,76 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.233.0 */}
+            <div className="mb-12" id="v3.233.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.233.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Three bugs where tenancy, roles and impersonation meet</h3>
+                <p>
+                  A reviewer proposed building applications that deliberately combine
+                  subsystems which have each had bugs on their own, on the theory that
+                  intersections are where the next ones live. The first of those is
+                  multitenancy with custom roles and impersonation, all at once. It found
+                  three, and the first is the kind of thing that makes a framework unusable
+                  for the case it advertises.
+                </p>
+                <p>
+                  <strong>Every DELETE on a tenant-owned resource answered 500.</strong> The
+                  plugin mounted its organization resolver on the protected route group only.
+                  The staff group carries every delete and every bulk route, and the admin
+                  group every admin-only endpoint, so on those the request never resolved an
+                  organization at all: the scoping callback fails closed, as it should, and
+                  the caller got &quot;Failed to delete deal&quot;. The resolver is now mounted
+                  on all three groups, and the routes file has markers for the other two so a
+                  plugin can reach them.
+                </p>
+                <p>
+                  <strong>A role held through an organization membership granted nothing.</strong>{' '}
+                  The middleware read the membership, put its role id on the request context,
+                  and nothing ever read it: permissions came from platform roles alone, so
+                  somebody made an administrator of one organization was an administrator of
+                  every organization they belonged to. Per-organization roles now grant inside
+                  that organization, and only there. They add to platform roles rather than
+                  replacing them, so an organization can grant and cannot take away.
+                </p>
+                <p>
+                  <strong>&quot;No active organization&quot; was a 500.</strong> It is now 400{' '}
+                  <code>NO_ORGANIZATION</code>, with a message saying to send the header or
+                  join an organization. The mechanism is worth having on its own: an error can
+                  implement <code>respond.Coded</code> to say what it should look like on the
+                  wire, which is how a package the response layer cannot import gets a decent
+                  answer instead of an opaque 500.
+                </p>
+                <p>
+                  Ordering turned out to matter as much as presence. The first fix put the
+                  resolver after the permission gate, so a member whose only permission came
+                  from their organization role still got a 403: the gate read their grants
+                  before the organization had been resolved. On every authenticated group it
+                  now runs after authentication and before authorization, and CI asserts that
+                  order rather than trusting it.
+                </p>
+                <p>
+                  The application that found these is kept rather than thrown away, which was
+                  the other half of the reviewer&apos;s advice. A new CI job scaffolds it on
+                  every push, with both plugins and both resource shapes, and runs 26 checks
+                  across the seams. That also closes something the stability page had listed as
+                  untested: multitenancy was not in the live suite at all. And{' '}
+                  <code>grit doctor</code> gained two checks, because a project that installed
+                  the plugin before today still has the old wiring and{' '}
+                  <code>grit upgrade</code> does not rewrite routes.go: one names the missing
+                  mount with the line to add, the other reports that a user provisioned by SSO
+                  joins no organization, which is a policy decision the framework should not
+                  make quietly.
+                </p>
+              </div>
+            </div>
+
             {/* v3.232.0 */}
             <div className="mb-12" id="v3.232.0">
               <div className="flex items-center gap-3 mb-4">

@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/authz"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/tenant"
 )
@@ -74,11 +75,47 @@ func Tenant(db *gorm.DB) gin.HandlerFunc {
 
 		if active != "" {
 			c.Set("org_id", active)
-			c.Set("org_role_id", roleFor(memberships, active))
+			roleID := roleFor(memberships, active)
+			c.Set("org_role_id", roleID)
+			addOrgGrants(c, db, roleID)
 			c.Request = c.Request.WithContext(tenant.WithOrg(c.Request.Context(), active))
 		}
 		c.Next()
 	}
+}
+
+// addOrgGrants gives the caller the permissions their role in THIS organization
+// carries, for this request only.
+//
+// A per-organization role adds to the platform ones rather than replacing them:
+// an organization cannot take away a permission the platform granted, and an
+// existing project that has no membership roles behaves exactly as before. Until
+// this existed the membership role was stored, put on the context, and read by
+// nothing, so being an administrator of one organization meant being one
+// everywhere.
+func addOrgGrants(c *gin.Context, db *gorm.DB, roleID string) {
+	if roleID == "" {
+		return
+	}
+	extra, err := authz.GrantsForRole(db, roleID)
+	if err != nil || len(extra) == 0 {
+		// Not fatal: the request continues with the platform grants, which fails
+		// closed rather than 500ing every route because one role row is bad.
+		return
+	}
+	existing, _ := c.Get("user_grants")
+	list, _ := existing.([]string)
+
+	seen := make(map[string]bool, len(list)+len(extra))
+	merged := make([]string, 0, len(list)+len(extra))
+	for _, grant := range append(append([]string{}, list...), extra...) {
+		if seen[grant] {
+			continue
+		}
+		seen[grant] = true
+		merged = append(merged, grant)
+	}
+	c.Set("user_grants", merged)
 }
 
 func roleFor(memberships []models.OrganizationMember, orgID string) string {

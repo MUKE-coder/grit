@@ -5,56 +5,72 @@ import (
 	"testing"
 )
 
-// The plugin has to turn its own scoping on.
+// The multitenant plugin has to resolve the active organization on every
+// authenticated route group.
 //
-// It installed a correct tenant package and a correct middleware and wired
-// neither. tenant.RegisterScoping was never called, so the GORM callbacks that
-// add the org filter and stamp OrgID were never installed; middleware.Tenant
-// was never mounted, so nothing put the active organization on the request
-// context for them to read.
-//
-// Following the docs exactly — embed tenant.Owned, send X-Organization-ID —
-// produced a multi-tenant app with no isolation at all. Verified on a CRM:
-// one org read another org's contacts, and org_id came back empty on every
-// insert. The plugin's own middleware comment says "the whole isolation model
-// rests on this check", and nothing called it.
-func TestMultitenantTurnsItsScopingOn(t *testing.T) {
-	ctx := Context{Root: ".", Module: "crm/apps/api", Architecture: "triple", Frontend: "next"}
-	injections := multitenantInjections(ctx)
+// It used to patch the protected group alone. The staff group carries every DELETE
+// and every bulk route and the admin group every admin-only endpoint, so on those
+// the request never resolved an organization: the scoping callback failed closed
+// and deleting a tenant-owned row answered 500. Found by building the reviewer's
+// Project 1 and trying to delete a deal.
+func TestMultitenantMountsTheResolverOnEveryAuthenticatedGroup(t *testing.T) {
+	ctx := Context{Module: "example.com/app", APIRoot: "apps/api"}
+	injections := multitenantPlugin().Injections(ctx)
 
-	var joined string
-	markers := map[string]bool{}
-	for _, inj := range injections {
-		joined += inj.Code + "\n"
-		markers[inj.Marker] = true
+	want := map[string]string{
+		"// grit:middleware:protected": "protected.Use(middleware.Tenant(db))",
+		"// grit:middleware:staff":     "staff.Use(middleware.Tenant(db))",
+		"// grit:middleware:admin":     "admin.Use(middleware.Tenant(db))",
 	}
-
-	if !strings.Contains(joined, "tenant.RegisterScoping(db)") {
-		t.Error("RegisterScoping is never called: tenant.Owned is just a column " +
-			"and every tenant-owned model is read and written unscoped")
+	found := map[string]bool{}
+	for _, injection := range injections {
+		if code, ok := want[injection.Marker]; ok && strings.Contains(injection.Code, code) {
+			found[injection.Marker] = true
+		}
 	}
-	if !strings.Contains(joined, "middleware.Tenant(db)") {
-		t.Error("the tenant middleware is never mounted: nothing resolves the " +
-			"active organization onto the request context")
-	}
-	if !strings.Contains(joined, `"crm/apps/api/internal/tenant"`) {
-		t.Error("routes.go never imports the tenant package, so the wiring " +
-			"above does not compile")
-	}
-	if !markers["// grit:middleware:protected"] {
-		t.Error("the middleware is not mounted at the protected-group marker, " +
-			"where it can read the authenticated user")
+	for marker, code := range want {
+		if !found[marker] {
+			t.Errorf("nothing patches %s with %s, so that route group never resolves an organization",
+				marker, code)
+		}
 	}
 }
 
-// Injection code is written verbatim, so a template placeholder would land in
-// the source as those literal characters.
-func TestMultitenantInjectionsCarryNoTemplatePlaceholders(t *testing.T) {
-	ctx := Context{Root: ".", Module: "crm/apps/api", Architecture: "triple", Frontend: "next"}
-	for _, inj := range multitenantInjections(ctx) {
-		if strings.Contains(inj.Code, "{{") {
-			t.Errorf("injection into %s carries an unsubstituted placeholder:\n%s",
-				inj.File, inj.Code)
+// The error it raises says what it is on the wire.
+//
+// "No active organization" used to fall through respond.WriteError to an opaque
+// 500 reading "Failed to fetch deals", for a request whose only problem was not
+// naming an organization.
+func TestNoOrganizationErrorCarriesItsCode(t *testing.T) {
+	src := mtTenantPackage(Context{Module: "example.com/app", APIRoot: "apps/api"})
+	for _, want := range []string{
+		"func (noOrganizationError) ErrorCode() respond.Code { return respond.CodeNoOrganization }",
+		"var ErrNoOrganization error = noOrganizationError{}",
+		`"example.com/app/internal/respond"`,
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("internal/tenant/tenant.go is missing %q", want)
+		}
+	}
+}
+
+// And a role held through a membership grants inside that organization.
+//
+// The middleware put org_role_id on the request context and nothing read it, so
+// somebody made an administrator of one organization held the same permissions in
+// every organization they belonged to.
+func TestTenantMiddlewareAppliesTheOrganizationRole(t *testing.T) {
+	src := mtMiddleware(Context{Module: "example.com/app", APIRoot: "apps/api"})
+	for _, want := range []string{
+		"addOrgGrants(c, db, roleID)",
+		"func addOrgGrants(c *gin.Context, db *gorm.DB, roleID string)",
+		"authz.GrantsForRole(db, roleID)",
+		`"example.com/app/internal/authz"`,
+		// Merged, not replaced: an organization cannot take away a platform grant.
+		`c.Set("user_grants", merged)`,
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("internal/middleware/tenant.go is missing %q", want)
 		}
 	}
 }
