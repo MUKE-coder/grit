@@ -29,6 +29,67 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.228.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.228.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The verification that found the bugs now runs in CI, on three Postgres versions</h3>
+                <p>
+                  Grit&apos;s worst bugs were never found by a unit test. An export that returned an
+                  empty file with a 200, a list that handed one account another account&apos;s rows, a
+                  save that silently overwrote a newer one, a replace that appended instead of
+                  replacing: each was found by building a real application and using it, then fixed
+                  and verified by hand, once. <code>tests/live/verify.py</code> is that verification
+                  kept. It drives a running generated application over HTTP and reads Postgres behind
+                  it, because for some of these the database is the only witness: whether a column is
+                  really ciphertext, whether a move rewrote a subtree. 57 checks, green on the first
+                  run against a real project.
+                </p>
+                <p>
+                  A new workflow scaffolds a project, generates the resource shapes those bugs lived
+                  in (owned, tree, public, money, encrypted, a relation, line items), migrates, starts
+                  the server and runs the suite, on Postgres 15, 16 and 17. The matrix is there
+                  because these are database behaviours: RETURNING, a materialised-path rewrite with
+                  REPLACE, sliding-window limits, and the way <code>FindInBatches</code> pages.
+                </p>
+                <p>
+                  Two scanners join it. gosec runs over the CLI and over a generated application, with
+                  the rules a file-writing program trips by construction excluded: writing files at
+                  paths built from its own inputs is what a scaffolder is, and those rules produced 500
+                  findings that would have taught everyone to ignore the scanner. What is left is zero
+                  across 317 files, so the next finding is a new one. Trivy scans a generated
+                  project&apos;s dependencies, secrets and Dockerfiles.
+                </p>
+                <p>
+                  Trivy earned its place on the first run. A freshly scaffolded project carried five
+                  HIGH CVEs that <code>govulncheck</code> had not reported, because none are reachable
+                  from generated code: an XML signature validation bypass in{' '}
+                  <code>goxmldsig</code>, which on the SAML assertion path is an authentication bypass,
+                  where the newest release of the library that pulls it in still asks for the
+                  vulnerable version; two parser denial-of-service issues in <code>excelize</code>,
+                  which is what the CSV and XLSX importer hands user uploads to; an allocation DoS in{' '}
+                  <code>golang.org/x/image</code>, which decodes user images; and token parsing in{' '}
+                  <code>golang.org/x/oauth2</code>. All four are pinned as floors now, so{' '}
+                  <code>grit upgrade</code> carries them into existing projects too.
+                </p>
+                <p>
+                  gosec found one pattern worth changing: two formatting loops in generated code
+                  indexed bytes while iterating runes. Harmless for the digits they are given, and the
+                  exact shape that truncates the first multi-byte character somebody passes in, copied
+                  into two files. Three findings that are right to keep now carry their reason in the
+                  code instead: TOTP is HMAC-SHA1 because RFC 6238 says so, the backup&apos;s table
+                  name comes from the model registry, and <code>safefetch</code> checks the
+                  destination itself. The README now carries CI, live and scan badges.
+                </p>
+              </div>
+            </div>
+
             {/* v3.227.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

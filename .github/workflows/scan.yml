@@ -1,0 +1,86 @@
+# Static and dependency scanning of the code users actually deploy.
+#
+# The CLI's own scan lives in ci.yml. This one scaffolds a project and scans
+# that, because the generated API is the code that takes requests, and its
+# dependency graph is resolved at the user's install time rather than ours.
+#
+# It earned its place on the first run: a freshly scaffolded project carried
+# five HIGH CVEs that govulncheck had not reported, because none of them were
+# reachable from generated code. One of them was an XML signature validation
+# bypass on the SAML assertion path, which is an authentication bypass, and the
+# newest release of the library that pulls it in still asked for the vulnerable
+# version. They are pinned as floors in the scaffold now, and this job is what
+# notices the next one.
+name: Scan
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    # A CVE can land in a dependency without this repository changing at all.
+    - cron: "30 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generated-app:
+    name: Scan a generated app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.6"
+          check-latest: true
+          cache: true
+
+      - name: Build grit from this commit
+        run: |
+          go build -o /usr/local/bin/grit ./cmd/grit
+          grit version
+
+      # Resources, not just the base project: the generated handlers, services
+      # and queries are most of what a user deploys.
+      - name: Scaffold
+        run: |
+          mkdir -p /tmp/scan && cd /tmp/scan
+          grit new app --api
+          cd app
+          grit generate resource Tag --fields "name:string"
+          grit generate resource Note --fields "body:text,secret:text:encrypted" --owned-by user
+          grit generate resource Product \
+            --fields "name:string,slug:slug,price:money,tags:many_to_many:Tag" --public
+
+      # G104/G301/G302/G304/G306/G703/G706/G122/G204 describe what a file-writing
+      # program does by construction, and G101 fires on an email template that
+      # says "password". What is left gates: SQL building, weak crypto, weak
+      # randomness, unsafe TLS, integer conversions that can truncate.
+      - name: gosec (generated API)
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          cd /tmp/scan/app/apps/api
+          gosec -exclude=G104,G301,G302,G304,G306,G703,G706,G122,G204,G101 ./...
+
+      # govulncheck reports what is reachable from the generated code. Trivy
+      # reports the dependency graph, which is how the five CVEs above were
+      # found: reachable from a request through a library, not from the code.
+      - name: govulncheck (generated API)
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          cd /tmp/scan/app/apps/api
+          govulncheck ./...
+
+      - name: Trivy (dependencies, secrets, Dockerfiles)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: /tmp/scan/app
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true

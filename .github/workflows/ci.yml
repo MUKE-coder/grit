@@ -61,6 +61,20 @@ jobs:
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
 
+      # gosec, with the rules a file-writing program trips by construction
+      # excluded: writing files at paths built from its own inputs is what a
+      # scaffolder is, and an email template that says "password" is not a
+      # credential. Those rules produced 500 findings and would have taught
+      # everyone to ignore the scanner. What is left is zero across 317 files,
+      # so anything it reports next is new: SQL building, weak crypto, weak
+      # randomness, unsafe TLS, a conversion that can truncate.
+      #
+      # The generated application is scanned separately, in scan.yml.
+      - name: gosec
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          gosec -exclude=G104,G301,G302,G304,G306,G703,G706,G122,G204,G101 ./...
+
   build:
     name: Build
     runs-on: ubuntu-latest

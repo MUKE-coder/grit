@@ -10,6 +10,9 @@
 
 <p align="center">
   <a href="https://github.com/MUKE-coder/grit/releases"><img src="https://img.shields.io/github/v/release/MUKE-coder/grit?style=flat-square&color=38bdf8" alt="Release" /></a>
+  <a href="https://github.com/MUKE-coder/grit/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/MUKE-coder/grit/ci.yml?branch=main&style=flat-square&label=CI&color=38bdf8" alt="CI" /></a>
+  <a href="https://github.com/MUKE-coder/grit/actions/workflows/live.yml"><img src="https://img.shields.io/github/actions/workflow/status/MUKE-coder/grit/live.yml?branch=main&style=flat-square&label=live%20app&color=38bdf8" alt="Live app checks on Postgres 15, 16 and 17" /></a>
+  <a href="https://github.com/MUKE-coder/grit/actions/workflows/scan.yml"><img src="https://img.shields.io/github/actions/workflow/status/MUKE-coder/grit/scan.yml?branch=main&style=flat-square&label=scan&color=38bdf8" alt="Security scan of a generated app" /></a>
   <a href="https://github.com/MUKE-coder/grit/blob/main/LICENSE"><img src="https://img.shields.io/github/license/MUKE-coder/grit?style=flat-square&color=38bdf8" alt="License" /></a>
   <a href="https://gritframework.dev"><img src="https://img.shields.io/badge/docs-gritframework.dev-38bdf8?style=flat-square" alt="Docs" /></a>
   <a href="https://gritframework.dev/sponsor"><img src="https://img.shields.io/badge/sponsor-%E2%99%A5-ec4899?style=flat-square" alt="Sponsor" /></a>

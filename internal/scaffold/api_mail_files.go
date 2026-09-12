@@ -240,6 +240,7 @@ const welcomeTemplate = ` + "`" + `<!DOCTYPE html>
 </body>
 </html>` + "`" + `
 
+// #nosec G101 -- an email about a password, not a credential in the source.
 const passwordResetTemplate = ` + "`" + `<!DOCTYPE html>
 <html>
 <head>

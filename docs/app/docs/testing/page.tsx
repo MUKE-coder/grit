@@ -399,9 +399,45 @@ curl -I http://localhost:8080/api/health | grep -iE 'x-frame|x-content|content-s
               </p>
               <ul className="list-disc pl-6 my-3">
                 <li><strong>Audit trails</strong> — Grit&apos;s <code>middleware.LogSecurityEvent</code> + the activity-log hash chain provide tamper-evident records of every authN/authZ event.</li>
-                <li><strong>Continuous scanning</strong> — <code>.github/workflows/security.yml</code> runs govulncheck + pnpm audit + CodeQL on every PR and weekly. Dependabot raises PRs the moment a CVE drops.</li>
+                <li><strong>Continuous scanning</strong> — <code>.github/workflows/ci.yml</code> runs go vet, govulncheck and gosec on every PR, <code>scan.yml</code> scans a freshly generated application daily, and Dependabot raises PRs the moment a CVE drops.</li>
                 <li><strong>Remediation tracking</strong> — every finding flows from discovery → ticket (severity + owner + SLA) → fix → re-test. That documented loop is what SOC 2 / ISO 27001 auditors ask to see.</li>
               </ul>
+
+              <h2 id="live-checks" className="mt-10">How Grit itself is tested: live checks on every Postgres</h2>
+              <p>
+                This is about the framework rather than your application, and it is the answer to a
+                fair question: what stops a Grit release breaking something that used to work?
+              </p>
+              <p>
+                Grit&apos;s worst bugs were never found by a unit test. An export that returned an
+                empty file with a 200, a list that handed one account another account&apos;s rows, a
+                save that silently overwrote a newer one, a replace that appended instead of
+                replacing. Each was found by building a real application and using it. Unit tests over
+                generated source cannot catch them, because they are behaviours of the running thing,
+                and several are behaviours of the database.
+              </p>
+              <p>
+                So that verification is kept as code. <code>tests/live/verify.py</code> drives a
+                running generated application over HTTP and reads Postgres behind it, where the
+                database is the only witness: whether an encrypted column is really ciphertext,
+                whether a move rewrote a subtree, whether a replace left one line or three.{' '}
+                <code>.github/workflows/live.yml</code> scaffolds a project on every push, generates
+                the resource shapes those bugs lived in (owned, tree, public, money, encrypted, a
+                relation, line items), migrates, starts the server and runs the suite against{' '}
+                <strong>Postgres 15, 16 and 17</strong>.
+              </p>
+              <ul className="list-disc pl-6 my-3">
+                <li><strong>Optimistic locking</strong> — an ETag per version, a 409 naming the current one, and twenty simultaneous writes on one version where exactly one may land.</li>
+                <li><strong>Ownership</strong> — every path by id, the list, the export and the bulk route, including a staff account that holds the delete permission and still cannot touch another user&apos;s row.</li>
+                <li><strong>Data</strong> — money exact to the minor unit, an encrypted column unreadable in the table, a relation id that matches nothing refused rather than dropped, line items replaced rather than appended.</li>
+                <li><strong>Surfaces</strong> — the public endpoints behind an API key publishing an allowlist, the tree&apos;s moves and reorders, CSV import including an owned resource where only an ADMIN may name another owner.</li>
+              </ul>
+              <p>
+                The same suite runs by hand against any project:{' '}
+                <code>python tests/live/verify.py http://localhost:8080 --db myapp</code>. Adding a
+                check is the rule whenever a bug is found by using an application rather than by a
+                test, which is how the list above got its length.
+              </p>
 
               <h2 id="resources" className="mt-10">Resources</h2>
               <ul className="list-disc pl-6 my-3">
