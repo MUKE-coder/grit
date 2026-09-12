@@ -94,11 +94,14 @@ const rows: Row[] = [
   {
     area: 'Multitenancy (plugin, tenant.Owned)',
     status: 'beta',
-    guaranteed: 'A tenant-owned model is scoped by the organization on the request context, and a query with no organization is refused rather than answered.',
-    proof: 'The plugin’s own tests, and grit doctor reports a resource with no tenant.Owned in a project that has the plugin.',
+    guaranteed:
+      'A tenant-owned model is scoped by the organization on the request context on every authenticated route group, a query with no organization is refused rather than answered (400 NO_ORGANIZATION), the X-Organization-ID header is checked against membership, and a role held through a membership grants inside that organization only.',
+    proof:
+      'A CI job scaffolds a project with the multitenant and impersonate plugins and runs 26 checks across the seams on a real Postgres: cross-tenant reads, an admin with no organization, an organization and an owner on one row, a membership role used in the wrong organization, and an impersonated session inside a tenant. It also asserts the middleware order that one of those bugs was.',
     yours:
-      'Add tenant.Owned to every model that belongs to an organization, and verify isolation with two organizations before you trust it. Combining it with --tree or --public is not covered by the live suite yet.',
-    history: 'Isolation bugs were found and fixed in v3.197 and v3.198. This needs more adversarial testing before trusting it blind.',
+      'Add tenant.Owned to every model that belongs to an organization. Decide which organization a user provisioned by SSO joins: nothing does it for you, and grit doctor says so. Combining tenancy with --tree or --public is still not covered by the fixture.',
+    history:
+      'Isolation bugs were fixed in v3.197 and v3.198. v3.233.0 fixed three found by building tenancy, roles and impersonation together: every DELETE on a tenant-owned row answered 500 because the staff group never resolved an organization, a membership role granted nothing at all, and “no active organization” was an opaque 500.',
   },
   {
     area: 'Money (exact, multi-currency)',
@@ -233,7 +236,11 @@ const testing: { label: string; detail: string }[] = [
     detail: 'CI scaffolds a project, generates the resource shapes past bugs lived in, migrates, starts the server and drives it over HTTP, reading Postgres directly where the database is the only witness.',
   },
   {
-    label: '105 error codes, one status each, checked',
+    label: 'A tenancy fixture, run on every push',
+    detail: 'CI scaffolds a project with the multitenant and impersonate plugins, a tenant-owned resource and one that is tenant-owned and owned by a user, then drives 26 checks across the seams: cross-tenant reads, an admin with no organization, a role held through a membership, and an impersonated session inside a tenant.',
+  },
+  {
+    label: '106 error codes, one status each, checked',
     detail: 'every code a handler returns is resolved against the catalogue, and a code returned with a status other than its own fails the build. That test is why the statuses are consistent: VALIDATION_ERROR was 422 in thirty-eight handlers and 400 in twenty-five.',
   },
   {

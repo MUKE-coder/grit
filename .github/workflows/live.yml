@@ -194,3 +194,125 @@ jobs:
           name: live-postgres-${{ matrix.postgres }}
           path: /tmp/live/server.log
           retention-days: 14
+
+  tenancy:
+    name: tenancy, roles and impersonation together
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: grit
+          POSTGRES_PASSWORD: grit
+          POSTGRES_DB: grit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgres://grit:grit@localhost:5432/grit?sslmode=disable
+      REDIS_URL: redis://localhost:6379
+      APP_PORT: "8080"
+      APP_ENV: development
+      JWT_SECRET: ci-jwt-secret-0123456789abcdef0123456789abcdef
+      FIELD_ENCRYPTION_KEY: K3hQ8vZ2mP5sT7wY0bD4fG6jL9nR1uX3cV5aE8hK2oQ=
+      PGPASSWORD: grit
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.6"
+          check-latest: true
+          cache: true
+
+      - name: Build grit from this commit
+        run: |
+          go build -o /usr/local/bin/grit ./cmd/grit
+          grit version
+
+      # The combination, not the parts: the multitenant plugin and the impersonate
+      # plugin, a tenant-owned resource, and one that is tenant-owned AND has an
+      # owner, which is where an organization and an owner meet on the same row.
+      - name: Scaffold the fixture
+        run: |
+          mkdir -p /tmp/tenancy && cd /tmp/tenancy
+          grit new app --api
+          cd app
+          grit plugin add multitenant
+          grit plugin add impersonate
+          grit generate resource Deal \
+            --fields "title:string,amount:money,stage:select:new=New|won=Won|lost=Lost" \
+            --tenant-owned
+          grit generate resource Contact --fields "name:string,email:string" \
+            --tenant-owned --owned-by user
+
+      # The ordering bug that broke every DELETE was invisible in a build and
+      # obvious in a grep, so both run.
+      - name: Build, vet and check the middleware order
+        run: |
+          cd /tmp/tenancy/app/apps/api
+          go build ./...
+          go vet ./...
+          grep -n "Tenant(db)" internal/routes/routes.go
+          test "$(grep -c 'Use(middleware.Tenant(db))' internal/routes/routes.go)" = "3" \
+            || { echo "the tenant middleware is not on all three authenticated groups"; exit 1; }
+          python3 - <<'PY'
+          import io, sys
+          src = io.open('internal/routes/routes.go', encoding='utf-8').read().splitlines()
+          def line_of(needle):
+              for i, line in enumerate(src):
+                  if needle in line:
+                      return i
+              sys.exit('not found: ' + needle)
+          if line_of('staff.Use(middleware.Tenant(db))') > line_of('staff.Use(middleware.RequireStaff())'):
+              sys.exit('the tenant middleware runs after RequireStaff, so an organization role grants nothing')
+          print('middleware order is auth, then plugins, then the gate')
+          PY
+
+      - name: Migrate
+        run: |
+          cd /tmp/tenancy/app/apps/api
+          go run ./cmd/migrate --grit-version ci
+
+      - name: Start the API
+        run: |
+          cd /tmp/tenancy/app/apps/api
+          go build -o /tmp/tenancy/server ./cmd/server
+          /tmp/tenancy/server > /tmp/tenancy/server.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:8080/api/health > /dev/null && break
+            sleep 1
+          done
+
+      - name: The seams
+        run: |
+          python3 tests/live/verify_tenancy.py http://localhost:8080 \
+            --db grit --db-user grit --db-password grit \
+            --db-host localhost --db-port 5432
+
+      - name: Server log
+        if: failure()
+        run: tail -200 /tmp/tenancy/server.log || true
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: tenancy-server-log
+          path: /tmp/tenancy/server.log
+          retention-days: 14

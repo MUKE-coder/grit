@@ -124,12 +124,64 @@ db.WithContext(ctx).Create(&Invoice{Amount: 100})`} />
               enumerate tenants.
             </p>
 
+            <h2>When there is no active organization</h2>
+            <p>
+              A tenant-owned row cannot be read or written without one, and the scoping
+              callback fails closed rather than guessing. The caller is told so:{' '}
+              <code>400</code> with <Link href="/docs/backend/errors">the code</Link>{' '}
+              <code>NO_ORGANIZATION</code>, which happens when they belong to no
+              organization, or to several and named none.
+            </p>
+            <CodeBlock
+              language="json"
+              filename="400 Bad Request"
+              code={`{
+  "error": {
+    "code": "NO_ORGANIZATION",
+    "message": "no active organization: send it as X-Organization-ID, or join one"
+  }
+}`}
+            />
+            <p>
+              Until v3.233.0 this arrived as a 500 saying &quot;Failed to fetch deals&quot;,
+              because the error reached the generic handler and nothing knew what it meant.
+            </p>
+
             <h2>Roles per organization</h2>
             <p>
-              Membership carries the role, so someone is Editor in one organization and
-              Viewer in another. It reuses the{' '}
-              <Link href="/docs/security/authorization">roles</Link> you already have &mdash;
-              no parallel permission system.
+              Membership carries a role, so somebody can be an editor in one organization and
+              a viewer in another. It reuses the{' '}
+              <Link href="/docs/security/authorization">roles</Link> you already have, with no
+              parallel permission system.
+            </p>
+            <CodeBlock
+              language="bash"
+              code={`# Give Dave the "Deal Closer" role, in this organization only
+curl -X POST https://api.example.com/api/v1/organizations/01H.../members \\
+  -H "Authorization: Bearer ..." \\
+  -d '{"user_id": "01H...", "role_id": "01H..."}'`}
+            />
+            <p>
+              The semantics, because they are a choice: an organization role <strong>adds</strong>{' '}
+              permissions inside that organization. Platform roles, the ones assigned with{' '}
+              <code>PUT /users/:id/roles</code>, stay global. So an organization can grant but
+              cannot take away, and a project with no membership roles behaves exactly as it did.
+            </p>
+            <p>
+              This is what v3.233.0 fixed: the membership role was stored, put on the request
+              context, and read by nothing, so being an administrator of one organization meant
+              being one in every organization you belonged to.
+            </p>
+
+            <h2>Single sign-on does not join an organization</h2>
+            <p>
+              A user provisioned by SSO or a social login belongs to no organization, so every
+              tenant-owned endpoint answers <code>NO_ORGANIZATION</code> for them until somebody
+              puts them in one. That is deliberate: which organization a new user joins is a
+              policy the framework cannot guess, and guessing would be a cross-tenant bug rather
+              than a convenience. Map it where you know it, from the email domain, the SSO
+              connection, or a group the identity provider releases.{' '}
+              <code>grit doctor</code> reminds you when both are present.
             </p>
 
             <h2>Endpoints</h2>

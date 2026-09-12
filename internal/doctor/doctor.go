@@ -68,6 +68,8 @@ var checks = []struct {
 	{"owner-settable-from-body", checkOwnerFromBody},
 	{"resource-could-be-owned", checkUnownedUserResource},
 	{"tenant-shared-resource", checkTenantOwned},
+	{"tenant-middleware-missing", checkTenantMiddleware},
+	{"tenant-sso-no-organization", checkTenantSSOProvisioning},
 	{"pii-column-not-encrypted", checkPII},
 	{"append-only-mutable-routes", checkAppendOnlyRoutes},
 	{"studio-unprotected", checkStudio},
@@ -439,6 +441,84 @@ func checkTenantOwned(p *project) []Finding {
 		})
 	}
 	return out
+}
+
+// checkTenantMiddleware looks for the organization resolver on every
+// authenticated route group, in the right order.
+//
+// The multitenant plugin used to mount middleware.Tenant on the protected group
+// only. The staff group carries every DELETE and every bulk route, and the admin
+// group every admin-only endpoint, so on those the request never resolved an
+// organization: the scoping callback failed closed and the answer was a 500. A
+// project that installed the plugin before v3.233.0 still looks like that, and
+// grit upgrade does not rewrite routes.go, which plugins and people both edit.
+//
+// Order matters as much as presence. A role held through an organization
+// membership has to be resolved before RequireStaff reads the caller's grants, or
+// a member who is staff of the organization they are acting in gets a 403.
+func checkTenantMiddleware(p *project) []Finding {
+	if !p.hasTenant || p.routes == "" {
+		return nil
+	}
+
+	var out []Finding
+	for _, group := range []struct{ name, mount, gate string }{
+		{"staff", "staff.Use(middleware.Tenant(db))", "staff.Use(middleware.RequireStaff())"},
+		{"admin", "admin.Use(middleware.Tenant(db))", `admin.Use(middleware.RequireRole("ADMIN"))`},
+	} {
+		at := strings.Index(p.routes, group.mount)
+		if at < 0 {
+			out = append(out, Finding{
+				Level:    "error",
+				Check:    "tenant-middleware-missing",
+				Resource: group.name + " routes",
+				Message: "the " + group.name + " group does not resolve the active organization, so every " +
+					"tenant-owned row it touches answers 500: the DELETE and bulk routes live here",
+				Fix: "add " + group.mount + " in internal/routes/routes.go, above " + group.gate,
+			})
+			continue
+		}
+		if gate := strings.Index(p.routes, group.gate); gate >= 0 && at > gate {
+			out = append(out, Finding{
+				Level:    "error",
+				Check:    "tenant-middleware-missing",
+				Resource: group.name + " routes",
+				Message: "the organization is resolved after the permission gate, so a role held through an " +
+					"organization membership grants nothing on these routes",
+				Fix: "move " + group.mount + " above " + group.gate,
+			})
+		}
+	}
+	return out
+}
+
+// checkTenantSSOProvisioning reports the gap between single sign-on and
+// organizations.
+//
+// A user created by SSO or a social login joins no organization: nothing in the
+// provisioning path knows about them, and which organization somebody belongs to
+// is a policy decision (their email domain, the connection they came through, a
+// group the identity provider released) that the framework cannot make. The
+// result, with the rest of v3.233.0 in place, is an honest 400 NO_ORGANIZATION on
+// every tenant-owned endpoint rather than a silent empty list, which is the right
+// failure and still a surprise if nobody said so.
+func checkTenantSSOProvisioning(p *project) []Finding {
+	if !p.hasTenant {
+		return nil
+	}
+	if !strings.Contains(p.routes, "samlHandler") && !strings.Contains(p.routes, "/auth/sso") &&
+		!strings.Contains(p.routes, "oauthHandler") {
+		return nil
+	}
+	return []Finding{{
+		Level:    "warning",
+		Check:    "tenant-sso-no-organization",
+		Resource: "single sign-on",
+		Message: "a user provisioned by SSO or a social login joins no organization, so every tenant-owned " +
+			"endpoint answers NO_ORGANIZATION until somebody adds them to one",
+		Fix: "add the membership where you know the policy: map the email domain or the SSO connection to an " +
+			"organization after sign-in, or have an administrator invite them",
+	}}
 }
 
 // piiColumns are column names that usually hold something that should not be
