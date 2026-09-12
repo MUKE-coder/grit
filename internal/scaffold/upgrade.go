@@ -373,6 +373,46 @@ func Upgrade(uOpts UpgradeOptions) error {
 		updated += n
 	}
 
+	// --- The admin panel inside the SPA (a single) ---
+	//
+	// Same deal as the double above: one binary, one SPA, and before v3.236.0 no
+	// panel. The screens and the mirrored shared package are framework-owned and
+	// written from the templates; the SPA's dependencies, aliases and dev proxy
+	// are not, so those are edited in place and only where an entry is missing.
+	if opts.ShouldEmbedAdminInSPA() && dirExists(filepath.Join(root, "frontend", "src")) {
+		spinner.Printf("  → Adding the admin panel to the SPA at /admin...\n")
+		embedded := embeddedSingleAdminFileMap(root, opts)
+		for path, body := range singleSharedMirrorFiles(root, opts) {
+			embedded[path] = body
+		}
+		// The root route decides whether a page gets the site's navbar, and the
+		// panel's screens must not.
+		embedded[filepath.Join(root, "frontend", "src", "routes", "__root.tsx")] = webTanStackRootRoute(opts)
+		// The navbar, for the link to the panel.
+		embedded[filepath.Join(root, "frontend", "src", "components", "navbar.tsx")] = singleViteNavbar(opts)
+		n, err := writeUpgradeFiles(embedded, uOpts.Force)
+		if err != nil {
+			return fmt.Errorf("adding the admin panel to the SPA: %w", err)
+		}
+		for _, write := range adminExtraWriters {
+			if err := write(root, opts); err != nil {
+				return fmt.Errorf("adding the admin panel's widgets: %w", err)
+			}
+		}
+		wired, err := ensureSPAAdminWiring(root, opts)
+		if err != nil {
+			return fmt.Errorf("wiring the SPA for the admin panel: %w", err)
+		}
+		for _, f := range wired {
+			green.Printf("  ✓ %s now knows about the panel\n", f)
+		}
+		if n > 0 {
+			green.Printf("  ✓ Admin panel available at /admin/dashboard (%d files)\n", n)
+			cyan.Printf("    Run pnpm install in frontend/ for the panel's dependencies.\n")
+		}
+		updated += n
+	}
+
 	// --- Admin panel (generic components only — preserves resource definitions) ---
 	if hasAdmin && opts.Frontend == FrontendTanStack {
 		skipViteApp("admin")

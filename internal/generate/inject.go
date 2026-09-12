@@ -22,7 +22,7 @@ const apiVersion = "v1"
 
 func (g *Generator) injectAll(names Names) error {
 	apiRoot := g.APIRoot()
-	sharedRoot := filepath.Join(g.Root, "packages", "shared")
+	sharedRoot := g.SharedRoot()
 	adminRoot := g.AdminRoot()
 
 	// 1. Inject model into AutoMigrate

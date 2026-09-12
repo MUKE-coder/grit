@@ -66,6 +66,84 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.236.0 */}
+            <div className="mb-12" id="v3.236.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.236.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A single gets the admin panel too, inside its SPA</h3>
+                <p>
+                  Yesterday a two-app project got the panel. A one-binary project had the same
+                  hole and a smaller excuse: the whole point of <code>--single</code> is that one
+                  binary is the entire product, and the thing you administer it with was not in
+                  it. It is now, as a section of the same SPA at <code>/admin/dashboard</code>:
+                  35 screens, 201 files, the same dashboard, resource CRUD, system hub, settings
+                  and account security a three-app project has.
+                </p>
+                <p>
+                  The source is the Vite admin rather than the Next one, because a single
+                  project&apos;s frontend is already a TanStack Router app. Its routes move into
+                  the SPA&apos;s tree under <code>/admin</code> and the id inside each route file
+                  is rewritten to match, since TanStack refuses a file route whose id is not its
+                  path; everything else moves to <code>frontend/src/admin-panel/</code> behind an{' '}
+                  <code>@admin</code> alias. The SPA&apos;s root route yields: the panel draws its
+                  own sidebar and topbar, so the site navbar and footer step aside for anything
+                  under <code>/admin</code>, and nothing else changes.{' '}
+                  <code>grit generate resource</code> writes its screens there and registers it in
+                  the sidebar, and <code>grit upgrade</code> adds the panel to a single you
+                  already have: 212 files, plus the aliases, dependencies and dev-proxy entries
+                  inserted into your own config only where they were missing.
+                </p>
+                <p>
+                  Most of what this turned up was not about the feature. The panel&apos;s
+                  api-client defaults to <code>http://localhost:8080</code>, which is right when
+                  the admin runs on its own port and wrong when the binary serving the page is the
+                  API: it asks the origin it was served from now, in dev through the Vite proxy
+                  and in production directly. That proxy only forwarded <code>/api</code>, so the
+                  panel&apos;s links to GORM Studio, Pulse and Sentinel landed on the dev server;
+                  it forwards those too. The api-client also read{' '}
+                  <code>process.env.NODE_ENV</code>, which Vite does not polyfill, so every Vite
+                  admin ever scaffolded carried a &quot;process is not defined&quot; in the
+                  browser that <code>vite build</code> could not catch, because esbuild does not
+                  typecheck.
+                </p>
+                <p>
+                  Three more, all from asking the wrong question. Writers that wanted to know
+                  whether the panel is a TanStack app asked <code>UseTanStack</code>, which reads a
+                  field that is empty for a single project, so the account-security screen was
+                  written as a Next.js page into an <code>apps/admin</code> directory a single does
+                  not have: one orphan file, no package.json, nothing that compiles it. The
+                  generator had two copies of &quot;where does admin code live&quot; and only one
+                  learned about the new shape, so a generated resource was written and never
+                  registered, which means the screens existed and the sidebar did not know. And
+                  the shared schemas and types were written to <code>packages/shared</code>, which
+                  a single project does not have, so <code>grit generate</code> emitted a
+                  customisation overlay importing a type it had just skipped, and{' '}
+                  <code>grit sync</code> had nothing to sync. <code>grit remove resource</code>{' '}
+                  now finds the panel in all three shapes as well.
+                </p>
+                <p>
+                  Also the Redis noise, in the single binary this time. v3.235.0 quietened
+                  <code> apps/api</code>&apos;s main; a single project has its own, and it still
+                  printed a wall of driver failures, then &quot;Background worker started&quot;,
+                  then an asynq error every second or two forever. Two lines now, and the worker
+                  and cron start only when Redis answered.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Verified on a scaffolded single: 2,908 modules built with no type errors, the
+                  panel serves at <code>/admin/dashboard</code> with its own chrome, a generated
+                  resource appears in the sidebar and lists its records, and{' '}
+                  <code>grit upgrade</code> delivers all of it to a project scaffolded before this
+                  existed.
+                </p>
+              </div>
+            </div>
+
             {/* v3.235.0 */}
             <div className="mb-12" id="v3.235.0">
               <div className="flex items-center gap-3 mb-4">

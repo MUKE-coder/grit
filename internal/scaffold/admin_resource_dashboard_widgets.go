@@ -23,13 +23,12 @@ import (
 )
 
 func writeAdminResourceDashboardWidgets(root string, opts Options) error {
-	_ = opts
 	adminRoot := adminCodeRoot(root, opts)
 
 	files := map[string]string{
-		filepath.Join(adminRoot, "components", "dashboard", "ResourceStatCard.tsx"):    adminResourceStatCardTSX(),
-		filepath.Join(adminRoot, "components", "dashboard", "ResourceLatestTable.tsx"): adminResourceLatestTableTSX(),
-		filepath.Join(adminRoot, "components", "dashboard", "ResourceWidgetsRow.tsx"):  adminResourceWidgetsRowTSX(),
+		filepath.Join(adminRoot, "components", "dashboard", "ResourceStatCard.tsx"):    adminFlavoured(opts, adminResourceStatCardTSX()),
+		filepath.Join(adminRoot, "components", "dashboard", "ResourceLatestTable.tsx"): adminFlavoured(opts, adminResourceLatestTableTSX()),
+		filepath.Join(adminRoot, "components", "dashboard", "ResourceWidgetsRow.tsx"):  adminFlavoured(opts, adminResourceWidgetsRowTSX()),
 	}
 	for path, content := range files {
 		if err := writeFile(path, content); err != nil {

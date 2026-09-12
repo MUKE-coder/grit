@@ -126,7 +126,7 @@ func (g *Generator) adminResourceFile(names Names) (string, bool) {
 }
 
 func (g *Generator) injectFrontendField(names Names, f Field) error {
-	if dirExists(filepath.Join(g.Root, "packages", "shared")) {
+	if dirExists(g.SharedRoot()) {
 		if err := g.injectZodField(names, f); err != nil {
 			return err
 		}
@@ -161,7 +161,7 @@ func (g *Generator) injectModelField(names Names, f Field) error {
 }
 
 func (g *Generator) injectZodField(names Names, f Field) error {
-	path := filepath.Join(g.Root, "packages", "shared", "schemas", names.Kebab+".ts")
+	path := filepath.Join(g.SharedRoot(), "schemas", names.Kebab+".ts")
 	snake := toSnakeCase(f.Name)
 	if err := injectAfterAnchor(path,
 		fmt.Sprintf("export const Create%sSchema = z.object({", names.Pascal),
@@ -178,7 +178,7 @@ func (g *Generator) injectZodField(names Names, f Field) error {
 }
 
 func (g *Generator) injectTSField(names Names, f Field) error {
-	path := filepath.Join(g.Root, "packages", "shared", "types", names.Kebab+".ts")
+	path := filepath.Join(g.SharedRoot(), "types", names.Kebab+".ts")
 	return injectAfterAnchor(path,
 		fmt.Sprintf("export interface %s {", names.Pascal),
 		fmt.Sprintf("  %s: %s;", toSnakeCase(f.Name), f.TSType()))

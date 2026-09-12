@@ -137,7 +137,7 @@ func (g *Generator) writeResourceDefinitionTanStack(names Names) error {
 // tanStackResourcesRoot is where the TanStack admin keeps resource
 // definitions.
 func (g *Generator) tanStackResourcesRoot() string {
-	return filepath.Join(g.Root, "apps", "admin", "src", "resources")
+	return filepath.Join(g.adminTanStackRoot(), "resources")
 }
 
 // tanStackResourceImport is the module specifier a route uses to reach a
@@ -168,12 +168,14 @@ export const Route = createFileRoute('/_dashboard/resources/%s/')({
 })
 `, names.Camel, g.tanStackResourceImport(names), names.PluralKebab, names.Camel)
 
-	dir := filepath.Join(g.Root, "apps", "admin", "src", "routes", "_dashboard", "resources", names.PluralKebab)
-	os.MkdirAll(dir, 0755)
+	routes := filepath.Join(g.adminTanStackRoutesRoot(), "_dashboard", "resources")
+	dir := filepath.Join(routes, names.PluralKebab)
 	// Remove any stale flat route from a pre-detail-page generation so the two
 	// don't collide on the same path.
-	os.Remove(filepath.Join(g.Root, "apps", "admin", "src", "routes", "_dashboard", "resources", names.PluralKebab+".tsx"))
-	return os.WriteFile(filepath.Join(dir, "index.tsx"), []byte(content), 0644)
+	os.Remove(filepath.Join(routes, names.PluralKebab+".tsx"))
+	// writeFileWithDirs, not os.WriteFile: in the SPA the route id and the imports
+	// are rewritten on the way out, and that rewrite is keyed on the path.
+	return writeFileWithDirs(filepath.Join(dir, "index.tsx"), content)
 }
 
 // writeResourceDetailPageTanStack writes the per-resource $id detail route.
@@ -192,7 +194,6 @@ function RouteComponent() {
 }
 `, names.Camel, g.tanStackResourceImport(names), names.PluralKebab, names.Camel)
 
-	dir := filepath.Join(g.Root, "apps", "admin", "src", "routes", "_dashboard", "resources", names.PluralKebab)
-	os.MkdirAll(dir, 0755)
-	return os.WriteFile(filepath.Join(dir, "$id.tsx"), []byte(content), 0644)
+	dir := filepath.Join(g.adminTanStackRoutesRoot(), "_dashboard", "resources", names.PluralKebab)
+	return writeFileWithDirs(filepath.Join(dir, "$id.tsx"), content)
 }

@@ -697,7 +697,7 @@ export type Update%sInput = z.infer<typeof Update%sSchema>;
 `, importLines, names.Pascal, createFields, names.Pascal, updateFields,
 		names.Pascal, names.Pascal, names.Pascal, names.Pascal)
 
-	path := filepath.Join(g.Root, "packages", "shared", "schemas", names.Kebab+".ts")
+	path := filepath.Join(g.SharedRoot(), "schemas", names.Kebab+".ts")
 	return writeFileWithDirs(path, content)
 }
 
@@ -781,7 +781,7 @@ func (g *Generator) writeTSTypes(names Names) error {
 }
 `, names.Pascal, fields)
 
-	path := filepath.Join(g.Root, "packages", "shared", "types", names.Kebab+".ts")
+	path := filepath.Join(g.SharedRoot(), "types", names.Kebab+".ts")
 	return writeFileWithDirs(path, content)
 }
 

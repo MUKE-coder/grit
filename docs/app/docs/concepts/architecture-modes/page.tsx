@@ -32,6 +32,7 @@ const architectures: ArchMode[] = [
       { name: 'cmd/server/main.go', type: 'file', depth: 0, comment: 'go:embed frontend/dist/*' },
       { name: 'internal/', type: 'folder', depth: 0, comment: 'Go backend' },
       { name: 'frontend/', type: 'folder', depth: 0, comment: 'React + Vite + TanStack Router' },
+      { name: 'src/admin-panel/', type: 'folder', depth: 1, comment: 'The admin panel, at /admin/dashboard' },
       { name: 'go.mod', type: 'file', depth: 0 },
       { name: 'Makefile', type: 'file', depth: 0, comment: 'make dev, make build' },
     ],

@@ -19,6 +19,13 @@ package scaffold
 // and usePathname(). The Next.js variant lives in web_files.go::webNavbar
 // and gets used by the monorepo --triple scaffold.
 func singleViteNavbar(opts Options) string {
+	// The panel is a section of this same SPA, so the link is a route. Without it
+	// the only way to the dashboard is typing the URL, which is how the first
+	// embedded panel shipped.
+	adminLink := ""
+	if opts.ShouldEmbedAdminInSPA() {
+		adminLink = "\n  { href: \"/admin/dashboard\", label: \"Admin\" },"
+	}
 	return `import { useState } from "react"
 import { Link, useRouterState } from "@tanstack/react-router"
 import { Menu, X, Github } from "lucide-react"
@@ -27,7 +34,7 @@ const DOCS_URL = "https://gritframework.dev/docs"
 
 const navLinks = [
   { href: "/", label: "Home" },
-  { href: "/blog", label: "Blog" },
+  { href: "/blog", label: "Blog" },` + adminLink + `
 ]
 
 export function Navbar() {

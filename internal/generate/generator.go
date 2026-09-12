@@ -27,6 +27,28 @@ type Generator struct {
 	Force bool
 }
 
+// SharedRoot is where the shared Zod schemas and TypeScript types live.
+//
+// packages/shared in a monorepo. A single project has no workspace to put a
+// package in, so the same files are mirrored into the SPA and reached through the
+// same @repo/shared specifier; writing them to packages/shared there means
+// writing them nowhere.
+func (g *Generator) SharedRoot() string {
+	return sharedRootFrom(g.Root)
+}
+
+// sharedRootFrom answers the same question for the commands that have a root and
+// no Generator.
+func sharedRootFrom(root string) string {
+	if monorepo := filepath.Join(root, "packages", "shared"); dirExists(monorepo) {
+		return monorepo
+	}
+	if spa := filepath.Join(root, "frontend", "src", "shared"); dirExists(spa) {
+		return spa
+	}
+	return filepath.Join(root, "packages", "shared")
+}
+
 // APIRoot returns the base directory for Go files.
 func (g *Generator) APIRoot() string {
 	if g.Architecture == "single" {
@@ -41,11 +63,12 @@ func (g *Generator) APIRoot() string {
 // Only meaningful for a project that HAS one: a double's panel is a route group
 // inside the web app, and its code lives at AdminCodeRoot with its routes at
 // AdminRoutesRoot. See admin_embedded.go.
+// One question, one answer: this used to be a second copy of AdminCodeRoot's
+// logic, and when a third shape arrived only one of the two learned about it. The
+// registry injection reads this one, which is why a resource generated into a
+// single project was written and never registered.
 func (g *Generator) AdminRoot() string {
-	if g.EmbedsAdmin() {
-		return filepath.Join(g.Root, "apps", "web", "admin-panel")
-	}
-	return filepath.Join(g.Root, "apps", "admin")
+	return g.AdminCodeRoot()
 }
 
 // UseTanStack returns true if the project uses TanStack Router.
@@ -322,17 +345,17 @@ func (g *Generator) Run() error {
 	}
 
 	// Shared types (monorepo only)
-	sharedDir := filepath.Join(g.Root, "packages", "shared")
+	sharedDir := g.SharedRoot()
 	if dirExists(sharedDir) {
 		if err := g.writeZodSchema(names); err != nil {
 			return fmt.Errorf("writing Zod schema: %w", err)
 		}
-		fmt.Printf("  ✓ packages/shared/schemas/%s.ts\n", names.Kebab)
+		fmt.Printf("  ✓ %s/schemas/%s.ts\n", relativeToRoot(g.Root, sharedDir), names.Kebab)
 
 		if err := g.writeTSTypes(names); err != nil {
 			return fmt.Errorf("writing TS types: %w", err)
 		}
-		fmt.Printf("  ✓ packages/shared/types/%s.ts\n", names.Kebab)
+		fmt.Printf("  ✓ %s/types/%s.ts\n", relativeToRoot(g.Root, sharedDir), names.Kebab)
 	}
 
 	// Write hooks for web app (monorepo: apps/web, check both hooks/ and src/hooks/)
@@ -361,13 +384,16 @@ func (g *Generator) Run() error {
 
 	// Write admin resource definition + page (if admin app exists)
 	adminResourcesDir := filepath.Join(g.AdminCodeRoot(), "resources")
-	adminTanStackResourcesDir := filepath.Join(g.Root, "apps", "admin", "src", "resources")
+	adminTanStackResourcesDir := g.tanStackResourcesRoot()
 	// Whether the admin half actually ran. The closing message promised a
 	// sidebar entry unconditionally on a triple project, including when there
 	// was no admin directory to write to and nothing had been written: a green
 	// tick, and a next step pointing at a screen that does not exist.
 	wroteAdmin := false
-	if dirExists(adminResourcesDir) {
+	// A TanStack panel is asked for first: in the SPA both roots are the same
+	// directory, and the Next branch would claim it and write a page.tsx the
+	// router never looks at.
+	if dirExists(adminResourcesDir) && !g.AdminIsTanStack() {
 		wroteAdmin = true
 		// Next.js admin
 		//
@@ -401,12 +427,13 @@ func (g *Generator) Run() error {
 		if err := g.writeResourcePageTanStack(names); err != nil {
 			return fmt.Errorf("writing resource page: %w", err)
 		}
-		fmt.Printf("  ✓ apps/admin/src/routes/_dashboard/resources/%s/index.tsx\n", names.PluralKebab)
+		routes := relativeToRoot(g.Root, g.adminTanStackRoutesRoot())
+		fmt.Printf("  ✓ %s/_dashboard/resources/%s/index.tsx\n", routes, names.PluralKebab)
 
 		if err := g.writeResourceDetailPageTanStack(names); err != nil {
 			return fmt.Errorf("writing resource detail page: %w", err)
 		}
-		fmt.Printf("  ✓ apps/admin/src/routes/_dashboard/resources/%s/$id.tsx\n", names.PluralKebab)
+		fmt.Printf("  ✓ %s/_dashboard/resources/%s/$id.tsx\n", routes, names.PluralKebab)
 	}
 
 	// Mobile (Expo) screens + hooks — file-based routing means creating the
