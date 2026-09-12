@@ -27,7 +27,7 @@ import (
 // Every step is a no-op when its marker is already present, so running an
 // upgrade twice is safe.
 func ensureMoneyFrontend(root string, opts Options) error {
-	if !opts.ShouldIncludeAdmin() {
+	if !opts.HasAdminPanel() {
 		return nil
 	}
 
@@ -35,7 +35,7 @@ func ensureMoneyFrontend(root string, opts Options) error {
 		return err
 	}
 
-	adminRoot := filepath.Join(root, "apps", "admin")
+	adminRoot := adminCodeRoot(root, opts)
 	// TanStack keeps the same tree one level down, under src/.
 	base := adminRoot
 	if opts.UseTanStack() {

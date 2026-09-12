@@ -17,7 +17,7 @@ func writeAdminPasskeyFiles(root string, opts Options) error {
 	// being absent, because it looks like something went half-finished.
 	//
 	// The API endpoints are unaffected and still exist in every architecture.
-	if !opts.ShouldIncludeAdmin() {
+	if !opts.HasAdminPanel() {
 		return nil
 	}
 

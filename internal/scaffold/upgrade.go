@@ -49,6 +49,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		Style:       readProjectStyle(root),
 		Version:     uOpts.Version,
 		Frontend:    readProjectFrontend(root),
+		// Read from the project rather than assumed. Normalize defaults to triple,
+		// and upgrading a double with that assumption wrote thirteen admin files
+		// into an apps/admin this project does not have: files nothing compiles,
+		// plus a components.json for an application that is not there.
+		Architecture: detectArchitecture(root),
 	}
 	opts.Normalize()
 
@@ -339,6 +344,33 @@ func Upgrade(uOpts UpgradeOptions) error {
 		}
 		green.Printf("  ✓ Web app updated\n")
 		updated += 9
+	}
+
+	// --- The admin panel inside the web app (a double) ---
+	//
+	// A web app and no admin app is a double, and before v3.235.0 that meant no
+	// admin panel at all: the link was in the navbar and nothing was behind it. The
+	// panel is framework-owned, so upgrade delivers it, and the manifest guard
+	// reports a file somebody edited rather than overwriting it.
+	if hasWeb && !hasAdmin {
+		spinner.Printf("  → Adding the admin panel to the web app at /admin...\n")
+		embedded := map[string]string{}
+		for path, body := range embeddedAdminFileMap(root, opts) {
+			embedded[path] = body
+		}
+		n, err := writeUpgradeFiles(embedded, uOpts.Force)
+		if err != nil {
+			return fmt.Errorf("adding the embedded admin panel: %w", err)
+		}
+		for _, write := range adminExtraWriters {
+			if err := write(root, opts); err != nil {
+				return fmt.Errorf("adding the embedded admin panel's widgets: %w", err)
+			}
+		}
+		if n > 0 {
+			green.Printf("  ✓ Admin panel available at /admin/dashboard (%d files)\n", n)
+		}
+		updated += n
 	}
 
 	// --- Admin panel (generic components only — preserves resource definitions) ---
@@ -693,6 +725,36 @@ func pruneAdminStrays(adminRoot string) int {
 		fmt.Printf("  ✓ Removed %d stale duplicate component file(s) from earlier upgrades\n", removed)
 	}
 	return removed
+}
+
+// detectArchitecture works out a project's shape from what is on disk.
+//
+// Used by upgrade, which has no flag to read: a project does not record which
+// architecture it was scaffolded as, and the directories say it plainly enough.
+//
+//	apps/admin        a triple: web, admin and api
+//	apps/web only     a double: the admin panel is a route group inside the web app
+//	apps/expo only    mobile
+//	apps/api only     api
+//	no apps/ at all   single: one binary with the SPA embedded
+func detectArchitecture(root string) Architecture {
+	apps := filepath.Join(root, "apps")
+	switch {
+	case dirExists(filepath.Join(apps, "admin")):
+		return ArchTriple
+	case dirExists(filepath.Join(apps, "web")):
+		return ArchDouble
+	case dirExists(filepath.Join(apps, "expo")):
+		return ArchMobile
+	case dirExists(filepath.Join(apps, "api")):
+		return ArchAPI
+	case !dirExists(apps):
+		return ArchSingle
+	default:
+		// An apps/ directory holding something unexpected. Treat it as API-only,
+		// which writes the least.
+		return ArchAPI
+	}
 }
 
 // ensureShadcnConfigs gives every frontend a components.json if it has none.

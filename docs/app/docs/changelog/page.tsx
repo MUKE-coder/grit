@@ -66,6 +66,75 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.235.0 */}
+            <div className="mb-12" id="v3.235.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.235.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A double gets the admin panel, at /admin</h3>
+                <p>
+                  Somebody scaffolded a two-app project, opened the web app, clicked Admin in the
+                  navbar, and arrived at <code>http://localhost:3001</code> where nothing was
+                  running. The panel was built for three-app projects only: a double had the link
+                  and no panel behind it, which is worse than not offering it.
+                </p>
+                <p>
+                  It is there now, as a route group inside the web app: 147 screens at{' '}
+                  <code>/admin/dashboard</code> with their own layout, the same dashboard, resource
+                  CRUD, system hub, settings and account security a triple has. Not a second copy of
+                  the code. The file map is the one the standalone app uses, put through a transform
+                  that moves the routes under <code>app/admin</code>, moves the components, lib and
+                  hooks under <code>admin-panel/</code> behind their own <code>@admin</code> alias,
+                  and prefixes the internal links, so a fix to an admin screen reaches both shapes at
+                  once. <code>grit upgrade</code> adds it to a double you already have, 157 files,
+                  manifest-guarded so anything you edited is reported rather than overwritten.
+                </p>
+                <p>
+                  Four bugs came out of building it, and three were not about this feature at all.{' '}
+                  <code>@repo/upload</code> ships raw TypeScript and neither the web app nor the
+                  <strong> admin app</strong> listed it in <code>transpilePackages</code>, so the
+                  standalone admin could not have built either: the failure reads &quot;Module parse
+                  failed: Unexpected token&quot; on a type-only import. Several admin screens are
+                  written by feature writers rather than by the file map, and those asked whether the
+                  project has an admin <em>app</em> when they meant whether it has a{' '}
+                  <em>panel</em>, so an embedded one arrived without its account-security page while
+                  the link to it sat in the user menu. Fourteen writers built the path{' '}
+                  <code>apps/admin</code> by hand rather than asking, which is the failure the
+                  path-helper comments already warned about. And <code>grit upgrade</code> assumed
+                  every project was a triple, because Normalize defaults to it and upgrade never set
+                  the architecture: upgrading a double wrote thirteen files into an{' '}
+                  <code>apps/admin</code> that does not exist, plus a components.json for an
+                  application that is not there. Upgrade now reads the shape off the directories.
+                </p>
+                <p>
+                  The panel guards itself, as it always did: the layout redirects anybody who is not
+                  signed in and sends a plain USER role to their profile rather than the dashboard.{' '}
+                  <code>grit add web-auth</code> is unchanged and does not collide with it: its
+                  middleware matches <code>/account</code>, <code>/login</code> and{' '}
+                  <code>/register</code>, none of which are the panel&apos;s routes under{' '}
+                  <code>/admin</code>. It did need one fix, because it writes the navbar and would
+                  have left the literal placeholder for the admin link in it.
+                </p>
+                <p>
+                  Separately, the startup noise on a project with no Redis. Four identical pool
+                  failures from inside the driver, a warning saying caching was disabled, then
+                  &quot;Job queue connected&quot; which was not true, then an asynq error every second
+                  or two forever because the worker polls regardless. The driver&apos;s own logger now
+                  collapses repeats, the job queue reports what actually happened, and the worker and
+                  cron scheduler only start when Redis answered. Two lines instead of a wall.
+                </p>
+                <p>
+                  Single is next: its admin has to go inside the embedded Vite SPA rather than a
+                  Next.js route group, which is the same idea and different work.
+                </p>
+              </div>
+            </div>
+
             {/* v3.234.0 */}
             <div className="mb-12" id="v3.234.0">
               <div className="flex items-center gap-3 mb-4">

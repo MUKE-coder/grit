@@ -24,7 +24,7 @@ import (
 
 func writeAdminResourceDashboardWidgets(root string, opts Options) error {
 	_ = opts
-	adminRoot := filepath.Join(root, "apps", "admin")
+	adminRoot := adminCodeRoot(root, opts)
 
 	files := map[string]string{
 		filepath.Join(adminRoot, "components", "dashboard", "ResourceStatCard.tsx"):    adminResourceStatCardTSX(),

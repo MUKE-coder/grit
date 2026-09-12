@@ -316,6 +316,7 @@ export default function HomePage() {
               { icon: FileCheck, label: 'Docs checked against the CLI', href: '/docs/testing#docs-checks' },
               { icon: Shield, label: 'Typed error codes, end to end', href: '/docs/backend/errors' },
               { icon: Database, label: 'Postgres, MySQL or SQLite', href: '/docs/infrastructure/database' },
+              { icon: LayoutDashboard, label: 'Admin panel in two apps or three', href: '/docs/concepts/architecture-modes' },
               { icon: TrendingUp, label: 'Exact multi-currency money', href: '/docs/concepts/money' },
               { icon: Building2, label: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
               { icon: Webhook, label: 'Webhooks', href: '/docs/backend/webhooks' },

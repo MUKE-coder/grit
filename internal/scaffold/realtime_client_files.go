@@ -28,8 +28,8 @@ func writeRealtimeClientFiles(root string, opts Options) error {
 		files[filepath.Join(webRoot, "lib", "realtime.ts")] = realtimeClientTS(false)
 		files[filepath.Join(webRoot, "hooks", "use-realtime.ts")] = useRealtimeTS(true)
 	}
-	if opts.ShouldIncludeAdmin() {
-		adminRoot := filepath.Join(root, "apps", "admin")
+	if opts.HasAdminPanel() {
+		adminRoot := adminCodeRoot(root, opts)
 		if opts.Frontend == FrontendTanStack {
 			adminRoot = filepath.Join(adminRoot, "src")
 		}
