@@ -110,9 +110,30 @@ def mysql_query(sql):
 
 
 def sqlite_query(sql):
-    # The path, not a host and port: --db carries the file for this engine.
-    out = subprocess.run(["sqlite3", args.db, sql], capture_output=True, text=True)
-    return (out.stdout or "").strip()
+    """Read the file with Python's own sqlite3, not a client binary.
+
+    --db carries the path for this engine. Read-only and with a timeout, so a
+    check never blocks on the API's writer, and no sqlite3 CLI has to exist on
+    the machine running the suite.
+    """
+    import sqlite3
+    # Read-write, not read-only: the suite promotes one account to ADMIN through
+    # this, and a read-only handle made that update silently do nothing, which
+    # turned every staff check into a 403.
+    uri = 'file:%s' % args.db.replace('?', '%3f')
+    try:
+        connection = sqlite3.connect(uri, uri=True, timeout=10)
+    except sqlite3.Error as error:
+        return 'sqlite: %s' % error
+    try:
+        cursor = connection.execute(sql)
+        row = cursor.fetchone()
+        connection.commit()
+        return '' if row is None or row[0] is None else str(row[0])
+    except sqlite3.Error as error:
+        return 'sqlite: %s' % error
+    finally:
+        connection.close()
 
 
 def postgres_query(sql):
