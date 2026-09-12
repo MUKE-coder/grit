@@ -83,6 +83,39 @@ def ids(rows):
 
 
 def psql(sql):
+    """One value out of the database, whichever engine is behind the API.
+
+    Named psql for the Postgres history; it dispatches on --engine now, because a
+    suite that can only read Postgres can only verify Postgres, and Grit claims
+    three engines.
+    """
+    if args.engine == "mysql":
+        return mysql_query(sql)
+    if args.engine == "sqlite":
+        return sqlite_query(sql)
+    return postgres_query(sql)
+
+
+def mysql_query(sql):
+    command = ["mysql", "-N", "-B", "-h", args.db_host, "-P", str(args.db_port),
+               "-u", args.db_user, args.db, "-e", sql]
+    if args.db_password:
+        command.insert(1, "-p" + args.db_password)
+    if args.psql_container:
+        command = ["docker", "exec", "-i", args.psql_container, "mysql", "-N", "-B",
+                   "-u", args.db_user] + (["-p" + args.db_password] if args.db_password else []) + \
+            [args.db, "-e", sql]
+    out = subprocess.run(command, capture_output=True, text=True)
+    return (out.stdout or "").strip()
+
+
+def sqlite_query(sql):
+    # The path, not a host and port: --db carries the file for this engine.
+    out = subprocess.run(["sqlite3", args.db, sql], capture_output=True, text=True)
+    return (out.stdout or "").strip()
+
+
+def postgres_query(sql):
     """One value out of Postgres. The database is the only witness for some of
     these: whether a column is ciphertext, whether a path was rewritten."""
     if args.psql_container:
@@ -368,12 +401,12 @@ def check_tree(alice):
           (status, body[:250]))
 
     status, _, body = call('PATCH', categories + '/' + middle + '/move', alice, {'parent_id': other, 'position': 0})
-    moved = psql("select path || '|' || depth from categories where id = '%s'" % bottom)
+    moved = psql("select concat(path, '|', depth) from categories where id = '%s'" % bottom)
     check('Tree: a move carries the subtree with it',
           status == 200 and moved == '/%s/%s/%s/|2' % (other, middle, bottom), (status, moved))
 
     status, _, body = call('PATCH', categories + '/' + bottom + '/move', alice, {'position': 5})
-    kept = psql("select parent_id || '|' || position from categories where id = '%s'" % bottom)
+    kept = psql("select concat(parent_id, '|', position) from categories where id = '%s'" % bottom)
     check('Tree: a move with no parent keeps the one it has', status == 200 and kept == '%s|5' % middle,
           (status, kept))
 
@@ -545,7 +578,10 @@ def main():
     parser.add_argument('--db-port', default='5432')
     parser.add_argument('--db-password', default='')
     parser.add_argument('--psql-container', default='',
-                        help='run psql inside this docker container instead of on the host')
+                        help='run the database client inside this docker container instead of on the host')
+    parser.add_argument('--engine', default='postgres', choices=['postgres', 'mysql', 'sqlite'],
+                        help='which engine is behind the API: it decides how the checks that read the '
+                             'database directly are run. For sqlite, --db is the file path.')
     args = parser.parse_args()
     args.base = args.base.rstrip('/')
     args.psql_env = None

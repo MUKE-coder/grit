@@ -66,6 +66,72 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.234.0 */}
+            <div className="mb-12" id="v3.234.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.234.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Say which database, and have it tested</h3>
+                <p>
+                  Somebody opened a fresh project&apos;s <code>.env</code> to point it at MySQL and
+                  found Postgres settings, a commented <code>DATABASE_URL</code> mentioning Postgres
+                  and SQLite, and nowhere to put MySQL credentials. They were right: the engine came
+                  from the scheme on <code>DATABASE_URL</code> and nothing in the file said so, for
+                  an engine that had been supported for months.
+                </p>
+                <p>
+                  There is a setting now. <code>DB_PROVIDER</code> takes{' '}
+                  <code>postgres</code>, <code>mysql</code>, <code>sqlite</code> or{' '}
+                  <code>memory</code>, each with its own block of settings beside it, and{' '}
+                  <code>grit new myapp --db mysql</code> picks it at scaffold time.{' '}
+                  <code>DATABASE_URL</code> still wins when set, because a managed database&apos;s
+                  connection string carries options these parts do not model, and when the two
+                  disagree about the engine the app says so at boot instead of leaving you to wonder
+                  why the settings you edited do nothing.
+                </p>
+                <p>
+                  <code>memory</code> is new, and it migrates itself. An in-memory database cannot
+                  outlive the process holding it, so a separate migrate command would build the
+                  schema and take it away again: the server migrates at boot when the provider is
+                  memory, which is safe precisely because there is never anything to lose. It also
+                  uses a shared cache rather than a bare <code>:memory:</code>, without which every
+                  pooled connection gets its own empty database and a freshly migrated app reports
+                  that its tables do not exist.
+                </p>
+                <p>
+                  The part that mattered more than the setting: these engines are now tested. The
+                  live suite, 68 checks over a running app covering ownership, trees, the public
+                  surface, money, encryption at rest, CSV import and optimistic locking, runs on
+                  MySQL 8 and SQLite as well as Postgres 15, 16 and 17, with a smaller set on an
+                  in-memory database. It reads the database directly on each of them rather than
+                  only over HTTP, which needed one Postgres-only query fixed: <code>||</code> for
+                  concatenation, which MySQL reads as OR.
+                </p>
+                <p>
+                  Building the first project on MySQL found a real bug within a minute.{' '}
+                  <code>grit generate resource --tree</code> produced a table MySQL refused to
+                  create: the materialised path was an indexed <code>varchar(1024)</code>, and
+                  utf8mb4 counts four bytes a character, so the index was 4096 bytes against a
+                  3072-byte limit. The path is 700 characters now, about eighteen levels of uuid,
+                  and the whole suite passes on MySQL. That is the value of running the thing:
+                  the support was claimed, the documentation was correct, and the first table with
+                  a deep index did not exist.
+                </p>
+                <p>
+                  <code>grit doctor</code> gained one more check, for the failure this release makes
+                  easy to reach: <code>DB_PROVIDER=memory</code> with{' '}
+                  <code>APP_ENV=production</code> is an error, because the app works perfectly until
+                  it restarts and then every row is gone with nothing to recover from. SQLite in
+                  production is a warning that names the tradeoffs rather than a refusal.
+                </p>
+              </div>
+            </div>
+
             {/* v3.233.0 */}
             <div className="mb-12" id="v3.233.0">
               <div className="flex items-center gap-3 mb-4">

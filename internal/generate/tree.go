@@ -43,7 +43,11 @@ func treeFields(names Names) string {
 	Children []%s `+"`"+`gorm:"foreignKey:%s" json:"children,omitempty"`+"`"+`
 	// Path is "/id/id/id/", this row's id last, ids delimited on both sides so
 	// a prefix match cannot half-match an id. Descendants are one indexed LIKE.
-	Path string `+"`"+`gorm:"size:1024;index" json:"path"`+"`"+`
+	// 700 characters, not more: MySQL indexes at most 3072 bytes, and utf8mb4
+	// counts four per character, so an indexed varchar(1024) is 4096 bytes and
+	// AutoMigrate refuses the table outright. 700 holds about eighteen levels of
+	// uuid, which is deeper than a category or folder tree goes.
+	Path string `+"`"+`gorm:"size:700;index" json:"path"`+"`"+`
 	// Depth is 0 for a root. Stored rather than counted from Path, because a
 	// move can keep it correct with one delta and counting separators in SQL is
 	// three expressions across three dialects.

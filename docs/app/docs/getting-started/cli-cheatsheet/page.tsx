@@ -1132,6 +1132,10 @@ export default function CLICheatsheetPage() {
                     desc="Drop all tables, then re-run migrations from scratch"
                   />
                   <TerminalCard
+                    cmd="grit new myapp --db mysql"
+                    desc="Pick the engine at scaffold time: postgres (default), mysql, sqlite, memory"
+                  />
+                  <TerminalCard
                     cmd="grit migrate status"
                     desc="What each recorded run added, newest first"
                   />

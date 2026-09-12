@@ -236,6 +236,10 @@ const testing: { label: string; detail: string }[] = [
     detail: 'CI scaffolds a project, generates the resource shapes past bugs lived in, migrates, starts the server and drives it over HTTP, reading Postgres directly where the database is the only witness.',
   },
   {
+    label: 'The live suite on five databases',
+    detail: 'the same 68 checks run on Postgres 15, 16 and 17, on MySQL 8, and on SQLite, with a smaller set on an in-memory database. Until v3.234.0 they ran on Postgres alone, so MySQL support rested on the driver compiling: the first project built on it hit a table AutoMigrate refused.',
+  },
+  {
     label: 'A tenancy fixture, run on every push',
     detail: 'CI scaffolds a project with the multitenant and impersonate plugins, a tenant-owned resource and one that is tenant-owned and owned by a user, then drives 26 checks across the seams: cross-tenant reads, an admin with no organization, a role held through a membership, and an impersonated session inside a tenant.',
   },
