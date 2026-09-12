@@ -25,25 +25,46 @@ const OWASP_2025: Row[] = [
     defence: (
       <>
         <p>
-          Grit ships the <code>internal/authz</code> package as the canonical IDOR defence.
-          Every object access goes through <code>authz.MustOwn</code>, which loads the row
-          by ID, verifies it belongs to the authenticated user, and returns 404 (never 403)
-          so existence isn&apos;t leaked through error-message differences.
+          <code>internal/authz</code> is the IDOR defence, and from v3.224.0 a generated
+          resource applies it in its <Link href="/docs/backend/services" className="text-primary hover:underline">service</Link>{' '}
+          rather than its handler, so every caller gets it: a route, a background job, a
+          command, a test. A list and an export are scoped in SQL, a read by id is checked
+          after loading, and somebody else&apos;s row is 404 rather than 403, so a wrong guess
+          cannot be told from a right one.
         </p>
-        <CodeBlock filename="internal/handlers/invoice.go" code={`func (h *InvoiceHandler) GetByID(c *gin.Context) {
-    var invoice models.Invoice
-    if err := authz.MustOwn(c, h.DB, &invoice, c.Param("id")); err != nil {
-        return // helper already wrote 404
+        <CodeBlock filename="internal/services/invoice.go (generated)" code={`// Scoped in SQL. The list is the path people forget, and an export is the
+// list without pages.
+query = authz.ScopeOwned(ctx, query, "user_id")
+
+// Checked after loading, for every path that works by id.
+func (s *InvoiceService) GetByID(ctx context.Context, id string) (*models.Invoice, error) {
+    var item models.Invoice
+    if err := s.db(ctx).First(&item, "id = ?", id).Error; err != nil {
+        return nil, err
     }
-    c.JSON(http.StatusOK, gin.H{"data": invoice})
+    if !authz.Owns(ctx, &item) {
+        return nil, gorm.ErrRecordNotFound // 404, not 403
+    }
+    return &item, nil
 }
 
 // The model implements Ownable:
 func (i *Invoice) GetOwnerID() string { return i.UserID }`} />
         <p>
-          For tenant / team scoping use <code>authz.CheckScope</code>. For admin-only
-          routes use <code>authz.RequireRoles(&quot;ADMIN&quot;)</code>. SSRF (absorbed into A01 in
-          2025) is handled by the <code>internal/safefetch</code> package — see A05 below.
+          The caller travels on the context: a handler puts it there with{' '}
+          <code>authz.WithActor(c.Request.Context(), authz.ActorOf(c))</code>, and a job says
+          who it acts for with <code>authz.AsSystem</code> or <code>authz.WithActor</code>. An
+          owned resource with no caller on the context matches nothing, which is the safe way
+          for a job that forgot to fail.
+        </p>
+        <p>
+          In a handler you write yourself, <code>authz.MustOwn</code> does the same check in
+          one call and writes the 404 for you. For tenant / team scoping use{' '}
+          <code>authz.CheckScope</code>; for admin-only routes use{' '}
+          <code>authz.RequireRoles(&quot;ADMIN&quot;)</code>. SSRF (absorbed into A01 in 2025) is
+          handled by the <code>internal/safefetch</code> package, see A05 below. What is
+          guaranteed here and what stays yours is listed per subsystem on the{' '}
+          <Link href="/docs/stability" className="text-primary hover:underline">stability matrix</Link>.
         </p>
       </>
     ),
@@ -647,7 +668,27 @@ govulncheck ./...`} />
                       <td className="px-4 py-2.5 font-mono text-xs">.env</td>
                     </tr>
                     <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5">Every authenticated handler calls authz.MustOwn / RequireRoles</td>
+                      <td className="px-4 py-2.5"><code>grit doctor</code> reports no errors</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">the whole project</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5">FIELD_ENCRYPTION_KEY set, or encrypted columns are stored in the clear</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">.env</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5">GORM_STUDIO_PASSWORD changed, or GORM_STUDIO_ENABLED=false</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">.env</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5">SENTINEL_AUDIT_KEY set, so the audit chain is keyed</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">.env</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5">Every resource whose rows belong to a user generated with --owned-by</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">internal/services/</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5">Every handler you wrote yourself calls authz.MustOwn / RequireRoles</td>
                       <td className="px-4 py-2.5 font-mono text-xs">internal/handlers/</td>
                     </tr>
                     <tr className="border-b border-border/20">
@@ -656,7 +697,7 @@ govulncheck ./...`} />
                     </tr>
                     <tr className="border-b border-border/20">
                       <td className="px-4 py-2.5">govulncheck + pnpm audit green</td>
-                      <td className="px-4 py-2.5 font-mono text-xs">.github/workflows/security.yml</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">.github/workflows/ci.yml, scan.yml</td>
                     </tr>
                     <tr className="border-b border-border/20">
                       <td className="px-4 py-2.5">k6 average-load passes p95 SLO</td>
