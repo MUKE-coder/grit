@@ -222,6 +222,10 @@ const testing: { label: string; detail: string }[] = [
     detail: 'CI scaffolds a project, generates the resource shapes past bugs lived in, migrates, starts the server and drives it over HTTP, reading Postgres directly where the database is the only witness.',
   },
   {
+    label: '609 documented commands, checked against the CLI',
+    detail: 'every grit command these docs show is resolved against the real command tree, and every --fields spec is run through the generator\u2019s own parser. A renamed command or a field type that does not exist fails the build. Blocks marked verify= go further: CI runs them against a scaffolded project on a real Postgres.',
+  },
+  {
     label: '13 project checks in grit doctor',
     detail: 'the mistakes that fail silently, reported in your own project: an encrypted field with no key, a resource nothing scopes, a table shared across organizations, a database browser with no login.',
   },

@@ -31,9 +31,21 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.230.0"
+var version = "3.231.0"
 
 func main() {
+	if err := rootCommand().Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+// rootCommand builds the whole command tree.
+//
+// Separate from main so a test can walk it: the docs show hundreds of grit
+// commands, and the only way to know they all still exist, with the flags the
+// docs give them, is to ask the tree itself.
+func rootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "grit",
 		Short: "Grit — Go + React. Built with Grit.",
@@ -75,10 +87,7 @@ func main() {
 	rootCmd.AddCommand(upCmd())
 	rootCmd.AddCommand(deployCmd())
 
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	return rootCmd
 }
 
 func versionCmd() *cobra.Command {

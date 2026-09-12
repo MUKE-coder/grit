@@ -54,6 +54,14 @@ interface CodeBlockProps {
   terminal?: boolean
   className?: string
   highlightLines?: number[]
+  /**
+   * Marks this block as one CI runs, naming the flow it belongs to
+   * (verify="migrate-rollback"). Blocks with the same id run in order, in one
+   * scaffolded project, by .github/workflows/docs.yml. It changes nothing about
+   * how the block renders: it is a claim that the commands in it work, and the
+   * workflow is what makes the claim true.
+   */
+  verify?: string
 }
 
 export function CodeBlock({

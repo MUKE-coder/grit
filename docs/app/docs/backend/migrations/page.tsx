@@ -515,6 +515,22 @@ Type yes to continue:`}
                 </div>
 
                 <p className="text-muted-foreground leading-relaxed mb-4 mt-4">
+                  The whole thing end to end, on a project you can throw away afterwards. This
+                  block is one of the few the build runs rather than only reads: every command in
+                  it is executed against a real Postgres on every change to these docs.
+                </p>
+
+                <CodeBlock
+                  terminal
+                  verify="migrate-rollback"
+                  code={`grit generate resource Widget --fields "name:string"
+grit migrate                  # creates the widgets table: one recorded change
+grit migrate status           # the baseline, and then this run
+grit migrate down --dry-run   # the statements, and nothing else
+grit migrate down --yes       # the table goes; the rest of the schema stays`}
+                />
+
+                <p className="text-muted-foreground leading-relaxed mb-4 mt-4">
                   The first run on an empty database is the one that built the schema, recorded
                   as a <strong>baseline</strong>. Rolling that back would drop the database
                   rather than undo a change, so it is refused and{' '}

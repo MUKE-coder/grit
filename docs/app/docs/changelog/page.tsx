@@ -66,6 +66,60 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.231.0 */}
+            <div className="mb-12" id="v3.231.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.231.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The build reads the docs</h3>
+                <p>
+                  &quot;The docs said to do X and X did not work&quot; is the most repeated root
+                  cause on this page. A command had been renamed, a flag never existed, a field
+                  type the generator refuses was in a tutorial. Every one of those was found by a
+                  person following a page, which is the most expensive way to find anything, and
+                  nothing in the build knew the docs existed.
+                </p>
+                <p>
+                  Now it does. Every grit command shown anywhere in the docs, 609 of them, is
+                  resolved against the real command tree: the command has to exist, and so does
+                  every flag it is given. Every <code>--fields</code> spec goes through the same
+                  parser the generator uses. It found two bugs on its first run: a page telling
+                  people to run <code>grit migrate:fresh</code>, a Laravel spelling Grit never had,
+                  and a tutorial whose <code>status:select</code> field the generator refuses
+                  because a select needs options. Both are fixed.
+                </p>
+                <p>
+                  That catches a command that is wrong, not steps that are each valid and do not
+                  work in order. So a block can claim more by naming a flow,{' '}
+                  <code>verify=&quot;migrate-rollback&quot;</code>, and the new{' '}
+                  <code>Docs</code> workflow scaffolds a project per flow, migrates it and runs
+                  that flow&apos;s blocks in page order on a real Postgres. Three flows are covered:
+                  the rollback walkthrough, <code>grit doctor</code> reporting nothing on a correct
+                  project, and a generated resource compiling and vetting clean.
+                </p>
+                <p>
+                  What is deliberately not claimed: most blocks are not marked, because they start
+                  a server, bring up docker compose, or carry a placeholder only the reader can
+                  fill in. Marking those would be pretending. They still get the command and
+                  field-spec check, which is the half that rots quietly.
+                </p>
+                <p>
+                  The checker is conservative by design, and two of its own mistakes are worth
+                  recording. It read prose as commands, because a changelog sentence began
+                  &quot;grit can keep itself current&quot; and a heading read &quot;grit sync:
+                  Manual Type Generation&quot;, so it now only reads inside code blocks. And it was
+                  missing the first command of every multi-line block, the one sharing a line with{' '}
+                  <code>code=&#123;`</code>, which was most of the commands in these docs: 298
+                  before the fix, 609 after.
+                </p>
+              </div>
+            </div>
+
             {/* v3.230.0 */}
             <div className="mb-12" id="v3.230.0">
               <div className="flex items-center gap-3 mb-4">
