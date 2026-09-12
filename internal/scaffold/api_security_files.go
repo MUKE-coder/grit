@@ -124,6 +124,9 @@ func Get(ctx context.Context, rawURL string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	// #nosec G704 -- the destination was resolved and checked against the
+	// private and metadata ranges above. Refusing an internal target is
+	// what this package is for.
 	return Client.Do(req)
 }
 
@@ -133,6 +136,9 @@ func Do(req *http.Request) (*http.Response, error) {
 	if err := validateURL(req.URL); err != nil {
 		return nil, err
 	}
+	// #nosec G704 -- the destination was resolved and checked against the
+	// private and metadata ranges above. Refusing an internal target is
+	// what this package is for.
 	return Client.Do(req)
 }
 

@@ -1,0 +1,146 @@
+# The generated app, running, on every supported Postgres.
+#
+# Grit's hardest bugs were never found by unit tests. They were found by
+# building a real application and using it: an export that returned an empty
+# file with a 200, a list that handed one user another user's rows, a save that
+# silently overwrote a newer one, a replace that appended. Each was fixed and
+# verified by hand, once.
+#
+# This job is that verification, kept. It scaffolds a project, generates the
+# resource shapes the bugs lived in, migrates, starts the server and drives it
+# over HTTP, checking the database directly where the database is the only
+# witness (whether a column is ciphertext, whether a move rewrote a subtree).
+#
+# The matrix exists because these are database behaviours. RETURNING, the
+# sliding-window rate limits, a materialised-path rewrite with REPLACE, and
+# FindInBatches paging all depend on the dialect, and Grit claims Postgres 15
+# through 17.
+name: Live
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    name: generated app on postgres ${{ matrix.postgres }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ["15", "16", "17"]
+
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_USER: grit
+          POSTGRES_PASSWORD: grit
+          POSTGRES_DB: grit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgres://grit:grit@localhost:5432/grit?sslmode=disable
+      REDIS_URL: redis://localhost:6379
+      APP_PORT: "8080"
+      APP_ENV: development
+      JWT_SECRET: ci-jwt-secret-0123456789abcdef0123456789abcdef
+      # Without a key, crypto.EncryptedString stores the value as it is, and the
+      # "not readable in the database" check would pass for the wrong reason.
+      FIELD_ENCRYPTION_KEY: K3hQ8vZ2mP5sT7wY0bD4fG6jL9nR1uX3cV5aE8hK2oQ=
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.6"
+          check-latest: true
+          cache: true
+
+      - name: Build grit from this commit
+        run: |
+          go build -o /usr/local/bin/grit ./cmd/grit
+          grit version
+
+      # The shapes are the ones the bugs lived in: an owned resource, a tree, a
+      # public surface, money, an encrypted column, a relation, a line-items
+      # child. Tag and Category come first because the relations resolve them.
+      - name: Scaffold the fixture app
+        run: |
+          mkdir -p /tmp/live && cd /tmp/live
+          grit new app --api
+          cd app
+          grit generate resource Tag --fields "name:string"
+          grit generate resource Lot --fields "title:string,current_bid:int"
+          grit generate resource Note --fields "body:text" --owned-by user
+          grit generate resource Category --fields "name:string,slug:slug" --tree --public
+          grit generate resource Product \
+            --fields "name:string,slug:slug,price:money,secret:text:encrypted,category:belongs_to:Category,tags:many_to_many:Tag" \
+            --public
+          grit generate resource Invoice --fields "number:string" \
+            --items "InvoiceItem:description:string,qty:int,unit_rate:float"
+
+      - name: Build, vet and test the generated API
+        run: |
+          cd /tmp/live/app/apps/api
+          go build ./...
+          go vet ./...
+          go test ./... 2>&1 | tail -30
+
+      - name: Audit the generated project
+        run: |
+          cd /tmp/live/app
+          grit doctor || true   # reported, not gating: a fixture has no secrets set
+
+      - name: Migrate
+        run: |
+          cd /tmp/live/app/apps/api
+          go run ./cmd/migrate
+
+      - name: Start the API
+        run: |
+          cd /tmp/live/app/apps/api
+          go build -o /tmp/live/server ./cmd/server
+          /tmp/live/server > /tmp/live/server.log 2>&1 &
+          echo "started"
+
+      - name: Live checks
+        run: |
+          python3 tests/live/verify.py http://localhost:8080 \
+            --db grit --db-user grit --db-password grit \
+            --db-host localhost --db-port 5432
+
+      # The server log is where a 500 explains itself, and it is gone with the
+      # runner unless it is kept.
+      - name: Server log
+        if: failure()
+        run: tail -200 /tmp/live/server.log || true
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: live-postgres-${{ matrix.postgres }}
+          path: /tmp/live/server.log
+          retention-days: 14

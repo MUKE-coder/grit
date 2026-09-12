@@ -288,7 +288,10 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.22.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
-	github.com/xuri/excelize/v2 v2.10.0
+	// CVE-2026-54063 and CVE-2026-59161: the worksheet and streaming
+	// parsers could be made to allocate without bound, and this is what
+	// the CSV/XLSX importer hands user uploads to.
+	github.com/xuri/excelize/v2 v2.11.0
 	golang.org/x/crypto v0.53.0
 	// Sentinel now ships a proper /v2 module path, so we track real tags.
 	// v2.1.1 is the minimum safe release for WAF.Mode = ModeBlock: v2.1.0
@@ -323,7 +326,12 @@ require (
 require (
 	github.com/jackc/pgx/v5 v5.9.2 // GO-2026-5004
 	github.com/quic-go/quic-go v0.59.1 // GO-2026-5676, GO-2025-4233
-	golang.org/x/image v0.43.0 // GO-2026-5066, -5062, -5032, -5031, -4815
+	// CVE-2026-33487: XML Digital Signature validation could be bypassed. On the
+	// SAML assertion path that is an authentication bypass, and crewjam/saml
+	// v0.5.1 is its newest release and still asks for the vulnerable version.
+	github.com/russellhaering/goxmldsig v1.6.0 // CVE-2026-33487
+	golang.org/x/image v0.45.0 // GO-2026-5066, -5062, -5032, -5031, -4815, CVE-2026-46603
+	golang.org/x/oauth2 v0.27.0 // CVE-2025-22868
 	golang.org/x/text v0.39.0 // GO-2026-5970
 )
 `, opts.Module())
@@ -3453,6 +3461,9 @@ func RequestID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		requestID := c.GetHeader("X-Request-ID")
 		if requestID == "" {
+			// #nosec G404 -- a request id has to be unique for tracing, not
+			// unpredictable. crypto/rand here would be a syscall on every
+			// request for no security gain.
 			requestID = fmt.Sprintf("%d-%d", time.Now().UnixNano(), rand.Int63())
 		}
 		c.Set("request_id", requestID)
@@ -7454,11 +7465,15 @@ func thousands(f float64) string {
 		intPart = intPart[1:]
 	}
 	var out []byte
-	for i, c := range intPart {
+	// Indexed by byte rather than ranged by rune: intPart is digits from
+	// FormatFloat, so the two are the same here, and mixing a rune loop with
+	// byte arithmetic is how the first multi-byte character someone passes in
+	// gets truncated.
+	for i := 0; i < len(intPart); i++ {
 		if i > 0 && (len(intPart)-i)%3 == 0 {
 			out = append(out, ',')
 		}
-		out = append(out, byte(c))
+		out = append(out, intPart[i])
 	}
 	result := string(out) + "." + parts[1]
 	if neg {
@@ -8223,11 +8238,15 @@ func formatAmount(n float64) string {
 		intPart = intPart[1:]
 	}
 	var out []byte
-	for i, c := range intPart {
+	// Indexed by byte rather than ranged by rune: intPart is digits from
+	// FormatFloat, so the two are the same here, and mixing a rune loop with
+	// byte arithmetic is how the first multi-byte character someone passes in
+	// gets truncated.
+	for i := 0; i < len(intPart); i++ {
 		if i > 0 && (len(intPart)-i)%3 == 0 {
 			out = append(out, ',')
 		}
-		out = append(out, byte(c))
+		out = append(out, intPart[i])
 	}
 	result := string(out) + "." + parts[1]
 	if neg {

@@ -34,7 +34,7 @@ func totpServiceGo() string {
 import (
 	"crypto/hmac"
 	"crypto/rand"
-	"crypto/sha1"
+	"crypto/sha1" // #nosec G505 -- RFC 6238 TOTP is HMAC-SHA1, and every authenticator app requires it
 	"crypto/sha256"
 	"encoding/base32"
 	"encoding/binary"
@@ -116,6 +116,7 @@ func generateCode(secret string, counter int64) (string, error) {
 
 	// Counter to big-endian 8 bytes
 	buf := make([]byte, 8)
+	// #nosec G115 -- counter is a time step, always positive.
 	binary.BigEndian.PutUint64(buf, uint64(counter))
 
 	// HMAC-SHA1

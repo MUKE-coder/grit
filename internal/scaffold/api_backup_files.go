@@ -205,6 +205,8 @@ func Tables(db *gorm.DB) ([]string, error) {
 // table comes from Tables() — the model registry, not user input — so it can't
 // be injected into the raw SQL below.
 func streamTable(ctx context.Context, sqlDB *sql.DB, table string, csvw *csv.Writer, dbuf *bufio.Writer) (int, error) {
+	// #nosec G202 -- table comes from Tables(), the model registry, and never
+	// from a request. A placeholder cannot carry a table name.
 	rows, err := sqlDB.QueryContext(ctx, "SELECT * FROM \""+table+"\"")
 	if err != nil {
 		return 0, fmt.Errorf("select %s: %w", table, err)
