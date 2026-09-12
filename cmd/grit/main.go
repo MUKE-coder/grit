@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -29,7 +31,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.229.0"
+var version = "3.230.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -985,25 +987,18 @@ func migrateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "migrate",
 		Short: "Run database migrations",
-		Long:  "Connect to the database and run GORM AutoMigrate for all models. Use --fresh to drop all tables first.",
+		Long: "Connect to the database and run GORM AutoMigrate for all models. Use --fresh to drop all tables first.\n\n" +
+			"Each run records what it added, so `grit migrate status` shows the history and\n" +
+			"`grit migrate down` undoes the last run.",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// The migrate tool says why it refused; a usage dump buries it.
+			cmd.SilenceUsage = true
 			printLogo()
 
-			apiDir, err := findAPIDir()
-			if err != nil {
-				return err
-			}
-
-			goArgs := []string{"run", "cmd/migrate/main.go"}
+			goArgs := []string{"run", "cmd/migrate/main.go", "--grit-version", version}
 			if fresh {
 				goArgs = append(goArgs, "--fresh")
 			}
-
-			c := exec.Command("go", goArgs...)
-			c.Dir = apiDir
-			c.Stdout = os.Stdout
-			c.Stderr = os.Stderr
-			c.Stdin = os.Stdin
 
 			purple := color.New(color.FgHiMagenta, color.Bold)
 			if fresh {
@@ -1012,11 +1007,96 @@ func migrateCmd() *cobra.Command {
 				purple.Println("\n  Running database migrations...")
 			}
 
-			return c.Run()
+			return runMigrateTool(goArgs)
 		},
 	}
 
 	cmd.Flags().BoolVar(&fresh, "fresh", false, "Drop all tables before migrating (migrate:fresh)")
+	cmd.AddCommand(migrateStatusCmd(), migrateDownCmd())
+
+	return cmd
+}
+
+// runMigrateTool shells out to the project's own cmd/migrate, which knows the
+// database config and the models. Same pattern as `grit backup`.
+func runMigrateTool(goArgs []string) error {
+	apiDir, err := findAPIDir()
+	if err != nil {
+		return err
+	}
+
+	c := exec.Command("go", goArgs...)
+	c.Dir = apiDir
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+	c.Stdin = os.Stdin
+
+	if err := c.Run(); err != nil {
+		var exit *exec.ExitError
+		if errors.As(err, &exit) {
+			// The tool has already printed why it stopped, in a sentence. Returning
+			// the error here would add a second line reading "exit status 1", which
+			// is how a refusal that explains itself ends up looking like a crash.
+			os.Exit(exit.ExitCode())
+		}
+		return err
+	}
+	return nil
+}
+
+func migrateStatusCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "status",
+		Short: "Show what each migration run changed",
+		Long: "List the recorded migration runs, newest first, with the tables, columns and\n" +
+			"indexes each one added and whether it has been rolled back.\n\n" +
+			"Grit has no migration files: AutoMigrate decides what to change by comparing the\n" +
+			"models to the database. So the history is not a list of scripts that were run, it\n" +
+			"is a record of what actually changed, taken from the schema before and after.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceUsage = true
+			printLogo()
+			color.New(color.FgHiMagenta, color.Bold).Println("\n  Migration history...")
+			return runMigrateTool([]string{"run", "cmd/migrate/main.go", "--status"})
+		},
+	}
+}
+
+func migrateDownCmd() *cobra.Command {
+	var steps int
+	var dryRun bool
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   "down",
+		Short: "Undo what the last migration run added",
+		Long: "Drop the tables, columns and indexes that the most recent migration run added,\n" +
+			"in the reverse of the order it added them.\n\n" +
+			"This is not a down script, because there are none to write: AutoMigrate only ever\n" +
+			"adds, so the reverse of a run is computed from what that run changed.\n\n" +
+			"It cannot bring data back. A column this drops takes everything written into it,\n" +
+			"so every statement is printed first and nothing runs without a confirmation or\n" +
+			"--yes. Use --dry-run to see the statements and stop. The first run on an empty\n" +
+			"database is a baseline and is refused: use `grit migrate --fresh` to start over.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceUsage = true
+			printLogo()
+			color.New(color.FgHiMagenta, color.Bold).Println("\n  Rolling back the last migration...")
+
+			goArgs := []string{"run", "cmd/migrate/main.go", "--down", "--steps", strconv.Itoa(steps)}
+			if dryRun {
+				goArgs = append(goArgs, "--dry-run")
+			}
+			if yes {
+				goArgs = append(goArgs, "--yes")
+			}
+			return runMigrateTool(goArgs)
+		},
+	}
+
+	cmd.Flags().IntVar(&steps, "steps", 1, "How many runs to undo, newest first")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Print the statements and change nothing")
+	cmd.Flags().BoolVar(&yes, "yes", false, "Do not ask before dropping (for scripts and CI)")
 
 	return cmd
 }

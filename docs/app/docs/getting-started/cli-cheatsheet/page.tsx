@@ -1131,6 +1131,14 @@ export default function CLICheatsheetPage() {
                     cmd="grit migrate --fresh"
                     desc="Drop all tables, then re-run migrations from scratch"
                   />
+                  <TerminalCard
+                    cmd="grit migrate status"
+                    desc="What each recorded run added, newest first"
+                  />
+                  <TerminalCard
+                    cmd="grit migrate down"
+                    desc="Undo what the last run added: --steps N, --dry-run, --yes"
+                  />
                 </div>
                 <div className="mt-6 rounded-lg border border-border/30 bg-card/30 overflow-hidden">
                   <div className="px-4 py-2.5 border-b border-border/30 bg-accent/20">

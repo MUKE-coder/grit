@@ -43,6 +43,14 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 
 		filepath.Join(apiRoot, "internal", "models", "outbox_message.go"): apiOutboxModelGo(),
 
+		// The migration history, and the rollback computed from it. Here rather
+		// than with cmd/migrate because an existing project needs the package
+		// before its rewritten cmd/migrate can import it: split across the two
+		// sets, grit upgrade would deliver a main.go importing a package that
+		// never arrived.
+		filepath.Join(apiRoot, "internal", "migrate", "history.go"):      apiMigrateHistoryGo(),
+		filepath.Join(apiRoot, "internal", "migrate", "history_test.go"): apiMigrateHistoryTestGo(),
+
 		// The actor on the context, which generated services scope owned rows
 		// by. A new file beside authz.go, so a project whose authz.go was
 		// edited still gets it.

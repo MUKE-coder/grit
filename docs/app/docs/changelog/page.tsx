@@ -66,6 +66,65 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.230.0 */}
+            <div className="mb-12" id="v3.230.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.230.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Down migrations, for a framework that has no migration files</h3>
+                <p>
+                  Grit migrates with <code>AutoMigrate</code>, so there is no up script and nothing to
+                  write a down script against. What there is instead is a fact worth using:
+                  AutoMigrate only ever adds, and never drops a column. So the reverse of a run does
+                  not have to be written by hand, it can be computed. Each run now snapshots the schema
+                  before and after, records the difference in two tables in your own database, and{' '}
+                  <code>grit migrate down</code> drops exactly what that run added: indexes, then
+                  columns, then tables.
+                </p>
+                <p>
+                  <code>grit migrate status</code> shows the history, newest first, with what each run
+                  changed and whether it has been rolled back. <code>grit migrate down</code> takes{' '}
+                  <code>--steps N</code>, <code>--dry-run</code>, and <code>--yes</code> for CI. Every
+                  statement is printed before anything runs, because this is the one part no rollback
+                  can undo: a dropped column takes the data written into it since. Each drop is skipped
+                  if the thing is already gone, so a rollback interrupted halfway can simply be run
+                  again.
+                </p>
+                <p>
+                  Two things it refuses. The first run on an empty database is the one that built the
+                  schema, recorded as a baseline: rolling that back would drop the database rather than
+                  undo a change, so it points at <code>grit migrate --fresh</code> instead. And a
+                  project scaffolded before this existed gets a baseline on its next migrate, because
+                  the schema it finds was built by runs nobody recorded. <code>grit upgrade</code>{' '}
+                  delivers the package and the rewritten <code>cmd/migrate</code> together, since
+                  either alone is a project that does not compile.
+                </p>
+                <p>
+                  The tests that prove it ship into the project rather than staying in the CLI, and one
+                  of them found the first bug before release: SQLite reports its own{' '}
+                  <code>sqlite_sequence</code> table, which the history&apos;s autoincrement id creates,
+                  so a snapshot of an empty database was not empty. On SQLite no run would have been
+                  recognised as the baseline, and the first rollback would have offered to drop the
+                  whole schema. The live suite now adds a real column with{' '}
+                  <code>grit generate field</code>, rolls it back on Postgres 15, 16 and 17, and checks
+                  the column is gone, the table is not, and the baseline is refused.
+                </p>
+                <p>
+                  Writing that check found a second bug, in <code>grit generate field</code>: it wrote
+                  to <code>packages/shared</code> and <code>apps/admin</code> without looking, the way{' '}
+                  <code>grit generate resource</code> never has. On an API-only project it failed on the
+                  first missing file, after the model had already gained the field, so the command
+                  reported an error having half done the work. It now injects the frontend where there
+                  is one, including the case of an admin panel with no definition for that resource.
+                </p>
+              </div>
+            </div>
+
             {/* v3.229.0 */}
             <div className="mb-12" id="v3.229.0">
               <div className="flex items-center gap-3 mb-4">

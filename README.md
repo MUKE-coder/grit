@@ -169,6 +169,8 @@ grit routes                            # List all registered API routes
 # Database
 grit migrate                           # Run migrations
 grit migrate --fresh                   # Drop + re-migrate
+grit migrate status                    # What each run changed
+grit migrate down                      # Undo the last run (--steps, --dry-run, --yes)
 grit seed                              # Seed database
 
 # Operations
