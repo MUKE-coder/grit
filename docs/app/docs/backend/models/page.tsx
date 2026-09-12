@@ -505,12 +505,14 @@ func Migrate(db *gorm.DB) error {
                 <li>Drop tables.</li>
               </ul>
               <p>
-                For destructive changes, use <code>grit migrate:fresh</code> in development
+                For destructive changes, use <code>grit migrate --fresh</code> in development
                 (this drops all tables and re-migrates). In production, write manual SQL migrations.
               </p>
 
-              <CodeBlock terminal code={`grit migrate        # run AutoMigrate
-grit migrate:fresh  # drop all + re-migrate (dev only!)`} />
+              <CodeBlock terminal code={`grit migrate          # run AutoMigrate
+grit migrate --fresh  # drop all + re-migrate (dev only!)
+grit migrate status   # what each run changed
+grit migrate down     # undo the last run`} />
 
               {/* ── Adding a New Model Step by Step ─────────────────────────────── */}
               <h2 id="adding-models">Adding a New Model (Step by Step)</h2>

@@ -313,6 +313,7 @@ export default function HomePage() {
               { icon: TestTube2, label: 'Live checks on 3 Postgres versions', href: '/docs/testing#live-checks' },
               { icon: Shield, label: 'Stability matrix, per subsystem', href: '/docs/stability' },
               { icon: Database, label: 'Roll back a migration', href: '/docs/backend/migrations#rolling-back' },
+              { icon: FileCheck, label: 'Docs checked against the CLI', href: '/docs/testing#docs-checks' },
               { icon: TrendingUp, label: 'Exact multi-currency money', href: '/docs/concepts/money' },
               { icon: Building2, label: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
               { icon: Webhook, label: 'Webhooks', href: '/docs/backend/webhooks' },

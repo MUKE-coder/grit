@@ -157,7 +157,7 @@ grit generate resource Report --fields "title:string,period:string,total:float"`
               code={`cd /tmp
 grit new scratch --api
 cd scratch
-grit generate resource Invoice --fields "customer:belongs_to:Customer,total:float,status:select"
+grit generate resource Invoice --fields "customer:belongs_to:Customer,total:float,status:select:draft=Draft|sent=Sent|paid=Paid"
 
 # Now read internal/{models,services,handlers}/invoice.go and take what is useful.`}
             />

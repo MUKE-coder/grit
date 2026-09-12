@@ -111,8 +111,15 @@ export default function DoctorPage() {
 
               <p>
                 That is a project with nothing to say about it, which is the point: a linter that
-                cries wolf is a linter people turn off. Here is the same command on an older project
-                with ten resources:
+                cries wolf is a linter people turn off. That claim is checked rather than asserted:
+                the docs workflow scaffolds a project on every change to these pages and runs this,
+                which fails if anything is reported.
+              </p>
+
+              <CodeBlock terminal verify="doctor-clean" code={`grit doctor`} />
+
+              <p>
+                Here is the same command on an older project with ten resources:
               </p>
 
               <CodeBlock terminal code={`$ grit doctor

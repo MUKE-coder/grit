@@ -403,6 +403,54 @@ curl -I http://localhost:8080/api/health | grep -iE 'x-frame|x-content|content-s
                 <li><strong>Remediation tracking</strong> — every finding flows from discovery → ticket (severity + owner + SLA) → fix → re-test. That documented loop is what SOC 2 / ISO 27001 auditors ask to see.</li>
               </ul>
 
+              <h2 id="docs-checks">The docs are tested too</h2>
+              <p>
+                &quot;The docs said to do X and X did not work&quot; is the most repeated root
+                cause in this project&apos;s changelog: a command that had been renamed, a flag
+                that never existed, a field type the generator refuses. Every instance was found
+                by a person following a page, which is the most expensive way to find it.
+              </p>
+              <p>
+                So the build reads the docs. Every grit command shown on any page, 609 of them, is
+                resolved against the real command tree: the command has to exist, and so does
+                every flag it is given. Every <code>--fields</code> spec goes through the same
+                parser the generator uses, so a documented field type that does not exist fails
+                the build rather than somebody&apos;s afternoon. Two bugs turned up the first time
+                it ran: a page telling people to run <code>grit migrate:fresh</code>, a spelling
+                Grit never had, and a tutorial whose <code>status:select</code> field the
+                generator refuses because a select needs options.
+              </p>
+              <p>
+                That catches a command that is wrong. It does not catch steps that are each valid
+                and do not work in order, so a block can claim more by naming a flow:
+              </p>
+              <CodeBlock
+                language="tsx"
+                filename="docs/app/docs/backend/migrations/page.tsx"
+                code={`<CodeBlock
+  terminal
+  verify="migrate-rollback"
+  code={\`grit generate resource Widget --fields "name:string"
+grit migrate
+grit migrate status
+grit migrate down --dry-run
+grit migrate down --yes\`}
+/>`}
+              />
+              <p>
+                The <code>Docs</code> workflow scaffolds a project per flow, migrates it, and runs
+                that flow&apos;s blocks in page order against a real Postgres, failing on the
+                first non-zero exit. Three flows are covered today: the rollback walkthrough
+                above, <code>grit doctor</code> reporting nothing on a correct project, and a
+                generated resource compiling and vetting clean.
+              </p>
+              <p>
+                Most blocks are not marked, and the reason is worth stating: they start a server,
+                bring up docker compose, or carry a placeholder only you can fill in. Marking them
+                would mean pretending. What every block does get is the command and field-spec
+                check, which is the part that silently rots.
+              </p>
+
               <h2 id="live-checks" className="mt-10">How Grit itself is tested: live checks on every Postgres</h2>
               <p>
                 This is about the framework rather than your application, and it is the answer to a

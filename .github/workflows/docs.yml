@@ -1,0 +1,119 @@
+# The docs, checked against the CLI they document.
+#
+# "The docs said to do X and X did not work" is the most repeated root cause in
+# this project's changelog: a command that had been renamed, a flag that never
+# existed, a field type the generator refuses, steps that were each valid and did
+# not work in order. Every one was found by a person following a page.
+#
+# Two jobs, for the two halves of that:
+#
+#   checks  asks the command tree about every grit command the docs show, and the
+#           generator's own parser about every --fields spec. Cheap, no database,
+#           covers all 300-odd commands on every page.
+#   flows   runs the blocks that claim to be runnable. A block marked
+#           verify="<flow>" is executed against a scaffolded project on a real
+#           Postgres, in page order, failing on the first non-zero exit.
+#
+# The split is deliberate and stated in the docs: most blocks cannot be executed
+# as written (they start a server, bring up docker compose, carry a placeholder),
+# so the ones that claim more say so by name.
+name: Docs
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "docs/**"
+      - "internal/docscheck/**"
+      - "internal/generate/**"
+      - "cmd/grit/**"
+      - "tools/docsamples/**"
+      - "tests/docs/**"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "docs/**"
+      - "internal/docscheck/**"
+      - "internal/generate/**"
+      - "cmd/grit/**"
+      - "tools/docsamples/**"
+      - "tests/docs/**"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: every documented command exists
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.6"
+          check-latest: true
+          cache: true
+
+      - name: Commands and field specs
+        run: go test ./cmd/grit/ -run 'TestDocs' -count=1 -v
+
+  flows:
+    name: the runnable blocks run
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: grit
+          POSTGRES_PASSWORD: grit
+          POSTGRES_DB: grit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      # Each flow gets its own database; the app reads DATABASE_URL, which the
+      # runner sets per flow from this base.
+      DATABASE_URL_BASE: postgres://grit:grit@localhost:5432
+      PGPASSWORD: grit
+      APP_ENV: development
+      JWT_SECRET: ci-jwt-secret-0123456789abcdef0123456789abcdef
+      FIELD_ENCRYPTION_KEY: K3hQ8vZ2mP5sT7wY0bD4fG6jL9nR1uX3cV5aE8hK2oQ=
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.6"
+          check-latest: true
+          cache: true
+
+      - name: Build grit from this commit
+        run: |
+          go build -o /usr/local/bin/grit ./cmd/grit
+          grit version
+
+      - name: List the flows the docs claim
+        run: go run ./tools/docsamples -list
+
+      - name: Run them
+        run: |
+          mkdir -p /tmp/docsflows
+          WORK=/tmp/docsflows tests/docs/run-flows.sh
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: docs-flows
+          path: /tmp/docsflows
+          retention-days: 14

@@ -531,6 +531,14 @@ fields:
                   One command. It writes the column into the Go model, both Zod schemas, the
                   TypeScript type, and the admin table and form:
                 </p>
+                {/* Runnable: the workflow generates this and builds it. */}
+                <CodeBlock
+                  language="bash"
+                  verify="generate-builds"
+                  code={`grit generate resource Post --fields "title:string,content:text,published:bool"
+(cd apps/api && go build ./... && go vet ./...)`}
+                />
+
                 <CodeBlock language="bash" code={`grit g field Product sku:string
 grit g field Invoice status:select:draft=Draft|sent=Sent|paid=Paid
 grit g field Invoice paid:toggle
