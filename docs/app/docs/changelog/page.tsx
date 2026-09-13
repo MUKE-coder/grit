@@ -66,6 +66,114 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.241.0 */}
+            <div className="mb-12" id="v3.241.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.241.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A security review of a scaffolded app: the three criticals, and the secrets in .env.example</h3>
+                <p>
+                  An independent review ran thirteen specialist skills over a double scaffolded with
+                  v3.239.0, a small address book, and reported 109 findings: 3 critical, 26 high, 44
+                  medium and 36 low. Nearly all of them are framework code, so they are being fixed in
+                  the templates rather than in that app. This release is the set the review marked
+                  &quot;before the first commit&quot;. Every one of them was in a project freshly
+                  scaffolded today.
+                </p>
+
+                <h4>Any account could make itself ADMIN through sync</h4>
+                <p>
+                  The default sync registry held <code>users</code> and <code>uploads</code>, and{' '}
+                  <code>/sync/push</code> was a generic write: it loaded the row the client named,
+                  decoded the client&apos;s JSON over it and saved it. Register, push{' '}
+                  <code>{`{"op":"update","model":"users","data":{"role":"ADMIN"}}`}</code>, done.
+                  Pull returned every row of every synced table to any signed-in account.
+                </p>
+                <p>
+                  Users and uploads are no longer synced; both have APIs with their own checks. Each
+                  pushed change now asks for <code>&lt;model&gt;.create</code>, <code>.edit</code> or{' '}
+                  <code>.delete</code>, or for the row to be the caller&apos;s own in a table whose
+                  rows have owners, and an owner cannot hand a row to somebody else by rewriting its
+                  owner field. The id, version and timestamps are never taken from the payload. Pull
+                  reads a table with <code>&lt;model&gt;.view</code>, and otherwise only the
+                  caller&apos;s own rows of an owned table. A row the caller may not touch answers
+                  NOT_FOUND, so its existence is not confirmed.
+                </p>
+
+                <h4>SQL injection and IDOR in the upload handlers</h4>
+                <p>
+                  <code>GET</code> and <code>DELETE /uploads/:id</code> passed the path segment to{' '}
+                  <code>First(&amp;upload, id)</code>. With a string, GORM treats that as a SQL
+                  condition, not a primary key, so <code>/uploads/1=1</code> matched a row and a
+                  longer expression was a blind oracle over the whole database. Neither checked who
+                  owned the file, and the list and stats covered every user&apos;s uploads. Lookups
+                  are now parameterised and scoped: an ADMIN or a holder of{' '}
+                  <code>uploads.view</code> (or <code>uploads.delete</code>) reaches every upload,
+                  anyone else only their own, and anything else is a 404.
+                </p>
+
+                <h4>Generated resources were open to any signed-in account</h4>
+                <p>
+                  Only delete and bulk asked for a permission. List, read, export, import, create and
+                  update sat on the protected group, and on an app with open registration signed in
+                  means anybody: the review exported the whole address book from an account made a
+                  minute earlier. Each generated route now asks for the permission the roles screen
+                  already grants for its verb (<code>view</code>, <code>create</code>,{' '}
+                  <code>edit</code>), on the staff group, so an ADMIN holds them all and a role can
+                  grant them. The same applies to the workflow, append-only and <code>--tree</code>{' '}
+                  routes, where a move or a rebuild rewrites every row beneath a node.
+                </p>
+                <p>
+                  A resource generated with <code>--owned-by</code> or <code>--tenant-owned</code>{' '}
+                  keeps its protected routes: its queries are already narrowed to the caller&apos;s
+                  own rows or organization. A project whose routes predate the staff group puts
+                  shared routes on the admin group instead.
+                </p>
+
+                <h4>Real secrets in .env.example</h4>
+                <p>
+                  <code>.env.example</code>, the file meant to be committed, was a byte-for-byte copy
+                  of <code>.env</code>: the JWT secret, the database password and the dashboard
+                  passwords, in the repository from the first <code>git add</code>, and in production
+                  for anyone who deployed with <code>cp .env.example .env</code>. Generated secrets
+                  are now <code>CHANGE_ME</code> there, and <code>*.db</code> and{' '}
+                  <code>*.sqlite</code> files, which hold password hashes, sessions and API keys, are
+                  ignored.
+                </p>
+
+                <h4>Upgrading</h4>
+                <p>
+                  <code>grit upgrade</code> applies all of it to an existing project. It moves
+                  generated routes behind their permissions, in the route files and the tree routes
+                  in <code>routes.go</code>, takes users and uploads out of the sync registry and the
+                  desktop app&apos;s sync list, delivers the new sync and upload handlers, replaces
+                  the secrets in <code>.env.example</code> and adds the ignores. Each edit anchors on
+                  the exact text Grit generated, so a route you wrote by hand is left alone, and is
+                  still open to every account if it is on <code>m.Protected</code>.
+                </p>
+                <p>
+                  Two things it cannot do for you. If <code>.env.example</code> was ever committed or
+                  shared, rotate the secrets in <code>.env</code>, because they are the same values.
+                  And an ordinary account that used a shared resource before now needs a role that
+                  grants it: give <code>&lt;resource&gt;.view</code> and the rest in Roles &amp;
+                  permissions.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Verified live on a fresh double (24 checks) and on a copy of the reviewed app after{' '}
+                  <code>grit upgrade</code> (26 checks): a new account gets 403 on shared resources
+                  and cannot push or pull them, cannot change its role through sync, and gets 404 for{' '}
+                  <code>/uploads/1=1</code> and for another user&apos;s file, while ADMIN and owners
+                  keep working. The CI live suite gains the same checks. The rest of the review is
+                  tracked as Phase 8.
+                </p>
+              </div>
+            </div>
+
             {/* v3.240.1 */}
             <div className="mb-12" id="v3.240.1">
               <div className="flex items-center gap-3 mb-4">

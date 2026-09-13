@@ -54,16 +54,8 @@ func (g *Generator) prepareAppendOnly() error {
 // DoNothing, never an update. Leaving it out cost an append-only resource its
 // bulk load, which is the first thing a ledger or an audit trail needs: history
 // arrives as a CSV of rows that already happened.
-func (g *Generator) writeAppendOnlyRoutes(w io.Writer, names Names) {
-	routes := []string{
-		`GET("%s", h.List)`,
-		`GET("%s/export", h.Export)`,
-		`POST("%s/import", h.Import)`,
-		`GET("%s/import/template", h.Template)`,
-		`GET("%s/:id", h.GetByID)`,
-		`GET("%s/:id/pdf", h.PDF)`,
-		`POST("%s", h.Create)`,
-	}
+func (g *Generator) writeAppendOnlyRoutes(w io.Writer, names Names, staffGroup bool) {
+	routes := readCreateRoutes()
 
 	if len(g.Roles) > 0 {
 		roleArgs := make([]string, len(g.Roles))
@@ -74,12 +66,12 @@ func (g *Generator) writeAppendOnlyRoutes(w io.Writer, names Names) {
 		fmt.Fprintf(w, "\t\tg := m.Protected.Group(\"/%s\")\n", names.Plural)
 		fmt.Fprintf(w, "\t\tg.Use(middleware.RequireRole(%s))\n", strings.Join(roleArgs, ", "))
 		for _, r := range routes {
-			fmt.Fprintf(w, "\t\tg."+r+"\n", "")
+			fmt.Fprintf(w, "\t\tg.%s(%q, h.%s)\n", r.method, r.path, r.handler)
 		}
 	} else {
 		fmt.Fprintf(w, "\t\t// Append-only: created and read, never changed or deleted.\n")
 		for _, r := range routes {
-			fmt.Fprintf(w, "\t\tm.Protected."+r+"\n", "/"+names.Plural)
+			g.writeGatedRoute(w, names.Plural, r, staffGroup)
 		}
 	}
 	fmt.Fprintf(w, "\t})\n}\n")

@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -24,10 +25,29 @@ func randomHex(n int) string {
 	return hex.EncodeToString(b)
 }
 
+// envExampleFile is .env with every generated secret replaced by a placeholder.
+//
+// .env.example is meant to be committed, and it was a byte-for-byte copy of .env:
+// a real JWT secret, database password and dashboard passwords in the repository
+// from the first git add, and in production for anybody who deployed with
+// cp .env.example .env. The shape stays, so it still documents every variable.
+func envExampleFile(opts Options) string {
+	out := generatedSecret.ReplaceAllString(envFile(opts), "${1}=CHANGE_ME${2}")
+	return encryptionKeyLine.ReplaceAllString(out, "${1}=CHANGE_ME${2}")
+}
+
+var (
+	// generatedSecret matches a KEY=value line whose value is what randomHex
+	// produces: 32 or more lowercase hex characters.
+	generatedSecret = regexp.MustCompile(`(?m)^([A-Z][A-Z0-9_]*)=[0-9a-f]{32,}(\r?)$`)
+	// encryptionKeyLine covers the field-encryption key, which is base64.
+	encryptionKeyLine = regexp.MustCompile(`(?m)^(FIELD_ENCRYPTION_KEY)=\S+(\r?)$`)
+)
+
 func writeRootFiles(root string, opts Options) error {
 	files := map[string]string{
 		filepath.Join(root, ".env"):                                      envFile(opts),
-		filepath.Join(root, ".env.example"):                              envFile(opts), // Same as .env — serves as documentation for other devs
+		filepath.Join(root, ".env.example"):                              envExampleFile(opts),
 		filepath.Join(root, ".gitignore"):                                rootGitignore(),
 		filepath.Join(root, "README.md"):                                 readmeFile(opts),
 		filepath.Join(root, "grit.json"):                                 gritJSON(opts),
@@ -416,172 +436,6 @@ SOCIAL_AUTH_ENABLED=false
 	// The admin panel's URL is not a URL in every shape: see adminURLEnv.
 	return strings.Replace(out, "{{ADMIN_URL_ENV}}", adminURLEnv(opts), 1)
 }
-func envExampleFile(opts Options) string {
-	return `# App — General application settings
-APP_NAME=myapp              # Application name
-APP_ENV=development         # Environment: development, staging, production
-APP_PORT=8080               # API server port
-APP_URL=http://localhost:8080
-
-# ─── Database ───────────────────────────────────────────────────────────
-# Which engine this project talks to: postgres | mysql | sqlite | memory.
-# Only the block for the one you choose is read.
-#   postgres   the default, and what docker-compose.yml starts
-#   mysql      MySQL 8 or MariaDB, on a server you run
-#   sqlite     one file, pure Go, no CGO and no server
-#   memory     SQLite in RAM, empty at every boot, for tests and demos
-# Pick it at scaffold time with: grit new myapp --db mysql
-DB_PROVIDER=postgres
-
-# Postgres — read when DB_PROVIDER=postgres
-# Single source of truth. Edit ONLY the POSTGRES_* values below — both
-# docker-compose.yml and the Go API read them. ` + "`grit new`" + ` generates a
-# strong random POSTGRES_PASSWORD per project so a fresh scaffold runs
-# without any editing.
-POSTGRES_USER=grit
-POSTGRES_PASSWORD=change-me          # MUST change in production
-POSTGRES_DB=myapp
-# MySQL — read when DB_PROVIDER=mysql. Nothing in docker-compose starts MySQL.
-MYSQL_USER=grit
-MYSQL_PASSWORD=change-me
-MYSQL_DB=myapp
-MYSQL_HOST=localhost
-MYSQL_PORT=3306
-# SQLite — read when DB_PROVIDER=sqlite. A path, relative to apps/api.
-SQLITE_PATH=./app.db
-POSTGRES_HOST=localhost              # ` + "`postgres`" + ` inside docker-compose.prod.yml
-POSTGRES_PORT=5434                   # host port; 5432 inside docker network
-# ─── Docker host ports ──────────────────────────────────────────────────
-#
-# What docker-compose binds on your machine. Every Grit project defaults to
-# the same numbers, so the second one you start fails with "port is already
-# allocated". Change them here: compose binds them, and the API builds its
-# Postgres, Redis and MinIO addresses from them unless a URL below is set.
-#
-# Only the host side moves. Inside the compose network the services keep
-# their standard ports, so nothing else needs to know.
-REDIS_PORT=6380
-MAILHOG_SMTP_PORT=1025
-MAILHOG_UI_PORT=8025
-MINIO_PORT=9002
-MINIO_CONSOLE_PORT=9003
-
-# Override the connection string ONLY for external Postgres (Neon,
-# Supabase, RDS) or SQLite. When set, this wins over the POSTGRES_*
-# parts above.
-#   DATABASE_URL=postgres://user:pass@host:5432/db?sslmode=require
-#   DATABASE_URL=sqlite:./app.db
-#   DATABASE_URL=sqlite::memory:
-# DATABASE_URL=
-
-# JWT — Authentication tokens
-JWT_SECRET=change-me-in-production   # MUST change in production
-# Field-level encryption (optional). Set a base64 32-byte key to enable AES-256-GCM
-# on crypto.EncryptedString columns. Generate one: openssl rand -base64 32
-# Keep it safe and backed up — losing it makes encrypted columns unreadable.
-# FIELD_ENCRYPTION_KEY=
-JWT_ACCESS_EXPIRY=15m                # Access token lifetime
-JWT_REFRESH_EXPIRY=168h              # Refresh token lifetime (7 days)
-
-# OAuth2 — Social Login (Google + GitHub)
-# Google: https://console.cloud.google.com/apis/credentials
-GOOGLE_CLIENT_ID=                    # Google OAuth 2.0 Client ID
-GOOGLE_CLIENT_SECRET=                # Google OAuth 2.0 Client Secret
-# GitHub: https://github.com/settings/developers
-GITHUB_CLIENT_ID=                    # GitHub OAuth App Client ID
-GITHUB_CLIENT_SECRET=                # GitHub OAuth App Client Secret
-OAUTH_FRONTEND_URL=http://localhost:3001  # Where to redirect after OAuth
-
-# Redis — Cache and job queue
-# Unset, the API connects to localhost on REDIS_PORT above, so moving the port
-# moves the connection with it. Set REDIS_URL for an external Redis, or to empty
-# (REDIS_URL=) to run without Redis at all: cache, background jobs and cron then
-# stay off instead of retrying a dial in a loop.
-# REDIS_URL=redis://localhost:6380
-
-# Public API URL — baked into Next.js bundles at build time
-API_URL=https://api.example.com
-
-# Storage — Active driver: minio, s3, r2, or b2
-STORAGE_DRIVER=minio                 # Change to "s3", "r2", or "b2" to switch providers
-
-# MinIO — Local S3-compatible storage (default for development)
-# Unset, built from MINIO_PORT above. Set it only for a MinIO somewhere else.
-# MINIO_ENDPOINT=http://localhost:9002
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
-MINIO_BUCKET=myapp-uploads
-MINIO_REGION=us-east-1
-MINIO_USE_SSL=false
-
-# AWS S3 — Native AWS object storage (most common production choice)
-# Get credentials: IAM Console → Users → Security credentials → Access keys.
-# Better still: attach an IAM role to your EC2 / ECS / Lambda and leave
-# S3_ACCESS_KEY + S3_SECRET_KEY empty — the SDK auto-discovers role creds.
-# Leave S3_ENDPOINT EMPTY so the SDK uses the AWS regional endpoint and
-# virtual-hosted-style addressing (required for new buckets).
-S3_ENDPOINT=                         # Empty = AWS default (s3.<region>.amazonaws.com)
-S3_ACCESS_KEY=                       # Falls back to AWS_ACCESS_KEY_ID
-S3_SECRET_KEY=                       # Falls back to AWS_SECRET_ACCESS_KEY
-S3_BUCKET=myapp-uploads
-S3_REGION=us-east-1                  # Falls back to AWS_REGION
-
-# Cloudflare R2 — S3-compatible object storage with zero egress fees
-# Get credentials: Cloudflare Dashboard → R2 → Manage R2 API Tokens
-R2_ENDPOINT=https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com
-R2_ACCESS_KEY=                       # R2 Access Key ID
-R2_SECRET_KEY=                       # R2 Secret Access Key
-R2_BUCKET=myapp-uploads
-R2_REGION=auto                       # Always "auto" for R2
-
-# Backblaze B2 — S3-compatible object storage, low cost per GB
-# Get credentials: B2 Cloud Storage → App Keys
-B2_ENDPOINT=https://s3.us-west-004.backblazeb2.com
-B2_ACCESS_KEY=                       # B2 keyID
-B2_SECRET_KEY=                       # B2 applicationKey
-B2_BUCKET=myapp-uploads
-B2_REGION=us-west-004               # Must match your bucket region
-
-# Email — Resend integration
-RESEND_API_KEY=re_your_api_key
-MAIL_FROM=noreply@myapp.dev
-
-# CORS — Allowed frontend origins (comma-separated)
-# Browser origins allowed to call the API. The Wails desktop webview does NOT
-# need an entry here: its origin varies (http://wails.localhost:34115 in dev,
-# http://wails.localhost in a Windows build, wails://wails on macOS/Linux), so
-# the CORS middleware matches the wails.localhost host on any port instead.
-CORS_ORIGINS=http://localhost:3000,http://localhost:3001
-
-# GORM Studio — Visual database browser
-GORM_STUDIO_ENABLED=true
-GORM_STUDIO_USERNAME=admin              # Login username for the Studio UI
-GORM_STUDIO_PASSWORD=                    # Generated per-scaffold in .env. Rotate: openssl rand -hex 16
-GORM_STUDIO_READ_ONLY=false             # Refuse every write from Studio
-GORM_STUDIO_DISABLE_SQL=false           # The SQL editor bypasses every GORM guard
-
-# AI — Vercel AI Gateway (one key, hundreds of models)
-AI_GATEWAY_API_KEY=                           # Get from vercel.com/ai-gateway
-AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model (e.g. openai/gpt-5.4, google/gemini-2.5-pro)
-AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
-
-# Two-Factor Authentication (TOTP)
-TOTP_ISSUER=myapp                    # App name shown in authenticator apps
-
-# Observability — Pulse (performance monitoring, request tracing, error tracking)
-PULSE_ENABLED=true                   # Set to "false" to disable Pulse entirely
-PULSE_USERNAME=admin                 # Dashboard login username
-PULSE_PASSWORD=pulse                 # Dashboard login password (change in production!)
-
-# Security — Sentinel (WAF, rate limiting, threat detection)
-SENTINEL_ENABLED=true                # Set to "false" to disable Sentinel entirely
-SENTINEL_USERNAME=admin              # Dashboard login username
-SENTINEL_PASSWORD=sentinel           # Dashboard login password (change in production!)
-SENTINEL_SECRET_KEY=change-me        # Secret for dashboard JWT sessions
-SENTINEL_AUDIT_KEY=                  # Keys the audit log hash chain (openssl rand -hex 32)
-`
-}
-
 func envCloudExampleFile(opts Options) string {
 	return fmt.Sprintf(`# %s: Cloud Environment Variables
 #
@@ -729,10 +583,13 @@ minio-data/
 # Turborepo
 .turbo/
 
-# Sentinel (WAF database)
-sentinel.db
-sentinel.db-shm
-sentinel.db-wal
+# Local databases. SQLite files hold real data: users with their password
+# hashes, sessions and API keys, as well as Sentinel's WAF log.
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
 
 # Testing
 e2e/test-results/

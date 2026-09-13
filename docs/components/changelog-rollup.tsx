@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 7 to 13, 2026",
-    count: 50,
+    count: 51,
     entries: [
+      { version: "3.241.0", title: "A security review of a scaffolded app: the three criticals, and the secrets in .env.example" },
       { version: "3.240.1", title: "--append-only broke grit migrate on ordinary MySQL" },
       { version: "3.240.0", title: "A double-entry ledger under load, and the three gaps it found" },
       { version: "3.239.0", title: "A two-app project on Vite had a panel that could never have run" },

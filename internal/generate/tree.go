@@ -699,12 +699,33 @@ func (g *Generator) ensureTreeRoutes(names Names) {
 		method string
 		path   string
 		call   string
+		perm   string
 	}{
-		{"GET", "/" + names.Plural + "/tree", "GetTree"},
-		{"GET", "/" + names.Plural + "/:id/breadcrumbs", "GetBreadcrumbs"},
-		{"PATCH", "/" + names.Plural + "/:id/move", "Move"},
-		{"POST", "/" + names.Plural + "/reorder", "Reorder"},
-		{"POST", "/" + names.Plural + "/rebuild-tree", "RebuildPaths"},
+		{"GET", "/" + names.Plural + "/tree", "GetTree", "view"},
+		{"GET", "/" + names.Plural + "/:id/breadcrumbs", "GetBreadcrumbs", "view"},
+		{"PATCH", "/" + names.Plural + "/:id/move", "Move", "edit"},
+		{"POST", "/" + names.Plural + "/reorder", "Reorder", "edit"},
+		{"POST", "/" + names.Plural + "/rebuild-tree", "RebuildPaths", "edit"},
+	}
+
+	// Who reaches the tree: the rule the resource's own routes follow. A move or
+	// a rebuild rewrites every row beneath a node, and on a shared tree signing
+	// in is not a permission to do that.
+	route := func(method, path, call, perm string) string {
+		switch {
+		case len(g.Roles) > 0:
+			roleArgs := make([]string, len(g.Roles))
+			for i, r := range g.Roles {
+				roleArgs[i] = fmt.Sprintf("%q", r)
+			}
+			return fmt.Sprintf("\t\tprotected.%s(%q, middleware.RequireRole(%s), %s)", method, path, strings.Join(roleArgs, ", "), call)
+		case g.scopedRows():
+			return fmt.Sprintf("\t\tprotected.%s(%q, %s)", method, path, call)
+		case strings.Contains(content, "middleware.RequireStaff()"):
+			return fmt.Sprintf("\t\tstaff.%s(%q, middleware.RequireRole(\"ADMIN\", \"perm:%s.%s\"), %s)", method, path, names.Plural, perm, call)
+		default:
+			return fmt.Sprintf("\t\tadmin.%s(%q, %s)", method, path, call)
+		}
 	}
 
 	lines := []string{}
@@ -720,7 +741,7 @@ func (g *Generator) ensureTreeRoutes(names Names) {
 		if strings.Contains(content, call) {
 			continue
 		}
-		lines = append(lines, fmt.Sprintf("\t\tprotected.%s(%q, %s)", r.method, r.path, call))
+		lines = append(lines, route(r.method, r.path, call, r.perm))
 		added = append(added, r.method+" "+r.path)
 	}
 	if len(added) == 0 {

@@ -2,6 +2,7 @@ package generate
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -65,10 +66,14 @@ func (g *Generator) resourceRoutesSource(names Names) (string, error) {
 	// Delete and bulk go on the staff group, asking for the resource's delete
 	// permission, where the project has that group. Role-restricted and
 	// append-only resources have their own arrangements.
-	needStaff := g.projectHasStaffGroup() && len(g.Roles) == 0 && !g.Definition.AppendOnly
+	staffGroup := g.projectHasStaffGroup() && len(g.Roles) == 0
+	needStaff := staffGroup && !g.Definition.AppendOnly
+	// An owned append-only resource has no delete and protects everything else,
+	// so it is the one shape on a staff project that names no guard.
+	staffGate := staffGroup && !(g.Definition.AppendOnly && g.scopedRows())
 
 	imports := []string{fmt.Sprintf("%q", g.Module+"/internal/handlers")}
-	if len(g.Roles) > 0 || needStaff {
+	if len(g.Roles) > 0 || staffGate {
 		imports = append(imports, fmt.Sprintf("%q", g.Module+"/internal/middleware"))
 	}
 
@@ -85,7 +90,7 @@ func (g *Generator) resourceRoutesSource(names Names) (string, error) {
 	fmt.Fprintf(&b, "// deleting this file; nothing else refers to it.\n")
 	fmt.Fprintf(&b, "//\n")
 	fmt.Fprintf(&b, "// m.Public is outside the auth middleware and behind an API key, m.Protected\n")
-	if needStaff {
+	if staffGate {
 		fmt.Fprintf(&b, "// takes a JWT or an API key, and m.Staff also requires the permission its\n")
 		fmt.Fprintf(&b, "// route names (an ADMIN holds every one).\n")
 	} else {
@@ -121,7 +126,7 @@ func (g *Generator) resourceRoutesSource(names Names) (string, error) {
 
 	// Append-only resources get read and create, and nothing else.
 	if g.Definition.AppendOnly {
-		g.writeAppendOnlyRoutes(&b, names)
+		g.writeAppendOnlyRoutes(&b, names, staffGroup)
 		return b.String(), nil
 	}
 
@@ -154,20 +159,17 @@ func (g *Generator) resourceRoutesSource(names Names) (string, error) {
 			fmt.Fprintf(&b, "\t\t%s\n", r)
 		}
 	} else {
-		fmt.Fprintf(&b, "\t\tm.Protected.GET(\"/%s\", h.List)\n", names.Plural)
-		fmt.Fprintf(&b, "\t\tm.Protected.GET(\"/%s/export\", h.Export)\n", names.Plural)
-		fmt.Fprintf(&b, "\t\tm.Protected.POST(\"/%s/import\", h.Import)\n", names.Plural)
-		fmt.Fprintf(&b, "\t\tm.Protected.GET(\"/%s/import/template\", h.Template)\n", names.Plural)
-		fmt.Fprintf(&b, "\t\tm.Protected.GET(\"/%s/:id\", h.GetByID)\n", names.Plural)
-		fmt.Fprintf(&b, "\t\tm.Protected.GET(\"/%s/:id/pdf\", h.PDF)\n", names.Plural)
-		fmt.Fprintf(&b, "\t\tm.Protected.POST(\"/%s\", h.Create)\n", names.Plural)
-		fmt.Fprintf(&b, "\t\tm.Protected.PUT(\"/%s/:id\", h.Update)\n", names.Plural)
-		fmt.Fprintf(&b, "\t\tm.Protected.PATCH(\"/%s/:id\", h.Patch)\n", names.Plural)
+		routes := append(readCreateRoutes(),
+			gatedRoute{"PUT", "/:id", "edit", "Update"},
+			gatedRoute{"PATCH", "/:id", "edit", "Patch"})
 		if g.Definition.WorkflowField() != nil {
-			// The service checks each transition's permission, and the owner
-			// when the resource has one, so the route itself can be protected.
-			fmt.Fprintf(&b, "\t\tm.Protected.GET(\"/%s/workflow\", h.Workflow)\n", names.Plural)
-			fmt.Fprintf(&b, "\t\tm.Protected.POST(\"/%s/:id/transitions/:action\", h.Transition)\n", names.Plural)
+			// The service also checks each transition's own permission.
+			routes = append(routes,
+				gatedRoute{"GET", "/workflow", "view", "Workflow"},
+				gatedRoute{"POST", "/:id/transitions/:action", "edit", "Transition"})
+		}
+		for _, r := range routes {
+			g.writeGatedRoute(&b, names.Plural, r, staffGroup)
 		}
 		fmt.Fprintf(&b, "\n")
 		// Bulk sits with DELETE rather than with PATCH: it can delete, and a
@@ -185,6 +187,51 @@ func (g *Generator) resourceRoutesSource(names Names) (string, error) {
 
 	fmt.Fprintf(&b, "\t})\n}\n")
 	return b.String(), nil
+}
+
+// gatedRoute is one generated route and the permission it asks for.
+type gatedRoute struct{ method, path, perm, handler string }
+
+// readCreateRoutes are the routes every resource has, append-only ones included.
+func readCreateRoutes() []gatedRoute {
+	return []gatedRoute{
+		{"GET", "", "view", "List"},
+		{"GET", "/export", "view", "Export"},
+		{"POST", "/import", "create", "Import"},
+		{"GET", "/import/template", "view", "Template"},
+		{"GET", "/:id", "view", "GetByID"},
+		{"GET", "/:id/pdf", "view", "PDF"},
+		{"POST", "", "create", "Create"},
+	}
+}
+
+// writeGatedRoute writes one route of a resource that has no --roles.
+//
+// An owned resource's service scopes every query to the caller, so a signed-in
+// account sees and changes only its own rows, and the route can be protected.
+// Anything else is shared data, and "signed in" is not a permission on an app
+// with open registration: that is how a scaffolded address book handed every
+// contact to anybody who made an account. On the staff group each verb asks for
+// the permission the roles UI grants for it; a project without that group keeps
+// shared data for ADMIN.
+func (g *Generator) writeGatedRoute(w io.Writer, plural string, r gatedRoute, staffGroup bool) {
+	switch {
+	case g.scopedRows():
+		fmt.Fprintf(w, "\t\tm.Protected.%s(\"/%s%s\", h.%s)\n", r.method, plural, r.path, r.handler)
+	case staffGroup:
+		fmt.Fprintf(w, "\t\tm.Staff.%s(\"/%s%s\", middleware.RequireRole(\"ADMIN\", \"perm:%s.%s\"), h.%s)\n",
+			r.method, plural, r.path, plural, r.perm, r.handler)
+	default:
+		fmt.Fprintf(w, "\t\tm.Admin.%s(\"/%s%s\", h.%s)\n", r.method, plural, r.path, r.handler)
+	}
+}
+
+// scopedRows reports whether every query on the resource is already narrowed
+// to the caller: to their own rows (--owned-by), or to their organization's
+// (--tenant-owned, applied by the tenant middleware). Such a resource can sit on
+// the protected group, since signing in reaches nothing that is not yours.
+func (g *Generator) scopedRows() bool {
+	return g.Definition.IsOwned() || g.Definition.TenantOwned
 }
 
 // removeResourceRoutes deletes a resource's route file.

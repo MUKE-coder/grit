@@ -224,6 +224,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairResourceHandlers(root, opts); err != nil {
 			fmt.Printf("  ⚠ repairing resource handlers: %v\n", err)
 		}
+		// The contact-app security review's criticals: shared resource routes
+		// open to any signed-in account, users and uploads writable through
+		// sync, and real secrets in .env.example.
+		if err := repairReviewCriticals(root, opts); err != nil {
+			fmt.Printf("  ⚠ applying the security review fixes: %v\n", err)
+		}
 		// The activity-log chain was hashed at a precision Postgres and MySQL
 		// do not store, so it failed verification on its first row. Only where
 		// the audit package is already there.

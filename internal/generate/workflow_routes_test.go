@@ -51,8 +51,8 @@ func TestWorkflowRoutesLiveInTheResourceRouteFile(t *testing.T) {
 		t.Fatalf("routes: %v", err)
 	}
 	for _, want := range []string{
-		`m.Protected.GET("/referrals/workflow", h.Workflow)`,
-		`m.Protected.POST("/referrals/:id/transitions/:action", h.Transition)`,
+		`m.Admin.GET("/referrals/workflow", h.Workflow)`,
+		`m.Admin.POST("/referrals/:id/transitions/:action", h.Transition)`,
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("the route file is missing %s", want)

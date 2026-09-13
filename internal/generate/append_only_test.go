@@ -33,12 +33,12 @@ func TestAppendOnlyRoutesAreReadAndCreate(t *testing.T) {
 	}
 
 	for _, want := range []string{
-		`m.Protected.GET("/journal_entries", h.List)`,
-		`m.Protected.GET("/journal_entries/:id", h.GetByID)`,
-		`m.Protected.POST("/journal_entries", h.Create)`,
+		`m.Admin.GET("/journal_entries", h.List)`,
+		`m.Admin.GET("/journal_entries/:id", h.GetByID)`,
+		`m.Admin.POST("/journal_entries", h.Create)`,
 		// The bulk load, which only inserts: a ledger's history arrives as a CSV
 		// of rows that already happened.
-		`m.Protected.POST("/journal_entries/import", h.Import)`,
+		`m.Admin.POST("/journal_entries/import", h.Import)`,
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("missing %s", want)

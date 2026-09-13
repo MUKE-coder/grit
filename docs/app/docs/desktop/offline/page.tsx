@@ -268,8 +268,6 @@ phone           ─ unchanged ─      ─ unchanged ─
               </p>
               <CodeBlock language="go" code={`// internal/routes/routes.go (auto-managed)
 syncRegistry := sync.NewRegistry()
-syncRegistry.Register("users", &models.User{})
-syncRegistry.Register("uploads", &models.Upload{})
 syncRegistry.Register("buildings", &models.Building{}) // injected by generator
 syncRegistry.Register("tenants", &models.Tenant{})     // injected by generator
 // grit:sync — new resources land here automatically
