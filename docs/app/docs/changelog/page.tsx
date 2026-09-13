@@ -66,6 +66,47 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.255.0 */}
+            <div className="mb-12" id="v3.255.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.255.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An XLSX export no longer holds the whole table in memory</h3>
+                <p>
+                  The next finding from the review of a scaffolded app. A generated resource&apos;s
+                  export read its rows in batches for CSV, but for XLSX it collected every matching
+                  row into one slice and then built the sheet cell by cell in excelize&apos;s
+                  in-memory workbook. The comment above it said excelize had no streaming writer; it
+                  does. Measured on a fresh project with 300,000 contacts: one export took the API
+                  from 80 MB to 1,328 MB. A few at once, from anyone allowed to export, would take
+                  the API down.
+                </p>
+                <p>
+                  <code>export.NewXLSXStream</code> writes the header, takes rows a batch at a time
+                  through excelize&apos;s stream writer, which moves them to a temporary file past a
+                  few megabytes, and sends the finished workbook. The generated handler adds each
+                  batch as the service reads it. The same export of 300,000 contacts now peaks 122 MB
+                  above idle, with every row in the sheet. More rows than a worksheet holds
+                  (1,048,576) is refused with <code>export.ErrTooManyRows</code> rather than a
+                  truncated file; CSV has no such limit. <code>--audit-reads</code> resources count
+                  the rows with <code>sheet.Written()</code>. <code>export.XLSX</code> still takes a
+                  slice, for small in-memory exports, and now uses the stream too.
+                </p>
+                <p>
+                  <code>grit upgrade</code> delivers the export package and its tests, and rewrites
+                  the XLSX branch of every generated handler that is still exactly what{' '}
+                  <code>grit generate</code> wrote. On the test project the upgraded handler came out
+                  identical to a freshly generated one. An edited branch is left alone, with a note
+                  saying what to change.
+                </p>
+              </div>
+            </div>
+
             {/* v3.254.0 */}
             <div className="mb-12" id="v3.254.0">
               <div className="flex items-center gap-3 mb-4">

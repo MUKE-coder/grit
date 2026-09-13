@@ -7577,6 +7577,7 @@ package export
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -7647,25 +7648,68 @@ func writeCSVRows(cw *csv.Writer, items interface{}, opts Options) error {
 	return nil
 }
 
-// XLSX writes items as an Excel workbook into w.
+// XLSX writes items as an Excel workbook into w. An export that reads its rows
+// in batches should use NewXLSXStream instead, so the rows are never all in
+// memory at once.
 func XLSX(w io.Writer, items interface{}, opts Options) error {
-	f := excelize.NewFile()
-	defer f.Close()
+	sheet, err := NewXLSXStream(opts)
+	if err != nil {
+		return err
+	}
+	if err := sheet.Rows(items); err != nil {
+		return errors.Join(err, sheet.Close())
+	}
+	return errors.Join(sheet.Finish(w), sheet.Close())
+}
 
+// ErrTooManyRows is returned when an export has more rows than a worksheet can
+// hold: 1,048,576, the header included. CSV has no such limit.
+var ErrTooManyRows = errors.New("export: more rows than an XLSX worksheet holds; export as CSV instead")
+
+// XLSXStream builds a workbook one batch of rows at a time.
+//
+// Rows go through excelize's stream writer, which moves them to a temporary
+// file once they pass a few megabytes, so memory stays flat however many there
+// are. Building the sheet cell by cell held every row in memory: 300,000
+// contacts took an API from 80 MB to 1.3 GB.
+type XLSXStream struct {
+	file   *excelize.File
+	stream *excelize.StreamWriter
+	opts   Options
+	next   int // the worksheet row the next item goes on
+	cells  []interface{}
+}
+
+// NewXLSXStream starts a workbook and writes its header row. Close it when done,
+// which removes its temporary files.
+func NewXLSXStream(opts Options) (*XLSXStream, error) {
+	f := excelize.NewFile()
 	sheet := opts.Sheet
 	if sheet == "" {
 		sheet = "Sheet1"
 	}
 	if sheet != "Sheet1" {
 		// excelize creates "Sheet1" by default; swap to the requested name.
-		_ = f.SetSheetName("Sheet1", sheet)
+		if err := f.SetSheetName("Sheet1", sheet); err != nil {
+			return nil, errors.Join(err, f.Close())
+		}
 	}
-
+	stream, err := f.NewStreamWriter(sheet)
+	if err != nil {
+		return nil, errors.Join(err, f.Close())
+	}
+	header := make([]interface{}, len(opts.Columns))
 	for i, col := range opts.Columns {
-		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
-		_ = f.SetCellValue(sheet, cell, col.Header)
+		header[i] = col.Header
 	}
+	if err := stream.SetRow("A1", header); err != nil {
+		return nil, errors.Join(err, f.Close())
+	}
+	return &XLSXStream{file: f, stream: stream, opts: opts, next: 2, cells: make([]interface{}, len(opts.Columns))}, nil
+}
 
+// Rows appends items, a slice of structs, below the rows already written.
+func (x *XLSXStream) Rows(items interface{}) error {
 	v := reflect.ValueOf(items)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
@@ -7673,16 +7717,41 @@ func XLSX(w io.Writer, items interface{}, opts Options) error {
 	if v.Kind() != reflect.Slice {
 		return fmt.Errorf("export: items must be a slice, got %T", items)
 	}
-
 	for i := 0; i < v.Len(); i++ {
-		for j, col := range opts.Columns {
-			cell, _ := excelize.CoordinatesToCellName(j+1, i+2)
-			val := formatCell(extractField(v.Index(i), col.Field), col.Format)
-			_ = f.SetCellValue(sheet, cell, val)
+		if x.next > excelize.TotalRows {
+			return ErrTooManyRows
 		}
+		for j, col := range x.opts.Columns {
+			x.cells[j] = formatCell(extractField(v.Index(i), col.Field), col.Format)
+		}
+		cell, err := excelize.CoordinatesToCellName(1, x.next)
+		if err != nil {
+			return err
+		}
+		if err := x.stream.SetRow(cell, x.cells); err != nil {
+			return err
+		}
+		x.next++
 	}
+	return nil
+}
 
-	return f.Write(w)
+// Written is the number of rows added so far, the header not included.
+func (x *XLSXStream) Written() int {
+	return x.next - 2
+}
+
+// Finish completes the sheet and writes the workbook to w.
+func (x *XLSXStream) Finish(w io.Writer) error {
+	if err := x.stream.Flush(); err != nil {
+		return err
+	}
+	return x.file.Write(w)
+}
+
+// Close removes the workbook's temporary files.
+func (x *XLSXStream) Close() error {
+	return x.file.Close()
 }
 
 // extractField walks a dot-path through a struct. Returns the zero

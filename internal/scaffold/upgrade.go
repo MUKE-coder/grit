@@ -362,6 +362,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairGzipMiddleware(root, opts); err != nil {
 			fmt.Printf("  ⚠ replacing the gzip middleware: %v\n", err)
 		}
+		// Generated XLSX exports stream rows into the workbook instead of
+		// holding them all in memory. After the codegen runtime, which
+		// delivers export.NewXLSXStream.
+		if err := repairXLSXExports(root, opts); err != nil {
+			fmt.Printf("  ⚠ streaming the XLSX exports: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {

@@ -1207,7 +1207,7 @@ pushed, and name the version.
 - [x] H14 F (v3.252.0) - global 10 MB body cap breaks uploads; 15 s write timeout truncates exports and AI streams
 - [x] H15 F (v3.253.0) - health check runs KEYS asynq:*
 - [x] H16 F (v3.254.0) - gzip middleware allocates per request and breaks SSE
-- [ ] H17 F - XLSX export builds the whole table in memory
+- [x] H17 F (v3.255.0) - XLSX export builds the whole table in memory
 - [ ] H18 F - list queries unindexed; COUNT on every page; %x% search
 - [ ] H19 F - CSV import queries per row, ignores errors, unbounded
 - [ ] H20 F - sync pull scans and sorts whole tables; fails on MySQL
