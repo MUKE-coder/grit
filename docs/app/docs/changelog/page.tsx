@@ -66,6 +66,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.246.0 */}
+            <div className="mb-12" id="v3.246.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.246.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Database backups are no longer in a public bucket</h3>
+                <p>
+                  The next finding from the review of a scaffolded app. On every start the API set a
+                  bucket policy granting anyone <code>s3:GetObject</code> on every key, and backups
+                  are written to the same bucket under <code>backups/</code>. A backup&apos;s address,
+                  seen once in a proxy log, browser history or a Referer header, was a permanent
+                  anonymous download of the database: password hashes, 2FA secrets and every record.
+                  The fifteen-minute signed download link protected nothing, because the same URL
+                  without its signature worked too. The error from setting the policy was also
+                  thrown away. Reproduced against MinIO: <code>backups/</code>,{' '}
+                  <code>originals/</code> and <code>exports/</code> all answered 200 to an anonymous
+                  request.
+                </p>
+                <p>
+                  The policy now covers <code>uploads/</code> and <code>thumbnails/</code> only, which
+                  is everything the API hands out a plain URL for, so images and download links keep
+                  working. Backups, the private originals kept by the image pipeline and every other
+                  key can only be read through a signed URL. Setting the policy replaces the one a
+                  bucket has, so an existing bucket is narrowed the first time an upgraded API
+                  starts, and a provider that refuses the policy is now reported in the log rather
+                  than ignored.
+                </p>
+                <p>
+                  One case this cannot reach. Cloudflare R2 and Backblaze B2 have no bucket policies:
+                  public access is switched on for a whole bucket in their dashboards. If yours has a
+                  public domain, keep backups in a different bucket from uploads.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Verified against MinIO on a fresh project and on a project upgraded from v3.245.0
+                  whose bucket had the old policy: an uploaded image still loads without a
+                  signature, and objects under <code>backups/</code>, <code>originals/</code> and{' '}
+                  <code>exports/</code> are refused. <code>tests/live/verify_storage.py</code> runs
+                  the check against any MinIO, and a test that ships into every project pins the
+                  policy to the two public prefixes.
+                </p>
+              </div>
+            </div>
+
             {/* v3.245.0 */}
             <div className="mb-12" id="v3.245.0">
               <div className="flex items-center gap-3 mb-4">
