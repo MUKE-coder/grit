@@ -424,13 +424,13 @@ export default function DockerCheatSheetPage() {
                     </div>
                     <p className="text-xs text-muted-foreground/70 leading-relaxed">
                       Web-based file browser. Create buckets, upload files, and
-                      manage access policies. Default credentials:{" "}
+                      manage access policies. Credentials, from .env:{" "}
                       <code className="text-xs font-mono bg-accent/50 px-1 py-0.5 rounded">
-                        minioadmin
+                        MINIO_ACCESS_KEY
                       </code>{" "}
                       /{" "}
                       <code className="text-xs font-mono bg-accent/50 px-1 py-0.5 rounded">
-                        minioadmin
+                        MINIO_SECRET_KEY
                       </code>
                     </p>
                   </div>
@@ -451,7 +451,7 @@ export default function DockerCheatSheetPage() {
                       <span className="text-primary/50 select-none">$ </span>
                       <span className="text-foreground/80">
                         docker compose exec minio mc alias set local
-                        http://localhost:9000 minioadmin minioadmin
+                        http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground/50 mt-1">

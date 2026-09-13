@@ -216,8 +216,8 @@ export default function FileStorageCourse() {
 STORAGE_DRIVER=minio          # minio | s3 | r2 | b2
 MINIO_ENDPOINT=http://localhost:9002
 MINIO_BUCKET=uploads
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
+MINIO_ACCESS_KEY=<generated per project>
+MINIO_SECRET_KEY=<generated per project>
 MINIO_REGION=us-east-1
 MINIO_USE_SSL=false
 
@@ -233,8 +233,8 @@ MINIO_USE_SSL=false
             <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">STORAGE_DRIVER</strong> — The storage backend: <Code>minio</Code> (local dev), <Code>s3</Code>, <Code>r2</Code>, or <Code>b2</Code>. This selects which set of provider variables Grit reads and which client it initializes.</li>
             <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_ENDPOINT</strong> — The MinIO URL for local dev: <Code>http://localhost:9002</Code>. (Cloud drivers use their own endpoint var — <Code>S3_ENDPOINT</Code>, <Code>R2_ENDPOINT</Code>, <Code>B2_ENDPOINT</Code>; leave S3 empty for the AWS regional default.)</li>
             <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_BUCKET</strong> — The bucket where files are stored. Grit uses a single bucket and organizes files with key prefixes.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_ACCESS_KEY</strong> — The access key ID. For local MinIO: <Code>minioadmin</Code>. For cloud providers: your IAM access key (via <Code>S3_ACCESS_KEY</Code> / <Code>R2_ACCESS_KEY</Code>).</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_SECRET_KEY</strong> — The secret access key. For local MinIO: <Code>minioadmin</Code>. Keep production secrets out of Git.</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_ACCESS_KEY</strong> — The access key ID. For local MinIO: generated per project into <Code>.env</Code>. For cloud providers: your IAM access key (via <Code>S3_ACCESS_KEY</Code> / <Code>R2_ACCESS_KEY</Code>).</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_SECRET_KEY</strong> — The secret access key. For local MinIO: generated per project into <Code>.env</Code>. Keep production secrets out of Git.</li>
             <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_REGION</strong> — Required by the S3 protocol. For MinIO any value works (<Code>us-east-1</Code>); R2 uses <Code>auto</Code>; AWS S3 uses your real region.</li>
             <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_USE_SSL</strong> — HTTPS on/off. <Code>false</Code> for local MinIO (HTTP), <Code>true</Code> for cloud providers.</li>
           </ul>
@@ -285,8 +285,8 @@ MINIO_USE_SSL=false
           </p>
 
           <CodeBlock filename="MinIO Console Login">
-{`Username: minioadmin
-Password: minioadmin`}
+{`Username: MINIO_ACCESS_KEY from .env
+Password: MINIO_SECRET_KEY from .env`}
           </CodeBlock>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -308,7 +308,7 @@ Password: minioadmin`}
 
           <CodeBlock filename="Creating a Bucket">
 {`1. Open http://localhost:9003
-2. Log in with minioadmin / minioadmin
+2. Log in with the MINIO_ACCESS_KEY and MINIO_SECRET_KEY from .env
 3. Click "Buckets" in the sidebar
 4. Click "Create Bucket"
 5. Enter the name: uploads
@@ -327,7 +327,7 @@ The bucket is now ready to receive files.`}
           <Challenge number={3} title="Explore MinIO Console">
             <p>Make sure Docker is running with <Code>docker compose up -d</Code>. Open{' '}
             <Code>localhost:9003</Code> in your browser and log in with{' '}
-            <Code>minioadmin</Code> / <Code>minioadmin</Code>. Can you see the{' '}
+            <Code>MINIO_ACCESS_KEY</Code> / <Code>MINIO_SECRET_KEY</Code> from <Code>.env</Code>. Can you see the{' '}
             <Code>uploads</Code> bucket? Create a test bucket called {'"'}images{'"'} and verify
             it appears in the list.</p>
           </Challenge>

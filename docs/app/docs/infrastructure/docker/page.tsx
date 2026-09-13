@@ -151,8 +151,8 @@ export default function DockerSetupPage() {
       - "9002:9000"
       - "9003:9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: \${MINIO_ACCESS_KEY:?set MINIO_ACCESS_KEY in .env}
+      MINIO_ROOT_PASSWORD: \${MINIO_SECRET_KEY:?set MINIO_SECRET_KEY in .env}
     volumes:
       - minio-data:/data
     command: server /data --console-address ":9001"
@@ -202,7 +202,7 @@ volumes:
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-medium text-foreground/90">MinIO</td>
                         <td className="px-4 py-2.5 font-mono text-xs">9002 / 9003</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">minioadmin / minioadmin</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">the MINIO_ACCESS_KEY and MINIO_SECRET_KEY from .env</td>
                         <td className="px-4 py-2.5">S3-compatible file storage</td>
                       </tr>
                       <tr>
@@ -226,7 +226,7 @@ volumes:
                     {
                       title: 'MinIO Console',
                       url: 'http://localhost:9003',
-                      desc: 'Web-based file browser for your S3-compatible storage. Create buckets, upload files, manage access policies. Login with minioadmin / minioadmin.',
+                      desc: 'Web-based file browser for your S3-compatible storage. Create buckets, upload files, manage access policies. Login with the MINIO_ACCESS_KEY and MINIO_SECRET_KEY from .env.',
                     },
                     {
                       title: 'Mailhog UI',
@@ -366,8 +366,8 @@ services:
     env_file:
       - .env
     environment:
-      MINIO_ROOT_USER: \${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: \${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_ROOT_USER: \${MINIO_ACCESS_KEY:?set MINIO_ACCESS_KEY in .env}
+      MINIO_ROOT_PASSWORD: \${MINIO_SECRET_KEY:?set MINIO_SECRET_KEY in .env}
     volumes:
       - minio-data:/data
     networks:
@@ -613,7 +613,7 @@ CMD ["node", "apps/web/server.js"]`} />
                     },
                     {
                       q: 'MinIO bucket not found',
-                      a: 'MinIO starts with no buckets. Open the MinIO console at http://localhost:9003, login with minioadmin/minioadmin, and create your bucket. Or set MINIO_DEFAULT_BUCKETS in the compose file.',
+                      a: 'MinIO starts with no buckets. Open the MinIO console at http://localhost:9003, login with the MINIO_ACCESS_KEY and MINIO_SECRET_KEY from .env, and create your bucket. Or set MINIO_DEFAULT_BUCKETS in the compose file.',
                     },
                     {
                       q: 'Docker Compose V1 vs V2',

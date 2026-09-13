@@ -1200,7 +1200,7 @@ pushed, and name the version.
 - [x] H7 F (v3.243.0) - login rate limits keyed to unversioned paths; APP_ENV defaults to development
 - [x] H8 F+A (v3.241.0) - real secrets in .env.example; *.db not git-ignored
 - [x] H9 F (v3.243.0) - GORM Studio (writable SQL) on in production; /docs public
-- [ ] H10 F - production MinIO on minioadmin; every container gets every secret
+- [x] H10 F (v3.248.0) - production MinIO on minioadmin; every container gets every secret
 - [ ] H11 F - reachable Go stdlib CVEs; release built on go 1.25.0
 - [ ] H12 F - thumbnail worker decodes without a pixel cap (OOM loop)
 - [ ] H13 F - unchecked DB writes in TOTP, session and auth paths

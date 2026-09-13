@@ -133,9 +133,12 @@ services:
       # Expo app rewrites "localhost" to your dev IP (apps/expo/lib/images.ts).
       - "${MINIO_PORT:-9002}:9000"
       - "${MINIO_CONSOLE_PORT:-9003}:9001"
+    # The root credentials are generated per project into .env. They were
+    # minioadmin/minioadmin, on a port bound to every interface so a phone on
+    # the LAN can load images, so anyone on the same network owned the bucket.
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?set MINIO_ACCESS_KEY in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?set MINIO_SECRET_KEY in .env}
     volumes:
       - minio-data:/data
     command: server /data --console-address ":9001"
@@ -281,14 +284,13 @@ services:
     image: postgres:16-alpine
     container_name: %s-postgres
     restart: unless-stopped
-    env_file:
-      - .env
-    # Identical credentials to the api service above — they come from the
-    # SAME .env block, so they can't drift. The :-grit fallbacks below
-    # protect against a missing env var blocking startup.
+    # Only the settings Postgres reads, from the same .env the api uses. With
+    # env_file it was handed all of .env: the JWT secret, the Sentinel keys and
+    # every dashboard password. The password has no fallback, so a stack that
+    # cannot find it refuses to start rather than run on "grit".
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-grit}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-grit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-%s}
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -324,7 +326,7 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: ${POSTGRES_USER:-grit}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-grit}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       DB_NAME: ${POSTGRES_DB:-%s}
       POOL_MODE: transaction
       # Client slots the app may open, against server connections actually held
@@ -359,11 +361,11 @@ services:
     image: minio/minio
     container_name: %s-minio
     restart: unless-stopped
-    env_file:
-      - .env
+    # Only its root credentials, with no default. Presigned uploads put MinIO
+    # behind the public proxy, where minioadmin/minioadmin is the whole bucket.
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?set MINIO_ACCESS_KEY in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?set MINIO_SECRET_KEY in .env}
     volumes:
       - minio-data:/data
     networks:

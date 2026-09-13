@@ -121,8 +121,8 @@ STORAGE_DRIVER=minio
 
 # MinIO — local dev (default)
 MINIO_ENDPOINT=http://localhost:9002
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
+MINIO_ACCESS_KEY=<generated per project>
+MINIO_SECRET_KEY=<generated per project>
 MINIO_BUCKET=myapp-uploads
 MINIO_REGION=us-east-1
 MINIO_USE_SSL=false

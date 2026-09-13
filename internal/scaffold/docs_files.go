@@ -1369,8 +1369,8 @@ REDIS_PORT=6380
 
 # S3 Storage (MinIO locally, built from MINIO_PORT unless MINIO_ENDPOINT is set)
 S3_ENDPOINT=
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin
+S3_ACCESS_KEY=your-access-key
+S3_SECRET_KEY=your-secret-key
 S3_BUCKET=uploads
 S3_REGION=us-east-1
 

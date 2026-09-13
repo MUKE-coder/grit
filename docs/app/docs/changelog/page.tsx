@@ -66,6 +66,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.248.0 */}
+            <div className="mb-12" id="v3.248.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.248.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>MinIO no longer runs on minioadmin, and side containers get only their own settings</h3>
+                <p>
+                  The next finding from the review of a scaffolded app. MinIO&apos;s root
+                  credentials were <code>minioadmin</code> / <code>minioadmin</code> everywhere: in{' '}
+                  <code>.env</code>, as the fallback in the API&apos;s config, hard-coded in the
+                  development compose file, where MinIO&apos;s port is open to the local network so
+                  a phone can load images, and as the default in the production compose file, where
+                  presigned uploads put MinIO behind the public proxy. Whoever reached it owned the
+                  bucket. The production stack also gave Postgres and MinIO the whole{' '}
+                  <code>.env</code>: the JWT secret, the Sentinel keys and every dashboard password.
+                </p>
+                <p>
+                  A new project&apos;s <code>.env</code> now carries MinIO credentials generated like
+                  its other secrets. Both compose files read them from there and refuse to start
+                  without them, as the production file does for the Postgres password, which used to
+                  fall back to <code>grit</code>. Postgres and MinIO in the production stack receive
+                  only the settings they read. And the production check from v3.243.0 now covers
+                  MinIO too: outside development, an API using MinIO refuses to start with a default
+                  or short <code>MINIO_SECRET_KEY</code>, and names it.
+                </p>
+                <p>
+                  <code>grit upgrade</code> updates both compose files and the production check in{' '}
+                  <code>config.go</code>. It does not rewrite <code>.env</code>, which holds your
+                  secrets: if it still says <code>minioadmin</code>, the upgrade tells you, and a
+                  production server will not start until you set new MinIO credentials. MinIO takes
+                  them on its next start; files already stored are unaffected.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Verified on a fresh project and on one upgraded from v3.247.0: the rendered
+                  production stack gives Postgres, pgbouncer, Redis and MinIO none of the API&apos;s
+                  secrets, an empty MinIO secret stops the stack, and a production API refuses{' '}
+                  <code>minioadmin</code>. The CI live suite checks both on every push, and the docs
+                  no longer tell you to sign in to MinIO with <code>minioadmin</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.247.0 */}
             <div className="mb-12" id="v3.247.0">
               <div className="flex items-center gap-3 mb-4">
