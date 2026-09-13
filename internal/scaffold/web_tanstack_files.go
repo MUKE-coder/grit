@@ -10,32 +10,39 @@ func writeWebTanStackFiles(root string, opts Options) error {
 
 	files := map[string]string{
 		filepath.Join(webRoot, "package.json"):   webTanStackPackageJSON(opts),
-		filepath.Join(webRoot, "vite.config.ts"): webTanStackViteConfig(),
+		filepath.Join(webRoot, "vite.config.ts"): webTanStackViteConfig(opts),
 		filepath.Join(webRoot, "index.html"):     webTanStackIndexHTML(opts),
 		// .cjs (not .js) because package.json sets "type": "module" and PostCSS
 		// config still uses CommonJS module.exports.
-		filepath.Join(webRoot, "postcss.config.cjs"):                 postCSSConfigFor(webRoot),
-		filepath.Join(webRoot, "src", "vite-env.d.ts"):               viteEnvTypes(),
-		filepath.Join(webRoot, "tsconfig.json"):                      webTanStackTSConfig(),
-		filepath.Join(webRoot, "src", "main.tsx"):                    webTanStackMain(),
-		filepath.Join(webRoot, "src", "globals.css"):                 webGlobalCSS(),
-		filepath.Join(webRoot, "src", "routes", "__root.tsx"):        webTanStackRootRoute(opts),
-		filepath.Join(webRoot, "src", "routes", "index.tsx"):         webTanStackIndexRoute(opts),
-		filepath.Join(webRoot, "src", "routes", "blog", "index.tsx"): webTanStackBlogListRoute(),
-		filepath.Join(webRoot, "src", "routes", "blog", "$slug.tsx"): webTanStackBlogDetailRoute(),
-		filepath.Join(webRoot, "src", "components", "navbar.tsx"):    nextToTanStack(webNavbar(opts)),
-		filepath.Join(webRoot, "src", "components", "footer.tsx"):    nextToTanStack(webFooter(opts)),
-		filepath.Join(webRoot, "src", "components", "providers.tsx"): webTanStackProviders(),
-		filepath.Join(webRoot, "src", "lib", "next-compat.tsx"):      adminNextCompatShim(),
-		filepath.Join(webRoot, "src", "lib", "utils.ts"):             webUtils(),
-		filepath.Join(webRoot, "components.json"):                    viteComponentsJSON(),
-		filepath.Join(webRoot, "src", "lib", "api.ts"):               viteAPIClient(),
-		filepath.Join(webRoot, "src", "hooks", "use-blogs.ts"):       nextToTanStack(webUseBlogsHook()),
-		filepath.Join(webRoot, "public", ".gitkeep"):                 "",
+		filepath.Join(webRoot, "postcss.config.cjs"):          postCSSConfigFor(webRoot),
+		filepath.Join(webRoot, "src", "vite-env.d.ts"):        viteEnvTypes(),
+		filepath.Join(webRoot, "tsconfig.json"):               webTanStackTSConfig(opts),
+		filepath.Join(webRoot, "src", "main.tsx"):             webTanStackMain(),
+		filepath.Join(webRoot, "src", "globals.css"):          webGlobalCSS(),
+		filepath.Join(webRoot, "src", "routes", "__root.tsx"): webTanStackRootRoute(opts),
+		// The public site, as a pathless layout route: the URLs are still / and
+		// /blog, and _site.tsx draws the navbar and footer, so a section with its
+		// own chrome (the admin panel, the customer area) cannot inherit theirs.
+		filepath.Join(webRoot, "src", "routes", "_site.tsx"):                  singleSiteLayoutRoute(),
+		filepath.Join(webRoot, "src", "routes", "_site", "index.tsx"):         siteRouteID(webTanStackIndexRoute(opts)),
+		filepath.Join(webRoot, "src", "routes", "_site", "blog", "index.tsx"): siteRouteID(webTanStackBlogListRoute()),
+		filepath.Join(webRoot, "src", "routes", "_site", "blog", "$slug.tsx"): siteRouteID(webTanStackBlogDetailRoute()),
+		filepath.Join(webRoot, "src", "components", "navbar.tsx"):             nextToTanStack(webNavbar(opts)),
+		filepath.Join(webRoot, "src", "components", "footer.tsx"):             nextToTanStack(webFooter(opts)),
+		filepath.Join(webRoot, "src", "components", "providers.tsx"):          webTanStackProviders(),
+		filepath.Join(webRoot, "src", "lib", "next-compat.tsx"):               adminNextCompatShim(),
+		filepath.Join(webRoot, "src", "lib", "utils.ts"):                      webUtils(),
+		filepath.Join(webRoot, "components.json"):                             viteComponentsJSON(),
+		filepath.Join(webRoot, "src", "lib", "api.ts"):                        viteAPIClient(),
+		filepath.Join(webRoot, "src", "hooks", "use-blogs.ts"):                nextToTanStack(webUseBlogsHook()),
+		filepath.Join(webRoot, "public", ".gitkeep"):                          "",
 	}
 
 	for path, content := range files {
-		if err := writeFile(path, content); err != nil {
+		// adminHref fills in where the panel lives, as writeWebFiles does for the
+		// Next.js app. Without it the navbar of every --vite web app carried the
+		// literal {{ADMIN_HREF}}: a link to a page called that.
+		if err := writeFile(path, adminHref(content, opts)); err != nil {
 			return fmt.Errorf("writing %s: %w", path, err)
 		}
 	}
@@ -66,7 +73,7 @@ func webTanStackPackageJSON(opts Options) string {
     "react-dom": "19.2.7",
     "tailwind-merge": "^2.6.0",
     "@repo/shared": "workspace:*",
-    "@repo/upload": "workspace:*"
+    "@repo/upload": "workspace:*"`+webAdminDependencies(opts)+viteHostDependencies(opts)+`
   },
   "devDependencies": {
     "vitest": "^2.1.0",
@@ -90,7 +97,7 @@ func webTanStackPackageJSON(opts Options) string {
 }`, opts.ProjectName)
 }
 
-func webTanStackViteConfig() string {
+func webTanStackViteConfig(opts Options) string {
 	return `import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
@@ -103,7 +110,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(__dirname, './src'),` + viteHostAliases(opts) + `
     },
   },
   preview: {
@@ -188,7 +195,7 @@ export default config
 `
 }
 
-func webTanStackTSConfig() string {
+func webTanStackTSConfig(opts Options) string {
 	return `{
   "compilerOptions": {
     "target": "ES2020",
@@ -207,7 +214,7 @@ func webTanStackTSConfig() string {
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"]` + hostTSConfigPaths(opts) + `
     },
     "baseUrl": "."
   },
@@ -251,38 +258,20 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 `
 }
 
+// webTanStackRootRoute is the document's outlet and nothing else.
+//
+// Every section of a Vite app owns its layout: routes/_site draws the navbar and
+// footer, routes/admin the panel's chrome, routes/_auth and routes/account their
+// own. A root that drew the site chrome would put it above all of them, which is
+// what shipped the admin panel inside the marketing navbar.
 func webTanStackRootRoute(opts Options) string {
-	// With the admin panel in this same router, the root cannot wrap everything in
-	// the site chrome: the panel has a sidebar and a topbar of its own, and the
-	// marketing navbar on top of them is one header too many.
-	if opts.ShouldEmbedAdminInSPA() {
-		// One SPA, four sections, and the root is not one of them: routes/_site
-		// draws the public chrome, routes/admin the panel's, routes/_auth and
-		// routes/account their own. A page belongs to a section by living in it.
-		return `import { createRootRoute, Outlet } from '@tanstack/react-router'
+	_ = opts
+	return `import { createRootRoute, Outlet } from '@tanstack/react-router'
 
 export const Route = createRootRoute({
   component: () => <Outlet />,
 })
 `
-	}
-
-	return fmt.Sprintf(`import { createRootRoute, Outlet } from '@tanstack/react-router'
-import { Navbar } from '@/components/navbar'
-import { Footer } from '@/components/footer'
-
-export const Route = createRootRoute({
-  component: () => (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-      <main className="flex-1">
-        <Outlet />
-      </main>
-      <Footer />
-    </div>
-  ),
-})
-`)
 }
 
 func webTanStackIndexRoute(opts Options) string {
@@ -498,4 +487,57 @@ interface ImportMeta {
 	readonly env: ImportMetaEnv
 }
 `
+}
+
+// viteHostAliases are the extra aliases a Vite app needs when the admin panel
+// lives inside it.
+//
+// Vite resolves imports itself and does not read tsconfig paths, so both files
+// have to be told. @repo/upload is aliased to its source because the package
+// ships raw TypeScript: the Next.js apps list it in transpilePackages for the
+// same reason.
+func viteHostAliases(opts Options) string {
+	if !opts.ShouldEmbedAdminInSPA() {
+		return ""
+	}
+	// A single project has no workspace, so its copy of the shared package is
+	// mirrored into the SPA and aliased there instead; see singleFrontendViteConfig.
+	if opts.Architecture == ArchSingle {
+		return ""
+	}
+	return `
+      // The admin panel's own code, which lives in this app under src/admin-panel.
+      '@admin': path.resolve(__dirname, './src/admin-panel'),
+      // The upload package ships raw TypeScript, so Vite compiles it as source
+      // rather than resolving a build. The panel's api-client builds its uploader
+      // from it.
+      '@repo/upload/web': path.resolve(__dirname, '../../packages/upload/src/web.ts'),
+      '@repo/upload': path.resolve(__dirname, '../../packages/upload/src/index.ts'),`
+}
+
+// hostTSConfigPaths is the same set for the typechecker.
+func hostTSConfigPaths(opts Options) string {
+	if !opts.ShouldEmbedAdminInSPA() || opts.Architecture == ArchSingle {
+		return ""
+	}
+	return `,
+      "@admin/*": ["./src/admin-panel/*"],
+      "@repo/upload/web": ["../../packages/upload/src/web.ts"],
+      "@repo/upload": ["../../packages/upload/src/index.ts"]`
+}
+
+// viteHostDependencies is what the panel needs that the Next.js web app already
+// had and this one did not.
+//
+// webAdminDependencies is the set the two web apps share; react-hook-form and its
+// resolvers sit in the Next app's own dependency list rather than in there, so the
+// first build of a --double --vite panel failed on its login screen importing
+// react-hook-form.
+func viteHostDependencies(opts Options) string {
+	if !opts.ShouldEmbedAdminInSPA() || opts.Architecture == ArchSingle {
+		return ""
+	}
+	return `,
+    "@hookform/resolvers": "^3.3.0",
+    "react-hook-form": "^7.49.0"`
 }

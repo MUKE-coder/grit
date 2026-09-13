@@ -361,7 +361,10 @@ func (g *Generator) Run() error {
 	// Write hooks for web app (monorepo: apps/web, check both hooks/ and src/hooks/)
 	webHooksDir := filepath.Join(g.Root, "apps", "web", "hooks")
 	webTanStackHooksDir := filepath.Join(g.Root, "apps", "web", "src", "hooks")
-	if dirExists(webHooksDir) {
+	// src/routes is what makes it a Vite app, and a Vite app keeps hooks under
+	// src/ whatever else is lying around at the app root.
+	viteWeb := dirExists(filepath.Join(g.Root, "apps", "web", "src", "routes"))
+	if dirExists(webHooksDir) && !viteWeb {
 		if err := g.writeReactQueryHooks(names, "web"); err != nil {
 			return fmt.Errorf("writing web hooks: %w", err)
 		}

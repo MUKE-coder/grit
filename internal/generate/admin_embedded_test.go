@@ -115,3 +115,40 @@ func TestAdminRootFromDisk(t *testing.T) {
 		}
 	}
 }
+
+// A double whose web app was built with --vite hosts the panel in that app, not
+// in a Next.js route group. Both descriptions fit the project, and the generator
+// has to pick the one whose directory exists.
+func TestGeneratorFindsTheViteDoublesPanel(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "apps", "web", "src", "admin-panel", "resources"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	g := &Generator{Root: root, Architecture: "double"}
+
+	if !g.EmbedsAdminInSPA() {
+		t.Fatal("apps/web/src/admin-panel is what makes this a Vite host")
+	}
+	if got := g.AdminCodeRoot(); got != filepath.Join(root, "apps", "web", "src", "admin-panel") {
+		t.Errorf("a resource's definition would go to %s, which does not exist", got)
+	}
+	if got := g.adminTanStackRoutesRoot(); got != filepath.Join(root, "apps", "web", "src", "routes", "admin") {
+		t.Errorf("its screens would go to %s", got)
+	}
+	if !g.AdminIsTanStack() {
+		t.Error("the panel is a TanStack app, so a screen is a page plus a route shim")
+	}
+
+	// A Next.js double is unaffected: no src/admin-panel, so the route group wins.
+	next := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(next, "apps", "web", "admin-panel"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	ng := &Generator{Root: next, Architecture: "double"}
+	if ng.EmbedsAdminInSPA() {
+		t.Error("a Next.js double is not a Vite host")
+	}
+	if got := ng.AdminCodeRoot(); got != filepath.Join(next, "apps", "web", "admin-panel") {
+		t.Errorf("a Next.js double's panel is at %s", got)
+	}
+}

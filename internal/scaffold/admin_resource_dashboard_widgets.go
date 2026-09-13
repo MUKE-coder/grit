@@ -23,7 +23,8 @@ import (
 )
 
 func writeAdminResourceDashboardWidgets(root string, opts Options) error {
-	adminRoot := adminCodeRoot(root, opts)
+	// adminPath, not adminCodeRoot: see writeAdminCustomChartFiles.
+	adminRoot := adminPath(root, opts)
 
 	files := map[string]string{
 		filepath.Join(adminRoot, "components", "dashboard", "ResourceStatCard.tsx"):    adminFlavoured(opts, adminResourceStatCardTSX()),

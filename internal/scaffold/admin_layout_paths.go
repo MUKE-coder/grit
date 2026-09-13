@@ -23,12 +23,12 @@ import "path/filepath"
 // failed on a dashboard widget that had been written to apps/admin/components.
 func adminCodeRoot(root string, opts Options) string {
 	switch {
+	// The Vite case is asked first: both predicates are true for a double built
+	// with --vite, and its panel is a section of a Vite app, not a Next.js one.
+	case opts.ShouldEmbedAdminInSPA():
+		return filepath.Join(spaHostRoot(root, opts), "src", "admin-panel")
 	case opts.ShouldEmbedAdmin():
 		return filepath.Join(root, "apps", "web", "admin-panel")
-	case opts.ShouldEmbedAdminInSPA():
-		// A single project is one binary with a Vite SPA inside it, so the panel
-		// lives in that SPA's source.
-		return filepath.Join(root, "frontend", "src", "admin-panel")
 	default:
 		return filepath.Join(root, "apps", "admin")
 	}
@@ -75,14 +75,14 @@ func adminPath(root string, opts Options, parts ...string) string {
 	// the segment the panel owns; only the panel's own code lives in admin-panel/.
 	if opts.ShouldEmbedAdminInSPA() && len(parts) > 0 && parts[0] == "routes" {
 		return filepath.Join(append(
-			[]string{root, "frontend", "src", "routes", "admin"}, parts[1:]...)...)
+			[]string{spaHostRoot(root, opts), "src", "routes", "admin"}, parts[1:]...)...)
 	}
 	base := filepath.Join(root, "apps", "admin")
 	switch {
+	case opts.ShouldEmbedAdminInSPA():
+		base = filepath.Join(spaHostRoot(root, opts), "src", "admin-panel")
 	case opts.ShouldEmbedAdmin():
 		base = filepath.Join(root, "apps", "web", "admin-panel")
-	case opts.ShouldEmbedAdminInSPA():
-		base = filepath.Join(root, "frontend", "src", "admin-panel")
 	case opts.UseTanStack():
 		base = filepath.Join(base, "src")
 	}

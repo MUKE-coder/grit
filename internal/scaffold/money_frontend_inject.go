@@ -35,12 +35,10 @@ func ensureMoneyFrontend(root string, opts Options) error {
 		return err
 	}
 
-	adminRoot := adminCodeRoot(root, opts)
-	// TanStack keeps the same tree one level down, under src/.
-	base := adminRoot
-	if opts.UseTanStack() {
-		base = filepath.Join(adminRoot, "src")
-	}
+	// adminPath answers this for every shape: apps/admin for the Next app,
+	// apps/admin/src for the Vite one, and the panel's own directory when it is
+	// embedded in a web app or an SPA.
+	base := adminPath(root, opts)
 
 	if err := ensureMoneyFieldComponent(base, opts); err != nil {
 		return err

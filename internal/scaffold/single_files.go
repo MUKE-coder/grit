@@ -505,7 +505,8 @@ func singleSharedThemes(opts Options) string {
 // unchanged across all architectures.
 func singleFrontendTSConfig() string {
 	return strings.Replace(
-		webTanStackTSConfig(),
+		// The single's own aliases are added below, so the base config is enough here.
+		webTanStackTSConfig(Options{}),
 		`"@/*": ["./src/*"]`,
 		`"@/*": ["./src/*"],
       "@repo/upload/web": ["../packages/upload/src/web.ts"],

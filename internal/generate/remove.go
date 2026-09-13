@@ -88,6 +88,8 @@ func RemoveResource(name string) error {
 		filepath.Join(webRoot, "app", "admin", "(dashboard)", "resources", names.PluralKebab, "page.tsx"),
 		filepath.Join(root, "frontend", "src", "routes", "admin", "_dashboard", "resources", names.PluralKebab, "index.tsx"),
 		filepath.Join(root, "frontend", "src", "routes", "admin", "_dashboard", "resources", names.PluralKebab, "$id.tsx"),
+		filepath.Join(webRoot, "src", "routes", "admin", "_dashboard", "resources", names.PluralKebab, "index.tsx"),
+		filepath.Join(webRoot, "src", "routes", "admin", "_dashboard", "resources", names.PluralKebab, "$id.tsx"),
 		filepath.Join(root, "frontend", "src", "hooks", "use-"+names.PluralKebab+".ts"),
 	}
 
@@ -143,6 +145,7 @@ func RemoveResource(name string) error {
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", names.PluralKebab),
 		filepath.Join(webRoot, "app", "admin", "(dashboard)", "resources", names.PluralKebab),
 		filepath.Join(root, "frontend", "src", "routes", "admin", "_dashboard", "resources", names.PluralKebab),
+		filepath.Join(webRoot, "src", "routes", "admin", "_dashboard", "resources", names.PluralKebab),
 		filepath.Join(webRoot, "app", names.Kebab),
 	}
 	for _, d := range dirsToDelete {

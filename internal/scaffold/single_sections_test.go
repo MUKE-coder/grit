@@ -21,10 +21,11 @@ func TestSingleRootRouteDrawsNothing(t *testing.T) {
 		t.Error("the root route should render an outlet")
 	}
 
-	// A monorepo web app with no panel inside it keeps the old root, chrome and all.
+	// Every Vite app is the same shape, panel or no panel: the root is an outlet
+	// and routes/_site draws the site chrome.
 	web := webTanStackRootRoute(Options{ProjectName: "app", Architecture: ArchTriple, Frontend: FrontendTanStack})
-	if !strings.Contains(web, "<Navbar />") {
-		t.Error("a web app with no embedded panel still draws its chrome from the root")
+	if strings.Contains(web, "<Navbar />") {
+		t.Error("a Vite web app's root should leave the chrome to its _site section")
 	}
 }
 
@@ -173,7 +174,7 @@ func TestMigrateSPARouteSections(t *testing.T) {
 	write("blog/$slug.tsx", "export const Route = createFileRoute('/blog/$slug')({})\n")
 
 	quiet := color.New()
-	migrateSPARouteSections(root, quiet, quiet)
+	migrateSPARouteSections(filepath.Join(root, "frontend"), quiet, quiet)
 
 	landing, err := os.ReadFile(filepath.Join(routes, "_site", "index.tsx"))
 	if err != nil {
@@ -197,7 +198,7 @@ func TestMigrateSPARouteSections(t *testing.T) {
 	}
 
 	// A second upgrade is a no-op.
-	migrateSPARouteSections(root, quiet, quiet)
+	migrateSPARouteSections(filepath.Join(root, "frontend"), quiet, quiet)
 	if _, err := os.Stat(filepath.Join(routes, "_site", "_site")); err == nil {
 		t.Error("the section was nested inside itself")
 	}

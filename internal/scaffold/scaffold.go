@@ -68,7 +68,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.238.0"
+const DefaultVersion = "3.239.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -547,16 +547,18 @@ func Run(opts Options) error {
 	// route group at /admin: the same screens and the same file map, moved and
 	// repointed (see admin_embedded.go). Before this, a double shipped with the
 	// admin link in its navbar and nothing behind it.
-	if opts.ShouldEmbedAdmin() {
+	// A double on Next.js. A double built with --vite takes the Vite path below,
+	// which is the same panel in the dialect that app speaks.
+	if opts.ShouldEmbedAdmin() && !opts.ShouldEmbedAdminInSPA() {
 		spinner.Printf("  → Scaffolding admin panel into the web app at /admin...\n")
 		if err := writeEmbeddedAdminFiles(root, opts); err != nil {
 			return fmt.Errorf("writing the embedded admin panel: %w", err)
 		}
 	}
 
-	// A single project has one binary and one SPA, so the panel goes into that
-	// SPA's routes. The Vite admin is the source, because the SPA is a TanStack
-	// Router app and the panel is already written in that dialect.
+	// A Vite app hosting the panel: a single project's SPA, or a double's web app
+	// when it was scaffolded with --vite. The Vite admin is the source, because
+	// both are TanStack Router apps and the panel is already written that way.
 	if opts.ShouldEmbedAdminInSPA() {
 		spinner.Printf("  → Scaffolding admin panel into the SPA at /admin...\n")
 		if err := writeEmbeddedSingleAdminFiles(root, opts); err != nil {
