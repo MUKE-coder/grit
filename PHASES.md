@@ -1193,7 +1193,7 @@ pushed, and name the version.
 ### 8.2 High
 - [ ] H1 F - bucket public-read, backups included; PutBucketPolicy error discarded
 - [ ] H2 F - users.edit / roles.edit holders can grant themselves ADMIN (no grant ceiling)
-- [ ] H3 F - stored XSS in blog posts (unsanitised HTML in API and web)
+- [x] H3 F (v3.242.0) - stored XSS in blog posts (unsanitised HTML in API and web)
 - [ ] H4 F - any user lists uploads; CompleteUpload accepts any object key (list and read scoping shipped in v3.241.0; the CompleteUpload key check is open)
 - [ ] H5 F - refresh tokens accepted as access tokens; no session check; refresh cookie path mismatch
 - [ ] H6 F - TOTP brute force and replay; Enable overwrites; Verify skips lock checks

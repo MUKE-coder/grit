@@ -665,6 +665,29 @@ def check_review_criticals(bob, bob_id, admin):
               (status, body[:160]))
 
 
+def check_stored_xss(admin):
+    """A blog post's HTML was stored as it was sent and rendered raw, on the same
+    origin as the admin panel (H3 in the contact-app review, v3.242.0)."""
+    attack = '<img src=x onerror=alert(1)><p>kept</p>'
+    status, _, body = call('POST', '/api/v1/admin/blogs', admin,
+                           {'title': 'XSS ' + uuid.uuid4().hex[:8], 'content': attack, 'published': True})
+    post = data(body) or {}
+    stored = post.get('content') or ''
+    check('XSS: an admin publishes a post', status in (200, 201), (status, body[:200]))
+    check('XSS: its event handler is not stored', 'onerror' not in stored and '<p>kept</p>' in stored, stored)
+
+    status, _, body = call('GET', '/api/v1/blogs/' + str(post.get('slug')))
+    served = (data(body) or {}).get('content') or ''
+    check('XSS: nor served on the public page', status == 200 and 'onerror' not in served, (status, served[:120]))
+
+    status, _, body = call('PUT', '/api/v1/admin/blogs/' + str(post.get('id')), admin,
+                           {'content': '<p>edited</p><a href="javascript:alert(1)">x</a>'})
+    _, _, after = call('GET', '/api/v1/blogs/' + str(post.get('slug')))
+    edited = (data(after) or {}).get('content') or ''
+    check('XSS: an edit is sanitised too', status == 200 and 'javascript:' not in edited and '<p>edited</p>' in edited,
+          (status, edited[:120]))
+
+
 def main():
     global args
     parser = argparse.ArgumentParser(description=__doc__)
@@ -733,6 +756,7 @@ def main():
     check_write_errors(alice)
     check_error_codes(alice, alice_email)
     check_review_criticals(bob, bob_id, admin)
+    check_stored_xss(admin)
 
     width = max(len(name) for name, _, _ in results)
     failed = 0

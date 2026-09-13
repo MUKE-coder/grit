@@ -91,6 +91,7 @@ func webPackageJSON(opts Options) string {
     "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "dompurify": "^3.4.15",
     "lucide-react": "^0.468.0",
     "next": "^16.1.6",
     "react": "19.2.7",
@@ -1640,7 +1641,15 @@ func webBlogDetailPage() string {
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Calendar } from "lucide-react";
+import DOMPurify from "dompurify";
 import { usePublicBlog } from "@/hooks/use-blogs";
+
+// The API sanitises rich text on the way in. This is the second layer, for
+// posts stored before it did and for anything written around the API.
+function safeHTML(html: string): string {
+  if (typeof window === "undefined") return "";
+  return DOMPurify.sanitize(html, { USE_PROFILES: { html: true }, ADD_ATTR: ["target"] });
+}
 
 export default function BlogDetailPage() {
   const params = useParams();
@@ -1731,7 +1740,7 @@ export default function BlogDetailPage() {
       {/* Content */}
       <div
         className="prose-blog"
-        dangerouslySetInnerHTML={{ __html: blog.content }}
+        dangerouslySetInnerHTML={{ __html: safeHTML(blog.content) }}
       />
 
       {/* Bottom nav */}

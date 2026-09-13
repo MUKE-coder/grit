@@ -285,6 +285,11 @@ func (g *Generator) writeGoModel(names Names) error {
 		if f.Required && (f.GoType() == "string") && !f.IsSlug() {
 			tags += ` binding:"required"`
 		}
+		if FieldType(f.Type) == FieldRichtext && !f.Encrypted {
+			// Rendered as HTML wherever it is shown, so internal/sanitize cleans
+			// it on every write.
+			tags += ` sanitize:"html"`
+		}
 
 		structFields += fmt.Sprintf("\t%s %s `%s`\n", goName, goType, tags)
 	}

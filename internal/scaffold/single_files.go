@@ -541,6 +541,7 @@ func singleFrontendPackageJSON(opts Options) string {
     "@tanstack/react-router": "^1.93.0",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
+    "dompurify": "^3.4.15",
     "lucide-react": "^0.468.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
