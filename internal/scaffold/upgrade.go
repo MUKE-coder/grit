@@ -241,6 +241,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairProductionSafety(root, opts); err != nil {
 			fmt.Printf("  ⚠ hardening production mode: %v\n", err)
 		}
+		// Tokens: a refresh token is no longer an access token, an access token
+		// dies with its session, and the refresh cookie reaches its routes.
+		if err := repairTokenSafety(root, opts); err != nil {
+			fmt.Printf("  ⚠ tying tokens to their sessions: %v\n", err)
+		}
 		// The activity-log chain was hashed at a precision Postgres and MySQL
 		// do not store, so it failed verification on its first row. Only where
 		// the audit package is already there.

@@ -573,7 +573,7 @@ const (
 
               <p>
                 The API sets two cookies on login/register/refresh: <code>grit_access</code> (short-lived)
-                and <code>grit_refresh</code> (long-lived, scoped to <code>/api/auth</code>). Both are{' '}
+                and <code>grit_refresh</code> (long-lived, scoped to <code>/api/v1/auth</code>). Both are{' '}
                 <code>HttpOnly</code> so JavaScript cannot read them, <code>Secure</code> on HTTPS
                 so they only travel over TLS, and <code>SameSite=Lax</code> so the CSRF surface
                 is limited to top-level navigations.

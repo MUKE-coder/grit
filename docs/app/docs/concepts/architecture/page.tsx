@@ -498,7 +498,7 @@ studio.Mount(router, db, []interface{}{
                 <ol className="space-y-2.5 mb-4 list-decimal list-inside">
                   {[
                     'User submits login form with email and password',
-                    'Go API validates credentials and sets two HttpOnly cookies: grit_access (15 min, Secure, SameSite=Lax) and grit_refresh (7 days, Path=/api/auth)',
+                    'Go API validates credentials and sets two HttpOnly cookies: grit_access (15 min, Secure, SameSite=Lax) and grit_refresh (7 days, Path=/api/v1/auth)',
                     'Frontend uses withCredentials: true on its fetch/axios client — the browser attaches the cookies automatically. The JS code never sees the tokens, so XSS cannot read them.',
                     'When the access token expires, the response interceptor catches the 401, calls /api/auth/refresh once (browser sends grit_refresh), the API issues a fresh grit_access cookie, and the original request is retried.',
                     'Protected routes in the frontend check the /api/auth/me response (or a server-side check) and redirect to /login if missing.',

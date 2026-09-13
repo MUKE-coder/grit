@@ -64,6 +64,11 @@ func (h *ImpersonateHandler) Start(c *gin.Context) {
 		respond.Internal(c, err)
 		return
 	}
+	// An access token names its session, so the swap needs one.
+	if _, err := services.CreateSession(h.DB, c, target.ID, pair.RefreshToken); err != nil {
+		respond.Internal(c, err)
+		return
+	}
 
 	// Swap the session to the target, stash the admin's token, and set a
 	// readable flag the UI can see (HttpOnly cookies are invisible to JS).
@@ -92,7 +97,9 @@ func (h *ImpersonateHandler) Stop(c *gin.Context) {
 		return
 	}
 
-	claims, err := h.Auth.ValidateToken(adminToken)
+	// The admin's own session has to be live still: signing out everywhere
+	// while impersonating must not leave a way back in.
+	claims, err := h.Auth.ValidateAccessToken(adminToken)
 	if err != nil {
 		clearImpersonatorCookies(c)
 		respond.Unauthorized(c, "Impersonation session expired; sign in again")
@@ -101,6 +108,10 @@ func (h *ImpersonateHandler) Stop(c *gin.Context) {
 
 	pair, err := h.Auth.GenerateTokenPair(claims.UserID, claims.Email, claims.Role)
 	if err != nil {
+		respond.Internal(c, err)
+		return
+	}
+	if _, err := services.CreateSession(h.DB, c, claims.UserID, pair.RefreshToken); err != nil {
 		respond.Internal(c, err)
 		return
 	}

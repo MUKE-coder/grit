@@ -1914,6 +1914,7 @@ func apiAuthServiceGo() string {
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -1921,6 +1922,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/ids"
 )
 
 // AuthService handles JWT token operations.
@@ -1928,6 +1932,10 @@ type AuthService struct {
 	Secret        string
 	AccessExpiry  time.Duration
 	RefreshExpiry time.Duration
+
+	// DB is where sessions live. When it is set, an access token is refused as
+	// soon as its session is revoked, rather than when the token expires.
+	DB *gorm.DB
 }
 
 // TokenPair holds access and refresh tokens.
@@ -1937,22 +1945,47 @@ type TokenPair struct {
 	ExpiresAt    int64  ` + "`" + `json:"expires_at"` + "`" + `
 }
 
+// Token types. An access token lives for minutes and is what every route
+// accepts; a refresh token lives for days and is only exchanged at /auth/refresh.
+const (
+	TokenTypeAccess  = "access"
+	TokenTypeRefresh = "refresh"
+)
+
+// ErrWrongTokenType is returned when a token is presented where the other kind
+// belongs.
+var ErrWrongTokenType = errors.New("wrong token type")
+
 // Claims represents JWT claims.
 type Claims struct {
 	UserID string ` + "`" + `json:"user_id"` + "`" + `
 	Email  string ` + "`" + `json:"email"` + "`" + `
 	Role   string ` + "`" + `json:"role"` + "`" + `
+	// TokenType is "access" or "refresh". The two used to be the same shape, so
+	// a seven-day refresh token was accepted as a bearer token everywhere.
+	TokenType string ` + "`" + `json:"typ,omitempty"` + "`" + `
+	// SessionID is the sessions row both tokens of a pair belong to, so an access
+	// token can be refused the moment that session is revoked.
+	SessionID string ` + "`" + `json:"sid,omitempty"` + "`" + `
 	jwt.RegisteredClaims
 }
 
-// GenerateTokenPair creates a new access + refresh token pair.
+// GenerateTokenPair creates a new access + refresh token pair for a new session.
+// Record it with CreateSession: an access token whose session does not exist is
+// refused.
 func (s *AuthService) GenerateTokenPair(userID string, email, role string) (*TokenPair, error) {
-	accessToken, expiresAt, err := s.generateToken(userID, email, role, s.AccessExpiry)
+	return s.GenerateSessionTokenPair(userID, email, role, ids.New())
+}
+
+// GenerateSessionTokenPair creates a token pair for an existing session. Refresh
+// uses it, so the rotated tokens still name the session row they belong to.
+func (s *AuthService) GenerateSessionTokenPair(userID, email, role, sessionID string) (*TokenPair, error) {
+	accessToken, expiresAt, err := s.generateToken(userID, email, role, TokenTypeAccess, sessionID, s.AccessExpiry)
 	if err != nil {
 		return nil, fmt.Errorf("generating access token: %w", err)
 	}
 
-	refreshToken, _, err := s.generateToken(userID, email, role, s.RefreshExpiry)
+	refreshToken, _, err := s.generateToken(userID, email, role, TokenTypeRefresh, sessionID, s.RefreshExpiry)
 	if err != nil {
 		return nil, fmt.Errorf("generating refresh token: %w", err)
 	}
@@ -1964,14 +1997,45 @@ func (s *AuthService) GenerateTokenPair(userID string, email, role string) (*Tok
 	}, nil
 }
 
-// ValidateToken parses and validates a JWT token.
+// ValidateAccessToken accepts an access token whose session is still live. It is
+// what the auth middleware and the WebSocket handshake call.
+func (s *AuthService) ValidateAccessToken(tokenString string) (*Claims, error) {
+	claims, err := s.ValidateToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+	if claims.TokenType != TokenTypeAccess {
+		return nil, ErrWrongTokenType
+	}
+	if s.DB != nil && (claims.SessionID == "" || !SessionLive(s.DB, claims.SessionID)) {
+		return nil, ErrSessionInvalid
+	}
+	return claims, nil
+}
+
+// ValidateRefreshToken accepts a refresh token. One minted before token types has
+// none, and is accepted: the session row still has to exist and rotate, which is
+// the check that matters, and it is how existing sessions survive the upgrade.
+func (s *AuthService) ValidateRefreshToken(tokenString string) (*Claims, error) {
+	claims, err := s.ValidateToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+	if claims.TokenType != TokenTypeRefresh && claims.TokenType != "" {
+		return nil, ErrWrongTokenType
+	}
+	return claims, nil
+}
+
+// ValidateToken checks a token's signature and expiry, and nothing about what
+// kind of token it is. Prefer ValidateAccessToken or ValidateRefreshToken.
 func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(s.Secret), nil
-	})
+	}, jwt.WithValidMethods([]string{"HS256"}), jwt.WithExpirationRequired())
 
 	if err != nil {
 		return nil, fmt.Errorf("parsing token: %w", err)
@@ -1994,7 +2058,7 @@ func GenerateResetToken() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-func (s *AuthService) generateToken(userID string, email, role string, expiry time.Duration) (string, int64, error) {
+func (s *AuthService) generateToken(userID, email, role, tokenType, sessionID string, expiry time.Duration) (string, int64, error) {
 	expiresAt := time.Now().Add(expiry)
 
 	// Every token gets a unique jti. Without it, two tokens minted for the same
@@ -2007,9 +2071,11 @@ func (s *AuthService) generateToken(userID string, email, role string, expiry ti
 	}
 
 	claims := &Claims{
-		UserID: userID,
-		Email:  email,
-		Role:   role,
+		UserID:    userID,
+		Email:     email,
+		Role:      role,
+		TokenType: tokenType,
+		SessionID: sessionID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        jti,
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
@@ -2026,13 +2092,23 @@ func (s *AuthService) generateToken(userID string, email, role string, expiry ti
 	return tokenString, expiresAt.Unix(), nil
 }
 
+// RefreshCookiePath scopes the refresh cookie to the auth routes, so it is not
+// sent on every request. routes.Setup builds it from APIVersion. It has to match
+// where refresh and logout are mounted: written as /api/auth while they lived
+// under /api/v1/auth, the browser never sent it to either, so refreshing from a
+// cookie always failed and logout never revoked the session.
+var RefreshCookiePath = "/api/v1/auth"
+
+// legacyRefreshCookiePath is where projects before v3.244.0 set the cookie.
+const legacyRefreshCookiePath = "/api/auth"
+
 // SetAuthCookies writes the token pair as HttpOnly cookies so the browser
 // holds the credentials out of JavaScript's reach. The native mobile and
 // desktop clients keep using the Authorization: Bearer header, which is
 // why the JSON body still includes the tokens — both paths work.
 //
 // Cookie names: grit_access (sent on every request) and grit_refresh
-// (scoped to /api/auth so it isn't sent everywhere). Both are HttpOnly,
+// (scoped to RefreshCookiePath so it isn't sent everywhere). Both are HttpOnly,
 // Secure when on HTTPS, and SameSite=Lax so CSRF surface is limited to
 // top-level navigations. The CSRF middleware adds defence in depth.
 //
@@ -2044,7 +2120,9 @@ func (s *AuthService) SetAuthCookies(c *gin.Context, pair *TokenPair) {
 
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("grit_access", pair.AccessToken, accessSeconds, "/", "", secure, true)
-	c.SetCookie("grit_refresh", pair.RefreshToken, refreshSeconds, "/api/auth", "", secure, true)
+	c.SetCookie("grit_refresh", pair.RefreshToken, refreshSeconds, RefreshCookiePath, "", secure, true)
+	// A cookie at the old path is never sent anywhere useful; clear it.
+	c.SetCookie("grit_refresh", "", -1, legacyRefreshCookiePath, "", secure, true)
 }
 
 // ClearAuthCookies expires both auth cookies. Call this from the Logout
@@ -2054,7 +2132,8 @@ func (s *AuthService) ClearAuthCookies(c *gin.Context) {
 	secure := isRequestHTTPS(c)
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("grit_access", "", -1, "/", "", secure, true)
-	c.SetCookie("grit_refresh", "", -1, "/api/auth", "", secure, true)
+	c.SetCookie("grit_refresh", "", -1, RefreshCookiePath, "", secure, true)
+	c.SetCookie("grit_refresh", "", -1, legacyRefreshCookiePath, "", secure, true)
 }
 
 // isRequestHTTPS returns true when the request is on HTTPS (directly or
@@ -2521,7 +2600,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		refreshToken = req.RefreshToken
 	}
 
-	claims, err := h.AuthService.ValidateToken(refreshToken)
+	claims, err := h.AuthService.ValidateRefreshToken(refreshToken)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": gin.H{
@@ -2557,7 +2636,14 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	tokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
+	// Keep the session id through rotation, so the new access token names the
+	// row the old one did. A refresh token from before token types carries none,
+	// and its row is found by the token instead.
+	sessionID := claims.SessionID
+	if sessionID == "" {
+		sessionID = services.SessionIDForToken(h.DB, refreshToken)
+	}
+	tokens, err := h.AuthService.GenerateSessionTokenPair(user.ID, user.Email, user.Role, sessionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
@@ -3269,7 +3355,9 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 			return
 		}
 
-		claims, err := authService.ValidateToken(token)
+		// An access token, whose session is still live: a refresh token, or a
+		// token from a session that logged out, is refused here.
+		claims, err := authService.ValidateAccessToken(token)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": gin.H{
@@ -8861,7 +8949,7 @@ func (h *RealtimeHandler) Connect(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": gin.H{"code": "MISSING_TOKEN", "message": "a ?token query or a grit_access cookie is required"}})
 		return
 	}
-	claims, err := h.Auth.ValidateToken(tokenStr)
+	claims, err := h.Auth.ValidateAccessToken(tokenStr)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": gin.H{"code": "INVALID_TOKEN", "message": err.Error()}})
 		return
@@ -9325,7 +9413,13 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		Secret:        cfg.JWTSecret,
 		AccessExpiry:  cfg.JWTAccessExpiry,
 		RefreshExpiry: cfg.JWTRefreshExpiry,
+		// Sessions are checked on every access token, so logging out, signing out
+		// everywhere and changing a password take effect at once.
+		DB: db,
 	}
+	// The refresh cookie is scoped to the auth routes, wherever the version puts
+	// them.
+	services.RefreshCookiePath = "/api/" + APIVersion + "/auth"
 
 	// Handlers
 	authHandler := &handlers.AuthHandler{

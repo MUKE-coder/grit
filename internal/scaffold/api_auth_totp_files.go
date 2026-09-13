@@ -260,6 +260,7 @@ func totpHandlerGo() string {
 
 import (
 	"encoding/base64"
+	"log"
 	"net/http"
 	"time"
 
@@ -483,6 +484,11 @@ func (h *TOTPHandler) Verify(c *gin.Context) {
 		})
 		return
 	}
+	// Record the session. An access token names its session, and one whose
+	// session was never recorded is refused on its first request.
+	if _, err := services.CreateSession(h.DB, c, user.ID, tokens.RefreshToken); err != nil {
+		log.Printf("totp: failed to record session for %s: %v", user.ID, err)
+	}
 
 	// If user wants to trust this device, create a trusted device cookie
 	if req.TrustDevice {
@@ -568,6 +574,11 @@ func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 			"error": gin.H{"code": "TOKEN_ERROR", "message": "Failed to generate tokens"},
 		})
 		return
+	}
+	// Record the session. An access token names its session, and one whose
+	// session was never recorded is refused on its first request.
+	if _, err := services.CreateSession(h.DB, c, user.ID, tokens.RefreshToken); err != nil {
+		log.Printf("totp: failed to record session for %s: %v", user.ID, err)
 	}
 
 	if req.TrustDevice {
