@@ -66,6 +66,78 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.243.0 */}
+            <div className="mb-12" id="v3.243.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.243.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Production is the default: login limits that fire, no SQL console, no default passwords</h3>
+                <p>
+                  Two more findings from the review of a scaffolded app, both about what a server
+                  runs with when nobody configured it carefully.
+                </p>
+
+                <h4>The login rate limit had never fired</h4>
+                <p>
+                  Sentinel matches the request path exactly. The five-per-fifteen-minutes login
+                  limit, the register limit, AuthShield and the CSRF exemptions for signing in were
+                  all written as <code>/api/auth/login</code>, while the router mounts{' '}
+                  <code>/api/v1</code>. Not one of them matched a request, so a password could be
+                  guessed as fast as the server answered. They are now built from the API version,
+                  and the forgot-password, reset-password and 2FA routes get limits of their own.
+                  Verified against a running server: five wrong passwords are refused as
+                  credentials, and the sixth is a 429.
+                </p>
+
+                <h4>A forgotten APP_ENV meant development</h4>
+                <p>
+                  Without <code>APP_ENV</code> the API ran as development: no rate limits, the WAF
+                  only logging, password-reset links written to the log. And nothing outside
+                  development refused <code>studio</code>, <code>sentinel</code> or{' '}
+                  <code>pulse</code> as a dashboard password, or a short JWT secret. Unset now means
+                  production. Anywhere but development, the server refuses to start with a JWT
+                  secret under 32 characters or a dashboard password that is short or a known
+                  default, and names the settings to fix. A scaffolded <code>.env</code> says{' '}
+                  <code>APP_ENV=development</code> and has generated secrets, so nothing changes on
+                  your machine.
+                </p>
+
+                <h4>GORM Studio and /docs in production</h4>
+                <p>
+                  GORM Studio, a browser SQL console with write access to every table, was on in
+                  production behind basic auth, and <code>/docs</code> published every route,
+                  admin, backup, SSO and GDPR ones included, with a console to call them. In
+                  production Studio is now off whatever <code>GORM_STUDIO_ENABLED</code> says,
+                  because <code>.env</code> files get copied to servers whole;{' '}
+                  <code>GORM_STUDIO_IN_PRODUCTION=true</code> turns it on there, read-only and with
+                  no SQL editor. <code>/docs</code> is served in production only with{' '}
+                  <code>API_DOCS_PUBLIC=true</code>. Development keeps both as they were.
+                </p>
+
+                <h4>Upgrading</h4>
+                <p>
+                  <code>grit upgrade</code> applies all of it to <code>config.go</code>,{' '}
+                  <code>routes.go</code>, the CSRF middleware and the startup log, anchoring on the
+                  text Grit generated and naming anything it had to leave alone. Check one thing
+                  before you deploy: a server started without <code>APP_ENV</code>, or with a
+                  default dashboard password, will now stop with an error instead of starting. That
+                  is the point, but it is a change.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The CI live suite now starts the fixture a second time with{' '}
+                  <code>APP_ENV=production</code>: Studio and <code>/docs</code> answer 404, a
+                  sign-in with a stale session cookie is judged on its credentials rather than
+                  refused for CSRF, the sixth failed login is a 429, and a start with{' '}
+                  <code>PULSE_PASSWORD=pulse</code> exits naming it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.242.0 */}
             <div className="mb-12" id="v3.242.0">
               <div className="flex items-center gap-3 mb-4">

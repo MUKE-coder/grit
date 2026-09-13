@@ -89,7 +89,8 @@ APP_URL=http://localhost:8080`} />
               <div className="mt-4 space-y-3">
                 {[
                   { variable: 'APP_NAME', default: 'Project name', desc: 'Used as the application title in email templates, log entries, and the admin panel header. Set to your project name during scaffolding.' },
-                  { variable: 'APP_ENV', default: 'development', desc: 'Controls logging verbosity, GORM Studio visibility, and error detail level. Set to production in deployed environments to disable debug features. Note: Pulse and Sentinel refuse to mount in production if their passwords are still the literal defaults.' },
+                  { variable: 'APP_ENV', default: 'production', desc: 'development or production. Unset means production, the strict mode: rate limits on, the WAF blocking, GORM Studio and /docs off. Anywhere but development the API refuses to start with a JWT secret under 32 characters or a dashboard password that is short or a known default, and names the settings to fix. A scaffolded .env sets development.' },
+                  { variable: 'API_DOCS_PUBLIC', default: 'false', desc: 'Serve the API reference at /docs in production too. It maps every route, admin ones included, with a console that calls them, so it is off in production unless this is true. Development always serves it.' },
                   { variable: 'APP_PORT', default: '8080', desc: 'The port the Go API server listens on. The frontend apps proxy API requests to this port.' },
                   { variable: 'APP_URL', default: 'http://localhost:8080', desc: 'The full URL of the API server. Used for generating absolute URLs in emails and file storage signed URLs.' },
                 ].map((item) => (
@@ -433,7 +434,8 @@ GORM_STUDIO_READ_ONLY=false             # Refuse every write from Studio
 GORM_STUDIO_DISABLE_SQL=false           # Turn off the raw SQL editor`} />
               <div className="mt-4 space-y-3">
                 {[
-                  { variable: 'GORM_STUDIO_ENABLED', default: 'true', desc: 'Enable or disable GORM Studio. Set to true in development for visual database browsing. Set to false in production to disable the browser and prevent unauthorized access to your data.' },
+                  { variable: 'GORM_STUDIO_ENABLED', default: 'true', desc: 'Enable or disable GORM Studio outside production. In production it is ignored, because .env files get copied to servers whole: Studio stays off there unless GORM_STUDIO_IN_PRODUCTION is true.' },
+                  { variable: 'GORM_STUDIO_IN_PRODUCTION', default: 'false', desc: 'Turn Studio on in production. Even then it is read-only with no SQL editor, whatever GORM_STUDIO_READ_ONLY and GORM_STUDIO_DISABLE_SQL say.' },
                   { variable: 'GORM_STUDIO_USERNAME', default: 'admin', desc: 'Login username for the Studio UI.' },
                   { variable: 'GORM_STUDIO_PASSWORD', default: 'studio', desc: 'Login password for the Studio UI. Change it if you keep Studio enabled outside local development.' },
                   { variable: 'GORM_STUDIO_READ_ONLY', default: 'false', desc: 'Refuse every create, update and delete from Studio, on every table. Browsing still works.' },

@@ -235,6 +235,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := ensureRichTextSafety(root, opts); err != nil {
 			fmt.Printf("  ⚠ sanitising rich text: %v\n", err)
 		}
+		// Production is the default and the strict mode: default secrets are
+		// refused, GORM Studio and /docs are off, and the auth rate limits match
+		// the routes they are for.
+		if err := repairProductionSafety(root, opts); err != nil {
+			fmt.Printf("  ⚠ hardening production mode: %v\n", err)
+		}
 		// The activity-log chain was hashed at a precision Postgres and MySQL
 		// do not store, so it failed verification on its first row. Only where
 		// the audit package is already there.

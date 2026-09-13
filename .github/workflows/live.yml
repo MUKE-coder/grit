@@ -133,6 +133,32 @@ jobs:
             --db grit --db-user grit --db-password grit \
             --db-host localhost --db-port 5432
 
+      # Production is the default and the strict mode. The same build, started
+      # with APP_ENV=production beside the development server: GORM Studio and
+      # /docs are gone, the login limit fires on the real path, and a default
+      # dashboard password stops the server from starting at all.
+      - name: Production mode
+        if: matrix.postgres == '17'
+        run: |
+          cd /tmp/live/app/apps/api
+          APP_ENV=production APP_PORT=8081 /tmp/live/server > /tmp/live/server-prod.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:8081/api/health > /dev/null && break
+            sleep 1
+          done
+          curl -sf http://localhost:8081/api/health > /dev/null || { tail -50 /tmp/live/server-prod.log; exit 1; }
+          python3 "$GITHUB_WORKSPACE/tests/live/verify_production.py" http://localhost:8081
+
+          set +e
+          APP_ENV=production APP_PORT=8082 PULSE_PASSWORD=pulse timeout 30 /tmp/live/server > /tmp/live/server-weak.log 2>&1
+          code=$?
+          set -e
+          if [ "$code" = "124" ]; then
+            echo "a production server started with PULSE_PASSWORD=pulse"; tail -20 /tmp/live/server-weak.log; exit 1
+          fi
+          grep -q "PULSE_PASSWORD" /tmp/live/server-weak.log || { tail -20 /tmp/live/server-weak.log; exit 1; }
+          echo "a default dashboard password stops a production server from starting"
+
       # Down migrations, against a real Postgres.
       #
       # AutoMigrate has no down scripts, so a rollback is computed from what a run
