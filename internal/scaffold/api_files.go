@@ -38,6 +38,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "auth.go"):                  apiAuthMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "cors.go"):                  apiCorsMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "logger.go"):                apiLoggerMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "limits.go"):                middlewareLimitsGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "limits_test.go"):           middlewareLimitsTestGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "maintenance.go"):           apiMaintenanceMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "idempotency.go"):           apiIdempotencyMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "hub.go"):                     apiRealtimeHubGo(),
@@ -657,12 +659,9 @@ func main() {
 
 	// Create server
 	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%s", cfg.Port),
-		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
-	}
+		Addr:    fmt.Sprintf(":%s", cfg.Port),
+		Handler: router,
+` + serverTimeoutFields + `	}
 
 	// Start server in goroutine
 	go func() {
@@ -9254,8 +9253,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// Global middleware
 	r.Use(middleware.Maintenance())
 	r.Use(middleware.SecurityHeaders())
-	r.Use(middleware.MaxBodySize(10 << 20)) // 10MB max request body
-	r.Use(middleware.RequestID())
+` + routesRequestLimitsBlock + `	r.Use(middleware.RequestID())
 	r.Use(middleware.Logger())
 	r.Use(gin.Recovery())
 	// Origins come from the cors.origins setting when it has a value, and from

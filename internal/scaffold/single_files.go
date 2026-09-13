@@ -418,12 +418,9 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:         ":" + port,
-		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
-	}
+		Addr:    ":" + port,
+		Handler: router,
+` + serverTimeoutFields + `	}
 
 	go func() {
 		log.Printf("Server starting on :%s", port)
