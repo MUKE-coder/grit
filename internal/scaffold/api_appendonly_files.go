@@ -292,6 +292,19 @@ func InstallTriggers(db *gorm.DB) error {
 		}
 		for _, statement := range statements {
 			if err := db.Exec(statement).Error; err != nil {
+				// MySQL with binary logging on, which is the default and the norm on
+				// RDS, refuses CREATE TRIGGER from a user without SUPER. Failing here
+				// failed the whole migration, roles included, so --append-only made
+				// grit migrate unusable on ordinary production MySQL. The GORM guard
+				// still holds for everything that goes through the API; say what is
+				// missing and how to add it, the way the no-trigger dialect branch
+				// above does.
+				if dialect == "mysql" && triggersNeedPrivilege(err) {
+					log.Printf("append-only: MySQL refused the trigger on %s: binary logging is on and this user lacks SUPER. "+
+						"The API still cannot change it (GORM refuses), but raw SQL can. To add the database guard, run "+
+						"SET GLOBAL log_bin_trust_function_creators = 1 (on RDS, set it in the parameter group) and migrate again", table)
+					break
+				}
 				return fmt.Errorf("append-only trigger on %s: %w", table, err)
 			}
 		}
@@ -346,6 +359,15 @@ func Suspend(tx *gorm.DB) (func() error, error) {
 		return nil, err
 	}
 	return func() error { return toggle("ENABLE") }, nil
+}
+
+// triggersNeedPrivilege recognises MySQL error 1419: "You do not have the SUPER
+// privilege and binary logging is enabled". Matched on the text rather than the
+// driver's error type, so this package needs no MySQL import in a project that
+// runs Postgres or SQLite.
+func triggersNeedPrivilege(err error) bool {
+	msg := err.Error()
+	return strings.Contains(msg, "1419") || strings.Contains(msg, "binary logging is enabled")
 }
 
 const postgresFunction = "CREATE OR REPLACE FUNCTION grit_append_only() RETURNS trigger AS $$\n" +
@@ -489,6 +511,22 @@ func TestRawSQLIsRefusedByTheTrigger(t *testing.T) {
 }
 
 // grit migrate runs on every deploy, so installing twice must be harmless.
+type triggerErr string
+
+func (e triggerErr) Error() string { return string(e) }
+
+// The MySQL refusal is recognised, and nothing else is: a syntax error must still
+// fail the migration rather than be logged and skipped.
+func TestMySQLTriggerPrivilegeIsRecognised(t *testing.T) {
+	refused := triggerErr("Error 1419 (HY000): You do not have the SUPER privilege and binary logging is enabled (you *might* want to use the less safe log_bin_trust_function_creators variable)")
+	if !triggersNeedPrivilege(refused) {
+		t.Error("error 1419 was not recognised, so grit migrate still fails on binlog MySQL")
+	}
+	if triggersNeedPrivilege(triggerErr("Error 1064 (42000): You have an error in your SQL syntax")) {
+		t.Error("an unrelated error was treated as the privilege refusal and would be skipped")
+	}
+}
+
 func TestInstallTriggersIsRepeatable(t *testing.T) {
 	db := open(t)
 	only(t, &ledgerRow{})

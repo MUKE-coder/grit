@@ -66,6 +66,46 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.240.1 */}
+            <div className="mb-12" id="v3.240.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.240.1
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>--append-only broke grit migrate on ordinary MySQL</h3>
+                <p>
+                  v3.240.0 added the append-only resource to the live suite, and its MySQL job was
+                  the first time the MySQL trigger met a real MySQL. Run locally against MySQL
+                  8.4, it showed what production would have met: with binary logging on, which is
+                  the image default and the norm on RDS, a user without SUPER cannot create a
+                  trigger. Error 1419. <code>InstallTriggers</code> returned it, so the whole
+                  migration failed, including the default roles seeded straight after it, which
+                  left authorization broken as well as the table unguarded. And because AutoMigrate
+                  had already created the table, a raw <code>UPDATE</code> on the
+                  &quot;append-only&quot; rows went straight through.
+                </p>
+                <p>
+                  On that refusal, <code>grit migrate</code> now logs what is missing and how to
+                  add it, and carries on: the GORM guard still refuses every change that goes
+                  through the API, and the roles are seeded. With{' '}
+                  <code>log_bin_trust_function_creators</code> set, the trigger installs and MySQL
+                  refuses a raw <code>UPDATE</code> with error 1644. Verified both ways against
+                  MySQL 8.4.11. Any other trigger error still fails the migration, because only the
+                  privilege refusal has a safe fallback.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Also, the v3.240.0 append-only live checks reached only the Postgres fixture. The
+                  SQLite and MySQL fixture is built in a separate job and never generated the
+                  resource. It does now, and the MySQL job sets the variable so the trigger is
+                  installed and checked rather than skipped with a warning.
+                </p>
+              </div>
+            </div>
+
             {/* v3.240.0 */}
             <div className="mb-12" id="v3.240.0">
               <div className="flex items-center gap-3 mb-4">
