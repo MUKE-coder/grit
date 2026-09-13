@@ -364,7 +364,10 @@ func Upgrade(uOpts UpgradeOptions) error {
 	// admin panel at all: the link was in the navbar and nothing was behind it. The
 	// panel is framework-owned, so upgrade delivers it, and the manifest guard
 	// reports a file somebody edited rather than overwriting it.
-	if hasWeb && !hasAdmin {
+	// Not when that web app is a Vite app: its panel is written by the section
+	// below, and writing this one first put 157 files on disk for the next
+	// step to delete.
+	if hasWeb && !hasAdmin && !opts.ShouldEmbedAdminInSPA() {
 		spinner.Printf("  → Adding the admin panel to the web app at /admin...\n")
 		embedded := map[string]string{}
 		for path, body := range embeddedAdminFileMap(root, opts) {
@@ -391,24 +394,31 @@ func Upgrade(uOpts UpgradeOptions) error {
 	// panel. The screens and the mirrored shared package are framework-owned and
 	// written from the templates; the SPA's dependencies, aliases and dev proxy
 	// are not, so those are edited in place and only where an entry is missing.
-	if opts.ShouldEmbedAdminInSPA() && dirExists(filepath.Join(root, "frontend", "src")) {
+	if host := spaHostRoot(root, opts); opts.ShouldEmbedAdminInSPA() && dirExists(filepath.Join(host, "src")) {
 		spinner.Printf("  → Adding the admin panel to the SPA at /admin...\n")
 		// Before the files are written: the root route stops drawing the site's
 		// chrome in this version, so the public pages have to be in the section
 		// whose layout draws it, or an upgraded project loses its navbar.
-		migrateSPARouteSections(root, spinner, green)
+		migrateSPARouteSections(host, spinner, green)
+		// And a Vite web app scaffolded before v3.239.0 carries a Next.js panel it
+		// could never compile.
+		removeNextPanelFromViteApp(root, opts, green)
 
 		embedded := embeddedSingleAdminFileMap(root, opts)
-		for path, body := range singleSharedMirrorFiles(root, opts) {
-			embedded[path] = body
+		if opts.Architecture == ArchSingle {
+			// Only a single mirrors the shared package: a monorepo has it as a
+			// workspace package already.
+			for path, body := range singleSharedMirrorFiles(root, opts) {
+				embedded[path] = body
+			}
 		}
 		// The root route decides whether a page gets the site's navbar, and the
 		// panel's screens must not.
-		embedded[filepath.Join(root, "frontend", "src", "routes", "__root.tsx")] = webTanStackRootRoute(opts)
+		embedded[filepath.Join(host, "src", "routes", "__root.tsx")] = webTanStackRootRoute(opts)
 		// The public site's layout, which is what draws the navbar and footer now.
-		embedded[filepath.Join(root, "frontend", "src", "routes", "_site.tsx")] = singleSiteLayoutRoute()
+		embedded[filepath.Join(host, "src", "routes", "_site.tsx")] = singleSiteLayoutRoute()
 		// The navbar, for the link to the panel.
-		embedded[filepath.Join(root, "frontend", "src", "components", "navbar.tsx")] = singleViteNavbar(opts)
+		embedded[filepath.Join(host, "src", "components", "navbar.tsx")] = adminHref(viteHostNavbar(opts), opts)
 		n, err := writeUpgradeFiles(embedded, uOpts.Force)
 		if err != nil {
 			return fmt.Errorf("adding the admin panel to the SPA: %w", err)
@@ -418,7 +428,7 @@ func Upgrade(uOpts UpgradeOptions) error {
 				return fmt.Errorf("adding the admin panel's widgets: %w", err)
 			}
 		}
-		wired, err := ensureSPAAdminWiring(root, opts)
+		wired, err := ensureSPAAdminWiring(host, opts)
 		if err != nil {
 			return fmt.Errorf("wiring the SPA for the admin panel: %w", err)
 		}
@@ -792,8 +802,8 @@ func pruneAdminStrays(adminRoot string) int {
 // dialect TanStack speaks: a pathless layout route rather than a route group.
 // The files are moved, so local edits survive, and the id each one declares is
 // rewritten because TanStack checks that it equals the file's path.
-func migrateSPARouteSections(root string, spinner, green *color.Color) {
-	routes := filepath.Join(root, "frontend", "src", "routes")
+func migrateSPARouteSections(host string, spinner, green *color.Color) {
+	routes := filepath.Join(host, "src", "routes")
 	site := filepath.Join(routes, "_site")
 	if !dirExists(routes) || fileExists(filepath.Join(site, "index.tsx")) {
 		return // not a single project, or already migrated
@@ -839,6 +849,34 @@ func migrateSPARouteSections(root string, spinner, green *color.Color) {
 
 	spinner.Printf("  → Moving the public pages into routes/_site...\n")
 	green.Printf("  ✓ The site layout is _site.tsx now, so /admin and /account keep their own\n")
+}
+
+// removeNextPanelFromViteApp deletes a panel that was written in the wrong dialect.
+//
+// Before v3.239.0, `grit new x --double --vite` wrote the Next.js panel: route
+// files under apps/web/app/admin and components under apps/web/admin-panel,
+// importing next/link. A Vite app has no app directory to route and cannot
+// resolve next/link, so none of it ever ran, and leaving it in place would put a
+// second copy of every screen beside the one that works.
+func removeNextPanelFromViteApp(root string, opts Options, green *color.Color) {
+	if opts.Architecture == ArchSingle {
+		return
+	}
+	removed := 0
+	for _, dead := range []string{
+		filepath.Join(root, "apps", "web", "app", "admin"),
+		filepath.Join(root, "apps", "web", "admin-panel"),
+	} {
+		if _, err := os.Stat(dead); err != nil {
+			continue
+		}
+		if err := os.RemoveAll(dead); err == nil {
+			removed++
+		}
+	}
+	if removed > 0 {
+		green.Printf("  ✓ Removed the Next.js panel this Vite app could not compile\n")
+	}
 }
 
 // retireAdminURLEnv comments out a NEXT_PUBLIC_ADMIN_URL this project should not

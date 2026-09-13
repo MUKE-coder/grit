@@ -66,6 +66,67 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.239.0 */}
+            <div className="mb-12" id="v3.239.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.239.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A two-app project on Vite had a panel that could never have run</h3>
+                <p>
+                  <code>grit new x --double --vite</code> wrote the Next.js panel into a TanStack
+                  Router app: 41 route files under an <code>app/</code> directory a Vite app does
+                  not route, and 129 components importing <code>next/link</code>, which it cannot
+                  resolve. Nothing linked to any of it and nothing would have compiled if it had.
+                  The shape shipped that way since the panel was embedded at all.
+                </p>
+                <p>
+                  The machinery for doing it properly already existed: it is what a single
+                  project&apos;s SPA uses, and the only single-specific thing about it was a
+                  hardcoded path. The panel now lands in <code>src/routes/admin/</code> with its
+                  code under <code>src/admin-panel/</code> behind the <code>@admin</code> alias, in
+                  the TanStack dialect, with the aliases and dependencies written into that
+                  app&apos;s own Vite config, tsconfig and package.json.{' '}
+                  <code>grit generate resource</code> writes a new resource&apos;s screens there
+                  and registers it, <code>grit add web-auth</code> writes the sign-in pages and the
+                  customer area there, and <code>grit upgrade</code> deletes the Next.js panel that
+                  could not compile before writing the one that can.
+                </p>
+                <p>
+                  Six bugs fell out of building it, and five were not about this feature. Every
+                  Vite web app ever scaffolded shipped a navbar linking to the literal string{' '}
+                  <code>{'{{ADMIN_HREF}}'}</code>, because the substitution ran only on the
+                  Next.js writer. The realtime client wrote{' '}
+                  <code>apps/web/hooks/use-realtime.ts</code> into an app that keeps its code under{' '}
+                  <code>src/</code>, and the resource generator then followed that directory,
+                  putting every generated hook beside it. Four writers appended <code>src</code> to
+                  a path that already had one, or did not append it when it was needed, so the
+                  standalone Vite admin&apos;s dashboard widgets were landing outside the
+                  application.
+                </p>
+                <p>
+                  The one that would have bitten hardest: the SPA&apos;s API client authenticates
+                  with a bearer token and never echoed the CSRF cookie. That is fine on its own,
+                  because the API exempts bearer requests, and wrong the moment the admin panel in
+                  the same app signs in with cookies. After that the browser holds a session cookie
+                  for the host and sends it with everything, so a customer signing up on the public
+                  site was refused with <code>CSRF_INVALID</code>. It echoes the token now, which
+                  fixes the same latent bug in every single-binary project.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Verified on a scaffolded <code>--double --vite</code>: the web app builds and
+                  typechecks clean, the panel signs in and renders its dashboard with live data at{' '}
+                  <code>/admin/dashboard</code>, a generated resource appears in its sidebar, a
+                  customer registers and lands on the account dashboard, and a project scaffolded
+                  before this upgrades, loses the panel it could not compile, and builds green.
+                </p>
+              </div>
+            </div>
+
             {/* v3.238.0 */}
             <div className="mb-12" id="v3.238.0">
               <div className="flex items-center gap-3 mb-4">

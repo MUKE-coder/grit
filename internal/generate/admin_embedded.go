@@ -31,7 +31,21 @@ func (g *Generator) EmbedsAdmin() bool {
 // the screens are the same; what differs is where they go and that the router is
 // the SPA's, so every route id carries the /admin segment.
 func (g *Generator) EmbedsAdminInSPA() bool {
-	return g.Architecture == "single"
+	if g.Architecture == "single" {
+		return true
+	}
+	// A double whose web app was scaffolded with --vite hosts the panel the same
+	// way, in src/admin-panel rather than in a Next.js route group. Read off the
+	// disk rather than from the architecture, which does not record the frontend.
+	return dirExists(filepath.Join(g.Root, "apps", "web", "src", "admin-panel"))
+}
+
+// spaHost is the Vite app hosting the panel.
+func (g *Generator) spaHost() string {
+	if g.Architecture == "single" {
+		return filepath.Join(g.Root, "frontend")
+	}
+	return filepath.Join(g.Root, "apps", "web")
 }
 
 // AdminIsTanStack reports whether the panel is a TanStack Router app, which
@@ -46,7 +60,7 @@ func (g *Generator) AdminIsTanStack() bool {
 // adminTanStackRoot is where a TanStack panel keeps its own code.
 func (g *Generator) adminTanStackRoot() string {
 	if g.EmbedsAdminInSPA() {
-		return filepath.Join(g.Root, "frontend", "src", "admin-panel")
+		return filepath.Join(g.spaHost(), "src", "admin-panel")
 	}
 	return filepath.Join(g.Root, "apps", "admin", "src")
 }
@@ -55,7 +69,7 @@ func (g *Generator) adminTanStackRoot() string {
 // that is the SPA's own route tree, under the segment the panel owns.
 func (g *Generator) adminTanStackRoutesRoot() string {
 	if g.EmbedsAdminInSPA() {
-		return filepath.Join(g.Root, "frontend", "src", "routes", "admin")
+		return filepath.Join(g.spaHost(), "src", "routes", "admin")
 	}
 	return filepath.Join(g.Root, "apps", "admin", "src", "routes")
 }
@@ -64,10 +78,14 @@ func (g *Generator) adminTanStackRoutesRoot() string {
 // definitions live.
 func (g *Generator) AdminCodeRoot() string {
 	switch {
+	// The Vite case first: a double built with --vite satisfies both, and its
+	// panel is a section of a Vite app rather than a Next.js route group. Asking
+	// in the other order wrote a resource's definition to a directory that does
+	// not exist, so the sidebar never learned about it.
+	case g.EmbedsAdminInSPA():
+		return filepath.Join(g.spaHost(), "src", "admin-panel")
 	case g.EmbedsAdmin():
 		return filepath.Join(g.Root, "apps", "web", "admin-panel")
-	case g.EmbedsAdminInSPA():
-		return filepath.Join(g.Root, "frontend", "src", "admin-panel")
 	default:
 		return filepath.Join(g.Root, "apps", "admin")
 	}
@@ -89,8 +107,11 @@ func (g *Generator) AdminRoutesRoot() string {
 // a triple project and for every file that is not an admin screen.
 func embeddedAdminFileContent(path, content string) string {
 	slashed := filepath.ToSlash(path)
-	if strings.Contains(slashed, "/frontend/src/admin-panel/") ||
-		strings.Contains(slashed, "/frontend/src/routes/admin/") {
+	// A Vite host: frontend/src for a single, apps/web/src for a double built
+	// with --vite. The Next.js panel has no src segment, so the two transforms
+	// cannot both claim a file.
+	if strings.Contains(slashed, "/src/admin-panel/") ||
+		strings.Contains(slashed, "/src/routes/admin/") {
 		return repointSPAAdminContent(content)
 	}
 	if !strings.Contains(slashed, "/apps/web/admin-panel/") &&
@@ -155,6 +176,7 @@ func adminRootFrom(root string) string {
 	for _, candidate := range []string{
 		filepath.Join(root, "apps", "admin"),
 		filepath.Join(root, "apps", "web", "admin-panel"),
+		filepath.Join(root, "apps", "web", "src", "admin-panel"),
 		filepath.Join(root, "frontend", "src", "admin-panel"),
 	} {
 		if dirExists(candidate) {

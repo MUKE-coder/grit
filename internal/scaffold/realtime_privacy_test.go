@@ -190,13 +190,18 @@ func TestRealtimeClientShipsWithTheFrontends(t *testing.T) {
 			t.Fatalf("%s: %v", frontend, err)
 		}
 
+		// A Vite app keeps its code under src/; the Next.js one does not.
 		adminHooks := filepath.Join("apps", "admin", "hooks", "use-realtime.ts")
+		webLib := filepath.Join("apps", "web", "lib", "realtime.ts")
+		webHooks := filepath.Join("apps", "web", "hooks", "use-realtime.ts")
 		if frontend == FrontendTanStack {
 			adminHooks = filepath.Join("apps", "admin", "src", "hooks", "use-realtime.ts")
+			webLib = filepath.Join("apps", "web", "src", "lib", "realtime.ts")
+			webHooks = filepath.Join("apps", "web", "src", "hooks", "use-realtime.ts")
 		}
 		for _, rel := range []string{
-			filepath.Join("apps", "web", "lib", "realtime.ts"),
-			filepath.Join("apps", "web", "hooks", "use-realtime.ts"),
+			webLib,
+			webHooks,
 			adminHooks,
 			filepath.Join("apps", "expo", "lib", "realtime.ts"),
 		} {
@@ -207,7 +212,7 @@ func TestRealtimeClientShipsWithTheFrontends(t *testing.T) {
 
 		// Reconnection is the part a copy-pasted snippet never has, and the
 		// part that decides whether live updates survive a laptop lid.
-		b, err := os.ReadFile(filepath.Join(root, "apps", "web", "lib", "realtime.ts"))
+		b, err := os.ReadFile(filepath.Join(root, webLib))
 		if err != nil {
 			t.Fatalf("%s: %v", frontend, err)
 		}

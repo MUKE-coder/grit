@@ -722,7 +722,8 @@ func adminTanStackIndexHTML(opts Options) string {
 }
 
 func adminTanStackTSConfig() string {
-	return webTanStackTSConfig() // Same config
+	// The standalone admin app hosts nothing, so it takes the base config.
+	return webTanStackTSConfig(Options{})
 }
 
 func adminTanStackMain() string {

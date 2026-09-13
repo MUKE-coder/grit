@@ -14,7 +14,9 @@ import (
 )
 
 func writeAdminCustomChartFiles(root string, opts Options) error {
-	adminRoot := adminCodeRoot(root, opts)
+	// adminPath, not adminCodeRoot: a standalone Vite admin keeps its components
+	// under src/, and these two were landing beside it where nothing imports them.
+	adminRoot := adminPath(root, opts)
 
 	files := map[string]string{
 		filepath.Join(adminRoot, "components", "dashboard", "CustomChartCard.tsx"):  adminFlavoured(opts, adminCustomChartCardTSX()),

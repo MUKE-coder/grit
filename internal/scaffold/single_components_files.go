@@ -386,6 +386,20 @@ api.interceptors.request.use((config) => {
   if (unsafe && config.headers && !config.headers["Idempotency-Key"]) {
     config.headers["Idempotency-Key"] = crypto.randomUUID()
   }
+  // Echo the grit_csrf cookie into X-CSRF-Token on every state-changing request.
+  //
+  // This client authenticates with a bearer token and the API exempts bearer
+  // requests from CSRF, so it looks unnecessary until you remember the admin
+  // panel in this same app signs in with cookies. Once it has, the browser holds
+  // a grit_access cookie for this host and sends it along with every request the
+  // public site makes: the API then treats a sign-up or a login as a
+  // cookie-authenticated mutation and refuses it with CSRF_INVALID.
+  if (unsafe && config.headers && typeof document !== "undefined") {
+    const m = document.cookie.match(/(?:^|; )grit_csrf=([^;]+)/)
+    if (m) {
+      config.headers["X-CSRF-Token"] = decodeURIComponent(m[1])
+    }
+  }
   return config
 })
 

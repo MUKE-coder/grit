@@ -28,6 +28,12 @@ import (
 func singleAuthFiles(feRoot string, opts Options) []webAuthFile {
 	src := filepath.Join(feRoot, "src")
 	return []webAuthFile{
+		// The auth library itself, and an API client that carries the token it
+		// stores. A single project ships both already; a web app built with --vite
+		// shipped a client with no Authorization header and nothing to log in with,
+		// which is why the first build of these screens could not resolve @/lib/auth.
+		{filepath.Join(src, "lib", "auth.ts"), singleAuthLib()},
+		{filepath.Join(src, "lib", "api.ts"), viteAPIClientWithAuth()},
 		{filepath.Join(src, "hooks", "use-auth.ts"), singleUseAuthHook()},
 		{filepath.Join(src, "components", "user-menu.tsx"), singleUserMenu()},
 
@@ -961,35 +967,61 @@ func brandInitial(opts Options) string {
 	return strings.ToUpper(string([]rune(opts.ProjectName)[0]))
 }
 
-// singleViteNavbarWithAuth is the SPA navbar with the account menu in it.
+// singleViteNavbarWithAuth is a Vite app's navbar with the account menu in it.
 //
-// Built from the base navbar rather than copied, so the two cannot drift: the
-// only difference is the user menu, and a change to the logo or the links reaches
-// both. The Next.js web app does the same thing in web_chrome_files.go.
+// Built from that app's own navbar rather than copied, so the two cannot drift: a
+// change to the logo or the links reaches both. The two hosts ship different
+// navbars (a single's is its own, a double's is the web app's converted from
+// Next), so the base is asked for rather than assumed.
 func singleViteNavbarWithAuth(opts Options) string {
-	nav := singleViteNavbar(opts)
+	nav := viteHostNavbar(opts)
 	nav = strings.Replace(nav,
-		`import { Menu, X, Github } from "lucide-react"`,
-		`import { Menu, X, Github } from "lucide-react"
+		`import { Menu, X, Github`,
+		`import { UserMenu } from "@/components/user-menu"
 
-import { UserMenu } from "@/components/user-menu"`, 1)
+import { Menu, X, Github`, 1)
 
-	// The desktop row: the account menu sits after the GitHub icon.
-	nav = strings.Replace(nav, `            <Github className="h-5 w-5" />
-          </a>
-        </div>`, `            <Github className="h-5 w-5" />
-          </a>
-          <UserMenu />
-        </div>`, 1)
+	// The account menu goes at the end of the desktop row, which is the div the
+	// mobile hamburger follows. Anchoring on the last link in that row would mean
+	// knowing which link it is, and the two navbars disagree.
+	nav = strings.Replace(nav, `        </div>
 
-	// And the mobile drawer, where it is a pair of links rather than a dropdown.
+        <button`, `          <UserMenu />
+        </div>
+
+        <button`, 1)
+
+	// The same in the mobile drawer, where the row is a column.
 	nav = strings.Replace(nav, `              GitHub
-            </a>
-          </div>`, `              GitHub
+            </a>`, `              GitHub
             </a>
             <div className="pt-2 border-t border-border/50">
               <UserMenu />
-            </div>
-          </div>`, 1)
+            </div>`, 1)
 	return nav
+}
+
+// viteHostNavbar is the navbar the host app ships without auth, which is what the
+// "has this been edited" check compares against as well.
+func viteHostNavbar(opts Options) string {
+	if opts.Architecture == ArchSingle {
+		return singleViteNavbar(opts)
+	}
+	return adminHref(nextToTanStack(webNavbar(opts)), opts)
+}
+
+// spaAuthBase is what a replaceable file looks like before this command runs.
+//
+// An existing file is the developer's, unless it is byte-for-byte the one the
+// scaffold wrote: the navbar has to gain the user menu and the API client has to
+// start carrying the token, and skipping either leaves the screens unreachable or
+// signed out. Anything not listed here is never overwritten without --force.
+func spaAuthBase(feRoot string, opts Options, path string) (string, bool) {
+	switch path {
+	case filepath.Join(feRoot, "src", "components", "navbar.tsx"):
+		return viteHostNavbar(opts), true
+	case filepath.Join(feRoot, "src", "lib", "api.ts"):
+		return viteAPIClient(), true
+	}
+	return "", false
 }

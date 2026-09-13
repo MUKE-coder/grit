@@ -40,6 +40,12 @@ func AddWebAuth(root string, force bool) error {
 	}
 
 	webRoot := filepath.Join(root, "apps", "web")
+	// A web app built with --vite is a TanStack Router app, not a Next.js one: it
+	// has src/routes and no app directory. The Next.js pages below would land in a
+	// directory it does not route, importing next/link, which it cannot resolve.
+	if dirExists(filepath.Join(webRoot, "src", "routes")) {
+		return addWebAuthSingle(root, webRoot, force)
+	}
 	if _, err := os.Stat(webRoot); err != nil {
 		return fmt.Errorf("apps/web not found at %s: this command needs a project with a web frontend", webRoot)
 	}
@@ -346,9 +352,15 @@ func fileHasContent(path, content string) bool {
 // The SPA has shipped lib/auth.ts since it existed, with login, register,
 // refresh, logout and the TOTP challenge, and no screen that called any of it.
 func addWebAuthSingle(root, feRoot string, force bool) error {
+	// The same screens either way; the architecture decides only what the brand
+	// line says and which navbar counts as untouched.
 	opts := Options{
 		ProjectName:  filepath.Base(root),
-		Architecture: ArchSingle,
+		Architecture: detectArchitecture(root),
+		Frontend:     readProjectFrontend(root),
+	}
+	if opts.Architecture != ArchSingle && opts.Frontend == "" {
+		opts.Frontend = FrontendTanStack
 	}
 
 	for _, f := range singleAuthFiles(feRoot, opts) {
@@ -357,8 +369,8 @@ func addWebAuthSingle(root, feRoot string, force bool) error {
 		// An existing file is the developer's, unless it is byte-for-byte the one
 		// the scaffold wrote. The navbar is the case that matters: it is a
 		// replacement here, and skipping it leaves no way to reach any of this.
-		untouched := f.path == filepath.Join(feRoot, "src", "components", "navbar.tsx") &&
-			fileHasContent(f.path, singleViteNavbar(opts))
+		base, replaceable := spaAuthBase(feRoot, opts, f.path)
+		untouched := replaceable && fileHasContent(f.path, base)
 		if _, err := os.Stat(f.path); err == nil && !force && !untouched {
 			fmt.Printf("  • skipped %s (already exists: pass --force to overwrite)\n", rel)
 			continue

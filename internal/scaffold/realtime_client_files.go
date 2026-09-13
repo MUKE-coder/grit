@@ -24,15 +24,22 @@ func writeRealtimeClientFiles(root string, opts Options) error {
 	files := map[string]string{}
 
 	if opts.ShouldIncludeWeb() {
+		// A Vite web app keeps its code under src/. Writing to apps/web/hooks there
+		// created a directory nothing imports, and the resource generator then
+		// followed it: it looks for that directory to decide where hooks go.
 		webRoot := filepath.Join(root, "apps", "web")
+		if opts.UseTanStack() {
+			webRoot = filepath.Join(webRoot, "src")
+		}
 		files[filepath.Join(webRoot, "lib", "realtime.ts")] = realtimeClientTS(false)
-		files[filepath.Join(webRoot, "hooks", "use-realtime.ts")] = useRealtimeTS(true)
+		files[filepath.Join(webRoot, "hooks", "use-realtime.ts")] = useRealtimeTS(!opts.UseTanStack())
 	}
 	if opts.HasAdminPanel() {
-		adminRoot := adminCodeRoot(root, opts)
-		if opts.Frontend == FrontendTanStack {
-			adminRoot = filepath.Join(adminRoot, "src")
-		}
+		// adminPath knows where the panel's own code lives in each of the four
+		// shapes, including the src/ a standalone Vite admin keeps it under.
+		// Appending "src" here as well wrote admin-panel/src/hooks into an
+		// embedded panel, which nothing imports and tsc reports as missing.
+		adminRoot := adminPath(root, opts)
 		files[filepath.Join(adminRoot, "lib", "realtime.ts")] = realtimeClientTS(false)
 		files[filepath.Join(adminRoot, "hooks", "use-realtime.ts")] = useRealtimeTS(opts.Frontend == FrontendNext)
 	}

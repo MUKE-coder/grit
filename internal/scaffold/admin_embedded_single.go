@@ -24,10 +24,27 @@ import (
 // What is dropped is the app shell: the SPA has its own index.html, vite config,
 // main.tsx, root route and stylesheet.
 
-// ShouldEmbedAdminInSPA reports whether the panel lives inside the single
-// binary's SPA.
+// ShouldEmbedAdminInSPA reports whether the panel lives inside a Vite app.
+//
+// Two shapes qualify, and they are the same problem: a single project, whose one
+// SPA is a TanStack Router app, and a double whose web app was scaffolded with
+// --vite. Both host the panel as a section of themselves. A double on Next.js is
+// the other transform, in admin_embedded.go.
+//
+// Before this, a --double --vite project got the Next.js panel: 41 files under an
+// app/ directory a Vite app does not route, importing next/link, which it cannot
+// resolve. The panel was unreachable and would not have built.
 func (o Options) ShouldEmbedAdminInSPA() bool {
-	return o.Architecture == ArchSingle
+	return o.Architecture == ArchSingle || (o.ShouldEmbedAdmin() && o.UseTanStack())
+}
+
+// spaHostRoot is the Vite app the panel lives inside: a single project's frontend,
+// or a double's web app.
+func spaHostRoot(root string, opts Options) string {
+	if opts.Architecture == ArchSingle {
+		return filepath.Join(root, "frontend")
+	}
+	return filepath.Join(root, "apps", "web")
 }
 
 // singleAdminShellFiles are the Vite admin's own application scaffolding, which
@@ -55,7 +72,7 @@ var singleAdminShellFiles = map[string]bool{
 func embeddedSingleAdminFileMap(root string, opts Options) map[string]string {
 	source := adminTanStackFileMap(root, opts)
 	adminRoot := filepath.Join(root, "apps", "admin")
-	spa := filepath.Join(root, "frontend", "src")
+	spa := filepath.Join(spaHostRoot(root, opts), "src")
 
 	out := map[string]string{}
 	for path, content := range source {
@@ -145,8 +162,12 @@ var routeIDPattern = regexp.MustCompile(`createFileRoute\('([^']*)'\)`)
 // directory the SPA has.
 func embeddedSingleAdminContent(path, content string) string {
 	slashed := filepath.ToSlash(path)
-	if !strings.Contains(slashed, "/frontend/src/admin-panel/") &&
-		!strings.Contains(slashed, "/frontend/src/routes/admin/") {
+	// Keyed on the destination, and the destination is inside a Vite app's src:
+	// frontend/src for a single, apps/web/src for a double built with --vite. The
+	// Next.js panel lives at apps/web/admin-panel, with no src, so the two
+	// transforms cannot both claim a file.
+	if !strings.Contains(slashed, "/src/admin-panel/") &&
+		!strings.Contains(slashed, "/src/routes/admin/") {
 		return content
 	}
 
@@ -213,8 +234,7 @@ func writeEmbeddedSingleAdminFiles(root string, opts Options) error {
 // exactly as it is.
 //
 // Returns the files it changed, for the upgrade to report.
-func ensureSPAAdminWiring(root string, opts Options) ([]string, error) {
-	feRoot := filepath.Join(root, "frontend")
+func ensureSPAAdminWiring(feRoot string, opts Options) ([]string, error) {
 	var changed []string
 
 	// The dependencies the panel's screens import. Tiptap for the rich-text
@@ -260,13 +280,22 @@ func ensureSPAAdminWiring(root string, opts Options) ([]string, error) {
 	// so both files need telling, and the subpath entries go in ahead of the
 	// directory ones or the prefix match swallows them.
 	vite := filepath.Join(feRoot, "vite.config.ts")
-	if ok, err := insertMissingAfter(vite, "alias: {", []string{
+	// A single project sits one level above packages/; a monorepo web app two.
+	up := "../packages/upload/src"
+	aliases := []string{
 		`      '@admin': path.resolve(__dirname, './src/admin-panel'),`,
 		`      '@repo/shared/brand': path.resolve(__dirname, './src/shared/brand.config.ts'),`,
 		`      '@repo/shared': path.resolve(__dirname, './src/shared'),`,
-		`      '@repo/upload/web': path.resolve(__dirname, '../packages/upload/src/web.ts'),`,
-		`      '@repo/upload': path.resolve(__dirname, '../packages/upload/src/index.ts'),`,
-	}); err != nil {
+	}
+	if opts.Architecture != ArchSingle {
+		up = "../../packages/upload/src"
+		// The shared package is a workspace dependency there, resolved by node.
+		aliases = aliases[:1]
+	}
+	aliases = append(aliases,
+		"      '@repo/upload/web': path.resolve(__dirname, '"+up+"/web.ts'),",
+		"      '@repo/upload': path.resolve(__dirname, '"+up+"/index.ts'),")
+	if ok, err := insertMissingAfter(vite, "alias: {", aliases); err != nil {
 		return changed, err
 	} else if ok {
 		changed = append(changed, "frontend/vite.config.ts")
@@ -286,13 +315,17 @@ func ensureSPAAdminWiring(root string, opts Options) ([]string, error) {
 	}
 
 	ts := filepath.Join(feRoot, "tsconfig.json")
-	if ok, err := insertMissingAfter(ts, `"paths": {`, []string{
-		`      "@repo/upload/web": ["../packages/upload/src/web.ts"],`,
-		`      "@repo/upload": ["../packages/upload/src/index.ts"],`,
-		`      "@repo/shared/brand": ["./src/shared/brand.config.ts"],`,
-		`      "@repo/shared/*": ["./src/shared/*"],`,
+	paths := []string{
 		`      "@admin/*": ["./src/admin-panel/*"],`,
-	}); err != nil {
+		"      \"@repo/upload/web\": [\"" + up + "/web.ts\"],",
+		"      \"@repo/upload\": [\"" + up + "/index.ts\"],",
+	}
+	if opts.Architecture == ArchSingle {
+		paths = append(paths,
+			`      "@repo/shared/brand": ["./src/shared/brand.config.ts"],`,
+			`      "@repo/shared/*": ["./src/shared/*"],`)
+	}
+	if ok, err := insertMissingAfter(ts, `"paths": {`, paths); err != nil {
 		return changed, err
 	} else if ok {
 		changed = append(changed, "frontend/tsconfig.json")
