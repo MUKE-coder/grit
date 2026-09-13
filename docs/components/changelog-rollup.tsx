@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 7 to 13, 2026",
-    count: 59,
+    count: 60,
     entries: [
+      { version: "3.250.0", title: "An image cannot claim enough pixels to take the API down" },
       { version: "3.249.0", title: "A generated API builds on Go 1.26.6, and govulncheck finds nothing" },
       { version: "3.248.0", title: "MinIO no longer runs on minioadmin, and side containers get only their own settings" },
       { version: "3.247.0", title: "A delegated role can no longer make itself ADMIN" },

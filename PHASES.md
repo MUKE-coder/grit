@@ -1202,7 +1202,7 @@ pushed, and name the version.
 - [x] H9 F (v3.243.0) - GORM Studio (writable SQL) on in production; /docs public
 - [x] H10 F (v3.248.0) - production MinIO on minioadmin; every container gets every secret
 - [x] H11 F (v3.249.0) - reachable Go stdlib CVEs; release built on go 1.25.0
-- [ ] H12 F - thumbnail worker decodes without a pixel cap (OOM loop)
+- [x] H12 F (v3.250.0) - thumbnail worker decodes without a pixel cap (OOM loop)
 - [ ] H13 F - unchecked DB writes in TOTP, session and auth paths
 - [ ] H14 F - global 10 MB body cap breaks uploads; 15 s write timeout truncates exports and AI streams
 - [ ] H15 F - health check runs KEYS asynq:*

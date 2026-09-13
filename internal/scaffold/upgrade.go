@@ -337,6 +337,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeStorageFiles(root, opts); err != nil {
 			return fmt.Errorf("updating storage files: %w", err)
 		}
+		// After storage, whose errors it names: the thumbnail job does not retry
+		// an image refused before decoding.
+		if err := repairThumbnailWorker(root, opts); err != nil {
+			fmt.Printf("  ⚠ hardening the thumbnail job: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {

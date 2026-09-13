@@ -13,6 +13,7 @@ func writeStorageFiles(root string, opts Options) error {
 	files := map[string]string{
 		filepath.Join(apiRoot, "internal", "storage", "storage.go"):      storageServiceGo(),
 		filepath.Join(apiRoot, "internal", "storage", "image.go"):        storageImageGo(),
+		filepath.Join(apiRoot, "internal", "storage", "image_test.go"):   storageImageTestGo(),
 		filepath.Join(apiRoot, "internal", "storage", "url_test.go"):     storageURLTestGo(module),
 		filepath.Join(apiRoot, "internal", "handlers", "upload.go"):      uploadHandlerGo(),
 		filepath.Join(apiRoot, "internal", "files", "file_ref.go"):       filesFileRefGo(),
@@ -289,6 +290,7 @@ func storageImageGo() string {
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"image"
 	_ "image/gif"
@@ -298,6 +300,8 @@ import (
 	"strings"
 
 	"github.com/disintegration/imaging"
+
+	"{{MODULE}}/internal/media"
 )
 
 // MaxImageWidth is the maximum width for processed images.
@@ -306,12 +310,56 @@ const MaxImageWidth = 1920
 // ThumbnailSize is the size of generated thumbnails.
 const ThumbnailSize = 300
 
+// MaxImageBytes is the most the helpers read of an image. Uploads are capped at
+// 50 MB, and the one byte over tells a larger file from one exactly at the cap.
+const MaxImageBytes = 50<<20 + 1
+
+var (
+	// ErrImageTooLarge is returned for an image refused before decoding: over
+	// MaxImageBytes, or with a header claiming more pixels than the media
+	// profile allows. A few kilobytes of PNG can claim 30000x30000, which
+	// decodes to 3.6 GB and takes the process with it.
+	ErrImageTooLarge = errors.New("image is too large to decode")
+	// ErrUnreadableImage is returned for data that is not an image this
+	// package can decode. Like ErrImageTooLarge it fails the same way every
+	// time, so a job should not retry it.
+	ErrUnreadableImage = errors.New("image cannot be decoded")
+)
+
+// readImage reads and decodes an image, refusing it first when its header
+// claims more pixels than media.Get("").MaxPixels. image.Decode commits the
+// memory for every pixel before it reads them, so the header is the only place
+// a decompression bomb can be stopped.
+func readImage(reader io.Reader) (image.Image, error) {
+	data, err := io.ReadAll(io.LimitReader(reader, MaxImageBytes))
+	if err != nil {
+		return nil, fmt.Errorf("reading image: %w", err)
+	}
+	if len(data) >= MaxImageBytes {
+		return nil, fmt.Errorf("image is over %d MB: %w", (MaxImageBytes-1)>>20, ErrImageTooLarge)
+	}
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("reading image header: %v: %w", err, ErrUnreadableImage)
+	}
+	limit := int64(media.Get("").MaxPixels)
+	if px := int64(cfg.Width) * int64(cfg.Height); limit > 0 && px > limit {
+		return nil, fmt.Errorf("image is %dx%d, over the %d megapixel limit: %w",
+			cfg.Width, cfg.Height, limit/1000000, ErrImageTooLarge)
+	}
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("decoding image: %v: %w", err, ErrUnreadableImage)
+	}
+	return img, nil
+}
+
 // ProcessImage resizes an image if it exceeds MaxImageWidth, preserving aspect ratio.
 // Returns the processed image bytes and format.
 func ProcessImage(reader io.Reader, mimeType string) ([]byte, error) {
-	img, _, err := image.Decode(reader)
+	img, err := readImage(reader)
 	if err != nil {
-		return nil, fmt.Errorf("decoding image: %w", err)
+		return nil, err
 	}
 
 	bounds := img.Bounds()
@@ -329,9 +377,9 @@ func ProcessImage(reader io.Reader, mimeType string) ([]byte, error) {
 
 // GenerateThumbnail creates a square thumbnail of the given size.
 func GenerateThumbnail(reader io.Reader, mimeType string) ([]byte, error) {
-	img, _, err := image.Decode(reader)
+	img, err := readImage(reader)
 	if err != nil {
-		return nil, fmt.Errorf("decoding image: %w", err)
+		return nil, err
 	}
 
 	thumb := imaging.Fill(img, ThumbnailSize, ThumbnailSize, imaging.Center, imaging.Lanczos)
@@ -1248,4 +1296,94 @@ func TestGetURL(t *testing.T) {
 	}
 }
 `, module)
+}
+
+// storageImageTestGo is the regression test for H12 in the contact-app review,
+// shipped so it runs where the code does.
+func storageImageTestGo() string {
+	return `package storage
+
+import (
+	"bytes"
+	"compress/zlib"
+	"encoding/binary"
+	"errors"
+	"hash/crc32"
+	"image"
+	"image/color"
+	"image/png"
+	"runtime"
+	"testing"
+)
+
+// pngClaiming is a PNG whose header claims w x h RGBA pixels, with one short
+// row of data behind it. Decoding it allocates for every claimed pixel before
+// discovering the data is not there.
+func pngClaiming(w, h uint32) []byte {
+	var b bytes.Buffer
+	b.WriteString("\x89PNG\r\n\x1a\n")
+	chunk := func(kind string, data []byte) {
+		_ = binary.Write(&b, binary.BigEndian, uint32(len(data)))
+		b.WriteString(kind)
+		b.Write(data)
+		_ = binary.Write(&b, binary.BigEndian, crc32.ChecksumIEEE(append([]byte(kind), data...)))
+	}
+	ihdr := make([]byte, 13)
+	binary.BigEndian.PutUint32(ihdr[0:], w)
+	binary.BigEndian.PutUint32(ihdr[4:], h)
+	ihdr[8], ihdr[9] = 8, 6
+	chunk("IHDR", ihdr)
+	var z bytes.Buffer
+	zw := zlib.NewWriter(&z)
+	_, _ = zw.Write(make([]byte, 64))
+	_ = zw.Close()
+	chunk("IDAT", z.Bytes())
+	chunk("IEND", nil)
+	return b.Bytes()
+}
+
+// A few kilobytes claiming 30000x30000 would allocate 3.6 GB in image.Decode.
+// The thumbnail worker ran that in the API process and retried it five times.
+func TestAPixelBombIsRefusedBeforeDecoding(t *testing.T) {
+	bomb := pngClaiming(30000, 30000)
+	var before, after runtime.MemStats
+	runtime.ReadMemStats(&before)
+	_, err := GenerateThumbnail(bytes.NewReader(bomb), "image/png")
+	runtime.ReadMemStats(&after)
+	if !errors.Is(err, ErrImageTooLarge) {
+		t.Fatalf("want ErrImageTooLarge, got %v", err)
+	}
+	if grew := after.TotalAlloc - before.TotalAlloc; grew > 64<<20 {
+		t.Errorf("refusing the image allocated %d MB", grew>>20)
+	}
+	if _, err := ProcessImage(bytes.NewReader(bomb), "image/png"); !errors.Is(err, ErrImageTooLarge) {
+		t.Errorf("ProcessImage: want ErrImageTooLarge, got %v", err)
+	}
+}
+
+func TestNotAnImageIsUnreadable(t *testing.T) {
+	if _, err := GenerateThumbnail(bytes.NewReader([]byte("not an image")), "image/png"); !errors.Is(err, ErrUnreadableImage) {
+		t.Errorf("want ErrUnreadableImage, got %v", err)
+	}
+}
+
+func TestAnOrdinaryImageStillMakesAThumbnail(t *testing.T) {
+	img := image.NewRGBA(image.Rect(0, 0, 640, 480))
+	for x := 0; x < 640; x++ {
+		img.Set(x, x%480, color.RGBA{R: 255, A: 255})
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatal(err)
+	}
+	thumb, err := GenerateThumbnail(bytes.NewReader(buf.Bytes()), "image/png")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, _, err := image.DecodeConfig(bytes.NewReader(thumb))
+	if err != nil || got.Width != ThumbnailSize || got.Height != ThumbnailSize {
+		t.Errorf("thumbnail is %dx%d (%v), want %dx%d", got.Width, got.Height, err, ThumbnailSize, ThumbnailSize)
+	}
+}
+`
 }

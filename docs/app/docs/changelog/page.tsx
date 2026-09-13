@@ -66,6 +66,46 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.250.0 */}
+            <div className="mb-12" id="v3.250.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.250.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An image cannot claim enough pixels to take the API down</h3>
+                <p>
+                  The next finding from the review of a scaffolded app. The image pipeline behind a
+                  direct upload read an image&apos;s dimensions from its header and refused one too
+                  large to decode. The thumbnail job did not: a file uploaded through a presigned URL
+                  went straight to <code>image.Decode</code>, which reserves memory for every pixel
+                  the header claims before reading any of them. Reproduced with a 72-byte PNG that
+                  claims 8000x8000: decoding it allocated 244 MB before failing. At 30000x30000 the
+                  same file asks for 3.4 GB. The job runs inside the API process and was retried five
+                  times, so a file that size would crash the API, and crash it again on every retry.
+                </p>
+                <p>
+                  The storage package&apos;s image helpers now read at most 50 MB, check the pixel
+                  count against the media profile&apos;s limit from the header, and only then decode.
+                  They return <code>storage.ErrImageTooLarge</code> or{' '}
+                  <code>storage.ErrUnreadableImage</code>, and the thumbnail job treats both as
+                  permanent (<code>asynq.SkipRetry</code>), so an image that cannot be processed is
+                  set aside instead of retried. The media pipeline&apos;s own pixel check now
+                  multiplies in 64 bits, so dimensions near the integer limit cannot wrap past it.
+                </p>
+                <p>
+                  <code>grit upgrade</code> delivers the storage and media changes and updates the
+                  thumbnail job in <code>jobs/workers.go</code>. A test that ships with each project
+                  feeds the helpers a PNG claiming 30000x30000 and fails if refusing it allocates more
+                  than 64 MB. One thing this does not change: jobs still run inside the API process.
+                  For heavy image work, run the workers as a separate process.
+                </p>
+              </div>
+            </div>
+
             {/* v3.249.0 */}
             <div className="mb-12" id="v3.249.0">
               <div className="flex items-center gap-3 mb-4">
