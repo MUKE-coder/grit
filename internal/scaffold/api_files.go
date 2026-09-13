@@ -2813,6 +2813,15 @@ func (h *UserHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Only an ADMIN makes an ADMIN, and nobody hands out a role that grants more
+	// than they hold.
+	if reason := authz.RoleBeyondCaller(c, h.DB, req.Role); reason != "" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": gin.H{"code": "FORBIDDEN", "message": "You cannot give that role: " + reason},
+		})
+		return
+	}
+
 	// Check email uniqueness
 	var existing models.User
 	if err := h.DB.Where("email = ?", req.Email).First(&existing).Error; err == nil {
@@ -3024,6 +3033,22 @@ func (h *UserHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// Only an ADMIN changes an ADMIN account or makes one. Before, a users.edit
+	// holder could PUT {"role":"ADMIN"} on themselves, or reset an
+	// administrator's password or email and sign in as them.
+	if !authz.IsAdmin(c) && authz.IsAdminAccount(h.DB, &user) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": gin.H{"code": "FORBIDDEN", "message": "Only an ADMIN can change an ADMIN account"},
+		})
+		return
+	}
+	if reason := authz.RoleBeyondCaller(c, h.DB, req.Role); reason != "" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": gin.H{"code": "FORBIDDEN", "message": "You cannot give that role: " + reason},
+		})
+		return
+	}
+
 	updates := map[string]interface{}{}
 	if req.FirstName != "" {
 		updates["first_name"] = req.FirstName
@@ -3112,6 +3137,14 @@ func (h *UserHandler) Delete(c *gin.Context) {
 				"code":    "NOT_FOUND",
 				"message": "User not found",
 			},
+		})
+		return
+	}
+
+	// Deleting an administrator is an ADMIN's call too.
+	if !authz.IsAdmin(c) && authz.IsAdminAccount(h.DB, &user) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": gin.H{"code": "FORBIDDEN", "message": "Only an ADMIN can change an ADMIN account"},
 		})
 		return
 	}

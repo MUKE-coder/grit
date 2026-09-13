@@ -55,14 +55,28 @@ func ensureRichTextSafety(root string, opts Options) error {
 		}
 	}
 
+	m, err := manifest.Load(root)
+	if err != nil {
+		return err
+	}
 	for _, path := range []string{
 		filepath.Join(root, "apps", "web", "package.json"),
 		filepath.Join(root, "frontend", "package.json"),
 		filepath.Join(root, "package.json"),
 	} {
+		// A package.json Grit wrote and nobody has edited stays Grit's after this
+		// edit. Without the refresh, the next upgrade took the added dependency
+		// for a change of the developer's and stopped updating the file.
+		pristine := false
+		if key, inside := manifest.Rel(root, path); inside {
+			pristine = m.StatusOf(root, key) == manifest.Unchanged
+		}
 		added, err := ensureDependency(path, "dompurify", dompurifyVersion)
 		if err != nil {
 			return err
+		}
+		if added && pristine {
+			manifest.Refresh(path)
 		}
 		if added {
 			rel, _ := filepath.Rel(root, path)

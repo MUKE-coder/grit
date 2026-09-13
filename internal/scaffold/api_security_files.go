@@ -34,6 +34,9 @@ func writeSecurityFiles(root string, opts Options) error {
 		// editing every route.
 		filepath.Join(apiRoot, "internal", "authz", "permissions.go"):      authzPermissionsGo(),
 		filepath.Join(apiRoot, "internal", "authz", "permissions_test.go"): authzPermissionsTestGo(),
+		// The grant ceiling: nobody but an ADMIN hands out more than they hold.
+		filepath.Join(apiRoot, "internal", "authz", "ceiling.go"):      authzCeilingGo(),
+		filepath.Join(apiRoot, "internal", "authz", "ceiling_test.go"): authzCeilingTestGo(),
 		// Role model + the single user->grants resolution seam.
 		filepath.Join(apiRoot, "internal", "models", "role.go"):                  roleModelGo(),
 		filepath.Join(apiRoot, "internal", "authz", "grants.go"):                 authzGrantsGo(),
