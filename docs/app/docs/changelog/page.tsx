@@ -66,6 +66,44 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.253.0 */}
+            <div className="mb-12" id="v3.253.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.253.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The health check no longer stalls Redis</h3>
+                <p>
+                  The next finding from the review of a scaffolded app. <code>/api/health</code>{' '}
+                  counted asynq&apos;s keys with a Lua script that called <code>KEYS asynq:*</code>{' '}
+                  inside Redis on every request. Redis runs commands on one thread, so the scan
+                  blocks every other client while it runs: the cache, rate limits, the job queue,
+                  the realtime backplane. The 500 ms client timeout does not stop a script already
+                  running on the server, asynq keeps a key for every task, and anyone can call the
+                  endpoint. Reproduced with a million keys: the worst Redis round trip went from 3 ms
+                  to 1,261 ms while the health check ran, and the check itself took 813 ms.
+                </p>
+                <p>
+                  The jobs probe now reports up when Redis answers its ping, and takes its queue
+                  counts from <code>jobs.StatsCache</code>: asynq&apos;s inspector, which reads each
+                  queue&apos;s list and set sizes, refreshed in the background at most every 30
+                  seconds. A probe never waits for it. Against the same million keys the worst Redis
+                  round trip stayed at 20 ms and the health check answered in 5 ms. The response
+                  reports <code>queued</code> and <code>active</code> in place of{' '}
+                  <code>queue_keys</code>, and the admin&apos;s System Health page shows them.
+                </p>
+                <p>
+                  <code>grit upgrade</code> delivers <code>jobs/stats.go</code> and the admin page,
+                  and replaces the probe in <code>routes.go</code> when it is still exactly the code
+                  Grit wrote; otherwise it says what to change.
+                </p>
+              </div>
+            </div>
+
             {/* v3.252.0 */}
             <div className="mb-12" id="v3.252.0">
               <div className="flex items-center gap-3 mb-4">

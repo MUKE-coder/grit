@@ -352,6 +352,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairRequestLimits(root, opts); err != nil {
 			fmt.Printf("  ⚠ setting per-route request limits: %v\n", err)
 		}
+		// /api/health reads queue counts from a background snapshot instead of
+		// running KEYS inside Redis on every probe.
+		if err := repairHealthQueueProbe(root, opts); err != nil {
+			fmt.Printf("  ⚠ moving the health check off KEYS: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {
