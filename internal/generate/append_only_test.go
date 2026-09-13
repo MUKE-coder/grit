@@ -36,12 +36,15 @@ func TestAppendOnlyRoutesAreReadAndCreate(t *testing.T) {
 		`m.Protected.GET("/journal_entries", h.List)`,
 		`m.Protected.GET("/journal_entries/:id", h.GetByID)`,
 		`m.Protected.POST("/journal_entries", h.Create)`,
+		// The bulk load, which only inserts: a ledger's history arrives as a CSV
+		// of rows that already happened.
+		`m.Protected.POST("/journal_entries/import", h.Import)`,
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("missing %s", want)
 		}
 	}
-	for _, verb := range []string{"h.Update", "h.Patch", "h.Delete", "h.Bulk", "h.Import"} {
+	for _, verb := range []string{"h.Update", "h.Patch", "h.Delete", "h.Bulk"} {
 		if strings.Contains(src, verb) {
 			t.Errorf("an append-only resource still routes %s", verb)
 		}

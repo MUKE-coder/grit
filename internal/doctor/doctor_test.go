@@ -403,3 +403,77 @@ func TestNotAGritProject(t *testing.T) {
 		t.Fatal("a directory with no API should be refused, not reported as clean")
 	}
 }
+
+// A topic written to the outbox with no relay covering it is a queue that only
+// grows: the write succeeds, the transaction commits, and the row sits at
+// pending forever. Nothing at run time says so.
+func TestOutboxTopicWithNoRelay(t *testing.T) {
+	enqueues := "package services\n\n" +
+		"func (s *LedgerService) transfer(tx *gorm.DB) error {\n" +
+		"\treturn outbox.Enqueue(tx, \"ledger.transfer\", payload, outbox.Key(ref))\n" +
+		"}\n"
+
+	report := run(t, map[string]string{"apps/api/internal/services/ledger.go": enqueues})
+	found := fired(report, "outbox-topic-undelivered")
+	if len(found) != 1 {
+		t.Fatalf("expected one finding, got %d", len(found))
+	}
+	if found[0].Resource != "ledger.transfer" {
+		t.Errorf("the finding names %q", found[0].Resource)
+	}
+
+	// With a relay whose prefix covers it, there is nothing to say.
+	relay := "package main\n\n" +
+		"func main() {\n" +
+		"\trelay := &outbox.Relay{DB: db, TopicPrefix: \"ledger.\", Deliver: send}\n" +
+		"\trelay.Start(ctx)\n" +
+		"}\n"
+	report = run(t, map[string]string{
+		"apps/api/internal/services/ledger.go": enqueues,
+		"apps/api/cmd/ledgerrelay/main.go":     relay,
+	})
+	if f := fired(report, "outbox-topic-undelivered"); len(f) != 0 {
+		t.Errorf("a covered topic was reported: %s", f[0].Message)
+	}
+
+	// A relay with no prefix drains everything.
+	report = run(t, map[string]string{
+		"apps/api/internal/services/ledger.go": enqueues,
+		"apps/api/cmd/relay/main.go":           "package main\n\nvar r = &outbox.Relay{DB: db, Deliver: send}\n",
+	})
+	if f := fired(report, "outbox-topic-undelivered"); len(f) != 0 {
+		t.Errorf("a relay with no prefix covers every topic: %s", f[0].Message)
+	}
+
+	// The event bus's own topics are covered by the relay the framework starts,
+	// and that relay names its prefix through a constant.
+	report = run(t, map[string]string{
+		"apps/api/internal/events/durable.go": "package events\n\n" +
+			"const durableTopicPrefix = \"event:\"\n\n" +
+			"func start(db *gorm.DB) {\n" +
+			"\trelay := &outbox.Relay{DB: db, Deliver: deliverDurable, TopicPrefix: durableTopicPrefix}\n" +
+			"\trelay.Start(ctx)\n}\n",
+		"apps/api/internal/events/bus.go": "package events\n\n" +
+			"func publish(tx *gorm.DB) error {\n" +
+			"\treturn outbox.Enqueue(tx, \"event:invoice.created\", payload)\n}\n",
+	})
+	if f := fired(report, "outbox-topic-undelivered"); len(f) != 0 {
+		t.Errorf("the event bus runs its own relay: %s", f[0].Message)
+	}
+}
+
+// The check reads code, not documentation. The outbox package's own comment
+// shows an Enqueue call, and reporting a project for a line of prose is how a
+// linter loses its audience.
+func TestOutboxCheckIgnoresComments(t *testing.T) {
+	report := run(t, map[string]string{
+		"apps/api/internal/outbox/outbox.go": "package outbox\n\n" +
+			"// Enqueue writes a message.\n" +
+			"//\n" +
+			"//\treturn outbox.Enqueue(tx, \"orders.created\", order, outbox.Key(order.ID))\n" +
+			"func Enqueue() {}\n",
+	})
+	if f := fired(report, "outbox-topic-undelivered"); len(f) != 0 {
+		t.Errorf("a doc comment was read as code: %s", f[0].Message)
+	}
+}

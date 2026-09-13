@@ -426,6 +426,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Native desktop binary with Wails v2 + React + Tailwind on the front and Go + GORM (SQLite or Postgres) on the back. Local auth, PDF + Excel export, frameless window, draggable panels.',
   },
+  '/docs/backend/outbox': {
+    title: 'The transactional outbox',
+    description:
+      'Enqueue a message in the same transaction as the write it is about, and let a relay deliver it: keys for idempotency, retries with backoff, parked failures, and a doctor check for a topic no relay covers.',
+  },
   '/docs/backend/errors': {
     title: 'Error codes',
     description:

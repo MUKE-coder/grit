@@ -99,6 +99,7 @@ jobs:
           grit generate resource Product \
             --fields "name:string,slug:slug,price:money,secret:text:encrypted,category:belongs_to:Category,tags:many_to_many:Tag" \
             --public
+          grit generate resource Entry --append-only --fields "ref:string,memo:text"
           grit generate resource Invoice --fields "number:string" \
             --items "InvoiceItem:description:string,qty:int,unit_rate:float"
 

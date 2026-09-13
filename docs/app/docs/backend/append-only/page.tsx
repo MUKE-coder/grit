@@ -191,6 +191,13 @@ GORM_STUDIO_DISABLE_SQL=false   # true turns the raw SQL editor off`}
                 rather than generating a resource that looks protected and is not.
               </p>
 
+              <p>
+                The CSV import is routed, because importing only inserts:{' '}
+                <code>CreateInBatches</code> with <code>OnConflict DoNothing</code>, never an
+                update. That matters for the resources this flag is for, whose history arrives as
+                a file of rows that already happened (v3.240.0).
+              </p>
+
               <Callout type="note" title="Limits">
                 <code>--append-only</code> cannot be combined with <code>--tree</code>: moving a
                 node rewrites its path, which is an update. The handler still contains its update

@@ -42,17 +42,24 @@ func (g *Generator) prepareAppendOnly() error {
 	return scaffold.EnsureAppendOnlyWiring(api, g.Module)
 }
 
-// writeAppendOnlyRoutes emits the routes for an append-only resource: read and
-// create. Closes the Mount function the caller opened.
+// writeAppendOnlyRoutes emits the routes for an append-only resource: read,
+// create and bulk load. Closes the Mount function the caller opened.
 //
-// Update, Patch, Delete, Bulk and Import stay in the handler, unrouted. If the
-// business later decides a correction may be made in place, that is one route
-// rather than a regenerate over code someone has edited; the table refuses the
-// write regardless until the model stops registering itself.
+// Update, Patch, Delete and Bulk stay in the handler, unrouted. If the business
+// later decides a correction may be made in place, that is one route rather than
+// a regenerate over code someone has edited; the table refuses the write
+// regardless until the model stops registering itself.
+//
+// Import is routed, because it only inserts: CreateInBatches with OnConflict
+// DoNothing, never an update. Leaving it out cost an append-only resource its
+// bulk load, which is the first thing a ledger or an audit trail needs: history
+// arrives as a CSV of rows that already happened.
 func (g *Generator) writeAppendOnlyRoutes(w io.Writer, names Names) {
 	routes := []string{
 		`GET("%s", h.List)`,
 		`GET("%s/export", h.Export)`,
+		`POST("%s/import", h.Import)`,
+		`GET("%s/import/template", h.Template)`,
 		`GET("%s/:id", h.GetByID)`,
 		`GET("%s/:id/pdf", h.PDF)`,
 		`POST("%s", h.Create)`,

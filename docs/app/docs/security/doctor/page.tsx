@@ -50,6 +50,11 @@ const checks: { name: string; level: string; what: string }[] = [
     what: 'An append-only resource still mounts PUT, PATCH or DELETE. The model and the database trigger refuse the write, so the endpoint can only fail.',
   },
   {
+    name: 'outbox-topic-undelivered',
+    level: 'warning',
+    what: 'The project enqueues outbox messages on a topic no relay covers, so those rows stay pending forever. The event bus relays its own "event:" topics and leaves the rest to you.',
+  },
+  {
     name: 'studio-unprotected',
     level: 'error / warning',
     what: 'GORM Studio browses and edits every table. An error when it has no login at all, and when its password is still the default in production.',
@@ -105,7 +110,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  13 checks over 0 resource(s)
+  17 checks over 0 resource(s)
 
   ✓ Nothing to report.`} />
 
@@ -124,7 +129,7 @@ export default function DoctorPage() {
 
               <CodeBlock terminal code={`$ grit doctor
 
-  13 checks over 10 resource(s)
+  17 checks over 10 resource(s)
 
   ✗ Product has encrypted fields, and FIELD_ENCRYPTION_KEY is not set in .env, so they are stored in the clear
       set FIELD_ENCRYPTION_KEY to 32 random bytes (openssl rand -base64 32), or set it in the deployment's environment
