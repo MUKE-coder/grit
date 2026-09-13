@@ -167,6 +167,12 @@ func (h *RoleHandler) Create(c *gin.Context) {
 		respond.BadRequest(c, "Unknown permissions: "+strings.Join(bad, ", "))
 		return
 	}
+	// A role hands out at most what its author holds, or a roles.create or
+	// roles.edit holder could write "*" into a role and take it.
+	if beyond := authz.CannotGrant(c, in.Grants); len(beyond) > 0 {
+		respond.Forbidden(c, "You cannot grant permissions you do not hold: "+strings.Join(beyond, ", "))
+		return
+	}
 
 	var existing models.Role
 	if err := h.DB.Where("name = ?", in.Name).First(&existing).Error; err == nil {
@@ -201,6 +207,19 @@ func (h *RoleHandler) Update(c *gin.Context) {
 	}
 	if bad := validateGrants(in.Grants); len(bad) > 0 {
 		respond.BadRequest(c, "Unknown permissions: "+strings.Join(bad, ", "))
+		return
+	}
+	// A role hands out at most what its author holds, or a roles.create or
+	// roles.edit holder could write "*" into a role and take it.
+	if beyond := authz.CannotGrant(c, in.Grants); len(beyond) > 0 {
+		respond.Forbidden(c, "You cannot grant permissions you do not hold: "+strings.Join(beyond, ", "))
+		return
+	}
+
+	// Only an ADMIN changes a built-in role: taking "*" out of ADMIN locks out
+	// every administrator.
+	if role.IsSystem && !authz.IsAdmin(c) {
+		respond.Forbidden(c, "Only an ADMIN can change a built-in role")
 		return
 	}
 
@@ -304,6 +323,31 @@ func (h *RoleHandler) AssignUserRoles(c *gin.Context) {
 		if int(n) != len(in.RoleIDs) {
 			respond.BadRequest(c, "One or more roles do not exist")
 			return
+		}
+	}
+
+	// The ceiling applies to assignment too: only an ADMIN changes an ADMIN's
+	// roles or hands out ADMIN, and nobody else hands out a role that grants more
+	// than they hold. Before, a users.edit holder could assign themselves ADMIN.
+	if !authz.IsAdmin(c) {
+		if authz.IsAdminAccount(h.DB, &user) {
+			respond.Forbidden(c, "Only an ADMIN can change an ADMIN's roles")
+			return
+		}
+		var roles []models.Role
+		if err := h.DB.Where("id IN ?", in.RoleIDs).Find(&roles).Error; err != nil {
+			respond.Internal(c, err)
+			return
+		}
+		for i := range roles {
+			if strings.EqualFold(roles[i].Name, models.RoleAdmin) {
+				respond.Forbidden(c, "Only an ADMIN can assign the ADMIN role")
+				return
+			}
+			if beyond := authz.CannotGrant(c, roles[i].GrantsList()); len(beyond) > 0 {
+				respond.Forbidden(c, fmt.Sprintf("The %s role grants permissions you do not hold: %s", roles[i].Name, strings.Join(beyond, ", ")))
+				return
+			}
 		}
 	}
 

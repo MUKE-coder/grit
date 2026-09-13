@@ -66,6 +66,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.247.0 */}
+            <div className="mb-12" id="v3.247.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.247.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A delegated role can no longer make itself ADMIN</h3>
+                <p>
+                  The next finding from the review of a scaffolded app, reproduced before it was
+                  fixed. An account given only <code>users.edit</code> and <code>roles.edit</code>,
+                  the kind of role you would hand a support lead, made itself ADMIN by setting its own
+                  role, made itself ADMIN again by assigning itself the ADMIN role, reset an
+                  administrator&apos;s password, deleted that administrator, wrote <code>*</code>{' '}
+                  into its own role, and created a role with a permission it did not have. Every one
+                  of those requests was answered 200.
+                </p>
+                <p>
+                  There is now a grant ceiling, in <code>internal/authz/ceiling.go</code>. An ADMIN
+                  hands out anything. Anyone else hands out at most what they hold: a role they create
+                  or edit may grant only permissions they have, a role they assign may grant only
+                  permissions they have, and a wildcard counts as every permission it expands to. Only
+                  an ADMIN makes an ADMIN, changes or deletes an ADMIN account (the ADMIN role, or
+                  roles that together grant everything), or edits a built-in role. A delegate still
+                  edits ordinary accounts and creates roles within their own grants.
+                </p>
+                <p>
+                  <code>grit upgrade</code> adds <code>ceiling.go</code> and puts the checks into your
+                  user and role handlers where they still read as Grit wrote them. The role tests that
+                  ship with the project now act as an ADMIN, which they always meant to, and gain a
+                  test of the ceiling.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Verified live on a fresh project and on one upgraded from v3.246.0: all six
+                  escalations are refused and the three legitimate actions still work. The CI live
+                  suite gains the same checks. Also fixed: since v3.242.0, <code>grit upgrade</code>{' '}
+                  added <code>dompurify</code> to the web app&apos;s <code>package.json</code>{' '}
+                  without recording that the edit was its own, so the next upgrade treated the file
+                  as yours and stopped updating it. It now records the edit; a file already marked
+                  that way stays marked, and <code>grit upgrade --diff</code> shows what it holds back.
+                </p>
+              </div>
+            </div>
+
             {/* v3.246.0 */}
             <div className="mb-12" id="v3.246.0">
               <div className="flex items-center gap-3 mb-4">

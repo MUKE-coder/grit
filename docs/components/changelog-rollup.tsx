@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 7 to 13, 2026",
-    count: 56,
+    count: 57,
     entries: [
+      { version: "3.247.0", title: "A delegated role can no longer make itself ADMIN" },
       { version: "3.246.0", title: "Database backups are no longer in a public bucket" },
       { version: "3.245.0", title: "A two-factor code can be used once, and cannot be guessed" },
       { version: "3.244.0", title: "A refresh token is not an access token, and logging out ends the session" },

@@ -251,6 +251,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairTwoFactor(root, opts); err != nil {
 			fmt.Printf("  ⚠ hardening two-factor sign-in: %v\n", err)
 		}
+		// The grant ceiling: a users.edit or roles.edit holder cannot make
+		// themselves ADMIN or hand out more than they hold.
+		if err := repairGrantCeiling(root, opts); err != nil {
+			fmt.Printf("  ⚠ adding the grant ceiling: %v\n", err)
+		}
 		// The activity-log chain was hashed at a precision Postgres and MySQL
 		// do not store, so it failed verification on its first row. Only where
 		// the audit package is already there.

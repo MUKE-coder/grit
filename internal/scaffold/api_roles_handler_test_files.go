@@ -49,6 +49,8 @@ func roleRouter(db *gorm.DB) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	h := NewRoleHandler(db)
 	r := gin.New()
+	// These tests act as an ADMIN. The grant ceiling has tests of its own.
+	r.Use(func(c *gin.Context) { c.Set("user_role", "ADMIN"); c.Next() })
 	r.GET("/permissions", h.Catalog)
 	r.GET("/roles", h.List)
 	r.POST("/roles", h.Create)
@@ -200,6 +202,45 @@ func TestRoleAPI_AssignUserRoles(t *testing.T) {
 	// Unknown role ids are rejected rather than silently dropped.
 	w = do(t, r, "PUT", "/users/u1/roles", map[string]any{"role_ids": []string{"does-not-exist"}})
 	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func staffRoleRouter(db *gorm.DB, grants []string) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	h := NewRoleHandler(db)
+	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("user_role", "USER")
+		c.Set("user_grants", grants)
+		c.Next()
+	})
+	r.POST("/roles", h.Create)
+	r.PUT("/roles/:id", h.Update)
+	r.PUT("/users/:id/roles", h.AssignUserRoles)
+	return r
+}
+
+// A roles.edit or users.edit holder hands out at most what they hold. Before
+// the ceiling, either could make themselves ADMIN.
+func TestRoleAPI_GrantCeiling(t *testing.T) {
+	db := roleTestDB(t)
+	r := staffRoleRouter(db, []string{"roles.create", "roles.edit", "users.edit", "users.view"})
+
+	w := do(t, r, "POST", "/roles", map[string]any{"name": "everything", "grants": []string{"*"}})
+	assert.Equal(t, http.StatusForbidden, w.Code, "a non-admin created a role with *")
+	w = do(t, r, "POST", "/roles", map[string]any{"name": "deleter", "grants": []string{"users.delete"}})
+	assert.Equal(t, http.StatusForbidden, w.Code, "a role granting a permission its author lacks was created")
+	w = do(t, r, "POST", "/roles", map[string]any{"name": "viewer", "grants": []string{"users.view"}})
+	assert.Equal(t, http.StatusCreated, w.Code, w.Body.String())
+
+	var admin models.Role
+	require.NoError(t, db.Where("name = ?", "ADMIN").First(&admin).Error)
+	u := models.User{FirstName: "Del", LastName: "Egate", Email: "delegate@example.com", Password: "password123", Role: "USER", Active: true}
+	require.NoError(t, db.Create(&u).Error)
+
+	w = do(t, r, "PUT", "/users/"+u.ID+"/roles", map[string]any{"role_ids": []string{admin.ID}})
+	assert.Equal(t, http.StatusForbidden, w.Code, "a non-admin assigned the ADMIN role")
+	w = do(t, r, "PUT", "/roles/"+admin.ID, map[string]any{"name": "ADMIN", "grants": []string{"users.view"}})
+	assert.Equal(t, http.StatusForbidden, w.Code, "a non-admin changed the ADMIN role")
 }
 `
 	return strings.ReplaceAll(src, "~", "`")

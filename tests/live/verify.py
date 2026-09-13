@@ -688,6 +688,37 @@ def check_stored_xss(admin):
           (status, edited[:120]))
 
 
+def check_grant_ceiling(admin, admin_id):
+    """A users.edit or roles.edit holder could make themselves ADMIN, reset an
+    administrator's password, or write "*" into their own role (H2, v3.247.0)."""
+    token, delegate_id, email = register('delegate')
+    status, _, body = call('POST', '/api/v1/roles', admin, {
+        'name': 'Delegate ' + RUN[:6],
+        'grants': ['users.view', 'users.edit', 'roles.view', 'roles.create', 'roles.edit']})
+    role_id = (data(body) or {}).get('id')
+    call('PUT', '/api/v1/users/%s/roles' % delegate_id, admin, {'role_ids': [role_id]})
+    delegate, _ = login(email)
+    check('Ceiling: a delegate holds users.edit and roles.edit', status in (200, 201) and role_id, (status, body[:160]))
+
+    _, _, body = call('GET', '/api/v1/roles', admin)
+    admin_role = next((r.get('id') for r in (data(body) or []) if r.get('name') == 'ADMIN'), 'missing')
+
+    for label, (method, path, payload) in {
+        'make themselves ADMIN': ('PUT', '/api/v1/users/%s' % delegate_id, {'role': 'ADMIN'}),
+        'assign themselves the ADMIN role': ('PUT', '/api/v1/users/%s/roles' % delegate_id, {'role_ids': [admin_role]}),
+        "reset an administrator's password": ('PUT', '/api/v1/users/%s' % admin_id, {'password': 'Hijacked-123456'}),
+        'write * into their own role': ('PUT', '/api/v1/roles/%s' % role_id, {'name': 'Delegate ' + RUN[:6], 'grants': ['*']}),
+        'create a role with a permission they lack': ('POST', '/api/v1/roles', {'name': 'Deleter ' + RUN[:6], 'grants': ['users.delete']}),
+    }.items():
+        status, _, body = call(method, path, delegate, payload)
+        check('Ceiling: a delegate cannot %s (403)' % label, status == 403, (status, body[:160]))
+
+    role = psql("select role from users where id = '%s'" % delegate_id)
+    check('Ceiling: the delegate is not an ADMIN afterwards', role != 'ADMIN', role)
+    status, _, body = call('PUT', '/api/v1/users/%s' % delegate_id, delegate, {'job_title': 'Delegate'})
+    check('Ceiling: a delegate still edits an ordinary account', status == 200, (status, body[:160]))
+
+
 def main():
     global args
     parser = argparse.ArgumentParser(description=__doc__)
@@ -757,6 +788,7 @@ def main():
     check_error_codes(alice, alice_email)
     check_review_criticals(bob, bob_id, admin)
     check_stored_xss(admin)
+    check_grant_ceiling(admin, admin_id)
 
     width = max(len(name) for name, _, _ in results)
     failed = 0
