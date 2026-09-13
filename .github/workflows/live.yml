@@ -386,6 +386,7 @@ jobs:
           grit generate resource Product \
             --fields "name:string,slug:slug,price:money,secret:text:encrypted,category:belongs_to:Category,tags:many_to_many:Tag" \
             --public
+          grit generate resource Entry --append-only --fields "ref:string,memo:text"
           grit generate resource Invoice --fields "number:string" \
             --items "InvoiceItem:description:string,qty:int,unit_rate:float"
 
@@ -400,6 +401,13 @@ jobs:
       - name: Migrate
         if: matrix.engine != 'memory'
         run: |
+          # MySQL with binary logging on (the image default, and RDS) refuses
+          # CREATE TRIGGER from a user without SUPER. Allow it here so the
+          # append-only trigger is installed and its refusal is checked, rather
+          # than skipped with the warning a production MySQL would print.
+          if [ "${{ matrix.engine }}" = "mysql" ]; then
+            mysql -h 127.0.0.1 -uroot -prootpass -e "SET GLOBAL log_bin_trust_function_creators = 1;"
+          fi
           cd /tmp/engines/app/apps/api
           go run ./cmd/migrate --grit-version ci
 

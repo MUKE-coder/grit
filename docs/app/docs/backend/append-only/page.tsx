@@ -203,10 +203,13 @@ GORM_STUDIO_DISABLE_SQL=false   # true turns the raw SQL editor off`}
                 node rewrites its path, which is an update. The handler still contains its update
                 and delete methods, unrouted, so allowing corrections in place later is a route
                 rather than a regenerate; the table refuses them regardless while the model
-                registers itself. The triggers have been run against Postgres and SQLite. The
-                MySQL trigger is written but has not yet been exercised against a live MySQL, where
-                creating triggers can require the <code>TRIGGER</code> privilege or, with binary
-                logging on, <code>log_bin_trust_function_creators</code>.
+                registers itself. The triggers have been run against Postgres, SQLite and MySQL
+                8.4. On MySQL with binary logging on, which is the default and the norm on RDS, a
+                user without SUPER cannot create a trigger at all: <code>grit migrate</code> then
+                logs what is missing and carries on, so the API still refuses a change but raw SQL
+                does not. Set <code>log_bin_trust_function_creators</code> (in the RDS parameter
+                group, or with <code>SET GLOBAL</code>) and migrate again to add the database
+                guard (v3.240.1).
               </Callout>
 
               <div className="mt-16 flex items-center justify-between border-t border-border/30 pt-8">
