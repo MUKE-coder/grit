@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 7 to 13, 2026",
-    count: 54,
+    count: 55,
     entries: [
+      { version: "3.245.0", title: "A two-factor code can be used once, and cannot be guessed" },
       { version: "3.244.0", title: "A refresh token is not an access token, and logging out ends the session" },
       { version: "3.243.0", title: "Production is the default: login limits that fire, no SQL console, no default passwords" },
       { version: "3.242.0", title: "Stored XSS: rich text is sanitised on its way into the database, and again in the browser" },

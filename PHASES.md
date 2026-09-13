@@ -1196,7 +1196,7 @@ pushed, and name the version.
 - [x] H3 F (v3.242.0) - stored XSS in blog posts (unsanitised HTML in API and web)
 - [ ] H4 F - any user lists uploads; CompleteUpload accepts any object key (list and read scoping shipped in v3.241.0; the CompleteUpload key check is open)
 - [x] H5 F (v3.244.0) - refresh tokens accepted as access tokens; no session check; refresh cookie path mismatch
-- [ ] H6 F - TOTP brute force and replay; Enable overwrites; Verify skips lock checks
+- [x] H6 F (v3.245.0) - TOTP brute force and replay; Enable overwrites; Verify skips lock checks
 - [x] H7 F (v3.243.0) - login rate limits keyed to unversioned paths; APP_ENV defaults to development
 - [x] H8 F+A (v3.241.0) - real secrets in .env.example; *.db not git-ignored
 - [x] H9 F (v3.243.0) - GORM Studio (writable SQL) on in production; /docs public

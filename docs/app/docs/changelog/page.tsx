@@ -66,6 +66,66 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.245.0 */}
+            <div className="mb-12" id="v3.245.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.245.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A two-factor code can be used once, and cannot be guessed</h3>
+                <p>
+                  The next finding from the review of a scaffolded app, reproduced before it was
+                  fixed: five of nine checks failed. Anyone who had the password could get past 2FA.
+                </p>
+                <ul>
+                  <li>
+                    <strong>Unlimited guesses.</strong> A pending token took as many codes as could be
+                    sent in its five minutes, and a correct password cleared the account&apos;s
+                    failure count, so signing in again handed out a fresh supply. A code has a million
+                    values and three of them are valid at any moment.
+                  </li>
+                  <li>
+                    <strong>Replay.</strong> A code signed in again for as long as it was valid,
+                    including the code used to turn 2FA on.
+                  </li>
+                  <li>
+                    <strong>Silent re-enrolment.</strong> Enabling 2FA replaced a secret that was
+                    already enabled, so a stolen session could move the account to the
+                    attacker&apos;s authenticator.
+                  </li>
+                  <li>
+                    <strong>Skipped checks.</strong> The second step did not refuse a disabled or
+                    locked account, which the password step does.
+                  </li>
+                </ul>
+                <p>
+                  Now each pending token takes five wrong codes and is then spent. Every wrong code
+                  also counts against the account on the same counter as wrong passwords, which is
+                  cleared only when a sign-in completes, so ten wrong codes across any number of
+                  sign-ins lock the account for fifteen minutes (<code>totp.MaxFailedAttempts</code>,{' '}
+                  <code>totp.LockoutDuration</code>). The time step of each accepted code is stored
+                  and only a later one is accepted, through a conditional update so two requests
+                  cannot spend one code; the code that enabled 2FA is spent too. Codes are compared in
+                  constant time, the pending token is spent by exactly one request, enabling is
+                  refused while 2FA is on, and the second step checks for a disabled or locked
+                  account. A backup-code sign-in now sets the browser&apos;s cookies as well.
+                </p>
+                <p>
+                  <code>grit upgrade</code> delivers the TOTP package, its models (two new columns,
+                  added by <code>grit migrate</code>) and the handler, and moves the failure-count
+                  reset in your login handler to after the 2FA step.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  After the fix all nine checks pass, computing real codes against a fresh project and
+                  an upgraded copy of the reviewed app, and they run in the CI live suite.
+                </p>
+              </div>
+            </div>
+
             {/* v3.244.0 */}
             <div className="mb-12" id="v3.244.0">
               <div className="flex items-center gap-3 mb-4">

@@ -246,6 +246,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairTokenSafety(root, opts); err != nil {
 			fmt.Printf("  ⚠ tying tokens to their sessions: %v\n", err)
 		}
+		// Two-factor sign-in: codes cannot be guessed without limit or used
+		// twice, and enabling 2FA does not replace a secret already in use.
+		if err := repairTwoFactor(root, opts); err != nil {
+			fmt.Printf("  ⚠ hardening two-factor sign-in: %v\n", err)
+		}
 		// The activity-log chain was hashed at a precision Postgres and MySQL
 		// do not store, so it failed verification on its first row. Only where
 		// the audit package is already there.
