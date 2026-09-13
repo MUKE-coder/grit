@@ -383,6 +383,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os"{{STRCONV}}
 	"strings"
 
@@ -412,13 +413,21 @@ func (s *{{Pascal}}Service) StartImport(ctx context.Context, total int) (*models
 // multitenant plugin stamps them with.
 func (s *{{Pascal}}Service) ImportCSV(ctx context.Context, jobID, path string) {
 	db := s.db(ctx)
+	// record writes the job's state for the client polling it. A failure is
+	// logged rather than dropped: the import carries on, and a job stuck on
+	// its last state is at least explained.
+	record := func(fields map[string]interface{}) {
+		if err := db.Model(&models.ImportJob{}).Where("id = ?", jobID).Updates(fields).Error; err != nil {
+			log.Printf("import job %s: recording progress: %v", jobID, err)
+		}
+	}
 {{OWNER_SETUP}}	defer os.Remove(path)
 	// This runs in a bare goroutine, so gin.Recovery() does NOT cover it: an
 	// unrecovered panic here would crash the whole server. Recover, and mark
 	// the job failed so the client's poll terminates instead of hanging.
 	defer func() {
 		if r := recover(); r != nil {
-			db.Model(&models.ImportJob{}).Where("id = ?", jobID).Updates(map[string]interface{}{
+			record(map[string]interface{}{
 				"status":  "failed",
 				"message": fmt.Sprintf("import crashed: %v", r),
 			})
@@ -427,7 +436,7 @@ func (s *{{Pascal}}Service) ImportCSV(ctx context.Context, jobID, path string) {
 
 	f, err := os.Open(path)
 	if err != nil {
-		db.Model(&models.ImportJob{}).Where("id = ?", jobID).Updates(map[string]interface{}{
+		record(map[string]interface{}{
 			"status": "failed", "message": "could not reopen upload",
 		})
 		return
@@ -439,7 +448,7 @@ func (s *{{Pascal}}Service) ImportCSV(ctx context.Context, jobID, path string) {
 
 	headers, err := reader.Read()
 	if err != nil {
-		db.Model(&models.ImportJob{}).Where("id = ?", jobID).Updates(map[string]interface{}{
+		record(map[string]interface{}{
 			"status": "failed", "message": "empty or invalid CSV",
 		})
 		return
@@ -461,7 +470,7 @@ func (s *{{Pascal}}Service) ImportCSV(ctx context.Context, jobID, path string) {
 	// checkpoint writes current progress so the client's poll sees movement.
 	checkpoint := func(status, message string) {
 		errsJSON, _ := json.Marshal(rowErrors)
-		db.Model(&models.ImportJob{}).Where("id = ?", jobID).Updates(map[string]interface{}{
+		record(map[string]interface{}{
 			"status":    status,
 			"processed": created + skipped + failed,
 			"created":   created,

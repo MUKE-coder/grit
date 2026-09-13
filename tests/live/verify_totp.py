@@ -123,6 +123,42 @@ status, body = login()
 check('ten wrong codes across sign-ins lock the account (429)', status == 429 and code_of(body) == 'ACCOUNT_LOCKED',
       (status, code_of(body)))
 
+# Backup codes: two sign-ins race to spend one code. Exactly one may win; the
+# spend used to be a plain save, so both could.
+import threading
+
+backup_email = 'backup-%s@example.com' % uuid.uuid4().hex[:8]
+call('POST', '/api/v1/auth/register',
+     {'first_name': 'Back', 'last_name': 'Up', 'email': backup_email, 'password': PASSWORD})
+status, body = call('POST', '/api/v1/auth/login', {'email': backup_email, 'password': PASSWORD})
+backup_access = ((body.get('data') or {}).get('tokens') or {}).get('access_token')
+status, body = call('POST', '/api/v1/auth/totp/setup', bearer=backup_access)
+backup_secret = (body.get('data') or {}).get('secret')
+status, body = call('POST', '/api/v1/auth/totp/enable',
+                    {'secret': backup_secret, 'code': totp(backup_secret, step_now())}, bearer=backup_access)
+codes = (body.get('data') or {}).get('backup_codes') or []
+check('enabling 2FA hands out backup codes', status == 200 and codes, (status, code_of(body)))
+
+pendings = []
+for _ in range(2):
+    status, body = call('POST', '/api/v1/auth/login', {'email': backup_email, 'password': PASSWORD})
+    pendings.append((body.get('data') or {}).get('pending_token'))
+race, gate = [], threading.Barrier(2)
+
+
+def spend(pending_token):
+    gate.wait()
+    s, _ = call('POST', '/api/v1/auth/totp/backup-codes/verify', {'pending_token': pending_token, 'code': codes[0]})
+    race.append(s)
+
+
+threads = [threading.Thread(target=spend, args=(p,)) for p in pendings]
+for th in threads:
+    th.start()
+for th in threads:
+    th.join()
+check('one backup code signs in once, however many sign-ins race for it', sorted(race) == [200, 401], race)
+
 width = max(len(n) for n, _, _ in results)
 failed = 0
 for name, ok, detail in results:

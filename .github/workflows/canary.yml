@@ -75,6 +75,9 @@ jobs:
           cd /tmp/canary/app
           if [ -d apps/api ]; then cd apps/api; fi
           go build ./...
+          # pipefail: without it the step reports tail's exit code, and a
+          # failing generated test passes CI.
+          set -o pipefail
           go test ./... 2>&1 | tail -20
 
       # The generated app's dependency surface is what users actually deploy, and

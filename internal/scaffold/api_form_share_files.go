@@ -352,6 +352,7 @@ func formShareHandlerGo() string {
 	return `package handlers
 
 import (
+	"log"
 	"crypto/rand"
 	"encoding/base64"
 	"net/http"
@@ -668,10 +669,12 @@ func (h *FormShareHandler) PublicSubmit(c *gin.Context) {
 
 	// Bump submission count (best-effort — failure here doesn't
 	// retroactively invalidate the user's submission).
-	h.DB.Model(&share).UpdateColumns(map[string]interface{}{
+	if err := h.DB.Model(&share).UpdateColumns(map[string]interface{}{
 		"submission_count": share.SubmissionCount + 1,
 		"updated_at":       time.Now(),
-	})
+	}).Error; err != nil {
+		log.Printf("form share %s: counting a submission: %v", share.ID, err)
+	}
 
 	// v3.31.25 — write the audit row. Best-effort; failure here means
 	// the visitor still gets their record, the admin just misses one
@@ -680,13 +683,15 @@ func (h *FormShareHandler) PublicSubmit(c *gin.Context) {
 	if len(ua) > 500 {
 		ua = ua[:500]
 	}
-	_ = h.DB.Create(&models.FormSubmission{
+	if err := h.DB.Create(&models.FormSubmission{
 		ShareID:      share.ID,
 		ResourceName: share.ResourceName,
 		RecordID:     out.ID,
 		IP:           c.ClientIP(),
 		UserAgent:    ua,
-	}).Error
+	}).Error; err != nil {
+		log.Printf("form share %s: writing the audit row for record %s: %v", share.ID, out.ID, err)
+	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"data": gin.H{

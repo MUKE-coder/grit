@@ -108,6 +108,9 @@ jobs:
           cd /tmp/live/app/apps/api
           go build ./...
           go vet ./...
+          # pipefail: without it the step reports tail's exit code, and a
+          # failing generated test passes CI.
+          set -o pipefail
           go test ./... 2>&1 | tail -30
 
       - name: Audit the generated project

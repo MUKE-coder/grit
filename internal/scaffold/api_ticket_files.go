@@ -89,6 +89,7 @@ func ticketHandlerGo() string {
 	return `package handlers
 
 import (
+	"log"
 	"fmt"
 	"net/http"
 	"strings"
@@ -439,8 +440,10 @@ func (h *TicketHandler) emitTicketCreated(t *models.Ticket, creator *models.User
 			Link:     "/system/support/" + t.ID,
 			Dedup:    "ticket-created:" + t.ID + ":" + a.ID,
 		}
-		// Ignore unique-index collisions — duplicate fires are no-ops.
-		h.DB.FirstOrCreate(&n, models.Notification{Dedup: n.Dedup})
+		// FirstOrCreate on the dedup key, so a duplicate fire is a no-op.
+		if err := h.DB.FirstOrCreate(&n, models.Notification{Dedup: n.Dedup}).Error; err != nil {
+			log.Printf("tickets: notifying %s of ticket %s: %v", a.ID, t.ID, err)
+		}
 	}
 }
 

@@ -286,12 +286,14 @@ func totpHandlerGo() string {
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	qrcode "github.com/skip2/go-qrcode"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/models"
@@ -538,13 +540,33 @@ func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 	remaining := make([]string, 0, len(config.BackupCodes)-1)
 	remaining = append(remaining, config.BackupCodes[:idx]...)
 	remaining = append(remaining, config.BackupCodes[idx+1:]...)
-	config.BackupCodes = remaining
-	if err := h.DB.Model(config).Update("backup_codes", config.BackupCodes).Error; err != nil {
+	// The update matches only while the list is still the one this request
+	// read. Two requests carrying the same code both find it in the list; only
+	// the first to write can spend it, and the other is refused.
+	read, err := json.Marshal([]string(config.BackupCodes))
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to use the backup code"},
 		})
 		return
 	}
+	res := h.DB.Model(&models.TwoFactorConfig{}).
+		Where("id = ? AND backup_codes = ?", config.ID, string(read)).
+		Update("backup_codes", datatypes.JSONSlice[string](remaining))
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to use the backup code"},
+		})
+		return
+	}
+	if res.RowsAffected != 1 {
+		h.failSecondFactor(pending, user)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": gin.H{"code": "INVALID_BACKUP_CODE", "message": "Invalid backup code"},
+		})
+		return
+	}
+	config.BackupCodes = remaining
 
 	h.completeSecondFactor(c, pending, user, req.TrustDevice, gin.H{"backup_codes_remaining": len(remaining)},
 		"Logged in successfully with backup code")
@@ -717,10 +739,22 @@ func (h *TOTPHandler) Disable(c *gin.Context) {
 		return
 	}
 
-	// Delete TOTP config, trusted devices, and pending tokens
-	h.DB.Where("user_id = ?", userID).Delete(&models.TwoFactorConfig{})
-	h.DB.Where("user_id = ?", userID).Delete(&models.TrustedDevice{})
-	h.DB.Where("user_id = ?", userID).Delete(&models.TOTPPendingToken{})
+	// The config, the trusted devices and the pending tokens go together, or
+	// none of them do. The three deletes ran unchecked, and the answer was
+	// "disabled" whether or not anything had been deleted.
+	if err := h.DB.Transaction(func(tx *gorm.DB) error {
+		for _, table := range []interface{}{&models.TwoFactorConfig{}, &models.TrustedDevice{}, &models.TOTPPendingToken{}} {
+			if err := tx.Where("user_id = ?", userID).Delete(table).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to disable two-factor authentication"},
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Two-factor authentication disabled",
@@ -863,7 +897,12 @@ func (h *TOTPHandler) RevokeTrustedDevice(c *gin.Context) {
 func (h *TOTPHandler) RevokeTrustedDevices(c *gin.Context) {
 	userID := c.GetString("user_id")
 
-	h.DB.Where("user_id = ?", userID).Delete(&models.TrustedDevice{})
+	if err := h.DB.Where("user_id = ?", userID).Delete(&models.TrustedDevice{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to revoke trusted devices"},
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "All trusted devices revoked. You will need to enter a TOTP code on next login.",
@@ -913,9 +952,12 @@ func IsTrustedDevice(c *gin.Context, db *gorm.DB, userID string) bool {
 		return false
 	}
 
-	// Refresh the device expiry (sliding window)
+	// Refresh the device expiry (sliding window). The device is trusted either
+	// way; a refresh that fails only means the window is not extended.
 	device.ExpiresAt = time.Now().Add(totp.TrustedDeviceDuration)
-	db.Save(&device)
+	if err := db.Model(&device).Update("expires_at", device.ExpiresAt).Error; err != nil {
+		log.Printf("totp: extending trusted device %d: %v", device.ID, err)
+	}
 
 	return true
 }

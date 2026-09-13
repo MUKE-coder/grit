@@ -20,6 +20,9 @@ import (
 // exercise the module flags and nothing else.
 func init() {
 	os.Setenv("JWT_SECRET", "test-secret-key-for-module-flag-tests-only")
+	// Load refuses to start in production without real secrets, and production
+	// is the default.
+	os.Setenv("APP_ENV", "development")
 }
 
 // Default ON: an existing app upgrading must behave exactly as before.
