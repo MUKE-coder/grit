@@ -11,9 +11,11 @@ func writeJobsFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "jobs", "client.go"):   jobsClientGo(),
-		filepath.Join(apiRoot, "internal", "jobs", "workers.go"):  jobsWorkersGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "jobs.go"): jobsHandlerGo(),
+		filepath.Join(apiRoot, "internal", "jobs", "client.go"):     jobsClientGo(),
+		filepath.Join(apiRoot, "internal", "jobs", "stats.go"):      jobsStatsGo(),
+		filepath.Join(apiRoot, "internal", "jobs", "stats_test.go"): jobsStatsTestGo(),
+		filepath.Join(apiRoot, "internal", "jobs", "workers.go"):    jobsWorkersGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "jobs.go"):   jobsHandlerGo(),
 	}
 
 	for path, content := range files {

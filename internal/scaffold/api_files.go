@@ -9608,7 +9608,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	services.WatchSSO(db, ssoRegistry, samlRegistry)
 	// grit:handlers
 
-	// Health check
+` + healthQueueStatsSetup + `	// Health check
 	// /api/health probes every infrastructure dependency the dashboard's
 	// System Health page wants to render. Each probe is bounded by a 500ms
 	// timeout so a hung dependency doesn't pile up health requests; failing
@@ -9619,8 +9619,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			OK         bool   ` + "`" + `json:"ok"` + "`" + `
 			LatencyMS  int64  ` + "`" + `json:"latency_ms,omitempty"` + "`" + `
 			Tables     int    ` + "`" + `json:"tables,omitempty"` + "`" + `
-			QueueKeys  int    ` + "`" + `json:"queue_keys,omitempty"` + "`" + `
-			Configured bool   ` + "`" + `json:"configured,omitempty"` + "`" + `
+` + healthQueueFields + `			Configured bool   ` + "`" + `json:"configured,omitempty"` + "`" + `
 			Error      string ` + "`" + `json:"error,omitempty"` + "`" + `
 		}
 
@@ -9661,28 +9660,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			redisStatus.LatencyMS = time.Since(redisStart).Milliseconds()
 		}
 
-		// Background-jobs queue — count active asynq keys as a liveness
-		// signal. If asynq isn't wired (Jobs == nil), report unconfigured
-		// rather than "down" so the dashboard distinguishes the cases.
-		jobsStatus := compStatus{}
-		if svc.Jobs != nil && svc.Cache != nil {
-			ctx, cancel := context.WithTimeout(c.Request.Context(), 500*time.Millisecond)
-			defer cancel()
-			n, err := svc.Cache.Client().Eval(ctx,
-				"local total = 0\nfor _, k in ipairs(redis.call('keys', 'asynq:*')) do total = total + 1 end\nreturn total",
-				[]string{}).Int()
-			if err == nil {
-				jobsStatus.OK = true
-				jobsStatus.QueueKeys = n
-			} else {
-				// Fall back to a simple ping so a "no keys yet" install still
-				// reports OK rather than down.
-				if perr := svc.Cache.Client().Ping(ctx).Err(); perr == nil {
-					jobsStatus.OK = true
-				}
-			}
-		}
-
+` + healthJobsBlock + `
 		// Email is "configured" when Resend key is set + non-default. The
 		// dashboard treats unconfigured as "—" not "down".
 		mailStatus := compStatus{

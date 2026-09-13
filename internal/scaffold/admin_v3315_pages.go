@@ -199,7 +199,7 @@ interface HealthResponse {
   database: { ok: boolean; latency_ms?: number; tables?: number };
   redis?:    { ok: boolean; latency_ms?: number };
   api:       { ok: boolean };
-  jobs?:     { ok: boolean; queue_keys?: number };
+  jobs?:     { ok: boolean; queued?: number; active?: number };
   email?:    { ok: boolean; configured?: boolean };
 }
 
@@ -259,7 +259,7 @@ export default function SystemHealthPage() {
       label: "Background Jobs",
       icon: <ActivityIcon className="h-5 w-5" />,
       status: data.jobs?.ok === false ? "down" : data.jobs?.ok ? "ok" : "unknown",
-      detail: data.jobs?.queue_keys != null ? data.jobs.queue_keys + " queue keys active" : (data.jobs?.ok ? "Worker pool healthy" : "Not configured"),
+      detail: data.jobs?.queued != null ? data.jobs.queued + " queued, " + (data.jobs.active ?? 0) + " running" : (data.jobs?.ok ? "Worker pool healthy" : "Not configured"),
     },
     {
       key: "email",
