@@ -32,7 +32,7 @@ func TestAuditReadsMarksEveryRead(t *testing.T) {
 			t.Errorf("%s does not record its read (%s)", sig, want)
 		}
 	}
-	if !strings.Contains(method(t, h, "func (h *InvoiceHandler) Export("), `audit.ReadCount(c, "invoices", len(all))`) {
+	if !strings.Contains(method(t, h, "func (h *InvoiceHandler) Export("), `audit.ReadCount(c, "invoices", sheet.Written())`) {
 		t.Error("the XLSX export does not record its read")
 	}
 	if !strings.Contains(h, `"shop/apps/api/internal/audit"`) {

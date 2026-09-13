@@ -44,7 +44,7 @@ func (g *Generator) auditReadSnippets(names Names) auditReadSnippets {
 		ExportMark: "\t// --audit-reads: an export is recorded as a count. Listing every id\n" +
 			"\t// it held would make one entry the size of the table.\n" +
 			"\taudit.ReadCount(c, \"" + plural + "\", exported)\n",
-		XLSXMark: "\t\taudit.ReadCount(c, \"" + plural + "\", len(all))\n",
+		XLSXMark: "\t\taudit.ReadCount(c, \"" + plural + "\", sheet.Written())\n",
 	}
 }
 

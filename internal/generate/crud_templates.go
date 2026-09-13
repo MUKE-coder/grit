@@ -1105,18 +1105,27 @@ func (h *{{Pascal}}Handler) Export(c *gin.Context) {
 	}
 
 	if format == "xlsx" {
-		// excelize has no streaming writer, so the sheet is built in memory.
-		var all []models.{{Pascal}}
+		// Rows go into the workbook batch by batch, through a writer that moves
+		// them to a temporary file, so memory stays flat however many match.
+		sheet, err := export.NewXLSXStream(opts)
+		if err != nil {
+			h.fail(c, err, "Failed to export {{plural}}")
+			return
+		}
+		defer func() {
+			if err := sheet.Close(); err != nil {
+				log.Printf("export {{plural}} as xlsx: removing temporary files: %v", err)
+			}
+		}()
 		if err := h.service().Export(h.ctx(c), search, func(rows []models.{{Pascal}}) error {
-			all = append(all, rows...)
-			return nil
+			return sheet.Rows(rows)
 		}); err != nil {
 			h.fail(c, err, "Failed to export {{plural}}")
 			return
 		}
 {{AUDIT_XLSX_MARK}}		c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 		c.Header("Content-Disposition", ` + "`" + `attachment; filename="{{plural}}.xlsx"` + "`" + `)
-		if err := export.XLSX(c.Writer, all, opts); err != nil {
+		if err := sheet.Finish(c.Writer); err != nil {
 			log.Printf("export {{plural}} as xlsx: %v", err)
 		}
 		return
