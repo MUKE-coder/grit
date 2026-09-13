@@ -66,6 +66,50 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.254.0 */}
+            <div className="mb-12" id="v3.254.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.254.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Streams stream, and gzip stops costing a megabyte a response</h3>
+                <p>
+                  The next finding from the review of a scaffolded app, and the tests written for it
+                  found three more problems in the same thirty lines. The gzip middleware built a new
+                  compressor for every request: 1,198 KB allocated per compressed response. Its writer
+                  did not pass <code>Flush</code> through the gzip buffer, so a server-sent event
+                  stream, the AI stream among them, reached the client in one piece when the handler
+                  returned. It compressed zip, xlsx, PDF and image responses a second time. It sent
+                  a 204 with a 10 byte gzip body. A handler that declared its length, as{' '}
+                  <code>DataFromReader</code> does, had the compressed body sent under the
+                  uncompressed <code>Content-Length</code>, which a client reads as a truncated or
+                  corrupt response. And <code>gzip;q=0</code>, a client refusing gzip, got gzip.
+                </p>
+                <p>
+                  The middleware now lives in <code>middleware/gzip.go</code>. Writers come from a
+                  pool. The decision waits for the handler&apos;s first write, when its status and
+                  headers are known: only text-like types are compressed, never an event stream,
+                  never a bodyless status, never a body declared under 1 KB, and a declared length
+                  is removed when the body is compressed. <code>Flush</code> flushes the compressor
+                  and then the connection. A test that ships with each project covers every case
+                  above, and failed six of its seven checks against the old middleware. Checked
+                  end to end with a fake AI gateway sending a chunk a second: through the old
+                  middleware <code>/api/v1/ai/stream</code> delivered all five chunks after five
+                  seconds; now each arrives when the gateway sends it.
+                </p>
+                <p>
+                  <code>grit upgrade</code> removes the old middleware from{' '}
+                  <code>middleware/logger.go</code> when it is exactly what Grit wrote, and delivers
+                  the new file. When it has been edited, upgrade says what to change and leaves both
+                  files alone.
+                </p>
+              </div>
+            </div>
+
             {/* v3.253.0 */}
             <div className="mb-12" id="v3.253.0">
               <div className="flex items-center gap-3 mb-4">

@@ -1206,7 +1206,7 @@ pushed, and name the version.
 - [x] H13 F (v3.251.0) - unchecked DB writes in TOTP, session and auth paths
 - [x] H14 F (v3.252.0) - global 10 MB body cap breaks uploads; 15 s write timeout truncates exports and AI streams
 - [x] H15 F (v3.253.0) - health check runs KEYS asynq:*
-- [ ] H16 F - gzip middleware allocates per request and breaks SSE
+- [x] H16 F (v3.254.0) - gzip middleware allocates per request and breaks SSE
 - [ ] H17 F - XLSX export builds the whole table in memory
 - [ ] H18 F - list queries unindexed; COUNT on every page; %x% search
 - [ ] H19 F - CSV import queries per row, ignores errors, unbounded

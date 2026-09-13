@@ -357,6 +357,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairHealthQueueProbe(root, opts); err != nil {
 			fmt.Printf("  ⚠ moving the health check off KEYS: %v\n", err)
 		}
+		// Gzip moves to middleware/gzip.go: pooled writers, compressed types
+		// left alone, and Flush passed through so streams stream.
+		if err := repairGzipMiddleware(root, opts); err != nil {
+			fmt.Printf("  ⚠ replacing the gzip middleware: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {
