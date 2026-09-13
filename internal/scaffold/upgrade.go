@@ -347,6 +347,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairModulesTest(root, opts); err != nil {
 			fmt.Printf("  ⚠ fixing the module flag tests: %v\n", err)
 		}
+		// Uploads, imports, exports and streams get their own body limit and
+		// deadlines, instead of one cap and one timeout for every route.
+		if err := repairRequestLimits(root, opts); err != nil {
+			fmt.Printf("  ⚠ setting per-route request limits: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {

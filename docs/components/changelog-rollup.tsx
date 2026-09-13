@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 7 to 13, 2026",
-    count: 61,
+    count: 62,
     entries: [
+      { version: "3.252.0", title: "Uploads over 10 MB work, and a slow export is no longer cut off" },
       { version: "3.251.0", title: "A failed database write no longer passes for a successful one" },
       { version: "3.250.0", title: "An image cannot claim enough pixels to take the API down" },
       { version: "3.249.0", title: "A generated API builds on Go 1.26.6, and govulncheck finds nothing" },

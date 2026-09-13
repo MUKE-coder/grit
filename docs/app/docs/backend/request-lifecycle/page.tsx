@@ -46,7 +46,7 @@ export default function RequestLifecyclePage() {
   │
   1  Maintenance          503 for everyone but allowlisted IPs
   2  SecurityHeaders      CSP, HSTS, X-Frame-Options, nosniff
-  3  MaxBodySize          10 MB cap — before anything reads the body
+  3  RequestLimits        body cap and deadlines per route, before anything reads the body
   4  RequestID            X-Request-ID, threaded through every log line
   5  Logger               method, path, status, latency, request id
   6  Recovery             turns a panic into a 500 instead of a dead process
@@ -73,8 +73,14 @@ export default function RequestLifecyclePage() {
                 body read, no DB, no auth.
               </li>
               <li>
-                <strong>MaxBodySize precedes anything that reads the body.</strong> A cap applied
-                after parsing is not a cap.
+                <strong>RequestLimits precedes anything that reads the body.</strong> A cap applied
+                after parsing is not a cap. An ordinary route gets 10 MB and the server&apos;s
+                timeouts: 10 seconds for headers, 30 to read the body, 60 to answer. Routes listed
+                as transfers get their own cap and 30 minutes to read or write: uploads (512 MB), the
+                AI endpoints, the GDPR and audit exports and backup downloads. A generated
+                resource&apos;s <code>/export</code> and <code>/import</code> (100 MB) are transfers
+                without being listed. Add a route to the map in <code>routes.go</code> when it takes
+                a large body, streams a response or waits on something slow.
               </li>
               <li>
                 <strong>Recovery sits after Logger, not before.</strong> Gin runs middleware in

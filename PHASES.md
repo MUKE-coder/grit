@@ -1204,7 +1204,7 @@ pushed, and name the version.
 - [x] H11 F (v3.249.0) - reachable Go stdlib CVEs; release built on go 1.25.0
 - [x] H12 F (v3.250.0) - thumbnail worker decodes without a pixel cap (OOM loop)
 - [x] H13 F (v3.251.0) - unchecked DB writes in TOTP, session and auth paths
-- [ ] H14 F - global 10 MB body cap breaks uploads; 15 s write timeout truncates exports and AI streams
+- [x] H14 F (v3.252.0) - global 10 MB body cap breaks uploads; 15 s write timeout truncates exports and AI streams
 - [ ] H15 F - health check runs KEYS asynq:*
 - [ ] H16 F - gzip middleware allocates per request and breaks SSE
 - [ ] H17 F - XLSX export builds the whole table in memory

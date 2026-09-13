@@ -66,6 +66,49 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.252.0 */}
+            <div className="mb-12" id="v3.252.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.252.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Uploads over 10 MB work, and a slow export is no longer cut off</h3>
+                <p>
+                  The next finding from the review of a scaffolded app. Every request passed through a
+                  10 MB body cap before it reached a handler, so the upload handler&apos;s own 512 MB
+                  limit never applied: no upload over 10 MB could succeed, whatever a field
+                  advertised. The server&apos;s 15 second read and write timeouts were each one
+                  deadline for a whole request or response. Reproduced on a fresh project: a 20 MB
+                  upload was refused with 413, and a CSV export of 300,000 rows to a slow reader
+                  answered 200 and stopped after 3,935 of them, so the partial file looked like a
+                  success. The AI stream was cut at 15 seconds while its client allows 120.
+                </p>
+                <p>
+                  <code>middleware.RequestLimits</code> replaces the global cap. It chooses the body
+                  limit and the deadlines by route. An ordinary route keeps 10 MB and the server&apos;s
+                  timeouts, now 10 seconds for headers, 30 to read and 60 to answer. Routes listed as
+                  transfers in <code>routes.go</code> get their own limit and 30 minutes to read or
+                  write, extended per request with <code>http.ResponseController</code>: uploads
+                  (512 MB), the AI endpoints, the GDPR and audit exports and backup downloads. Every
+                  generated resource&apos;s <code>/export</code> and <code>/import</code> (100 MB) is
+                  a transfer without being listed. The server timeouts stay short on purpose: they are
+                  what stops a slow client holding a connection open.
+                </p>
+                <p>
+                  Checked against a running API with MinIO: a 20 MB upload succeeds, and so does one
+                  sent over 25 seconds; the 300,000 row export reaches a slow reader whole; an 11 MB
+                  JSON body to an ordinary route is still refused. <code>tests/live/verify_limits.py</code>{' '}
+                  runs those checks. <code>grit upgrade</code> delivers the middleware and its tests,
+                  and updates <code>routes.go</code> and <code>cmd/server/main.go</code> where they are
+                  still the files Grit wrote.
+                </p>
+              </div>
+            </div>
+
             {/* v3.251.0 */}
             <div className="mb-12" id="v3.251.0">
               <div className="flex items-center gap-3 mb-4">
