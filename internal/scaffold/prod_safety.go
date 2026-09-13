@@ -51,6 +51,7 @@ const configCheckSecretsFunc = `// weakSecrets are values a scaffold, a README o
 var weakSecrets = map[string]bool{
 	"studio": true, "sentinel": true, "pulse": true, "admin": true, "password": true, "secret": true,
 	"change-me": true, "change_me": true, "change-me-in-prod": true, "sentinel-secret-change-me": true,
+	"minioadmin": true,
 }
 
 // checkSecrets refuses to start anywhere but development with a secret that can
@@ -69,6 +70,9 @@ func checkSecrets(cfg *Config) error {
 		{"SENTINEL_PASSWORD", cfg.SentinelPassword, cfg.SentinelEnabled},
 		{"SENTINEL_SECRET_KEY", cfg.SentinelSecretKey, cfg.SentinelEnabled},
 		{"PULSE_PASSWORD", cfg.PulsePassword, cfg.PulseEnabled},
+		// MinIO's root password, when MinIO is the store. S3, R2 and B2 keys are
+		// issued by the provider and are not guessable defaults.
+		{"MINIO_SECRET_KEY", cfg.Storage.SecretKey, cfg.StorageDriver == "minio"},
 	} {
 		if s.used && (len(s.value) < 16 || weakSecrets[strings.ToLower(s.value)]) {
 			weak = append(weak, s.name)

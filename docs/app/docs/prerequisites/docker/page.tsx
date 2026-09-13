@@ -107,8 +107,8 @@ const gritComposeExample = `services:
       - "9002:9000"
       - "9003:9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: \${MINIO_ACCESS_KEY:?set MINIO_ACCESS_KEY in .env}
+      MINIO_ROOT_PASSWORD: \${MINIO_SECRET_KEY:?set MINIO_SECRET_KEY in .env}
     volumes:
       - minio-data:/data
     command: server /data --console-address ":9001"
@@ -399,7 +399,7 @@ Docker Compose version v2.x.x`} />
                 },
                 {
                   title: 'MinIO (ports 9002 / 9003)',
-                  desc: 'An S3-compatible object storage server. Handles file uploads like user avatars, documents, and images. Port 9002 is the API endpoint your Go code talks to. Port 9003 is a web console where you can browse files, create buckets, and manage storage. Login: minioadmin / minioadmin.',
+                  desc: 'An S3-compatible object storage server. Handles file uploads like user avatars, documents, and images. Port 9002 is the API endpoint your Go code talks to. Port 9003 is a web console where you can browse files, create buckets, and manage storage. Login: the MINIO_ACCESS_KEY and MINIO_SECRET_KEY from .env.',
                 },
                 {
                   title: 'Mailhog (ports 1025 / 8025)',

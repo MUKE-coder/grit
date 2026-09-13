@@ -265,8 +265,8 @@ REDIS_URL=redis://localhost:6380`}
           <CodeBlock filename=".env">
 {`# File storage (S3-compatible)
 MINIO_ENDPOINT=http://localhost:9002
-STORAGE_ACCESS_KEY=minioadmin
-STORAGE_SECRET_KEY=minioadmin
+STORAGE_ACCESS_KEY=<generated per project>
+STORAGE_SECRET_KEY=<generated per project>
 STORAGE_BUCKET=uploads
 STORAGE_USE_SSL=false
 STORAGE_REGION=us-east-1`}
@@ -274,8 +274,8 @@ STORAGE_REGION=us-east-1`}
 
           <Tip>
             In development, MinIO runs via Docker Compose. You can browse uploaded files at
-            <Code>localhost:9003</Code> using the MinIO Console. The default credentials
-            are <Code>minioadmin</Code> / <Code>minioadmin</Code>.
+            <Code>localhost:9003</Code> using the MinIO Console. Sign in with the <Code>MINIO_ACCESS_KEY</Code> and{' '}
+            <Code>MINIO_SECRET_KEY</Code> from your <Code>.env</Code>.
           </Tip>
 
           <Challenge number={3} title="Upload a File">

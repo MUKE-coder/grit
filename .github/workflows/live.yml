@@ -170,6 +170,29 @@ jobs:
           grep -q "PULSE_PASSWORD" /tmp/live/server-weak.log || { tail -20 /tmp/live/server-weak.log; exit 1; }
           echo "a default dashboard password stops a production server from starting"
 
+          set +e
+          APP_ENV=production APP_PORT=8083 MINIO_SECRET_KEY=minioadmin timeout 30 /tmp/live/server > /tmp/live/server-minio.log 2>&1
+          code=$?
+          set -e
+          if [ "$code" = "124" ]; then
+            echo "a production server started with MINIO_SECRET_KEY=minioadmin"; tail -20 /tmp/live/server-minio.log; exit 1
+          fi
+          grep -q "MINIO_SECRET_KEY" /tmp/live/server-minio.log || { tail -20 /tmp/live/server-minio.log; exit 1; }
+          echo "a default MinIO secret stops a production server from starting"
+
+      # The production stack hands each side container only the settings it
+      # reads, and refuses to start without the MinIO and Postgres secrets.
+      - name: Production compose
+        if: matrix.postgres == '17'
+        run: |
+          cd /tmp/live/app
+          docker compose -f docker-compose.prod.yml config --format json > /tmp/live/compose.json
+          python3 "$GITHUB_WORKSPACE/tests/live/verify_compose.py" /tmp/live/compose.json
+          if MINIO_SECRET_KEY= docker compose -f docker-compose.prod.yml config > /dev/null 2>&1; then
+            echo "the production stack accepted an empty MINIO_SECRET_KEY"; exit 1
+          fi
+          echo "the production stack refuses an empty MINIO_SECRET_KEY"
+
       # Down migrations, against a real Postgres.
       #
       # AutoMigrate has no down scripts, so a rollback is computed from what a run

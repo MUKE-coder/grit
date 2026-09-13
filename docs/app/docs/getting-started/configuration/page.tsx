@@ -304,8 +304,8 @@ STORAGE_DRIVER=minio
 
 # MinIO: local S3-compatible storage (default for development)
 # MINIO_ENDPOINT=http://localhost:9002   # unset: built from MINIO_PORT
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
+MINIO_ACCESS_KEY=<generated per project>
+MINIO_SECRET_KEY=<generated per project>
 MINIO_BUCKET=myapp-uploads
 MINIO_REGION=us-east-1
 MINIO_USE_SSL=false
@@ -337,7 +337,7 @@ B2_REGION=us-west-004        # Must match your bucket region`} />
                 {[
                   { variable: 'STORAGE_DRIVER', default: 'minio', desc: 'Which storage provider to use. Options: minio (local dev with Docker), s3 (AWS S3), r2 (Cloudflare R2), b2 (Backblaze B2). Only the variables for the active driver need to be set.' },
                   { variable: 'MINIO_ENDPOINT', default: 'built from MINIO_PORT', desc: 'MinIO server URL. Unset, the API uses localhost on MINIO_PORT (9002 by default, with the console on MINIO_CONSOLE_PORT), so moving the port moves the endpoint. Set it only for a MinIO somewhere else.' },
-                  { variable: 'MINIO_ACCESS_KEY / MINIO_SECRET_KEY', default: 'minioadmin', desc: 'Default MinIO credentials. These match the Docker Compose configuration. Change in production if running your own MinIO instance.' },
+                  { variable: 'MINIO_ACCESS_KEY / MINIO_SECRET_KEY', default: 'generated', desc: 'MinIO root credentials, generated per project into .env. Both compose files read them from there and refuse to start without them, and a production API refuses a default or short MinIO secret.' },
                   { variable: 'S3_ENDPOINT', default: '(empty)', desc: 'AWS S3 endpoint. Leave empty to use the AWS regional default (s3.<region>.amazonaws.com) with virtual-hosted-style addressing. Only used when STORAGE_DRIVER=s3.' },
                   { variable: 'S3_ACCESS_KEY / S3_SECRET_KEY / S3_REGION', default: '(IAM fallback)', desc: 'AWS credentials and region. Fall back to AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION, so leaving them empty lets an attached IAM role supply the credentials automatically.' },
                   { variable: 'R2_ENDPOINT', default: '(your account)', desc: 'Cloudflare R2 endpoint. Format: https://ACCOUNT_ID.r2.cloudflarestorage.com. Only used when STORAGE_DRIVER=r2.' },
@@ -699,8 +699,8 @@ STORAGE_DRIVER=minio
 
 # MinIO (local dev; built from MINIO_PORT unless set)
 # MINIO_ENDPOINT=http://localhost:9002
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
+MINIO_ACCESS_KEY=<generated per project>
+MINIO_SECRET_KEY=<generated per project>
 MINIO_BUCKET=myapp-uploads
 MINIO_REGION=us-east-1
 MINIO_USE_SSL=false

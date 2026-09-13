@@ -256,6 +256,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairGrantCeiling(root, opts); err != nil {
 			fmt.Printf("  ⚠ adding the grant ceiling: %v\n", err)
 		}
+		// Storage secrets: no minioadmin in the compose files, side containers
+		// get only their own settings, and production refuses a default MinIO
+		// secret.
+		if err := repairStorageSecrets(root, opts); err != nil {
+			fmt.Printf("  ⚠ hardening storage secrets: %v\n", err)
+		}
 		// The activity-log chain was hashed at a precision Postgres and MySQL
 		// do not store, so it failed verification on its first row. Only where
 		// the audit package is already there.

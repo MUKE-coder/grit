@@ -278,8 +278,8 @@ STORAGE_DRIVER=minio
 # MinIO (local development — used when STORAGE_DRIVER=minio)
 # Unset, built from MINIO_PORT above. Set it only for a MinIO somewhere else.
 # MINIO_ENDPOINT=http://localhost:9002
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
+MINIO_ACCESS_KEY={{MINIO_ACCESS_KEY}}
+MINIO_SECRET_KEY={{MINIO_SECRET_KEY}}
 MINIO_BUCKET=%s-uploads
 MINIO_REGION=us-east-1
 MINIO_USE_SSL=false
@@ -442,6 +442,11 @@ SOCIAL_AUTH_ENABLED=false
 		pulsePassword, sentinelPassword, sentinelSecretKey, sentinelAuditKey,
 		opts.Theme, // THEME — picked by --theme at scaffold time, defaults to atlas
 	)
+
+	// MinIO's root credentials, generated like the rest. They were
+	// minioadmin/minioadmin, which is the whole bucket to anyone who can reach it.
+	out = strings.Replace(out, "{{MINIO_ACCESS_KEY}}", "grit"+randomHex(8), 1)
+	out = strings.Replace(out, "{{MINIO_SECRET_KEY}}", randomHex(24), 1)
 
 	// The admin panel's URL is not a URL in every shape: see adminURLEnv.
 	return strings.Replace(out, "{{ADMIN_URL_ENV}}", adminURLEnv(opts), 1)

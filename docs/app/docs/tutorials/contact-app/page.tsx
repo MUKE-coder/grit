@@ -388,7 +388,7 @@ export default function TutorialContactAppPage() {
                     },
                     {
                       url: "http://localhost:9001",
-                      desc: "MinIO Console — browse uploaded files (login: minioadmin / minioadmin)",
+                      desc: "MinIO Console — browse uploaded files (login: the MINIO_ACCESS_KEY and MINIO_SECRET_KEY from .env)",
                     },
                   ].map((item) => (
                     <li

@@ -1262,8 +1262,10 @@ func resolveStorage(driver string) StorageConfig {
 	default: // minio
 		return StorageConfig{
 			Endpoint:  resolveMinioEndpoint(),
-			AccessKey: getEnv("MINIO_ACCESS_KEY", "minioadmin"),
-			SecretKey: getEnv("MINIO_SECRET_KEY", "minioadmin"),
+			// No default: minioadmin/minioadmin is the whole bucket to anyone who
+			// can reach MinIO. .env carries credentials generated per project.
+			AccessKey: getEnv("MINIO_ACCESS_KEY", ""),
+			SecretKey: getEnv("MINIO_SECRET_KEY", ""),
 			Bucket:    getEnv("MINIO_BUCKET", "uploads"),
 			Region:    getEnv("MINIO_REGION", "us-east-1"),
 			UseSSL:    getEnv("MINIO_USE_SSL", "false") == "true",
