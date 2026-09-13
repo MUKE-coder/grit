@@ -33,6 +33,8 @@ var frameworkDeps = []FrameworkDep{
 	{"github.com/MUKE-coder/gorm-studio", "v1.1.0",
 		"read-only SQL enforced on the read path, fail-closed imports, composite keys matched in full"},
 	{"github.com/MUKE-coder/pulse", "v1.0.0", "the tagged release"},
+	{"golang.org/x/crypto", "v0.57.0", "govulncheck flags releases before v0.56.0"},
+	{"filippo.io/edwards25519", "v1.2.0", "govulncheck flags releases before v1.1.1"},
 }
 
 // goGet runs go get in dir. A variable, so a test can see what would be fetched

@@ -129,7 +129,8 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          # The version the API's go.mod requires; see the comment there.
+          go-version: '1.26.6'
           cache: true
           cache-dependency-path: %[1]s/go.sum
 

@@ -389,7 +389,7 @@ volumes:
 // that bundles the Go server and an embedded SPA. Multi-stage:
 //
 //  1. node:22-alpine   builds the frontend bundle to /app/frontend/dist
-//  2. golang:1.26-alpine builds the Go binary with //go:embed picking up
+//  2. golang:1.26.6-alpine builds the Go binary with //go:embed picking up
 //     the frontend output from the project root
 //  3. alpine:3.19      runtime, drops to a non-root user
 //
@@ -418,7 +418,7 @@ COPY frontend/ ./
 RUN pnpm build
 
 # ---------- Stage 2: build the Go binary ----------
-FROM golang:1.26-alpine AS gobuild
+FROM golang:1.26.6-alpine AS gobuild
 WORKDIR /app
 
 RUN apk add --no-cache git
@@ -474,7 +474,7 @@ func dockerfileAPI() string {
 # machine, and cgo cannot cross-compile without a target toolchain.
 ARG IMAGE_BACKEND=purego
 
-FROM golang:1.26-alpine AS builder
+FROM golang:1.26.6-alpine AS builder
 
 WORKDIR /app
 

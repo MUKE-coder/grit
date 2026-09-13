@@ -102,7 +102,7 @@ export default function LLMGuidePage() {
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
-                    { label: 'Backend', value: 'Go 1.24 · Gin · GORM · PostgreSQL · Redis' },
+                    { label: 'Backend', value: 'Go 1.26 · Gin · GORM · PostgreSQL · Redis' },
                     { label: 'Frontend', value: 'Next.js 15 · React 19 · TypeScript · Tailwind CSS' },
                     { label: 'Admin panel', value: 'Custom Filament-like panel scaffolded with Next.js' },
                     { label: 'Shared types', value: 'packages/shared — Zod schemas + TypeScript types' },

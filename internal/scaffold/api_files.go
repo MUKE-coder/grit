@@ -261,7 +261,12 @@ func (h *ImportJobHandler) GetByID(c *gin.Context) {
 func apiGoMod(opts Options) string {
 	return fmt.Sprintf(`module %s
 
-go 1.21
+// Go 1.26.6, and not an earlier patch. Go 1.26.4 carries eight standard library
+// vulnerabilities this code reaches, among them net/http and the encoding/xml
+// behind the SAML sign-in path, before anyone has signed in. The go directive is
+// also what CI, setup-go and the release workflow install, and an older Go
+// downloads this one, so raising it here raises it everywhere.
+go 1.26.6
 
 require (
 	github.com/MUKE-coder/gin-docs v0.0.0-20260222113017-4d647cb4e7aa
@@ -304,7 +309,7 @@ require (
 	// parsers could be made to allocate without bound, and this is what
 	// the CSV/XLSX importer hands user uploads to.
 	github.com/xuri/excelize/v2 v2.11.0
-	golang.org/x/crypto v0.53.0
+	golang.org/x/crypto v0.57.0
 	// Sentinel now ships a proper /v2 module path, so we track real tags.
 	// v2.1.1 is the minimum safe release for WAF.Mode = ModeBlock: v2.1.0
 	// fixed the SSRF rule matching "0.0.0.0" inside a Chrome User-Agent
@@ -345,6 +350,8 @@ require (
 	golang.org/x/image v0.45.0 // GO-2026-5066, -5062, -5032, -5031, -4815, CVE-2026-46603
 	golang.org/x/oauth2 v0.27.0 // CVE-2025-22868
 	golang.org/x/text v0.39.0 // GO-2026-5970
+	// Pulled in by the MySQL driver; govulncheck flags releases before v1.1.1.
+	filippo.io/edwards25519 v1.2.0
 )
 `, opts.Module())
 }
