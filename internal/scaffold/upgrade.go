@@ -342,6 +342,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairThumbnailWorker(root, opts); err != nil {
 			fmt.Printf("  ⚠ hardening the thumbnail job: %v\n", err)
 		}
+		// The module flag tests call config.Load, which refuses the production
+		// default without real secrets.
+		if err := repairModulesTest(root, opts); err != nil {
+			fmt.Printf("  ⚠ fixing the module flag tests: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {

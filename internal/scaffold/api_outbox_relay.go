@@ -198,13 +198,17 @@ func (r *Relay) attempt(ctx context.Context, m Message) {
 	now := time.Now()
 
 	if err == nil {
-		r.DB.Model(&Message{}).Where("id = ?", m.ID).Updates(map[string]any{
+		if dbErr := r.DB.Model(&Message{}).Where("id = ?", m.ID).Updates(map[string]any{
 			"status":       StatusDelivered,
 			"delivered_at": now,
 			"attempts":     m.Attempts + 1,
 			"last_error":   "",
 			"claimed_by":   "",
-		})
+		}).Error; dbErr != nil {
+			// Delivered but not recorded, so it will be delivered again. Logged,
+			// because a receiver seeing a repeat deserves an explanation.
+			log.Printf("outbox: %s (%s) delivered, but recording it failed: %v", m.ID, m.Topic, dbErr)
+		}
 		return
 	}
 
@@ -222,7 +226,9 @@ func (r *Relay) attempt(ctx context.Context, m Message) {
 		update["status"] = StatusPending
 		update["available_at"] = now.Add(r.backoff(attempts))
 	}
-	r.DB.Model(&Message{}).Where("id = ?", m.ID).Updates(update)
+	if dbErr := r.DB.Model(&Message{}).Where("id = ?", m.ID).Updates(update).Error; dbErr != nil {
+		log.Printf("outbox: %s (%s) recording attempt %d failed: %v", m.ID, m.Topic, attempts, dbErr)
+	}
 }
 
 // backoff doubles per attempt, capped.

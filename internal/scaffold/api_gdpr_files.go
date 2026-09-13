@@ -259,6 +259,7 @@ func apiGDPRHandlerGo() string {
 	src := `package handlers
 
 import (
+	"log"
 	"fmt"
 	"net/http"
 
@@ -335,14 +336,18 @@ func (h *GDPRHandler) Erase(c *gin.Context) {
 
 	// Record the erasure in the semantic activity log too, so it shows up in the
 	// dashboard and flows out through the OCSF/SIEM export.
-	h.DB.Create(&models.UserActivity{
+	// The erasure itself succeeded; a missing activity row is logged loudly,
+	// because this is the record an auditor will ask for.
+	if err := h.DB.Create(&models.UserActivity{
 		UserID:       fmt.Sprint(callerID),
 		Action:       "user.gdpr_erase",
 		Severity:     "warn",
 		Summary:      fmt.Sprintf("Erased all personal data for user %s (%d records)", targetID, journal.RecordsAffected),
 		ResourceType: "user",
 		ResourceID:   targetID,
-	})
+	}).Error; err != nil {
+		log.Printf("gdpr: user %s was erased, but the activity row was not written: %v", targetID, err)
+	}
 
 	c.JSON(http.StatusOK, gin.H{"data": journal, "message": "User data erased"})
 }

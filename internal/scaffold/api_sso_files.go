@@ -498,7 +498,9 @@ func ClaimGroups(raw map[string]interface{}, claim string) []string {
 // TouchConnection records that a connection was just used to sign somebody in.
 func TouchConnection(db *gorm.DB, id string) {
 	now := time.Now()
-	db.Model(&models.SSOConnection{}).Where("id = ?", id).Update("last_used_at", now)
+	if err := db.Model(&models.SSOConnection{}).Where("id = ?", id).Update("last_used_at", now).Error; err != nil {
+		log.Printf("sso: recording use of connection %s: %v", id, err)
+	}
 }
 
 // providerSession is the goth session marshalled between the redirect to the
@@ -814,7 +816,9 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 		if !user.Active {
 			return nil, fmt.Errorf("Your account has been disabled.")
 		}
-		h.DB.Model(&identity).Updates(map[string]interface{}{"last_login_at": now, "email": email})
+		if err := h.DB.Model(&identity).Updates(map[string]interface{}{"last_login_at": now, "email": email}).Error; err != nil {
+			log.Printf("sso: recording sign-in for identity %s: %v", identity.ID, err)
+		}
 		return &user, nil
 	}
 	if err != gorm.ErrRecordNotFound {

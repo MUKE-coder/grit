@@ -136,7 +136,15 @@ func (p *Passkeys) takeSession(id, purpose string) (*webauthn.SessionData, strin
 	if err := p.DB.First(&row, "id = ? AND purpose = ?", id, purpose).Error; err != nil {
 		return nil, "", ErrPasskeyChallengeGone
 	}
-	p.DB.Delete(&models.WebAuthnSession{}, "id = ?", row.ID)
+	// The delete is the claim: of two requests presenting one ceremony, only the
+	// one that removes the row goes on.
+	res := p.DB.Delete(&models.WebAuthnSession{}, "id = ?", row.ID)
+	if res.Error != nil {
+		return nil, "", fmt.Errorf("claiming the passkey ceremony: %w", res.Error)
+	}
+	if res.RowsAffected != 1 {
+		return nil, "", ErrPasskeyChallengeGone
+	}
 	if time.Now().After(row.ExpiresAt) {
 		return nil, "", ErrPasskeyChallengeGone
 	}
@@ -268,10 +276,14 @@ func (p *Passkeys) FinishLogin(sessionID string, body []byte) (*models.User, err
 				row.ID, row.SignCount, next, row.UserID)
 		}
 		now := time.Now()
-		p.DB.Model(&row).Updates(map[string]interface{}{
+		if err := p.DB.Model(&row).Updates(map[string]interface{}{
 			"sign_count":   next,
 			"last_used_at": now,
-		})
+		}).Error; err != nil {
+			// The sign-in stands, but the counter is how a cloned credential is
+			// spotted, so a counter that did not move should be findable.
+			log.Printf("passkey %s: recording the sign counter: %v", row.ID, err)
+		}
 	}
 
 	return matched, nil

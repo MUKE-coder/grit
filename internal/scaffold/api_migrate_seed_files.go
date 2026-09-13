@@ -146,7 +146,9 @@ func main() {
 	// people add to. A migration fix living in a file upgrades never touch is a
 	// fix only new projects get.
 	if db.Migrator().HasTable("webhook_events") {
-		db.Exec("UPDATE webhook_events SET external_id = NULL WHERE external_id = ''")
+		if err := db.Exec("UPDATE webhook_events SET external_id = NULL WHERE external_id = ''").Error; err != nil {
+			log.Printf("migrate: clearing empty webhook external ids (the unique index may refuse them): %v", err)
+		}
 	}
 
 	fmt.Println("Running migrations...")

@@ -14,6 +14,7 @@ func apiAPIKeySeederGo() string {
 	return `package database
 
 import (
+	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -33,9 +34,14 @@ import (
 // know which one your app is using.
 func SeedAPIKeys(db *gorm.DB) error {
 	var owner models.User
-	if err := db.Where("role = ?", "ADMIN").Order("created_at asc").First(&owner).Error; err != nil {
+	err := db.Where("role = ?", "ADMIN").Order("created_at asc").First(&owner).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Println("Skipping API keys: no admin user to own them")
 		return nil
+	}
+	// Anything else is the database failing, not a project without an admin.
+	if err != nil {
+		return err
 	}
 
 	publishable, err := ensureKey(db, models.APIKey{

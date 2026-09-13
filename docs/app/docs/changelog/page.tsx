@@ -66,6 +66,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.251.0 */}
+            <div className="mb-12" id="v3.251.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.251.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A failed database write no longer passes for a successful one</h3>
+                <p>
+                  The next finding from the review of a scaffolded app. Writes in the two-factor,
+                  session and auth paths ran without checking their error, and three of them mattered.
+                  Two sign-ins presenting the same backup code at the same moment could both use it,
+                  because each read the list of codes and then saved the shorter one. Turning 2FA off
+                  ran three deletes outside a transaction and answered &quot;disabled&quot; whether or
+                  not they had run. And when a refresh token was replayed, the session it belonged to
+                  was revoked with an unchecked write, so a database error left a captured session
+                  live.
+                </p>
+                <p>
+                  A backup code is now spent by an update that matches only while the list is still
+                  the one the request read. The request that loses the race gets a 401, which counts as
+                  a failed attempt. Checked against a running API: two concurrent sign-ins with one code
+                  return exactly one 200 and one 401. Disabling 2FA runs in one transaction and answers
+                  500 if it fails. A replay whose revocation fails is refused with that error. A passkey
+                  ceremony is claimed by deleting it, so two requests presenting one challenge cannot
+                  both finish.
+                </p>
+                <p>
+                  The other writes the review listed, and those a scan of a fresh project turned up,
+                  are checked too: the outbox relay, the passkey sign counter, API key last use, SSO,
+                  webhooks, form shares, GDPR requests, tickets, notifications, import job progress,
+                  device pairing and the thumbnail URL. Where failing the request would be wrong, the
+                  failure is logged. The thumbnail job returns it, so the job is retried.
+                </p>
+                <p>
+                  CI had been hiding two problems. The step that runs a generated project&apos;s tests
+                  piped <code>go test</code> into <code>tail</code> and reported tail&apos;s exit code,
+                  so the module flag tests had failed since v3.243.0 made production the default. The
+                  workflows now set <code>pipefail</code>, and those tests run in development. A fresh
+                  project&apos;s own lint config also reported two findings, now fixed: the API key
+                  seeder treated any database error as &quot;no admin yet&quot;, and the lockout window
+                  multiplied a duration by a duration.
+                </p>
+                <p>
+                  <code>grit upgrade</code> delivers the 2FA handler, the session and passkey services,
+                  the outbox relay, SSO and GDPR, and fixes <code>config/modules_test.go</code> in
+                  place. Form shares, tickets, notifications, API keys, webhooks, device pairing, import
+                  handlers and the jobs worker are yours once written, so those changes reach new
+                  projects and newly generated resources.
+                </p>
+              </div>
+            </div>
+
             {/* v3.250.0 */}
             <div className="mb-12" id="v3.250.0">
               <div className="flex items-center gap-3 mb-4">

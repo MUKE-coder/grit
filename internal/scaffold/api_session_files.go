@@ -153,7 +153,11 @@ func RotateSession(db *gorm.DB, c *gin.Context, oldToken, newToken string) (*mod
 		var replayed models.Session
 		if db.Where("prev_token_hash = ?", oldHash).First(&replayed).Error == nil {
 			now := time.Now()
-			db.Model(&replayed).Update("revoked_at", &now)
+			// A replay is the one time revocation must not quietly fail: the
+			// token was captured, and the session it belongs to stays live.
+			if err := db.Model(&replayed).Update("revoked_at", &now).Error; err != nil {
+				return nil, err
+			}
 			forgetSession(replayed.ID)
 		}
 		return nil, ErrSessionInvalid

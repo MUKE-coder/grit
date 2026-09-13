@@ -426,7 +426,11 @@ func handleImageProcess(deps WorkerDeps) func(ctx context.Context, task *asynq.T
 		// Update the upload record with thumbnail URL
 		thumbURL := deps.Storage.GetURL(thumbKey)
 		if deps.DB != nil {
-			deps.DB.Model(&models.Upload{}).Where("id = ?", payload.UploadID).Update("thumbnail_url", thumbURL)
+			// Returned, so the job is retried: a thumbnail nobody can find was
+			// generated for nothing.
+			if err := deps.DB.Model(&models.Upload{}).Where("id = ?", payload.UploadID).Update("thumbnail_url", thumbURL).Error; err != nil {
+				return fmt.Errorf("recording the thumbnail for upload %s: %w", payload.UploadID, err)
+			}
 		}
 
 		log.Printf("Thumbnail created for upload %s", payload.UploadID)

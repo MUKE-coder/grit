@@ -71,6 +71,7 @@ func (m *PairingRequest) Live(now time.Time) bool {
 // pairingHandlerGo is the handshake itself.
 func pairingHandlerGo(ctx Context) string {
 	src := "package handlers\n\n" + `import (
+	"log"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
@@ -225,7 +226,10 @@ func (h *PairingHandler) Status(c *gin.Context) {
 	h.Auth.SetAuthCookies(c, pair)
 
 	// The handshake is over. Nothing here is worth keeping.
-	h.DB.Delete(&models.PairingRequest{}, "id = ?", pr.ID)
+	// Cleanup only: the claim above already made the request single-use.
+	if err := h.DB.Delete(&models.PairingRequest{}, "id = ?", pr.ID).Error; err != nil {
+		log.Printf("pairing: deleting claimed request %s: %v", pr.ID, err)
+	}
 
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{
 		"status": "approved",

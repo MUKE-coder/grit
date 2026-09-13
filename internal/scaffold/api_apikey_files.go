@@ -208,6 +208,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -362,7 +363,9 @@ func VerifyAPIKey(db *gorm.DB, token string) (*models.APIKey, error) {
 // failing a request over.
 func TouchAPIKey(db *gorm.DB, id string) {
 	now := time.Now()
-	db.Model(&models.APIKey{}).Where("id = ?", id).UpdateColumn("last_used_at", now)
+	if err := db.Model(&models.APIKey{}).Where("id = ?", id).UpdateColumn("last_used_at", now).Error; err != nil {
+		log.Printf("api keys: recording use of key %s: %v", id, err)
+	}
 }
 
 // RevokeAPIKey marks a key unusable. Revocation is a timestamp rather than a

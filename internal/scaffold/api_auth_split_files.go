@@ -435,7 +435,9 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 		}
 
 		if len(updates) > 0 {
-			h.DB.Model(&user).Updates(updates)
+			if err := h.DB.Model(&user).Updates(updates).Error; err != nil {
+				log.Printf("oauth: linking %s to user %s: %v", provider, user.ID, err)
+			}
 		}
 	}
 

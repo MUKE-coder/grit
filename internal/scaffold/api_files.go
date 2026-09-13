@@ -988,7 +988,7 @@ func Load() (*Config, error) {
 		// NULL email_verified_at.
 		RequireEmailVerification: getEnv("REQUIRE_EMAIL_VERIFICATION", "false") == "true",
 		LoginMaxAttempts:   getEnvInt("LOGIN_MAX_ATTEMPTS", 10),
-		LoginLockoutWindow: getEnvDuration("LOGIN_LOCKOUT_MINUTES", 15) * time.Minute,
+		LoginLockoutWindow: getEnvDuration("LOGIN_LOCKOUT_MINUTES", 15, time.Minute),
 
 		SentinelEnabled:        getEnv("SENTINEL_ENABLED", "true") == "true",
 		SentinelUsername:       getEnv("SENTINEL_USERNAME", "admin"),
@@ -1313,12 +1313,12 @@ func getEnvInt(key string, fallback int) int {
 	return fallback
 }
 
-// getEnvDuration reads a whole number of units; the caller multiplies by the
-// unit it means, which keeps the env var name self-describing
+// getEnvDuration reads a whole number of units, named by the caller, which
+// keeps the env var name self-describing
 // (LOGIN_LOCKOUT_MINUTES=15 rather than a duration string nobody formats
 // consistently).
-func getEnvDuration(key string, fallback int) time.Duration {
-	return time.Duration(getEnvInt(key, fallback))
+func getEnvDuration(key string, fallback int, unit time.Duration) time.Duration {
+	return time.Duration(getEnvInt(key, fallback)) * unit
 }
 
 // splitCSV trims and splits a comma-separated env var. Empty strings
@@ -6312,6 +6312,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -6419,19 +6420,23 @@ func (h *WebhookHandler) Receive(c *gin.Context) {
 	// up — the provider already got a 200 once we persisted.
 	if dispatchErr := webhooks.Dispatch(c.Request.Context(), &event); dispatchErr != nil {
 		now := time.Now()
-		h.DB.Model(&event).Updates(map[string]interface{}{
+		if err := h.DB.Model(&event).Updates(map[string]interface{}{
 			"status":        "failed",
 			"handler_error": dispatchErr.Error(),
 			"processed_at":  &now,
-		})
+		}).Error; err != nil {
+			log.Printf("webhooks: recording that event %s failed: %v", event.ID, err)
+		}
 		c.JSON(http.StatusOK, gin.H{"status": "received", "id": event.ID, "handler": "failed"})
 		return
 	}
 	now := time.Now()
-	h.DB.Model(&event).Updates(map[string]interface{}{
+	if err := h.DB.Model(&event).Updates(map[string]interface{}{
 		"status":       "processed",
 		"processed_at": &now,
-	})
+	}).Error; err != nil {
+		log.Printf("webhooks: recording that event %s was processed: %v", event.ID, err)
+	}
 	c.JSON(http.StatusOK, gin.H{"status": "processed", "id": event.ID})
 }
 
