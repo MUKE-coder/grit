@@ -59,7 +59,7 @@ export default function DesktopOverviewPage() {
                   Install Grit
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  You need <strong className="text-foreground/80">Go 1.21+</strong>,{' '}
+                  You need <strong className="text-foreground/80">Go 1.26.6+</strong>,{' '}
                   <strong className="text-foreground/80">Node.js 18+</strong>, and{' '}
                   <a href="https://wails.io/docs/gettingstarted/installation" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Wails v2</a>{' '}
                   installed. Then install the Grit CLI:

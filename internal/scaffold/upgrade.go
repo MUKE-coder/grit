@@ -262,6 +262,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairStorageSecrets(root, opts); err != nil {
 			fmt.Printf("  ⚠ hardening storage secrets: %v\n", err)
 		}
+		// The Go release the API builds with, in go.mod, its Dockerfiles and
+		// its CI workflows.
+		if err := repairGoToolchain(root, opts); err != nil {
+			fmt.Printf("  ⚠ raising the Go toolchain: %v\n", err)
+		}
 		// The activity-log chain was hashed at a precision Postgres and MySQL
 		// do not store, so it failed verification on its first row. Only where
 		// the audit package is already there.

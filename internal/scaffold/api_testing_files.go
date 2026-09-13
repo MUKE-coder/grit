@@ -342,7 +342,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          # Scanned against the Go the API builds with. On an older one the
+          # scan reports standard library issues the build does not have.
+          go-version: '1.26.6'
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
       - name: Run govulncheck

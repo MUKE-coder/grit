@@ -624,7 +624,7 @@ func (k *Keychain) Delete(key string) error {
 func desktopClientGoMod(module string) string {
 	return `module ` + module + `
 
-go 1.24.2
+go 1.26.6
 
 require (
 	github.com/99designs/keyring v1.2.2

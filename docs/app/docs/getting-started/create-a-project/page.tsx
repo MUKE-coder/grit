@@ -300,7 +300,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                   />
                   <p className="text-muted-foreground leading-relaxed mt-4">
                     Verify with <code>grit --help</code>. You&apos;ll also need a few tools installed
-                    &mdash; <strong>Go 1.24+</strong>, <strong>Node 22+</strong>,{' '}
+                    &mdash; <strong>Go 1.26.6+</strong>, <strong>Node 22+</strong>,{' '}
                     <strong>pnpm 9+</strong>, and <strong>Docker</strong> (skippable for desktop).
                     New to any of them? The{' '}
                     <Link href="/docs/getting-started/prerequisites">Prerequisites</Link> page has a

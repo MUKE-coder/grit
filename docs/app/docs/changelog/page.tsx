@@ -66,6 +66,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.249.0 */}
+            <div className="mb-12" id="v3.249.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.249.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A generated API builds on Go 1.26.6, and govulncheck finds nothing</h3>
+                <p>
+                  The next finding from the review of a scaffolded app. A fresh project&apos;s{' '}
+                  <code>go.mod</code> said <code>go 1.25.0</code>, which is what its release workflow
+                  installs, and its lint and security workflows asked for Go 1.24. Run on this
+                  machine&apos;s Go 1.26.4, <code>govulncheck</code> reported eight standard library
+                  vulnerabilities that the API&apos;s own code reaches, among them{' '}
+                  <code>net/http</code> and the <code>encoding/xml</code> behind SAML sign-in, which
+                  anyone can reach before signing in. Two modules were also below their fixed
+                  releases: <code>golang.org/x/crypto</code> and <code>filippo.io/edwards25519</code>.
+                </p>
+                <p>
+                  The API&apos;s <code>go.mod</code> now says <code>go 1.26.6</code>. That one line is
+                  what <code>setup-go</code> and the release workflow install, and an older Go
+                  downloads 1.26.6 on first build, so it raises the version everywhere at once. The
+                  Dockerfiles pin <code>golang:1.26.6-alpine</code>, the generated lint and security
+                  workflows pin 1.26.6, the desktop app follows, and the scaffold requires{' '}
+                  <code>x/crypto</code> v0.57.0 and <code>edwards25519</code> v1.2.0. On a fresh
+                  project <code>govulncheck ./...</code> now reports no vulnerabilities.
+                </p>
+                <p>
+                  <code>grit upgrade</code> raises an older <code>go</code> directive, raises both
+                  modules to their floors (so <code>grit doctor</code> reports a project left below
+                  them), and raises Go pins below 1.26.6 in your Dockerfiles and workflows, leaving a
+                  newer pin alone.
+                </p>
+              </div>
+            </div>
+
             {/* v3.248.0 */}
             <div className="mb-12" id="v3.248.0">
               <div className="flex items-center gap-3 mb-4">

@@ -82,7 +82,7 @@ export default function TutorialProductCatalogPage() {
               </h2>
               <ul className="space-y-2.5">
                 {[
-                  "Go 1.21+ installed",
+                  "Go 1.26.6+ installed (an older Go downloads it)",
                   "Node.js 18+ and pnpm installed",
                   "Docker and Docker Compose installed",
                   "Grit CLI installed — see /docs/getting-started/installation (one-line install script)",

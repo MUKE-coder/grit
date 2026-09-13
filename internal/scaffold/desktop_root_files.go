@@ -45,7 +45,7 @@ func desktopWailsJSON(opts DesktopOptions) string {
 func desktopGoMod(opts DesktopOptions) string {
 	return fmt.Sprintf(`module %s
 
-go 1.21
+go 1.26.6
 
 require (
 	github.com/wailsapp/wails/v2 v2.9.1
