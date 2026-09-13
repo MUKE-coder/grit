@@ -195,5 +195,67 @@ func TestListUserSessionsExcludesRevoked(t *testing.T) {
 	require.Len(t, live, 1)
 	assert.Equal(t, keep.ID, live[0].ID)
 }
+
+func tokenService(db *gorm.DB) *services.AuthService {
+	return &services.AuthService{
+		Secret:        "a-test-secret-that-is-longer-than-32-characters",
+		AccessExpiry:  time.Minute,
+		RefreshExpiry: time.Hour,
+		DB:            db,
+	}
+}
+
+// A refresh token is not an access token, and an access token dies with its
+// session rather than when it expires.
+func TestAccessTokensFollowTheirSession(t *testing.T) {
+	db := newSessionDB(t)
+	auth := tokenService(db)
+	pair, err := auth.GenerateTokenPair("user-1", "a@example.com", "USER")
+	require.NoError(t, err)
+	s, err := services.CreateSession(db, sessionCtx("Chrome"), "user-1", pair.RefreshToken)
+	require.NoError(t, err)
+
+	claims, err := auth.ValidateAccessToken(pair.AccessToken)
+	require.NoError(t, err)
+	assert.Equal(t, s.ID, claims.SessionID, "the row's id is the one the tokens name")
+
+	_, err = auth.ValidateAccessToken(pair.RefreshToken)
+	assert.Error(t, err, "a refresh token was accepted as an access token")
+	_, err = auth.ValidateRefreshToken(pair.AccessToken)
+	assert.Error(t, err, "an access token was accepted as a refresh token")
+
+	require.NoError(t, services.RevokeSessionByToken(db, pair.RefreshToken))
+	_, err = auth.ValidateAccessToken(pair.AccessToken)
+	assert.Error(t, err, "an access token outlived its revoked session")
+}
+
+// A token minted without CreateSession names a session that does not exist.
+func TestAnAccessTokenWithNoSessionIsRefused(t *testing.T) {
+	db := newSessionDB(t)
+	auth := tokenService(db)
+	pair, err := auth.GenerateTokenPair("user-1", "a@example.com", "USER")
+	require.NoError(t, err)
+	_, err = auth.ValidateAccessToken(pair.AccessToken)
+	assert.Error(t, err)
+}
+
+// Rotation keeps the session id, so refreshed access tokens still name the row.
+func TestRefreshKeepsTheSessionID(t *testing.T) {
+	db := newSessionDB(t)
+	auth := tokenService(db)
+	pair, err := auth.GenerateTokenPair("user-1", "a@example.com", "USER")
+	require.NoError(t, err)
+	s, err := services.CreateSession(db, sessionCtx("Chrome"), "user-1", pair.RefreshToken)
+	require.NoError(t, err)
+
+	next, err := auth.GenerateSessionTokenPair("user-1", "a@example.com", "USER", services.SessionIDForToken(db, pair.RefreshToken))
+	require.NoError(t, err)
+	_, err = services.RotateSession(db, sessionCtx("Chrome"), pair.RefreshToken, next.RefreshToken)
+	require.NoError(t, err)
+
+	claims, err := auth.ValidateAccessToken(next.AccessToken)
+	require.NoError(t, err)
+	assert.Equal(t, s.ID, claims.SessionID)
+}
 `
 }

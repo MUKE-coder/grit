@@ -133,6 +133,12 @@ jobs:
             --db grit --db-user grit --db-password grit \
             --db-host localhost --db-port 5432
 
+      # A refresh token is not an access token, and an access token dies with
+      # its session: logout and "sign out everywhere" reach it. The browser's
+      # refresh cookie reaches the routes it is for.
+      - name: Token types and revocation
+        run: python3 tests/live/verify_tokens.py http://localhost:8080
+
       # Production is the default and the strict mode. The same build, started
       # with APP_ENV=production beside the development server: GORM Studio and
       # /docs are gone, the login limit fires on the real path, and a default

@@ -66,6 +66,69 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.244.0 */}
+            <div className="mb-12" id="v3.244.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.244.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A refresh token is not an access token, and logging out ends the session</h3>
+                <p>
+                  The next finding from the review of a scaffolded app, reproduced on a fresh
+                  project before it was fixed. Seven of thirteen checks failed.
+                </p>
+                <ul>
+                  <li>
+                    <strong>Refresh tokens worked as access tokens.</strong> The two were the same
+                    shape, so the seven-day refresh token, which the login response also returns in
+                    its body, was accepted as a bearer token on every route and on the WebSocket.
+                  </li>
+                  <li>
+                    <strong>Revoking a session reached nothing already issued.</strong> The auth
+                    middleware never read the sessions table, so after logging out, signing out
+                    everywhere or changing a password, every access token kept working until it
+                    expired.
+                  </li>
+                  <li>
+                    <strong>The refresh cookie never reached its routes.</strong> It was scoped to{' '}
+                    <code>/api/auth</code>, and refresh and logout are mounted under{' '}
+                    <code>/api/v1/auth</code>. A browser never sent it to either, so a web session
+                    could not refresh (the admin sent you back to the sign-in page when the access
+                    token expired) and logout revoked nothing.
+                  </li>
+                </ul>
+                <p>
+                  Tokens now carry a type and the id of the session they belong to.{' '}
+                  <code>ValidateAccessToken</code>, which the auth middleware and the WebSocket
+                  handshake call, accepts only an access token whose session is live, checked
+                  against the database and trusted for 30 seconds. Revoking a session through this
+                  process takes effect at once, and through another replica within those 30 seconds.
+                  <code>/auth/refresh</code> accepts only a refresh token and keeps the session id
+                  through rotation, and the cookie is scoped to the versioned auth routes. Two-factor
+                  sign-in and impersonation now record sessions, which they did not before. The JWT
+                  parser also insists on HS256 and an expiry.
+                </p>
+                <p>
+                  <code>grit upgrade</code> delivers the new auth and session services and edits the
+                  middleware, the WebSocket handler, refresh, two-factor sign-in, the impersonation
+                  plugin and the service wiring where they still read as Grit wrote them. Existing
+                  sessions survive: an access token from before the upgrade is refused once, and the
+                  client refreshes with its old refresh token, which is still accepted. If you mint
+                  tokens yourself with <code>GenerateTokenPair</code>, record the session with{' '}
+                  <code>services.CreateSession</code>, or the access token is refused.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  After the fix all thirteen checks pass, on a fresh project and on an upgraded copy
+                  of the reviewed app, and they run in the CI live suite on every push. The session
+                  tests that ship into each project cover token types, revocation and rotation.
+                </p>
+              </div>
+            </div>
+
             {/* v3.243.0 */}
             <div className="mb-12" id="v3.243.0">
               <div className="flex items-center gap-3 mb-4">
