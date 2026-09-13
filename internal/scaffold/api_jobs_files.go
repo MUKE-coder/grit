@@ -405,8 +405,14 @@ func handleImageProcess(deps WorkerDeps) func(ctx context.Context, task *asynq.T
 		}
 		defer reader.Close()
 
-		// Generate thumbnail
+		// Generate thumbnail. An image refused as too large, or one that cannot
+		// be decoded, fails the same way on every attempt, so it is not retried.
+		// A decompression bomb used to be decoded in this process and retried
+		// until the retries ran out, restarting the API each time.
 		thumbBytes, err := storage.GenerateThumbnail(reader, payload.MimeType)
+		if errors.Is(err, storage.ErrImageTooLarge) || errors.Is(err, storage.ErrUnreadableImage) {
+			return fmt.Errorf("generating thumbnail for %s: %v: %w", payload.Key, err, asynq.SkipRetry)
+		}
 		if err != nil {
 			return fmt.Errorf("generating thumbnail: %w", err)
 		}

@@ -432,7 +432,7 @@ func Transform(r io.ReadSeeker, p Profile) (Result, error) {
 	if err != nil {
 		return Result{}, fmt.Errorf("reading image header: %w", err)
 	}
-	if px := cfg.Width * cfg.Height; px > p.MaxPixels {
+	if px := int64(cfg.Width) * int64(cfg.Height); px > int64(p.MaxPixels) {
 		return Result{}, fmt.Errorf(
 			"image is %dx%d (%d megapixels), over the %d megapixel limit",
 			cfg.Width, cfg.Height, px/1000000, p.MaxPixels/1000000)
@@ -926,7 +926,7 @@ func Transform(r io.ReadSeeker, p Profile) (Result, error) {
 	}
 	srcW, srcH := probe.Width(), probe.Height()
 	probe.Close()
-	if px := srcW * srcH; px > p.MaxPixels {
+	if px := int64(srcW) * int64(srcH); px > int64(p.MaxPixels) {
 		return Result{}, fmt.Errorf(
 			"image is %dx%d (%d megapixels), over the %d megapixel limit",
 			srcW, srcH, px/1000000, p.MaxPixels/1000000)
