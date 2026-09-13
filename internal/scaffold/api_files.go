@@ -660,8 +660,7 @@ func main() {
 	// Start server in goroutine
 	go func() {
 		log.Printf("Server starting on port %s", cfg.Port)
-		log.Printf("GORM Studio available at http://localhost:%s/studio", cfg.Port)
-		log.Printf("API Documentation at http://localhost:%s/docs", cfg.Port)
+` + serverDashboardLogs + `
 		if cfg.PulseEnabled {
 			log.Printf("Pulse dashboard at http://localhost:%s/pulse/ui/", cfg.Port)
 		}
@@ -914,6 +913,9 @@ type Config struct {
 	GithubClientID     string
 	GithubClientSecret string
 	OAuthFrontendURL   string // Where to redirect after OAuth callback
+
+	// Serve the API reference at /docs in production (API_DOCS_PUBLIC).
+	APIDocsPublic bool
 }
 
 // Load reads configuration from environment variables.
@@ -926,7 +928,8 @@ func Load() (*Config, error) {
 
 	cfg := &Config{
 		AppName:     getEnv("APP_NAME", "grit-app"),
-		AppEnv:      getEnv("APP_ENV", "development"),
+		// Production unless told otherwise: a server that forgot APP_ENV is strict.
+		AppEnv:      getEnv("APP_ENV", "production"),
 		Port:        getEnv("APP_PORT", "8080"),
 		AppURL:      getEnv("APP_URL", "http://localhost:8080"),
 		DatabaseURL: resolveDatabaseURL(),
@@ -1005,7 +1008,7 @@ func Load() (*Config, error) {
 	// connection attempt in cmd/server/main.go will surface a useful error
 	// if the resolved URL points at an unreachable database.
 
-	if cfg.JWTSecret == "" {
+` + configProductionBlock + `	if cfg.JWTSecret == "" {
 		return nil, fmt.Errorf("JWT_SECRET is required")
 	}
 	if len(cfg.JWTSecret) < 32 {
@@ -1034,6 +1037,7 @@ func Load() (*Config, error) {
 	return cfg, nil
 }
 
+` + configCheckSecretsFunc + `
 // IsDevelopment returns true if the app is running in development mode.
 func (c *Config) IsDevelopment() bool {
 	return c.AppEnv == "development"
@@ -9054,6 +9058,7 @@ func eventBusStatus() interface{} {
 // the prefix will eventually be dragged onto a version it wasn't written for.
 const APIVersion = "v1"
 
+` + routesAuthLimitsFunc + `
 // wafExcludedRoutes lists the paths Sentinel's WAF steps aside for, under the
 // live API prefix.
 //
@@ -9137,18 +9142,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// In development, use relaxed rate limits so devs don't get blocked while testing
 		isDev := cfg.AppEnv == "development"
 		ipLimit := &sentinel.Limit{Requests: 100, Window: 1 * time.Minute}
-		routeLimits := map[string]sentinel.Limit{
-			"/api/auth/login":    {Requests: 5, Window: 15 * time.Minute},
-			"/api/auth/register": {Requests: 3, Window: 15 * time.Minute},
-		}
-		if isDev {
-			ipLimit = &sentinel.Limit{Requests: 1000, Window: 1 * time.Minute}
-			routeLimits = map[string]sentinel.Limit{
-				"/api/auth/login":    {Requests: 100, Window: 1 * time.Minute},
-				"/api/auth/register": {Requests: 100, Window: 1 * time.Minute},
-			}
-		}
-
+` + routesLimitsBlock + `
 		// Sentinel persists its security data (threat log, blocked IPs,
 		// audit trail) through its own storage adapter, NOT the *gorm.DB we
 		// pass in. Left unset it silently falls back to a local sentinel.db
@@ -9245,7 +9239,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			},
 			AuthShield: sentinel.AuthShieldConfig{
 				Enabled:    !isDev,
-				LoginRoute: "/api/auth/login",
+				LoginRoute: "/api/" + APIVersion + "/auth/login",
 				// v2.0 CAPTCHA tier sits between soft and hard thresholds.
 				// Wire a provider by setting CaptchaProvider in your app code.
 			},
@@ -9279,8 +9273,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// The OpenAPI reference. Its 141 route overrides live in apidocs.go, where
 	// they are 500 lines of description rather than 500 lines in the middle of
 	// the file that wires your application together.
-	registerAPIDocs(r, db, cfg)
-
+` + routesDocsBlock + `
 	// Mount Pulse observability (request tracing, DB monitoring, runtime metrics, error tracking)
 	if cfg.PulseEnabled {
 		// Pulse v1.0 uses functional options + a context. The context

@@ -625,6 +625,7 @@ func isSAMLACSPath(path string) bool {
 		(strings.HasPrefix(path, "/api/") && strings.Contains(path, "/auth/saml/"))
 }
 
+` + csrfAuthRouteFunc + `
 func AutoCSRF() gin.HandlerFunc {
 	const (
 		csrfCookie   = "grit_csrf"
@@ -633,15 +634,7 @@ func AutoCSRF() gin.HandlerFunc {
 	)
 	// Routes that bootstrap the session (login etc.) can't have a CSRF
 	// cookie yet — exempt them so users can sign in on the first try.
-	bootstrap := map[string]bool{
-		"/api/auth/login":           true,
-		"/api/auth/register":        true,
-		"/api/auth/refresh":         true,
-		"/api/auth/forgot-password": true,
-		"/api/auth/reset-password":  true,
-		"/api/auth/totp/verify":     true,
-		"/api/auth/totp/backup-codes/verify": true,
-	}
+	` + csrfBootstrapMap + `
 	return func(c *gin.Context) {
 		method := strings.ToUpper(c.Request.Method)
 		path := c.Request.URL.Path
@@ -662,7 +655,7 @@ func AutoCSRF() gin.HandlerFunc {
 		}
 
 		// Bootstrap auth endpoints are exempt — they create the session.
-		if bootstrap[path] {
+		if bootstrap[authRoute(path)] {
 			c.Next()
 			return
 		}

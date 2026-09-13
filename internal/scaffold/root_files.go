@@ -131,7 +131,13 @@ func envFile(opts Options) string {
 
 # App
 APP_NAME=%s
+# development or production. Unset means production, the strict one: rate limits
+# on, the WAF blocking, GORM Studio and /docs off, and a default or short secret
+# stops the server from starting.
 APP_ENV=development
+# Serve the API reference at /docs in production as well. It maps every route
+# and has a console that calls them, so it is off there unless you say so.
+API_DOCS_PUBLIC=false
 APP_PORT=8080
 APP_URL=http://localhost:8080
 
@@ -346,6 +352,10 @@ GORM_STUDIO_USERNAME=admin
 GORM_STUDIO_PASSWORD=%s
 GORM_STUDIO_READ_ONLY=false
 GORM_STUDIO_DISABLE_SQL=false
+# In production Studio stays off whatever GORM_STUDIO_ENABLED says, because this
+# file gets copied to servers whole. This turns it on there, read-only and with
+# no SQL editor.
+GORM_STUDIO_IN_PRODUCTION=false
 
 # ============================================
 # Optional modules

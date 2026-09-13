@@ -1197,9 +1197,9 @@ pushed, and name the version.
 - [ ] H4 F - any user lists uploads; CompleteUpload accepts any object key (list and read scoping shipped in v3.241.0; the CompleteUpload key check is open)
 - [ ] H5 F - refresh tokens accepted as access tokens; no session check; refresh cookie path mismatch
 - [ ] H6 F - TOTP brute force and replay; Enable overwrites; Verify skips lock checks
-- [ ] H7 F - login rate limits keyed to unversioned paths; APP_ENV defaults to development
+- [x] H7 F (v3.243.0) - login rate limits keyed to unversioned paths; APP_ENV defaults to development
 - [x] H8 F+A (v3.241.0) - real secrets in .env.example; *.db not git-ignored
-- [ ] H9 F - GORM Studio (writable SQL) on in production; /docs public
+- [x] H9 F (v3.243.0) - GORM Studio (writable SQL) on in production; /docs public
 - [ ] H10 F - production MinIO on minioadmin; every container gets every secret
 - [ ] H11 F - reachable Go stdlib CVEs; release built on go 1.25.0
 - [ ] H12 F - thumbnail worker decodes without a pixel cap (OOM loop)

@@ -125,7 +125,7 @@ admin.Use(authz.RequireRoles("ADMIN"))   // role gate
         defence: (
           <>
             <p>
-              Sentinel rate-limits <code>/api/auth/login</code> to 5 attempts / 15 min
+              Sentinel rate-limits <code>/api/v1/auth/login</code> to 5 attempts / 15 min
               per IP. After repeated failures, AuthShield places the account in a
               cool-down window per user, not just per IP — defeating distributed
               brute-force from a botnet.
@@ -137,12 +137,12 @@ admin.Use(authz.RequireRoles("ADMIN"))   // role gate
     Enabled: true,
     ByIP:    &sentinel.Limit{Requests: 100, Window: time.Minute},
     ByRoute: map[string]sentinel.Limit{
-        "/api/auth/login": {Requests: 5, Window: 15 * time.Minute},
+        "/api/" + APIVersion + "/auth/login": {Requests: 5, Window: 15 * time.Minute},
     },
 },
 AuthShield: sentinel.AuthShieldConfig{
     Enabled: true,
-    LoginRoute: "/api/auth/login",
+    LoginRoute: "/api/" + APIVersion + "/auth/login",
 },`}
             />
           </>
