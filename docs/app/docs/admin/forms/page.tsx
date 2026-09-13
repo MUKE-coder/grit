@@ -712,6 +712,13 @@ export default defineResource({
                 a <code>text</code> column in the Go model (to store the HTML) and a
                 <code>richtext</code> form field in the admin resource definition.
               </p>
+              <p>
+                The model field is tagged <code>sanitize:&quot;html&quot;</code>, because the HTML
+                is rendered for somebody other than its author. The API removes scripts, event
+                handlers, iframes and <code>javascript:</code> links from it on every write, and
+                the formatting the editor produces survives. See{' '}
+                <a href="/docs/security/defenders-handbook">the defenders handbook</a>.
+              </p>
             </div>
 
             <div className="mt-4 mb-8">
@@ -719,7 +726,7 @@ export default defineResource({
 grit generate resource Article title:string content:richtext status:select
 
 # The generator produces:
-# - Go model:  Content string \`gorm:"type:text" json:"content"\`
+# - Go model:  Content string \`gorm:"type:text" json:"content" sanitize:"html"\`
 # - Zod schema: content: z.string().optional()
 # - Form field: { key: 'content', label: 'Content', type: 'richtext' }`} />
             </div>

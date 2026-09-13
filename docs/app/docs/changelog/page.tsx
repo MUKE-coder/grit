@@ -66,6 +66,59 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.242.0 */}
+            <div className="mb-12" id="v3.242.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.242.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Stored XSS: rich text is sanitised on its way into the database, and again in the browser</h3>
+                <p>
+                  The next finding from the review of a scaffolded app. The demo blog stored a
+                  post&apos;s HTML exactly as it was sent, and the web app rendered it with{' '}
+                  <code>dangerouslySetInnerHTML</code> on the same origin as the admin panel. There
+                  was no sanitiser in either tier. So an account allowed only to edit posts could save{' '}
+                  <code>{`<img src=x onerror="...">`}</code>, wait for an admin to read it, and let the
+                  script call the API as that admin: issue itself an API key, or give itself the
+                  ADMIN role. Any <code>richtext</code> field on a generated resource had the same
+                  problem the moment somebody rendered it.
+                </p>
+                <p>
+                  Every API now has <code>internal/sanitize</code>, installed on the database handle
+                  when it connects. Every field tagged <code>sanitize:&quot;html&quot;</code> is cleaned
+                  on every write that has a model, whichever way the write arrives: create, PUT,
+                  PATCH, bulk edit, the CSV importer, sync push and GORM Studio&apos;s row editor. The
+                  generator tags <code>richtext</code> fields, and the blog&apos;s content is tagged.
+                  The policy keeps what the admin editor produces (headings, lists, links, images,
+                  tables, code blocks with their language, text alignment, colours and highlights)
+                  and removes scripts, event handlers, <code>javascript:</code> URLs, iframes and any
+                  other styling. The blog pages, in the Next app, the Vite app and the single-app SPA,
+                  also render through DOMPurify, which covers posts stored before this release.
+                </p>
+                <p>
+                  <code>grit upgrade</code> adds bluemonday and the package, wires it into{' '}
+                  <code>database.go</code>, tags the blog&apos;s content and adds{' '}
+                  <code>dompurify</code> to the web app, so run <code>pnpm install</code> afterwards.
+                  It cannot tell a rich text column from a plain text one in a resource you already
+                  generated, so add <code>sanitize:&quot;html&quot;</code> to those fields&apos; tags
+                  yourself. Rows already stored are not rewritten; saving one again cleans it. Raw SQL
+                  and <code>db.Table</code> without a model bypass the sanitiser.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Verified live on a fresh double: the attack is gone from the stored row and the
+                  public page after a create and an edit of a post, and from a generated richtext
+                  field after create, PUT, PATCH and bulk patch, while centred text survives. The
+                  sanitiser&apos;s own tests ship into the project and pass there and on an upgraded
+                  copy of the reviewed app, and the Next and SPA builds pass with DOMPurify. The CI
+                  live suite gains four checks.
+                </p>
+              </div>
+            </div>
+
             {/* v3.241.0 */}
             <div className="mb-12" id="v3.241.0">
               <div className="flex items-center gap-3 mb-4">

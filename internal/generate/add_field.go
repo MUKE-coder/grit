@@ -156,6 +156,9 @@ func (g *Generator) injectModelField(names Names, f Field) error {
 	if f.Required && f.GoType() == "string" {
 		tags += ` binding:"required"`
 	}
+	if FieldType(f.Type) == FieldRichtext && !f.Encrypted {
+		tags += ` sanitize:"html"`
+	}
 	line := fmt.Sprintf("\t%s %s `%s`", goName, f.GoType(), tags)
 	return injectModelLine(path, names.Pascal, line)
 }

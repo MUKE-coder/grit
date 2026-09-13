@@ -99,6 +99,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "crypto", "field.go"):                apiCryptoFieldGo(),
 		filepath.Join(apiRoot, "internal", "crypto", "field_test.go"):           apiCryptoFieldTestGo(),
 		filepath.Join(apiRoot, "internal", "crypto", "map_update_test.go"):      apiCryptoMapUpdateTestGo(),
+		filepath.Join(apiRoot, "internal", "sanitize", "html.go"):               apiSanitizeHTMLGo(),
+		filepath.Join(apiRoot, "internal", "sanitize", "html_test.go"):          apiSanitizeHTMLTestGo(),
 		// v3.31.40 — per-user dashboard customisation
 		filepath.Join(apiRoot, "internal", "models", "dashboard_layout.go"):   dashboardLayoutModelGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "dashboard_layout.go"): strings.ReplaceAll(dashboardLayoutHandlerGo(), "{{MODULE}}", opts.Module()),
@@ -292,6 +294,10 @@ require (
 	github.com/hibiken/asynq v0.24.1
 	github.com/markbates/goth v1.80.0
 	github.com/joho/godotenv v1.5.1
+	// The HTML sanitiser behind internal/sanitize. Rich text is rendered as HTML
+	// by the blog and by anything built on a richtext field, so it is cleaned on
+	// the way in rather than trusted on the way out.
+	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/redis/go-redis/v9 v9.22.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	// CVE-2026-54063 and CVE-2026-59161: the worksheet and streaming
@@ -1419,6 +1425,7 @@ import (
 
 	"{{MODULE}}/internal/appendonly"
 	"{{MODULE}}/internal/crypto"
+	"{{MODULE}}/internal/sanitize"
 )
 
 // Connect establishes a database connection using the provided DSN.
@@ -1519,6 +1526,13 @@ func Connect(dsn string) (*gorm.DB, error) {
 	// this the first edit to an encrypted column stored plaintext.
 	if err := crypto.Install(db); err != nil {
 		return nil, fmt.Errorf("installing field encryption for map updates: %w", err)
+	}
+
+	// Rich text is sanitised on its way into the database: every field tagged
+	// sanitize:"html", through every write that has a model (create, update,
+	// PATCH, bulk edit, CSV import, sync push, GORM Studio's row editor).
+	if err := sanitize.Install(db); err != nil {
+		return nil, fmt.Errorf("installing the HTML sanitiser: %w", err)
 	}
 
 	// Append-only tables refuse UPDATE and DELETE through this handle, so GORM

@@ -230,6 +230,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairReviewCriticals(root, opts); err != nil {
 			fmt.Printf("  ⚠ applying the security review fixes: %v\n", err)
 		}
+		// Stored XSS: rich text is sanitised in the API on every write, and the
+		// blog pages render through DOMPurify.
+		if err := ensureRichTextSafety(root, opts); err != nil {
+			fmt.Printf("  ⚠ sanitising rich text: %v\n", err)
+		}
 		// The activity-log chain was hashed at a precision Postgres and MySQL
 		// do not store, so it failed verification on its first row. Only where
 		// the audit package is already there.

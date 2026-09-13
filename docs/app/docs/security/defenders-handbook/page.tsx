@@ -746,6 +746,33 @@ const BONUS: Bonus[] = [
     ),
   },
   {
+    title: 'Rich text is sanitised before it is stored',
+    body: (
+      <>
+        <p>
+          HTML that one account writes and another reads is the classic stored XSS, and an
+          admin panel on the same origin turns it into an account takeover. Grit cleans it in
+          the API: <code>internal/sanitize</code> is installed on the database handle when the
+          API connects, and every field tagged <code>sanitize:&quot;html&quot;</code> is cleaned
+          on every write that has a model. Create, update, PATCH, bulk edit, CSV import, sync
+          push and GORM Studio are all covered. Generated <code>richtext</code> fields and the
+          blog are tagged for you, and the blog pages render through DOMPurify as well.
+        </p>
+        <CodeBlock
+          language="go"
+          code={`type Page struct {
+	Body string \`gorm:"type:text" json:"body" sanitize:"html"\`
+}`}
+        />
+        <p>
+          Raw SQL and <code>db.Table(&quot;pages&quot;)</code> without a model bypass it. If you
+          render stored HTML with <code>dangerouslySetInnerHTML</code> anywhere else, sanitise it
+          there too.
+        </p>
+      </>
+    ),
+  },
+  {
     title: 'CSRF middleware (double-submit + SameSite)',
     body: (
       <>

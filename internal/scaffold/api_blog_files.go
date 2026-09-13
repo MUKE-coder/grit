@@ -42,7 +42,7 @@ type Blog struct {
 	ID          string         ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
 	Title       string         ` + "`" + `gorm:"size:255;not null" json:"title" binding:"required"` + "`" + `
 	Slug        string         ` + "`" + `gorm:"size:255;uniqueIndex" json:"slug"` + "`" + `
-	Content     string         ` + "`" + `gorm:"type:text" json:"content"` + "`" + `
+	Content     string         ` + "`" + `gorm:"type:text" json:"content" sanitize:"html"` + "`" + `
 	Image       string         ` + "`" + `gorm:"size:500" json:"image"` + "`" + `
 	Excerpt     string         ` + "`" + `gorm:"size:500" json:"excerpt"` + "`" + `
 	Published   bool           ` + "`" + `gorm:"default:false" json:"published"` + "`" + `

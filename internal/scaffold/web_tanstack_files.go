@@ -68,6 +68,7 @@ func webTanStackPackageJSON(opts Options) string {
     "@tanstack/react-router": "^1.93.0",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
+    "dompurify": "^3.4.15",
     "lucide-react": "^0.468.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
@@ -396,6 +397,7 @@ func webTanStackBlogDetailRoute() string {
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { ArrowLeft } from 'lucide-react'
+import DOMPurify from 'dompurify'
 
 export const Route = createFileRoute('/blog/$slug')({
   component: BlogDetailPage,
@@ -439,7 +441,7 @@ function BlogDetailPage() {
       <span className="text-sm text-muted-foreground/50 block mb-8">
         {new Date(blog.created_at).toLocaleDateString()}
       </span>
-      <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: blog.content }} />
+      <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(blog.content, { USE_PROFILES: { html: true }, ADD_ATTR: ['target'] }) }} />
     </div>
   )
 }
