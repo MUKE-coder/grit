@@ -577,6 +577,38 @@ def check_error_codes(alice, alice_email):
               isinstance(err(body).get('details', {}), dict), err(body))
 
 
+def check_append_only(alice):
+    """A ledger's rows are written once. The route layer refuses a change and so
+    does the table, and the bulk load still has to work: history arrives as a CSV
+    of rows that already happened, which is an insert, not an edit."""
+    marker = 'entry-' + uuid.uuid4().hex[:6]
+    status, _, body = call('POST', '/api/v1/entries', alice, {'ref': marker, 'memo': 'as written'})
+    entry_id = (data(body) or {}).get('id')
+    check('Append-only: a row can be created', status in (200, 201) and entry_id, (status, body[:160]))
+
+    status, _, _ = call('PUT', '/api/v1/entries/%s' % entry_id, alice, {'memo': 'changed'})
+    check('Append-only: there is no update route', status == 404, status)
+    status, _, _ = call('DELETE', '/api/v1/entries/%s' % entry_id, alice)
+    check('Append-only: there is no delete route', status == 404, status)
+
+    # The table is the second guard, and the one that holds against SQL.
+    psql("update entries set memo = 'tampered' where ref = '%s'" % marker)
+    memo = psql("select memo from entries where ref = '%s'" % marker)
+    check('Append-only: the table refuses an UPDATE too', memo == 'as written', memo)
+
+    # The bulk load: insert-only, so an append-only resource keeps it.
+    status, _, body = call('GET', '/api/v1/entries/import/template', alice)
+    check('Append-only: the import template is served', status == 200 and b'ref' in body, (status, body[:120]))
+
+    bulk = 'bulk-' + uuid.uuid4().hex[:6]
+    status, _, body = upload_csv('/api/v1/entries/import', alice,
+                                 'ref,memo\r\n%s-1,history\r\n%s-2,history\r\n' % (bulk, bulk))
+    job = wait_job((data(body) or {}).get('job_id', 'missing'), alice)
+    count = psql("select count(*) from entries where ref like '%s%%'" % bulk)
+    check('Append-only: a CSV of history imports',
+          status == 202 and job.get('status') == 'completed' and count == '2', (status, job, count))
+
+
 def check_write_errors(alice):
     """Five write paths bound the error and returned a constant 500, so a rule
     enforced in a GORM hook reached neither the client nor the log."""
@@ -638,6 +670,7 @@ def main():
     check_tree(alice)
     check_public_surface(alice, admin, category, product_id)
     check_csv_import(alice, admin, alice_id, alice_email, bob, bob_id)
+    check_append_only(alice)
     check_write_errors(alice)
     check_error_codes(alice, alice_email)
 

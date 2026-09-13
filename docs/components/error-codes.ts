@@ -820,6 +820,32 @@ export const errorCodeAreas: ErrorCodeArea[] = [
     ],
   },
   {
+    area: 'stock',
+    label: 'stock',
+    codes: [
+      {
+        code: 'INSUFFICIENT_STOCK',
+        status: 422,
+        category: 'state',
+        meaning: 'The row has less available than the quantity asked for, and nothing was taken.',
+        client: 'Show what is left and let the person choose again; do not retry the same quantity.',
+      },
+    ],
+  },
+  {
+    area: 'money',
+    label: 'money',
+    codes: [
+      {
+        code: 'INSUFFICIENT_FUNDS',
+        status: 422,
+        category: 'state',
+        meaning: 'The balance is lower than the amount, and nothing was moved.',
+        client: 'Show the balance. A retry only helps after money arrives.',
+      },
+    ],
+  },
+  {
     area: 'workflow',
     label: 'Workflows',
     codes: [
@@ -915,7 +941,7 @@ export const errorCodeAreas: ErrorCodeArea[] = [
 ]
 
 /** How many codes the API documents. Shown on the page, so it cannot be stale. */
-export const errorCodeCount = 106
+export const errorCodeCount = 108
 
 /** Every row, flattened, for searching and for a test that checks coverage. */
 export const errorCodes: ErrorCodeRow[] = errorCodeAreas.flatMap((area) => area.codes)

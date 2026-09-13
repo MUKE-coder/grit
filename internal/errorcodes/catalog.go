@@ -395,6 +395,20 @@ var catalog = []Entry{
 		"The since parameter is not an RFC3339 timestamp.",
 		"Send the cursor the last sync returned, unchanged."},
 
+	// ── Not enough of it ───────────────────────────────────────────────────────
+	//
+	// The framework ships stock.Take and money.Sub and had no code for what they
+	// refuse, so every application that sold something or moved money invented
+	// one. These are the two refusals an inventory or a ledger makes constantly,
+	// and a client has to tell them apart from a validation error: the request was
+	// right, the world said no.
+	{"INSUFFICIENT_STOCK", http.StatusUnprocessableEntity, CategoryState, "stock",
+		"The row has less available than the quantity asked for, and nothing was taken.",
+		"Show what is left and let the person choose again; do not retry the same quantity."},
+	{"INSUFFICIENT_FUNDS", http.StatusUnprocessableEntity, CategoryState, "money",
+		"The balance is lower than the amount, and nothing was moved.",
+		"Show the balance. A retry only helps after money arrives."},
+
 	// ── Workflows and trees ────────────────────────────────────────────────────
 	{"INVALID_TRANSITION", http.StatusUnprocessableEntity, CategoryState, "workflow",
 		"That move is not declared in the workflow for this status.",

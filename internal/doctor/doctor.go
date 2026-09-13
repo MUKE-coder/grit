@@ -78,6 +78,7 @@ var checks = []struct {
 	{"framework-library-behind", checkFrameworkDeps},
 	{"rate-limits-per-process", checkSentinelCounters},
 	{"public-allowlist-sensitive", checkPublicAllowlist},
+	{"outbox-topic-undelivered", checkOutboxRelays},
 }
 
 // Run audits the project at root.
@@ -148,6 +149,7 @@ type project struct {
 	snake         map[string]string // resource → its file name
 	resources     []string          // resources with a handler and a service
 	hasTenant     bool
+	allGo         string // every Go file under internal/, concatenated
 }
 
 var (
@@ -155,6 +157,10 @@ var (
 	fieldRe    = regexp.MustCompile("^\\s*(\\w+)\\s+([\\w\\.\\*\\[\\]]+)\\s+`[^`]*json:\"([a-zA-Z0-9_]+)")
 	ownerRe    = regexp.MustCompile(`func \(\w+ \*(\w+)\) GetOwnerID\(\) string \{\s*\n?\s*return \w+\.(\w+)`)
 	registerRe = regexp.MustCompile(`appendonly\.Register\(&(\w+)\{\}\)`)
+	// outbox.Enqueue(tx, "topic", ...) and the relays that drain it.
+	enqueueRe = regexp.MustCompile(`outbox\.Enqueue\([^,]+,\s*"([^"]+)"`)
+	relayRe   = regexp.MustCompile(`(?s)outbox\.Relay\{.{0,400}?\}`)
+	prefixRe  = regexp.MustCompile(`TopicPrefix:\s*(?:"([^"]*)"|(\w+))`)
 )
 
 // loadProject reads everything the checks look at, once.
@@ -198,6 +204,12 @@ func loadProject(root string) (*project, error) {
 			p.services[strings.TrimSuffix(name, ".go")] = src
 		}
 	}
+	// Every Go file in the API, for the checks that are not about one resource.
+	// An application's own outbox relay can be anywhere: a service, a command, a
+	// package of its own.
+	// The whole API, not only internal/: a relay is often a command of its own.
+	p.allGo = allGoFiles(p.apiRoot)
+
 	for name, src := range goFiles(filepath.Join(internal, "routes")) {
 		p.routes += src
 		if strings.HasSuffix(name, "_routes.go") {
@@ -874,4 +886,129 @@ func readFile(path string) string {
 func dirExists(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && info.IsDir()
+}
+
+// checkOutboxRelays finds topics that are written and never delivered.
+//
+// outbox.Enqueue puts a row in the table; a relay is what takes it out again.
+// The event bus starts one for "event:" and leaves everything else alone on
+// purpose, so a topic of your own with no relay of your own is a queue that only
+// grows. It is silent: the write succeeds, the transaction commits, and the
+// message sits at pending with zero attempts until somebody reads the table.
+func checkOutboxRelays(p *project) []Finding {
+	topics := map[string]bool{}
+	for _, m := range enqueueRe.FindAllStringSubmatch(p.allGo, -1) {
+		topics[m[1]] = true
+	}
+	if len(topics) == 0 {
+		return nil
+	}
+
+	// A relay with no prefix drains everything, which settles the question.
+	for _, m := range relayRe.FindAllStringSubmatch(p.allGo, -1) {
+		if !strings.Contains(m[0], "TopicPrefix") {
+			return nil
+		}
+	}
+
+	prefixes := []string{}
+	for _, m := range prefixRe.FindAllStringSubmatch(p.allGo, -1) {
+		if m[1] != "" {
+			prefixes = append(prefixes, m[1])
+			continue
+		}
+		// TopicPrefix: someConstant — resolve it if the constant is a literal.
+		if v := constValue(p.allGo, m[2]); v != "" {
+			prefixes = append(prefixes, v)
+		}
+	}
+
+	var uncovered []string
+	for topic := range topics {
+		covered := false
+		for _, prefix := range prefixes {
+			if strings.HasPrefix(topic, prefix) {
+				covered = true
+				break
+			}
+		}
+		if !covered {
+			uncovered = append(uncovered, topic)
+		}
+	}
+	sort.Strings(uncovered)
+
+	var out []Finding
+	for _, topic := range uncovered {
+		out = append(out, Finding{
+			Level:    "warning",
+			Resource: topic,
+			Message: "this project enqueues outbox messages on " + topic +
+				" and runs no relay that covers it, so those rows stay pending forever",
+			Fix: "start an outbox.Relay with TopicPrefix set to the prefix of your topics, " +
+				"the way internal/events does for \"event:\", and give it a Deliver that " +
+				"does the sending",
+		})
+	}
+	return out
+}
+
+// constValue finds a string constant's value, for TopicPrefix: someConstant.
+func constValue(src, name string) string {
+	m := regexp.MustCompile(name + `\s*=\s*"([^"]*)"`).FindStringSubmatch(src)
+	if len(m) == 2 {
+		return m[1]
+	}
+	return ""
+}
+
+// allGoFiles concatenates every Go file under dir, recursively, for the checks
+// that are about the project rather than about one resource.
+func allGoFiles(dir string) string {
+	var b strings.Builder
+	_ = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return nil
+		}
+		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+		// Without the comments: the outbox package documents itself with an
+		// Enqueue example, and a check that reads comments reports a project
+		// for a line of prose. A linter that cries wolf gets turned off.
+		b.WriteString(withoutComments(readFile(path)))
+		b.WriteString("\n")
+		return nil
+	})
+	return b.String()
+}
+
+// withoutComments drops whole-line // comments and /* */ blocks.
+//
+// Line comments only when the line is nothing else, so a URL inside a string is
+// untouched. That is enough for the checks that read code: what they must not
+// read is documentation showing how a call is written.
+func withoutComments(src string) string {
+	var b strings.Builder
+	inBlock := false
+	for _, line := range strings.Split(src, "\n") {
+		trimmed := strings.TrimSpace(line)
+		switch {
+		case inBlock:
+			if strings.Contains(trimmed, "*/") {
+				inBlock = false
+			}
+			continue
+		case strings.HasPrefix(trimmed, "//"):
+			continue
+		case strings.HasPrefix(trimmed, "/*"):
+			if !strings.Contains(trimmed, "*/") {
+				inBlock = true
+			}
+			continue
+		}
+		b.WriteString(line)
+		b.WriteString("\n")
+	}
+	return b.String()
 }

@@ -66,6 +66,66 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.240.0 */}
+            <div className="mb-12" id="v3.240.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.240.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A double-entry ledger under load, and the three gaps it found</h3>
+                <p>
+                  The second of the reviewer&apos;s stress projects: a ledger with multi-currency
+                  transfers, stock, an append-only journal and the transactional outbox, driven by
+                  32 concurrent workers. 3,000 transfers and 300 orders later the invariants all
+                  held. Every transfer wrote exactly two lines, every same-currency pair moved the
+                  same amount both ways, every balance reconciled against its own journal to the
+                  minor unit, 609 currency conversions rounded without drift, the product sold
+                  exactly its 250 units and refused the 51st, and not one journal row was ever
+                  mutated: not through the API, not in SQL, not by TRUNCATE.
+                </p>
+                <p>
+                  What it found was not in the arithmetic. It was in what the framework leaves to
+                  you without saying so.
+                </p>
+                <p>
+                  <strong>Nothing delivered the outbox.</strong> The event bus runs a relay for its
+                  own <code>event:</code> topics and deliberately leaves the rest of the table
+                  alone, so an application that enqueues <code>ledger.transfer</code> needs a relay
+                  of its own. Nothing says so at run time: the write succeeds, the transaction
+                  commits, and the rows sit at pending with zero attempts. 2,200 of them piled up
+                  before anybody looked. <code>grit doctor</code> checks for it now, reading the
+                  topics your code enqueues and the relays your code starts, and the outbox finally
+                  has a documentation page rather than one comment in a changelog.
+                </p>
+                <p>
+                  <strong>The taxonomy had no code for &quot;not enough of it&quot;.</strong> Grit
+                  ships <code>stock.Take</code> and <code>money.Sub</code> and had nothing for what
+                  they refuse, so every application that sells something or moves money invented a
+                  code. <code>INSUFFICIENT_STOCK</code> and <code>INSUFFICIENT_FUNDS</code> are in
+                  the catalogue now, both 422, and the generated TypeScript union knows them.
+                </p>
+                <p>
+                  <strong>An append-only resource had lost its bulk load.</strong>{' '}
+                  <code>--append-only</code> dropped the CSV import along with update and delete,
+                  and the import only inserts: <code>CreateInBatches</code> with{' '}
+                  <code>OnConflict DoNothing</code>. A ledger&apos;s history arrives as a file of
+                  rows that already happened, and there was no way to load it. The import is routed
+                  again, and the live suite now imports 2,000 rows into an append-only table while
+                  transfers run against it, then checks that the table still refuses an update.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The outbox itself came out of this well: 3,250 messages, delivered by a relay
+                  whose Deliver refused a third of the time, drained in ten seconds with 1,639
+                  retries, every key delivered exactly once. The retry path, the claim, the backoff
+                  and the dedupe key all behaved.
+                </p>
+              </div>
+            </div>
+
             {/* v3.239.0 */}
             <div className="mb-12" id="v3.239.0">
               <div className="flex items-center gap-3 mb-4">
