@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 7 to 13, 2026",
-    count: 63,
+    count: 64,
     entries: [
+      { version: "3.254.0", title: "Streams stream, and gzip stops costing a megabyte a response" },
       { version: "3.253.0", title: "The health check no longer stalls Redis" },
       { version: "3.252.0", title: "Uploads over 10 MB work, and a slow export is no longer cut off" },
       { version: "3.251.0", title: "A failed database write no longer passes for a successful one" },

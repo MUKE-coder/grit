@@ -40,6 +40,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "logger.go"):                apiLoggerMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "limits.go"):                middlewareLimitsGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "limits_test.go"):           middlewareLimitsTestGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "gzip.go"):                  middlewareGzipGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "gzip_test.go"):             middlewareGzipTestGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "maintenance.go"):           apiMaintenanceMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "idempotency.go"):           apiIdempotencyMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "hub.go"):                     apiRealtimeHubGo(),
@@ -3708,7 +3710,6 @@ func apiLoggerMiddlewareGo() string {
 	return `package middleware
 
 import (
-	"compress/gzip"
 	"fmt"
 	"log"
 	"math/rand"
@@ -3734,41 +3735,6 @@ func RequestID() gin.HandlerFunc {
 		c.Header("X-Request-ID", requestID)
 		c.Next()
 	}
-}
-
-// Gzip compresses responses using gzip encoding when the client supports it.
-func Gzip() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if !strings.Contains(c.GetHeader("Accept-Encoding"), "gzip") {
-			c.Next()
-			return
-		}
-
-		gz, err := gzip.NewWriterLevel(c.Writer, gzip.BestSpeed)
-		if err != nil {
-			c.Next()
-			return
-		}
-		defer gz.Close()
-
-		c.Header("Content-Encoding", "gzip")
-		c.Header("Vary", "Accept-Encoding")
-		c.Writer = &gzipResponseWriter{ResponseWriter: c.Writer, Writer: gz}
-		c.Next()
-	}
-}
-
-type gzipResponseWriter struct {
-	gin.ResponseWriter
-	Writer *gzip.Writer
-}
-
-func (g *gzipResponseWriter) Write(data []byte) (int, error) {
-	return g.Writer.Write(data)
-}
-
-func (g *gzipResponseWriter) WriteString(s string) (int, error) {
-	return g.Writer.Write([]byte(s))
 }
 
 // SecurityHeaders adds production security headers to every response.

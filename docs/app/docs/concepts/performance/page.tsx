@@ -54,37 +54,46 @@ export default function PerformancePage() {
                       <h3 className="text-lg font-semibold tracking-tight">Gzip Response Compression</h3>
                     </div>
                     <p className="text-muted-foreground leading-relaxed mb-4">
-                      All API responses are compressed with Gzip automatically. The middleware
-                      checks for <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Accept-Encoding: gzip</code> and
-                      wraps the Gin response writer to compress output at{' '}
-                      <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">BestSpeed</code> — the
+                      Text responses are compressed with Gzip when the client sends{' '}
+                      <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Accept-Encoding: gzip</code>, at{' '}
+                      <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">BestSpeed</code>, the
                       sweet spot between CPU cost and payload size. JSON payloads typically shrink by
-                      60–80%, dramatically reducing bandwidth on paginated list endpoints.
+                      60 to 80%, which matters most on paginated list endpoints. Compressors come from a
+                      pool, so a response does not pay to build one.
+                    </p>
+                    <p className="text-muted-foreground leading-relaxed mb-4">
+                      The middleware decides at the handler&apos;s first write, when the status and
+                      headers are known. It leaves alone anything already compressed (images, video, PDF,
+                      zip, xlsx), server-sent event streams, responses with no body and bodies declared
+                      under 1 KB, and it drops a declared{' '}
+                      <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Content-Length</code>{' '}
+                      when it compresses. <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Flush</code>{' '}
+                      flushes the compressor and then the connection, so a streamed response streams.
                     </p>
                     <StatBars
-                      title="Typical paginated JSON list — over the wire"
+                      title="Typical paginated JSON list, over the wire"
                       items={[
                         { label: 'Uncompressed', value: 100, display: '100 KB', tone: 'default' },
                         { label: 'Gzip (BestSpeed)', value: 28, display: '~28 KB', tone: 'primary' },
                       ]}
-                      caption="60–80% smaller responses, applied automatically to every route that sends JSON"
+                      caption="60 to 80% smaller JSON responses, on every route that sends text"
                     />
-                    <CodeBlock language="go" filename="apps/api/internal/middleware/middleware.go" code={`func Gzip() gin.HandlerFunc {
-    return func(c *gin.Context) {
-        if !strings.Contains(c.GetHeader("Accept-Encoding"), "gzip") {
-            c.Next()
-            return
-        }
-        gz, _ := gzip.NewWriterLevel(c.Writer, gzip.BestSpeed)
-        defer gz.Close()
-        c.Header("Content-Encoding", "gzip")
-        c.Header("Vary", "Accept-Encoding")
-        c.Writer = &gzipResponseWriter{ResponseWriter: c.Writer, Writer: gz}
-        c.Next()
+                    <CodeBlock language="go" filename="apps/api/internal/middleware/gzip.go" code={`// decide chooses, once, whether this response is compressed.
+func (g *gzipResponseWriter) decide(first []byte) {
+    h := g.ResponseWriter.Header()
+    status := g.ResponseWriter.Status()
+    if status < http.StatusOK || status == http.StatusNoContent || status == http.StatusNotModified ||
+        h.Get("Content-Encoding") != "" || !compressible(h.Get("Content-Type")) {
+        return // sent as it is
     }
+    h.Del("Content-Length")
+    h.Set("Content-Encoding", "gzip")
+    h.Add("Vary", "Accept-Encoding")
+    g.gz = gzipWriters.Get().(*gzip.Writer) // pooled
+    g.gz.Reset(g.ResponseWriter)
 }
 
-// Registered globally — applies to every route
+// Registered globally in routes.go
 r.Use(middleware.Gzip())`} />
                   </div>
 
