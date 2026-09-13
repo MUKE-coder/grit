@@ -279,8 +279,8 @@ import (
 // GetSyncTables(), and ~grit generate resource~ appends new resources at the
 // marker below — so a new resource joins offline sync automatically.
 var syncTables = []string{
-	"users",
-	"uploads",
+	// Never users or uploads: the API refuses to sync them, since a push is a
+	// generic write and a user row carries its own role.
 	// grit:sync-tables
 }
 
@@ -2594,7 +2594,7 @@ export function TitleBar({ showSidebarControls: _ = true }: TitleBarProps) {
   const [platform, setPlatform] = useState<"darwin" | "windows" | "linux">("windows");
   // Sync tables are owned by the Go side (grit generate resource appends to
   // them), so read them at runtime rather than hardcoding a list here.
-  const [syncTables, setSyncTables] = useState<string[]>(["users", "uploads"]);
+  const [syncTables, setSyncTables] = useState<string[]>([]);
 
   useEffect(() => {
     getPlatform().then(setPlatform);
@@ -3501,7 +3501,7 @@ export interface SyncStatus {
 // side so a newly generated resource is included automatically).
 export async function getSyncTables(): Promise<string[]> {
   if (isWails) return window.go!.main.App.GetSyncTables();
-  return ["users", "uploads"];
+  return [];
 }
 
 // setOfflineMode flips the manual "Work offline" switch. Turning it off

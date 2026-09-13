@@ -4725,6 +4725,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	"` + "{{MODULE}}" + `/internal/authz"
 	"` + "{{MODULE}}" + `/internal/services"
 	"` + "{{MODULE}}" + `/internal/sync"
 )
@@ -4811,6 +4812,9 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 	// local_only is a promise it never leaves the device, and a promise kept
 	// only by well-behaved clients is not one.
 	ch.Data = policy.StripLocalOnly(ch.Data)
+	// Fields the server owns: the row's id is the change's id, the version is the
+	// server's, and the timestamps are never the client's to set.
+	ch.Data = stripServerFields(ch.Data)
 	// The Go struct name (e.g. "Category") is the nicest entity label for the
 	// activity feed — offline edits should read the same as online ones.
 	entityType := reflect.TypeOf(proto).Elem().Name()
@@ -4825,6 +4829,9 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 			return PushResult{OK: false, Code: "DECODE_ERROR", Message: err.Error()}
 		}
 		setField(obj, "ID", ch.ID)
+		if !syncMayWrite(c, ch.Model, "create", obj) {
+			return PushResult{OK: false, Code: "FORBIDDEN", Message: "you may not create " + ch.Model}
+		}
 		if err := h.DB.Create(obj).Error; err != nil {
 			return PushResult{OK: false, Code: "CREATE_FAILED", Message: err.Error()}
 		}
@@ -4841,6 +4848,11 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 				return PushResult{OK: false, Code: "NOT_FOUND", Message: "row was deleted on the server"}
 			}
 			return PushResult{OK: false, Code: "INTERNAL_ERROR", Message: err.Error()}
+		}
+		// Not found rather than forbidden: a row the caller may not touch is one
+		// whose existence it does not get to learn.
+		if !syncMayWrite(c, ch.Model, "edit", current) {
+			return PushResult{OK: false, Code: "NOT_FOUND", Message: "row was deleted on the server"}
 		}
 		serverVersion := getIntField(current, "Version")
 		if serverVersion != ch.Version {
@@ -4886,6 +4898,11 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 			return PushResult{OK: false, Code: "DECODE_ERROR", Message: err.Error()}
 		}
 		setField(obj, "ID", ch.ID)
+		// The payload is merged onto the loaded row, so check again: an owner may
+		// not hand a row to somebody else by rewriting its owner field.
+		if !syncMayWrite(c, ch.Model, "edit", obj) {
+			return PushResult{OK: false, Code: "FORBIDDEN", Message: "you may not change who owns this row"}
+		}
 		// Seed Version with the server's value so the BeforeUpdate hook bumps it to
 		// serverVersion+1 regardless of what the client sent in the payload.
 		setIntField(obj, "Version", serverVersion)
@@ -4907,6 +4924,9 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 				return PushResult{OK: true}
 			}
 			return PushResult{OK: false, Code: "INTERNAL_ERROR", Message: err.Error()}
+		}
+		if !syncMayWrite(c, ch.Model, "delete", current) {
+			return PushResult{OK: false, Code: "NOT_FOUND", Message: "row was deleted on the server"}
 		}
 		serverVersion := getIntField(current, "Version")
 		if ch.Version != 0 && serverVersion != ch.Version {
@@ -4975,6 +4995,18 @@ func (h *SyncHandler) Pull(c *gin.Context) {
 		return
 	}
 
+	// Who reads what. A holder of <model>.view reads the table; anybody else
+	// reads only the rows they own, and only from a table whose rows have owners.
+	// Before this, any signed-in account pulled every row of every synced table.
+	seeAll := syncGranted(c, model, "view")
+	if _, owned := proto.(ownedRow); !seeAll && !owned {
+		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{
+			"code":    "FORBIDDEN",
+			"message": "you do not have permission to read " + model,
+		}})
+		return
+	}
+
 	// Build a slice of the right type via reflection.
 	sliceType := reflect.SliceOf(reflect.TypeOf(proto).Elem())
 	results := reflect.New(sliceType)
@@ -5010,6 +5042,12 @@ func (h *SyncHandler) Pull(c *gin.Context) {
 	var maxEff time.Time
 	for i := 0; i < rs.Len(); i++ {
 		item := rs.Index(i).Addr().Interface()
+		if eff, ok := effectiveSyncTime(item); ok && eff.After(maxEff) {
+			maxEff = eff
+		}
+		if !seeAll && !syncOwns(c, item) {
+			continue
+		}
 		b, merr := json.Marshal(item)
 		if merr != nil {
 			continue
@@ -5020,9 +5058,6 @@ func (h *SyncHandler) Pull(c *gin.Context) {
 		}
 		m["_deleted"] = isSyncDeleted(item)
 		rows = append(rows, policy.Projects(m))
-		if eff, ok := effectiveSyncTime(item); ok && eff.After(maxEff) {
-			maxEff = eff
-		}
 	}
 	if !maxEff.IsZero() {
 		cursor = maxEff.Format(time.RFC3339Nano)
@@ -5070,6 +5105,51 @@ func effectiveSyncTime(obj interface{}) (time.Time, bool) {
 		}
 	}
 	return eff, !eff.IsZero()
+}
+
+// ownedRow is a model whose rows belong to a user.
+type ownedRow interface {
+	GetOwnerID() string
+}
+
+// syncGranted reports whether the caller holds <model>.<action> or is ADMIN:
+// the same test the resource's own routes make with RequireRole.
+func syncGranted(c *gin.Context, model, action string) bool {
+	if role, _ := c.Get("user_role"); role == "ADMIN" {
+		return true
+	}
+	if grants, ok := c.Get("user_grants"); ok {
+		if list, ok := grants.([]string); ok {
+			return authz.Granted(list, model+"."+action)
+		}
+	}
+	return false
+}
+
+// syncOwns reports whether row belongs to the caller.
+func syncOwns(c *gin.Context, row interface{}) bool {
+	o, ok := row.(ownedRow)
+	if !ok {
+		return false
+	}
+	uid := c.GetString("user_id")
+	return uid != "" && o.GetOwnerID() == uid
+}
+
+// syncMayWrite: a holder of the permission may, and so may the owner of a row in
+// a table whose rows have owners. Nobody else.
+func syncMayWrite(c *gin.Context, model, action string, row interface{}) bool {
+	return syncGranted(c, model, action) || syncOwns(c, row)
+}
+
+// serverFields are never taken from a pushed payload.
+var serverFields = []string{"id", "version", "created_at", "updated_at", "deleted_at"}
+
+func stripServerFields(data map[string]interface{}) map[string]interface{} {
+	for _, k := range serverFields {
+		delete(data, k)
+	}
+	return data
 }
 
 // decodeInto round-trips a map through JSON into the target struct so
@@ -9340,8 +9420,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// offline-first desktop clients. The resource generator injects
 	// new resources at the marker below.
 	syncRegistry := sync.NewRegistry()
-	syncRegistry.Register("users", &models.User{})
-	syncRegistry.Register("uploads", &models.Upload{})
+	// Never users or uploads. A push is a generic write: a user row carries its
+	// own role and email, an upload row the key of any object in the bucket.
+	// Both have their own APIs with their own checks, and syncing them let any
+	// account make itself ADMIN.
 	syncRegistry.Register("blogs", &models.Blog{})
 	// grit:sync
 	syncHandler := handlers.NewSyncHandler(db, syncRegistry)

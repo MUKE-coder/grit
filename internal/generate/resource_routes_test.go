@@ -41,8 +41,9 @@ func TestResourceRoutesGoToTheirOwnFile(t *testing.T) {
 		"func init() {",
 		"RegisterRoutes(func(m *Mount) {",
 		"h := &handlers.ProductHandler{",
-		`m.Protected.GET("/products", h.List)`,
-		`m.Protected.GET("/products/:id", h.GetByID)`,
+		// No staff group in this project, so shared data is ADMIN's.
+		`m.Admin.GET("/products", h.List)`,
+		`m.Admin.GET("/products/:id", h.GetByID)`,
 		// Bulk sits with DELETE because it can delete.
 		`m.Admin.DELETE("/products/:id", h.Delete)`,
 		`m.Admin.POST("/products/bulk", h.Bulk)`,

@@ -728,14 +728,19 @@ const BONUS: Bonus[] = [
           code={`grit generate resource Invoice --fields "number:string,total:money" --owned-by user`}
         />
         <p className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
-          <strong className="text-amber-400">Without it, nothing is scoped.</strong>{' '}
+          <strong className="text-amber-400">Without it, the rows are shared, and permissions decide.</strong>{' '}
           The generator cannot guess which resources are per-user and which are
-          shared reference data, so a resource generated without{' '}
-          <code>--owned-by</code> is shared: its routes sit on the authenticated
-          group, and <strong>any signed-in user can read and write every row</strong>.
-          That is right for a product catalogue and badly wrong for an invoice. If
-          you did not pass the flag and did not add the check yourself, assume every
-          row of that resource is readable by every account you have issued.
+          shared data, so a resource generated without <code>--owned-by</code> or{' '}
+          <code>--tenant-owned</code> is shared: every row is visible to whoever may
+          see the resource at all. Since v3.241.0 that is decided per verb: each
+          route asks for <code>&lt;resource&gt;.view</code>, <code>.create</code>,{' '}
+          <code>.edit</code> or <code>.delete</code>, which an ADMIN holds and a role
+          grants. Before it, only delete asked, and{' '}
+          <strong>any signed-in account could read and write every row</strong>,
+          which on an app with open registration is anybody. <code>grit upgrade</code>{' '}
+          moves routes generated that way behind their permissions. If you wrote a
+          route by hand on <code>m.Protected</code>, it is still open to every account
+          you have issued.
         </p>
       </>
     ),

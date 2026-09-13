@@ -620,6 +620,51 @@ def check_write_errors(alice):
     check('Errors: so is a read of one', status == 404, status)
 
 
+def check_review_criticals(bob, bob_id, admin):
+    """The three criticals of the contact-app security review (v3.241.0).
+
+    A generated resource asked for a permission only to delete, so an account
+    registered a minute earlier read and exported every row. /sync/push decoded
+    the client's JSON over any row of any synced table, users included, so one
+    request made that account ADMIN. And GET /uploads/:id handed the path to GORM
+    as a SQL condition.
+    """
+    for label, (method, path, payload) in {
+        'list a shared resource': ('GET', '/api/v1/lots', None),
+        'export it': ('GET', '/api/v1/lots/export?format=csv', None),
+        'create in it': ('POST', '/api/v1/lots', {'title': 'not yours', 'current_bid': 1}),
+        'fetch its import template': ('GET', '/api/v1/lots/import/template', None),
+    }.items():
+        status, _, body = call(method, path, bob, payload)
+        check('Shared: an account with no permission cannot %s (403)' % label, status == 403,
+              (status, body[:160]))
+    # --tree routes lived in routes.go on the protected group: any account could
+    # move nodes of a shared tree or rewrite every path in it.
+    status, _, body = call('GET', '/api/v1/categories/tree', bob)
+    check('Shared: nor read a shared tree (403)', status == 403, (status, body[:160]))
+    status, _, body = call('POST', '/api/v1/categories/rebuild-tree', bob)
+    check('Shared: nor rebuild it (403)', status == 403, (status, body[:160]))
+    status, _, _ = call('GET', '/api/v1/lots', admin)
+    check('Shared: ADMIN still lists it', status == 200, status)
+
+    status, _, body = call('POST', '/api/v1/sync/push', bob, {'changes': [
+        {'op': 'update', 'model': 'users', 'id': bob_id, 'version': 1, 'data': {'role': 'ADMIN'}}]})
+    role = psql("select role from users where id = '%s'" % bob_id)
+    check('Sync: a push cannot make an account ADMIN', role == 'USER', (status, body[:200], role))
+    status, _, body = call('GET', '/api/v1/sync/pull?model=lots', bob)
+    check('Sync: an account with no permission cannot pull a shared table (403)', status == 403,
+          (status, body[:160]))
+    status, _, body = call('POST', '/api/v1/sync/push', bob, {'changes': [
+        {'op': 'create', 'model': 'lots', 'id': str(uuid.uuid4()), 'version': 0,
+         'data': {'title': 'synced in', 'current_bid': 1}}]})
+    check('Sync: nor push a row into it', b'FORBIDDEN' in body, (status, body[:200]))
+
+    for path in ('/api/v1/uploads/1=1', '/api/v1/uploads/1%20OR%201=1'):
+        status, _, body = call('GET', path, bob)
+        check('Uploads: %s is a 404, not a SQL condition' % path.rsplit('/', 1)[1], status == 404,
+              (status, body[:160]))
+
+
 def main():
     global args
     parser = argparse.ArgumentParser(description=__doc__)
@@ -662,6 +707,20 @@ def main():
     check('Setup: a staff account holds notes.delete and nothing else', status in (200, 201) and role_id,
           (status, body[:160]))
 
+    # alice works on the shared resources through a role, the way a team member
+    # would. Since v3.241.0 a shared resource asks for a permission for each
+    # verb, and signing in is not one. bob holds nothing.
+    editor_grants = ['%s.%s' % (resource, action)
+                     for resource in ('lots', 'tags', 'categories', 'products', 'invoices')
+                     for action in ('view', 'create', 'edit')] + ['entries.view', 'entries.create']
+    status, _, body = call('POST', '/api/v1/roles', admin,
+                           {'name': 'Live Editor ' + RUN[:6], 'grants': editor_grants})
+    editor_role = (data(body) or {}).get('id')
+    call('PUT', '/api/v1/users/%s/roles' % alice_id, admin, {'role_ids': [editor_role]})
+    alice, _ = login(alice_email)
+    check('Setup: alice works on the shared resources through a role', status in (200, 201) and editor_role,
+          (status, body[:160]))
+
     check_optimistic_locking(alice)
     check_lists_and_exports(alice, admin)
     check_ownership(alice, alice_id, bob, bob_id, staff, admin)
@@ -673,6 +732,7 @@ def main():
     check_append_only(alice)
     check_write_errors(alice)
     check_error_codes(alice, alice_email)
+    check_review_criticals(bob, bob_id, admin)
 
     width = max(len(name) for name, _, _ in results)
     failed = 0

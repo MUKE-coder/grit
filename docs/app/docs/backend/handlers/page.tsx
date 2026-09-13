@@ -114,14 +114,23 @@ func (h *PostHandler) fail(c *gin.Context, err error, fallback string) {
                 call, so the routes file constructs it exactly as it always has. The generated routes
                 (excerpt):
               </p>
-              <CodeBlock language="go" filename="apps/api/internal/routes/post_routes.go" code={`m.Protected.GET("/posts", h.List)
-m.Protected.GET("/posts/export", h.Export)
-m.Protected.GET("/posts/:id", h.GetByID)
-m.Protected.POST("/posts", h.Create)
-m.Protected.PUT("/posts/:id", h.Update)
-m.Protected.PATCH("/posts/:id", h.Patch)
+              <CodeBlock language="go" filename="apps/api/internal/routes/post_routes.go" code={`m.Staff.GET("/posts", middleware.RequireRole("ADMIN", "perm:posts.view"), h.List)
+m.Staff.GET("/posts/export", middleware.RequireRole("ADMIN", "perm:posts.view"), h.Export)
+m.Staff.GET("/posts/:id", middleware.RequireRole("ADMIN", "perm:posts.view"), h.GetByID)
+m.Staff.POST("/posts", middleware.RequireRole("ADMIN", "perm:posts.create"), h.Create)
+m.Staff.PUT("/posts/:id", middleware.RequireRole("ADMIN", "perm:posts.edit"), h.Update)
+m.Staff.PATCH("/posts/:id", middleware.RequireRole("ADMIN", "perm:posts.edit"), h.Patch)
 m.Staff.DELETE("/posts/:id", middleware.RequireRole("ADMIN", "perm:posts.delete"), h.Delete)
 m.Staff.POST("/posts/bulk", middleware.RequireRole("ADMIN", "perm:posts.delete"), h.Bulk)`} />
+              <p>
+                Every verb asks for its permission, because signing in is not one: on an app with
+                open registration it is anybody. An ADMIN holds them all, and a role grants them in
+                the roles screen. A resource generated with <code>--owned-by</code> or{' '}
+                <code>--tenant-owned</code> is different: its queries are already narrowed to the
+                caller&apos;s own rows or organization, so those routes are on{' '}
+                <code>m.Protected</code>. A project whose routes predate the staff group puts shared
+                routes on <code>m.Admin</code> instead.
+              </p>
 
               {/* ── What stays in the handler ─────────────────────────────── */}
               <h2 id="what-stays">What Stays in the Handler</h2>

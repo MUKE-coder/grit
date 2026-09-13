@@ -366,6 +366,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/authz"
 	"{{MODULE}}/internal/files"
 	"{{MODULE}}/internal/jobs"
 	"{{MODULE}}/internal/media"
@@ -433,6 +434,26 @@ func init() {
 			AllowedMimeTypes[m] = true
 		}
 	}
+}
+
+// uploadScope is the uploads a caller may see or change.
+//
+// A holder of uploads.<action>, or ADMIN, reaches every upload; anybody else
+// reaches only their own. Before this, GET and DELETE /uploads/:id handed the
+// path segment to GORM as a raw SQL condition (First with a string argument is
+// a WHERE clause, not a primary key), and List and Stats covered every user's
+// files.
+func (h *UploadHandler) uploadScope(c *gin.Context, action string) *gorm.DB {
+	q := h.DB.WithContext(c.Request.Context()).Model(&models.Upload{})
+	if role, _ := c.Get("user_role"); role == "ADMIN" {
+		return q
+	}
+	if grants, ok := c.Get("user_grants"); ok {
+		if list, ok := grants.([]string); ok && authz.Granted(list, "uploads."+action) {
+			return q
+		}
+	}
+	return q.Where("user_id = ?", c.GetString("user_id"))
 }
 
 // MaxUploadSize is the maximum file size (50 MB).
@@ -792,7 +813,7 @@ func (h *UploadHandler) Stats(c *gin.Context) {
 	}
 
 	var total int64
-	if err := h.DB.Model(&models.Upload{}).Count(&total).Error; err != nil {
+	if err := h.uploadScope(c, "view").Count(&total).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to compute stats"},
 		})
@@ -800,7 +821,7 @@ func (h *UploadHandler) Stats(c *gin.Context) {
 	}
 
 	var totalSize int64
-	h.DB.Model(&models.Upload{}).Select("COALESCE(SUM(size), 0)").Scan(&totalSize)
+	h.uploadScope(c, "view").Select("COALESCE(SUM(size), 0)").Scan(&totalSize)
 
 	// Bucket by MIME kind. SUBSTR + CASE in raw SQL keeps this a single
 	// scan regardless of DB engine (works on Postgres + SQLite).
@@ -814,7 +835,7 @@ func (h *UploadHandler) Stats(c *gin.Context) {
 		WHEN mime_type LIKE '%wordprocessing%' OR mime_type = 'application/msword' THEN 'document'
 		ELSE 'other'
 	END` + "`" + `
-	h.DB.Model(&models.Upload{}).
+	h.uploadScope(c, "view").
 		Select(bucketExpr+" AS kind, COUNT(*) AS count, COALESCE(SUM(size), 0) AS size").
 		Group("kind").
 		Scan(&rows)
@@ -840,7 +861,7 @@ func (h *UploadHandler) List(c *gin.Context) {
 		pageSize = 20
 	}
 
-	query := h.DB.Model(&models.Upload{})
+	query := h.uploadScope(c, "view")
 
 	// Filter by MIME type
 	if mimeType := c.Query("mime_type"); mimeType != "" {
@@ -880,7 +901,7 @@ func (h *UploadHandler) GetByID(c *gin.Context) {
 	id := c.Param("id")
 
 	var upload models.Upload
-	if err := h.DB.First(&upload, id).Error; err != nil {
+	if err := h.uploadScope(c, "view").Where("id = ?", id).First(&upload).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -900,7 +921,7 @@ func (h *UploadHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 
 	var upload models.Upload
-	if err := h.DB.First(&upload, id).Error; err != nil {
+	if err := h.uploadScope(c, "delete").Where("id = ?", id).First(&upload).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",

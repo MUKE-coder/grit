@@ -1168,6 +1168,144 @@ rules. A plugin bundle, not core, exactly as the review's own section 36 argues.
 
 ---
 
+## Phase 8 - The contact-app review (in progress)
+
+An independent review of a scaffolded double (`contact-app`, v3.239.0) ran 13 specialist
+skills and found 109 issues: 3 Critical, 26 High, 44 Medium, 36 Low, 2 Okay. The report is
+`contact-app/CODE_REVIEW.md`, and its consolidated standard is the `go-nextjs-review` skill
+(`CHECKLIST.md`: never cross, before production, should).
+
+Almost all of it is framework code, so it is fixed in the templates, delivered to existing
+projects by `grit upgrade`, and becomes the standard every new project starts from.
+**F** = framework fix, **A** = contact-app only, **F+A** = both. Tick only when verified and
+pushed, and name the version.
+
+### 8.0 Standards for every project
+- [ ] Ship go-nextjs-review (SKILL.md, CHECKLIST.md, references/) into every scaffold's .claude/skills/
+- [ ] Framework CLAUDE.md: new and changed templates must pass the CHECKLIST red-line items
+- [ ] Regression tests for every Critical and High fix, in the live suite where it is behaviour
+
+### 8.1 Critical
+- [x] C1 F (v3.241.0) - any user becomes ADMIN via /sync/push: users/uploads in the default sync registry, no field allowlist, no owner or permission gate
+- [x] C2 F (v3.241.0) - SQL injection and IDOR in upload GET/DELETE (First(&upload, id))
+- [x] C3 F+A (v3.241.0) - generated resources readable and writable by any logged-in user (only delete is gated)
+
+### 8.2 High
+- [ ] H1 F - bucket public-read, backups included; PutBucketPolicy error discarded
+- [ ] H2 F - users.edit / roles.edit holders can grant themselves ADMIN (no grant ceiling)
+- [ ] H3 F - stored XSS in blog posts (unsanitised HTML in API and web)
+- [ ] H4 F - any user lists uploads; CompleteUpload accepts any object key (list and read scoping shipped in v3.241.0; the CompleteUpload key check is open)
+- [ ] H5 F - refresh tokens accepted as access tokens; no session check; refresh cookie path mismatch
+- [ ] H6 F - TOTP brute force and replay; Enable overwrites; Verify skips lock checks
+- [ ] H7 F - login rate limits keyed to unversioned paths; APP_ENV defaults to development
+- [x] H8 F+A (v3.241.0) - real secrets in .env.example; *.db not git-ignored
+- [ ] H9 F - GORM Studio (writable SQL) on in production; /docs public
+- [ ] H10 F - production MinIO on minioadmin; every container gets every secret
+- [ ] H11 F - reachable Go stdlib CVEs; release built on go 1.25.0
+- [ ] H12 F - thumbnail worker decodes without a pixel cap (OOM loop)
+- [ ] H13 F - unchecked DB writes in TOTP, session and auth paths
+- [ ] H14 F - global 10 MB body cap breaks uploads; 15 s write timeout truncates exports and AI streams
+- [ ] H15 F - health check runs KEYS asynq:*
+- [ ] H16 F - gzip middleware allocates per request and breaks SSE
+- [ ] H17 F - XLSX export builds the whole table in memory
+- [ ] H18 F - list queries unindexed; COUNT on every page; %x% search
+- [ ] H19 F - CSV import queries per row, ignores errors, unbounded
+- [ ] H20 F - sync pull scans and sorts whole tables; fails on MySQL
+- [ ] H21 F - CI security scans and Dependabot point at paths that don't exist
+- [ ] H22 F - public home and blog render only in the browser
+- [ ] H23 F - every admin page waits on /auth/me
+- [ ] H24 F - xlsx and recharts in first-load chunks
+- [ ] H25 F - list search not debounced; table blanks; 5 requests per save
+- [ ] H26 F - 500s never logged; raw errors sent to clients
+
+### 8.3 Medium
+- [ ] M1 F - idempotency cache replays across users, before auth
+- [ ] M2 F - xlsx@0.18.5 with known CVEs parses untrusted files
+- [ ] M3 F - OAuth account pre-hijacking; gothic store reuses the JWT secret
+- [ ] M4 F - any user reads any user record
+- [ ] M5 F - email/password change without the current password
+- [ ] M6 F - SAML metadata fetch bypasses safefetch
+- [ ] M7 F - Docker contexts pull in .env.local, node_modules, *.db, binaries
+- [ ] M8 F+A - prod compose on in-container SQLite; password fallbacks; Redis without auth
+- [ ] M9 F - CI supply chain: unpinned actions, broad permissions, floating tools
+- [ ] M10 F - admin routes guarded only in the browser
+- [ ] M11 F - request context missing from most DB calls
+- [ ] M12 F - flag evaluation spawns a goroutine and an INSERT
+- [ ] M13 F - API-key auth SELECT + UPDATE per request
+- [ ] M14 F - dashboard stats load 30 days of rows into Go
+- [ ] M15 F - image processing inline with no concurrency cap
+- [ ] M16 F - audit writer inserts row by row under a cluster lock
+- [ ] M17 F - sync push unbounded, 3 queries per change, no transaction
+- [ ] M18 F - every mutation writes an activity row synchronously
+- [ ] M19 F - outbox never pruned; no SKIP LOCKED; no shutdown
+- [ ] M20 F - cleanup and cron jobs unbounded and retry-heavy
+- [ ] M21 F - pool sizing ignores replicas and Sentinel's pool
+- [ ] M22 F - response cache has no stampede protection
+- [ ] M23 F - duplicate and drifting query keys
+- [ ] M24 F - admin QueryClient is a module-level singleton
+- [ ] M25 F - Tiptap and the form stack load eagerly
+- [ ] M26 F - admin theme flash; duplicate theme system
+- [ ] M27 F - public shared-form page fetches in useEffect with raw axios
+- [ ] M28 F - hand-built error envelopes bypass respond
+- [ ] M29 F - business logic in handlers; services depend on gin
+- [ ] M30 F - emails sent from bare goroutines
+- [ ] M31 F - user update not atomic; user creation racy
+- [ ] M32 F - hand-rolled pagination; ticket list ignores its config
+- [ ] M33 F - ticket authorisation copied; role literals
+- [ ] M34 F - dashboards swallow upstream errors
+- [ ] M35 F - sentinel errors compared with ==
+- [ ] M36 F - GDPR erase accepts a malformed body
+- [ ] M37 F - god functions (routes.Setup 902 lines)
+- [ ] M38 F - two axios clients; 11 copies of API_URL; unversioned raw calls
+- [ ] M39 F - mutation and error-handling boilerplate
+- [ ] M40 F - pages call the API inline instead of hooks
+- [ ] M41 F - types and schemas redeclared instead of imported
+- [ ] M42 F - blog admin pages ignore the resource definition
+- [ ] M43 F - two Tiptap editors with different schemas
+- [ ] M44 F - duplicate PageHeader; oversized hooks and pages
+
+### 8.4 Low
+- [ ] L1 F - login/register reveal account state
+- [ ] L2 F - TOTP secrets in plaintext
+- [ ] L3 F - trusted-device cookie not Secure, no SameSite
+- [ ] L4 F - WebSocket CheckOrigin returns true; raw error to client
+- [ ] L5 F - no ownership check on notification MarkRead and import job status
+- [ ] L6 F - no SetTrustedProxies; spoofable ClientIP
+- [ ] L7 F - CSP allows unsafe-inline scripts and img-src https:
+- [ ] L8 F - href from stored data without a scheme allowlist
+- [ ] L9 F - SSO redirect by string concatenation (open redirect)
+- [ ] L10 F - EOL alpine; no HEALTHCHECK; unpinned node image
+- [ ] L11 F - pnpm 10 declared, pnpm 9 in Docker and CI
+- [ ] L12 F - admin123 seeded whenever APP_ENV != production
+- [ ] L13 F - unmaintained deps (go-qrcode, gorilla/mux, tiptap 2)
+- [ ] L14 F - dev MinIO on 0.0.0.0 with minioadmin
+- [ ] L15 F - new asynq Inspector per admin request
+- [ ] L16 F - GDPR export loads all activity rows
+- [ ] L17 F - contact create/update re-read with Preload
+- [ ] L18 F - notification queries without composite indexes
+- [ ] L19 F - /admin redirects in the browser
+- [ ] L20 F - header refresh invalidates every query
+- [ ] L21 F - plain img for covers and thumbnails
+- [ ] L22 F - SessionWatchdog resets a timeout on every mousemove
+- [ ] L23 F - sidebar expansion in an effect, and never expands
+- [ ] L24 F - DataTable per-row includes, no memoisation
+- [ ] L25 F - usePermissions builds a new Set every render
+- [ ] L26 F - Dropzone never revokes object URLs
+- [ ] L27 F - mono font preloaded everywhere; Inter pinned weights
+- [ ] L28 F - dashboard chart plots Math.random()
+- [ ] L29 F - unchecked type assertions userID.(string)
+- [ ] L30 F - Go dead code and leftovers
+- [ ] L31 F - init() mutates AllowedMimeTypes; Getenv per request
+- [ ] L32 F - magic values in tickets and notifications
+- [ ] L33 F - user-facing sentences as error values
+- [ ] L34 F - ~1,150 lines of dead web code
+- [ ] L35 F - ~20 avoidable anys
+- [ ] L36 F - Dropzone boolean-prop proliferation
+
+### 8.5 Okay
+- [ ] N1 F - contact/group handlers 90% identical by design; consider generic export helpers
+- [ ] N2 - .npmrc node-linker=hoisted: acceptable while the Turbopack workaround is needed
+
 ## Phase Summary
 
 | Phase | Duration | Focus | Key Deliverable |
