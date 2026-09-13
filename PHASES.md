@@ -1191,7 +1191,7 @@ pushed, and name the version.
 - [x] C3 F+A (v3.241.0) - generated resources readable and writable by any logged-in user (only delete is gated)
 
 ### 8.2 High
-- [ ] H1 F - bucket public-read, backups included; PutBucketPolicy error discarded
+- [x] H1 F (v3.246.0) - bucket public-read, backups included; PutBucketPolicy error discarded
 - [ ] H2 F - users.edit / roles.edit holders can grant themselves ADMIN (no grant ceiling)
 - [x] H3 F (v3.242.0) - stored XSS in blog posts (unsanitised HTML in API and web)
 - [ ] H4 F - any user lists uploads; CompleteUpload accepts any object key (list and read scoping shipped in v3.241.0; the CompleteUpload key check is open)

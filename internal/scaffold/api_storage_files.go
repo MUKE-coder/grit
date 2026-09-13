@@ -39,7 +39,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -56,6 +58,21 @@ type Storage struct {
 	client *s3.Client
 	bucket string
 	cfg    config.StorageConfig
+}
+
+// PublicPrefixes are the key prefixes anyone may read without a signature:
+// uploaded files and their thumbnails, which pages link to directly. Backups,
+// private originals and every other key are read through GetSignedURL.
+var PublicPrefixes = []string{"uploads/", "thumbnails/"}
+
+// BucketPolicy allows anonymous reads under PublicPrefixes, and nothing else.
+func BucketPolicy(bucket string) string {
+	resources := make([]string, 0, len(PublicPrefixes))
+	for _, prefix := range PublicPrefixes {
+		resources = append(resources, strconv.Quote("arn:aws:s3:::"+bucket+"/"+prefix+"*"))
+	}
+	return "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":[\"*\"]}," +
+		"\"Action\":[\"s3:GetObject\"],\"Resource\":[" + strings.Join(resources, ",") + "]}]}"
 }
 
 // New creates a new Storage instance using the given config.
@@ -113,22 +130,22 @@ func New(cfg config.StorageConfig) (*Storage, error) {
 		}
 	}
 
-	// Always ensure public-read policy so uploaded files are accessible via URL.
-	// This is idempotent — safe to call on every startup.
-	policy := fmt.Sprintf(` + "`" + `{
-		"Version": "2012-10-17",
-		"Statement": [{
-			"Effect": "Allow",
-			"Principal": {"AWS": ["*"]},
-			"Action": ["s3:GetObject"],
-			"Resource": ["arn:aws:s3:::%s/*"]
-		}]
-	}` + "`" + `, cfg.Bucket)
-
-	_, _ = client.PutBucketPolicy(ctx, &s3.PutBucketPolicyInput{
+	// Anyone may read what an <img> or a download link points at, and nothing
+	// else. The policy used to cover every key, backups and private originals
+	// included, so a backup's key seen once in a log or a Referer header was a
+	// permanent anonymous download of the database. PutBucketPolicy replaces the
+	// policy a bucket has, so an existing bucket is narrowed on the next start.
+	if _, err := client.PutBucketPolicy(ctx, &s3.PutBucketPolicyInput{
 		Bucket: aws.String(cfg.Bucket),
-		Policy: aws.String(policy),
-	})
+		Policy: aws.String(BucketPolicy(cfg.Bucket)),
+	}); err != nil {
+		// Cloudflare R2 and Backblaze B2 have no bucket policies: public access
+		// is switched on per bucket in their dashboards. Anywhere else, a refusal
+		// leaves the bucket with whatever policy it had before.
+		log.Printf("storage: could not set the bucket policy on %q: %v. Where the provider has bucket policies, allow anonymous reads on %s only; "+
+			"where it has none (R2, B2), do not give the bucket that holds backups a public domain",
+			cfg.Bucket, err, strings.Join(PublicPrefixes, ", "))
+	}
 
 	return &Storage{
 		client: client,
@@ -1150,10 +1167,37 @@ func storageURLTestGo(module string) string {
 	return fmt.Sprintf(`package storage
 
 import (
+	"encoding/json"
 	"testing"
 
 	"%s/internal/config"
 )
+
+// Only uploaded files and their thumbnails are public. The policy used to cover
+// every key, database backups included.
+func TestBucketPolicyIsScopedToPublicPrefixes(t *testing.T) {
+	var doc struct {
+		Statement []struct {
+			Resource []string
+		}
+	}
+	if err := json.Unmarshal([]byte(BucketPolicy("b")), &doc); err != nil {
+		t.Fatalf("the policy is not JSON: %%v", err)
+	}
+	if len(doc.Statement) != 1 {
+		t.Fatalf("want one statement, got %%d", len(doc.Statement))
+	}
+	want := map[string]bool{"arn:aws:s3:::b/uploads/*": true, "arn:aws:s3:::b/thumbnails/*": true}
+	for _, r := range doc.Statement[0].Resource {
+		if !want[r] {
+			t.Errorf("the policy makes %%s public", r)
+		}
+		delete(want, r)
+	}
+	if len(want) != 0 {
+		t.Errorf("missing from the policy: %%v", want)
+	}
+}
 
 func TestGetURL(t *testing.T) {
 	cases := []struct {
