@@ -457,13 +457,17 @@ jobs:
               'password': 'SuperSecret123!'})
           assert status in (200, 201), (status, body)
           token = body['data']['tokens']['access_token']
-          status, body = call('POST', '/api/v1/lots', {'title': 'in memory', 'current_bid': 5}, token=token)
+          # A shared resource asks for a permission a new account does not hold,
+          # so this one writes to notes, which belong to their owner.
+          status, body = call('POST', '/api/v1/lots', {'title': 'not mine', 'current_bid': 5}, token=token)
+          assert status == 403, (status, body)
+          status, body = call('POST', '/api/v1/notes', {'body': 'in memory'}, token=token)
           assert status in (200, 201), (status, body)
-          status, body = call('GET', '/api/v1/lots', token=token)
+          status, body = call('GET', '/api/v1/notes', token=token)
           assert status == 200 and len(body.get('data') or []) == 1, (status, body)
-          status, body = call('GET', '/api/v1/lots/00000000-0000-0000-0000-000000000000', token=token)
+          status, body = call('GET', '/api/v1/notes/00000000-0000-0000-0000-000000000000', token=token)
           assert status == 404 and body['error']['code'] == 'NOT_FOUND', (status, body)
-          print('in-memory: registered, wrote, read back, and 404s correctly')
+          print('in-memory: registered, refused a shared write, wrote its own, read back, and 404s correctly')
           PY
               ;;
           esac
