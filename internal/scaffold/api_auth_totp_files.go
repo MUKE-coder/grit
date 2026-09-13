@@ -63,8 +63,18 @@ const (
 	BackupCodeCount = 10
 	// PendingTokenExpiry is how long a TOTP pending token is valid.
 	PendingTokenExpiry = 5 * time.Minute
+	// MaxPendingAttempts is how many wrong codes one pending token takes before
+	// it is spent and the sign-in has to start again from the password.
+	MaxPendingAttempts = 5
 	// TrustedDeviceDuration is how long a trusted device cookie lasts.
 	TrustedDeviceDuration = 30 * 24 * time.Hour // 30 days
+)
+
+// MaxFailedAttempts is how many wrong codes, across sign-ins, lock the account
+// for LockoutDuration. Wrong codes count on the same counter as wrong passwords.
+var (
+	MaxFailedAttempts = 10
+	LockoutDuration   = 15 * time.Minute
 )
 
 // GenerateSecret creates a new random TOTP secret, base32-encoded.
@@ -92,19 +102,29 @@ func GenerateURI(secret, email, issuer string) string {
 // ValidateCode checks if the given TOTP code is valid for the secret.
 // Accepts codes within ±Window periods for clock skew tolerance.
 func ValidateCode(secret, code string) (bool, error) {
-	now := time.Now().Unix()
-	counter := now / Period
+	_, ok, err := ValidateCodeStep(secret, code)
+	return ok, err
+}
 
+// ValidateCodeStep is ValidateCode that also returns the time step the code
+// belongs to. A caller records it and refuses any step not later than the last
+// one used, because a code is otherwise good for its whole window, and anyone
+// who saw it could use it again.
+func ValidateCodeStep(secret, code string) (int64, bool, error) {
+	counter := time.Now().Unix() / Period
+	matched, found := int64(0), false
 	for i := -int64(Window); i <= int64(Window); i++ {
 		expected, err := generateCode(secret, counter+i)
 		if err != nil {
-			return false, err
+			return 0, false, err
 		}
-		if expected == code {
-			return true, nil
+		// Every candidate is compared, in constant time, so the response time
+		// says nothing about which one matched.
+		if hmac.Equal([]byte(expected), []byte(code)) {
+			matched, found = counter+i, true
 		}
 	}
-	return false, nil
+	return matched, found, nil
 }
 
 // generateCode computes the HOTP code for a given counter (RFC 4226).
@@ -218,6 +238,9 @@ type TwoFactorConfig struct {
 	Secret      string                     ` + "`" + `gorm:"size:255;not null" json:"-"` + "`" + `
 	Enabled     bool                       ` + "`" + `gorm:"default:false" json:"enabled"` + "`" + `
 	BackupCodes datatypes.JSONSlice[string] ` + "`" + `gorm:"type:text" json:"-"` + "`" + `
+	// LastUsedStep is the time step of the last code accepted. Only a later one
+	// is accepted next, so a code cannot be used twice.
+	LastUsedStep int64 ` + "`" + `gorm:"not null;default:0" json:"-"` + "`" + `
 	CreatedAt   time.Time                  ` + "`" + `json:"created_at"` + "`" + `
 	UpdatedAt   time.Time                  ` + "`" + `json:"updated_at"` + "`" + `
 }
@@ -240,6 +263,9 @@ type TOTPPendingToken struct {
 	UserID    string    ` + "`" + `gorm:"size:36;index;not null" json:"user_id"` + "`" + `
 	TokenHash string    ` + "`" + `gorm:"size:64;uniqueIndex;not null" json:"-"` + "`" + `
 	ExpiresAt time.Time ` + "`" + `gorm:"not null" json:"expires_at"` + "`" + `
+	// Attempts counts wrong codes against this token; at totp.MaxPendingAttempts
+	// it is refused.
+	Attempts  int       ` + "`" + `gorm:"not null;default:0" json:"-"` + "`" + `
 	CreatedAt time.Time ` + "`" + `json:"created_at"` + "`" + `
 }
 
@@ -374,8 +400,22 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 		return
 	}
 
+	// Enabling replaces the secret, so it is refused while 2FA is on: a stolen
+	// session could otherwise re-enrol the account to an authenticator the
+	// attacker holds. Disabling first asks for the password.
+	var existing models.TwoFactorConfig
+	if err := h.DB.Where("user_id = ?", userID).First(&existing).Error; err == nil && existing.Enabled {
+		c.JSON(http.StatusConflict, gin.H{
+			"error": gin.H{
+				"code":    "TOTP_ALREADY_ENABLED",
+				"message": "Two-factor authentication is already enabled. Disable it first.",
+			},
+		})
+		return
+	}
+
 	// Verify the code matches the secret
-	valid, err := totp.ValidateCode(req.Secret, req.Code)
+	step, valid, err := totp.ValidateCodeStep(req.Secret, req.Code)
 	if err != nil || !valid {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": gin.H{
@@ -397,11 +437,18 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 
 	// Upsert the TwoFactorConfig
 	var config models.TwoFactorConfig
-	h.DB.Where("user_id = ?", userID).FirstOrCreate(&config, models.TwoFactorConfig{UserID: userID})
+	if err := h.DB.Where("user_id = ?", userID).FirstOrCreate(&config, models.TwoFactorConfig{UserID: userID}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to enable two-factor authentication"},
+		})
+		return
+	}
 
 	config.Secret = req.Secret
 	config.Enabled = true
 	config.BackupCodes = hashes
+	// The code that enabled 2FA is spent; it cannot also sign in.
+	config.LastUsedStep = step
 
 	if err := h.DB.Save(&config).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -430,31 +477,23 @@ func (h *TOTPHandler) Verify(c *gin.Context) {
 		return
 	}
 
-	// Look up the pending token
-	tokenHash := totp.HashToken(req.PendingToken)
-	var pending models.TOTPPendingToken
-	if err := h.DB.Where("token_hash = ? AND expires_at > ?", tokenHash, time.Now()).First(&pending).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_PENDING_TOKEN",
-				"message": "Invalid or expired verification session. Please log in again.",
-			},
-		})
+	pending, user, config, ok := h.beginSecondFactor(c, req.PendingToken)
+	if !ok {
 		return
 	}
 
-	// Get the user's TOTP config
-	var config models.TwoFactorConfig
-	if err := h.DB.Where("user_id = ? AND enabled = ?", pending.UserID, true).First(&config).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOTP_ERROR", "message": "Two-factor configuration not found"},
-		})
-		return
+	step, valid, err := totp.ValidateCodeStep(config.Secret, req.Code)
+	if err == nil && valid {
+		// A code is good for its window, so without this the same code signs in
+		// again for as long as it lasts. The step only moves forward, and the
+		// update is conditional, so two requests cannot both spend one code.
+		res := h.DB.Model(&models.TwoFactorConfig{}).
+			Where("id = ? AND last_used_step < ?", config.ID, step).
+			UpdateColumn("last_used_step", step)
+		valid = res.Error == nil && res.RowsAffected == 1
 	}
-
-	// Validate the TOTP code
-	valid, err := totp.ValidateCode(config.Secret, req.Code)
 	if err != nil || !valid {
+		h.failSecondFactor(pending, user)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": gin.H{
 				"code":    "INVALID_TOTP_CODE",
@@ -464,48 +503,7 @@ func (h *TOTPHandler) Verify(c *gin.Context) {
 		return
 	}
 
-	// Delete the pending token (one-time use)
-	h.DB.Delete(&pending)
-
-	// Load the user for token generation
-	var user models.User
-	if err := h.DB.Where("id = ?", pending.UserID).First(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "USER_ERROR", "message": "User not found"},
-		})
-		return
-	}
-
-	// Generate real JWT tokens
-	tokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOKEN_ERROR", "message": "Failed to generate tokens"},
-		})
-		return
-	}
-	// Record the session. An access token names its session, and one whose
-	// session was never recorded is refused on its first request.
-	if _, err := services.CreateSession(h.DB, c, user.ID, tokens.RefreshToken); err != nil {
-		log.Printf("totp: failed to record session for %s: %v", user.ID, err)
-	}
-
-	// If user wants to trust this device, create a trusted device cookie
-	if req.TrustDevice {
-		h.createTrustedDevice(c, user.ID)
-	}
-
-	// Mirror tokens into HttpOnly cookies so the browser client doesn't
-	// need to handle them in JS. Native bearer clients use the JSON body.
-	h.AuthService.SetAuthCookies(c, tokens)
-
-	c.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
-			"user":   user,
-			"tokens": tokens,
-		},
-		"message": "Logged in successfully",
-	})
+	h.completeSecondFactor(c, pending, user, req.TrustDevice, nil, "Logged in successfully")
 }
 
 // VerifyBackupCode validates a backup code during login (alternative to TOTP).
@@ -518,31 +516,14 @@ func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 		return
 	}
 
-	// Look up the pending token
-	tokenHash := totp.HashToken(req.PendingToken)
-	var pending models.TOTPPendingToken
-	if err := h.DB.Where("token_hash = ? AND expires_at > ?", tokenHash, time.Now()).First(&pending).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_PENDING_TOKEN",
-				"message": "Invalid or expired verification session. Please log in again.",
-			},
-		})
+	pending, user, config, ok := h.beginSecondFactor(c, req.PendingToken)
+	if !ok {
 		return
 	}
 
-	// Get the user's TOTP config
-	var config models.TwoFactorConfig
-	if err := h.DB.Where("user_id = ? AND enabled = ?", pending.UserID, true).First(&config).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOTP_ERROR", "message": "Two-factor configuration not found"},
-		})
-		return
-	}
-
-	// Verify the backup code
 	idx := totp.VerifyBackupCode(req.Code, config.BackupCodes)
 	if idx < 0 {
+		h.failSecondFactor(pending, user)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": gin.H{
 				"code":    "INVALID_BACKUP_CODE",
@@ -552,20 +533,129 @@ func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 		return
 	}
 
-	// Remove the used backup code (one-time use)
-	config.BackupCodes = append(config.BackupCodes[:idx], config.BackupCodes[idx+1:]...)
-	h.DB.Save(&config)
-
-	// Delete the pending token
-	h.DB.Delete(&pending)
-
-	// Load user and generate tokens
-	var user models.User
-	if err := h.DB.Where("id = ?", pending.UserID).First(&user).Error; err != nil {
+	// Spend the backup code before signing in, and fail if that cannot be saved:
+	// a code that stays in the list stays usable.
+	remaining := make([]string, 0, len(config.BackupCodes)-1)
+	remaining = append(remaining, config.BackupCodes[:idx]...)
+	remaining = append(remaining, config.BackupCodes[idx+1:]...)
+	config.BackupCodes = remaining
+	if err := h.DB.Model(config).Update("backup_codes", config.BackupCodes).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "USER_ERROR", "message": "User not found"},
+			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to use the backup code"},
 		})
 		return
+	}
+
+	h.completeSecondFactor(c, pending, user, req.TrustDevice, gin.H{"backup_codes_remaining": len(remaining)},
+		"Logged in successfully with backup code")
+}
+
+// beginSecondFactor loads what a second-factor attempt needs, and refuses one
+// that must not go ahead: a pending token that is unknown, expired or out of
+// attempts, or an account that is disabled or locked. Password sign-in makes
+// the same account checks; before, the second step skipped them.
+func (h *TOTPHandler) beginSecondFactor(c *gin.Context, pendingToken string) (*models.TOTPPendingToken, *models.User, *models.TwoFactorConfig, bool) {
+	invalid := func() {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": gin.H{
+				"code":    "INVALID_PENDING_TOKEN",
+				"message": "Invalid or expired verification session. Please log in again.",
+			},
+		})
+	}
+
+	var pending models.TOTPPendingToken
+	if err := h.DB.Where("token_hash = ? AND expires_at > ?", totp.HashToken(pendingToken), time.Now()).First(&pending).Error; err != nil {
+		invalid()
+		return nil, nil, nil, false
+	}
+	if pending.Attempts >= totp.MaxPendingAttempts {
+		invalid()
+		return nil, nil, nil, false
+	}
+
+	var user models.User
+	if err := h.DB.Where("id = ?", pending.UserID).First(&user).Error; err != nil {
+		invalid()
+		return nil, nil, nil, false
+	}
+	if !user.Active {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": gin.H{"code": "ACCOUNT_DISABLED", "message": "Your account has been disabled"},
+		})
+		return nil, nil, nil, false
+	}
+	if user.LockedUntil != nil && time.Now().Before(*user.LockedUntil) {
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"error": gin.H{"code": "ACCOUNT_LOCKED", "message": "Too many failed attempts. Try again later, or reset your password."},
+		})
+		return nil, nil, nil, false
+	}
+
+	var config models.TwoFactorConfig
+	if err := h.DB.Where("user_id = ? AND enabled = ?", pending.UserID, true).First(&config).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "TOTP_ERROR", "message": "Two-factor configuration not found"},
+		})
+		return nil, nil, nil, false
+	}
+	return &pending, &user, &config, true
+}
+
+// failSecondFactor counts a wrong code against the pending token and against
+// the account. Each count is its own UPDATE, so concurrent guesses cannot share
+// one increment. Before, a pending token took unlimited guesses, and signing in
+// again with the password cleared the account's count.
+func (h *TOTPHandler) failSecondFactor(pending *models.TOTPPendingToken, user *models.User) {
+	if err := h.DB.Model(&models.TOTPPendingToken{}).Where("id = ?", pending.ID).
+		UpdateColumn("attempts", gorm.Expr("attempts + 1")).Error; err != nil {
+		log.Printf("totp: counting an attempt for %s: %v", user.ID, err)
+	}
+	if err := h.DB.Model(&models.User{}).Where("id = ?", user.ID).
+		UpdateColumn("failed_login_count", gorm.Expr("failed_login_count + 1")).Error; err != nil {
+		log.Printf("totp: counting a failure for %s: %v", user.ID, err)
+		return
+	}
+
+	var fresh models.User
+	if err := h.DB.Select("id", "failed_login_count").First(&fresh, "id = ?", user.ID).Error; err != nil {
+		return
+	}
+	if totp.MaxFailedAttempts <= 0 || fresh.FailedLoginCount < totp.MaxFailedAttempts {
+		return
+	}
+	until := time.Now().Add(totp.LockoutDuration)
+	if err := h.DB.Model(&models.User{}).Where("id = ?", user.ID).
+		Updates(map[string]interface{}{"locked_until": until, "failed_login_count": 0}).Error; err != nil {
+		log.Printf("totp: locking %s: %v", user.ID, err)
+		return
+	}
+	if err := h.DB.Where("user_id = ?", user.ID).Delete(&models.TOTPPendingToken{}).Error; err != nil {
+		log.Printf("totp: clearing pending tokens for %s: %v", user.ID, err)
+	}
+	log.Printf("lockout: %s locked until %s after %d wrong 2FA codes", user.Email, until.Format(time.RFC3339), totp.MaxFailedAttempts)
+}
+
+// completeSecondFactor spends the pending token, clears the failure count and
+// signs the user in.
+func (h *TOTPHandler) completeSecondFactor(c *gin.Context, pending *models.TOTPPendingToken, user *models.User, trustDevice bool, extra gin.H, message string) {
+	// Only the request that deletes the pending token may use it, so two
+	// requests carrying one token cannot both sign in.
+	res := h.DB.Delete(&models.TOTPPendingToken{}, pending.ID)
+	if res.Error != nil || res.RowsAffected != 1 {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": gin.H{
+				"code":    "INVALID_PENDING_TOKEN",
+				"message": "Invalid or expired verification session. Please log in again.",
+			},
+		})
+		return
+	}
+	if user.FailedLoginCount > 0 || user.LockedUntil != nil {
+		if err := h.DB.Model(&models.User{}).Where("id = ?", user.ID).
+			Updates(map[string]interface{}{"failed_login_count": 0, "locked_until": nil}).Error; err != nil {
+			log.Printf("totp: clearing the failure count for %s: %v", user.ID, err)
+		}
 	}
 
 	tokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
@@ -581,19 +671,19 @@ func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 		log.Printf("totp: failed to record session for %s: %v", user.ID, err)
 	}
 
-	if req.TrustDevice {
+	if trustDevice {
 		h.createTrustedDevice(c, user.ID)
 	}
 
-	remaining := len(config.BackupCodes)
-	c.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
-			"user":                  user,
-			"tokens":               tokens,
-			"backup_codes_remaining": remaining,
-		},
-		"message": "Logged in successfully with backup code",
-	})
+	// Mirror tokens into HttpOnly cookies so the browser client doesn't
+	// need to handle them in JS. Native bearer clients use the JSON body.
+	h.AuthService.SetAuthCookies(c, tokens)
+
+	data := gin.H{"user": user, "tokens": tokens}
+	for k, v := range extra {
+		data[k] = v
+	}
+	c.JSON(http.StatusOK, gin.H{"data": data, "message": message})
 }
 
 // Disable turns off 2FA for the user (requires password confirmation).

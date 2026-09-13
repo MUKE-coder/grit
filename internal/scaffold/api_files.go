@@ -2497,14 +2497,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// Any successful password check clears the counter, including one that
-	// still has 2FA ahead of it — the password was correct, which is what this
-	// counter measures.
-	if user.FailedLoginCount > 0 || user.LockedUntil != nil {
-		h.DB.Model(&models.User{}).Where("id = ?", user.ID).
-			Updates(map[string]interface{}{"failed_login_count": 0, "locked_until": nil})
-	}
-
 	// Check if user has TOTP enabled
 	var totpConfig models.TwoFactorConfig
 	if err := h.DB.Where("user_id = ? AND enabled = ?", user.ID, true).First(&totpConfig).Error; err == nil {
@@ -2520,11 +2512,16 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			}
 
 			// Store hashed pending token in DB
-			h.DB.Create(&models.TOTPPendingToken{
+			if err := h.DB.Create(&models.TOTPPendingToken{
 				UserID:    user.ID,
 				TokenHash: totp.HashToken(pendingToken),
 				ExpiresAt: time.Now().Add(totp.PendingTokenExpiry),
-			})
+			}).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": gin.H{"code": "TOKEN_ERROR", "message": "Failed to create verification session"},
+				})
+				return
+			}
 
 			c.JSON(http.StatusOK, gin.H{
 				"data": gin.H{
@@ -2534,6 +2531,16 @@ func (h *AuthHandler) Login(c *gin.Context) {
 				"message": "Two-factor authentication required",
 			})
 			return
+		}
+	}
+
+	// The failure count is cleared when the sign-in completes. Cleared at the
+	// password, with 2FA still ahead, it handed a fresh set of guesses at the
+	// code to anyone who knew the password and simply signed in again.
+	if user.FailedLoginCount > 0 || user.LockedUntil != nil {
+		if err := h.DB.Model(&models.User{}).Where("id = ?", user.ID).
+			Updates(map[string]interface{}{"failed_login_count": 0, "locked_until": nil}).Error; err != nil {
+			log.Printf("lockout: clearing the failure count for %s: %v", user.ID, err)
 		}
 	}
 

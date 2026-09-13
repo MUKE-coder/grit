@@ -139,6 +139,11 @@ jobs:
       - name: Token types and revocation
         run: python3 tests/live/verify_tokens.py http://localhost:8080
 
+      # A 2FA code cannot be used twice or guessed without limit, signing in
+      # again does not reset the guesses, and enabling cannot re-enrol.
+      - name: Two-factor sign-in
+        run: python3 tests/live/verify_totp.py http://localhost:8080
+
       # Production is the default and the strict mode. The same build, started
       # with APP_ENV=production beside the development server: GORM Studio and
       # /docs are gone, the login limit fires on the real path, and a default
