@@ -290,6 +290,11 @@ func (g *Generator) writeGoModel(names Names) error {
 			// it on every write.
 			tags += ` sanitize:"html"`
 		}
+		if f.IsSearchable() && !f.IsRelationship() {
+			// The same columns List searches. grit migrate gives them a trigram
+			// index on Postgres, which LIKE '%term%' can use.
+			tags += ` search:"trigram"`
+		}
 
 		structFields += fmt.Sprintf("\t%s %s `%s`\n", goName, goType, tags)
 	}
@@ -324,7 +329,7 @@ func (g *Generator) writeGoModel(names Names) error {
 type %s struct {
 	ID        string         `+"`"+`gorm:"primarykey;size:36" json:"id"`+"`"+`
 %s	Version   int            `+"`"+`gorm:"not null;default:1" json:"version"`+"`"+`
-	CreatedAt time.Time      `+"`"+`json:"created_at"`+"`"+`
+	CreatedAt time.Time      `+"`"+`gorm:"index" json:"created_at"`+"`"+`
 	UpdatedAt time.Time      `+"`"+`json:"updated_at"`+"`"+`
 	DeletedAt gorm.DeletedAt `+"`"+`gorm:"index" json:"-"`+"`"+`
 	// ArchivedAt is the "put this away without destroying it" state, and it is

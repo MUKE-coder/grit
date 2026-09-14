@@ -273,7 +273,10 @@ export default function BenchmarksPage() {
                 every request, on every framework. That is a fair comparison (they all do
                 the same work) but at 50 concurrent users it is mostly a measurement of
                 Postgres. For the cleanest read of framework overhead, look at <code>show</code>:
-                one indexed lookup, one JSON encode, nothing else in the way.
+                one indexed lookup, one JSON encode, nothing else in the way. These runs predate
+                v3.256.0, since when a Grit list reuses its total across pages until the table is
+                written to, so a repeat of the <code>list</code> row would no longer count on every
+                request.
               </p>
             </section>
 

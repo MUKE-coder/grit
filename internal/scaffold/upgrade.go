@@ -368,6 +368,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairXLSXExports(root, opts); err != nil {
 			fmt.Printf("  ⚠ streaming the XLSX exports: %v\n", err)
 		}
+		// List queries: created_at indexed, totals reused across pages, and
+		// searched columns tagged for trigram indexes on Postgres. After the
+		// codegen runtime, which delivers internal/paginate.
+		if err := repairListPerformance(root, opts); err != nil {
+			fmt.Printf("  ⚠ speeding up list queries: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {
