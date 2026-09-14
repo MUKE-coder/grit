@@ -353,7 +353,7 @@ type UserActivityHandler struct {
 //	GET /api/user-activity?severity=critical&page=1&page_size=25
 //	GET /api/user-activity?q=login&user_id=...
 func (h *UserActivityHandler) List(c *gin.Context) {
-	q := h.DB.Model(&models.UserActivity{}).Order("created_at desc")
+	q := h.DB.WithContext(c.Request.Context()).Model(&models.UserActivity{}).Order("created_at desc")
 
 	params := paginate.Bind(c).
 		With("user_id", c.Query("user_id")).
@@ -396,7 +396,7 @@ func (h *UserActivityHandler) Stats(c *gin.Context) {
 	// that syntax is Postgres-only and errors on SQLite, which is a supported
 	// target here, so this panel returned zeros on every SQLite project.
 	since := time.Now().Add(-24 * time.Hour)
-	h.DB.Model(&models.UserActivity{}).
+	h.DB.WithContext(c.Request.Context()).Model(&models.UserActivity{}).
 		Select("severity, COUNT(*) AS count").
 		Where("created_at > ?", since).
 		Group("severity").

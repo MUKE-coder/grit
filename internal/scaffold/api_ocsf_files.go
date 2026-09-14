@@ -244,7 +244,7 @@ func (h *OCSFHandler) Export(c *gin.Context) {
 		limit = ocsfMaxLimit
 	}
 
-	q := h.DB.Model(&models.UserActivity{}).Order("created_at asc, id asc").Limit(limit)
+	q := h.DB.WithContext(c.Request.Context()).Model(&models.UserActivity{}).Order("created_at asc, id asc").Limit(limit)
 
 	// since is a wall-clock floor (a collector's first poll); after is the exact
 	// cursor for every poll thereafter. Both may be present — after wins ties
@@ -263,7 +263,7 @@ func (h *OCSFHandler) Export(c *gin.Context) {
 	}
 	if afterID := c.Query("after"); afterID != "" {
 		var cursor models.UserActivity
-		if err := h.DB.Select("created_at", "id").First(&cursor, "id = ?", afterID).Error; err == nil {
+		if err := h.DB.WithContext(c.Request.Context()).Select("created_at", "id").First(&cursor, "id = ?", afterID).Error; err == nil {
 			q = q.Where("(created_at, id) > (?, ?)", cursor.CreatedAt, cursor.ID)
 		}
 		// An unknown after id falls through to since/start rather than erroring:

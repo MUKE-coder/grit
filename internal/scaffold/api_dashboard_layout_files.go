@@ -110,7 +110,7 @@ func (h *DashboardLayoutHandler) Get(c *gin.Context) {
 	}
 
 	var layout models.DashboardLayout
-	err := h.DB.Where("user_id = ?", userID).First(&layout).Error
+	err := h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).First(&layout).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// Empty layout = show every widget by default.
 		c.JSON(http.StatusOK, gin.H{
@@ -253,7 +253,7 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 	req.CustomCharts = cleanCharts
 
 	var layout models.DashboardLayout
-	err := h.DB.Where("user_id = ?", userID).First(&layout).Error
+	err := h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).First(&layout).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		layout = models.DashboardLayout{UserID: userID.(string)}
 	} else if err != nil {
@@ -283,7 +283,7 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 	}
 	layout.DatePreset = req.DatePreset
 
-	if err := h.DB.Save(&layout).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Save(&layout).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to save layout"},
 		})

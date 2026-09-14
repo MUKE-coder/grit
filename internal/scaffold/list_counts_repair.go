@@ -51,7 +51,7 @@ const blogListAnchor = `	blogs, total, pages, err := h.Service.List(page, pageSi
 const blogListCounts = `
 	// The admin's stat cards ask for their counts on this request, over the
 	// same search as the list.
-	countQuery := h.DB.Model(&models.Blog{})
+	countQuery := h.DB.WithContext(c.Request.Context()).Model(&models.Blog{})
 	if search != "" {
 		countQuery = countQuery.Where("LOWER(title) LIKE LOWER(?) OR LOWER(content) LIKE LOWER(?)", "%"+search+"%", "%"+search+"%")
 	}

@@ -1078,7 +1078,7 @@ func (h *BackupHandler) svc() *backup.Service {
 // List returns backups newest-first. Poll it while one is RUNNING.
 func (h *BackupHandler) List(c *gin.Context) {
 	var items []models.Backup
-	if err := h.DB.Order("created_at desc").Limit(50).Find(&items).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Order("created_at desc").Limit(50).Find(&items).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to list backups"},
 		})
@@ -1139,7 +1139,7 @@ func (h *BackupHandler) Download(c *gin.Context) {
 	}
 
 	var b models.Backup
-	if err := h.DB.First(&b, "id = ?", c.Param("id")).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).First(&b, "id = ?", c.Param("id")).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{"code": "NOT_FOUND", "message": "Backup not found"},
 		})

@@ -339,7 +339,7 @@ func (h *GDPRHandler) Erase(c *gin.Context) {
 	// dashboard and flows out through the OCSF/SIEM export.
 	// The erasure itself succeeded; a missing activity row is logged loudly,
 	// because this is the record an auditor will ask for.
-	if err := h.DB.Create(&models.UserActivity{
+	if err := h.DB.WithContext(c.Request.Context()).Create(&models.UserActivity{
 		UserID:       fmt.Sprint(callerID),
 		Action:       "user.gdpr_erase",
 		Severity:     "warn",
@@ -357,7 +357,7 @@ func (h *GDPRHandler) Erase(c *gin.Context) {
 // can see at a glance whether the record of erasures is intact (admin only).
 func (h *GDPRHandler) Journal(c *gin.Context) {
 	var rows []models.DeletionJournal
-	if err := h.DB.Order("created_at desc, id desc").Find(&rows).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Order("created_at desc, id desc").Find(&rows).Error; err != nil {
 		respond.ServerError(c, "QUERY_FAILED", err, "Internal server error")
 		return
 	}

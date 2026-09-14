@@ -348,7 +348,7 @@ func (h *TOTPHandler) Setup(c *gin.Context) {
 
 	// Check if TOTP is already enabled
 	var existing models.TwoFactorConfig
-	if err := h.DB.Where("user_id = ?", userID).First(&existing).Error; err == nil && existing.Enabled {
+	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).First(&existing).Error; err == nil && existing.Enabled {
 		c.JSON(http.StatusConflict, gin.H{
 			"error": gin.H{
 				"code":    "TOTP_ALREADY_ENABLED",
@@ -406,7 +406,7 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 	// session could otherwise re-enrol the account to an authenticator the
 	// attacker holds. Disabling first asks for the password.
 	var existing models.TwoFactorConfig
-	if err := h.DB.Where("user_id = ?", userID).First(&existing).Error; err == nil && existing.Enabled {
+	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).First(&existing).Error; err == nil && existing.Enabled {
 		c.JSON(http.StatusConflict, gin.H{
 			"error": gin.H{
 				"code":    "TOTP_ALREADY_ENABLED",
@@ -439,7 +439,7 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 
 	// Upsert the TwoFactorConfig
 	var config models.TwoFactorConfig
-	if err := h.DB.Where("user_id = ?", userID).FirstOrCreate(&config, models.TwoFactorConfig{UserID: userID}).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).FirstOrCreate(&config, models.TwoFactorConfig{UserID: userID}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to enable two-factor authentication"},
 		})
@@ -452,7 +452,7 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 	// The code that enabled 2FA is spent; it cannot also sign in.
 	config.LastUsedStep = step
 
-	if err := h.DB.Save(&config).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Save(&config).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to enable two-factor authentication"},
 		})
@@ -489,7 +489,7 @@ func (h *TOTPHandler) Verify(c *gin.Context) {
 		// A code is good for its window, so without this the same code signs in
 		// again for as long as it lasts. The step only moves forward, and the
 		// update is conditional, so two requests cannot both spend one code.
-		res := h.DB.Model(&models.TwoFactorConfig{}).
+		res := h.DB.WithContext(c.Request.Context()).Model(&models.TwoFactorConfig{}).
 			Where("id = ? AND last_used_step < ?", config.ID, step).
 			UpdateColumn("last_used_step", step)
 		valid = res.Error == nil && res.RowsAffected == 1
@@ -550,7 +550,7 @@ func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 		})
 		return
 	}
-	res := h.DB.Model(&models.TwoFactorConfig{}).
+	res := h.DB.WithContext(c.Request.Context()).Model(&models.TwoFactorConfig{}).
 		Where("id = ? AND backup_codes = ?", config.ID, string(read)).
 		Update("backup_codes", datatypes.JSONSlice[string](remaining))
 	if res.Error != nil {
@@ -587,7 +587,7 @@ func (h *TOTPHandler) beginSecondFactor(c *gin.Context, pendingToken string) (*m
 	}
 
 	var pending models.TOTPPendingToken
-	if err := h.DB.Where("token_hash = ? AND expires_at > ?", totp.HashToken(pendingToken), time.Now()).First(&pending).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("token_hash = ? AND expires_at > ?", totp.HashToken(pendingToken), time.Now()).First(&pending).Error; err != nil {
 		invalid()
 		return nil, nil, nil, false
 	}
@@ -597,7 +597,7 @@ func (h *TOTPHandler) beginSecondFactor(c *gin.Context, pendingToken string) (*m
 	}
 
 	var user models.User
-	if err := h.DB.Where("id = ?", pending.UserID).First(&user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", pending.UserID).First(&user).Error; err != nil {
 		invalid()
 		return nil, nil, nil, false
 	}
@@ -615,7 +615,7 @@ func (h *TOTPHandler) beginSecondFactor(c *gin.Context, pendingToken string) (*m
 	}
 
 	var config models.TwoFactorConfig
-	if err := h.DB.Where("user_id = ? AND enabled = ?", pending.UserID, true).First(&config).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ? AND enabled = ?", pending.UserID, true).First(&config).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "TOTP_ERROR", "message": "Two-factor configuration not found"},
 		})
@@ -663,7 +663,7 @@ func (h *TOTPHandler) failSecondFactor(pending *models.TOTPPendingToken, user *m
 func (h *TOTPHandler) completeSecondFactor(c *gin.Context, pending *models.TOTPPendingToken, user *models.User, trustDevice bool, extra gin.H, message string) {
 	// Only the request that deletes the pending token may use it, so two
 	// requests carrying one token cannot both sign in.
-	res := h.DB.Delete(&models.TOTPPendingToken{}, pending.ID)
+	res := h.DB.WithContext(c.Request.Context()).Delete(&models.TOTPPendingToken{}, pending.ID)
 	if res.Error != nil || res.RowsAffected != 1 {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": gin.H{
@@ -674,7 +674,7 @@ func (h *TOTPHandler) completeSecondFactor(c *gin.Context, pending *models.TOTPP
 		return
 	}
 	if user.FailedLoginCount > 0 || user.LockedUntil != nil {
-		if err := h.DB.Model(&models.User{}).Where("id = ?", user.ID).
+		if err := h.DB.WithContext(c.Request.Context()).Model(&models.User{}).Where("id = ?", user.ID).
 			Updates(map[string]interface{}{"failed_login_count": 0, "locked_until": nil}).Error; err != nil {
 			log.Printf("totp: clearing the failure count for %s: %v", user.ID, err)
 		}
@@ -722,7 +722,7 @@ func (h *TOTPHandler) Disable(c *gin.Context) {
 
 	// Verify password
 	var user models.User
-	if err := h.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", userID).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{"code": "NOT_FOUND", "message": "User not found"},
 		})
@@ -742,7 +742,7 @@ func (h *TOTPHandler) Disable(c *gin.Context) {
 	// The config, the trusted devices and the pending tokens go together, or
 	// none of them do. The three deletes ran unchecked, and the answer was
 	// "disabled" whether or not anything had been deleted.
-	if err := h.DB.Transaction(func(tx *gorm.DB) error {
+	if err := h.DB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
 		for _, table := range []interface{}{&models.TwoFactorConfig{}, &models.TrustedDevice{}, &models.TOTPPendingToken{}} {
 			if err := tx.Where("user_id = ?", userID).Delete(table).Error; err != nil {
 				return err
@@ -769,14 +769,14 @@ func (h *TOTPHandler) Status(c *gin.Context) {
 	enabled := false
 	backupCodesRemaining := 0
 
-	if err := h.DB.Where("user_id = ?", userID).First(&config).Error; err == nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).First(&config).Error; err == nil {
 		enabled = config.Enabled
 		backupCodesRemaining = len(config.BackupCodes)
 	}
 
 	// Count trusted devices
 	var deviceCount int64
-	h.DB.Model(&models.TrustedDevice{}).Where("user_id = ? AND expires_at > ?", userID, time.Now()).Count(&deviceCount)
+	h.DB.WithContext(c.Request.Context()).Model(&models.TrustedDevice{}).Where("user_id = ? AND expires_at > ?", userID, time.Now()).Count(&deviceCount)
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
@@ -792,7 +792,7 @@ func (h *TOTPHandler) RegenerateBackupCodes(c *gin.Context) {
 	userID := c.GetString("user_id")
 
 	var config models.TwoFactorConfig
-	if err := h.DB.Where("user_id = ? AND enabled = ?", userID, true).First(&config).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ? AND enabled = ?", userID, true).First(&config).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{
 				"code":    "TOTP_NOT_ENABLED",
@@ -811,7 +811,7 @@ func (h *TOTPHandler) RegenerateBackupCodes(c *gin.Context) {
 	}
 
 	config.BackupCodes = hashes
-	if err := h.DB.Save(&config).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Save(&config).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to save backup codes"},
 		})
@@ -837,7 +837,7 @@ func (h *TOTPHandler) ListTrustedDevices(c *gin.Context) {
 	userID := c.GetString("user_id")
 
 	var devices []models.TrustedDevice
-	if err := h.DB.
+	if err := h.DB.WithContext(c.Request.Context()).
 		Where("user_id = ? AND expires_at > ?", userID, time.Now()).
 		Order("created_at desc").
 		Find(&devices).Error; err != nil {
@@ -875,7 +875,7 @@ func (h *TOTPHandler) RevokeTrustedDevice(c *gin.Context) {
 
 	// Scoped to the caller: without the user_id predicate this would let any
 	// authenticated user revoke anyone's device by guessing an id.
-	res := h.DB.Where("id = ? AND user_id = ?", c.Param("id"), userID).
+	res := h.DB.WithContext(c.Request.Context()).Where("id = ? AND user_id = ?", c.Param("id"), userID).
 		Delete(&models.TrustedDevice{})
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -897,7 +897,7 @@ func (h *TOTPHandler) RevokeTrustedDevice(c *gin.Context) {
 func (h *TOTPHandler) RevokeTrustedDevices(c *gin.Context) {
 	userID := c.GetString("user_id")
 
-	if err := h.DB.Where("user_id = ?", userID).Delete(&models.TrustedDevice{}).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).Delete(&models.TrustedDevice{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to revoke trusted devices"},
 		})
@@ -924,7 +924,7 @@ func (h *TOTPHandler) createTrustedDevice(c *gin.Context, userID string) {
 		ExpiresAt: time.Now().Add(totp.TrustedDeviceDuration),
 	}
 
-	if err := h.DB.Create(&device).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Create(&device).Error; err != nil {
 		return // Non-critical
 	}
 

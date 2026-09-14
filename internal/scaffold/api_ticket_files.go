@@ -159,14 +159,14 @@ func (h *TicketHandler) Create(c *gin.Context) {
 		Priority:    req.Priority,
 		Labels:      labels,
 	}
-	if err := h.DB.Create(&ticket).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Create(&ticket).Error; err != nil {
 		respond.ServerError(c, "DB_ERROR", err, "Internal server error")
 		return
 	}
 
 	// Hydrate the user for the email + audit. Best-effort.
 	var creator models.User
-	h.DB.First(&creator, "id = ?", userID)
+	h.DB.WithContext(c.Request.Context()).First(&creator, "id = ?", userID)
 
 	// Fire-and-forget email + admin notifications. We don't fail the
 	// request if either side trips — the ticket itself is persisted.
@@ -195,7 +195,7 @@ func (h *TicketHandler) List(c *gin.Context) {
 	role, _ := c.Get("user_role")
 	isAdmin := role == "ADMIN" || role == "EDITOR"
 
-	q := h.DB.Model(&models.Ticket{}).
+	q := h.DB.WithContext(c.Request.Context()).Model(&models.Ticket{}).
 		Preload("User").Preload("Assignee").
 		Order("COALESCE(last_reply_at, created_at) DESC")
 
@@ -232,7 +232,7 @@ func (h *TicketHandler) Get(c *gin.Context) {
 	isAdmin := role == "ADMIN" || role == "EDITOR"
 
 	var t models.Ticket
-	q := h.DB.Preload("User").Preload("Assignee").
+	q := h.DB.WithContext(c.Request.Context()).Preload("User").Preload("Assignee").
 		Preload("Replies", func(db *gorm.DB) *gorm.DB { return db.Order("created_at ASC") }).
 		Preload("Replies.User")
 	if err := q.First(&t, "id = ?", id).Error; err != nil {
@@ -270,7 +270,7 @@ func (h *TicketHandler) Reply(c *gin.Context) {
 	isAdmin := role == "ADMIN" || role == "EDITOR"
 
 	var t models.Ticket
-	if err := h.DB.First(&t, "id = ?", id).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).First(&t, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{"code": "NOT_FOUND", "message": "ticket not found"},
 		})
@@ -290,7 +290,7 @@ func (h *TicketHandler) Reply(c *gin.Context) {
 		IsAdminReply: isAdmin,
 	}
 	now := time.Now()
-	if err := h.DB.Transaction(func(tx *gorm.DB) error {
+	if err := h.DB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&reply).Error; err != nil {
 			return err
 		}
@@ -346,13 +346,13 @@ func (h *TicketHandler) Assign(c *gin.Context) {
 
 	id := c.Param("id")
 	var t models.Ticket
-	if err := h.DB.First(&t, "id = ?", id).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).First(&t, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{"code": "NOT_FOUND", "message": "ticket not found"},
 		})
 		return
 	}
-	if err := h.DB.Model(&t).Update("assignee_id", req.AssigneeID).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Model(&t).Update("assignee_id", req.AssigneeID).Error; err != nil {
 		respond.ServerError(c, "DB_ERROR", err, "Internal server error")
 		return
 	}
@@ -374,7 +374,7 @@ func (h *TicketHandler) transitionStatus(c *gin.Context, status string) {
 	isAdmin := role == "ADMIN" || role == "EDITOR"
 
 	var t models.Ticket
-	if err := h.DB.First(&t, "id = ?", id).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).First(&t, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{"code": "NOT_FOUND", "message": "ticket not found"},
 		})
@@ -394,7 +394,7 @@ func (h *TicketHandler) transitionStatus(c *gin.Context, status string) {
 	} else {
 		updates["closed_at"] = nil
 	}
-	if err := h.DB.Model(&t).Updates(updates).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Model(&t).Updates(updates).Error; err != nil {
 		respond.ServerError(c, "DB_ERROR", err, "Internal server error")
 		return
 	}

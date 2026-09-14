@@ -100,7 +100,7 @@ const (
 			return
 		}
 		var roles []models.Role
-		if err := h.DB.Where("id IN ?", in.RoleIDs).Find(&roles).Error; err != nil {
+		if err := h.DB.WithContext(c.Request.Context()).Where("id IN ?", in.RoleIDs).Find(&roles).Error; err != nil {
 			respond.Internal(c, err)
 			return
 		}
@@ -159,12 +159,18 @@ func repairUserCeilingSource(src string) (string, []string, []string) {
 	if !strings.Contains(src, "func (h *UserHandler) Update(") || strings.Contains(src, "authz.RoleBeyondCaller(") {
 		return src, nil, nil
 	}
+	// The delete call is bound to the request's context in handlers written since
+	// v3.270.0, and plain before it; the anchor is whichever this file has.
+	deleteCall := "h.DB.Delete(&user)"
+	if strings.Contains(src, "h.DB.WithContext(c.Request.Context()).Delete(&user)") {
+		deleteCall = "h.DB.WithContext(c.Request.Context()).Delete(&user)"
+	}
 	out, ok := applyInsertions(src, []insertion{
 		{anchor: "\t// Check email uniqueness\n\tvar existing models.User", before: true,
 			text: "\t// Only an ADMIN makes an ADMIN, and nobody hands out a role that grants more\n\t// than they hold.\n" + userRoleCheck + "\n"},
 		{anchor: "\tupdates := map[string]interface{}{}\n\tif req.FirstName != \"\" {", before: true,
 			text: "\t// Only an ADMIN changes an ADMIN account or makes one. Before, a users.edit\n\t// holder could PUT {\"role\":\"ADMIN\"} on themselves, or reset an\n\t// administrator's password or email and sign in as them.\n" + userAdminCheck + userRoleCheck + "\n"},
-		{anchor: "\tif err := h.DB.Delete(&user).Error; err != nil {\n\t\tc.JSON(http.StatusInternalServerError, gin.H{\n\t\t\t\"error\": gin.H{\n\t\t\t\t\"code\":    \"INTERNAL_ERROR\",\n\t\t\t\t\"message\": \"Failed to delete user\",", before: true,
+		{anchor: "\tif err := " + deleteCall + ".Error; err != nil {\n\t\tc.JSON(http.StatusInternalServerError, gin.H{\n\t\t\t\"error\": gin.H{\n\t\t\t\t\"code\":    \"INTERNAL_ERROR\",\n\t\t\t\t\"message\": \"Failed to delete user\",", before: true,
 			text: "\t// Deleting an administrator is an ADMIN's call too.\n" + userAdminCheck + "\n"},
 	})
 	if !ok {

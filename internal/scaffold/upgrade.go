@@ -420,6 +420,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairDeployHardening(root, opts); err != nil {
 			fmt.Printf("  ⚠ hardening the deployment: %v\n", err)
 		}
+		// Database calls follow the request's context, and the dashboard stats
+		// count per day in the database.
+		if err := repairRequestPerformance(root, opts); err != nil {
+			fmt.Printf("  ⚠ binding requests' context and counting stats in SQL: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {

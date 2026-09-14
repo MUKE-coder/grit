@@ -426,6 +426,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -767,28 +768,47 @@ func (h *UploadHandler) Create(c *gin.Context) {
 			ref.Width, ref.Height = &w, &hgt
 			ref.Format = strings.TrimPrefix(res.Primary.MIME, "image/")
 
+			// Renditions upload side by side, four at a time. One after another,
+			// an image with several sizes kept the request waiting on each.
+			var (
+				renditionsMu sync.Mutex
+				renditionsWG sync.WaitGroup
+				uploadSlots  = make(chan struct{}, 4)
+			)
 			for _, r := range res.Extra {
-				rk := fmt.Sprintf("%s/%s-%d-%s%s", prefix, base, stamp.UnixNano(), r.Name, r.Ext)
-				if err := h.Storage.Upload(c.Request.Context(), rk, bytes.NewReader(r.Bytes), r.MIME); err != nil {
-					// A missing rendition is a smaller problem than a failed
-					// upload: the primary is already stored and usable.
-					log.Printf("media: rendition %q failed for %s: %v", r.Name, header.Filename, err)
-					continue
-				}
-				if ref.Renditions == nil {
-					ref.Renditions = map[string]files.Rendition{}
-				}
-				ref.Renditions[r.Name] = files.Rendition{
-					URL: h.Storage.GetURL(rk), Key: rk,
-					Width: r.Width, Height: r.Height,
-					Size: int64(len(r.Bytes)), MIME: r.MIME,
-				}
-				// The thumb doubles as the ref's thumbnail, which is what the
-				// admin table and the dropzone preview read.
-				if r.Name == "thumb" {
-					ref.ThumbnailURL = h.Storage.GetURL(rk)
-				}
+				r := r
+				renditionsWG.Add(1)
+				uploadSlots <- struct{}{}
+				go func() {
+					defer func() {
+						<-uploadSlots
+						renditionsWG.Done()
+					}()
+					rk := fmt.Sprintf("%s/%s-%d-%s%s", prefix, base, stamp.UnixNano(), r.Name, r.Ext)
+					if err := h.Storage.Upload(c.Request.Context(), rk, bytes.NewReader(r.Bytes), r.MIME); err != nil {
+						// A missing rendition is a smaller problem than a failed
+						// upload: the primary is already stored and usable.
+						log.Printf("media: rendition %q failed for %s: %v", r.Name, header.Filename, err)
+						return
+					}
+					renditionsMu.Lock()
+					defer renditionsMu.Unlock()
+					if ref.Renditions == nil {
+						ref.Renditions = map[string]files.Rendition{}
+					}
+					ref.Renditions[r.Name] = files.Rendition{
+						URL: h.Storage.GetURL(rk), Key: rk,
+						Width: r.Width, Height: r.Height,
+						Size: int64(len(r.Bytes)), MIME: r.MIME,
+					}
+					// The thumb doubles as the ref's thumbnail, which is what the
+					// admin table and the dropzone preview read.
+					if r.Name == "thumb" {
+						ref.ThumbnailURL = h.Storage.GetURL(rk)
+					}
+				}()
 			}
+			renditionsWG.Wait()
 
 			log.Printf("media[%s]: %s %.1fKB %dx%d -> %.1fKB %s %dx%d",
 				media.Backend(), header.Filename, float64(header.Size)/1024,
@@ -833,7 +853,7 @@ func (h *UploadHandler) Create(c *gin.Context) {
 		UserID:       userID.(string),
 	}
 
-	if err := h.DB.Create(&upload).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Create(&upload).Error; err != nil {
 		_ = h.Storage.Delete(c.Request.Context(), key)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
@@ -1014,7 +1034,7 @@ func (h *UploadHandler) Delete(c *gin.Context) {
 		}
 	}
 
-	if err := h.DB.Delete(&upload).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Delete(&upload).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"code":    "INTERNAL_ERROR",
@@ -1175,7 +1195,7 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 	// Once per key. A second row for the same object would let one delete remove
 	// a file another row still points at.
 	var recorded int64
-	if err := h.DB.Model(&models.Upload{}).Where("path = ?", req.Key).Count(&recorded).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Model(&models.Upload{}).Where("path = ?", req.Key).Count(&recorded).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to check the upload"},
 		})
@@ -1226,7 +1246,7 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 		UserID:       userID,
 	}
 
-	if err := h.DB.Create(&upload).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Create(&upload).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to save upload record"},
 		})

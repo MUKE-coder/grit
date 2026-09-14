@@ -224,7 +224,7 @@ func (h *PasskeyHandler) Rename(c *gin.Context) {
 		}})
 		return
 	}
-	res := h.DB.Model(&models.Passkey{}).
+	res := h.DB.WithContext(c.Request.Context()).Model(&models.Passkey{}).
 		Where("id = ? AND user_id = ?", c.Param("id"), c.GetString("user_id")).
 		Update("name", name)
 	if res.Error != nil || res.RowsAffected == 0 {

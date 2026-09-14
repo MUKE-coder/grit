@@ -86,7 +86,7 @@ func (h *RoleHandler) Catalog(c *gin.Context) {
 // List returns every role with how many users hold it.
 func (h *RoleHandler) List(c *gin.Context) {
 	var roles []models.Role
-	if err := h.DB.Order("is_system DESC, name ASC").Find(&roles).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Order("is_system DESC, name ASC").Find(&roles).Error; err != nil {
 		respond.Internal(c, err)
 		return
 	}
@@ -97,7 +97,7 @@ func (h *RoleHandler) List(c *gin.Context) {
 		N      int64
 	}
 	var rows []countRow
-	h.DB.Model(&models.UserRole{}).
+	h.DB.WithContext(c.Request.Context()).Model(&models.UserRole{}).
 		Select("role_id, count(*) as n").
 		Group("role_id").
 		Scan(&rows)
@@ -115,12 +115,12 @@ func (h *RoleHandler) List(c *gin.Context) {
 
 func (h *RoleHandler) Get(c *gin.Context) {
 	var role models.Role
-	if err := h.DB.Where("id = ?", c.Param("id")).First(&role).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", c.Param("id")).First(&role).Error; err != nil {
 		respond.NotFound(c, "Role not found")
 		return
 	}
 	var n int64
-	h.DB.Model(&models.UserRole{}).Where("role_id = ?", role.ID).Count(&n)
+	h.DB.WithContext(c.Request.Context()).Model(&models.UserRole{}).Where("role_id = ?", role.ID).Count(&n)
 	respond.OK(c, h.toDTO(role, n))
 }
 
@@ -175,7 +175,7 @@ func (h *RoleHandler) Create(c *gin.Context) {
 	}
 
 	var existing models.Role
-	if err := h.DB.Where("name = ?", in.Name).First(&existing).Error; err == nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("name = ?", in.Name).First(&existing).Error; err == nil {
 		respond.Conflict(c, "A role with that name already exists")
 		return
 	}
@@ -185,7 +185,7 @@ func (h *RoleHandler) Create(c *gin.Context) {
 		respond.Internal(c, err)
 		return
 	}
-	if err := h.DB.Create(&role).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Create(&role).Error; err != nil {
 		respond.Internal(c, err)
 		return
 	}
@@ -195,7 +195,7 @@ func (h *RoleHandler) Create(c *gin.Context) {
 
 func (h *RoleHandler) Update(c *gin.Context) {
 	var role models.Role
-	if err := h.DB.Where("id = ?", c.Param("id")).First(&role).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", c.Param("id")).First(&role).Error; err != nil {
 		respond.NotFound(c, "Role not found")
 		return
 	}
@@ -240,20 +240,20 @@ func (h *RoleHandler) Update(c *gin.Context) {
 		respond.Internal(c, err)
 		return
 	}
-	if err := h.DB.Save(&role).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Save(&role).Error; err != nil {
 		respond.Internal(c, err)
 		return
 	}
 	authz.Invalidate()
 
 	var n int64
-	h.DB.Model(&models.UserRole{}).Where("role_id = ?", role.ID).Count(&n)
+	h.DB.WithContext(c.Request.Context()).Model(&models.UserRole{}).Where("role_id = ?", role.ID).Count(&n)
 	respond.OK(c, h.toDTO(role, n), "Role updated")
 }
 
 func (h *RoleHandler) Delete(c *gin.Context) {
 	var role models.Role
-	if err := h.DB.Where("id = ?", c.Param("id")).First(&role).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", c.Param("id")).First(&role).Error; err != nil {
 		respond.NotFound(c, "Role not found")
 		return
 	}
@@ -271,11 +271,11 @@ func (h *RoleHandler) Delete(c *gin.Context) {
 	// how the admin's user form assigns a role today. Checking only the join
 	// table let a role deleted out from under string-assigned users.
 	var viaJoin, viaString int64
-	if err := h.DB.Model(&models.UserRole{}).Where("role_id = ?", role.ID).Count(&viaJoin).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Model(&models.UserRole{}).Where("role_id = ?", role.ID).Count(&viaJoin).Error; err != nil {
 		respond.Internal(c, err)
 		return
 	}
-	if err := h.DB.Model(&models.User{}).Where("role = ?", role.Name).Count(&viaString).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Model(&models.User{}).Where("role = ?", role.Name).Count(&viaString).Error; err != nil {
 		respond.Internal(c, err)
 		return
 	}
@@ -288,7 +288,7 @@ func (h *RoleHandler) Delete(c *gin.Context) {
 	// delete leaves a tombstone row that blocks ever creating a role with the
 	// same name again ("duplicate key idx_roles_name"). An unassigned role has
 	// no audit value, so remove it outright.
-	if err := h.DB.Unscoped().Delete(&role).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Unscoped().Delete(&role).Error; err != nil {
 		respond.Internal(c, err)
 		return
 	}
@@ -305,7 +305,7 @@ func (h *RoleHandler) AssignUserRoles(c *gin.Context) {
 	userID := c.Param("id")
 
 	var user models.User
-	if err := h.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", userID).First(&user).Error; err != nil {
 		respond.NotFound(c, "User not found")
 		return
 	}
@@ -319,7 +319,7 @@ func (h *RoleHandler) AssignUserRoles(c *gin.Context) {
 	// Reject unknown role ids rather than silently dropping them.
 	if len(in.RoleIDs) > 0 {
 		var n int64
-		h.DB.Model(&models.Role{}).Where("id IN ?", in.RoleIDs).Count(&n)
+		h.DB.WithContext(c.Request.Context()).Model(&models.Role{}).Where("id IN ?", in.RoleIDs).Count(&n)
 		if int(n) != len(in.RoleIDs) {
 			respond.BadRequest(c, "One or more roles do not exist")
 			return
@@ -335,7 +335,7 @@ func (h *RoleHandler) AssignUserRoles(c *gin.Context) {
 			return
 		}
 		var roles []models.Role
-		if err := h.DB.Where("id IN ?", in.RoleIDs).Find(&roles).Error; err != nil {
+		if err := h.DB.WithContext(c.Request.Context()).Where("id IN ?", in.RoleIDs).Find(&roles).Error; err != nil {
 			respond.Internal(c, err)
 			return
 		}
@@ -351,7 +351,7 @@ func (h *RoleHandler) AssignUserRoles(c *gin.Context) {
 		}
 	}
 
-	err := h.DB.Transaction(func(tx *gorm.DB) error {
+	err := h.DB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("user_id = ?", userID).Delete(&models.UserRole{}).Error; err != nil {
 			return err
 		}

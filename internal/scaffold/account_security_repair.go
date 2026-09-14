@@ -73,7 +73,7 @@ const (
 		// stops working and its sessions end before the provider is linked.
 		if user.EmailVerifiedAt == nil {
 			verifiedAt := time.Now()
-			if err := h.DB.Model(&user).Updates(map[string]interface{}{"password": "", "email_verified_at": verifiedAt}).Error; err != nil {
+			if err := h.DB.WithContext(c.Request.Context()).Model(&user).Updates(map[string]interface{}{"password": "", "email_verified_at": verifiedAt}).Error; err != nil {
 				log.Printf("oauth: securing unverified account %s: %v", user.ID, err)
 				redirectURL := fmt.Sprintf("%s/login?error=%s", h.Config.OAuthFrontendURL, url.QueryEscape("Something went wrong."))
 				c.Redirect(http.StatusTemporaryRedirect, redirectURL)
@@ -152,7 +152,7 @@ const (
 	}
 	if emailChanged {
 		var taken int64
-		if err := h.DB.Model(&models.User{}).Where("LOWER(email) = LOWER(?) AND id <> ?", req.Email, user.ID).Count(&taken).Error; err != nil {
+		if err := h.DB.WithContext(c.Request.Context()).Model(&models.User{}).Where("LOWER(email) = LOWER(?) AND id <> ?", req.Email, user.ID).Count(&taken).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to check the email address"},
 			})

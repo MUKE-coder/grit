@@ -234,7 +234,7 @@ type ImportJobHandler struct {
 // and the per-row errors once Status is "completed".
 func (h *ImportJobHandler) GetByID(c *gin.Context) {
 	var job models.ImportJob
-	if err := h.DB.First(&job, "id = ?", c.Param("id")).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).First(&job, "id = ?", c.Param("id")).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{"code": "NOT_FOUND", "message": "Import job not found"},
 		})
@@ -2333,7 +2333,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	// Check email uniqueness
 	var existingUser models.User
-	if err := h.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{
 			"error": gin.H{
 				"code":    "EMAIL_EXISTS",
@@ -2354,7 +2354,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		MACAddress: req.MACAddress,
 	}
 
-	if err := h.DB.Create(&user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Create(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"code":    "INTERNAL_ERROR",
@@ -2417,7 +2417,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := h.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("email = ?", req.Email).First(&user).Error; err != nil {
 		// v3.30.1: unknown email is the most common brute-force fingerprint;
 		// surface it in /system/activity as "warn" severity so operators
 		// can spot credential-stuffing spikes.
@@ -2513,7 +2513,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	// Check if user has TOTP enabled
 	var totpConfig models.TwoFactorConfig
-	if err := h.DB.Where("user_id = ? AND enabled = ?", user.ID, true).First(&totpConfig).Error; err == nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ? AND enabled = ?", user.ID, true).First(&totpConfig).Error; err == nil {
 		// TOTP is enabled — check for trusted device
 		if !IsTrustedDevice(c, h.DB, user.ID) {
 			// Generate a short-lived pending token for TOTP verification
@@ -2526,7 +2526,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			}
 
 			// Store hashed pending token in DB
-			if err := h.DB.Create(&models.TOTPPendingToken{
+			if err := h.DB.WithContext(c.Request.Context()).Create(&models.TOTPPendingToken{
 				UserID:    user.ID,
 				TokenHash: totp.HashToken(pendingToken),
 				ExpiresAt: time.Now().Add(totp.PendingTokenExpiry),
@@ -2552,7 +2552,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	// password, with 2FA still ahead, it handed a fresh set of guesses at the
 	// code to anyone who knew the password and simply signed in again.
 	if user.FailedLoginCount > 0 || user.LockedUntil != nil {
-		if err := h.DB.Model(&models.User{}).Where("id = ?", user.ID).
+		if err := h.DB.WithContext(c.Request.Context()).Model(&models.User{}).Where("id = ?", user.ID).
 			Updates(map[string]interface{}{"failed_login_count": 0, "locked_until": nil}).Error; err != nil {
 			log.Printf("lockout: clearing the failure count for %s: %v", user.ID, err)
 		}
@@ -2638,7 +2638,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	// change take effect on the next refresh (partial revocation without a
 	// server-side token store).
 	var user models.User
-	if err := h.DB.First(&user, "id = ?", claims.UserID).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).First(&user, "id = ?", claims.UserID).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": gin.H{
 				"code":    "INVALID_TOKEN",
@@ -2840,7 +2840,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 
 	// Check email uniqueness
 	var existing models.User
-	if err := h.DB.Where("email = ?", req.Email).First(&existing).Error; err == nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("email = ?", req.Email).First(&existing).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{
 			"error": gin.H{
 				"code":    "EMAIL_EXISTS",
@@ -2868,7 +2868,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 		user.Role = models.RoleUser
 	}
 
-	if err := h.DB.Create(&user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Create(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"code":    "INTERNAL_ERROR",
@@ -2912,7 +2912,7 @@ func (h *UserHandler) List(c *gin.Context) {
 		sortBy = "created_at"
 	}
 
-	query := h.DB.Model(&models.User{})
+	query := h.DB.WithContext(c.Request.Context()).Model(&models.User{})
 
 	// Search
 	if search != "" {
@@ -2956,7 +2956,7 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 	id := c.Param("id")
 
 	var user models.User
-	if err := h.DB.Where("id = ?", id).First(&user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", id).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -3027,7 +3027,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 
 	var user models.User
-	if err := h.DB.Where("id = ?", id).First(&user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", id).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -3123,7 +3123,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 		}
 	}
 
-	if err := h.DB.Model(&user).Updates(updates).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Model(&user).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"code":    "INTERNAL_ERROR",
@@ -3134,7 +3134,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 	}
 
 	// Reload to get updated values
-	h.DB.Where("id = ?", id).First(&user)
+	h.DB.WithContext(c.Request.Context()).Where("id = ?", id).First(&user)
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":    user,
@@ -3147,7 +3147,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 
 	var user models.User
-	if err := h.DB.Where("id = ?", id).First(&user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", id).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -3165,7 +3165,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.DB.Delete(&user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Delete(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"code":    "INTERNAL_ERROR",
@@ -3185,7 +3185,7 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
 	var user models.User
-	if err := h.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", userID).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -3220,7 +3220,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
 	var user models.User
-	if err := h.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", userID).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -3274,7 +3274,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		updates["bio"] = crypto.EncryptedString(req.Bio)
 	}
 
-	if err := h.DB.Model(&user).Updates(updates).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Model(&user).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"code":    "INTERNAL_ERROR",
@@ -3284,7 +3284,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	h.DB.Where("id = ?", userID).First(&user)
+	h.DB.WithContext(c.Request.Context()).Where("id = ?", userID).First(&user)
 
 	// Changing a password must invalidate every logged-in device — that is the
 	// whole point of changing it after a suspected compromise.
@@ -3321,7 +3321,7 @@ func (h *UserHandler) DeleteProfile(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
 	var user models.User
-	if err := h.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", userID).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -3331,7 +3331,7 @@ func (h *UserHandler) DeleteProfile(c *gin.Context) {
 		return
 	}
 
-	if err := h.DB.Delete(&user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Delete(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"code":    "INTERNAL_ERROR",
@@ -3429,7 +3429,7 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 		// emits the bare value into the WHERE clause and Postgres rejects UUID
 		// primary keys with "trailing junk after numeric literal".
 		var user models.User
-		if err := db.Where("id = ?", claims.UserID).First(&user).Error; err != nil {
+		if err := db.WithContext(c.Request.Context()).Where("id = ?", claims.UserID).First(&user).Error; err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": gin.H{
 					"code":    "UNAUTHORIZED",
@@ -3878,7 +3878,7 @@ func apiPaginateGo() string {
 //
 //	func (h *ShopHandler) List(c *gin.Context) {
 //	    res, err := paginate.List[models.Shop](
-//	        h.DB.Model(&models.Shop{}).Preload("Building"),
+//	        h.DB.WithContext(c.Request.Context()).Model(&models.Shop{}).Preload("Building"),
 //	        paginate.Bind(c),
 //	        paginate.Config{
 //	            Searchable:   []string{"shop_number", "description"},
@@ -5069,7 +5069,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 		if !syncMayWrite(c, ch.Model, "create", obj) {
 			return PushResult{OK: false, Code: "FORBIDDEN", Message: "you may not create " + ch.Model}
 		}
-		if err := h.DB.Create(obj).Error; err != nil {
+		if err := h.DB.WithContext(c.Request.Context()).Create(obj).Error; err != nil {
 			return PushResult{OK: false, Code: "CREATE_FAILED", Message: syncFault(c, ch, err, "the server could not create the row")}
 		}
 		// Mirror the online handler: emit a semantic activity row so offline
@@ -5080,7 +5080,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 	case "update":
 		// Versioned update: load current row, compare versions, update if match.
 		current := proto
-		if err := h.DB.First(current, "id = ?", ch.ID).Error; err != nil {
+		if err := h.DB.WithContext(c.Request.Context()).First(current, "id = ?", ch.ID).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return PushResult{OK: false, Code: "NOT_FOUND", Message: "row was deleted on the server"}
 			}
@@ -5146,7 +5146,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 		// Save writes every column (so cleared/zeroed fields persist) and runs the
 		// BeforeUpdate hook. Omit associations so the nested relation object is not
 		// upserted, and CreatedAt so the client can't rewind the original timestamp.
-		if err := h.DB.Omit(clause.Associations, "CreatedAt").Save(obj).Error; err != nil {
+		if err := h.DB.WithContext(c.Request.Context()).Omit(clause.Associations, "CreatedAt").Save(obj).Error; err != nil {
 			return PushResult{OK: false, Code: "UPDATE_FAILED", Message: syncFault(c, ch, err, "the server could not update the row")}
 		}
 		newVersion := getIntField(obj, "Version")
@@ -5155,7 +5155,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 
 	case "delete":
 		current := proto
-		if err := h.DB.First(current, "id = ?", ch.ID).Error; err != nil {
+		if err := h.DB.WithContext(c.Request.Context()).First(current, "id = ?", ch.ID).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {
 				// Already gone — treat as success so the outbox can clear.
 				return PushResult{OK: true}
@@ -5175,7 +5175,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 				ServerData:    current,
 			}
 		}
-		if err := h.DB.Delete(current, "id = ?", ch.ID).Error; err != nil {
+		if err := h.DB.WithContext(c.Request.Context()).Delete(current, "id = ?", ch.ID).Error; err != nil {
 			return PushResult{OK: false, Code: "DELETE_FAILED", Message: syncFault(c, ch, err, "the server could not delete the row")}
 		}
 		services.LogDelete(h.DB, c, entityType, ch.ID, ch.ID)
@@ -6493,7 +6493,7 @@ func (h *WebhookHandler) Receive(c *gin.Context) {
 		Payload:    datatypes.JSON(body),
 		Status:     "pending",
 	}
-	if err := h.DB.Create(&event).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Create(&event).Error; err != nil {
 		// Duplicate (provider, external_id) — already processed.
 		// Return 200 so the provider doesn't retry, and skip the handler.
 		if webhooks.IsDuplicateError(err) {
@@ -6509,7 +6509,7 @@ func (h *WebhookHandler) Receive(c *gin.Context) {
 	// up — the provider already got a 200 once we persisted.
 	if dispatchErr := webhooks.Dispatch(c.Request.Context(), &event); dispatchErr != nil {
 		now := time.Now()
-		if err := h.DB.Model(&event).Updates(map[string]interface{}{
+		if err := h.DB.WithContext(c.Request.Context()).Model(&event).Updates(map[string]interface{}{
 			"status":        "failed",
 			"handler_error": dispatchErr.Error(),
 			"processed_at":  &now,
@@ -6520,7 +6520,7 @@ func (h *WebhookHandler) Receive(c *gin.Context) {
 		return
 	}
 	now := time.Now()
-	if err := h.DB.Model(&event).Updates(map[string]interface{}{
+	if err := h.DB.WithContext(c.Request.Context()).Model(&event).Updates(map[string]interface{}{
 		"status":       "processed",
 		"processed_at": &now,
 	}).Error; err != nil {
@@ -6533,7 +6533,7 @@ func (h *WebhookHandler) Receive(c *gin.Context) {
 //
 //	GET /api/admin/webhooks?provider=stripe&status=failed
 func (h *WebhookHandler) List(c *gin.Context) {
-	q := h.DB.Model(&models.WebhookEvent{})
+	q := h.DB.WithContext(c.Request.Context()).Model(&models.WebhookEvent{})
 	params := paginate.Bind(c).
 		With("provider", c.Query("provider")).
 		With("status", c.Query("status"))
@@ -6558,7 +6558,7 @@ func (h *WebhookHandler) List(c *gin.Context) {
 func (h *WebhookHandler) Replay(c *gin.Context) {
 	id := c.Param("id")
 	var event models.WebhookEvent
-	if err := h.DB.First(&event, "id = ?", id).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).First(&event, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": gin.H{"code": "NOT_FOUND", "message": "webhook event not found"},
@@ -6585,13 +6585,13 @@ func (h *WebhookHandler) Replay(c *gin.Context) {
 		updates["status"] = "failed"
 		updates["handler_error"] = dispatchErr.Error()
 	}
-	if err := h.DB.Model(&event).Updates(updates).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Model(&event).Updates(updates).Error; err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	// Re-read to get the post-increment count; the original event.RetryCount
 	// is stale after the gorm.Expr update.
-	_ = h.DB.Select("retry_count").First(&event, "id = ?", id).Error
+	_ = h.DB.WithContext(c.Request.Context()).Select("retry_count").First(&event, "id = ?", id).Error
 	if dispatchErr != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status":        "failed",
@@ -6787,26 +6787,31 @@ const DefaultRefreshInterval = 30 * time.Second
 
 // Engine owns the in-memory flag cache. One per process.
 type Engine struct {
-	db        *gorm.DB
-	hub       *realtime.Hub // optional — when set, broadcasts on Refresh
-	mu        sync.RWMutex
-	flags     map[string]*models.FeatureFlag
-	stop      chan struct{}
+	db    *gorm.DB
+	hub   *realtime.Hub // optional — when set, broadcasts on Refresh
+	mu    sync.RWMutex
+	flags map[string]*models.FeatureFlag
+	stop  chan struct{}
+	// exposures feeds one writer. Each flag check used to start a goroutine and
+	// an INSERT of its own, which a busy page turned into thousands a second.
+	exposures chan models.FlagExposure
 }
 
 // New returns an Engine with the cache pre-warmed. Call from
 // routes.Setup. hub is optional — pass nil to disable broadcasts.
 func New(db *gorm.DB, hub *realtime.Hub) *Engine {
 	e := &Engine{
-		db:    db,
-		hub:   hub,
-		flags: make(map[string]*models.FeatureFlag),
-		stop:  make(chan struct{}),
+		db:        db,
+		hub:       hub,
+		flags:     make(map[string]*models.FeatureFlag),
+		stop:      make(chan struct{}),
+		exposures: make(chan models.FlagExposure, exposureQueueSize),
 	}
 	if err := e.Refresh(); err != nil {
 		log.Printf("[flags] initial refresh failed: %v", err)
 	}
 	go e.refreshLoop()
+	go e.writeExposures()
 	setDefault(e)
 	return e
 }
@@ -7097,27 +7102,70 @@ func (e *Engine) evaluate(s Subject, name string) string {
 	return "disabled"
 }
 
-// trackExposure records the flag check asynchronously. Never blocks
-// the request path; logs failures.
+// exposureQueueSize bounds the exposures waiting for the writer. Past it they
+// are dropped: an exposure is analytics, never worth slowing a request for.
+const exposureQueueSize = 4096
+
+// trackExposure hands the flag check to the exposure writer without blocking.
 func (e *Engine) trackExposure(flagID, flagName, userID, variant string) {
 	if userID == "" {
 		// Anonymous exposures pollute the table without buying us
 		// anything (we can't link them to a user later). Skip.
 		return
 	}
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		err := e.db.WithContext(ctx).Create(&models.FlagExposure{
-			FlagID:   flagID,
-			FlagName: flagName,
-			UserID:   userID,
-			Variant:  variant,
-		}).Error
-		if err != nil {
-			log.Printf("[flags] exposure insert failed: %v", err)
+	select {
+	case e.exposures <- models.FlagExposure{FlagID: flagID, FlagName: flagName, UserID: userID, Variant: variant}:
+	default:
+	}
+}
+
+// writeExposures writes exposures in batches, and records each user, flag and
+// variant once a UTC day: an exposure says who saw which variant, not how many
+// times they reloaded the page.
+func (e *Engine) writeExposures() {
+	seen := map[string]bool{}
+	day := ""
+	for {
+		var first models.FlagExposure
+		select {
+		case <-e.stop:
+			return
+		case first = <-e.exposures:
 		}
-	}()
+		batch := []models.FlagExposure{first}
+	drain:
+		for len(batch) < 256 {
+			select {
+			case x := <-e.exposures:
+				batch = append(batch, x)
+			default:
+				break drain
+			}
+		}
+
+		today := time.Now().UTC().Format("2006-01-02")
+		if today != day || len(seen) > 100000 {
+			seen, day = map[string]bool{}, today
+		}
+		fresh := batch[:0]
+		for _, x := range batch {
+			k := x.UserID + "|" + x.FlagID + "|" + x.Variant
+			if seen[k] {
+				continue
+			}
+			seen[k] = true
+			fresh = append(fresh, x)
+		}
+		if len(fresh) == 0 {
+			continue
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		if err := e.db.WithContext(ctx).CreateInBatches(fresh, 256).Error; err != nil {
+			log.Printf("[flags] recording %d exposures: %v", len(fresh), err)
+		}
+		cancel()
+	}
 }
 
 // bucketFor hashes (userID || ":" || flagName) and returns the bucket
@@ -7206,7 +7254,7 @@ func NewFeatureFlagHandler(db *gorm.DB, engine *flags.Engine) *FeatureFlagHandle
 //
 //	GET /api/admin/flags
 func (h *FeatureFlagHandler) List(c *gin.Context) {
-	q := h.DB.Model(&models.FeatureFlag{})
+	q := h.DB.WithContext(c.Request.Context()).Model(&models.FeatureFlag{})
 	res, err := paginate.List[models.FeatureFlag](q, paginate.Bind(c), paginate.Config{
 		Searchable:   []string{"name", "description"},
 		Sortable:     map[string]bool{"name": true, "created_at": true, "enabled": true},
@@ -7258,7 +7306,7 @@ func (h *FeatureFlagHandler) Create(c *gin.Context) {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
-	if err := h.DB.Create(&flag).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Create(&flag).Error; err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
@@ -7273,7 +7321,7 @@ func (h *FeatureFlagHandler) Create(c *gin.Context) {
 func (h *FeatureFlagHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 	var flag models.FeatureFlag
-	if err := h.DB.First(&flag, "id = ?", id).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).First(&flag, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": gin.H{"code": "NOT_FOUND", "message": "flag not found"},
@@ -7299,7 +7347,7 @@ func (h *FeatureFlagHandler) Update(c *gin.Context) {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
-	if err := h.DB.Save(&flag).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Save(&flag).Error; err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
@@ -7315,7 +7363,7 @@ func (h *FeatureFlagHandler) Update(c *gin.Context) {
 func (h *FeatureFlagHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 	var flag models.FeatureFlag
-	if err := h.DB.First(&flag, "id = ?", id).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).First(&flag, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": gin.H{"code": "NOT_FOUND", "message": "flag not found"},
@@ -7325,7 +7373,7 @@ func (h *FeatureFlagHandler) Delete(c *gin.Context) {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
-	if err := h.DB.Delete(&flag).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Delete(&flag).Error; err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
@@ -7345,7 +7393,7 @@ func (h *FeatureFlagHandler) Exposures(c *gin.Context) {
 		Count   int64  ` + "`" + `json:"count"` + "`" + `
 	}
 	var rows []bucket
-	if err := h.DB.Model(&models.FlagExposure{}).
+	if err := h.DB.WithContext(c.Request.Context()).Model(&models.FlagExposure{}).
 		Select("variant, COUNT(DISTINCT user_id) as count").
 		Where("flag_id = ?", id).
 		Group("variant").
@@ -7550,7 +7598,7 @@ func NewActivityHandler(db *gorm.DB) *ActivityHandler {
 // List returns activity log entries, newest first. Supports filtering
 // by user_id, method, resource, path prefix and record id via query params.
 func (h *ActivityHandler) List(c *gin.Context) {
-	q := h.DB.Model(&models.ActivityLog{}).Order("created_at desc")
+	q := h.DB.WithContext(c.Request.Context()).Model(&models.ActivityLog{}).Order("created_at desc")
 	params := paginate.Bind(c).
 		With("user_id", c.Query("user_id")).
 		With("method", c.Query("method")).

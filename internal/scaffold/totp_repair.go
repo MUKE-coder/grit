@@ -61,7 +61,7 @@ const lateCounterReset = `
 	// password, with 2FA still ahead, it handed a fresh set of guesses at the
 	// code to anyone who knew the password and simply signed in again.
 	if user.FailedLoginCount > 0 || user.LockedUntil != nil {
-		if err := h.DB.Model(&models.User{}).Where("id = ?", user.ID).
+		if err := h.DB.WithContext(c.Request.Context()).Model(&models.User{}).Where("id = ?", user.ID).
 			Updates(map[string]interface{}{"failed_login_count": 0, "locked_until": nil}).Error; err != nil {
 			log.Printf("lockout: clearing the failure count for %s: %v", user.ID, err)
 		}
