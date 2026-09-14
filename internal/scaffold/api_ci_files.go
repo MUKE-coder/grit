@@ -52,8 +52,8 @@ func ciPnpmSteps(l ciLayout) string {
 	if l.single {
 		version = "        with:\n          version: 10\n"
 	}
-	return `      - uses: pnpm/action-setup@v4
-` + version + `      - uses: actions/setup-node@v4
+	return `      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+` + version + `      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
       # The committed lockfile is what gets installed and audited. Until one is
@@ -135,7 +135,7 @@ func securityCIYAML(opts Options) string {
       run:
         working-directory: {{JS_DIR}}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 ` + ciPnpmSteps(l) + `      # High and critical, in production dependencies: a moderate issue in a
       # dev tool should not block every pull request.
       - name: Audit
@@ -170,8 +170,8 @@ jobs:
       run:
         working-directory: {{API_DIR}}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           # The Go the API builds with. Scanned on an older one, the report lists
           # standard library issues the build does not have.
@@ -195,19 +195,19 @@ jobs:
           - language: go
             build-mode: manual
 `+jsMatrix+`    steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - if: matrix.language == 'go'
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: {{API_DIR}}/go.mod
-`+placeholder+`      - uses: github/codeql-action/init@v3
+`+placeholder+`      - uses: github/codeql-action/init@faaca9a8f6edddba5725ffe5adefdab6669a2eca # v3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
       - if: matrix.build-mode == 'manual'
         working-directory: {{API_DIR}}
         run: go build ./...
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@faaca9a8f6edddba5725ffe5adefdab6669a2eca # v3
         with:
           category: "/language:${{ matrix.language }}"
 `)
@@ -246,7 +246,7 @@ func ciYAML(opts Options) string {
       run:
         working-directory: {{JS_DIR}}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 ` + ciPnpmSteps(l) + steps
 	}
 	return ciReplace(l, `name: CI
@@ -270,8 +270,8 @@ jobs:
       run:
         working-directory: {{API_DIR}}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: {{API_DIR}}/go.mod
           cache-dependency-path: {{API_DIR}}/go.sum

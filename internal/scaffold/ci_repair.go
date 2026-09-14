@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
 // repairCIWorkflows brings a project's CI up to the fix for H21 in the
@@ -31,7 +33,10 @@ func repairCIWorkflows(root string, opts Options) error {
 		filepath.Join(workflows, "release.yml"):          releaseCIYAML(ci),
 		filepath.Join(workflows, "lint.yml"):             lintCIYAML(ci),
 	}
-	if path := filepath.Join(workflows, "ci.yml"); !fileExists(path) {
+	// ci.yml is delivered when the project has none, or when Grit wrote the one
+	// it has. A ci.yml the project wrote itself is untracked, and the upgrade
+	// guard would replace it, so it is left alone.
+	if path := filepath.Join(workflows, "ci.yml"); !fileExists(path) || gritWroteFile(root, path) {
 		files[path] = ciYAML(ci)
 	}
 	for path, content := range files {
@@ -44,4 +49,15 @@ func repairCIWorkflows(root string, opts Options) error {
 		}
 	}
 	return nil
+}
+
+// gritWroteFile reports whether the manifest records Grit writing path. The
+// upgrade guard then keeps the file if it has been edited since.
+func gritWroteFile(root, path string) bool {
+	m, err := manifest.Load(root)
+	if err != nil {
+		return false
+	}
+	rel, ok := manifest.Rel(root, path)
+	return ok && m.StatusOf(root, rel) != manifest.Untracked
 }

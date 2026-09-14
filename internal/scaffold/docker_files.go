@@ -21,6 +21,8 @@ func writeDockerFiles(root string, opts Options) error {
 	} else {
 		files[filepath.Join(root, "docker-compose.prod.yml")] = dockerComposeProd(opts)
 		files[filepath.Join(root, "apps", "api", "Dockerfile")] = dockerfileAPI()
+		// The API image builds from apps/api, which the root .dockerignore does not cover.
+		files[filepath.Join(root, "apps", "api", ".dockerignore")] = apiDockerIgnore
 		// Frontend choice decides the image: a Vite app builds to a static
 		// dist/ served by nginx, whereas Next.js builds a standalone Node
 		// server. Handing a Vite app the Next.js Dockerfile fails the build —
@@ -119,8 +121,7 @@ services:
       retries: 5
 
   minio:
-    image: minio/minio
-    container_name: %s-minio
+    ` + minioImageNew + `    container_name: %s-minio
     restart: unless-stopped
     ports:
       # Host 9002 / 9003 (not the MinIO-default 9000 / 9001) avoids
@@ -227,11 +228,9 @@ services:
     # — only the dev host port mapping uses 5434. The Go config builds
     # DATABASE_URL from these parts at startup.
     environment:
-      APP_ENV: production
-      POSTGRES_HOST: postgres
+` + composeDBProvider + `      POSTGRES_HOST: postgres
       POSTGRES_PORT: "5432"
-      REDIS_URL: redis://redis:6379
-      MINIO_ENDPOINT: http://minio:9000
+` + composeRedisURLNew + `      MINIO_ENDPOINT: http://minio:9000
     depends_on:
       postgres:
         condition: service_healthy
@@ -327,7 +326,7 @@ services:
   #
   # To use it, set in .env:  DB_HOST=pgbouncer  DB_PORT=6432
   pgbouncer:
-    image: edoburu/pgbouncer:latest
+    image: edoburu/pgbouncer:v1.25.2-p0
     container_name: %s-pgbouncer
     restart: unless-stopped
     depends_on:
@@ -358,7 +357,7 @@ services:
     image: redis:7-alpine
     container_name: %s-redis
     restart: unless-stopped
-    volumes:
+` + composeRedisAuth + `    volumes:
       - redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -369,8 +368,7 @@ services:
       - %s
 
   minio:
-    image: minio/minio
-    container_name: %s-minio
+    ` + minioImageNew + `    container_name: %s-minio
     restart: unless-stopped
     # Only its root credentials, with no default. Presigned uploads put MinIO
     # behind the public proxy, where minioadmin/minioadmin is the whole bucket.
@@ -601,13 +599,5 @@ CMD ["node", "apps/%s/server.js"]
 }
 
 func dockerIgnore() string {
-	return `node_modules
-.next
-.turbo
-dist
-*.log
-.env
-.env.local
-.git
-`
+	return dockerIgnoreNew
 }
