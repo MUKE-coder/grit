@@ -66,6 +66,28 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.267.1 */}
+            <div className="mb-12" id="v3.267.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.267.1
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The upload codes from v3.267.0 are in the error catalogue</h3>
+                <p>
+                  v3.267.0 added two error codes to the upload handler,{" "}
+                  <code>UPLOAD_KEY_FORBIDDEN</code> and <code>UPLOAD_ALREADY_RECORDED</code>, without adding them
+                  to Grit&apos;s error catalogue, the list every code a generated API can return has to appear in
+                  with its status and what a client should do. The test that holds the templates to the catalogue
+                  failed, so the v3.267.0 release was never published. Both codes are catalogued now, and appear
+                  on the error codes page. The upload fix itself is unchanged: see v3.267.0.
+                </p>
+              </div>
+            </div>
+
             {/* v3.267.0 */}
             <div className="mb-12" id="v3.267.0">
               <div className="flex items-center gap-3 mb-4">

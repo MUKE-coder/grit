@@ -464,6 +464,20 @@ export const errorCodeAreas: ErrorCodeArea[] = [
         client: 'Treat it as absent: the key is wrong, or the object was deleted.',
       },
       {
+        code: 'UPLOAD_KEY_FORBIDDEN',
+        status: 403,
+        category: 'permission',
+        meaning: 'The key being recorded was not presigned for this user. Only keys under the caller\'s own uploads/<user_id>/ prefix are accepted.',
+        client: 'Send back the key the presign returned. Another user\'s key, or one outside the uploads, will not be accepted.',
+      },
+      {
+        code: 'UPLOAD_ALREADY_RECORDED',
+        status: 409,
+        category: 'conflict',
+        meaning: 'This upload has already been recorded, and a key is recorded only once.',
+        client: 'Treat the upload as done: fetch it from the uploads list instead of completing it again.',
+      },
+      {
         code: 'PRESIGN_FAILED',
         status: 500,
         category: 'server',
@@ -941,7 +955,7 @@ export const errorCodeAreas: ErrorCodeArea[] = [
 ]
 
 /** How many codes the API documents. Shown on the page, so it cannot be stale. */
-export const errorCodeCount = 108
+export const errorCodeCount = 110
 
 /** Every row, flattened, for searching and for a test that checks coverage. */
 export const errorCodes: ErrorCodeRow[] = errorCodeAreas.flatMap((area) => area.codes)
