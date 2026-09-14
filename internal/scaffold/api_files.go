@@ -418,6 +418,7 @@ func apiMainGo(opts Options) string {
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"log"
 	"net/http"
@@ -550,8 +551,7 @@ func main() {
 	// which is the exact class of breakage the version prefix exists to avoid.
 	// The unversioned path is re-dispatched to the current version by
 	// mountLegacyAPIAlias (query string preserved), so these keep working.
-	gothic.Store = sessions.NewCookieStore([]byte(cfg.JWTSecret))
-	var oauthProviders []goth.Provider
+` + gothicStoreNew + `	var oauthProviders []goth.Provider
 	if cfg.GoogleClientID != "" {
 		oauthProviders = append(oauthProviders, google.New(
 			cfg.GoogleClientID, cfg.GoogleClientSecret,
@@ -2779,6 +2779,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -3208,6 +3209,9 @@ type UpdateProfileRequest struct {
 	Avatar    string ` + "`" + `json:"avatar"` + "`" + `
 	JobTitle  string ` + "`" + `json:"job_title"` + "`" + `
 	Bio       string ` + "`" + `json:"bio"` + "`" + `
+
+	// Required to change the email or the password.
+	CurrentPassword string ` + "`" + `json:"current_password"` + "`" + `
 }
 
 // UpdateProfile updates the currently authenticated user's profile.
@@ -3238,7 +3242,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	updates := map[string]interface{}{}
+` + profileChecks + `	updates := map[string]interface{}{}
 	passwordChanged := false
 	if req.FirstName != "" {
 		updates["first_name"] = req.FirstName
@@ -3246,10 +3250,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	if req.LastName != "" {
 		updates["last_name"] = req.LastName
 	}
-	if req.Email != "" {
-		updates["email"] = req.Email
-	}
-	if req.Password != "" {
+` + profileEmailNew + `	if req.Password != "" {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -3293,8 +3294,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	// carries it and there is no way to recognise "this device" here. Revoking
 	// everything and minting a fresh pair is both simpler and stricter — the old
 	// token is dead even for the caller, and they stay signed in.
-	if passwordChanged {
-		if err := services.RevokeAllUserSessions(h.DB, user.ID, ""); err != nil {
+` + profileRevokeNew + `h.DB, user.ID, ""); err != nil {
 			// Log it; the password DID change, so failing the request now would be
 			// misleading. Sessions still die at their idle/absolute timeout.
 			log.Printf("failed to revoke sessions after password change for user %s: %v", user.ID, err)
@@ -4756,7 +4756,10 @@ func apiIdempotencyMiddlewareGo() string {
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -4808,8 +4811,7 @@ func Idempotency(cacheService *cache.Cache) gin.HandlerFunc {
 			return
 		}
 
-		cacheKey := "idem:" + c.Request.Method + ":" + c.FullPath() + ":" + key
-
+` + idempotencyKeyNew + `
 		// Replay if we've seen this key before.
 		var cached idempotentResponse
 		found, err := cacheService.Get(c.Request.Context(), cacheKey, &cached)
@@ -4837,7 +4839,7 @@ func Idempotency(cacheService *cache.Cache) gin.HandlerFunc {
 		}
 	}
 }
-
+` + idempotencyScopeFunc + `
 type idempotentResponse struct {
 	Status      int    ` + "`" + `json:"status"` + "`" + `
 	ContentType string ` + "`" + `json:"content_type"` + "`" + `
@@ -10010,7 +10012,6 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		protected.DELETE("/auth/totp/trusted-devices/:id", totpHandler.RevokeTrustedDevice)
 
 		// User routes (authenticated)
-		protected.GET("/users/:id", userHandler.GetByID)
 
 		// GDPR right-to-access: a user may export their own data; an admin, anyone's.
 		protected.GET("/users/:id/gdpr-export", gdprHandler.Export)
@@ -10105,7 +10106,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	staff.Use(middleware.RequireStaff())
 	{
 		staff.GET("/users", middleware.RequireRole("ADMIN", "perm:users.view"), userHandler.List)
-		staff.POST("/users", middleware.RequireRole("ADMIN", "perm:users.create"), userHandler.Create)
+` + userByIDStaffRoute + `		staff.POST("/users", middleware.RequireRole("ADMIN", "perm:users.create"), userHandler.Create)
 		staff.PUT("/users/:id", middleware.RequireRole("ADMIN", "perm:users.edit"), userHandler.Update)
 		staff.DELETE("/users/:id", middleware.RequireRole("ADMIN", "perm:users.delete"), userHandler.Delete)
 		staff.PUT("/users/:id/roles", middleware.RequireRole("ADMIN", "perm:users.edit"), roleHandler.AssignUserRoles)

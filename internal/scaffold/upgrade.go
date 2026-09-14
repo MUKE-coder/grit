@@ -409,6 +409,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairServerErrors(root, opts); err != nil {
 			fmt.Printf("  ⚠ keeping server errors out of responses: %v\n", err)
 		}
+		// Idempotent replays are bound to the caller, a provider sign-in cannot
+		// inherit a pre-registered account, reading a user takes users.view, and
+		// changing the email or password takes the current password.
+		if err := repairAccountSecurity(root, opts); err != nil {
+			fmt.Printf("  ⚠ hardening account security: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {

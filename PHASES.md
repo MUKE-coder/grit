@@ -1219,11 +1219,11 @@ pushed, and name the version.
 - [x] H26 F (v3.266.0) - 500s never logged; raw errors sent to clients
 
 ### 8.3 Medium
-- [ ] M1 F - idempotency cache replays across users, before auth
-- [ ] M2 F - xlsx@0.18.5 with known CVEs parses untrusted files
-- [ ] M3 F - OAuth account pre-hijacking; gothic store reuses the JWT secret
-- [ ] M4 F - any user reads any user record
-- [ ] M5 F - email/password change without the current password
+- [x] M1 F (v3.268.0) - idempotency cache replays across users, before auth
+- [x] M2 F (v3.259.0, confirmed in v3.268.0) - xlsx@0.18.5 with known CVEs parses untrusted files (templates pin the SheetJS 0.20.3 tarball; parsing in a Web Worker not done)
+- [x] M3 F (v3.268.0) - OAuth account pre-hijacking; gothic store reuses the JWT secret
+- [x] M4 F (v3.268.0) - any user reads any user record
+- [x] M5 F (v3.268.0) - email/password change without the current password (no notice to the old address: the user handler has no mailer)
 - [ ] M6 F - SAML metadata fetch bypasses safefetch
 - [ ] M7 F - Docker contexts pull in .env.local, node_modules, *.db, binaries
 - [ ] M8 F+A - prod compose on in-container SQLite; password fallbacks; Redis without auth

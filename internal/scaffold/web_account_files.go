@@ -282,6 +282,7 @@ export default function AccountProfilePage() {
     email: "",
     job_title: "",
     password: "",
+    current_password: "",
   });
   const [saved, setSaved] = useState(false);
 
@@ -293,6 +294,7 @@ export default function AccountProfilePage() {
       email: user.email ?? "",
       job_title: user.job_title ?? "",
       password: "",
+      current_password: "",
     });
   }, [user]);
 
@@ -305,12 +307,14 @@ export default function AccountProfilePage() {
         job_title: form.job_title,
       };
       if (form.password) payload.password = form.password;
+      // The API asks for it to change the email or the password.
+      if (form.current_password) payload.current_password = form.current_password;
       const { data } = await api.put("/api/profile", payload);
       return data;
     },
     onSuccess: () => {
       setSaved(true);
-      setForm((f) => ({ ...f, password: "" }));
+      setForm((f) => ({ ...f, password: "", current_password: "" }));
       queryClient.invalidateQueries({ queryKey: ["me"] });
       window.setTimeout(() => setSaved(false), 4000);
     },
@@ -374,6 +378,14 @@ export default function AccountProfilePage() {
           </span>
         </label>
 
+        <label className="block space-y-1.5">
+          <span className="text-sm font-medium text-foreground">Current password</span>
+          <input type="password" autoComplete="current-password" {...field("current_password")} />
+          <span className="block text-xs text-text-secondary">
+            Needed only to change your email or your password.
+          </span>
+        </label>
+
         <div className="flex items-center gap-3 pt-1">
           <button
             type="submit"
@@ -385,7 +397,8 @@ export default function AccountProfilePage() {
           {saved ? <span className="text-sm text-text-secondary">Saved.</span> : null}
           {save.isError ? (
             <span className="text-sm text-danger">
-              That did not save. Check the fields and try again.
+              {(save.error as { response?: { data?: { error?: { message?: string } } } } | null)?.response?.data?.error
+                ?.message ?? "That did not save. Check the fields and try again."}
             </span>
           ) : null}
         </div>

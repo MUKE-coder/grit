@@ -487,6 +487,8 @@ const PersonalInfoSchema = z.object({
   first_name: z.string().min(2, "First name must be at least 2 characters"),
   last_name: z.string().min(2, "Last name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email"),
+  // Only needed when the email changes.
+  current_password: z.string().optional(),
 });
 type PersonalInfoValues = z.infer<typeof PersonalInfoSchema>;
 
@@ -498,6 +500,7 @@ type ProfessionalInfoValues = z.infer<typeof ProfessionalInfoSchema>;
 
 const ChangePasswordSchema = z
   .object({
+    current_password: z.string().min(1, "Enter your current password"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirm_password: z.string().min(1, "Please confirm your password"),
   })
@@ -566,7 +569,10 @@ export default function ProfilePage() {
   const onPersonalSubmit = (data: PersonalInfoValues) => updateProfile.mutate(data);
   const onProfessionalSubmit = (data: ProfessionalInfoValues) => updateProfile.mutate(data);
   const onPasswordSubmit = (data: ChangePasswordValues) =>
-    changePassword.mutate({ password: data.password }, { onSuccess: () => passwordForm.reset() });
+    changePassword.mutate(
+      { password: data.password, current_password: data.current_password },
+      { onSuccess: () => passwordForm.reset() },
+    );
 
   if (!user) return null;
 
@@ -655,6 +661,17 @@ export default function ProfilePage() {
               placeholder="you@example.com"
             />
           </Field>
+          <Field label="Current password (only to change your email)">
+            <input
+              type="password"
+              autoComplete="current-password"
+              {...personalForm.register("current_password")}
+              className={inputClass}
+            />
+          </Field>
+          {updateProfile.isError && (
+            <p className="text-sm text-danger">{(updateProfile.error as { response?: { data?: { error?: { message?: string } } } } | null)?.response?.data?.error?.message ?? "That did not save. Try again."}</p>
+          )}
           <div className="flex justify-end">
             <SubmitButton pending={updateProfile.isPending}>
               <Save className="h-4 w-4" />
@@ -703,6 +720,14 @@ export default function ProfilePage() {
         message={changePassword.isSuccess ? "Password updated" : undefined}
       >
         <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+          <Field label="Current password" error={passwordForm.formState.errors.current_password?.message}>
+            <input
+              type="password"
+              autoComplete="current-password"
+              {...passwordForm.register("current_password")}
+              className={passwordForm.formState.errors.current_password ? errorInputClass : inputClass}
+            />
+          </Field>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field label="New password" error={passwordForm.formState.errors.password?.message}>
               <input
@@ -721,6 +746,9 @@ export default function ProfilePage() {
               />
             </Field>
           </div>
+          {changePassword.isError && (
+            <p className="text-sm text-danger">{(changePassword.error as { response?: { data?: { error?: { message?: string } } } } | null)?.response?.data?.error?.message ?? "That did not save. Try again."}</p>
+          )}
           <div className="flex justify-end">
             <SubmitButton pending={changePassword.isPending}>
               <Lock className="h-4 w-4" />
