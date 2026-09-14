@@ -66,6 +66,61 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.268.0 */}
+            <div className="mb-12" id="v3.268.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.268.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Account security: replays, provider sign-in, user records and profile changes</h3>
+                <p>
+                  Five findings from the contact-app review, each reproduced on a generated project first.
+                </p>
+                <p>
+                  <strong>An Idempotency-Key replayed another user&apos;s response.</strong> The cache that
+                  makes retries safe keyed each stored response on the method, the path and the key, and
+                  answered before authentication. Anyone who learned a key got the stored response: sending only
+                  a user&apos;s key, with no credential at all, replayed the 201 that created their API key,
+                  secret included. The key now includes a hash of the credential the request carries, a request
+                  with no credential is never replayed, and sign-in and API key routes are never cached. After
+                  upgrading, the same request gets 401.
+                </p>
+                <p>
+                  <strong>Signing in with Google or GitHub could inherit a planted account.</strong> The callback
+                  linked the provider to any account with the same email and left its password working, so
+                  someone who registered the victim&apos;s address first kept password access after the victim
+                  signed in with the provider. Linking to an account whose email was never confirmed now clears
+                  its password and ends its sessions first, and a provider that shares no email is refused. The
+                  OAuth cookie store also has its own key, derived from the JWT secret rather than being it, and
+                  an HttpOnly, SameSite=Lax cookie that is Secure over https.
+                </p>
+                <p>
+                  <strong>Any signed-in user could read any user&apos;s record</strong>, email, role and IP address
+                  included. <code>GET /api/v1/users/:id</code> now takes <code>users.view</code>, like the user
+                  list; your own record is <code>GET /api/v1/profile</code>. It went from 200 to 403.
+                </p>
+                <p>
+                  <strong>A stolen session could change the password and the email.</strong> Changing either now
+                  takes the current password: without it the answer is 422, with a wrong one 401. A new email is
+                  checked against other accounts first, where it used to fail with a 500 from the database, is
+                  unconfirmed until confirmed, and signs out every other session. An account with no password,
+                  one made through a provider, changes these through a password reset instead. The admin profile
+                  pages and the web account page ask for the current password and show the API&apos;s reason when
+                  a change is refused. The old address is not yet notified of the change.
+                </p>
+                <p>
+                  The fifth finding, the <code>xlsx</code> package with two known vulnerabilities, was already
+                  fixed in v3.259.0, which moved every template to the patched SheetJS build.{" "}
+                  <code>grit upgrade</code> applies the four fixes to the API files Grit wrote, and leaves a note
+                  with what to change in any it cannot recognise.
+                </p>
+              </div>
+            </div>
+
             {/* v3.267.1 */}
             <div className="mb-12" id="v3.267.1">
               <div className="flex items-center gap-3 mb-4">

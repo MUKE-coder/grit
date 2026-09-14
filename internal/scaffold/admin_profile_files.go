@@ -19,6 +19,8 @@ const PersonalInfoSchema = z.object({
   first_name: z.string().min(2, "First name must be at least 2 characters"),
   last_name: z.string().min(2, "Last name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email"),
+  // Only needed when the email changes.
+  current_password: z.string().optional(),
 });
 type PersonalInfoValues = z.infer<typeof PersonalInfoSchema>;
 
@@ -30,6 +32,7 @@ type ProfessionalInfoValues = z.infer<typeof ProfessionalInfoSchema>;
 
 const ChangePasswordSchema = z
   .object({
+    current_password: z.string().min(1, "Enter your current password"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirm_password: z.string().min(1, "Please confirm your password"),
   })
@@ -92,7 +95,7 @@ export default function ProfilePage() {
   // Password form
   const passwordForm = useForm<ChangePasswordValues>({
     resolver: zodResolver(ChangePasswordSchema),
-    defaultValues: { password: "", confirm_password: "" },
+    defaultValues: { current_password: "", password: "", confirm_password: "" },
   });
 
   // Reset form defaults when user data loads
@@ -120,7 +123,7 @@ export default function ProfilePage() {
 
   const onPasswordSubmit = (data: ChangePasswordValues) => {
     changePassword.mutate(
-      { password: data.password },
+      { password: data.password, current_password: data.current_password },
       { onSuccess: () => passwordForm.reset() }
     );
   };
@@ -308,6 +311,18 @@ export default function ProfilePage() {
           </div>
           <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4 p-6">
             <div className="space-y-1.5">
+              <label className="text-sm font-medium text-text-secondary">Current password</label>
+              <input
+                type="password"
+                autoComplete="current-password"
+                {...passwordForm.register("current_password")}
+                className={passwordForm.formState.errors.current_password ? errorInputClass : inputClass}
+              />
+              {passwordForm.formState.errors.current_password && (
+                <p className="text-xs text-danger">{passwordForm.formState.errors.current_password.message}</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
               <label className="text-sm font-medium text-text-secondary">New password</label>
               <input
                 type="password"
@@ -334,6 +349,9 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between">
               {changePassword.isSuccess && (
                 <p className="text-sm text-success">Password updated successfully.</p>
+              )}
+              {changePassword.isError && (
+                <p className="text-sm text-danger">{(changePassword.error as { response?: { data?: { error?: { message?: string } } } } | null)?.response?.data?.error?.message ?? "That did not save. Try again."}</p>
               )}
               <div className="ml-auto">
                 <button
@@ -405,6 +423,8 @@ interface UpdateProfileData {
   bio?: string;
   avatar?: string;
   password?: string;
+  // Needed to change the email or the password.
+  current_password?: string;
 }
 
 export function useUpdateProfile() {
@@ -423,7 +443,7 @@ export function useUpdateProfile() {
 
 export function useChangePassword() {
   return useMutation({
-    mutationFn: async (data: { password: string }) => {
+    mutationFn: async (data: { password: string; current_password: string }) => {
       const { data: response } = await apiClient.put("/api/profile", data);
       return response;
     },

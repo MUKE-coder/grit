@@ -371,7 +371,7 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 		return
 	}
 
-	// Find or create user by email
+` + oauthEmailGuard + `	// Find or create user by email
 	var user models.User
 	result := h.DB.Where("email = ?", gothUser.Email).First(&user)
 
@@ -419,9 +419,7 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 			c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 			return
 		}
-	} else {
-		// Link OAuth provider to existing account
-		updates := map[string]interface{}{}
+` + oauthUnverifiedLink + `		updates := map[string]interface{}{}
 		if provider == "google" && user.GoogleID == "" {
 			updates["google_id"] = gothUser.UserID
 		} else if provider == "github" && user.GithubID == "" {

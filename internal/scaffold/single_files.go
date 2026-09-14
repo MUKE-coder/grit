@@ -181,6 +181,7 @@ func singleMainGo(opts Options) string {
 
 import (
 	"context"
+	"crypto/sha256"
 	"embed"
 	"io/fs"
 	"log"
@@ -316,8 +317,7 @@ func main() {
 	}
 
 	// OAuth2 social login providers
-	gothic.Store = sessions.NewCookieStore([]byte(cfg.JWTSecret))
-	var oauthProviders []goth.Provider
+` + gothicStoreNew + `	var oauthProviders []goth.Provider
 	if cfg.GoogleClientID != "" {
 		oauthProviders = append(oauthProviders, google.New(
 			cfg.GoogleClientID, cfg.GoogleClientSecret,

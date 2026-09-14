@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 14 to 20, 2026",
-    count: 13,
+    count: 14,
     entries: [
+      { version: "3.268.0", title: "Account security: replays, provider sign-in, user records and profile changes" },
       { version: "3.267.1", title: "The upload codes from v3.267.0 are in the error catalogue" },
       { version: "3.267.0", title: "A user can no longer claim, or delete, a file someone else uploaded" },
       { version: "3.266.0", title: "Server errors reach the log, and their text stops reaching clients" },
