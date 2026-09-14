@@ -1210,7 +1210,7 @@ pushed, and name the version.
 - [x] H17 F (v3.255.0) - XLSX export builds the whole table in memory
 - [x] H18 F (v3.256.0) - list queries unindexed; COUNT on every page; %x% search
 - [x] H19 F (v3.257.0) - CSV import queries per row, ignores errors, unbounded
-- [ ] H20 F - sync pull scans and sorts whole tables; fails on MySQL
+- [x] H20 F (v3.258.0) - sync pull scans and sorts whole tables; fails on MySQL
 - [ ] H21 F - CI security scans and Dependabot point at paths that don't exist
 - [ ] H22 F - public home and blog render only in the browser
 - [ ] H23 F - every admin page waits on /auth/me

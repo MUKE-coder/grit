@@ -330,7 +330,7 @@ type %s struct {
 	ID        string         `+"`"+`gorm:"primarykey;size:36" json:"id"`+"`"+`
 %s	Version   int            `+"`"+`gorm:"not null;default:1" json:"version"`+"`"+`
 	CreatedAt time.Time      `+"`"+`gorm:"index" json:"created_at"`+"`"+`
-	UpdatedAt time.Time      `+"`"+`json:"updated_at"`+"`"+`
+	UpdatedAt time.Time      `+"`"+`gorm:"index" json:"updated_at"`+"`"+`
 	DeletedAt gorm.DeletedAt `+"`"+`gorm:"index" json:"-"`+"`"+`
 	// ArchivedAt is the "put this away without destroying it" state, and it is
 	// deliberately not DeletedAt. A soft delete is invisible to every query and
