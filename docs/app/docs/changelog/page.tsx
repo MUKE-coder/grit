@@ -66,6 +66,43 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.267.0 */}
+            <div className="mb-12" id="v3.267.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.267.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A user can no longer claim, or delete, a file someone else uploaded</h3>
+                <p>
+                  A presigned upload finishes with <code>POST /api/v1/uploads/complete</code>, which records
+                  the file. That call recorded whatever object key it was given, for whoever asked. A signed-in
+                  user could name another user&apos;s upload, get a row for it, and delete that row, which
+                  deleted the other user&apos;s file from storage. Naming a key outside the uploads also told
+                  them whether that object existed, and the same upload could be recorded any number of times.
+                </p>
+                <p>
+                  Presigned keys now sit under the caller&apos;s own prefix,{" "}
+                  <code>uploads/&lt;user_id&gt;/</code>, and completing an upload accepts only a key under that
+                  prefix. The key is checked before storage is asked about it, so a refused key reveals nothing,
+                  and a key that already has a row is refused too. Nothing is kept between the two calls, so it
+                  needs no Redis. Clients that send back the key the presign returned need no change.{" "}
+                  <code>grit upgrade</code> delivers the upload handler. This finishes the second half of the
+                  upload access fix; listing and reading were scoped to their owner in v3.241.0.
+                </p>
+                <p>
+                  Checked live against MinIO, with a second account. Before, it recorded the admin&apos;s upload
+                  (201) and deleted it, and the admin&apos;s file was gone from storage; a key outside the uploads
+                  answered 404, and its own upload could be recorded twice. After upgrading, the admin&apos;s key
+                  and the outside key are refused with 403, its own upload is recorded once, and the second
+                  attempt gets 409.
+                </p>
+              </div>
+            </div>
+
             {/* v3.266.0 */}
             <div className="mb-12" id="v3.266.0">
               <div className="flex items-center gap-3 mb-4">

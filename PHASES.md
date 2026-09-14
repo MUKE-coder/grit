@@ -1194,7 +1194,7 @@ pushed, and name the version.
 - [x] H1 F (v3.246.0) - bucket public-read, backups included; PutBucketPolicy error discarded
 - [x] H2 F (v3.247.0) - users.edit / roles.edit holders can grant themselves ADMIN (no grant ceiling)
 - [x] H3 F (v3.242.0) - stored XSS in blog posts (unsanitised HTML in API and web)
-- [ ] H4 F - any user lists uploads; CompleteUpload accepts any object key (list and read scoping shipped in v3.241.0; the CompleteUpload key check is open)
+- [x] H4 F (v3.241.0, v3.267.0) - any user lists uploads; CompleteUpload accepts any object key (list and read scoping shipped in v3.241.0; the CompleteUpload key check in v3.267.0)
 - [x] H5 F (v3.244.0) - refresh tokens accepted as access tokens; no session check; refresh cookie path mismatch
 - [x] H6 F (v3.245.0) - TOTP brute force and replay; Enable overwrites; Verify skips lock checks
 - [x] H7 F (v3.243.0) - login rate limits keyed to unversioned paths; APP_ENV defaults to development

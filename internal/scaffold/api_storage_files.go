@@ -1077,7 +1077,17 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 
 	ext := filepath.Ext(req.Filename)
 	filename := fmt.Sprintf("%d-%s%s", time.Now().UnixNano(), strings.TrimSuffix(filepath.Base(req.Filename), ext), ext)
-	key := fmt.Sprintf("uploads/%s/%s", time.Now().Format("2006/01"), filename)
+	// Every presigned key sits under the caller's own prefix, and CompleteUpload
+	// records nothing else. That is what stops a user filing a row for an object
+	// that is not theirs, and then deleting the object through that row.
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": gin.H{"code": "UNAUTHORIZED", "message": "Sign in to upload"},
+		})
+		return
+	}
+	key := fmt.Sprintf("uploads/%s/%s/%s", userID, time.Now().Format("2006/01"), filename)
 
 	presignedURL, err := h.Storage.PresignPutURL(c.Request.Context(), key, req.ContentType, req.FileSize)
 	if err != nil {
@@ -1149,6 +1159,35 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 		return
 	}
 
+	// Only a key this server presigned for this user. Presign puts every key
+	// under uploads/<user_id>/ and nothing else writes there, so a key outside
+	// it is another user's file, a backup, or a guess. It used to be recorded
+	// for whoever asked, and deleting that row deleted the object. Checked
+	// before the bucket is asked, so the answer says nothing about whether a
+	// key exists.
+	userID := c.GetString("user_id")
+	if userID == "" || !strings.HasPrefix(req.Key, "uploads/"+userID+"/") || strings.Contains(req.Key, "..") {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": gin.H{"code": "UPLOAD_KEY_FORBIDDEN", "message": "That upload was not issued to you"},
+		})
+		return
+	}
+	// Once per key. A second row for the same object would let one delete remove
+	// a file another row still points at.
+	var recorded int64
+	if err := h.DB.Model(&models.Upload{}).Where("path = ?", req.Key).Count(&recorded).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to check the upload"},
+		})
+		return
+	}
+	if recorded > 0 {
+		c.JSON(http.StatusConflict, gin.H{
+			"error": gin.H{"code": "UPLOAD_ALREADY_RECORDED", "message": "That upload has already been recorded"},
+		})
+		return
+	}
+
 	// Ask the bucket what it actually received.
 	//
 	// The bytes never came through this server, so every number in the request
@@ -1177,8 +1216,6 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 		req.ContentType = storedType
 	}
 
-	userID, _ := c.Get("user_id")
-
 	upload := models.Upload{
 		Filename:     filepath.Base(req.Key),
 		OriginalName: req.Filename,
@@ -1186,7 +1223,7 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 		Size:         storedSize,
 		Path:         req.Key,
 		URL:          h.Storage.GetURL(req.Key),
-		UserID:       userID.(string),
+		UserID:       userID,
 	}
 
 	if err := h.DB.Create(&upload).Error; err != nil {
