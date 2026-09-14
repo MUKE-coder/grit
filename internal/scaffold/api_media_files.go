@@ -404,10 +404,15 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+	"runtime"
 
 	"github.com/HugoSmits86/nativewebp"
 	"github.com/disintegration/imaging"
 )
+
+// transformSlots lets one image decode run per CPU. A decoded 50 megapixel image
+// is about 200 MB, and uploads arriving together each decoded at once.
+var transformSlots = make(chan struct{}, runtime.NumCPU())
 
 // Transform decodes, orients, resizes and re-encodes an image according to a
 // profile.
@@ -423,6 +428,9 @@ import (
 // phone photo carries GPS coordinates, and a shop publishing product photos
 // would otherwise publish the seller's home address with them.
 func Transform(r io.ReadSeeker, p Profile) (Result, error) {
+	transformSlots <- struct{}{}
+	defer func() { <-transformSlots }()
+
 	p = withDefaults(p)
 
 	// Read the dimensions from the header first. DecodeConfig parses only the

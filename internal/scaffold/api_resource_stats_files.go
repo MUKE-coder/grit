@@ -28,6 +28,7 @@ func writeResourceStatsFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
+		filepath.Join(apiRoot, "internal", "services", "day_bucket.go"):              servicesDayBucketGo(),
 		filepath.Join(apiRoot, "internal", "services", "resource_stats_dispatch.go"): resourceStatsDispatchGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "resource_stats.go"):          resourceStatsHandlerGo(),
 	}
@@ -215,47 +216,7 @@ func parseStatsRange(filter ResourceStatsFilter) (time.Time, time.Time) {
 	return from, to
 }
 
-// buildDailySeries returns 30 buckets, one per calendar day for the
-// last 30 days. Uses a pull-then-bucket approach (one SELECT for the
-// raw timestamps, then in-memory grouping) rather than a SQL
-// GROUP BY DATE() because the DATE() function's return type differs
-// between SQLite and Postgres -- this way we get identical behavior
-// across both supported drivers.
-//
-// For very high-volume tables this would be slow; v3.31.44 ships the
-// simple version. Optimization (server-side aggregation with driver-
-// specific syntax) is a follow-up if the page gets heavy.
-func buildDailySeries(db *gorm.DB, model interface{}) ([]ResourceStatsBucket, error) {
-	cutoff := time.Now().AddDate(0, 0, -29) // 30 days inclusive of today
-	cutoff = time.Date(cutoff.Year(), cutoff.Month(), cutoff.Day(), 0, 0, 0, 0, cutoff.Location())
-
-	type row struct {
-		CreatedAt time.Time
-	}
-	var rows []row
-	err := db.Model(model).
-		Select("created_at").
-		Where("created_at >= ?", cutoff).
-		Scan(&rows).Error
-	if err != nil {
-		return nil, err
-	}
-
-	bucketMap := make(map[string]int64, 30)
-	for _, r := range rows {
-		key := r.CreatedAt.Format("2006-01-02")
-		bucketMap[key]++
-	}
-
-	series := make([]ResourceStatsBucket, 30)
-	for i := 0; i < 30; i++ {
-		d := cutoff.AddDate(0, 0, i)
-		key := d.Format("2006-01-02")
-		series[i] = ResourceStatsBucket{Date: key, Count: bucketMap[key]}
-	}
-	return series, nil
-}
-
+` + dailySeriesFunc + `
 // sanitiseLatest walks a reflect.Value of []ModelType and turns each
 // element into a map[string]interface{} via JSON round-trip. The JSON
 // step honors json:"-" tags, so columns like PasswordHash never reach
@@ -344,7 +305,7 @@ func (h *ResourceStatsHandler) Get(c *gin.Context) {
 		LatestLimit: limit,
 	}
 
-	stats, err := services.ComputeResourceStats(h.DB, resource, filter)
+	stats, err := services.ComputeResourceStats(h.DB.WithContext(c.Request.Context()), resource, filter)
 	if err != nil {
 		// An unregistered resource and a database error both land here. Both are
 		// the server's to fix, so the cause is logged and the widget gets a

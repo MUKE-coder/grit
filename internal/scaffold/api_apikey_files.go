@@ -210,6 +210,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"gorm.io/gorm"
@@ -317,6 +318,23 @@ func kindSegment(kind string) string {
 //
 // The comparison is constant-time. Both halves are hex of the same length, so
 // a byte-by-byte compare would leak how much of a guessed secret was right.
+// verifiedKeyTTL is how long a verified key is trusted without asking the
+// database again. A key revoked on another replica can keep working that long.
+const verifiedKeyTTL = 30 * time.Second
+
+// touchInterval is the least time between two last_used_at writes for a key.
+const touchInterval = time.Minute
+
+type verifiedKey struct {
+	key   models.APIKey
+	until time.Time
+}
+
+var (
+	verifiedKeys sync.Map // prefix + ":" + secret hash -> verifiedKey
+	lastTouched  sync.Map // key id -> time.Time
+)
+
 func VerifyAPIKey(db *gorm.DB, token string) (*models.APIKey, error) {
 	parts := strings.Split(strings.TrimSpace(token), "_")
 	if len(parts) < 3 || parts[0] != KeyTokenPrefix {
@@ -334,6 +352,18 @@ func VerifyAPIKey(db *gorm.DB, token string) (*models.APIKey, error) {
 		prefix, secret = parts[1], parts[2]
 	default:
 		return nil, ErrAPIKeyInvalid
+	}
+
+	// A key verified a moment ago is not a SELECT per request. The cache key holds
+	// the hash of the secret presented, so a wrong secret never matches an entry.
+	cacheKey := prefix + ":" + models.HashAPIKeySecret(secret)
+	if cached, ok := verifiedKeys.Load(cacheKey); ok {
+		entry := cached.(verifiedKey)
+		if time.Now().Before(entry.until) && entry.key.Active() {
+			key := entry.key
+			return &key, nil
+		}
+		verifiedKeys.Delete(cacheKey)
 	}
 
 	var key models.APIKey
@@ -355,6 +385,7 @@ func VerifyAPIKey(db *gorm.DB, token string) (*models.APIKey, error) {
 		return nil, ErrAPIKeyInvalid
 	}
 
+	verifiedKeys.Store(cacheKey, verifiedKey{key: key, until: time.Now().Add(verifiedKeyTTL)})
 	return &key, nil
 }
 
@@ -363,6 +394,12 @@ func VerifyAPIKey(db *gorm.DB, token string) (*models.APIKey, error) {
 // failing a request over.
 func TouchAPIKey(db *gorm.DB, id string) {
 	now := time.Now()
+	// last_used_at is read by a person, to the minute. Writing it on every request
+	// was an UPDATE per call on the same row, which contends under load.
+	if prev, ok := lastTouched.Load(id); ok && now.Sub(prev.(time.Time)) < touchInterval {
+		return
+	}
+	lastTouched.Store(id, now)
 	if err := db.Model(&models.APIKey{}).Where("id = ?", id).UpdateColumn("last_used_at", now).Error; err != nil {
 		log.Printf("api keys: recording use of key %s: %v", id, err)
 	}
@@ -381,6 +418,13 @@ func RevokeAPIKey(db *gorm.DB, id, userID string) error {
 	if res.RowsAffected == 0 {
 		return ErrAPIKeyInvalid
 	}
+	// Stop trusting any cached verification of it on this replica now.
+	verifiedKeys.Range(func(k, v any) bool {
+		if v.(verifiedKey).key.ID == id {
+			verifiedKeys.Delete(k)
+		}
+		return true
+	})
 	return nil
 }
 `
@@ -543,7 +587,7 @@ func APIKeyOrAuth(db *gorm.DB, jwtAuth gin.HandlerFunc) gin.HandlerFunc {
 			return
 		}
 
-		key, err := services.VerifyAPIKey(db, token)
+		key, err := services.VerifyAPIKey(db.WithContext(c.Request.Context()), token)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error": gin.H{
@@ -657,7 +701,7 @@ func RequireAPIKey(db *gorm.DB, limiter *cache.Cache) gin.HandlerFunc {
 			return
 		}
 
-		key, err := services.VerifyAPIKey(db, token)
+		key, err := services.VerifyAPIKey(db.WithContext(c.Request.Context()), token)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error": gin.H{
@@ -798,7 +842,7 @@ func (h *APIKeyHandler) List(c *gin.Context) {
 	userID := c.GetString("user_id")
 
 	var keys []models.APIKey
-	if err := h.DB.Where("user_id = ?", userID).
+	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).
 		Order("created_at desc").Find(&keys).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to load API keys"},

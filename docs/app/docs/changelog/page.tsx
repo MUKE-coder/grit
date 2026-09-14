@@ -66,6 +66,63 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.270.0 */}
+            <div className="mb-12" id="v3.270.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.270.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Performance under load: request context, flags, API keys, dashboard stats, images</h3>
+                <p>
+                  Five more findings from the contact-app review, each measured on a generated project before and
+                  after upgrading.
+                </p>
+                <p>
+                  <strong>Database calls ignored the request&apos;s context.</strong> A request the client had
+                  abandoned kept its queries running and its connection held. Database calls in the handlers now
+                  carry the request&apos;s context: 157 calls across the handler templates, and in methods that take
+                  the request as their first argument. The auth middleware&apos;s user lookup and API key check do
+                  too, and the three background jobs that write use the job&apos;s context. <code>grit upgrade</code>{" "}
+                  applies the same change to the handlers Grit wrote. Thirteen calls sit in methods that are never
+                  given the request, such as the failed-login counter, and are left as they are.
+                </p>
+                <p>
+                  <strong>Every feature flag check started a goroutine and an INSERT.</strong> Checking one flag
+                  2,000 times for one user wrote 2,000 exposure rows. Exposures now go to one writer through a
+                  bounded queue, are written in batches, and are recorded once per user, flag and variant per day;
+                  the same 2,000 checks write one row. When the queue is full an exposure is dropped rather than
+                  slowing the request.
+                </p>
+                <p>
+                  <strong>API key requests queried the key twice each.</strong> Fifty requests with one key ran
+                  fifty lookups and fifty <code>last_used_at</code> updates on the same row. A verified key is now
+                  trusted for 30 seconds, and its last use is recorded at most once a minute: the same fifty
+                  requests ran one of each. Revoking a key clears it on the replica that revoked it; another
+                  replica can accept it for up to those 30 seconds.
+                </p>
+                <p>
+                  <strong>Dashboard stats loaded a month of rows to count them.</strong> The stats and chart widgets
+                  read the timestamp of every record created in the last 30 days and counted per day in the API.
+                  They now count per day in the database, for SQLite, Postgres and MySQL. With 50,009 users, the
+                  users widget went from 1,905 ms to 406 ms, and 208 ms once warm; its daily query went from
+                  loading 50,009 rows to returning 30. On all three databases the new counts and sums matched a
+                  count done row by row. Days are now UTC days.
+                </p>
+                <p>
+                  <strong>Image uploads had no limit on concurrent work.</strong> Each image is decoded whole, about
+                  200 MB at 50 megapixels, and uploads arriving together each decoded at once. Decoding now runs at
+                  most once per CPU at a time, and an image&apos;s extra sizes upload four at a time instead of one
+                  after another. The review also flagged the transparency check as reading every pixel slowly; for
+                  the images the decoder produces, Go&apos;s own check already reads the pixel bytes directly, so
+                  that was left unchanged.
+                </p>
+              </div>
+            </div>
+
             {/* v3.269.0 */}
             <div className="mb-12" id="v3.269.0">
               <div className="flex items-center gap-3 mb-4">

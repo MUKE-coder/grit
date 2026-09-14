@@ -25,6 +25,7 @@ func writeChartFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
+		filepath.Join(apiRoot, "internal", "services", "day_bucket.go"):     servicesDayBucketGo(),
 		filepath.Join(apiRoot, "internal", "services", "chart_dispatch.go"): chartDispatchGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "chart.go"):          chartHandlerGo(),
 	}
@@ -48,7 +49,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
 	"gorm.io/gorm"
 
@@ -147,39 +147,7 @@ func reflectiveChart(db *gorm.DB, model interface{}, params ChartParams) (*Chart
 	}
 }
 
-// countOverTime returns daily counts for the last 30 days.
-func countOverTime(db *gorm.DB, model interface{}, params ChartParams) (*ChartResult, error) {
-	cutoff := time.Now().AddDate(0, 0, -29)
-	cutoff = time.Date(cutoff.Year(), cutoff.Month(), cutoff.Day(), 0, 0, 0, 0, cutoff.Location())
-
-	type row struct {
-		CreatedAt time.Time
-	}
-	var rows []row
-	if err := db.Model(model).
-		Select("created_at").
-		Where("created_at >= ?", cutoff).
-		Scan(&rows).Error; err != nil {
-		return nil, fmt.Errorf("count_over_time: %w", err)
-	}
-
-	bucket := map[string]int64{}
-	for _, r := range rows {
-		bucket[r.CreatedAt.Format("2006-01-02")]++
-	}
-	out := make([]ChartRow, 30)
-	for i := 0; i < 30; i++ {
-		d := cutoff.AddDate(0, 0, i)
-		key := d.Format("2006-01-02")
-		out[i] = ChartRow{X: key, Y: float64(bucket[key])}
-	}
-	return &ChartResult{
-		Preset: params.Preset,
-		Rows:   out,
-		Meta:   map[string]interface{}{"grain": params.Grain},
-	}, nil
-}
-
+` + countOverTimeFunc + `
 // groupBy returns top-N counts grouped by a string/bool column. The
 // field name is validated before reaching this helper, so safe to
 // splice into the SQL.
@@ -215,54 +183,7 @@ func groupBy(db *gorm.DB, model interface{}, params ChartParams) (*ChartResult, 
 	}, nil
 }
 
-// aggOverTime runs SUM or AVG of a numeric field over time.
-func aggOverTime(db *gorm.DB, model interface{}, params ChartParams, agg string) (*ChartResult, error) {
-	cutoff := time.Now().AddDate(0, 0, -29)
-	cutoff = time.Date(cutoff.Year(), cutoff.Month(), cutoff.Day(), 0, 0, 0, 0, cutoff.Location())
-
-	type row struct {
-		CreatedAt time.Time
-		Value     float64
-	}
-	var rows []row
-	if err := db.Model(model).
-		Select("created_at, " + params.Field + " as value").
-		Where("created_at >= ?", cutoff).
-		Scan(&rows).Error; err != nil {
-		return nil, fmt.Errorf("%s_over_time: %w", strings.ToLower(agg), err)
-	}
-
-	sumByDay := map[string]float64{}
-	cntByDay := map[string]int{}
-	for _, r := range rows {
-		key := r.CreatedAt.Format("2006-01-02")
-		sumByDay[key] += r.Value
-		cntByDay[key]++
-	}
-
-	out := make([]ChartRow, 30)
-	for i := 0; i < 30; i++ {
-		d := cutoff.AddDate(0, 0, i)
-		key := d.Format("2006-01-02")
-		var y float64
-		if agg == "SUM" {
-			y = sumByDay[key]
-		} else if cntByDay[key] > 0 {
-			y = sumByDay[key] / float64(cntByDay[key])
-		}
-		out[i] = ChartRow{X: key, Y: y}
-	}
-	return &ChartResult{
-		Preset: params.Preset,
-		Rows:   out,
-		Meta: map[string]interface{}{
-			"field": params.Field,
-			"agg":   strings.ToLower(agg),
-			"grain": params.Grain,
-		},
-	}, nil
-}
-
+` + aggOverTimeFunc + `
 // reflectFieldsByKind walks the model's struct fields and returns
 // two sets: categorical columns (string/bool) and numeric columns.
 // Framework columns and FileRef columns are filtered out.
@@ -381,7 +302,7 @@ func (h *ChartHandler) Get(c *gin.Context) {
 		Grain:  c.Query("grain"),
 	}
 
-	result, err := services.ComputeChart(h.DB, resource, params)
+	result, err := services.ComputeChart(h.DB.WithContext(c.Request.Context()), resource, params)
 	if err != nil {
 		respond.ServerError(c, "CHART_FAILED", err, "Could not compute this chart")
 		return

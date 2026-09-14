@@ -408,7 +408,7 @@ func (h *FormShareHandler) FieldsPreview(c *gin.Context) {
 // List paginates form shares for the admin dashboard.
 func (h *FormShareHandler) List(c *gin.Context) {
 	var shares []models.FormShare
-	q := h.DB.Order("created_at DESC")
+	q := h.DB.WithContext(c.Request.Context()).Order("created_at DESC")
 	if rn := c.Query("resource_name"); rn != "" {
 		q = q.Where("resource_name = ?", rn)
 	}
@@ -481,7 +481,7 @@ func (h *FormShareHandler) Create(c *gin.Context) {
 		share.PasswordHash = string(hash)
 	}
 
-	if err := h.DB.Create(&share).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Create(&share).Error; err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
@@ -505,7 +505,7 @@ type UpdateFormShareRequest struct {
 func (h *FormShareHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 	var share models.FormShare
-	if err := h.DB.First(&share, "id = ?", id).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).First(&share, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{"code": "NOT_FOUND", "message": "Share not found"},
 		})
@@ -549,7 +549,7 @@ func (h *FormShareHandler) Update(c *gin.Context) {
 	if req.HiddenFields != nil {
 		share.HiddenFields = datatypes.NewJSONSlice(*req.HiddenFields)
 	}
-	if err := h.DB.Save(&share).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Save(&share).Error; err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
@@ -560,7 +560,7 @@ func (h *FormShareHandler) Update(c *gin.Context) {
 // Delete soft-deletes a share (token stops working).
 func (h *FormShareHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
-	if err := h.DB.Delete(&models.FormShare{}, "id = ?", id).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Delete(&models.FormShare{}, "id = ?", id).Error; err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
@@ -582,7 +582,7 @@ func (h *FormShareHandler) Delete(c *gin.Context) {
 func (h *FormShareHandler) PublicGet(c *gin.Context) {
 	token := c.Param("token")
 	var share models.FormShare
-	if err := h.DB.First(&share, "token = ? AND enabled = ?", token, true).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).First(&share, "token = ? AND enabled = ?", token, true).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{"code": "NOT_FOUND", "message": "Link not found or disabled"},
 		})
@@ -628,7 +628,7 @@ type PublicFormSubmitRequest struct {
 func (h *FormShareHandler) PublicSubmit(c *gin.Context) {
 	token := c.Param("token")
 	var share models.FormShare
-	if err := h.DB.First(&share, "token = ? AND enabled = ?", token, true).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).First(&share, "token = ? AND enabled = ?", token, true).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{"code": "NOT_FOUND", "message": "Link not found or disabled"},
 		})
@@ -660,7 +660,7 @@ func (h *FormShareHandler) PublicSubmit(c *gin.Context) {
 
 	// Bump submission count (best-effort — failure here doesn't
 	// retroactively invalidate the user's submission).
-	if err := h.DB.Model(&share).UpdateColumns(map[string]interface{}{
+	if err := h.DB.WithContext(c.Request.Context()).Model(&share).UpdateColumns(map[string]interface{}{
 		"submission_count": share.SubmissionCount + 1,
 		"updated_at":       time.Now(),
 	}).Error; err != nil {
@@ -674,7 +674,7 @@ func (h *FormShareHandler) PublicSubmit(c *gin.Context) {
 	if len(ua) > 500 {
 		ua = ua[:500]
 	}
-	if err := h.DB.Create(&models.FormSubmission{
+	if err := h.DB.WithContext(c.Request.Context()).Create(&models.FormSubmission{
 		ShareID:      share.ID,
 		ResourceName: share.ResourceName,
 		RecordID:     out.ID,
@@ -698,7 +698,7 @@ func (h *FormShareHandler) PublicSubmit(c *gin.Context) {
 // recent rows. v3.31.25.
 func (h *FormShareHandler) ListSubmissions(c *gin.Context) {
 	var rows []models.FormSubmission
-	q := h.DB.Order("created_at DESC").Limit(100)
+	q := h.DB.WithContext(c.Request.Context()).Order("created_at DESC").Limit(100)
 
 	if shareID := c.Query("share_id"); shareID != "" {
 		q = q.Where("share_id = ?", shareID)

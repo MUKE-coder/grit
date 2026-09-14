@@ -741,7 +741,7 @@ func (h *SSOHandler) Callback(c *gin.Context) {
 	}
 
 	var conn models.SSOConnection
-	if err := h.DB.Where("slug = ? AND enabled = ?", slug, true).First(&conn).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("slug = ? AND enabled = ?", slug, true).First(&conn).Error; err != nil {
 		h.failLogin(c, "That sign-in method is not available.")
 		return
 	}
@@ -768,7 +768,7 @@ func (h *SSOHandler) Callback(c *gin.Context) {
 	}
 
 	// Reload so the token carries any role the mapping just assigned.
-	if err := h.DB.Where("id = ?", user.ID).First(user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", user.ID).First(user).Error; err != nil {
 		h.failLogin(c, "Could not complete sign-in.")
 		return
 	}
@@ -801,10 +801,10 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 	email := strings.ToLower(strings.TrimSpace(external.Email))
 
 	var identity models.UserIdentity
-	err := h.DB.Where("provider = ? AND subject = ?", conn.Slug, external.Subject).First(&identity).Error
+	err := h.DB.WithContext(c.Request.Context()).Where("provider = ? AND subject = ?", conn.Slug, external.Subject).First(&identity).Error
 	if err == nil {
 		var user models.User
-		if err := h.DB.Where("id = ?", identity.UserID).First(&user).Error; err != nil {
+		if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", identity.UserID).First(&user).Error; err != nil {
 			return nil, fmt.Errorf("Your account could not be found.")
 		}
 		// The account must still be one this connection can vouch for. A link
@@ -816,7 +816,7 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 		if !user.Active {
 			return nil, fmt.Errorf("Your account has been disabled.")
 		}
-		if err := h.DB.Model(&identity).Updates(map[string]interface{}{"last_login_at": now, "email": email}).Error; err != nil {
+		if err := h.DB.WithContext(c.Request.Context()).Model(&identity).Updates(map[string]interface{}{"last_login_at": now, "email": email}).Error; err != nil {
 			log.Printf("sso: recording sign-in for identity %s: %v", identity.ID, err)
 		}
 		return &user, nil
@@ -834,7 +834,7 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 	}
 
 	var user models.User
-	err = h.DB.Where("email = ?", email).First(&user).Error
+	err = h.DB.WithContext(c.Request.Context()).Where("email = ?", email).First(&user).Error
 	switch {
 	case err == nil:
 		if !user.Active {
@@ -855,7 +855,7 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 			EmailVerifiedAt: &now, // the IdP asserted it
 			IPAddress:       c.ClientIP(),
 		}
-		if err := h.DB.Create(&user).Error; err != nil {
+		if err := h.DB.WithContext(c.Request.Context()).Create(&user).Error; err != nil {
 			return nil, fmt.Errorf("Could not create your account.")
 		}
 	default:
@@ -870,7 +870,7 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 		Email:       email,
 		LastLoginAt: &now,
 	}
-	if err := h.DB.Create(&link).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Create(&link).Error; err != nil {
 		log.Printf("sso %s: linking identity for %s: %v", conn.Slug, user.ID, err)
 	}
 	return &user, nil
@@ -967,7 +967,7 @@ type SSOConnectionRequest struct {
 
 func (h *SSOHandler) List(c *gin.Context) {
 	var conns []models.SSOConnection
-	if err := h.DB.Order("created_at desc").Find(&conns).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Order("created_at desc").Find(&conns).Error; err != nil {
 		respond.Internal(c, err)
 		return
 	}
@@ -1030,7 +1030,7 @@ func (h *SSOHandler) Create(c *gin.Context) {
 		GroupsClaim:     firstNonBlank(in.GroupsClaim, "groups"),
 		GroupMappings:   in.GroupMappings,
 	}
-	if err := h.DB.Create(&conn).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Create(&conn).Error; err != nil {
 		respond.BadRequest(c, "could not save the connection — is the slug already in use?")
 		return
 	}
@@ -1044,7 +1044,7 @@ func (h *SSOHandler) Create(c *gin.Context) {
 
 func (h *SSOHandler) Update(c *gin.Context) {
 	var conn models.SSOConnection
-	if err := h.DB.Where("id = ?", c.Param("id")).First(&conn).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", c.Param("id")).First(&conn).Error; err != nil {
 		respond.NotFound(c, "SSO connection not found")
 		return
 	}
@@ -1123,18 +1123,18 @@ func (h *SSOHandler) Update(c *gin.Context) {
 		updates["allow_id_p_initiated"] = *in.AllowIDPInitiated
 	}
 
-	if err := h.DB.Model(&conn).Updates(updates).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Model(&conn).Updates(updates).Error; err != nil {
 		respond.Internal(c, err)
 		return
 	}
 
 	h.reload()
-	h.DB.Where("id = ?", conn.ID).First(&conn)
+	h.DB.WithContext(c.Request.Context()).Where("id = ?", conn.ID).First(&conn)
 	c.JSON(http.StatusOK, gin.H{"data": conn, "message": "SSO connection updated"})
 }
 
 func (h *SSOHandler) Delete(c *gin.Context) {
-	if err := h.DB.Where("id = ?", c.Param("id")).Delete(&models.SSOConnection{}).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", c.Param("id")).Delete(&models.SSOConnection{}).Error; err != nil {
 		respond.Internal(c, err)
 		return
 	}
@@ -1146,7 +1146,7 @@ func (h *SSOHandler) Delete(c *gin.Context) {
 // issuer URL from a wrong client secret without waiting for a user to fail.
 func (h *SSOHandler) Test(c *gin.Context) {
 	var conn models.SSOConnection
-	if err := h.DB.Where("id = ?", c.Param("id")).First(&conn).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", c.Param("id")).First(&conn).Error; err != nil {
 		respond.NotFound(c, "SSO connection not found")
 		return
 	}

@@ -430,7 +430,7 @@ func handleImageProcess(deps WorkerDeps) func(ctx context.Context, task *asynq.T
 		if deps.DB != nil {
 			// Returned, so the job is retried: a thumbnail nobody can find was
 			// generated for nothing.
-			if err := deps.DB.Model(&models.Upload{}).Where("id = ?", payload.UploadID).Update("thumbnail_url", thumbURL).Error; err != nil {
+			if err := deps.DB.WithContext(ctx).Model(&models.Upload{}).Where("id = ?", payload.UploadID).Update("thumbnail_url", thumbURL).Error; err != nil {
 				return fmt.Errorf("recording the thumbnail for upload %s: %w", payload.UploadID, err)
 			}
 		}
@@ -456,7 +456,7 @@ func handleTokensCleanup(deps WorkerDeps) func(ctx context.Context, task *asynq.
 		// it fails with a syntax error near the interval literal, so this job
 		// errored on every run and the cleanup silently never happened.
 		cutoff := time.Now().AddDate(0, 0, -30)
-		result := deps.DB.Exec(
+		result := deps.DB.WithContext(ctx).Exec(
 			"DELETE FROM users WHERE deleted_at IS NOT NULL AND deleted_at < ?", cutoff)
 		if result.Error != nil {
 			return fmt.Errorf("cleaning up deleted users: %w", result.Error)
@@ -500,7 +500,7 @@ func handleAuditPrune(deps WorkerDeps) func(ctx context.Context, task *asynq.Tas
 
 		cutoff := time.Now().AddDate(0, 0, -days)
 
-		return deps.DB.Transaction(func(tx *gorm.DB) error {
+		return deps.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 			res := tx.Exec("DELETE FROM activity_logs WHERE created_at < ?", cutoff)
 			if res.Error != nil {
 				return fmt.Errorf("pruning activity log: %w", res.Error)

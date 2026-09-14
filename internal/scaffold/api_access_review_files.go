@@ -825,7 +825,7 @@ func NewAccessReviewHandler(db *gorm.DB) *AccessReviewHandler {
 // List returns campaigns newest first, each with its decision counts.
 func (h *AccessReviewHandler) List(c *gin.Context) {
 	var reviews []models.AccessReview
-	if err := h.DB.Order("created_at desc").Find(&reviews).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Order("created_at desc").Find(&reviews).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": "failed to load reviews"},
 		})
@@ -835,10 +835,10 @@ func (h *AccessReviewHandler) List(c *gin.Context) {
 	out := make([]services.AccessReviewSummary, 0, len(reviews))
 	for _, r := range reviews {
 		s := services.AccessReviewSummary{AccessReview: r}
-		h.DB.Model(&models.AccessReviewItem{}).Where("review_id = ?", r.ID).Count(&s.TotalItems)
-		h.DB.Model(&models.AccessReviewItem{}).Where("review_id = ? AND decision = ?", r.ID, "pending").Count(&s.PendingItems)
-		h.DB.Model(&models.AccessReviewItem{}).Where("review_id = ? AND decision = ?", r.ID, "approved").Count(&s.ApprovedItems)
-		h.DB.Model(&models.AccessReviewItem{}).Where("review_id = ? AND decision = ?", r.ID, "revoked").Count(&s.RevokedItems)
+		h.DB.WithContext(c.Request.Context()).Model(&models.AccessReviewItem{}).Where("review_id = ?", r.ID).Count(&s.TotalItems)
+		h.DB.WithContext(c.Request.Context()).Model(&models.AccessReviewItem{}).Where("review_id = ? AND decision = ?", r.ID, "pending").Count(&s.PendingItems)
+		h.DB.WithContext(c.Request.Context()).Model(&models.AccessReviewItem{}).Where("review_id = ? AND decision = ?", r.ID, "approved").Count(&s.ApprovedItems)
+		h.DB.WithContext(c.Request.Context()).Model(&models.AccessReviewItem{}).Where("review_id = ? AND decision = ?", r.ID, "revoked").Count(&s.RevokedItems)
 		out = append(out, s)
 	}
 	c.JSON(http.StatusOK, gin.H{"data": out})
@@ -847,7 +847,7 @@ func (h *AccessReviewHandler) List(c *gin.Context) {
 // Get returns one campaign with all its items.
 func (h *AccessReviewHandler) Get(c *gin.Context) {
 	var review models.AccessReview
-	if err := h.DB.Preload("Items", func(db *gorm.DB) *gorm.DB {
+	if err := h.DB.WithContext(c.Request.Context()).Preload("Items", func(db *gorm.DB) *gorm.DB {
 		return db.Order("user_email asc, role_name asc")
 	}).First(&review, "id = ?", c.Param("id")).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{

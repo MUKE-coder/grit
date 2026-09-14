@@ -54,7 +54,7 @@ func fail(c *gin.Context, status int, code, message string) {
 // authed loads the signed-in user and checks the supplied password.
 func (h *RecoveryHandler) authed(c *gin.Context, password string) (*models.User, bool) {
 	var user models.User
-	if err := h.DB.First(&user, "id = ?", c.GetString("user_id")).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).First(&user, "id = ?", c.GetString("user_id")).Error; err != nil {
 		fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "Not signed in")
 		return nil, false
 	}
@@ -80,7 +80,7 @@ func (h *RecoveryHandler) authed(c *gin.Context, password string) (*models.User,
 // than render a button that cannot work.
 func (h *RecoveryHandler) Overview(c *gin.Context) {
 	var user models.User
-	if err := h.DB.First(&user, "id = ?", c.GetString("user_id")).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).First(&user, "id = ?", c.GetString("user_id")).Error; err != nil {
 		fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "Not signed in")
 		return
 	}

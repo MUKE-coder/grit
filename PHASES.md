@@ -1229,11 +1229,11 @@ pushed, and name the version.
 - [x] M8 F+A (v3.269.0) - prod compose on in-container SQLite; password fallbacks; Redis without auth (POSTGRES_SSLMODE on the internal network left as is)
 - [x] M9 F (v3.269.0) - CI supply chain: unpinned actions, broad permissions, floating tools
 - [x] M10 F (v3.269.0) - admin routes guarded only in the browser (edge gate when web and API share a host; no-grant USER redirect)
-- [ ] M11 F - request context missing from most DB calls
-- [ ] M12 F - flag evaluation spawns a goroutine and an INSERT
-- [ ] M13 F - API-key auth SELECT + UPDATE per request
-- [ ] M14 F - dashboard stats load 30 days of rows into Go
-- [ ] M15 F - image processing inline with no concurrency cap
+- [x] M11 F (v3.270.0) - request context missing from most DB calls (handler methods, auth middleware, API-key verify, stats and chart calls, job workers; contextcheck/noctx linters not enabled)
+- [x] M12 F (v3.270.0) - flag evaluation spawns a goroutine and an INSERT
+- [x] M13 F (v3.270.0) - API-key auth SELECT + UPDATE per request
+- [x] M14 F (v3.270.0) - dashboard stats load 30 days of rows into Go (count, series and latest still run one after another)
+- [x] M15 F (v3.270.0) - image processing inline with no concurrency cap (alpha check left as is: Opaque() already reads the pixel bytes of decoded NRGBA and RGBA images)
 - [ ] M16 F - audit writer inserts row by row under a cluster lock
 - [ ] M17 F - sync push unbounded, 3 queries per change, no transaction
 - [ ] M18 F - every mutation writes an activity row synchronously

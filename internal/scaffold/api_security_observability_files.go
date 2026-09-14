@@ -116,7 +116,7 @@ func (h *NotificationHandler) List(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	role, _ := c.Get("user_role")
 
-	q := h.DB.Order("created_at DESC").Limit(50)
+	q := h.DB.WithContext(c.Request.Context()).Order("created_at DESC").Limit(50)
 	if role == "ADMIN" {
 		// Admins see broadcast (user_id="") + their own
 		q = q.Where("user_id = '' OR user_id = ?", userID)
@@ -129,7 +129,7 @@ func (h *NotificationHandler) List(c *gin.Context) {
 
 	// Quick unread count for the bell badge
 	var unread int64
-	cq := h.DB.Model(&models.Notification{}).Where("read_at IS NULL")
+	cq := h.DB.WithContext(c.Request.Context()).Model(&models.Notification{}).Where("read_at IS NULL")
 	if role == "ADMIN" {
 		cq = cq.Where("user_id = '' OR user_id = ?", userID)
 	} else {
@@ -147,7 +147,7 @@ func (h *NotificationHandler) List(c *gin.Context) {
 func (h *NotificationHandler) MarkRead(c *gin.Context) {
 	id := c.Param("id")
 	now := time.Now()
-	if err := h.DB.Model(&models.Notification{}).
+	if err := h.DB.WithContext(c.Request.Context()).Model(&models.Notification{}).
 		Where("id = ?", id).
 		Update("read_at", now).Error; err != nil {
 		respond.ServerError(c, "DB_ERROR", err, "Internal server error")
@@ -161,7 +161,7 @@ func (h *NotificationHandler) MarkAllRead(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	role, _ := c.Get("user_role")
 	now := time.Now()
-	q := h.DB.Model(&models.Notification{}).Where("read_at IS NULL")
+	q := h.DB.WithContext(c.Request.Context()).Model(&models.Notification{}).Where("read_at IS NULL")
 	if role == "ADMIN" {
 		q = q.Where("user_id = '' OR user_id = ?", userID)
 	} else {

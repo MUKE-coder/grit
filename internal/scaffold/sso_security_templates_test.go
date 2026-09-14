@@ -22,7 +22,11 @@ func TestSSOTrustsAnIdPOnlyForItsDomains(t *testing.T) {
 		}
 	}
 	// The email check has to come before the lookup that links by email.
-	if strings.Index(h, "if !conn.OwnsEmail(email) {") > strings.Index(h, `err = h.DB.Where("email = ?", email).First(&user).Error`) {
+	lookup := strings.Index(h, `err = h.DB.WithContext(c.Request.Context()).Where("email = ?", email).First(&user).Error`)
+	if lookup < 0 {
+		t.Fatal("resolveUser no longer looks the account up by email")
+	}
+	if strings.Index(h, "if !conn.OwnsEmail(email) {") > lookup {
 		t.Error("the domain check runs after the account is already found by email")
 	}
 }

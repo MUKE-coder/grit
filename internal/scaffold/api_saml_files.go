@@ -513,7 +513,7 @@ func (h *SSOHandler) SAMLACS(c *gin.Context) {
 	}
 
 	var conn models.SSOConnection
-	if err := h.DB.Where("slug = ? AND enabled = ? AND protocol = ?", slug, true, "saml").
+	if err := h.DB.WithContext(c.Request.Context()).Where("slug = ? AND enabled = ? AND protocol = ?", slug, true, "saml").
 		First(&conn).Error; err != nil {
 		h.failLogin(c, "That sign-in method is not available.")
 		return
@@ -561,7 +561,7 @@ func (h *SSOHandler) SAMLACS(c *gin.Context) {
 	}
 
 	// Reload so the token carries any role the mapping just assigned.
-	if err := h.DB.Where("id = ?", user.ID).First(user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", user.ID).First(user).Error; err != nil {
 		h.failLogin(c, "Could not complete sign-in.")
 		return
 	}

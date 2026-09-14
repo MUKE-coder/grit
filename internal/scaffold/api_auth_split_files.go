@@ -53,7 +53,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	const genericResponse = "If an account with that email exists, a password reset link has been sent"
 
 	var user models.User
-	if err := h.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).Where("email = ?", req.Email).First(&user).Error; err != nil {
 		c.JSON(http.StatusOK, gin.H{"message": genericResponse})
 		return
 	}
@@ -167,7 +167,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	if err := h.DB.Model(&models.User{}).Where("id = ?", userID).
+	if err := h.DB.WithContext(c.Request.Context()).Model(&models.User{}).Where("id = ?", userID).
 		Update("password", string(hashedPassword)).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
@@ -221,7 +221,7 @@ func (h *AuthHandler) SendVerificationEmail(c *gin.Context) {
 	userID := c.GetString("user_id")
 
 	var user models.User
-	if err := h.DB.First(&user, "id = ?", userID).Error; err != nil {
+	if err := h.DB.WithContext(c.Request.Context()).First(&user, "id = ?", userID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{"code": "NOT_FOUND", "message": "User not found"},
 		})
@@ -373,7 +373,7 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 
 ` + oauthEmailGuard + `	// Find or create user by email
 	var user models.User
-	result := h.DB.Where("email = ?", gothUser.Email).First(&user)
+	result := h.DB.WithContext(c.Request.Context()).Where("email = ?", gothUser.Email).First(&user)
 
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
@@ -407,7 +407,7 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 				user.LastName = ""
 			}
 
-			if err := h.DB.Create(&user).Error; err != nil {
+			if err := h.DB.WithContext(c.Request.Context()).Create(&user).Error; err != nil {
 				log.Printf("OAuth: failed to create user: %v", err)
 				redirectURL := fmt.Sprintf("%s/login?error=%s", h.Config.OAuthFrontendURL, url.QueryEscape("Failed to create account."))
 				c.Redirect(http.StatusTemporaryRedirect, redirectURL)
@@ -433,7 +433,7 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 		}
 
 		if len(updates) > 0 {
-			if err := h.DB.Model(&user).Updates(updates).Error; err != nil {
+			if err := h.DB.WithContext(c.Request.Context()).Model(&user).Updates(updates).Error; err != nil {
 				log.Printf("oauth: linking %s to user %s: %v", provider, user.ID, err)
 			}
 		}
@@ -500,7 +500,7 @@ import (
 func (h *UserHandler) Unlock(c *gin.Context) {
 	id := c.Param("id")
 
-	res := h.DB.Model(&models.User{}).Where("id = ?", id).
+	res := h.DB.WithContext(c.Request.Context()).Model(&models.User{}).Where("id = ?", id).
 		Updates(map[string]interface{}{"locked_until": nil, "failed_login_count": 0})
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
