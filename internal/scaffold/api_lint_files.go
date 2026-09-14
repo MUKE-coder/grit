@@ -109,9 +109,9 @@ func lintCIYAML(opts Options) string {
 	// under apps/api. Pointing the action at the wrong directory fails with
 	// "no go files", which reads like a broken lint config rather than a path
 	// mistake.
-	workdir := "apps/api"
+	workdir, placeholder := "apps/api", ""
 	if opts.Architecture == ArchSingle {
-		workdir = "."
+		workdir, placeholder = ".", ciEmbedPlaceholderStep
 	}
 	return fmt.Sprintf(`name: Lint
 
@@ -134,7 +134,7 @@ jobs:
           cache: true
           cache-dependency-path: %[1]s/go.sum
 
-      - name: golangci-lint
+%[2]s      - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
@@ -143,5 +143,5 @@ jobs:
           # on a new project, so this mainly matters once you enable the
           # stricter linters documented in .golangci.yml.
           only-new-issues: true
-`, workdir)
+`, workdir, placeholder)
 }

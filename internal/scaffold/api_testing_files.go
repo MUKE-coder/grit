@@ -7,7 +7,8 @@ package scaffold
 //     A ready-to-run k6 suite covering all six load-test types so the
 //     project ships with a baseline + breaking-point answer in an
 //     afternoon, not a sprint.
-//   - .github/workflows/security.yml — govulncheck (Go) + npm audit
+//   - .github/workflows/security.yml: govulncheck, pnpm audit and CodeQL
+//   - .github/workflows/ci.yml: vet and tests, frontend type-check, tests and build
 //     (frontend) + CodeQL.
 //   - .github/dependabot.yml — Go modules + npm version + GitHub
 //     Actions, weekly schedule. Closes OWASP A03 Supply-Chain Failures.
@@ -29,12 +30,13 @@ func writeTestingFiles(root string, opts Options) error {
 		filepath.Join(root, "tests", "k6", "soak.js"):               k6SoakJS(),
 		filepath.Join(root, "tests", "k6", "breakpoint.js"):         k6BreakpointJS(),
 		filepath.Join(root, ".github", "dependabot.yml"):            dependabotYAML(opts),
-		filepath.Join(root, ".github", "workflows", "security.yml"): securityCIYAML(),
+		filepath.Join(root, ".github", "workflows", "security.yml"): securityCIYAML(opts),
+		filepath.Join(root, ".github", "workflows", "ci.yml"):       ciYAML(opts),
 		// Lint config lives beside the Go module it applies to — that is the
 		// repo root for --single, apps/api otherwise.
 		filepath.Join(opts.APIRoot(root), ".golangci.yml"):         golangciYAML(),
 		filepath.Join(root, ".github", "workflows", "lint.yml"):    lintCIYAML(opts),
-		filepath.Join(root, ".github", "workflows", "release.yml"): releaseCIYAML(),
+		filepath.Join(root, ".github", "workflows", "release.yml"): releaseCIYAML(opts),
 	}
 
 	for path, content := range files {
@@ -272,121 +274,5 @@ export const options = {
 }
 
 export default userJourney
-`
-}
-
-// dependabotYAML produces the Dependabot config that closes OWASP A03
-// Supply-Chain Failures — automated PRs for vulnerable Go modules, npm
-// packages, and GitHub Actions updates.
-func dependabotYAML(opts Options) string {
-	return `# Dependabot — automated dependency updates.
-# Closes OWASP Top 10:2025 A03 Supply-Chain Failures by surfacing
-# vulnerable dependencies as PRs you can review and merge.
-
-version: 2
-
-updates:
-  # Go modules
-  - package-ecosystem: gomod
-    directory: "/"
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 10
-    labels:
-      - dependencies
-      - go
-
-  # Frontend (Vite single-app layout; adjust if your tree differs)
-  - package-ecosystem: npm
-    directory: "/frontend"
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 10
-    labels:
-      - dependencies
-      - javascript
-
-  # GitHub Actions workflows
-  - package-ecosystem: github-actions
-    directory: "/"
-    schedule:
-      interval: weekly
-    labels:
-      - dependencies
-      - ci
-`
-}
-
-func securityCIYAML() string {
-	return `name: security
-
-# Security scans that should run on every PR and on a weekly schedule.
-# Covers OWASP Top 10:2025 A03 (Supply Chain) and A02 (Misconfiguration)
-# via static analysis. Pair with Dependabot for full coverage.
-
-on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
-  schedule:
-    # Weekly Monday 06:00 UTC — catches newly-disclosed CVEs in
-    # dependencies that didn't change in your code.
-    - cron: '0 6 * * 1'
-
-jobs:
-  govulncheck:
-    name: Go vulnerability scan (govulncheck)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          # Scanned against the Go the API builds with. On an older one the
-          # scan reports standard library issues the build does not have.
-          go-version: '1.26.6'
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-      - name: Run govulncheck
-        run: govulncheck ./...
-
-  npm-audit:
-    name: Frontend npm audit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Install pnpm
-        run: npm install -g pnpm@9.15.0
-      - name: Install deps
-        working-directory: frontend
-        run: pnpm install --frozen-lockfile
-      # Fail only on high/critical so noisy mediums don't block PRs.
-      - name: Run npm audit (high+)
-        working-directory: frontend
-        run: pnpm audit --audit-level=high
-
-  codeql:
-    name: CodeQL static analysis
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    strategy:
-      fail-fast: false
-      matrix:
-        language: ['go', 'javascript']
-    steps:
-      - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-      - uses: github/codeql-action/autobuild@v3
-      - uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:${{ matrix.language }}"
 `
 }

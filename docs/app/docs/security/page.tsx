@@ -126,9 +126,11 @@ func (i *Invoice) GetOwnerID() string { return i.UserID }`} />
         </ul>
         <p>
           These run on every push and pull-request, plus weekly so newly-disclosed CVEs
-          surface even when nothing in your code changed. Go modules are pinned in
-          <code> go.sum</code> with checksum verification; pnpm uses
-          <code> --frozen-lockfile</code> in CI.
+          surface even when nothing in your code changed. <code>.github/workflows/ci.yml</code>{' '}
+          runs the API&apos;s tests and the frontend&apos;s type-check, tests and build on every
+          pull request too. Go modules are pinned in <code> go.sum</code> with checksum
+          verification; once <code>pnpm-lock.yaml</code> is committed, CI installs with{' '}
+          <code>--frozen-lockfile</code>.
         </p>
       </>
     ),

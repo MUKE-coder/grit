@@ -158,7 +158,7 @@ func webAdminDependencies(opts Options) string {
     "react-dropzone": "^14.2.0",
     "recharts": "^2.12.0",
     "sonner": "^1.3.0",
-    "xlsx": "^0.18.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^3.22.0"`
 }
 

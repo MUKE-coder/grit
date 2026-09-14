@@ -66,6 +66,58 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.259.0 */}
+            <div className="mb-12" id="v3.259.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.259.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A project&apos;s CI scans its real code, runs its tests, and releases</h3>
+                <p>
+                  The next finding from the review of a scaffolded app. Every generated project gets
+                  Dependabot and a security workflow, and both were written for the single-app layout
+                  whatever the project was: a <code>go.mod</code> at the root and the frontend in{' '}
+                  <code>frontend/</code>. In a monorepo, govulncheck ran where there is no Go module,
+                  the audit ran in a directory that does not exist, and Dependabot watched neither.
+                  No workflow ran the tests on a pull request at all.
+                </p>
+                <p>
+                  Checking every generated workflow found more. The release workflow gated its desktop
+                  job with <code>hashFiles</code> in a job-level condition, which GitHub does not allow
+                  there, so the whole workflow was rejected on the first tag; and it built from{' '}
+                  <code>apps/api</code> even in a single app. <code>turbo.json</code> had no{' '}
+                  <code>test</code> task, so <code>pnpm test</code> failed. And once the audit pointed at
+                  the right place it failed on a fresh project: <code>xlsx</code> 0.18.5, the last
+                  release SheetJS published to npm, has two high advisories and no patched npm version.
+                </p>
+                <p>
+                  The workflows now follow the project&apos;s shape. Dependabot watches the Go module
+                  and the pnpm workspace. The security workflow scans the API with govulncheck (pinned,
+                  on the Go the API builds with), audits production dependencies at high severity, and
+                  runs CodeQL on Go and, when there is a frontend, JavaScript. A new{' '}
+                  <code>ci.yml</code> runs vet and race-enabled tests for the API and type-check, tests
+                  and build for the frontend on every pull request. A single app&apos;s jobs stub the
+                  frontend it embeds, so Go compiles. The release job is valid for every shape and has
+                  a desktop job only when there is a desktop app. <code>xlsx</code> comes from
+                  SheetJS&apos;s patched 0.20.3 build. Every workflow passes actionlint for single,
+                  double, triple, API-only and mobile projects, and the commands they run pass on a
+                  fresh project, the audit included.
+                </p>
+                <p>
+                  <code>grit upgrade</code> rewrites Dependabot, the security, lint and release
+                  workflows where they are still what Grit wrote, adds <code>ci.yml</code> when the
+                  project has none, and adds the <code>test</code> task. <code>package.json</code> is
+                  yours, so where a frontend still takes <code>xlsx</code> from npm, upgrade prints the
+                  command that replaces it. There is no lint step yet: the generated frontends ship no
+                  ESLint configuration, and Next.js 16 removed <code>next lint</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.258.0 */}
             <div className="mb-12" id="v3.258.0">
               <div className="flex items-center gap-3 mb-4">

@@ -1,5 +1,7 @@
 package scaffold
 
+import "strings"
+
 // A release workflow for the generated project.
 //
 // Grit signs its own releases — SBOM, keyless cosign signature, provenance
@@ -18,8 +20,9 @@ package scaffold
 // binaries rather than failing — and the workflow says so in its output rather
 // than skipping quietly.
 
-func releaseCIYAML() string {
-	return `name: Release
+func releaseCIYAML(opts Options) string {
+	l := ciLayoutFor(opts)
+	base := `name: Release
 
 # Tag-triggered. Push v1.2.3 and this builds, signs and publishes.
 on:
@@ -43,23 +46,23 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: apps/api/go.mod
-          cache-dependency-path: apps/api/go.sum
+          go-version-file: {{API_DIR}}/go.mod
+          cache-dependency-path: {{API_DIR}}/go.sum
 
-      # Tests gate the release. A tag that ships a failing build is worse than
+{{FRONTEND_BUILD}}      # Tests gate the release. A tag that ships a failing build is worse than
       # a tag that never ships.
       - name: Test
-        working-directory: apps/api
+        working-directory: {{API_DIR}}
         run: go test ./... -race
 
       - name: Build API binaries
-        working-directory: apps/api
+        working-directory: {{API_DIR}}
         run: |
-          mkdir -p ../../dist
+          mkdir -p "$GITHUB_WORKSPACE/dist"
           VERSION="${GITHUB_REF_NAME}"
           for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64; do
             os="${target%/*}"; arch="${target#*/}"
-            out="../../dist/api-${os}-${arch}"
+            out="$GITHUB_WORKSPACE/dist/api-${os}-${arch}"
             # CGO off so the binary runs on any distro, including scratch and
             # distroless images, without a matching libc.
             CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build \
@@ -114,13 +117,29 @@ jobs:
             dist/SHA256SUMS.sig
             dist/sbom.spdx.json
 
+`
+	frontend, desktop := "", ""
+	if l.single {
+		// The server embeds the built frontend, so it is built first.
+		frontend = ciPnpmSteps(l) + "      - name: Build the frontend\n        working-directory: frontend\n        run: pnpm build\n\n"
+		frontend = strings.Replace(frontend, "        run: if [ -f pnpm-lock.yaml ]", "        working-directory: frontend\n        run: if [ -f pnpm-lock.yaml ]", 1)
+	}
+	if l.desktop {
+		desktop = releaseDesktopJob
+	}
+	return ciReplace(l, strings.Replace(base, "{{FRONTEND_BUILD}}", frontend, 1)+desktop)
+}
+
+// releaseDesktopJob builds the desktop installers, for a project that has a
+// desktop app. It was once in every project's workflow behind a job-level
+// hashFiles condition, which GitHub does not allow there, so the whole workflow
+// was rejected on the first tag.
+const releaseDesktopJob = `
   # Desktop installers are a separate job because they need Windows and macOS
   # runners, and because signing them needs credentials this workflow cannot
-  # invent. Delete this job if you do not ship a desktop app.
+  # invent.
   desktop:
     name: Desktop installer (${{ matrix.os }})
-    # Only runs when the repo actually has a desktop app.
-    if: hashFiles('apps/desktop/wails.json') != ''
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
@@ -129,7 +148,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: apps/api/go.mod
+          go-version-file: {{API_DIR}}/go.mod
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
@@ -215,4 +234,3 @@ jobs:
           files: |
             apps/desktop/build/bin/*
 `
-}

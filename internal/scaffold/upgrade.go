@@ -386,6 +386,14 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairSyncPull(root, opts); err != nil {
 			fmt.Printf("  ⚠ paging sync pull on updated_at: %v\n", err)
 		}
+		// CI: Dependabot, the security scans and the release follow the
+		// project's layout, and ci.yml runs the tests on every pull request.
+		if err := repairCIWorkflows(root, opts); err != nil {
+			fmt.Printf("  ⚠ updating the CI workflows: %v\n", err)
+		}
+		// xlsx from npm stopped at 0.18.5, with two high advisories, so the
+		// security workflow's audit fails until the patched build is in.
+		warnVulnerableXLSX(root)
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {
