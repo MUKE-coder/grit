@@ -104,6 +104,45 @@ func TestRemoveDocsRoutes(t *testing.T) {
 		}
 	})
 
+	t.Run("removes every path under the base, and the admin base", func(t *testing.T) {
+		// The scaffolded blog documents a slug route and its admin endpoints
+		// under /admin/blogs. Left behind, they named a model that removal had
+		// deleted, and the API no longer compiled.
+		f := writeTempFile(t, "routes.go", `package routes
+
+	docs.Route("GET /api/v1/blogs").
+		Response(200, []models.Blog{}, "posts")
+	docs.Route("GET /api/v1/blogs/:slug").
+		Response(200, models.Blog{}, "the post")
+	docs.Route("POST /api/v1/blogs/bulk").
+		Response(200, handlers.MessageResponse{}, "done")
+	docs.Route("GET /api/v1/admin/blogs/:id").
+		Response(200, models.Blog{}, "the post")
+	docs.Route("PUT /api/v1/admin/blogs/:id").
+		RequestBody(handlers.UpdateBlogRequest{}).
+		Response(200, models.Blog{}, "updated")
+	docs.Route("GET /api/v1/blogsearch").
+		Response(200, handlers.MessageResponse{}, "a different resource")
+`)
+
+		if err := removeDocsRoutes(f, "/api/v1/blogs"); err != nil {
+			t.Fatalf("removeDocsRoutes public: %v", err)
+		}
+		if err := removeDocsRoutes(f, "/api/v1/admin/blogs"); err != nil {
+			t.Fatalf("removeDocsRoutes admin: %v", err)
+		}
+
+		got := readFile(t, f)
+		for _, gone := range []string{"models.Blog", "UpdateBlogRequest", "/:slug", "/bulk"} {
+			if strings.Contains(got, gone) {
+				t.Errorf("%s survived:\n%s", gone, got)
+			}
+		}
+		if !strings.Contains(got, `docs.Route("GET /api/v1/blogsearch")`) {
+			t.Errorf("a path that only shares the prefix was removed too:\n%s", got)
+		}
+	})
+
 	t.Run("reports when there is nothing to remove", func(t *testing.T) {
 		f := writeTempFile(t, "routes.go", docsRoutesFixture)
 
