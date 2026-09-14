@@ -221,6 +221,7 @@ import (
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/paginate"
 	"{{MODULE}}/internal/sanitize"
 	"{{MODULE}}/internal/services"
 )
@@ -274,7 +275,7 @@ func (h *BlogHandler) List(c *gin.Context) {
 		})
 		return
 	}
-
+` + blogListCounts + `
 	c.JSON(http.StatusOK, gin.H{
 		"data": blogs,
 		"meta": gin.H{
@@ -282,7 +283,7 @@ func (h *BlogHandler) List(c *gin.Context) {
 			"page":      page,
 			"page_size": pageSize,
 			"pages":     pages,
-		},
+` + listCountsMeta + `		},
 	})
 }
 

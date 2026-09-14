@@ -92,6 +92,8 @@ interface DataTableProps<T extends object = Record<string, unknown>> {
   columns: ColumnDefinition<T>[];
   data: T[];
   isLoading?: boolean;
+  /** Refetching with rows on screen: they stay, and a bar shows above them. */
+  isFetching?: boolean;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   onSort?: (key: string) => void;
@@ -108,6 +110,7 @@ export function DataTable<T extends object = Record<string, unknown>>({
   columns: columnsProp,
   data: dataProp,
   isLoading,
+  isFetching,
   sortBy,
   sortOrder,
   onSort,
@@ -154,7 +157,10 @@ export function DataTable<T extends object = Record<string, unknown>>({
   };
 
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto" aria-busy={isFetching || undefined}>
+      {isFetching && (
+        <div aria-hidden="true" className="absolute inset-x-0 top-0 h-0.5 animate-pulse bg-accent" />
+      )}
       <table className="w-full">
         <thead>
           <tr className="border-b border-border">

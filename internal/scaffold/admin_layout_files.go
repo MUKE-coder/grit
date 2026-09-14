@@ -936,6 +936,8 @@ export interface StatCard {
   field?: string;
   /** Optional trend delta shown next to value */
   trend?: { value: number; direction: "up" | "down" };
+  /** Shows the placeholder while a static value is still on its way. */
+  loading?: boolean;
 }
 
 export interface PageHeaderProps {
@@ -996,7 +998,7 @@ function StatCardItem({ stat }: { stat: StatCard }) {
             {stat.label}
           </p>
           <div className="mt-2 flex items-baseline gap-2">
-            {isLoading && stat.endpoint ? (
+            {(isLoading && stat.endpoint) || stat.loading ? (
               <div className="h-7 w-16 rounded bg-bg-hover animate-pulse" />
             ) : (
               <p className="text-2xl font-bold text-foreground tabular-nums">

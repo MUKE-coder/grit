@@ -455,6 +455,7 @@ export interface ResourceTableProps<T = Record<string, unknown>> {
   columns: ColumnDefinition<T>[];
   data: T[];
   isLoading?: boolean;
+  isFetching?: boolean;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   onSort?: (key: string) => void;
@@ -1318,6 +1319,7 @@ function ResourceListView({ resource }: ResourcePageProps) {
             columns={c.columns}
             data={c.rows}
             isLoading={c.isLoading}
+            isFetching={c.isFetching}
             sortBy={c.sortBy}
             sortOrder={c.sortOrder}
             onSort={c.setSort}
@@ -1512,11 +1514,16 @@ import type {
 } from "@/lib/resource";
 import {
   useBulkResource,
+  useDebouncedValue,
   useDeleteResource,
   useResource,
 } from "@/hooks/use-resource";
 import type { StatCard } from "@/components/layout/page-header";
 import { dateRangeToQueryParams, type DateRange } from "@/components/tables/date-filter";
+
+// The windows the default stat cards show beside the total. The list request
+// asks for them (?counts=), so the cards cost no requests of their own.
+const DEFAULT_STAT_COUNTS = ["created_7d", "created_30d", "updated_7d"];
 
 // Read the date filter back out of the address bar so a refresh or a shared
 // link rehydrates the same view.
@@ -1571,10 +1578,14 @@ export interface ResourceController<T = Record<string, unknown>> {
 
   // ── data ────────────────────────────────────────────────────────────
   rows: T[];
-  meta: { total: number; page: number; page_size: number; pages: number } | undefined;
+  meta:
+    | { total: number; page: number; page_size: number; pages: number; counts?: Record<string, number> | null }
+    | undefined;
   total: number;
   totalPages: number;
   isLoading: boolean;
+  /** A refetch with rows already on screen: a new page, sort or search. */
+  isFetching: boolean;
 
   // ── query state (all of it URL- or server-aware) ────────────────────
   page: number;
@@ -1708,6 +1719,8 @@ export function useResourceController<T = Record<string, unknown>>(
     options.initialPageSize ?? resource.table.pageSize ?? 20,
   );
   const [search, setSearchState] = useState("");
+  // The box shows every keystroke; the list asks once typing pauses.
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [sortBy, setSortBy] = useState(resource.table.defaultSort?.key ?? "");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
     resource.table.defaultSort?.direction ?? "desc",
@@ -1754,7 +1767,7 @@ export function useResourceController<T = Record<string, unknown>>(
   // filter and sort the operator is looking at.
   const apiSearchParams = useMemo(() => {
     const sp = new URLSearchParams();
-    if (search) sp.set("search", search);
+    if (debouncedSearch) sp.set("search", debouncedSearch);
     if (sortBy) {
       sp.set("sort_by", sortBy);
       sp.set("sort_order", sortOrder);
@@ -1768,12 +1781,23 @@ export function useResourceController<T = Record<string, unknown>>(
     const df = resource.table.dateFilter?.field;
     if (df && df !== "created_at") sp.set("date_field", df);
     return sp;
-  }, [search, sortBy, sortOrder, filters, dateParams, resource.table.dateFilter?.field]);
+  }, [debouncedSearch, sortBy, sortOrder, filters, dateParams, resource.table.dateFilter?.field]);
 
-  const { data, isLoading } = useResource<T>(resource.endpoint, {
+  const statsConfig = resource.stats;
+  const statsEnabled =
+    statsConfig === undefined ||
+    statsConfig === true ||
+    (typeof statsConfig === "object" && statsConfig !== null && statsConfig.enabled !== false);
+  const customStatCards =
+    typeof statsConfig === "object" &&
+    statsConfig !== null &&
+    Array.isArray(statsConfig.cards) &&
+    statsConfig.cards.length > 0;
+
+  const { data, isLoading, isFetching } = useResource<T>(resource.endpoint, {
     page,
     pageSize,
-    search,
+    search: debouncedSearch,
     sortBy,
     sortOrder,
     // Tab filters, then the operator's own, then the archived flag. The
@@ -1786,6 +1810,7 @@ export function useResourceController<T = Record<string, unknown>>(
     },
     dateParams,
     dateField: resource.table.dateFilter?.field,
+    counts: statsEnabled && !customStatCards ? DEFAULT_STAT_COUNTS : undefined,
   });
 
   const rows = useMemo(() => data?.data ?? [], [data]);
@@ -2084,12 +2109,6 @@ export function useResourceController<T = Record<string, unknown>>(
   const actions = resource.table.actions ?? ["create", "view", "edit", "delete"];
   const can = useCallback((action: TableAction) => actions.includes(action), [actions]);
 
-  const statsConfig = resource.stats;
-  const statsEnabled =
-    statsConfig === undefined ||
-    statsConfig === true ||
-    (typeof statsConfig === "object" && statsConfig !== null && statsConfig.enabled !== false);
-
   const stats: StatCard[] | undefined = useMemo(() => {
     if (!statsEnabled) return undefined;
 
@@ -2108,24 +2127,25 @@ export function useResourceController<T = Record<string, unknown>>(
       });
     };
 
-    if (
-      typeof statsConfig === "object" &&
-      statsConfig !== null &&
-      Array.isArray(statsConfig.cards) &&
-      statsConfig.cards.length > 0
-    ) {
+    if (customStatCards && typeof statsConfig === "object" && statsConfig !== null && statsConfig.cards) {
       return applyViewParams(statsConfig.cards);
     }
 
-    const ep = resource.endpoint;
+    // The defaults read the list response: the total the table shows, and the
+    // windows it asked for with ?counts=. So they describe the rows the table
+    // matches, search and filters included, and cost no requests of their own.
+    // A dash means the list endpoint does not answer ?counts=.
+    const counts = data?.meta?.counts;
+    const count = (name: string) => counts?.[name] ?? "—";
+    const loading = isLoading;
     const defaults: StatCard[] = [
-      { label: "Total", endpoint: ep + "?page_size=1", field: "meta.total", icon: resource.icon || "Package" },
-      { label: "This Week", endpoint: ep + "?page_size=1&created_since=7d", field: "meta.total", icon: "TrendingUp", color: "success" },
-      { label: "This Month", endpoint: ep + "?page_size=1&created_since=30d", field: "meta.total", icon: "Calendar", color: "info" },
-      { label: "Updated Recently", endpoint: ep + "?page_size=1&updated_since=7d", field: "meta.total", icon: "RefreshCw" },
+      { label: "Total", value: data?.meta?.total ?? "—", loading, icon: resource.icon || "Package" },
+      { label: "This Week", value: count("created_7d"), loading, icon: "TrendingUp", color: "success" },
+      { label: "This Month", value: count("created_30d"), loading, icon: "Calendar", color: "info" },
+      { label: "Updated Recently", value: count("updated_7d"), loading, icon: "RefreshCw" },
     ];
-    return applyViewParams(defaults);
-  }, [statsEnabled, statsConfig, resource.endpoint, resource.icon, dateParams, showArchived]);
+    return defaults;
+  }, [statsEnabled, customStatCards, statsConfig, resource.icon, dateParams, showArchived, data, isLoading]);
 
   return {
     resource,
@@ -2135,6 +2155,7 @@ export function useResourceController<T = Record<string, unknown>>(
     total: data?.meta?.total ?? 0,
     totalPages: data?.meta?.pages ?? 1,
     isLoading,
+    isFetching: isFetching && !isLoading,
 
     page,
     pageSize,
@@ -2236,9 +2257,52 @@ export function useResourceController<T = Record<string, unknown>>(
 }
 
 func adminUseResource() string {
-	return `import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+	return `import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
+
+// Every query about a resource starts with its endpoint, so invalidating
+// [endpoint] still refreshes all of it. Lists, single records and stat cards
+// each have a branch below that, so a save can refresh what it moved.
+export const resourceKeys = {
+  all: (endpoint: string) => [endpoint] as const,
+  lists: (endpoint: string) => [endpoint, "list"] as const,
+  list: (endpoint: string, params: object) => [endpoint, "list", params] as const,
+  detail: (endpoint: string, id: string) => [endpoint, "detail", id] as const,
+  // PageHeader's stat cards key on [endpoint, "stat", ...].
+  stats: (endpoint: string) => [endpoint, "stat"] as const,
+};
+
+// useDebouncedValue follows value once it has stopped changing for delay
+// milliseconds. The search box uses it so typing "john" is one request.
+export function useDebouncedValue<T>(value: T, delay: number): T {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return settled;
+}
+
+// refreshAfterSave refetches what a change to an existing row can move: the
+// lists, the record and any other view of the resource. Stat cards are marked
+// stale for their next mount instead: an edit rarely changes a count, and
+// refetching them cost a request per card on every save. The default cards
+// read their counts from the list, which does refetch.
+function refreshAfterSave(queryClient: QueryClient, endpoint: string) {
+  queryClient.invalidateQueries({
+    queryKey: resourceKeys.all(endpoint),
+    predicate: (query) => query.queryKey[1] !== "stat",
+  });
+  queryClient.invalidateQueries({ queryKey: resourceKeys.stats(endpoint), refetchType: "none" });
+}
 
 interface ResourceQueryParams {
   page?: number;
@@ -2252,6 +2316,9 @@ interface ResourceQueryParams {
   // default "created_at" target column when set.
   dateParams?: Record<string, string>;
   dateField?: string;
+  // Extra totals to return beside the page, such as created_7d: the default
+  // stat cards read theirs from the list response instead of a request each.
+  counts?: string[];
 }
 
 interface PaginatedResponse<T = Record<string, unknown>> {
@@ -2261,6 +2328,8 @@ interface PaginatedResponse<T = Record<string, unknown>> {
     page: number;
     page_size: number;
     pages: number;
+    // Answers ?counts=. Absent when the API does not support it.
+    counts?: Record<string, number> | null;
   };
 }
 
@@ -2268,13 +2337,15 @@ export function useResource<T = Record<string, unknown>>(
   endpoint: string,
   params: ResourceQueryParams = {}
 ) {
-  const { page = 1, pageSize = 20, search, sortBy, sortOrder, filters, dateParams, dateField } = params;
+  const { page = 1, pageSize = 20, search, sortBy, sortOrder, filters, dateParams, dateField, counts } = params;
 
   return useQuery<PaginatedResponse<T>>({
     // v3.31.34: dateParams + dateField included in key so a date
     // filter change invalidates the cache and the list refetches.
-    queryKey: [endpoint, { page, pageSize, search, sortBy, sortOrder, filters, dateParams, dateField }],
-    queryFn: async () => {
+    queryKey: resourceKeys.list(endpoint, { page, pageSize, search, sortBy, sortOrder, filters, dateParams, dateField, counts }),
+    // The signal cancels a request the next keystroke or page has replaced, so
+    // a slow answer to an old search cannot land on top of a newer one.
+    queryFn: async ({ signal }) => {
       const searchParams = new URLSearchParams({
         page: String(page),
         page_size: String(pageSize),
@@ -2298,10 +2369,16 @@ export function useResource<T = Record<string, unknown>>(
       if (dateField && dateField !== "created_at") {
         searchParams.set("date_field", dateField);
       }
+      if (counts && counts.length > 0) {
+        searchParams.set("counts", counts.join(","));
+      }
 
-      const { data } = await apiClient.get(` + "`" + `${endpoint}?${searchParams}` + "`" + `);
+      const { data } = await apiClient.get(` + "`" + `${endpoint}?${searchParams}` + "`" + `, { signal });
       return data;
     },
+    // Keep the rows on screen while the next page, sort or search loads. The
+    // table used to blank to a skeleton on every change.
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -2311,7 +2388,7 @@ export function useResourceItem<T = Record<string, unknown>>(
   options?: { enabled?: boolean }
 ) {
   return useQuery<{ data: T }>({
-    queryKey: [endpoint, id],
+    queryKey: resourceKeys.detail(endpoint, id),
     queryFn: async () => {
       const { data } = await apiClient.get(` + "`" + `${endpoint}/${id}` + "`" + `);
       return data;
@@ -2360,7 +2437,7 @@ export function useUpdateResource(endpoint: string, label?: string) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endpoint] });
+      refreshAfterSave(queryClient, endpoint);
       toast.success(said(label, "updated successfully"));
     },
     onError: (err: unknown) => {
@@ -2383,7 +2460,7 @@ export function usePatchResource(endpoint: string, label?: string) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endpoint] });
+      refreshAfterSave(queryClient, endpoint);
       toast.success(label ? label + " saved" : "Saved");
     },
     onError: (err: unknown) => {
