@@ -374,6 +374,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairListPerformance(root, opts); err != nil {
 			fmt.Printf("  ⚠ speeding up list queries: %v\n", err)
 		}
+		// Generated CSV imports: each belongs_to value looked up once, lookup
+		// errors fail the row, imports take turns, and the WAF no longer
+		// refuses a file over 1 MB. After the codegen runtime, which delivers
+		// internal/imports.
+		if err := repairImportServices(root, opts); err != nil {
+			fmt.Printf("  ⚠ hardening the CSV imports: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {

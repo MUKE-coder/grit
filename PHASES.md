@@ -1209,7 +1209,7 @@ pushed, and name the version.
 - [x] H16 F (v3.254.0) - gzip middleware allocates per request and breaks SSE
 - [x] H17 F (v3.255.0) - XLSX export builds the whole table in memory
 - [x] H18 F (v3.256.0) - list queries unindexed; COUNT on every page; %x% search
-- [ ] H19 F - CSV import queries per row, ignores errors, unbounded
+- [x] H19 F (v3.257.0) - CSV import queries per row, ignores errors, unbounded
 - [ ] H20 F - sync pull scans and sorts whole tables; fails on MySQL
 - [ ] H21 F - CI security scans and Dependabot point at paths that don't exist
 - [ ] H22 F - public home and blog render only in the browser

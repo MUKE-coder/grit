@@ -66,6 +66,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.257.0 */}
+            <div className="mb-12" id="v3.257.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.257.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>CSV imports over 1 MB work, take turns, and look each group up once</h3>
+                <p>
+                  The next finding from the review of a scaffolded app, and the test for it found a
+                  worse problem first. Every generated resource&apos;s CSV import sits behind
+                  Sentinel&apos;s WAF, whose 1 MB body cap refused any larger file with{' '}
+                  <code>413 WAF_BODY_TOO_LARGE</code> before the importer ran. The 100 MB limit an
+                  import route has had since v3.252.0 was never reached: a 5 MB file of 100,000
+                  contacts could not be imported at all.
+                </p>
+                <p>
+                  What the review found was in the importer itself. A belongs_to column looked its
+                  record up once per row: 19,000 contacts in 1,000 groups was 19,000 lookups of the
+                  groups table. Any error from that lookup, not only &quot;not found&quot;, was taken
+                  as a reason to create the group, and the create was not checked, so a failed create
+                  left the row with no group and a confusing error later. And nothing limited how
+                  many imports ran at once: four started together all ran together, each holding a
+                  database connection.
+                </p>
+                <p>
+                  Imports are now excluded from the WAF&apos;s body inspection, like uploads: they
+                  still pass through auth, permissions and rate limits. The importer resolves each
+                  distinct value once and remembers it, creates a missing record and checks the
+                  create, and fails the row on any other error. Id and user lookups check their errors
+                  the same way. Imports take turns through <code>internal/imports</code>, two at a time
+                  by default (<code>IMPORT_CONCURRENCY</code>); a waiting job says so in its status.
+                  Measured on the same project: the 100,000 contact file imports in 18.7 s with every
+                  row in its group, and of four imports started together two run and two wait.
+                </p>
+                <p>
+                  <code>grit upgrade</code> delivers <code>internal/imports</code>, adds the exclusion
+                  to <code>routes.go</code>, and rewrites the lookups and adds the turn-taking in every
+                  generated importer where the code is still what <code>grit generate</code> wrote. On
+                  a project made with v3.256.0 the upgraded importer came out identical to a freshly
+                  generated one. Upgrading it also found a bug in upgrade itself: the helper that adds
+                  an import took a map key named <code>&quot;errors&quot;</code> for the import and
+                  skipped it. It now looks only in the import block.
+                </p>
+              </div>
+            </div>
+
             {/* v3.256.0 */}
             <div className="mb-12" id="v3.256.0">
               <div className="flex items-center gap-3 mb-4">
