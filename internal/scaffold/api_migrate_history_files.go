@@ -202,13 +202,18 @@ func sortChanges(changes []Change) {
 // is not a rollback, it is dropping the database, so the command refuses it and
 // points at --fresh instead.
 func Record(db *gorm.DB, changes []Change, gritVersion string, baseline bool) (Run, error) {
+	now := time.Now().UTC()
 	run := Run{
-		ID:          time.Now().UTC().Format("20060102-150405.000"),
-		AppliedAt:   time.Now().UTC(),
+		AppliedAt:   now,
 		GritVersion: gritVersion,
 		Baseline:    baseline,
 	}
 	err := db.Transaction(func(tx *gorm.DB) error {
+		id, err := nextRunID(tx, now)
+		if err != nil {
+			return err
+		}
+		run.ID = id
 		if err := tx.Create(&run).Error; err != nil {
 			return err
 		}
@@ -224,6 +229,30 @@ func Record(db *gorm.DB, changes []Change, gritVersion string, baseline bool) (R
 		return run, fmt.Errorf("recording the migration: %w", err)
 	}
 	return run, nil
+}
+
+// runIDFormat is a run's ID: when it was recorded, to the millisecond, which
+// sorts in the order the runs happened.
+const runIDFormat = "20060102-150405.000"
+
+// nextRunID is now as a run ID, moved past the latest recorded run when it is not
+// later. Two runs in the same millisecond, which a fast test makes and a clock
+// stepping back can too, used to collide on the primary key.
+func nextRunID(tx *gorm.DB, now time.Time) (string, error) {
+	id := now.Format(runIDFormat)
+	var latest Run
+	res := tx.Order("id desc").Limit(1).Find(&latest)
+	if res.Error != nil {
+		return "", fmt.Errorf("reading the latest run: %w", res.Error)
+	}
+	if res.RowsAffected == 0 || id > latest.ID {
+		return id, nil
+	}
+	last, err := time.Parse(runIDFormat, latest.ID)
+	if err != nil {
+		return "", fmt.Errorf("reading the id of the latest run, %q: %w", latest.ID, err)
+	}
+	return last.Add(time.Millisecond).Format(runIDFormat), nil
 }
 
 // ChangesOf reads back the changes of one run, in the order they were recorded.
@@ -602,6 +631,24 @@ func TestSnapshotIgnoresTheHistoryItself(t *testing.T) {
 		if internalTable(name) {
 			t.Fatalf("%s belongs to the database, not to the schema it records", name)
 		}
+	}
+}
+
+// Runs recorded back to back, faster than the clock's millisecond, each get an
+// ID of their own, in order. Two such runs once failed on the primary key, which
+// is how this test's neighbour failed in CI.
+func TestRunsRecordedBackToBackGetDistinctIDs(t *testing.T) {
+	db := testDB(t)
+	previous := ""
+	for i := 0; i < 50; i++ {
+		run, err := Record(db, nil, "v0.0.0-test", false)
+		if err != nil {
+			t.Fatalf("run %d: %v", i, err)
+		}
+		if run.ID <= previous {
+			t.Fatalf("run %d has id %s, not after %s", i, run.ID, previous)
+		}
+		previous = run.ID
 	}
 }
 `

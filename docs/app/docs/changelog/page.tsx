@@ -66,6 +66,40 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.261.0 */}
+            <div className="mb-12" id="v3.261.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.261.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Two migrations in the same millisecond no longer collide</h3>
+                <p>
+                  Found by CI rather than by the review. The live suite for v3.260.0 failed once in the
+                  migration history&apos;s own tests, with <code>UNIQUE constraint failed:
+                  grit_migrations.id</code>, and passed when the job ran again. A recorded run&apos;s ID was
+                  the time to the millisecond, so two runs recorded within the same millisecond had the
+                  same ID. The test records a run and then another straight after, and on a fast machine
+                  both could land in one millisecond. A test that recorded two runs back to back failed on
+                  the second one every time.
+                </p>
+                <p>
+                  A run&apos;s ID is still the time it was recorded, in the same format, so a history from an
+                  earlier version reads and sorts as before. When that time is not later than the latest
+                  recorded run, as with two runs in one millisecond or a clock that stepped back, the new
+                  run takes the next millisecond after it, so IDs are unique and always in order. A test
+                  now records fifty runs back to back and checks each ID comes after the last.
+                </p>
+                <p>
+                  <code>grit upgrade</code> delivers the fix and the test with the rest of{' '}
+                  <code>internal/migrate</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.260.0 */}
             <div className="mb-12" id="v3.260.0">
               <div className="flex items-center gap-3 mb-4">
