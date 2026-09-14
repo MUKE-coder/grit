@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 14 to 20, 2026",
-    count: 7,
+    count: 8,
     entries: [
+      { version: "3.263.0", title: "Admin pages start loading without waiting for the signed-in user" },
       { version: "3.262.0", title: "Removing the blog leaves an API that compiles" },
       { version: "3.261.0", title: "Two migrations in the same millisecond no longer collide" },
       { version: "3.260.0", title: "The home page and blog render their posts on the server" },

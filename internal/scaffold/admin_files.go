@@ -1655,9 +1655,9 @@ export default function RootPage() {
 
 // adminDashboardLayout returns the (dashboard) route group layout with AdminLayout.
 func adminDashboardLayout() string {
-	return `"use client";
-
-import { AdminLayout } from "@/components/layout/admin-layout";
+	// A server component: AdminLayout is the client boundary, and a layout
+	// marked "use client" only moves that boundary up for no gain.
+	return `import { AdminLayout } from "@/components/layout/admin-layout";
 
 export default function DashboardGroupLayout({
   children,
