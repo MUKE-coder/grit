@@ -1212,7 +1212,7 @@ pushed, and name the version.
 - [x] H19 F (v3.257.0) - CSV import queries per row, ignores errors, unbounded
 - [x] H20 F (v3.258.0) - sync pull scans and sorts whole tables; fails on MySQL
 - [x] H21 F (v3.259.0) - CI security scans and Dependabot point at paths that don't exist
-- [ ] H22 F - public home and blog render only in the browser
+- [x] H22 F (v3.260.0) - public home and blog render only in the browser
 - [ ] H23 F - every admin page waits on /auth/me
 - [ ] H24 F - xlsx and recharts in first-load chunks
 - [ ] H25 F - list search not debounced; table blanks; 5 requests per save

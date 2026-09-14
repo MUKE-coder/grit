@@ -66,6 +66,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.260.0 */}
+            <div className="mb-12" id="v3.260.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.260.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The home page and blog render their posts on the server</h3>
+                <p>
+                  The next finding from the review of a scaffolded app. The home page, the blog list and
+                  every blog post in a Next.js project were client components that fetched their posts
+                  after the JavaScript loaded. The HTML the server sent held loading skeletons and no
+                  posts, which is what a search engine indexed and what a reader saw first, and all three
+                  pages shared the site&apos;s one title. Checked against a running project: the seeded
+                  post&apos;s title appeared in the server HTML of none of the three pages.
+                </p>
+                <p>
+                  They are server components now, reading through <code>lib/blog-api.ts</code> and
+                  refreshed every minute. The blog list pages with links (<code>/blog?page=2</code>), a
+                  post has its own title, description and share image, and a missing slug is a real 404.
+                  Server-side, DOMPurify has no page to work with, so the API&apos;s public blog endpoints
+                  sanitise the HTML they serve, which also covers posts stored before the API sanitised on
+                  write. In production Docker the web container reaches the API by service name through{' '}
+                  <code>API_INTERNAL_URL</code>. An API that cannot be reached, as during a CI build,
+                  leaves a list empty rather than failing the build. The same check afterwards: the post
+                  is in the server HTML of all three pages, each with its own title.
+                </p>
+                <p>
+                  Checking <code>grit remove resource Blog</code> against the new pages found it broken
+                  before this release. It still looked for the home page at the app root, which moved into
+                  a route group in an earlier release, and it never deleted the blog pages, so removal left
+                  the home page and both blog pages importing files it had deleted, and the web app failed
+                  to build. It now cleans the home
+                  page where it is and deletes the blog pages. The API still fails to compile after
+                  removing Blog, because the API reference and the route group keep references to it; that
+                  is a separate bug, older than this release, and next on the list.
+                </p>
+                <p>
+                  <code>grit upgrade</code> delivers the pages and <code>lib/blog-api.ts</code> where they
+                  are unedited, and adds the sanitising to the blog handler and{' '}
+                  <code>API_INTERNAL_URL</code> to the production compose file where those are still what
+                  Grit wrote. TanStack and single-app frontends are single-page apps with no server
+                  rendering, so they are unchanged.
+                </p>
+              </div>
+            </div>
+
             {/* v3.259.0 */}
             <div className="mb-12" id="v3.259.0">
               <div className="flex items-center gap-3 mb-4">

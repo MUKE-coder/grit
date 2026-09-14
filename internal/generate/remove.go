@@ -72,6 +72,7 @@ func RemoveResource(name string) error {
 		// --- web (Next.js + Vite layouts) ---
 		filepath.Join(webRoot, "hooks", "use-"+names.PluralKebab+".ts"),
 		filepath.Join(webRoot, "src", "hooks", "use-"+names.PluralKebab+".ts"),
+		filepath.Join(webRoot, "lib", names.Kebab+"-api.ts"),
 		// --- admin: Next.js ---
 		filepath.Join(adminRoot, "hooks", "use-"+names.PluralKebab+".ts"),
 		filepath.Join(adminRoot, "resources", names.PluralKebab, names.PluralKebab+".ts"),
@@ -147,6 +148,10 @@ func RemoveResource(name string) error {
 		filepath.Join(root, "frontend", "src", "routes", "admin", "_dashboard", "resources", names.PluralKebab),
 		filepath.Join(webRoot, "src", "routes", "admin", "_dashboard", "resources", names.PluralKebab),
 		filepath.Join(webRoot, "app", names.Kebab),
+		// The public pages moved into the (marketing) route group, and a page
+		// left behind imports the resource's deleted files, so the web build
+		// fails the moment the resource is removed.
+		filepath.Join(webRoot, "app", "(marketing)", names.Kebab),
 	}
 	for _, d := range dirsToDelete {
 		if _, err := os.Stat(d); err != nil {
@@ -401,7 +406,12 @@ func RemoveResource(name string) error {
 	// cut it out; without this the home page keeps importing the deleted
 	// use-blogs hook and the web app fails to build.
 	if strings.EqualFold(names.Pascal, "Blog") {
-		homePage := filepath.Join(webRoot, "app", "page.tsx")
+		// The home page moved into the (marketing) route group; a project from
+		// before that has it at the app root.
+		homePage := filepath.Join(webRoot, "app", "(marketing)", "page.tsx")
+		if !fileExists(homePage) {
+			homePage = filepath.Join(webRoot, "app", "page.tsx")
+		}
 		if fileExists(homePage) {
 			cut := removeMarkedRegion(homePage, "grit:home:blog-start", "grit:home:blog-end")
 			if removeMarkedRegion(homePage, "grit:home:blog-hook-start", "grit:home:blog-hook-end") {
@@ -411,6 +421,7 @@ func RemoveResource(name string) error {
 				cut = true
 			}
 			removeLinesContaining(homePage, `from "@/hooks/use-blogs"`)
+			removeLinesContaining(homePage, `from "@/lib/blog-api"`)
 			if cut {
 				fmt.Println("  ✗ Removed blog section from web home page")
 			}
