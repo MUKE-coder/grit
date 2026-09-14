@@ -9253,7 +9253,7 @@ func wafExcludedRoutes() []string {
 		"/posts", "/posts/*",
 		"/articles", "/articles/*",
 		"/uploads", "/uploads/*",
-		// Public form-share submissions. Auth is the share's bcrypt password
+` + wafImportExclusion + `		// Public form-share submissions. Auth is the share's bcrypt password
 		// (optional) and the token itself; Sentinel rate-limits the path. The
 		// subtree match also covers .../submit.
 		"/public/forms/*",

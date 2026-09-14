@@ -134,9 +134,6 @@ func EnsureAppendOnlyWiring(apiRoot, module string) error {
 // parenthesised import block to add it to.
 func addImportGroup(content, path string) (string, bool) {
 	line := "\t\"" + path + "\""
-	if strings.Contains(content, line) {
-		return content, true
-	}
 	start := strings.Index(content, "\nimport (\n")
 	if start < 0 {
 		return content, false
@@ -144,6 +141,12 @@ func addImportGroup(content, path string) (string, bool) {
 	end := strings.Index(content[start:], "\n)\n")
 	if end < 0 {
 		return content, false
+	}
+	// Present only as a line of the import block. Anywhere in the file was not
+	// enough: a map key such as "errors": in a function body matched, and the
+	// import was never added.
+	if strings.Contains(content[start:start+end+1], "\n"+line+"\n") {
+		return content, true
 	}
 	at := start + end
 	return content[:at] + "\n\n" + line + content[at:], true

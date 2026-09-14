@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // writeGoImportHandler generates the bulk CSV import of a resource, in two files.
@@ -98,6 +100,10 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 
 	needCrypto := false
 	owned := false
+	// Resolvers run once per import, before the rows; needLookupErrors pulls in
+	// errors and gorm for the not-found checks the lookups make.
+	var resolvers strings.Builder
+	needLookupErrors := false
 	for _, f := range g.Definition.Fields {
 		t := FieldType(f.Type)
 		if t == FieldSlug || t == FieldFile || t == FieldFiles ||
@@ -120,6 +126,7 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 			}
 
 			if relModel == "User" {
+				needLookupErrors = true
 				col, where := base+"_id", "id"
 				if lookup.ByName {
 					col, where = base, lookup.NaturalKeyJSON
@@ -139,19 +146,14 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 				continue
 			}
 
+			needLookupErrors = true
 			if lookup.ByName {
 				// The related model has a usable string column: resolve by
-				// that natural key and create the record if it's missing.
-				// Column is the relation name (e.g. "category").
+				// that natural key, once per distinct value, and create the
+				// record if it's missing. Column is the relation name.
 				headers = append(headers, base)
-				assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok && v != \"\" {\n"+
-					"\t\t\tvar rel models.%s\n"+
-					"\t\t\tif err := db.Where(%q, v).First(&rel).Error; err != nil {\n"+
-					"\t\t\t\trel = models.%s{%s: v}\n"+
-					"\t\t\t\tdb.Create(&rel)\n"+
-					"\t\t\t}\n"+
-					"\t\t\titem.%s = "+assignExpr+"\n"+
-					"\t\t}\n", base, relModel, lookup.NaturalKeyJSON+" = ?", relModel, lookup.NaturalKeyGo, fkGo))
+				resolvers.WriteString(scaffold.ImportNameResolver(base, relModel, lookup.NaturalKeyJSON, lookup.NaturalKeyGo))
+				assign.WriteString(scaffold.ImportNameAssign(base, fkGo, assignExpr == "&rel.ID"))
 			} else {
 				// No natural-key string column (e.g. belongs_to:User):
 				// resolve by the related record's ID. Column is "<base>_id".
@@ -159,10 +161,19 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 				// id simply leaves the foreign key unset.
 				idCol := base + "_id"
 				headers = append(headers, idCol)
+				// A lookup that fails for any reason but "not found" fails the row.
 				assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok && v != \"\" {\n"+
 					"\t\t\tvar rel models.%s\n"+
-					"\t\t\tif err := db.Where(\"id = ?\", v).First(&rel).Error; err == nil {\n"+
+					"\t\t\terr := db.Where(\"id = ?\", v).First(&rel).Error\n"+
+					"\t\t\tswitch {\n"+
+					"\t\t\tcase err == nil:\n"+
 					"\t\t\t\titem.%s = rel.ID\n"+
+					"\t\t\tcase !errors.Is(err, gorm.ErrRecordNotFound):\n"+
+					"\t\t\t\tfailed++\n"+
+					"\t\t\t\tif len(rowErrors) < 50 {\n"+
+					"\t\t\t\t\trowErrors = append(rowErrors, map[string]interface{}{\"row\": rowNum, \"message\": err.Error()})\n"+
+					"\t\t\t\t}\n"+
+					"\t\t\t\tcontinue\n"+
 					"\t\t\t}\n"+
 					"\t\t}\n", idCol, relModel, fkGo))
 			}
@@ -233,6 +244,11 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 		datatypesImport = "\n\t\"gorm.io/datatypes\""
 	}
 	templateHeaders := strings.Join(headers, ",")
+	errorsImport, gormImport := "", ""
+	if needLookupErrors {
+		errorsImport = "\n\t\"errors\""
+		gormImport = "\"gorm.io/gorm\"\n\t"
+	}
 
 	ownerSetup, authzImport := "", ""
 	if owned {
@@ -253,6 +269,9 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 		"{{STRCONV}}", strconvImport,
 		"{{DATATYPES}}", datatypesImport+moneyImport+cryptoImport,
 		"{{ASSIGN}}", assign.String(),
+		"{{RESOLVERS}}", resolvers.String(),
+		"{{ERRORS_IMPORT}}", errorsImport,
+		"{{GORM_IMPORT}}", gormImport,
 		"{{HEADERS}}", templateHeaders,
 		"{{OWNER_SETUP}}", ownerSetup,
 		"{{AUTHZ_IMPORT}}", authzImport,
@@ -380,16 +399,17 @@ const importServiceTemplate = `package services
 import (
 	"context"
 	"encoding/csv"
-	"encoding/json"
+	"encoding/json"{{ERRORS_IMPORT}}
 	"fmt"
 	"io"
 	"log"
 	"os"{{STRCONV}}
 	"strings"
 
-	"gorm.io/gorm/clause"{{DATATYPES}}
+	{{GORM_IMPORT}}"gorm.io/gorm/clause"{{DATATYPES}}
 
-	{{AUTHZ_IMPORT}}"{{MODULE}}/internal/models"
+	{{AUTHZ_IMPORT}}"{{MODULE}}/internal/imports"
+	"{{MODULE}}/internal/models"
 )
 
 // StartImport records a CSV import of {{Plural}} about to run: the job a client
@@ -434,7 +454,7 @@ func (s *{{Pascal}}Service) ImportCSV(ctx context.Context, jobID, path string) {
 		}
 	}()
 
-	f, err := os.Open(path)
+` + scaffold.ImportLimitGate + `	f, err := os.Open(path)
 	if err != nil {
 		record(map[string]interface{}{
 			"status": "failed", "message": "could not reopen upload",
@@ -464,7 +484,7 @@ func (s *{{Pascal}}Service) ImportCSV(ctx context.Context, jobID, path string) {
 		return "", false
 	}
 
-	created, skipped, failed := 0, 0, 0
+{{RESOLVERS}}	created, skipped, failed := 0, 0, 0
 	rowErrors := []map[string]interface{}{}
 
 	// checkpoint writes current progress so the client's poll sees movement.
@@ -562,9 +582,13 @@ func importUserLookup(col, where, fkGo, cond string) string {
 	return fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok && v != \"\"%s {\n"+
 		"\t\t\tvar rel models.User\n"+
 		"\t\t\tif err := db.Where(%q, v).First(&rel).Error; err != nil {\n"+
+		"\t\t\t\tmessage := fmt.Sprintf(\"no user with %s %%q\", v)\n"+
+		"\t\t\t\tif !errors.Is(err, gorm.ErrRecordNotFound) {\n"+
+		"\t\t\t\t\tmessage = err.Error()\n"+
+		"\t\t\t\t}\n"+
 		"\t\t\t\tfailed++\n"+
 		"\t\t\t\tif len(rowErrors) < 50 {\n"+
-		"\t\t\t\t\trowErrors = append(rowErrors, map[string]interface{}{\"row\": rowNum, \"message\": fmt.Sprintf(\"no user with %s %%q\", v)})\n"+
+		"\t\t\t\t\trowErrors = append(rowErrors, map[string]interface{}{\"row\": rowNum, \"message\": message})\n"+
 		"\t\t\t\t}\n"+
 		"\t\t\t\tcontinue\n"+
 		"\t\t\t}\n"+
