@@ -170,6 +170,17 @@ func frontendBuildArgs(opts Options) string {
 	return `        NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:8080}`
 }
 
+// frontendRuntimeEnv is the web container's environment. A Next.js app renders
+// its public pages on the server, which reaches the API over the Docker network
+// by service name: NEXT_PUBLIC_API_URL is the browser's address, and inside the
+// container localhost is the container itself.
+func frontendRuntimeEnv(opts Options) string {
+	if opts.UseTanStack() {
+		return ""
+	}
+	return composeWebAPIEnv
+}
+
 func dockerComposeProd(opts Options) string {
 	name := opts.ProjectName
 
@@ -238,13 +249,13 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
 %s
-    container_name: %s-web
+%s    container_name: %s-web
     restart: unless-stopped
     expose:
       - "3000"
     networks:
       - %s
-`, frontendBuildArgs(opts), name, name)
+`, frontendBuildArgs(opts), frontendRuntimeEnv(opts), name, name)
 	}
 
 	if opts.ShouldIncludeAdmin() {

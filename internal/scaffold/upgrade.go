@@ -394,6 +394,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		// xlsx from npm stopped at 0.18.5, with two high advisories, so the
 		// security workflow's audit fails until the patched build is in.
 		warnVulnerableXLSX(root)
+		// The Next.js public pages render on the server: the blog handler serves
+		// sanitised HTML, and the production web container can reach the API.
+		if err := repairPublicPages(root, opts); err != nil {
+			fmt.Printf("  ⚠ preparing the server-rendered pages: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {

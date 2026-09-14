@@ -221,6 +221,7 @@ import (
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/sanitize"
 	"{{MODULE}}/internal/services"
 )
 
@@ -308,7 +309,7 @@ func (h *BlogHandler) ListPublished(c *gin.Context) {
 		return
 	}
 
-	c.Header("Cache-Control", "public, max-age=300")
+` + blogListSanitize + `	c.Header("Cache-Control", "public, max-age=300")
 	c.JSON(http.StatusOK, gin.H{
 		"data": blogs,
 		"meta": gin.H{
@@ -335,7 +336,7 @@ func (h *BlogHandler) GetBySlug(c *gin.Context) {
 		return
 	}
 
-	c.Header("Cache-Control", "public, max-age=3600")
+` + blogSlugSanitize + `	c.Header("Cache-Control", "public, max-age=3600")
 	c.JSON(http.StatusOK, gin.H{
 		"data": blog,
 	})
