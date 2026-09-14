@@ -414,6 +414,8 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "components", "dashboard", "ResourceStatCard.tsx"):    nextToTanStack(adminResourceStatCardTSX()),
 		filepath.Join(adminRoot, "src", "components", "dashboard", "ResourceLatestTable.tsx"): nextToTanStack(adminResourceLatestTableTSX()),
 		filepath.Join(adminRoot, "src", "components", "dashboard", "ResourceWidgetsRow.tsx"):  nextToTanStack(adminResourceWidgetsRowTSX()),
+		filepath.Join(adminRoot, "src", "components", "dashboard", "ResourceSparkline.tsx"):   nextToTanStack(adminResourceSparklineTSX()),
+		filepath.Join(adminRoot, "src", "components", "dashboard", "DashboardCharts.tsx"):     nextToTanStack(adminDashboardChartsTSX()),
 		filepath.Join(adminRoot, "src", "components", "dashboard", "CustomChartCard.tsx"):     nextToTanStack(adminCustomChartCardTSX()),
 		filepath.Join(adminRoot, "src", "components", "dashboard", "ChartBuilderForm.tsx"):    nextToTanStack(adminChartBuilderFormTSX()),
 

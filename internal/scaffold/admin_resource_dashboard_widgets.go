@@ -30,6 +30,8 @@ func writeAdminResourceDashboardWidgets(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "dashboard", "ResourceStatCard.tsx"):    adminFlavoured(opts, adminResourceStatCardTSX()),
 		filepath.Join(adminRoot, "components", "dashboard", "ResourceLatestTable.tsx"): adminFlavoured(opts, adminResourceLatestTableTSX()),
 		filepath.Join(adminRoot, "components", "dashboard", "ResourceWidgetsRow.tsx"):  adminFlavoured(opts, adminResourceWidgetsRowTSX()),
+		filepath.Join(adminRoot, "components", "dashboard", "ResourceSparkline.tsx"):   adminFlavoured(opts, adminResourceSparklineTSX()),
+		filepath.Join(adminRoot, "components", "dashboard", "DashboardCharts.tsx"):     adminFlavoured(opts, adminDashboardChartsTSX()),
 	}
 	for path, content := range files {
 		if err := writeFile(path, content); err != nil {
@@ -46,14 +48,20 @@ func adminResourceStatCardTSX() string {
 	return `"use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
+import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ResponsiveContainer, AreaChart, Area, Tooltip,
-} from "recharts";
 import { apiClient } from "@/lib/api-client";
 import { dateRangeToQueryParams, type DateRange } from "@/components/tables/date-filter";
 import { getIcon, ArrowUpRight } from "@/lib/icons";
 import type { ResourceDefinition } from "@/lib/resource";
+
+// The sparkline is recharts, about 400 KB, so it loads after the card renders
+// instead of riding in the first load of every page that shows a card.
+const ResourceSparkline = dynamic(
+  () => import("@/components/dashboard/ResourceSparkline").then((m) => m.ResourceSparkline),
+  { ssr: false },
+);
 
 // One sparkline bucket = one calendar day. Always 30 buckets so the
 // chart shape stays stable; counts inside the active date range only
@@ -135,38 +143,9 @@ export function ResourceStatCard({ resource, dateRange }: Props) {
       {/* Always render the sparkline space so the card height is
           stable, even before data lands. */}
       <div className="mt-2 h-12 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={sparkData} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
-            <defs>
-              <linearGradient id={"spark-" + resource.slug} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.45} />
-                <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <Tooltip
-              contentStyle={{
-                background: "var(--bg-elevated)",
-                border: "1px solid var(--border)",
-                borderRadius: 6,
-                fontSize: 11,
-                padding: "4px 8px",
-              }}
-              labelStyle={{ color: "var(--text-secondary)" }}
-              itemStyle={{ color: "var(--foreground)" }}
-              cursor={{ stroke: "var(--accent)", strokeOpacity: 0.3 }}
-              formatter={(value: number) => [value + " new", "Count"]}
-              labelFormatter={(d: string) => d}
-            />
-            <Area
-              type="monotone"
-              dataKey="count"
-              stroke="var(--accent)"
-              strokeWidth={1.5}
-              fill={"url(#spark-" + resource.slug + ")"}
-              isAnimationActive={false}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        <Suspense fallback={null}>
+          <ResourceSparkline id={"spark-" + resource.slug} data={sparkData} />
+        </Suspense>
       </div>
       <p className="mt-1 text-[11px] text-text-muted">Last 30 days</p>
     </Link>

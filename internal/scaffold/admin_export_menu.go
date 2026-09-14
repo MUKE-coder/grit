@@ -106,7 +106,7 @@ export function ExportMenu({
         toast.error("Nothing to export");
         return;
       }
-      exportToFile(rows, columns, resource.slug, format);
+      await exportToFile(rows, columns, resource.slug, format);
       toast.success("Exported " + rows.length + " row" + (rows.length === 1 ? "" : "s"));
     } catch (err) {
       toast.error("Export failed: " + (err as Error).message);
