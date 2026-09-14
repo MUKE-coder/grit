@@ -257,6 +257,13 @@ func RemoveResource(name string) error {
 		removeLineBlock(routesFile,
 			fmt.Sprintf("%s := r.Group(", names.Plural),
 			"}")
+		// The scaffold declares it on the versioned group instead, as
+		//     blogs := v1.Group("/blogs") { ... }
+		// and an empty group left behind is a variable declared and not used,
+		// so the API no longer compiled.
+		if removeLineBlock(routesFile, fmt.Sprintf("\t%s := v1.Group(", names.Plural), "}") == nil {
+			removeLinesContaining(routesFile, fmt.Sprintf("// Public %s routes (no auth required)", names.Lower))
+		}
 	}
 
 	// 4+5. Remove routes (protected + admin)
@@ -269,7 +276,11 @@ func RemoveResource(name string) error {
 
 	// 5c. Remove the API-reference entries.
 	if fileExists(docsFile) {
-		if removeDocsRoutes(docsFile, "/api/"+apiVersion+"/"+names.Plural) == nil {
+		public := removeDocsRoutes(docsFile, "/api/"+apiVersion+"/"+names.Plural)
+		// The admin endpoints of a scaffolded resource are documented under
+		// /admin/<plural>, and left behind they still name its model.
+		admin := removeDocsRoutes(docsFile, "/api/"+apiVersion+"/admin/"+names.Plural)
+		if public == nil || admin == nil {
 			fmt.Println("  ✗ Removed the /docs entries")
 		}
 	}
@@ -854,9 +865,7 @@ func removeDocsRoutes(filePath, base string) error {
 
 	for i := 0; i < len(lines); i++ {
 		line := lines[i]
-		isStart := strings.Contains(line, "docs.Route(\"") &&
-			(strings.Contains(line, base+"\"") || strings.Contains(line, base+"/:id\""))
-		if !isStart {
+		if !docsRouteUnder(line, base) {
 			result = append(result, line)
 			continue
 		}
@@ -874,6 +883,28 @@ func removeDocsRoutes(filePath, base string) error {
 	}
 
 	return os.WriteFile(filePath, []byte(strings.Join(result, "\n")), 0644)
+}
+
+// docsRouteUnder reports whether line starts a docs.Route chain for base or for
+// a path beneath it: base itself, /:id, /:slug, /bulk and the rest. The match
+// stops at a path segment, so "order" never takes "orders" with it.
+func docsRouteUnder(line, base string) bool {
+	const open = "docs.Route(\""
+	at := strings.Index(line, open)
+	if at < 0 {
+		return false
+	}
+	route := line[at+len(open):]
+	end := strings.Index(route, "\"")
+	if end < 0 {
+		return false
+	}
+	fields := strings.Fields(route[:end])
+	if len(fields) != 2 {
+		return false
+	}
+	path := fields[1]
+	return path == base || strings.HasPrefix(path, base+"/")
 }
 
 // ConfirmRemoval prompts the user for confirmation.

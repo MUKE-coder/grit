@@ -66,6 +66,41 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.262.0 */}
+            <div className="mb-12" id="v3.262.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.262.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Removing the blog leaves an API that compiles</h3>
+                <p>
+                  The other half of what v3.260.0 found. After <code>grit remove resource Blog</code>, the
+                  web app built again, but the Go API did not: removal reported the API reference entries
+                  gone while six of the seven were still there, naming a model and two request types it had
+                  just deleted, and the blog&apos;s public route group stayed in <code>routes.go</code> with
+                  its routes taken out, an unused variable Go refuses to compile. The same failure happens
+                  with v3.257.0, so it is older than the pages that turned it up.
+                </p>
+                <p>
+                  Removal matched an API reference entry only when its path was the resource&apos;s base
+                  or the base followed by <code>/:id</code>. The blog documents <code>/:slug</code>, and
+                  its admin endpoints sit under <code>/api/v1/admin/blogs</code>. It now removes every
+                  documented path under the resource&apos;s base, and under its admin base, and still stops
+                  at a path segment so removing <code>order</code> leaves <code>orders</code> alone. It also
+                  removes a route group declared on the versioned group, which is how the scaffold declares
+                  the blog&apos;s, together with its comment.
+                </p>
+                <p>
+                  Checked on a fresh project: after removing the blog, no reference to it is left in the
+                  API reference or the routes, and the API builds, passes vet and passes its tests.
+                </p>
+              </div>
+            </div>
+
             {/* v3.261.0 */}
             <div className="mb-12" id="v3.261.0">
               <div className="flex items-center gap-3 mb-4">
