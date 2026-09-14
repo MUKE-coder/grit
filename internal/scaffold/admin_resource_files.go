@@ -1148,7 +1148,7 @@ export function ResourcePage({ resource: definition }: ResourcePageProps) {
 // selection" is the selection.
 function exportSelection(c: ResourceController) {
   if (c.selectedRows.length === 0) return;
-  exportToFile(c.selectedRows, c.columns, c.resource.slug, "csv");
+  void exportToFile(c.selectedRows, c.columns, c.resource.slug, "csv");
   c.announce(c.selectedRows.length + " rows exported.");
 }
 

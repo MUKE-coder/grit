@@ -66,6 +66,44 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.264.0 */}
+            <div className="mb-12" id="v3.264.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.264.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Resource lists and the dashboard stop downloading spreadsheet and chart code up front</h3>
+                <p>
+                  The admin&apos;s spreadsheet helpers imported SheetJS at the top of their module, and every
+                  resource list page imports those helpers, so about 500 KB of SheetJS arrived with every list
+                  whether or not anyone exported or imported. A comment on the list page called it lazy; it
+                  was not. The dashboard and its resource stat cards imported recharts the same way, adding
+                  about 400 KB to the dashboard&apos;s first load.
+                </p>
+                <p>
+                  SheetJS now loads the first time a spreadsheet is written or read. CSV export needs none of
+                  it and still downloads inside the click. The dashboard&apos;s two charts and the stat
+                  card&apos;s sparkline moved into modules of their own that load after the page renders,
+                  behind a placeholder, so the greeting, stat tiles and activity feed do not wait for them.
+                  This applies to the Next.js admin, the admin inside the web app and the Vite admin, where
+                  the charts sit behind Suspense. <code>grit upgrade</code> delivers the changed files and the
+                  two new chart modules to projects that have not edited them.
+                </p>
+                <p>
+                  Measured on a fresh project, then again after upgrading it, by fetching each page and
+                  adding up the scripts it asks for. The users list went from 1,352 KB (432 KB gzipped) to
+                  861 KB (270 KB), with SheetJS gone from it; the dashboard went from 1,241 KB (366 KB) to
+                  836 KB (261 KB), with recharts gone from it. In the browser, SheetJS arrived only on
+                  clicking Excel export, which still produced a valid workbook, the import template still
+                  downloaded, and all four dashboard charts rendered.
+                </p>
+              </div>
+            </div>
+
             {/* v3.263.0 */}
             <div className="mb-12" id="v3.263.0">
               <div className="flex items-center gap-3 mb-4">

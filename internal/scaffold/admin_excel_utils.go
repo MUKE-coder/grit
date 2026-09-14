@@ -18,10 +18,11 @@ func adminExcelUtils() string {
 	return `// Client-side Excel + CSV + JSON helpers built on SheetJS (xlsx).
 // Used by the ExportMenu and ImportModal in components/tables.
 //
-// We import the lite ESM build so Next.js' tree-shaker can drop the
-// streaming + crypto code paths we don't need in the browser.
+// SheetJS is about 500 KB. It loads the first time a spreadsheet is written
+// or read, never at the top of this module: every resource list page imports
+// this file, and a static import put SheetJS in the first load of all of them.
 
-import * as XLSX from "xlsx";
+const loadXLSX = () => import("xlsx");
 import type { ColumnDefinition, FieldDefinition, ResourceDefinition } from "@/lib/resource";
 import { apiClient } from "@/lib/api-client";
 
@@ -33,7 +34,7 @@ export type ExportFormat = "csv" | "json" | "xlsx";
 // chosen format. The visible-column list controls which fields are
 // included and what their human header is -- so the exported file
 // matches what the user sees in the table.
-export function exportToFile(
+export async function exportToFile(
   rows: Record<string, unknown>[],
   columns: ColumnDefinition[],
   filename: string,
@@ -65,6 +66,7 @@ export function exportToFile(
 
   // xlsx -- build a workbook with one sheet, auto-size widest column
   // up to a 60-char cap so big text fields don't blow out the layout.
+  const XLSX = await loadXLSX();
   const sheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
   sheet["!cols"] = headers.map((_, i) => {
     let max = headers[i].length;
@@ -123,7 +125,7 @@ export async function fetchAllPages<T = Record<string, unknown>>(
 // allowedFields lets a resource restrict imports to a subset of its
 // form fields -- e.g. exclude an auto-generated slug. Defaults to
 // every form field.
-export function downloadImportTemplate(
+export async function downloadImportTemplate(
   resource: ResourceDefinition,
   allowedFields?: string[],
 ) {
@@ -131,6 +133,7 @@ export function downloadImportTemplate(
   const headers = fields.map((f) => f.key);
   const example = fields.map((f) => placeholderFor(f));
 
+  const XLSX = await loadXLSX();
   const sheet = XLSX.utils.aoa_to_sheet([headers, example]);
   sheet["!cols"] = headers.map((h) => ({ wch: Math.max(h.length + 2, 14) }));
   const wb = XLSX.utils.book_new();
@@ -166,7 +169,7 @@ export async function parseImportFile(
   resource: ResourceDefinition,
   allowedFields?: string[],
 ): Promise<ParsedImport> {
-  const buf = await file.arrayBuffer();
+  const [buf, XLSX] = await Promise.all([file.arrayBuffer(), loadXLSX()]);
   const wb = XLSX.read(buf, { type: "array", cellDates: true });
   const firstSheetName = wb.SheetNames[0];
   if (!firstSheetName) {

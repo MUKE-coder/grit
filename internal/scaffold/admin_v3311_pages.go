@@ -14,12 +14,9 @@ func adminCaptivatingDashboard() string {
 	return `"use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { Suspense, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  AreaChart, Area, CartesianGrid, ResponsiveContainer,
-  Tooltip, XAxis, YAxis, PieChart, Pie, Cell,
-} from "recharts";
 import { useMe } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
 import { resources } from "@/resources";
@@ -32,6 +29,22 @@ import {
   Activity as ActivityIcon, ArrowUpRight,
   Users, Bell, TrendingUp, Database, Shield, getIcon,
 } from "@/lib/icons";
+
+// Recharts is about 400 KB. The two charts load after the page renders, so the
+// greeting, stat tiles and activity feed do not wait for it. Suspense shows the
+// placeholder in the Vite admin, where dynamic() is React.lazy.
+const ActivityAreaChart = dynamic(
+  () => import("@/components/dashboard/DashboardCharts").then((m) => m.ActivityAreaChart),
+  { ssr: false, loading: ChartPlaceholder },
+);
+const SeverityPieChart = dynamic(
+  () => import("@/components/dashboard/DashboardCharts").then((m) => m.SeverityPieChart),
+  { ssr: false, loading: ChartPlaceholder },
+);
+
+function ChartPlaceholder() {
+  return <div className="h-full w-full animate-pulse rounded-lg bg-bg-hover/40" />;
+}
 
 interface MeStats {
   users: number;
@@ -237,30 +250,9 @@ export default function DashboardPage() {
             <TrendingUp className="h-4 w-4 text-text-muted" />
           </div>
           <div className="h-56 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={weekSeries}>
-                <defs>
-                  <linearGradient id="activityFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="day" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--bg-elevated)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                  labelStyle={{ color: "var(--text-secondary)" }}
-                  itemStyle={{ color: "var(--foreground)" }}
-                />
-                <Area type="monotone" dataKey="events" stroke="var(--accent)" strokeWidth={2} fill="url(#activityFill)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <Suspense fallback={<ChartPlaceholder />}>
+              <ActivityAreaChart data={weekSeries} />
+            </Suspense>
           </div>
         </div>
 
@@ -270,21 +262,9 @@ export default function DashboardPage() {
             <p className="text-xs text-text-muted">Past 24 hours</p>
           </div>
           <div className="h-48 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={severitySeries} dataKey="value" innerRadius={40} outerRadius={70} paddingAngle={2}>
-                  {severitySeries.map((s, i) => <Cell key={i} fill={s.color} />)}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--bg-elevated)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            <Suspense fallback={<ChartPlaceholder />}>
+              <SeverityPieChart data={severitySeries} />
+            </Suspense>
           </div>
           <ul className="mt-2 space-y-1.5 text-xs">
             {severitySeries.map((s) => (

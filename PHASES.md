@@ -1214,7 +1214,7 @@ pushed, and name the version.
 - [x] H21 F (v3.259.0) - CI security scans and Dependabot point at paths that don't exist
 - [x] H22 F (v3.260.0) - public home and blog render only in the browser
 - [x] H23 F (v3.263.0) - every admin page waits on /auth/me
-- [ ] H24 F - xlsx and recharts in first-load chunks
+- [x] H24 F (v3.264.0) - xlsx and recharts in first-load chunks
 - [ ] H25 F - list search not debounced; table blanks; 5 requests per save
 - [ ] H26 F - 500s never logged; raw errors sent to clients
 

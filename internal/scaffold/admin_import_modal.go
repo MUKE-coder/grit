@@ -145,7 +145,11 @@ export function ImportModal({ resource, onClose }: ImportModalProps) {
               setDragOver={setDragOver}
               onDrop={onDrop}
               onPick={() => inputRef.current?.click()}
-              onDownloadTemplate={() => downloadImportTemplate(resource, allowedFields)}
+              onDownloadTemplate={() =>
+                downloadImportTemplate(resource, allowedFields).catch((err: Error) =>
+                  toast.error("Failed to build the template: " + err.message),
+                )
+              }
             />
           )}
 
