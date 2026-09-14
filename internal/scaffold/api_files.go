@@ -3888,7 +3888,7 @@ func apiPaginateGo() string {
 //	        },
 //	    )
 //	    if err != nil {
-//	        c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
+//	        respond.WriteError(c, err, "Failed to fetch shops")
 //	        return
 //	    }
 //	    c.JSON(http.StatusOK, res)
@@ -4940,6 +4940,7 @@ func apiSyncHandlerGo() string {
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -4951,6 +4952,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"` + "{{MODULE}}" + `/internal/authz"
+	"` + "{{MODULE}}" + `/internal/respond"
 	"` + "{{MODULE}}" + `/internal/services"
 	"` + "{{MODULE}}" + `/internal/sync"
 )
@@ -5027,6 +5029,14 @@ func syncIdentifier(data map[string]interface{}, id string) string {
 	return id
 }
 
+// syncFault logs why the server could not apply a change and returns what the
+// client is told instead. A database error names tables, columns and
+// constraints, and the push result goes back to the device that sent it.
+func syncFault(c *gin.Context, ch PushChange, err error, message string) string {
+	log.Printf("sync push %s %s %s | id=%s: %v", ch.Op, ch.Model, ch.ID, c.GetString("request_id"), err)
+	return message
+}
+
 func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 	proto, err := h.Registry.New(ch.Model)
 	if err != nil {
@@ -5058,7 +5068,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 			return PushResult{OK: false, Code: "FORBIDDEN", Message: "you may not create " + ch.Model}
 		}
 		if err := h.DB.Create(obj).Error; err != nil {
-			return PushResult{OK: false, Code: "CREATE_FAILED", Message: err.Error()}
+			return PushResult{OK: false, Code: "CREATE_FAILED", Message: syncFault(c, ch, err, "the server could not create the row")}
 		}
 		// Mirror the online handler: emit a semantic activity row so offline
 		// creates surface in /system/activity, not just the raw audit log.
@@ -5072,7 +5082,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 			if err == gorm.ErrRecordNotFound {
 				return PushResult{OK: false, Code: "NOT_FOUND", Message: "row was deleted on the server"}
 			}
-			return PushResult{OK: false, Code: "INTERNAL_ERROR", Message: err.Error()}
+			return PushResult{OK: false, Code: "INTERNAL_ERROR", Message: syncFault(c, ch, err, "the server could not read the row")}
 		}
 		// Not found rather than forbidden: a row the caller may not touch is one
 		// whose existence it does not get to learn.
@@ -5135,7 +5145,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 		// BeforeUpdate hook. Omit associations so the nested relation object is not
 		// upserted, and CreatedAt so the client can't rewind the original timestamp.
 		if err := h.DB.Omit(clause.Associations, "CreatedAt").Save(obj).Error; err != nil {
-			return PushResult{OK: false, Code: "UPDATE_FAILED", Message: err.Error()}
+			return PushResult{OK: false, Code: "UPDATE_FAILED", Message: syncFault(c, ch, err, "the server could not update the row")}
 		}
 		newVersion := getIntField(obj, "Version")
 		services.LogUpdate(h.DB, c, entityType, syncIdentifier(ch.Data, ch.ID), ch.ID, services.DiffSummary(ch.Data))
@@ -5148,7 +5158,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 				// Already gone — treat as success so the outbox can clear.
 				return PushResult{OK: true}
 			}
-			return PushResult{OK: false, Code: "INTERNAL_ERROR", Message: err.Error()}
+			return PushResult{OK: false, Code: "INTERNAL_ERROR", Message: syncFault(c, ch, err, "the server could not read the row")}
 		}
 		if !syncMayWrite(c, ch.Model, "delete", current) {
 			return PushResult{OK: false, Code: "NOT_FOUND", Message: "row was deleted on the server"}
@@ -5164,7 +5174,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 			}
 		}
 		if err := h.DB.Delete(current, "id = ?", ch.ID).Error; err != nil {
-			return PushResult{OK: false, Code: "DELETE_FAILED", Message: err.Error()}
+			return PushResult{OK: false, Code: "DELETE_FAILED", Message: syncFault(c, ch, err, "the server could not delete the row")}
 		}
 		services.LogDelete(h.DB, c, entityType, ch.ID, ch.ID)
 		return PushResult{OK: true}
@@ -5259,7 +5269,7 @@ func (h *SyncHandler) Pull(c *gin.Context) {
 		}
 	}
 	if err := q.Order("updated_at asc, id asc").Limit(limit).Find(results.Interface()).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 
@@ -6401,6 +6411,7 @@ import (
 
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/paginate"
+	"` + "{{MODULE}}" + `/internal/respond"
 	"` + "{{MODULE}}" + `/internal/webhooks"
 )
 
@@ -6487,9 +6498,7 @@ func (h *WebhookHandler) Receive(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"status": "skipped", "reason": "duplicate"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "PERSIST_FAILED", "message": err.Error()},
-		})
+		respond.ServerError(c, "PERSIST_FAILED", err, "Internal server error")
 		return
 	}
 
@@ -6533,9 +6542,7 @@ func (h *WebhookHandler) List(c *gin.Context) {
 		DefaultOrder: "desc",
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	c.JSON(http.StatusOK, res)
@@ -6556,9 +6563,7 @@ func (h *WebhookHandler) Replay(c *gin.Context) {
 			})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 
@@ -6579,9 +6584,7 @@ func (h *WebhookHandler) Replay(c *gin.Context) {
 		updates["handler_error"] = dispatchErr.Error()
 	}
 	if err := h.DB.Model(&event).Updates(updates).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	// Re-read to get the post-increment count; the original event.RetryCount
@@ -7183,6 +7186,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/flags"
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/paginate"
+	"` + "{{MODULE}}" + `/internal/respond"
 )
 
 // FeatureFlagHandler exposes admin-side CRUD over feature flags +
@@ -7208,9 +7212,7 @@ func (h *FeatureFlagHandler) List(c *gin.Context) {
 		DefaultOrder: "asc",
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	c.JSON(http.StatusOK, res)
@@ -7251,15 +7253,11 @@ func (h *FeatureFlagHandler) Create(c *gin.Context) {
 		Enabled:     body.Enabled,
 	}
 	if err := flag.SetRules(body.Rules); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	if err := h.DB.Create(&flag).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 
@@ -7280,9 +7278,7 @@ func (h *FeatureFlagHandler) Update(c *gin.Context) {
 			})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 
@@ -7298,15 +7294,11 @@ func (h *FeatureFlagHandler) Update(c *gin.Context) {
 	flag.Description = body.Description
 	flag.Enabled = body.Enabled
 	if err := flag.SetRules(body.Rules); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	if err := h.DB.Save(&flag).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 
@@ -7328,15 +7320,11 @@ func (h *FeatureFlagHandler) Delete(c *gin.Context) {
 			})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	if err := h.DB.Delete(&flag).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	h.Engine.RefreshAndBroadcast(flag.Name)
@@ -7361,9 +7349,7 @@ func (h *FeatureFlagHandler) Exposures(c *gin.Context) {
 		Group("variant").
 		Order("count desc").
 		Scan(&rows).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": rows})
@@ -7546,6 +7532,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/audit"
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/paginate"
+	"` + "{{MODULE}}" + `/internal/respond"
 )
 
 // ActivityHandler exposes the audit log as a paginated, filterable
@@ -7586,9 +7573,7 @@ func (h *ActivityHandler) List(c *gin.Context) {
 		DefaultOrder: "desc",
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	c.JSON(http.StatusOK, res)
@@ -7613,9 +7598,7 @@ func (h *ActivityHandler) VerifyIntegrity(c *gin.Context) {
 	defer cancel()
 	status, err := audit.VerifyChain(ctx, h.DB)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	c.JSON(http.StatusOK, status)
@@ -7660,9 +7643,7 @@ func (h *ActivityHandler) Reseal(c *gin.Context) {
 		})
 		return
 	case err != nil:
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{"resealed": n}, "message": "Chain resealed"})
@@ -8132,20 +8113,27 @@ func WriteError(c *gin.Context, err error, fallback string) {
 		NotFound(c, "")
 		return
 	}
-	log.Printf("%s %s: %v", c.Request.Method, c.Request.URL.Path, err)
-	fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", fallback)
+	ServerError(c, "INTERNAL_ERROR", err, fallback)
 }
 
-// 500 — server fault. Don't echo the raw error; log it and return a
-// generic message so we don't leak internals.
+// Internal answers 500 with a generic message. The error is logged with the
+// request it failed rather than sent: its text is for the operator, and to a
+// client it can describe the schema. It used to be discarded, so a 500 from
+// here left no trace anywhere.
 func Internal(c *gin.Context, internalErr error) {
-	msg := "Internal server error"
-	if internalErr != nil {
-		// In dev you may want the actual message. For now keep it
-		// opaque; logger middleware records the full err.
-		_ = internalErr
+	ServerError(c, "INTERNAL_ERROR", internalErr, "Internal server error")
+}
+
+// ServerError answers 500 with code and a message safe for the client, and
+// logs err with the method, path and request id, so the cause reaches the
+// operator and not the caller. The request id is the X-Request-ID header the
+// client received, which is how a report of a failure finds its log line.
+func ServerError(c *gin.Context, code string, err error, message string) {
+	if err != nil {
+		_ = c.Error(err)
 	}
-	fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", msg)
+	log.Printf("[500] %s %s | id=%s | %s: %v", c.Request.Method, c.Request.URL.Path, c.GetString("request_id"), code, err)
+	fail(c, http.StatusInternalServerError, code, message)
 }
 
 // OK writes 200 with { data, message? }.
@@ -9780,7 +9768,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			defer cancel()
 			if err := sqlDB.PingContext(ctx); err != nil {
 				dbStatus.OK = false
-				dbStatus.Error = err.Error()
+				log.Printf("health: database ping failed: %v", err)
 			}
 		}
 		dbStatus.LatencyMS = time.Since(dbStart).Milliseconds()
@@ -9801,7 +9789,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			defer cancel()
 			if err := svc.Cache.Client().Ping(ctx).Err(); err != nil {
 				redisStatus.OK = false
-				redisStatus.Error = err.Error()
+				log.Printf("health: redis ping failed: %v", err)
 			} else {
 				redisStatus.OK = true
 			}

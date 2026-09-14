@@ -365,6 +365,7 @@ import (
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/services"
 )
 
@@ -412,9 +413,7 @@ func (h *FormShareHandler) List(c *gin.Context) {
 		q = q.Where("resource_name = ?", rn)
 	}
 	if err := q.Find(&shares).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -483,9 +482,7 @@ func (h *FormShareHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.DB.Create(&share).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	share.HasPassword = share.PasswordHash != ""
@@ -553,9 +550,7 @@ func (h *FormShareHandler) Update(c *gin.Context) {
 		share.HiddenFields = datatypes.NewJSONSlice(*req.HiddenFields)
 	}
 	if err := h.DB.Save(&share).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	share.HasPassword = share.PasswordHash != ""
@@ -566,9 +561,7 @@ func (h *FormShareHandler) Update(c *gin.Context) {
 func (h *FormShareHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 	if err := h.DB.Delete(&models.FormShare{}, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Share deleted"})
@@ -661,9 +654,7 @@ func (h *FormShareHandler) PublicSubmit(c *gin.Context) {
 
 	out, err := services.SubmitSharedForm(h.DB, share.ResourceName, body.Fields)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "SUBMISSION_FAILED", "message": err.Error()},
-		})
+		respond.ServerError(c, "SUBMISSION_FAILED", err, "Your submission could not be saved")
 		return
 	}
 
@@ -717,9 +708,7 @@ func (h *FormShareHandler) ListSubmissions(c *gin.Context) {
 	}
 
 	if err := q.Find(&rows).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 

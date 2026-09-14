@@ -18,6 +18,7 @@ import (
 	"gorm.io/gorm"
 
 	"` + module + `/internal/models"
+	"` + module + `/internal/respond"
 	"` + module + `/internal/services"
 )
 
@@ -314,9 +315,7 @@ func (h *` + pascal + `VariantHandler) List(c *gin.Context) {
 
 	options, err := h.Variants.OptionsFor(` + snake + `ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": err.Error(),
-		}})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	byID := make(map[string]models.Option, len(options))
@@ -326,9 +325,7 @@ func (h *` + pascal + `VariantHandler) List(c *gin.Context) {
 
 	variants, err := h.Variants.VariantsFor(` + snake + `ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": err.Error(),
-		}})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 

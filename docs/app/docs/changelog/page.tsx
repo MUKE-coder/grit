@@ -66,6 +66,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.266.0 */}
+            <div className="mb-12" id="v3.266.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.266.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Server errors reach the log, and their text stops reaching clients</h3>
+                <p>
+                  Many of Grit&apos;s handlers answered a 500 with the error itself. A notification that could
+                  not be marked read came back as{" "}
+                  <code>SQL logic error: no such table: notifications (1)</code>, which tells whoever sent the
+                  request about the schema. The public <code>/api/health</code> endpoint did the same for
+                  anonymous callers, reporting why Redis or the database was down. Meanwhile{" "}
+                  <code>respond.Internal</code>, which the role and SSO handlers call, threw away the error it
+                  was given, so those 500s left nothing in the log at all. Database errors did appear in
+                  GORM&apos;s own log at its default level, but with nothing to tie them to the request that
+                  failed.
+                </p>
+                <p>
+                  A new <code>respond.ServerError</code> answers 500 with the error code and a message safe for
+                  the client, and logs the cause with the method, path and request id. The id is the{" "}
+                  <code>X-Request-ID</code> header the client received, so a reported failure leads straight
+                  to its log line. <code>respond.Internal</code> and <code>respond.WriteError</code> go through
+                  it. Every handler template that sent the error text with a 500 now calls it instead: 38 places,
+                  plus three 400s that passed a server error through (the dashboard chart, the resource stats
+                  widget, and the public shared form submission). The health endpoint logs a failed ping and
+                  reports only that the dependency is down. Sync push results log a failed write rather than
+                  returning it to the device. Messages about the request itself, such as validation errors,
+                  are unchanged.
+                </p>
+                <p>
+                  <code>grit upgrade</code> delivers the new <code>respond</code> package and applies the same
+                  rewrite to Grit&apos;s handlers and the health endpoint in an existing project. It only
+                  rewrites responses in the exact shape Grit generated, and a test holds every template to the
+                  rewrite.
+                </p>
+                <p>
+                  Checked against a copy of a project&apos;s database with its notifications table removed.
+                  Before, marking all notifications read answered 500 with the SQLite error; after upgrading, it
+                  answers 500 with &quot;Internal server error&quot;, and the log has the SQLite error under the
+                  same request id the client was given. With Redis paused, <code>/api/health</code> went from
+                  returning the ping error to returning only that Redis is down, with the error in the log.
+                </p>
+              </div>
+            </div>
+
             {/* v3.265.0 */}
             <div className="mb-12" id="v3.265.0">
               <div className="flex items-center gap-3 mb-4">

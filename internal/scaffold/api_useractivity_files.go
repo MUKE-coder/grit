@@ -339,6 +339,7 @@ import (
 
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
+	"{{MODULE}}/internal/respond"
 )
 
 type UserActivityHandler struct {
@@ -374,9 +375,7 @@ func (h *UserActivityHandler) List(c *gin.Context) {
 		DefaultOrder: "desc",
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	c.JSON(http.StatusOK, res)

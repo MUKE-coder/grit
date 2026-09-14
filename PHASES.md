@@ -1216,7 +1216,7 @@ pushed, and name the version.
 - [x] H23 F (v3.263.0) - every admin page waits on /auth/me
 - [x] H24 F (v3.264.0) - xlsx and recharts in first-load chunks
 - [x] H25 F (v3.265.0) - list search not debounced; table blanks; 5 requests per save
-- [ ] H26 F - 500s never logged; raw errors sent to clients
+- [x] H26 F (v3.266.0) - 500s never logged; raw errors sent to clients
 
 ### 8.3 Medium
 - [ ] M1 F - idempotency cache replays across users, before auth

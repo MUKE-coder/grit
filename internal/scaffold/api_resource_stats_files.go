@@ -294,6 +294,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/services"
 )
 
@@ -345,14 +346,10 @@ func (h *ResourceStatsHandler) Get(c *gin.Context) {
 
 	stats, err := services.ComputeResourceStats(h.DB, resource, filter)
 	if err != nil {
-		// 404 (unknown resource) and 500 (DB error) look similar at
-		// this layer -- the dispatcher returns a typed sentinel error
-		// for the former in a future release. For now both map to 400
-		// so the dashboard widget can render a friendly error state
-		// without crashing.
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "STATS_FAILED", "message": err.Error()},
-		})
+		// An unregistered resource and a database error both land here. Both are
+		// the server's to fix, so the cause is logged and the widget gets a
+		// message it can show, not the database's error text.
+		respond.ServerError(c, "STATS_FAILED", err, "Could not compute the stats for this resource")
 		return
 	}
 

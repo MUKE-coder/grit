@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 14 to 20, 2026",
-    count: 10,
+    count: 11,
     entries: [
+      { version: "3.266.0", title: "Server errors reach the log, and their text stops reaching clients" },
       { version: "3.265.0", title: "A resource list is one request per view, per search and per save" },
       { version: "3.264.0", title: "Resource lists and the dashboard stop downloading spreadsheet and chart code up front" },
       { version: "3.263.0", title: "Admin pages start loading without waiting for the signed-in user" },
