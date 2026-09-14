@@ -717,6 +717,9 @@ func turboJSON() string {
     },
     "type-check": {
       "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"]
     }
   }
 }

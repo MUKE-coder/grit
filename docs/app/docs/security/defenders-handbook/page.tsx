@@ -627,9 +627,13 @@ networks:
                 and weekly.
               </li>
               <li>
+                <code>.github/workflows/ci.yml</code>, which runs the API&apos;s tests and the
+                frontend&apos;s type-check, tests and build on every pull request.
+              </li>
+              <li>
                 <code>go.sum</code> checksum verification on every <code>go mod</code>{' '}
-                command and <code>pnpm install --frozen-lockfile</code> in CI — a
-                supply-chain typosquat or compromised tag fails the build.
+                command, and <code>pnpm install --frozen-lockfile</code> in CI once the
+                lockfile is committed, so a typosquat or a compromised tag fails the build.
               </li>
             </ul>
           </>

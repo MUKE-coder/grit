@@ -557,7 +557,7 @@ func adminPackageJSON(opts Options) string {
     "sonner": "^1.3.0",
     "tailwind-merge": "^2.2.0",
     "tw-animate-css": "^1.4.0",
-    "xlsx": "^0.18.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "@react-pdf/renderer": "^4.1.5",
     "zod": "^3.22.0",
     "@repo/shared": "workspace:*",
