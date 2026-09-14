@@ -50,6 +50,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):                apiRealtimeHandlerGo(),
 		filepath.Join(apiRoot, "internal", "sync", "registry.go"):                    apiSyncRegistryGo(),
 		filepath.Join(apiRoot, "internal", "sync", "policy.go"):                      apiSyncPolicyGo(),
+		filepath.Join(apiRoot, "internal", "sync", "softdelete.go"):                  syncSoftDeleteGo(),
+		filepath.Join(apiRoot, "internal", "sync", "softdelete_test.go"):             syncSoftDeleteTestGo(),
 		filepath.Join(apiRoot, "internal", "settings", "settings.go"):                apiSettingsRegistryGo(),
 		filepath.Join(apiRoot, "internal", "settings", "store.go"):                   apiSettingsStoreGo(),
 		filepath.Join(apiRoot, "internal", "settings", "defaults.go"):                apiSettingsDefaultsGo(),
@@ -1441,6 +1443,7 @@ import (
 	"{{MODULE}}/internal/crypto"
 	"{{MODULE}}/internal/paginate"
 	"{{MODULE}}/internal/sanitize"
+	"{{MODULE}}/internal/sync"
 )
 
 // Connect establishes a database connection using the provided DSN.
@@ -1557,7 +1560,7 @@ func Connect(dsn string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("installing append-only guard: %w", err)
 	}
 
-` + paginateConnectHook + `	sqlDB, err := db.DB()
+` + paginateConnectHook + syncConnectHook + `	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
@@ -4840,6 +4843,7 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -5085,9 +5089,9 @@ func (h *SyncHandler) Policy(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": SyncPolicyResponse{Models: h.Registry.Policies()}})
 }
 
-// Pull handles GET /api/sync/pull?since=<rfc3339>&model=<table>. Returns
-// every row in the requested table with UpdatedAt > since. The client
-// uses the response's cursor as the next ?since value.
+// Pull handles GET /api/sync/pull?since=<cursor>&model=<table>. Returns the
+// rows of the table changed after the cursor, oldest first, deletes included
+// as tombstones. The client sends the response's cursor as the next ?since.
 func (h *SyncHandler) Pull(c *gin.Context) {
 	model := c.Query("model")
 	if model == "" {
@@ -5132,27 +5136,29 @@ func (h *SyncHandler) Pull(c *gin.Context) {
 	sliceType := reflect.SliceOf(reflect.TypeOf(proto).Elem())
 	results := reflect.New(sliceType)
 
-	// Effective change time = the LATER of updated_at and deleted_at. A soft
-	// delete only sets deleted_at, so ordering/cursoring on updated_at alone
-	// would never carry the delete to offline clients (they'd keep a ghost
-	// row forever). We order + cursor on the effective time and mark deleted
-	// rows with "_deleted": true so the client can drop them from its mirror.
-	effExpr := "MAX(updated_at, COALESCE(deleted_at, updated_at))"
-	if h.DB.Dialector.Name() == "postgres" {
-		effExpr = "GREATEST(updated_at, COALESCE(deleted_at, updated_at))"
-	}
-
+	// A row's change time is its updated_at. A soft delete sets it too (see
+	// internal/sync), so one indexed column carries edits and deletes alike.
+	// Ordering by the later of updated_at and deleted_at sorted the whole table
+	// on every pull, and MySQL has no two-argument MAX to write it with.
+	//
+	// Pages are keyset on (updated_at, id), so rows that share a timestamp are
+	// not lost at a page boundary, as they were with a cursor of the time alone.
+	//
 	// Unscoped so soft-deleted rows are included (they're the tombstones).
-	q := h.DB.Unscoped().Model(proto)
+	q := h.DB.WithContext(c.Request.Context()).Unscoped().Model(proto)
 	if sinceStr != "" {
-		t, err := time.Parse(time.RFC3339Nano, sinceStr)
+		since, afterID, err := parseSyncCursor(sinceStr)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "INVALID_SINCE", "message": err.Error()}})
 			return
 		}
-		q = q.Where("updated_at > ? OR deleted_at > ?", t, t)
+		if afterID == "" {
+			q = q.Where("updated_at > ?", since)
+		} else {
+			q = q.Where("updated_at > ? OR (updated_at = ? AND id > ?)", since, since, afterID)
+		}
 	}
-	if err := q.Order(effExpr + " asc").Limit(limit).Find(results.Interface()).Error; err != nil {
+	if err := q.Order("updated_at asc, id asc").Limit(limit).Find(results.Interface()).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
@@ -5160,11 +5166,12 @@ func (h *SyncHandler) Pull(c *gin.Context) {
 	rs := results.Elem()
 	rows := make([]map[string]interface{}, 0, rs.Len())
 	cursor := sinceStr
-	var maxEff time.Time
 	for i := 0; i < rs.Len(); i++ {
 		item := rs.Index(i).Addr().Interface()
-		if eff, ok := effectiveSyncTime(item); ok && eff.After(maxEff) {
-			maxEff = eff
+		// The cursor passes every row read, including ones this caller may not
+		// see, so the next page starts after them.
+		if next, ok := syncCursor(item); ok {
+			cursor = next
 		}
 		if !seeAll && !syncOwns(c, item) {
 			continue
@@ -5179,9 +5186,6 @@ func (h *SyncHandler) Pull(c *gin.Context) {
 		}
 		m["_deleted"] = isSyncDeleted(item)
 		rows = append(rows, policy.Projects(m))
-	}
-	if !maxEff.IsZero() {
-		cursor = maxEff.Format(time.RFC3339Nano)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -5207,25 +5211,33 @@ func isSyncDeleted(obj interface{}) bool {
 	return false
 }
 
-// effectiveSyncTime returns the later of a row's UpdatedAt and DeletedAt — the
-// timestamp the pull cursor advances on so both edits and deletes are carried.
-func effectiveSyncTime(obj interface{}) (time.Time, bool) {
-	v := reflect.ValueOf(obj)
+// syncCursor is where the next pull starts after row: its updated_at and id,
+// as "<RFC3339Nano>~<id>". "~" needs no escaping in a query string.
+func syncCursor(row interface{}) (string, bool) {
+	v := reflect.ValueOf(row)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}
-	var eff time.Time
-	if f := v.FieldByName("UpdatedAt"); f.IsValid() {
-		if t, ok := f.Interface().(time.Time); ok {
-			eff = t
-		}
+	updated, id := v.FieldByName("UpdatedAt"), v.FieldByName("ID")
+	if !updated.IsValid() || !id.IsValid() {
+		return "", false
 	}
-	if f := v.FieldByName("DeletedAt"); f.IsValid() {
-		if d, ok := f.Interface().(gorm.DeletedAt); ok && d.Valid && d.Time.After(eff) {
-			eff = d.Time
-		}
+	t, ok := updated.Interface().(time.Time)
+	if !ok || t.IsZero() {
+		return "", false
 	}
-	return eff, !eff.IsZero()
+	return t.Format(time.RFC3339Nano) + "~" + fmt.Sprint(id.Interface()), true
+}
+
+// parseSyncCursor reads a cursor made by syncCursor, or a bare RFC3339 time from
+// a client that stored one before cursors carried the id.
+func parseSyncCursor(s string) (time.Time, string, error) {
+	at, id := s, ""
+	if i := strings.LastIndex(s, "~"); i >= 0 {
+		at, id = s[:i], s[i+1:]
+	}
+	t, err := time.Parse(time.RFC3339Nano, at)
+	return t, id, err
 }
 
 // ownedRow is a model whose rows belong to a user.

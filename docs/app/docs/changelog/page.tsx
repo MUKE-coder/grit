@@ -66,6 +66,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.258.0 */}
+            <div className="mb-12" id="v3.258.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.258.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Sync pull stops losing rows, and works on MySQL</h3>
+                <p>
+                  The next finding from the review of a scaffolded app, and the test for it found data
+                  loss. Offline clients page through <code>/api/v1/sync/pull</code> with a cursor. The
+                  cursor was a bare timestamp and the next page asked for rows changed after it, so rows
+                  that shared a timestamp and fell across a page boundary were skipped for good: of
+                  1,200 contacts written in the same instant and pulled 500 at a time, 500 reached the
+                  client. Bulk writes and imports produce exactly that.
+                </p>
+                <p>
+                  What the review found was the ordering. A soft delete set only{' '}
+                  <code>deleted_at</code>, so to carry deletes, pull sorted by the later of{' '}
+                  <code>updated_at</code> and <code>deleted_at</code>. No index serves that expression,
+                  so every pull sorted the whole table: about 60 ms a page on 300,000 Postgres rows. And
+                  on MySQL the expression was written with a two-argument <code>MAX</code>, which MySQL
+                  does not have, so pull failed with a SQL error on every request.
+                </p>
+                <p>
+                  A soft delete now sets <code>updated_at</code> to the same instant as{' '}
+                  <code>deleted_at</code>, through a hook in <code>internal/sync</code> that{' '}
+                  <code>database.go</code> installs, and generated and blog models index{' '}
+                  <code>updated_at</code>. Pull pages on <code>(updated_at, id)</code> with a cursor of
+                  the form <code>time~id</code>, and still accepts a bare time from a client that stored
+                  one before. It runs with the request&apos;s context. Measured again: 16 ms a page on
+                  the same Postgres table, 30 ms on MySQL, all 1,200 tied rows arriving in three pages,
+                  and a delete made after a cursor still reaching the next pull.
+                </p>
+                <p>
+                  <code>grit upgrade</code> delivers the sync handler and the hook, installs the hook in{' '}
+                  <code>database.go</code>, and indexes <code>updated_at</code> on generated and blog
+                  models where the line is still what Grit wrote. Run <code>grit migrate</code>: it
+                  builds the indexes and moves <code>updated_at</code> forward on rows deleted before
+                  this release, so their deletes are carried too. On a project made with v3.257.0 the
+                  upgraded handler, model and hook came out identical to a fresh project&apos;s.
+                </p>
+              </div>
+            </div>
+
             {/* v3.257.0 */}
             <div className="mb-12" id="v3.257.0">
               <div className="flex items-center gap-3 mb-4">
