@@ -1208,7 +1208,7 @@ pushed, and name the version.
 - [x] H15 F (v3.253.0) - health check runs KEYS asynq:*
 - [x] H16 F (v3.254.0) - gzip middleware allocates per request and breaks SSE
 - [x] H17 F (v3.255.0) - XLSX export builds the whole table in memory
-- [ ] H18 F - list queries unindexed; COUNT on every page; %x% search
+- [x] H18 F (v3.256.0) - list queries unindexed; COUNT on every page; %x% search
 - [ ] H19 F - CSV import queries per row, ignores errors, unbounded
 - [ ] H20 F - sync pull scans and sorts whole tables; fails on MySQL
 - [ ] H21 F - CI security scans and Dependabot point at paths that don't exist

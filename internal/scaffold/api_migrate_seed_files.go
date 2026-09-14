@@ -73,6 +73,7 @@ import (
 	"{{MODULE}}/internal/database"
 	"{{MODULE}}/internal/migrate"
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/paginate"
 )
 
 func main() {
@@ -155,7 +156,7 @@ func main() {
 	if err := models.Migrate(db); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
-
+` + migrateSearchIndexHook + `
 	after, err := migrate.Snapshot(db)
 	if err != nil {
 		// The migration itself worked. Only the record of it did not, and

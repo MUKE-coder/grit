@@ -66,6 +66,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.256.0 */}
+            <div className="mb-12" id="v3.256.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.256.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A list page on a million rows answers in 10 ms instead of 122</h3>
+                <p>
+                  The next finding from the review of a scaffolded app. A generated list sorts by{' '}
+                  <code>created_at</code>, which had no index, counted the whole match on every page,
+                  and searched with <code>LOWER(col) LIKE &apos;%term%&apos;</code>, which no ordinary
+                  index can serve. Measured against a running API on Postgres with a million contacts:
+                  page 1 took 122 ms, page 2 142 ms, page 500 159 ms, and a search 543 ms.
+                </p>
+                <p>
+                  Three changes. Generated models, uploads and users index <code>created_at</code>, so
+                  a page reads the newest rows from the index. A list&apos;s total is reused across its
+                  pages until the table is written to through the API, or for at most 15 seconds, so
+                  paging no longer counts the table each time; <code>paginate.Install</code> wires it
+                  in when the database connects. And on Postgres, <code>grit migrate</code> gives every
+                  column a list searches (tagged <code>search:&quot;trigram&quot;</code>) a{' '}
+                  <code>pg_trgm</code> index, built <code>CONCURRENTLY</code> and recorded in the
+                  migration history so a rollback drops it. Where the extension cannot be created the
+                  indexes are skipped with a message and search works as before.
+                </p>
+                <p>
+                  The same API and data afterwards: page 1 in 10 ms, page 2 in 7 ms, page 500 in 37 ms,
+                  and a search for a distinctive term in 8 ms. A short, common term is still slow on
+                  the page itself (175 ms for &quot;4242&quot; across a million numbered names),
+                  because so many rows match that Postgres walks the date index instead. Deep pages
+                  still pay for their offset; <code>?mode=cursor</code> does not. The first live run
+                  also caught a bug in the count cache before release: it was keyed on a value GORM
+                  copies for every request, so it never hit, and its test did not list the way a
+                  service does. Both are fixed.
+                </p>
+                <p>
+                  <code>grit upgrade</code> delivers the paginate package and the migrate command,
+                  installs the cache in <code>database.go</code>, and adds the index and search tags to
+                  generated models, uploads and users where those lines are still what Grit wrote. The
+                  indexes are built the next time you run <code>grit migrate</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.255.0 */}
             <div className="mb-12" id="v3.255.0">
               <div className="flex items-center gap-3 mb-4">

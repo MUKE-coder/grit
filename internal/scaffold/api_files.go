@@ -1439,6 +1439,7 @@ import (
 
 	"{{MODULE}}/internal/appendonly"
 	"{{MODULE}}/internal/crypto"
+	"{{MODULE}}/internal/paginate"
 	"{{MODULE}}/internal/sanitize"
 )
 
@@ -1556,7 +1557,7 @@ func Connect(dsn string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("installing append-only guard: %w", err)
 	}
 
-	sqlDB, err := db.DB()
+` + paginateConnectHook + `	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
@@ -1670,7 +1671,7 @@ type User struct {
 	IPAddress       string         ` + "`" + `gorm:"size:45" json:"ip_address"` + "`" + `
 	MACAddress      string         ` + "`" + `gorm:"size:50" json:"mac_address"` + "`" + `
 	Version         int            ` + "`" + `gorm:"not null;default:1" json:"version"` + "`" + `
-	CreatedAt       time.Time      ` + "`" + `json:"created_at"` + "`" + `
+	CreatedAt       time.Time      ` + "`" + `gorm:"index" json:"created_at"` + "`" + `
 	UpdatedAt       time.Time      ` + "`" + `json:"updated_at"` + "`" + `
 	DeletedAt       gorm.DeletedAt ` + "`" + `gorm:"index" json:"-"` + "`" + `
 }
@@ -1904,7 +1905,7 @@ type Upload struct {
 	// the daily orphan cleanup cron deletes the S3 object + DB row when
 	// the upload is older than 24h and still unclaimed.
 	ClaimedAt    *time.Time     ` + "`" + `gorm:"index" json:"claimed_at,omitempty"` + "`" + `
-	CreatedAt    time.Time      ` + "`" + `json:"created_at"` + "`" + `
+	CreatedAt    time.Time      ` + "`" + `gorm:"index" json:"created_at"` + "`" + `
 	UpdatedAt    time.Time      ` + "`" + `json:"updated_at"` + "`" + `
 	DeletedAt    gorm.DeletedAt ` + "`" + `gorm:"index" json:"-"` + "`" + `
 }
@@ -4382,7 +4383,7 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 	var result Result[T]
 
 	// Count first (before Order/Offset/Limit so Count reflects the whole match).
-	if err := query.Count(&result.Meta.Total).Error; err != nil {
+	if err := countTotal(query, &result.Meta.Total); err != nil {
 		return result, err
 	}
 

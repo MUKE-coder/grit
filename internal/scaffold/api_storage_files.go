@@ -934,7 +934,15 @@ func (h *UploadHandler) List(c *gin.Context) {
 	}
 
 	var total int64
-	query.Count(&total)
+	if err := query.Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to count uploads",
+			},
+		})
+		return
+	}
 
 	var uploads []models.Upload
 	offset := (page - 1) * pageSize

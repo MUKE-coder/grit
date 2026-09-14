@@ -36,6 +36,9 @@ func writeCodegenRuntimeFiles(root string, opts Options) error {
 	files := map[string]string{
 		filepath.Join(apiRoot, "internal", "paginate", "paginate.go"):      apiPaginateGo(),
 		filepath.Join(apiRoot, "internal", "paginate", "paginate_test.go"): apiPaginateTestGo(),
+		filepath.Join(apiRoot, "internal", "paginate", "count.go"):         paginateCountGo(),
+		filepath.Join(apiRoot, "internal", "paginate", "count_test.go"):    paginateCountTestGo(),
+		filepath.Join(apiRoot, "internal", "paginate", "search_index.go"):  paginateSearchIndexGo(),
 		filepath.Join(apiRoot, "internal", "events", "events.go"):          apiEventsGo(),
 		filepath.Join(apiRoot, "internal", "events", "durable.go"):         apiEventsDurableGo(),
 		filepath.Join(apiRoot, "internal", "workflow", "workflow.go"):      apiWorkflowGo(),
