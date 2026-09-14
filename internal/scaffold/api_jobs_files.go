@@ -632,6 +632,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hibiken/asynq"
+
+	"{{MODULE}}/internal/respond"
 )
 
 // JobsHandler handles admin job queue endpoints.
@@ -808,12 +810,7 @@ func (h *JobsHandler) Retry(c *gin.Context) {
 	defer inspector.Close()
 
 	if err := inspector.RunTask(queue, id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "RETRY_FAILED",
-				"message": "Failed to retry job: " + err.Error(),
-			},
-		})
+		respond.ServerError(c, "RETRY_FAILED", err, "Failed to retry job")
 		return
 	}
 

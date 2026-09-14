@@ -337,6 +337,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/services"
 )
 
@@ -382,9 +383,7 @@ func (h *ChartHandler) Get(c *gin.Context) {
 
 	result, err := services.ComputeChart(h.DB, resource, params)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "CHART_FAILED", "message": err.Error()},
-		})
+		respond.ServerError(c, "CHART_FAILED", err, "Could not compute this chart")
 		return
 	}
 

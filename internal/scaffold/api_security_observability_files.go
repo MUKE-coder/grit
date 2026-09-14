@@ -103,6 +103,7 @@ import (
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
 )
 
 type NotificationHandler struct {
@@ -149,9 +150,7 @@ func (h *NotificationHandler) MarkRead(c *gin.Context) {
 	if err := h.DB.Model(&models.Notification{}).
 		Where("id = ?", id).
 		Update("read_at", now).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "DB_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "DB_ERROR", err, "Internal server error")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "marked read"})
@@ -169,9 +168,7 @@ func (h *NotificationHandler) MarkAllRead(c *gin.Context) {
 		q = q.Where("user_id = ?", userID)
 	}
 	if err := q.Update("read_at", now).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "DB_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "DB_ERROR", err, "Internal server error")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "all marked read"})

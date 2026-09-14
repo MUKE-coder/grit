@@ -267,6 +267,7 @@ import (
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/services"
 )
 
@@ -296,7 +297,7 @@ func (h *GDPRHandler) Export(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code": "NOT_FOUND", "message": "user not found"}})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "EXPORT_FAILED", "message": err.Error()}})
+		respond.ServerError(c, "EXPORT_FAILED", err, "Internal server error")
 		return
 	}
 
@@ -330,7 +331,7 @@ func (h *GDPRHandler) Erase(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code": "NOT_FOUND", "message": "user not found"}})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "ERASE_FAILED", "message": err.Error()}})
+		respond.ServerError(c, "ERASE_FAILED", err, "Internal server error")
 		return
 	}
 
@@ -357,12 +358,12 @@ func (h *GDPRHandler) Erase(c *gin.Context) {
 func (h *GDPRHandler) Journal(c *gin.Context) {
 	var rows []models.DeletionJournal
 	if err := h.DB.Order("created_at desc, id desc").Find(&rows).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "QUERY_FAILED", "message": err.Error()}})
+		respond.ServerError(c, "QUERY_FAILED", err, "Internal server error")
 		return
 	}
 	verification, err := services.VerifyJournalChain(h.DB)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "VERIFY_FAILED", "message": err.Error()}})
+		respond.ServerError(c, "VERIFY_FAILED", err, "Internal server error")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": rows, "meta": verification})

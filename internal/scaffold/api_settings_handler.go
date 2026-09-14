@@ -13,6 +13,7 @@ import (
 
 	"{{MODULE}}/internal/authz"
 	"{{MODULE}}/internal/events"
+	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/settings"
 )
 
@@ -215,9 +216,7 @@ func (h *SettingsHandler) Reset(c *gin.Context) {
 	}
 
 	if err := store.Unset(key, scope, scopeID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": err.Error(),
-		}})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 

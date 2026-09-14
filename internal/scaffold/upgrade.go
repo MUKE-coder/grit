@@ -404,6 +404,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairListCounts(root, opts); err != nil {
 			fmt.Printf("  ⚠ returning list counts for the stat cards: %v\n", err)
 		}
+		// A server error is logged with its request id, and its text no longer
+		// reaches the client or, from /api/health, anonymous callers.
+		if err := repairServerErrors(root, opts); err != nil {
+			fmt.Printf("  ⚠ keeping server errors out of responses: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {

@@ -101,6 +101,7 @@ import (
 	"{{MODULE}}/internal/mail"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
+	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/services"
 )
 
@@ -159,9 +160,7 @@ func (h *TicketHandler) Create(c *gin.Context) {
 		Labels:      labels,
 	}
 	if err := h.DB.Create(&ticket).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "DB_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "DB_ERROR", err, "Internal server error")
 		return
 	}
 
@@ -217,9 +216,7 @@ func (h *TicketHandler) List(c *gin.Context) {
 		DefaultOrder: "desc",
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
 	c.JSON(http.StatusOK, res)
@@ -299,9 +296,7 @@ func (h *TicketHandler) Reply(c *gin.Context) {
 		}
 		return tx.Model(&t).Update("last_reply_at", now).Error
 	}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "DB_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "DB_ERROR", err, "Internal server error")
 		return
 	}
 
@@ -358,9 +353,7 @@ func (h *TicketHandler) Assign(c *gin.Context) {
 		return
 	}
 	if err := h.DB.Model(&t).Update("assignee_id", req.AssigneeID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "DB_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "DB_ERROR", err, "Internal server error")
 		return
 	}
 
@@ -402,9 +395,7 @@ func (h *TicketHandler) transitionStatus(c *gin.Context, status string) {
 		updates["closed_at"] = nil
 	}
 	if err := h.DB.Model(&t).Updates(updates).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "DB_ERROR", "message": err.Error()},
-		})
+		respond.ServerError(c, "DB_ERROR", err, "Internal server error")
 		return
 	}
 
