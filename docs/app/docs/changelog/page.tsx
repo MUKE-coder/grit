@@ -66,6 +66,50 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.265.0 */}
+            <div className="mb-12" id="v3.265.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.265.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A resource list is one request per view, per search and per save</h3>
+                <p>
+                  Opening a resource list in the admin sent five requests: the list, and one for each of the
+                  four stat cards above it. Typing in the search box sent a request per keystroke, and each
+                  one blanked the table to a skeleton until its answer arrived, in whatever order the answers
+                  came back. Saving a record sent the list and all four cards again. On the users and blog
+                  pages three of those cards were also wrong: their handlers never read the date windows the
+                  cards asked for, so This Week, This Month and Updated Recently all showed the grand total.
+                </p>
+                <p>
+                  The search now waits until typing pauses, and a request the next keystroke replaces is
+                  cancelled. The rows stay on screen while the next page, sort or search loads, with a thin bar
+                  above them instead of a skeleton. The default stat cards read the list response: Total is the
+                  total the table already has, and the list asks for the three windows beside it with a new
+                  <code>?counts=created_7d,created_30d,updated_7d</code> parameter, which{" "}
+                  <code>paginate.List</code> answers for every generated resource and a new{" "}
+                  <code>paginate.Counts</code> answers for the users and blog handlers. The cards now describe
+                  the rows the table matches, search and filters included. Saving an existing record refreshes
+                  the list and the record, and leaves any custom stat cards to refresh the next time they are
+                  shown. Custom cards set in a resource definition work as before.
+                </p>
+                <p>
+                  <code>grit upgrade</code> delivers the admin files and the pagination package, and adds the
+                  counts to the users and blog handlers when they are the files Grit wrote, or says what to
+                  change when they are not. A new test in the generated project covers the counts.
+                </p>
+                <p>
+                  Measured on the users list of a project upgraded from v3.264.0, against its API log: a page view
+                  went from 5 requests to 1, typing &quot;admin&quot; from 5 requests and 5 skeleton flashes to 1
+                  request and none, and a save from 6 requests to 2, the save itself and the list.
+                </p>
+              </div>
+            </div>
+
             {/* v3.264.0 */}
             <div className="mb-12" id="v3.264.0">
               <div className="flex items-center gap-3 mb-4">

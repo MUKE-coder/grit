@@ -2787,6 +2787,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/authz"
 	"` + "{{MODULE}}" + `/internal/crypto"
 	"` + "{{MODULE}}" + `/internal/models"
+	"` + "{{MODULE}}" + `/internal/paginate"
 	"` + "{{MODULE}}" + `/internal/services"
 )
 
@@ -2922,7 +2923,7 @@ func (h *UserHandler) List(c *gin.Context) {
 	// Count total
 	var total int64
 	query.Count(&total)
-
+` + userListCounts + `
 	// Fetch paginated results
 	var users []models.User
 	offset := (page - 1) * pageSize
@@ -2945,7 +2946,7 @@ func (h *UserHandler) List(c *gin.Context) {
 			"page":      page,
 			"page_size": pageSize,
 			"pages":     pages,
-		},
+` + listCountsMeta + `		},
 	})
 }
 
@@ -3949,6 +3950,13 @@ type Params struct {
 	DateField string
 	DateFrom  time.Time
 	DateTo    time.Time
+
+	// Counts names extra totals to return beside the page, from ?counts=:
+	// created_7d is rows created in the last 7 days, updated_30d rows updated
+	// in the last 30. Each is one COUNT over the same filters and search as
+	// Total. The admin's stat cards ask for theirs on the list request rather
+	// than sending a request per card.
+	Counts []string
 }
 
 // With returns a copy of Params with an additional filter applied.
@@ -4058,6 +4066,9 @@ type Meta struct {
 	// cost keyset pagination exists to avoid; ask for it with
 	// Config.IncludeTotal when you genuinely need it.
 	Mode string ` + "`" + `json:"mode,omitempty"` + "`" + `
+
+	// Counts answers ?counts=, keyed by the names asked for. See Params.Counts.
+	Counts map[string]int64 ` + "`" + `json:"counts,omitempty"` + "`" + `
 }
 
 // Result wraps the paginated data in the canonical { data, meta } envelope.
@@ -4130,6 +4141,7 @@ func Bind(c *gin.Context) Params {
 		DateFrom:     dateFrom,
 		DateTo:       dateTo,
 		QueryFilters: collectQueryFilters(c),
+		Counts:       parseCounts(c.Query("counts")),
 	}
 }
 
@@ -4143,6 +4155,7 @@ var reservedParams = map[string]bool{
 	"mode": true,
 	"created_since": true, "created_from": true, "created_to": true,
 	"updated_since": true, "archived": true, "format": true,
+	"counts": true,
 }
 
 func collectQueryFilters(c *gin.Context) map[string]string {
@@ -4389,6 +4402,13 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 	if err := countTotal(query, &result.Meta.Total); err != nil {
 		return result, err
 	}
+	if len(p.Counts) > 0 {
+		counts, err := countWindows(query, p.Counts)
+		if err != nil {
+			return result, err
+		}
+		result.Meta.Counts = counts
+	}
 
 	// Then fetch the page.
 	offset := (p.Page - 1) * p.PageSize
@@ -4408,6 +4428,86 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 	}
 
 	return result, nil
+}
+
+// maxCounts caps ?counts=, so one request cannot ask for any number of COUNTs.
+const maxCounts = 8
+
+// parseCounts keeps the well-formed names from ?counts=: created_<N>d or
+// updated_<N>d, with N from 1 to 3660. Anything else is dropped rather than
+// failing the list; a stat card asking for a count it cannot have shows a dash.
+func parseCounts(raw string) []string {
+	if raw == "" {
+		return nil
+	}
+	var out []string
+	seen := map[string]bool{}
+	for _, name := range strings.Split(raw, ",") {
+		name = strings.TrimSpace(name)
+		if _, _, ok := countWindow(name); !ok || seen[name] {
+			continue
+		}
+		seen[name] = true
+		out = append(out, name)
+		if len(out) == maxCounts {
+			break
+		}
+	}
+	return out
+}
+
+// countWindow turns created_7d into the column it filters and how far back.
+// The column is one of two literals, never text from the request.
+func countWindow(name string) (string, time.Duration, bool) {
+	var column, rest string
+	switch {
+	case strings.HasPrefix(name, "created_"):
+		column, rest = "created_at", strings.TrimPrefix(name, "created_")
+	case strings.HasPrefix(name, "updated_"):
+		column, rest = "updated_at", strings.TrimPrefix(name, "updated_")
+	default:
+		return "", 0, false
+	}
+	if !strings.HasSuffix(rest, "d") {
+		return "", 0, false
+	}
+	days, err := strconv.Atoi(strings.TrimSuffix(rest, "d"))
+	if err != nil || days < 1 || days > 3660 {
+		return "", 0, false
+	}
+	return column, time.Duration(days) * 24 * time.Hour, true
+}
+
+// countWindows runs one COUNT per name over query, which carries the list's
+// filters, search and date window but no order or page.
+func countWindows(query *gorm.DB, names []string) (map[string]int64, error) {
+	// To the minute, so the same request moments later builds the same SQL and
+	// the count cache can answer it.
+	now := time.Now().UTC().Truncate(time.Minute)
+	out := make(map[string]int64, len(names))
+	for _, name := range names {
+		column, window, ok := countWindow(name)
+		if !ok {
+			continue
+		}
+		var n int64
+		if err := countTotal(query.Session(&gorm.Session{}).Where(column+" >= ?", now.Add(-window)), &n); err != nil {
+			return nil, fmt.Errorf("counting %s: %w", name, err)
+		}
+		out[name] = n
+	}
+	return out, nil
+}
+
+// Counts answers ?counts= for a handler that builds its own list query instead
+// of calling List. query is that list's query with its filters and search, before
+// order and paging. It returns nil when the request asked for nothing.
+func Counts(c *gin.Context, query *gorm.DB) (map[string]int64, error) {
+	names := parseCounts(c.Query("counts"))
+	if len(names) == 0 {
+		return nil, nil
+	}
+	return countWindows(query, names)
 }
 
 // listCursor implements cursor-based pagination. The cursor is an
