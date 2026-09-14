@@ -120,14 +120,17 @@ on:
     branches: [main, master]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   golangci:
     name: golangci-lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           # The version the API's go.mod requires; see the comment there.
           go-version: '1.26.6'
@@ -135,9 +138,9 @@ jobs:
           cache-dependency-path: %[1]s/go.sum
 
 %[2]s      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9
         with:
-          version: latest
+          version: v2.13.2
           working-directory: %[1]s
           # Only flag findings the PR introduced. The shipped config is green
           # on a new project, so this mainly matters once you enable the

@@ -36,9 +36,7 @@ const configProductionBlock = `	// Whether the API reference at /docs is served 
 		// no SQL editor even then.
 		cfg.GORMStudioEnabled = getEnv("GORM_STUDIO_IN_PRODUCTION", "false") == "true"
 		cfg.GORMStudioReadOnly = true
-		cfg.GORMStudioDisableSQL = true
-	}
-	if cfg.AppEnv != "development" {
+` + sqliteProductionCheck + `	if cfg.AppEnv != "development" {
 		if err := checkSecrets(cfg); err != nil {
 			return nil, err
 		}

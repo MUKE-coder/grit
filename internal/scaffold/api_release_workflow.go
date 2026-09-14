@@ -30,21 +30,24 @@ on:
     tags:
       - "v*"
 
+# Read-only by default. Each job that publishes asks for what it needs.
 permissions:
-  contents: write
-  # Required for keyless signing and provenance. Without id-token the cosign
-  # step fails with a confusing OIDC error rather than an obvious one.
-  id-token: write
-  attestations: write
+  contents: read
 
 jobs:
   release:
     name: Build & Release
     runs-on: ubuntu-latest
+    # Signing and provenance need an OIDC token; without id-token the cosign
+    # step fails with a confusing OIDC error rather than an obvious one.
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: {{API_DIR}}/go.mod
           cache-dependency-path: {{API_DIR}}/go.sum
@@ -76,10 +79,15 @@ jobs:
 
       # An SBOM is what turns "are we affected by this CVE?" from an
       # afternoon into a grep.
+      # Syft from Anchore's action, pinned like every other step, rather than a
+      # shell script fetched from a URL at release time.
+      - name: Install Syft
+        id: syft
+        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0
+
       - name: Generate SBOM
         run: |
-          curl -sSfL https://get.anchore.io/syft | sh -s -- -b /usr/local/bin
-          syft dir:. \
+          "${{ steps.syft.outputs.cmd }}" dir:. \
             --exclude './**/node_modules/**' \
             --exclude './**/.next/**' \
             -o spdx-json > dist/sbom.spdx.json
@@ -88,7 +96,7 @@ jobs:
           python3 -c "import json,sys;d=json.load(open('dist/sbom.spdx.json'));n=len(d.get('packages',[]));print(f'SBOM packages: {n}');sys.exit(1 if n==0 else 0)"
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@v3
+        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
 
       - name: Sign the checksums
         working-directory: dist
@@ -102,12 +110,12 @@ jobs:
             SHA256SUMS
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
         with:
           subject-path: dist/api-*
 
       - name: Publish
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           generate_release_notes: true
           files: |
@@ -144,14 +152,16 @@ const releaseDesktopJob = `
       matrix:
         os: [windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: {{API_DIR}}/go.mod
 
       - name: Install Wails
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.9.2
 
       - name: Build
         working-directory: apps/desktop
@@ -229,7 +239,7 @@ const releaseDesktopJob = `
           rm -f cert.p12 notarize.zip
 
       - name: Publish installers
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: |
             apps/desktop/build/bin/*

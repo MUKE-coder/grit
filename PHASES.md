@@ -1224,11 +1224,11 @@ pushed, and name the version.
 - [x] M3 F (v3.268.0) - OAuth account pre-hijacking; gothic store reuses the JWT secret
 - [x] M4 F (v3.268.0) - any user reads any user record
 - [x] M5 F (v3.268.0) - email/password change without the current password (no notice to the old address: the user handler has no mailer)
-- [ ] M6 F - SAML metadata fetch bypasses safefetch
-- [ ] M7 F - Docker contexts pull in .env.local, node_modules, *.db, binaries
-- [ ] M8 F+A - prod compose on in-container SQLite; password fallbacks; Redis without auth
-- [ ] M9 F - CI supply chain: unpinned actions, broad permissions, floating tools
-- [ ] M10 F - admin routes guarded only in the browser
+- [x] M6 F (v3.269.0) - SAML metadata fetch bypasses safefetch
+- [x] M7 F (v3.269.0) - Docker contexts pull in .env.local, node_modules, *.db, binaries
+- [x] M8 F+A (v3.269.0) - prod compose on in-container SQLite; password fallbacks; Redis without auth (POSTGRES_SSLMODE on the internal network left as is)
+- [x] M9 F (v3.269.0) - CI supply chain: unpinned actions, broad permissions, floating tools
+- [x] M10 F (v3.269.0) - admin routes guarded only in the browser (edge gate when web and API share a host; no-grant USER redirect)
 - [ ] M11 F - request context missing from most DB calls
 - [ ] M12 F - flag evaluation spawns a goroutine and an INSERT
 - [ ] M13 F - API-key auth SELECT + UPDATE per request

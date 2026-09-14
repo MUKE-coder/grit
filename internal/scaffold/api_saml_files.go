@@ -76,7 +76,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"net/http"
 	"net/url"
 	"strings"
 	"sync"
@@ -89,6 +88,7 @@ import (
 
 	"{{MODULE}}/internal/crypto"
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/safefetch"
 )
 
 // ErrSAMLUnavailable is returned when a slug has no live SAML provider.
@@ -209,8 +209,7 @@ func loadIDPMetadata(conn models.SSOConnection) (*saml.EntityDescriptor, error) 
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	return samlsp.FetchMetadata(ctx, http.DefaultClient, *u)
-}
+` + samlFetchNew + `}
 
 // Provider returns the live service provider for a slug.
 func (r *SAMLRegistry) Provider(slug string) (*saml.ServiceProvider, error) {

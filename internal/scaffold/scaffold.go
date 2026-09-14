@@ -68,7 +68,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.268.0"
+const DefaultVersion = "3.269.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -553,6 +553,10 @@ func Run(opts Options) error {
 		spinner.Printf("  → Scaffolding admin panel into the web app at /admin...\n")
 		if err := writeEmbeddedAdminFiles(root, opts); err != nil {
 			return fmt.Errorf("writing the embedded admin panel: %w", err)
+		}
+		// The web app's middleware keeps signed-out visitors out of /admin.
+		if err := writeAdminEdgeGuard(root, opts); err != nil {
+			return err
 		}
 	}
 

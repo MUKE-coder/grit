@@ -66,6 +66,68 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.269.0 */}
+            <div className="mb-12" id="v3.269.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.269.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Deployment hardening: images, the production stack, CI and the admin gate</h3>
+                <p>
+                  Five more findings from the contact-app review, checked on a generated project before and
+                  after upgrading.
+                </p>
+                <p>
+                  <strong>Docker images carried local state.</strong> The <code>.dockerignore</code> patterns only
+                  matched at the root of the build context, and the API builds from <code>apps/api</code>, which
+                  had none. Its build context was 179 MB and put the development database, the Sentinel database
+                  and three local binaries into the image. The patterns are recursive now, <code>apps/api</code>{" "}
+                  has its own file, and the same context is 862 KB with none of them in it.
+                </p>
+                <p>
+                  <strong>The production stack ran on SQLite.</strong> The API took <code>DB_PROVIDER=sqlite</code>{" "}
+                  from the development <code>.env</code>, so the database lived inside the container and a
+                  redeploy started from nothing while the Postgres beside it sat unused. The production compose
+                  file now sets Postgres, and an API started with <code>APP_ENV=production</code> on SQLite
+                  refuses to start unless <code>ALLOW_SQLITE_IN_PRODUCTION=true</code> says the file is on a
+                  volume you back up. A deployment that runs SQLite in production on purpose needs that line
+                  after upgrading. Redis now takes a password, <code>REDIS_PASSWORD</code>, generated into{" "}
+                  <code>.env</code> for new projects; <code>grit upgrade</code> says to add one to an existing{" "}
+                  <code>.env</code>, and compose refuses to start the production stack without it. PgBouncer and
+                  MinIO run pinned versions, and MinIO now comes from quay.io: Docker Hub no longer serves the{" "}
+                  <code>minio/minio</code> image both compose files used.
+                </p>
+                <p>
+                  <strong>CI could be changed from outside the project.</strong> Every action in the generated
+                  workflows is pinned to a commit, with its version beside it for Dependabot. The release workflow
+                  is read-only by default and only its publishing jobs can write or sign. Syft is installed from
+                  Anchore&apos;s pinned action instead of a script downloaded at release time, the Wails CLI has a
+                  version, and golangci-lint is pinned to v2.13.2 with an action that can run it: the shipped{" "}
+                  <code>.golangci.yml</code> is a version 2 config, which the previous action could not load.{" "}
+                  <code>grit upgrade</code> now also updates a <code>ci.yml</code> that Grit wrote.
+                </p>
+                <p>
+                  <strong>The admin was guarded only in the browser.</strong> A visitor who never signed in
+                  loaded every admin page, and a user with no permissions could open System pages. The API now
+                  sets <code>grit_signed_in</code>, a marker with no secret in it, and the web app&apos;s middleware
+                  sends a visitor without it to the login page before any admin page loads. Browsers only share
+                  it when the web app and the API are on the same host, so on separate hosts the middleware stands
+                  aside and the page&apos;s own check applies. A user with no permissions is sent to their profile
+                  from any admin page. Before, <code>/admin/system/roles</code> answered 200 with no cookies; now
+                  it redirects to the login page.
+                </p>
+                <p>
+                  <strong>SAML metadata skipped the SSRF guard.</strong> The metadata URL an administrator enters
+                  is now fetched through the same guard as every other server-side fetch, so it cannot reach
+                  loopback, private or cloud metadata addresses.
+                </p>
+              </div>
+            </div>
+
             {/* v3.268.0 */}
             <div className="mb-12" id="v3.268.0">
               <div className="flex items-center gap-3 mb-4">

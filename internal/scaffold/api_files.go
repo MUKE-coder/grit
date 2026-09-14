@@ -2135,7 +2135,7 @@ func (s *AuthService) SetAuthCookies(c *gin.Context, pair *TokenPair) {
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("grit_access", pair.AccessToken, accessSeconds, "/", "", secure, true)
 	c.SetCookie("grit_refresh", pair.RefreshToken, refreshSeconds, RefreshCookiePath, "", secure, true)
-	// A cookie at the old path is never sent anywhere useful; clear it.
+` + signedInCookieSet + `	// A cookie at the old path is never sent anywhere useful; clear it.
 	c.SetCookie("grit_refresh", "", -1, legacyRefreshCookiePath, "", secure, true)
 }
 
@@ -2146,7 +2146,7 @@ func (s *AuthService) ClearAuthCookies(c *gin.Context) {
 	secure := isRequestHTTPS(c)
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("grit_access", "", -1, "/", "", secure, true)
-	c.SetCookie("grit_refresh", "", -1, RefreshCookiePath, "", secure, true)
+` + signedInCookieClear + `	c.SetCookie("grit_refresh", "", -1, RefreshCookiePath, "", secure, true)
 	c.SetCookie("grit_refresh", "", -1, legacyRefreshCookiePath, "", secure, true)
 }
 

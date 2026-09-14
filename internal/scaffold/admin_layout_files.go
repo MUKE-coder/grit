@@ -410,7 +410,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading, isError } = useMe();
   // Asked for beside /auth/me, not after it. The sidebar reads the same
   // query, so when it mounts the answer is already in the cache.
-  usePermissions();
+  const { permissions, isSuper, isLoading: permsLoading } = usePermissions();
   // False on the server and during hydration, true from the first browser
   // pass. Admin pages are written for the browser: they read localStorage,
   // window and search params while rendering, and prerendering them breaks
@@ -438,12 +438,16 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     }
   }, [isError, user, isLoading, router]);
 
-  // Redirect USER role to profile page
+  // A USER holding no grants has nothing in the admin but their own profile and
+  // account. The redirect used to cover only the dashboard, so such a user could
+  // open System pages; the API refused their requests, and now the pages do not
+  // open either.
   useEffect(() => {
-    if (user && user.role === "USER" && window.location.pathname === "/dashboard") {
-      router.replace("/profile");
-    }
-  }, [user, router]);
+    if (!user || user.role !== "USER" || permsLoading || isSuper || permissions.length > 0) return;
+    const path = window.location.pathname;
+    if (path.startsWith("/profile") || path.startsWith("/account")) return;
+    router.replace("/profile");
+  }, [user, router, permsLoading, isSuper, permissions]);
 
   const toggleSidebar = () => {
     const next = !sidebarCollapsed;

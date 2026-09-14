@@ -221,7 +221,11 @@ function matchesAny(pathname: string, patterns: string[]): boolean {
   return false;
 }
 
+` + adminGateTS + `
 export function middleware(request: NextRequest) {
+  const gate = adminGate(request);
+  if (gate) return gate;
+
   const { pathname } = request.nextUrl;
   const hasSession = request.cookies.has("grit_web_session");
 
@@ -247,6 +251,8 @@ export function middleware(request: NextRequest) {
 // in sync with PROTECTED_PATHS + AUTH_PATHS above.
 export const config = {
   matcher: [
+    "/admin",
+    "/admin/:path*",
     "/account/:path*",
     "/login",
     "/register",

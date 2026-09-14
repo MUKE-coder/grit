@@ -194,6 +194,9 @@ SQLITE_PATH=./app.db
 # Only the host side moves. Inside the compose network the services keep
 # their standard ports, so nothing else needs to know.
 REDIS_PORT=6380
+# The production Redis (docker-compose.prod.yml) takes this password. The
+# development one has none.
+REDIS_PASSWORD={{REDIS_PASSWORD}}
 MAILHOG_SMTP_PORT=1025
 MAILHOG_UI_PORT=8025
 MINIO_PORT=9002
@@ -447,6 +450,7 @@ SOCIAL_AUTH_ENABLED=false
 	// minioadmin/minioadmin, which is the whole bucket to anyone who can reach it.
 	out = strings.Replace(out, "{{MINIO_ACCESS_KEY}}", "grit"+randomHex(8), 1)
 	out = strings.Replace(out, "{{MINIO_SECRET_KEY}}", randomHex(24), 1)
+	out = strings.Replace(out, "{{REDIS_PASSWORD}}", randomHex(24), 1)
 
 	// The admin panel's URL is not a URL in every shape: see adminURLEnv.
 	return strings.Replace(out, "{{ADMIN_URL_ENV}}", adminURLEnv(opts), 1)
