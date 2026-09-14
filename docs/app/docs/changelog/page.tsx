@@ -66,6 +66,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.263.0 */}
+            <div className="mb-12" id="v3.263.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.263.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Admin pages start loading without waiting for the signed-in user</h3>
+                <p>
+                  The admin layout showed a spinner in place of the page until <code>/auth/me</code>{" "}
+                  answered, so no page request could start before it did. The permissions request lived in
+                  the sidebar, which also waited for the user. Every full load of an admin page paid for
+                  one whole round trip before its lists, stats and widgets were asked for.
+                </p>
+                <p>
+                  The page now renders straight away behind a loading overlay, and the layout asks for
+                  permissions beside <code>/auth/me</code> instead of after it. The overlay stays until the
+                  user is known, and a signed-out visitor is still sent to the login page: the page&apos;s own requests
+                  are refused with a 401, and the API client makes one refresh attempt before it redirects. Pages render on
+                  the first pass in the browser rather than on the server: admin pages read browser state
+                  while rendering, and prerendering them failed the build. The route group layout is no
+                  longer marked <code>&quot;use client&quot;</code>, since the admin layout is already the
+                  client boundary. <code>grit upgrade</code> delivers both files to projects that have not
+                  edited them.
+                </p>
+                <p>
+                  Measured on a fresh project against a local API, then again after upgrading it. On the
+                  dashboard, the first page request started 376 ms after <code>/auth/me</code> finished;
+                  now all ten start within 30 ms of it starting, most before it finishes. On the users
+                  list, permissions now start together with <code>/auth/me</code>, and the list query
+                  starts 78 ms after it finishes instead of 372 ms. Against a slower API the saving grows
+                  by the length of that request.
+                </p>
+              </div>
+            </div>
+
             {/* v3.262.0 */}
             <div className="mb-12" id="v3.262.0">
               <div className="flex items-center gap-3 mb-4">

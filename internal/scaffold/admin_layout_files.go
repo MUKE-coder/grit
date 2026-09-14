@@ -389,9 +389,10 @@ export {
 func adminLayoutComponent() string {
 	return `"use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useMe } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
 import { CollapsibleSidebar } from "@/components/chrome/CollapsibleSidebar";
 import { SessionWatchdog } from "@/components/chrome/SessionWatchdog";
 import { QuickAccess } from "@/components/chrome/QuickAccess";
@@ -402,8 +403,20 @@ import { Menu } from "@/lib/icons";
 // v3.29: navbar is gone — pages now drop a <PageHeader> at the top of
 // their JSX to get title/subtitle/search/dark-toggle/bell/user-menu in
 // one consistent strip. The dashboard layout only owns sidebar + main.
+// Nothing to subscribe to: the snapshot only differs between server and browser.
+const subscribeNever = () => () => {};
+
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading, isError } = useMe();
+  // Asked for beside /auth/me, not after it. The sidebar reads the same
+  // query, so when it mounts the answer is already in the cache.
+  usePermissions();
+  // False on the server and during hydration, true from the first browser
+  // pass. Admin pages are written for the browser: they read localStorage,
+  // window and search params while rendering, and prerendering them breaks
+  // the build. So they render on that first pass, which is still before
+  // /auth/me has answered.
+  const inBrowser = useSyncExternalStore(subscribeNever, () => true, () => false);
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -438,36 +451,38 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     localStorage.setItem("grit-sidebar-collapsed", String(next));
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-      </div>
-    );
-  }
-
-  // While the redirect effect fires, render the same spinner so we
-  // never flash a blank white page.
-  if (!user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-      </div>
-    );
-  }
-
+  // The page renders as soon as it is in the browser, so its queries start
+  // alongside /auth/me rather than waiting for it to answer. Until the user is known an
+  // overlay covers the page, and the effect above sends a signed-out visitor
+  // to the login page. A signed-out page query gets a 401, one refresh attempt
+  // and the same redirect from the API client.
   return (
     <div className="min-h-screen">
-      {/* v3.31.15: warns and refreshes the session before silent expiry. */}
-      <SessionWatchdog />
+      {!user && (
+        <div
+          role="status"
+          aria-busy="true"
+          aria-label="Loading"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary"
+        >
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        </div>
+      )}
 
-      <CollapsibleSidebar
-        user={user}
-        collapsed={sidebarCollapsed}
-        onToggleCollapsed={toggleSidebar}
-        mobileOpen={mobileMenuOpen}
-        onMobileClose={() => setMobileMenuOpen(false)}
-      />
+      {user && (
+        <>
+          {/* v3.31.15: warns and refreshes the session before silent expiry. */}
+          <SessionWatchdog />
+
+          <CollapsibleSidebar
+            user={user}
+            collapsed={sidebarCollapsed}
+            onToggleCollapsed={toggleSidebar}
+            mobileOpen={mobileMenuOpen}
+            onMobileClose={() => setMobileMenuOpen(false)}
+          />
+        </>
+      )}
 
       <div
         className={` + "`" + `flex min-h-screen flex-col transition-all duration-200 ${
@@ -487,11 +502,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
         {/* grit:layout:banner */}
         <EmailVerifiedBanner />
-        <main className="flex-1 px-4 py-6 md:px-8">{children}</main>
+        <main className="flex-1 px-4 py-6 md:px-8">{inBrowser ? children : null}</main>
       </div>
 
       {/* Floating quick-access button (configurable) */}
-      <QuickAccess />
+      {user && <QuickAccess />}
     </div>
   );
 }
