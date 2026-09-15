@@ -66,6 +66,47 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.276.0 */}
+            <div className="mb-12" id="v3.276.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.276.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Storage behind a Disk interface, and a local driver</h3>
+                <p>
+                  A Grit project without MinIO credentials answered every upload with 503
+                  <code>STORAGE_UNAVAILABLE</code>, so trying uploads in development meant running MinIO first.
+                  Storage now sits behind a <code>Disk</code> interface (put, get, exists, stat, delete, copy, move,
+                  list, URL and temporary URL) with two drivers: S3-compatible buckets and
+                  <code>STORAGE_DRIVER=local</code>.
+                </p>
+                <p>
+                  <strong>The local driver.</strong> Files live in <code>STORAGE_LOCAL_ROOT</code> (default
+                  <code>storage/app</code>) and are written atomically. Keys that try to leave the root are refused.
+                  The API serves uploads and thumbnails from <code>/files</code>, with Range support, and serves any
+                  other file only through an HMAC-signed temporary URL, which answers 403 once it expires. Outside
+                  production, a project without MinIO credentials uses the local driver automatically; production
+                  refuses it unless <code>ALLOW_LOCAL_STORAGE_IN_PRODUCTION=true</code>.
+                </p>
+                <p>
+                  <strong>Uploads keep working.</strong> When storage cannot presign a direct upload, the presign
+                  endpoint says so and the upload package sends the file to <code>POST /uploads</code> instead, so
+                  the upload UI works on either driver.
+                </p>
+                <p>
+                  On a fresh project with no MinIO credentials, an upload went from 503 to 201, and the file was then
+                  served (200, and 206 for a range), served through a signed URL (200), refused once the URL expired
+                  (403) and deleted. The same checks pass against MinIO, and a project on MinIO behaves exactly as
+                  before. <code>*storage.Storage</code> keeps every method, so existing handlers and generated
+                  resources compile unchanged. <code>grit upgrade</code> adds the driver to existing projects.
+                </p>
+              </div>
+            </div>
+
             {/* v3.275.0 */}
             <div className="mb-12" id="v3.275.0">
               <div className="flex items-center gap-3 mb-4">

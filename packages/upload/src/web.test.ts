@@ -138,6 +138,52 @@ describe("uploader", () => {
     expect(ref.optimised).toBe(false);
   });
 
+  it("sends the file through the API when the storage cannot presign", async () => {
+    const forms: string[] = [];
+    const puts: string[] = [];
+    const t: UploadTransport = {
+      get: async () => ({ data: { profiles: [profile] } }) as never,
+      post: async (path: string) => {
+        if (path === "/uploads/presign") return { data: { method: "multipart" } } as never;
+        throw new Error("unexpected POST " + path);
+      },
+      put: async (url: string) => {
+        puts.push(url);
+      },
+      postForm: async (path: string, form: FormData) => {
+        forms.push(path);
+        const file = form.get("file") as File;
+        return {
+          data: {
+            url: "http://localhost:8080/files/uploads/" + file.name,
+            key: "uploads/" + file.name,
+            name: file.name,
+            size: file.size,
+          },
+        } as never;
+      },
+    };
+    const optimize = vi.fn(async () => optimizedTo(40000, 9000));
+    const up = createUploader({ transport: t, optimize, profiles: [profile] });
+
+    const first = await up.upload(
+      new Blob([new Uint8Array(10)], { type: "image/jpeg" }),
+      "photo.jpg",
+      { accepts: ["image"] },
+    );
+    const second = await up.upload(
+      new Blob([new Uint8Array(10)], { type: "image/jpeg" }),
+      "second.jpg",
+    );
+
+    expect(puts).toHaveLength(0);
+    expect(forms[0]).toBe("/uploads?accepts=image&profile=default");
+    expect(first.key).toBe("uploads/photo.jpg");
+    expect(second.url).toContain("/files/");
+    // Asked once: the second upload skips the presign and the optimiser.
+    expect(optimize).toHaveBeenCalledTimes(1);
+  });
+
   it("leaves an animated GIF alone", async () => {
     const t = recorder();
     const optimize = vi.fn();

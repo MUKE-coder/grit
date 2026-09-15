@@ -69,7 +69,7 @@ const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'" + (isDev ? " 'unsafe-eval'" : ""),
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https: " + STORAGE_ORIGIN,
+  ` + cspImgSrcNew + `
   "font-src 'self' data:",
   // ws:/wss: keep the dev overlay + HMR socket working. api.ipify.org is the
   // public-IP hint the API client fetches so local audit records show a real
@@ -199,7 +199,7 @@ const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "img-src 'self' data: blob: https: " + STORAGE_ORIGIN,
+  ` + cspImgSrcNew + `
   "font-src 'self' data: https://fonts.gstatic.com",
   // api.ipify.org is the dev-only public-IP hint the API client fetches so
   // local audit records show a real address instead of ::1.

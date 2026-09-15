@@ -446,6 +446,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairMailDrivers(root, opts); err != nil {
 			fmt.Printf("  ⚠ adding the mail drivers: %v\n", err)
 		}
+		// Storage behind a Disk interface, and STORAGE_DRIVER=local: files on
+		// this machine, the default outside production when MinIO has no
+		// credentials.
+		if err := repairStorageDisk(root, opts); err != nil {
+			fmt.Printf("  ⚠ adding the local storage driver: %v\n", err)
+		}
 		// The admin's React Query client is created per mount, and the blog
 		// editor loads Tiptap on demand.
 		if err := repairAdminBundles(root, opts); err != nil {

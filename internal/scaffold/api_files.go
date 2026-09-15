@@ -387,7 +387,7 @@ tmp/
 # IDE
 .vscode/
 .idea/
-`
+` + apiGitignoreLocalStorage
 }
 
 func airConfig() string {
@@ -506,18 +506,7 @@ func main() {
 		}
 	}
 
-	// File storage (S3-compatible)
-	var storageService *storage.Storage
-	if cfg.Storage.Endpoint != "" && cfg.Storage.AccessKey != "" {
-		s, err := storage.New(cfg.Storage)
-		if err != nil {
-			log.Printf("Warning: Storage unavailable: %v (uploads disabled)", err)
-		} else {
-			storageService = s
-			log.Println("File storage connected")
-		}
-	}
-
+` + mainStorageInit + `
 ` + mailerInitNew + `
 	// AI service (Vercel AI Gateway)
 	var aiService *ai.AI
@@ -766,9 +755,7 @@ type StorageConfig struct {
 	//
 	// When set, object URLs become <PublicURL>/<key> — public origins are
 	// already scoped to one bucket, so the bucket segment is not repeated.
-	PublicURL string
-}
-
+` + configStorageFields + `
 // Config holds all application configuration.
 // ModuleFlags switches optional batteries on and off.
 //
@@ -857,8 +844,7 @@ type Config struct {
 	RedisURL string
 
 	// Storage
-	StorageDriver string        // "minio", "s3", "r2", or "b2"
-	Storage       StorageConfig // Resolved config for the active driver
+` + configStorageDriverFieldNew + `	Storage       StorageConfig // Resolved config for the active driver
 
 ` + configMailFieldsNew + `
 	CORSOrigins []string
@@ -934,8 +920,7 @@ func Load() (*Config, error) {
 	_ = godotenv.Load()
 	_ = godotenv.Load("../../.env") // Load from project root when running from apps/api
 
-	storageDriver := getEnv("STORAGE_DRIVER", "minio")
-
+` + configStorageDriverNew + `
 	cfg := &Config{
 		AppName:     getEnv("APP_NAME", "grit-app"),
 		// Production unless told otherwise: a server that forgot APP_ENV is strict.
@@ -1012,7 +997,7 @@ func Load() (*Config, error) {
 		OAuthFrontendURL:   getEnv("OAUTH_FRONTEND_URL", "http://localhost:3001"),
 	}
 
-	// DatabaseURL is always populated by resolveDatabaseURL() — either from
+` + configLocalStorageCheck + `	// DatabaseURL is always populated by resolveDatabaseURL() — either from
 	// the DATABASE_URL env var or built from POSTGRES_* parts. The actual
 	// connection attempt in cmd/server/main.go will surface a useful error
 	// if the resolved URL points at an unreachable database.
@@ -1224,7 +1209,7 @@ func warnProviderMismatch(provider, dsn string) {
 	}
 }
 
-// resolveStorage returns the StorageConfig for the active driver.
+` + configResolveStorageDriverFunc + `// resolveStorage returns the StorageConfig for the active driver.
 //
 // For AWS S3, leave S3_ENDPOINT empty — the AWS SDK will use the
 // regional endpoint automatically (s3.<region>.amazonaws.com).
@@ -1268,7 +1253,7 @@ func resolveStorage(driver string) StorageConfig {
 			UseSSL:    true,
 			PublicURL: firstNonEmpty(os.Getenv("B2_PUBLIC_URL"), os.Getenv("STORAGE_PUBLIC_URL")),
 		}
-	default: // minio
+` + configLocalCase + `	default: // minio
 		return StorageConfig{
 			Endpoint:  resolveMinioEndpoint(),
 			// No default: minioadmin/minioadmin is the whole bucket to anyone who
@@ -9891,7 +9876,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	services.WatchSSO(db, ssoRegistry, samlRegistry)
 	// grit:handlers
 
-` + healthQueueStatsSetup + `	// Health check
+` + routesLocalFilesBlock + healthQueueStatsSetup + `	// Health check
 	// /api/health probes every infrastructure dependency the dashboard's
 	// System Health page wants to render. Each probe is bounded by a 500ms
 	// timeout so a hung dependency doesn't pile up health requests; failing

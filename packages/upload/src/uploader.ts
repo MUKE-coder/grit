@@ -80,15 +80,21 @@ export function createUploader({ transport, optimize, profiles }: UploaderOption
     );
   }
 
-  /** Presign, PUT, and return the stored key. */
+  /** Set once the server says its storage takes uploads through the API. */
+  let throughAPI = false;
+
+  /**
+   * Presign, PUT, and return the stored key. Null when the server's storage
+   * cannot presign (STORAGE_DRIVER=local), before anything is sent.
+   */
   async function putOne(
     rendition: Rendition,
     filename: string,
     accepts: string[] | undefined,
     onProgress?: (f: number) => void,
-  ): Promise<{ key: string; url: string }> {
+  ): Promise<{ key: string; url: string } | null> {
     const presign = await transport.post<{
-      data: { presigned_url: string; key: string; public_url: string };
+      data: { presigned_url: string; key: string; public_url: string; method?: string };
     }>("/uploads/presign", {
       filename,
       content_type: rendition.mime,
@@ -98,6 +104,7 @@ export function createUploader({ transport, optimize, profiles }: UploaderOption
       file_size: rendition.blob.size,
       accepts,
     });
+    if (presign.data.method === "multipart") return null;
 
     await transport.put(
       presign.data.presigned_url,
@@ -107,6 +114,36 @@ export function createUploader({ transport, optimize, profiles }: UploaderOption
     );
 
     return { key: presign.data.key, url: presign.data.public_url };
+  }
+
+  /**
+   * Send the file to POST /uploads as a multipart form, for storage that
+   * cannot presign. The server optimises it and makes the renditions, so the
+   * original goes as it is.
+   */
+  async function uploadThroughAPI(
+    file: Blob,
+    filename: string,
+    options: UploadOptions,
+    profile: MediaProfile,
+  ): Promise<FileRef> {
+    if (!transport.postForm) {
+      throw new Error(
+        "This API's storage takes uploads through the API (STORAGE_DRIVER=local), and the upload transport has no postForm",
+      );
+    }
+    const form = new FormData();
+    form.append("file", file, filename);
+    const query = new URLSearchParams();
+    if (options.accepts?.length) query.set("accepts", options.accepts.join(","));
+    query.set("profile", profile.name);
+    const res = await transport.postForm<{ data: FileRef }>(
+      "/uploads?" + query.toString(),
+      form,
+      options.onProgress,
+    );
+    options.onProgress?.(1);
+    return { ...res.data, profile: profile.name };
   }
 
   /**
@@ -121,6 +158,7 @@ export function createUploader({ transport, optimize, profiles }: UploaderOption
     options: UploadOptions = {},
   ): Promise<FileRef> {
     const profile = await profileFor(options.profile);
+    if (throughAPI) return uploadThroughAPI(file, filename, options, profile);
     const isImage = file.type.startsWith("image/") && !file.type.includes("svg");
 
     let optimized: OptimizedImage | null = null;
@@ -171,9 +209,14 @@ export function createUploader({ transport, optimize, profiles }: UploaderOption
             ? stem(filename) + part.ext
             : filename
           : stem(filename) + "-" + part.name + part.ext;
-      const { key, url } = await putOne(part, name, options.accepts, (f) => {
+      const sent = await putOne(part, name, options.accepts, (f) => {
         options.onProgress?.((done + f * part.blob.size) / total);
       });
+      if (!sent) {
+        throughAPI = true;
+        return uploadThroughAPI(file, filename, options, profile);
+      }
+      const { key, url } = sent;
       done += part.blob.size;
       options.onProgress?.(done / total);
       stored[part.name] = { key, url, rendition: part };
