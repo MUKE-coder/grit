@@ -66,6 +66,50 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.274.0 */}
+            <div className="mb-12" id="v3.274.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.274.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Realtime channels with authorization</h3>
+                <p>
+                  The realtime socket could send to one user or to everyone, so a page had no way to follow a single
+                  record, and an app could not reach whoever is allowed to read it. Clients can now subscribe to a
+                  named channel, and the server answers <code>subscribed</code>, <code>subscription_error</code> or
+                  <code>unsubscribed</code>.
+                </p>
+                <p>
+                  <strong>Authorization.</strong> Register who may join a channel with
+                  <code>realtime.Channel(&quot;invoices.{`{id}`}&quot;, authorize)</code>. <code>public-</code>
+                  channels are open to any signed-in connection; <code>private-</code> and <code>presence-</code>
+                  channels admit only users the authorizer accepts, and a channel with no authorizer is refused. A
+                  connection may hold up to 100 channels.
+                </p>
+                <p>
+                  <strong>Publishing across replicas.</strong> <code>hub.Publish(channel, event)</code> reaches
+                  subscribers on every API process through the Redis backplane, and
+                  <code>services.RealtimeChannels</code> can route resource events to channels.
+                  <code>SendToUsers</code> and <code>RealtimeAudience</code> work as before.
+                </p>
+                <p>
+                  <strong>Clients.</strong> The web, admin and Expo clients gain
+                  <code>subscribe(channel, handlers)</code>, which returns an unsubscribe function, and the
+                  <code>useChannel</code> hook. After a reconnect they subscribe again on their own.
+                </p>
+                <p>
+                  In a live check with two API processes sharing Redis, 5 of 5 channel events crossed replicas, an
+                  unauthorized user received none, delivery stopped after unsubscribe, and a client whose connection
+                  dropped got its channel back without calling subscribe again. <code>grit upgrade</code> adds
+                  channels to existing projects and warns instead of rewriting a hub that has been edited.
+                </p>
+              </div>
+            </div>
+
             {/* v3.273.0 */}
             <div className="mb-12" id="v3.273.0">
               <div className="flex items-center gap-3 mb-4">

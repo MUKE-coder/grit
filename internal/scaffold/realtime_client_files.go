@@ -109,7 +109,7 @@ async function authQuery(): Promise<string> {
  * cheap registry operation rather than a handshake.
  */
 
-export type RealtimeEvent = { type: string; payload: unknown };
+export type RealtimeEvent = { type: string; channel?: string; payload: unknown };
 export type Handler = (payload: any, event: RealtimeEvent) => void;
 export type Status = "connecting" | "open" | "closed";
 
@@ -122,6 +122,39 @@ let closedByUs = false;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
 const handlers = new Map<string, Set<Handler>>();
+
+/** Handlers for one channel, keyed by event type ("*" catches the rest). */
+export type ChannelHandlers = Record<string, Handler>;
+
+/**
+ * Channel subscriptions by name. Each entry is one subscribe() call, so the same
+ * handlers object subscribed twice is released one call at a time.
+ */
+const channels = new Map<string, Set<{ handlers: ChannelHandlers }>>();
+
+function send(message: { type: string; channel: string }) {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(message));
+  }
+}
+
+function dispatchChannel(channel: string, evt: RealtimeEvent) {
+  let handled = false;
+  channels.get(channel)?.forEach(({ handlers: onChannel }) => {
+    const fn = onChannel[evt.type] ?? onChannel["*"];
+    if (!fn) return;
+    handled = true;
+    try {
+      fn(evt.payload as any, evt);
+    } catch (err) {
+      console.error("[realtime] handler for " + evt.type + " on " + channel + " threw", err);
+    }
+  });
+  if (evt.type === "subscription_error" && !handled) {
+    console.warn("[realtime] could not subscribe to " + channel, evt.payload);
+  }
+}
+
 const statusWatchers = new Set<(s: Status) => void>();
 let status: Status = "closed";
 
@@ -176,6 +209,10 @@ export async function connect(): Promise<void> {
   ws.onopen = () => {
     attempt = 0;
     setStatus("open");
+    // A new socket holds no subscriptions: the old one's ended with it. Ask
+    // again for every channel something still listens to, so a component that
+    // subscribed once keeps receiving across reconnects without doing anything.
+    channels.forEach((_, channel) => send({ type: "subscribe", channel }));
   };
 
   ws.onmessage = (e) => {
@@ -186,6 +223,12 @@ export async function connect(): Promise<void> {
       return; // not ours, or truncated
     }
     if (!evt || typeof evt.type !== "string") return;
+    if (typeof evt.channel === "string" && evt.channel !== "") {
+      // Channel traffic, replies included, goes to that channel's subscribers
+      // only, never to the event-type handlers below.
+      dispatchChannel(evt.channel, evt);
+      return;
+    }
     handlers.get(evt.type)?.forEach((fn) => {
       try {
         fn(evt.payload as any, evt);
@@ -226,19 +269,59 @@ export function disconnect() {
   setStatus("closed");
 }
 
-/** Subscribe to one event type. Returns the unsubscribe function. */
-export function subscribe(type: string, fn: Handler): () => void {
-  let set = handlers.get(type);
+/**
+ * Subscribe to one event type sent to the signed-in user:
+ *
+ *   subscribe("notification.new", (payload) => ...);
+ *
+ * or to a channel, with a handler per event type on it:
+ *
+ *   const off = subscribe("private-invoices.42", {
+ *     "invoices.paid": (payload) => ...,
+ *     subscription_error: (payload) => ..., // { code, message }
+ *   });
+ *
+ * Either way the return value unsubscribes. A channel stays subscribed, across
+ * reconnects, until its last subscriber lets go.
+ */
+export function subscribe(type: string, fn: Handler): () => void;
+export function subscribe(channel: string, handlers: ChannelHandlers): () => void;
+export function subscribe(name: string, target: Handler | ChannelHandlers): () => void {
+  if (typeof target !== "function") return subscribeChannel(name, target);
+  const fn = target;
+  let set = handlers.get(name);
   if (!set) {
     set = new Set();
-    handlers.set(type, set);
+    handlers.set(name, set);
   }
   set.add(fn);
   void connect();
 
   return () => {
     set!.delete(fn);
-    if (set!.size === 0) handlers.delete(type);
+    if (set!.size === 0) handlers.delete(name);
+  };
+}
+
+function subscribeChannel(channel: string, onChannel: ChannelHandlers): () => void {
+  let entries = channels.get(channel);
+  if (!entries) {
+    entries = new Set();
+    channels.set(channel, entries);
+    // Sent now if the socket is open; otherwise onopen sends it.
+    send({ type: "subscribe", channel });
+  }
+  const subscribers = entries;
+  const entry = { handlers: onChannel };
+  subscribers.add(entry);
+  void connect();
+
+  return () => {
+    if (!subscribers.delete(entry)) return;
+    if (subscribers.size === 0 && channels.get(channel) === subscribers) {
+      channels.delete(channel);
+      send({ type: "unsubscribe", channel });
+    }
   };
 }
 `
@@ -307,6 +390,37 @@ export function useRealtime(handlers: Record<string, Handler>) {
       );
     return () => offs.forEach((off) => off());
   }, [types]);
+}
+
+/**
+ * Subscribe to a channel for as long as a component is mounted, and again after
+ * every reconnect.
+ *
+ *   useChannel(invoice ? "private-invoices." + invoice.id : null, {
+ *     "invoices.paid": () => refetch(),
+ *     subscription_error: (p) => console.warn(p.message),
+ *   });
+ *
+ * Pass null while the channel name is not known yet. Handlers are read through
+ * a ref, as in useRealtime, so an inline object does not resubscribe per render.
+ */
+export function useChannel(channel: string | null | undefined, handlers: Record<string, Handler>) {
+  const latest = useRef(handlers);
+  latest.current = handlers;
+
+  const types = Object.keys(handlers).sort().join(",");
+
+  useEffect(() => {
+    if (!channel) return undefined;
+    const stable: Record<string, Handler> = {};
+    types
+      .split(",")
+      .filter(Boolean)
+      .forEach((type) => {
+        stable[type] = (payload, event) => latest.current[type]?.(payload, event);
+      });
+    return subscribe(channel, stable);
+  }, [channel, types]);
 }
 
 /**

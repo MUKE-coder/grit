@@ -49,6 +49,9 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "realtime", "backplane_test.go"):          apiRealtimeBackplaneTestGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "guard.go"):                   apiRealtimeGuardGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "guard_test.go"):              apiRealtimeGuardTestGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "channels.go"):                apiRealtimeChannelsGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "channels_test.go"):           apiRealtimeChannelsTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "realtime_channels_test.go"):  apiRealtimeChannelsHandlerTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "realtime_test.go"):           apiRealtimeHandlerTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):                apiRealtimeHandlerGo(),
 		filepath.Join(apiRoot, "internal", "sync", "registry.go"):                    apiSyncRegistryGo(),
@@ -9014,8 +9017,7 @@ const disconnectGrace = 10 * time.Second
 // Hub manages connected clients. Safe for concurrent use.
 type Hub struct {
 	mu      sync.RWMutex
-	clients map[string]map[*Client]struct{} // userID -> set of connections
-
+` + hubChannelsFieldNew + `
 	// nodeID identifies this process so it can ignore its own messages coming
 	// back off the backplane.
 	nodeID string
@@ -9119,9 +9121,7 @@ func (h *Hub) Unregister(c *Client) {
 	defer h.mu.Unlock()
 	if set, ok := h.clients[c.UserID]; ok {
 		if _, exists := set[c]; exists {
-			delete(set, c)
-			close(c.Send)
-		}
+` + hubUnregisterNew + `		}
 		if len(set) == 0 {
 			delete(h.clients, c.UserID)
 		}
@@ -9153,8 +9153,7 @@ func (h *Hub) disconnectLocal(userID string) {
 	}
 	conns := make([]*websocket.Conn, 0, len(set))
 	for c := range set {
-		conns = append(conns, c.Conn)
-		// Closing Send makes writePump emit a proper close frame and tear the
+` + hubDisconnectNew + `		// Closing Send makes writePump emit a proper close frame and tear the
 		// connection down itself, so the client sees a clean 1000 rather than
 		// an abnormal 1006 and can distinguish "you were signed out" from
 		// "the network dropped".
@@ -9349,10 +9348,7 @@ func (h *RealtimeHandler) Connect(c *gin.Context) {
 	go readPump(h.Hub, client)
 }
 
-// readPump pumps messages from the client → hub. We don't currently
-// accept commands from clients (mutations go through the REST API), so
-// this loop just services ping/pong and cleans up on disconnect.
-func readPump(hub *realtime.Hub, c *realtime.Client) {
+` + realtimeReadCommentNew + `func readPump(hub *realtime.Hub, c *realtime.Client) {
 	defer func() {
 		hub.Unregister(c)
 		_ = c.Conn.Close()
@@ -9364,10 +9360,7 @@ func readPump(hub *realtime.Hub, c *realtime.Client) {
 		return nil
 	})
 	for {
-		if _, _, err := c.Conn.ReadMessage(); err != nil {
-			return
-		}
-	}
+` + realtimeReadLoopNew + `	}
 }
 
 // writePump pumps messages from the hub → client and emits keepalive pings.
