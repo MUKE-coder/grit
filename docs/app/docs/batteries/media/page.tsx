@@ -441,6 +441,220 @@ npx expo install expo-image-manipulator   # Expo only`}
                 for fields that want optimisation.
               </p>
 
+              <h2 id="chain">Working with an image in code</h2>
+              <p>
+                Profiles cover uploads. When a handler needs to do something to an image
+                itself, such as crop an avatar, blur a preview or pull a placeholder colour,
+                the <code className={C}>media</code> package has a chain for it. Each step
+                returns a new image, and an error anywhere in the chain comes out of{' '}
+                <code className={C}>Encode</code> or <code className={C}>Store</code>, so the
+                whole thing reads as one expression.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock
+                filename="apps/api/internal/handlers/avatar.go"
+                code={`file, err := c.FormFile("avatar")
+// ...open it...
+
+img, err := media.Open(src)
+if err != nil {
+    // not an image, over 20 MB, over 50 megapixels, or a GIF
+}
+
+disk := h.Storage.Disk()
+key, err := img.Orient().Cover(150, 150).ToWebP().
+    Store(ctx, disk, "avatars", media.PublicFile)
+url := disk.URL(key)
+
+// One decode, several outputs: every step returns a new image.
+preview, err := img.Fit(800, 0).Blur(30).Grayscale().Quality(70).ToJPEG().Encode()
+placeholder, err := img.DominantColor()   // media.HexColor(placeholder) is "#6c5ce7"`}
+              />
+            </div>
+
+            <div className="prose-grit">
+              <h3 id="operations">Operations</h3>
+            </div>
+
+            <div className="mt-4 mb-8 rounded-lg border border-border/30 bg-card/30 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/30 bg-accent/20">
+                    <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Call</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-foreground/80">What it does</th>
+                  </tr>
+                </thead>
+                <tbody className="text-muted-foreground">
+                  {[
+                    ['Cover(w, h)', 'Scale and crop to exactly w x h, keeping the centre. Avatars and cards.'],
+                    ['Fit(w, h)', 'Scale down to sit inside w x h. A 0 leaves that side unbounded. Never enlarges.'],
+                    ['Resize(w, h)', 'Scale to w x h. A 0 keeps the aspect ratio. Will enlarge, up to the pixel limit.'],
+                    ['Crop(x, y, w, h)', 'Keep a rectangle. One reaching outside the image is an error, not clipped.'],
+                    ['Rotate(deg, bg)', 'Turn clockwise. Right angles are exact; other angles fill the corners with bg, transparent when nil.'],
+                    ['FlipH(), FlipV()', 'Mirror left to right, or top to bottom.'],
+                    ['Grayscale()', 'Remove the colour.'],
+                    ['Blur(0-100)', 'Gaussian blur. 100 is a sigma of 20 pixels.'],
+                    ['Sharpen(0-100)', 'Unsharp mask. 100 is a sigma of 5; 10 to 30 suits a thumbnail.'],
+                    ['Orient()', 'Apply the EXIF orientation. Open already does, so this only matters after WithoutAutoOrient().'],
+                  ].map(([call, what]) => (
+                    <tr key={call} className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs whitespace-nowrap">{call}</td>
+                      <td className="px-4 py-2.5">{what}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                A size with one side 0 keeps the aspect ratio everywhere, in profiles too:{' '}
+                <code className={C}>media.Fit(800, 0)</code> on a 2000x1000 photo gives
+                800x400. Before this, the zero reached the resampler, which returned an empty
+                0x0 image that was encoded and stored without an error.
+              </p>
+
+              <h3 id="inspection">Inspection</h3>
+              <ul>
+                <li>
+                  <code className={C}>Width()</code>, <code className={C}>Height()</code>,{' '}
+                  <code className={C}>Dimensions()</code>: the current size, 0 once the chain
+                  has failed.
+                </li>
+                <li>
+                  <code className={C}>MIME()</code> and <code className={C}>Extension()</code>:
+                  what <code className={C}>Encode</code> will produce, for a Content-Type header
+                  and a file name. <code className={C}>SourceFormat()</code> is what came in.
+                </li>
+                <li>
+                  <code className={C}>Orientation()</code>: the EXIF orientation the file
+                  carried, 1 to 8.
+                </li>
+                <li>
+                  <code className={C}>DominantColor()</code>: the most common colour, from a
+                  64x64 sample counted into 4096 buckets, returned as the average of the fullest
+                  bucket so a solid colour comes back exactly.
+                </li>
+                <li>
+                  <code className={C}>Err()</code>: the first error so far, when you want it
+                  before the end of the chain.
+                </li>
+              </ul>
+
+              <h3 id="encoders">Encoders, and what needs libvips</h3>
+              <p>
+                With no <code className={C}>To</code> call, the image encodes the way a
+                profile&apos;s <code className={C}>Auto</code> does. Quality runs from 1 to 100
+                and defaults to 82.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8 rounded-lg border border-border/30 bg-card/30 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/30 bg-accent/20">
+                    <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Call</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Pure Go (default)</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-foreground/80">-tags vips</th>
+                  </tr>
+                </thead>
+                <tbody className="text-muted-foreground">
+                  {[
+                    ['ToJPEG()', 'JPEG at Quality', 'JPEG at Quality'],
+                    ['ToPNG()', 'PNG, lossless', 'PNG, lossless'],
+                    ['ToWebP()', 'Lossless WebP. Quality is ignored.', 'Lossy WebP at Quality'],
+                    ['ToLossyWebP()', 'Error: ErrNeedsVips', 'Lossy WebP at Quality'],
+                    ['ToAVIF()', 'Error: ErrNeedsVips', 'AVIF at Quality (libvips with libheif)'],
+                  ].map(([call, pure, vips]) => (
+                    <tr key={call} className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs whitespace-nowrap">{call}</td>
+                      <td className="px-4 py-2.5">{pure}</td>
+                      <td className="px-4 py-2.5">{vips}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                The chain refuses where a profile downgrades. A profile asking for AVIF on the
+                pure-Go backend quietly gets JPEG, because one binary has to keep serving
+                uploads. Code that calls <code className={C}>ToAVIF()</code> or{' '}
+                <code className={C}>ToLossyWebP()</code> asked for something specific, so it
+                gets <code className={C}>ErrNeedsVips</code> with the build tag in the message
+                instead of a lossless file twenty times the size. Pure-Go WebP ignoring quality
+                is the same limitation: there is no pure-Go lossy WebP encoder.
+              </p>
+              <p>
+                Every output is written from pixels, so no EXIF survives, GPS included.
+              </p>
+
+              <h3 id="loading">Loading from a disk or a URL</h3>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock
+                code={`img, err := media.Open(r)                              // any io.Reader
+img, err := media.FromDisk(ctx, disk, "uploads/a.jpg")  // a storage.Disk
+img, err := media.FromURL(ctx, "https://example.com/photo.jpg")
+
+// Limits, on any of the three:
+img, err := media.FromURL(ctx, url,
+    media.WithMaxBytes(5<<20),          // default 20 MB
+    media.WithMaxPixels(20_000_000),    // default 50 megapixels
+    media.WithTimeout(5*time.Second),   // FromURL only, default 10s
+)`}
+              />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                <code className={C}>FromURL</code> is for URLs somebody else chose, such as
+                &quot;import avatar from a link&quot;, so it goes through{' '}
+                <code className={C}>safefetch</code>. A loopback, private or cloud metadata
+                address is refused before a connection is made, including one a public hostname
+                resolves to or redirects to, and the error wraps{' '}
+                <code className={C}>safefetch.ErrBlocked</code>. The body is read up to the byte
+                limit, and a server that declares a larger Content-Length is refused before
+                reading.
+              </p>
+              <p>
+                Every entry point reads the header first and refuses anything over the pixel
+                limit before decoding, and every operation that can grow an image checks its
+                output against the same limit, so <code className={C}>Resize(20000, 0)</code>{' '}
+                on a thumbnail is refused rather than allocated. All pixel work, whether decode,
+                operation or encode, waits for the same per-CPU slot the upload pipeline uses.
+              </p>
+
+              <h3 id="storing">Storing</h3>
+              <p>
+                <code className={C}>Store(ctx, disk, dir, visibility)</code> encodes, writes
+                through the disk and returns the key. It works on every storage driver, local
+                disk and buckets alike, because it only uses the Disk interface.
+              </p>
+              <ul>
+                <li>
+                  <code className={C}>media.PublicFile</code> writes under{' '}
+                  <code className={C}>uploads/&lt;dir&gt;/</code>, a public prefix: the local
+                  driver serves it without a signature and the bucket policy allows anonymous
+                  reads. Link to it with <code className={C}>disk.URL(key)</code>.
+                </li>
+                <li>
+                  <code className={C}>media.PrivateFile</code> writes under{' '}
+                  <code className={C}>private/&lt;dir&gt;/</code>, which nothing serves without a
+                  signature. Link to it with{' '}
+                  <code className={C}>disk.TemporaryURL(ctx, key, ttl)</code>.
+                </li>
+              </ul>
+              <p>
+                The file is named with 24 random hex characters and the extension of what was
+                encoded, and the content type is set from the same. A directory containing{' '}
+                <code className={C}>..</code> is refused.
+              </p>
+
               <h2 id="bombs">Decompression bombs are refused</h2>
               <p>
                 A solid-colour PNG compresses to almost nothing whatever its dimensions, so
