@@ -59,8 +59,7 @@ type fanout struct {
 
 	Users []string        ` + "`" + `json:"u,omitempty"` + "`" + `
 	All   bool            ` + "`" + `json:"a,omitempty"` + "`" + `
-	Event json.RawMessage ` + "`" + `json:"e,omitempty"` + "`" + `
-
+` + backplaneFanoutNew + `
 	// Kick closes every connection a user holds. Revocation has to cross the
 	// backplane or "sign out of all devices" only signs out of the devices
 	// that happen to be connected to the replica handling the request, which
@@ -144,9 +143,7 @@ func (h *Hub) receive(msg []byte) {
 	switch {
 	case f.Kick != "":
 		h.disconnectLocal(f.Kick)
-	case f.All:
-		h.broadcastLocal(f.Event)
-	default:
+` + backplaneReceiveNew + `	default:
 		h.deliverLocal(f.Users, f.Event)
 	}
 }

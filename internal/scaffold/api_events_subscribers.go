@@ -86,13 +86,7 @@ func registerAudit(db *gorm.DB) {
 //
 // Returning nil drops the event, which is what an unauthenticated or
 // system-initiated write does by default.
-var RealtimeAudience = func(e events.Event) []string {
-	if e.Actor == "" {
-		return nil
-	}
-	return []string{e.Actor}
-}
-
+` + subscribersAudienceNew + `
 // registerRealtime pushes resource events to the users RealtimeAudience picks.
 //
 // Async: a websocket write to a client on a bad connection must not slow the
@@ -102,22 +96,7 @@ func registerRealtime(hub *realtime.Hub) {
 		return
 	}
 	events.On("*", events.Async, "realtime", func(e events.Event) error {
-		audience := RealtimeAudience(e)
-		if len(audience) == 0 {
-			return nil
-		}
-		hub.SendToUsers(audience, realtime.Event{
-			Type: e.Name,
-			Payload: map[string]interface{}{
-				"resource": e.Resource,
-				"id":       e.ID,
-				"label":    e.Label,
-				"actor":    e.Actor,
-				"at":       e.At,
-			},
-		})
-		return nil
-	})
+` + subscribersPushNew + `	})
 }
 
 // registerWebhooks fans every event out to matching subscriptions.

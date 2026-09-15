@@ -436,6 +436,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairRealtimeSecurity(root, opts); err != nil {
 			fmt.Printf("  ⚠ securing the realtime socket: %v\n", err)
 		}
+		// Channels: subscribe and unsubscribe on the socket, authorizers per
+		// channel pattern, and Hub.Publish across replicas.
+		if err := repairRealtimeChannels(root, opts); err != nil {
+			fmt.Printf("  ⚠ adding realtime channels: %v\n", err)
+		}
 		// The admin's React Query client is created per mount, and the blog
 		// editor loads Tiptap on demand.
 		if err := repairAdminBundles(root, opts); err != nil {
