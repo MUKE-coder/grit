@@ -427,6 +427,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		// Hooks
 		filepath.Join(adminRoot, "hooks", "use-auth.ts"):                       adminUseAuth(),
 		filepath.Join(adminRoot, "hooks", "use-resource.ts"):                   adminUseResource(),
+		filepath.Join(adminRoot, "hooks", "use-notifications.ts"):              adminUseNotifications(),
 		filepath.Join(adminRoot, "hooks", "use-resource-controller.ts"):        adminUseResourceController(),
 		filepath.Join(adminRoot, "hooks", "use-resource-detail-controller.ts"): adminUseResourceDetailController(),
 		filepath.Join(adminRoot, "hooks", "use-system.ts"):                     adminUseSystem(),
@@ -1043,13 +1044,10 @@ export default function RootLayout({
 func adminProviders() string {
 	return `"use client";
 
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "sonner";
-import { queryClient } from "@/lib/query-client";
+` + adminProvidersNewImports + `
 import { ThemeProvider } from "./theme-provider";
 
-export function Providers({ children }: { children: React.ReactNode }) {
-  return (
+` + adminProvidersNewBody + `
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         {children}
@@ -1591,23 +1589,56 @@ export async function uploadFile(
 `
 }
 
+// adminQueryClient is lib/query-client.ts: the admin's React Query defaults and
+// a factory, not a client. Contact-app review M24: the file used to export one
+// client created when the module loaded, which on the server is one cache
+// shared by every request it renders.
 func adminQueryClient() string {
-	return `import { QueryClient } from "@tanstack/react-query";
-
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-    mutations: {
-      retry: 0,
-    },
-  },
-});
-`
+	return adminQueryClientSource
 }
+
+// adminQueryClientSource is shared with repairAdminQueryClient.
+const adminQueryClientSource = `import { QueryClient, type DefaultOptions } from "@tanstack/react-query";
+
+export const adminQueryDefaults: DefaultOptions = {
+  queries: {
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  },
+  mutations: {
+    retry: 0,
+  },
+};
+
+// A new client, for <Providers> to create once per mount.
+//
+// Never a client at module scope. A module is loaded once per server process, so
+// a client created there is one cache for every request the server renders: the
+// moment a page prefetches or suspends on a query, one user's data is in the
+// next user's HTML.
+export function makeQueryClient(): QueryClient {
+  return new QueryClient({ defaultOptions: adminQueryDefaults });
+}
+`
+
+// The lines of the old providers.tsx that used the module-level client.
+const (
+	adminProvidersOldImports = `import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "sonner";
+import { queryClient } from "@/lib/query-client";`
+	adminProvidersNewImports = `import { useState } from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "sonner";
+import { makeQueryClient } from "@/lib/query-client";`
+	adminProvidersOldBody = `export function Providers({ children }: { children: React.ReactNode }) {
+  return (`
+	adminProvidersNewBody = `export function Providers({ children }: { children: React.ReactNode }) {
+  // One client per mount: per request on the server, once in the browser.
+  const [queryClient] = useState(makeQueryClient);
+
+  return (`
+)
 
 func adminUtils() string {
 	return `import { clsx, type ClassValue } from "clsx";

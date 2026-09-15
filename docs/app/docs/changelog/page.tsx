@@ -66,6 +66,77 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.272.0 */}
+            <div className="mb-12" id="v3.272.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.272.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Connection pools, the response cache, and a lighter admin panel</h3>
+                <p>
+                  Five more findings from the contact-app review, each measured on a generated project before and
+                  after upgrading, and two bugs found while fixing them.
+                </p>
+                <p>
+                  <strong>Upgrading a project with the admin panel inside its web app dropped your resources from
+                  the panel.</strong> Upgrade wrote the template over <code>admin-panel/resources/index.ts</code>,
+                  so every resource added with <code>grit generate</code> disappeared from the admin while its
+                  definition and pages stayed on disk. Upgrade now leaves resource definitions, their pages and the
+                  registry alone, in the web app&apos;s panel and in a single app&apos;s. If an earlier upgrade already
+                  dropped them, this one registers them again and says which.
+                </p>
+                <p>
+                  <strong>A generated API could open more database connections than Postgres allows.</strong> Each
+                  process allowed 100, and Sentinel opened up to 10 more on the same database. Under load, one process
+                  held 96 connections and 153 requests failed when Postgres refused more. The app pool now defaults
+                  to 25 (<code>DB_MAX_OPEN_CONNS</code>) and Sentinel&apos;s to 5
+                  (<code>SENTINEL_DB_MAX_OPEN_CONNS</code>): the same load held 31 connections with no errors, and
+                  three replicas held at most 91. In production the API now connects through pgbouncer, where three
+                  replicas used at most 20 Postgres connections. pgbouncer also listens on the port its health check
+                  probes; before, that check could never pass.
+                </p>
+                <p>
+                  <strong>An expired cache entry sent every waiting request to the handler.</strong> Of 100
+                  requests arriving together at a cold key, between 13 and 71 ran the handler. Now one does, and the
+                  rest share its response. Entries also stored the body as base64 inside JSON; they now store it as
+                  sent, so a 6,004-byte response takes 6,040 bytes in Redis instead of 8,081. Clients see the same
+                  status, headers and body on a hit.
+                </p>
+                <p>
+                  <strong>The admin asked for the same data under different query keys.</strong> The dashboard&apos;s
+                  stat card and latest table each fetched a resource&apos;s stats, and the dashboard and the
+                  notification bell both polled notifications. A dashboard with five resources made 17 requests on
+                  load and 15 a minute while idle; it now makes 11 and 9, with no duplicates. Tab counts are queries
+                  that refresh after a create or delete, and a list with three count tabs loads with 4 requests
+                  instead of 7. Relationship pickers fetch their options when opened and search on the server, and
+                  the multi-select picker shows records created elsewhere instead of a list up to five minutes old.
+                </p>
+                <p>
+                  <strong>The admin&apos;s React Query client was shared by every server render.</strong> It was
+                  created when its module loaded, which becomes a leak between users the moment anything prefetches.
+                  The admin now creates its client once per mount, in all three admin shapes, and admin pages inside
+                  the web app no longer build a second, unused client.
+                </p>
+                <p>
+                  <strong>Every form loaded the rich text editor.</strong> Tiptap and ProseMirror came with any page
+                  that could open a form, and with the blog editor. They now load when the editor appears: a
+                  user&apos;s detail page went from 1,347 KB (418 KB gzipped) to 824 KB (260 KB), the blog editor from
+                  1,228 KB to 815 KB, and the Vite admin&apos;s entry script from 1,503 KB to 978 KB. The editor still
+                  opens and saves.
+                </p>
+                <p>
+                  <strong>The blog editor could not save.</strong> It saved, published and deleted through
+                  <code>/api/blogs/:id</code>, which the API does not serve, so each of those returned 404. It now
+                  uses <code>/api/admin/blogs/:id</code>, and <code>grit upgrade</code> fixes the editor page in
+                  existing projects.
+                </p>
+              </div>
+            </div>
+
             {/* v3.271.0 */}
             <div className="mb-12" id="v3.271.0">
               <div className="flex items-center gap-3 mb-4">

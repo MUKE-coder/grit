@@ -39,6 +39,7 @@ import {
 } from "@/lib/icons";
 import { apiClient } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
+import { resourceKeys } from "@/hooks/use-resource";
 import type { ResourceDefinition } from "@/lib/resource";
 
 /** A node as the tree endpoint returns it: the row, plus its children. */
@@ -170,7 +171,10 @@ export function ResourceTree({ resource, onEdit, onAddChild }: ResourceTreeProps
   const [dragging, setDragging] = useState<string | null>(null);
   const [target, setTarget] = useState<DropTarget | null>(null);
 
-  const treeKey = useMemo(() => [resource.slug, "tree"], [resource.slug]);
+  // Under the endpoint, like every other read of the resource, so a create or
+  // edit made from the form refreshes the tree as well. Keyed on the slug, it
+  // was reached by nothing the rest of the admin invalidates.
+  const treeKey = useMemo(() => resourceKeys.tree(resource.endpoint), [resource.endpoint]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: treeKey,
@@ -220,7 +224,7 @@ export function ResourceTree({ resource, onEdit, onAddChild }: ResourceTreeProps
     queryClient.invalidateQueries({ queryKey: treeKey });
     // The table view of the same resource is now stale too: a move changed
     // parent_id, and that is a column in it.
-    queryClient.invalidateQueries({ queryKey: [resource.slug] });
+    queryClient.invalidateQueries({ queryKey: resourceKeys.all(resource.endpoint) });
   };
 
   const move = useMutation({

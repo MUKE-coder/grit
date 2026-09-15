@@ -317,6 +317,8 @@ require (
 	// the CSV/XLSX importer hands user uploads to.
 	github.com/xuri/excelize/v2 v2.11.0
 	golang.org/x/crypto v0.57.0
+	// singleflight, which collapses concurrent cache misses in middleware/cache.go.
+	golang.org/x/sync v0.23.0
 	// Sentinel now ships a proper /v2 module path, so we track real tags.
 	// v2.1.1 is the minimum safe release for WAF.Mode = ModeBlock: v2.1.0
 	// fixed the SSRF rule matching "0.0.0.0" inside a Chrome User-Agent
@@ -1567,40 +1569,7 @@ func Connect(dsn string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
 
-	// Connection pool settings. SQLite ignores most of these — single-writer
-	// semantics mean MaxOpenConns above 1 only helps concurrent reads, and
-	// SQLite serialises writes internally. Postgres uses every knob.
-	//
-	// Idle defaults to Open, and that default matters more than it looks. When
-	// idle is lower, a request past the idle limit returns its connection to a
-	// full pool, so the connection is CLOSED — and the next request opens a new
-	// one, which makes Postgres fork a backend process. Under concurrency that
-	// is a connection storm, and it surfaces as database CPU rather than as
-	// anything you would think to look for in the application.
-	//
-	// Measured with k6 at 50 VUs, 4 CPUs per container, single-row reads:
-	// idle=10 gave ~810 req/s with Postgres pinned near 840% while the API used
-	// 196%; idle=100 gave ~2,720 req/s with both around 300%. Same binary, same
-	// query.
-	//
-	// Both are tunable because the right answer depends on the workload. If
-	// your queries are heavy enough to saturate the database — an unindexed
-	// COUNT over a large table on every request, say — a smaller pool acts as
-	// admission control and can measure faster, because queueing in the app is
-	// cheaper than thrashing in Postgres. Start here, then measure.
-	maxOpen := getEnvInt("DB_MAX_OPEN_CONNS", 100)
-	if maxOpen < 1 {
-		maxOpen = 1
-	}
-	maxIdle := getEnvInt("DB_MAX_IDLE_CONNS", maxOpen)
-	if maxIdle < 1 || maxIdle > maxOpen {
-		maxIdle = maxOpen
-	}
-	sqlDB.SetMaxIdleConns(maxIdle)
-	sqlDB.SetMaxOpenConns(maxOpen)
-	sqlDB.SetConnMaxLifetime(30 * time.Minute)
-	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
-
+` + dbPoolBlockNew + `
 	log.Println("Database connected successfully")
 	return db, nil
 }
@@ -1617,7 +1586,7 @@ func getEnvInt(key string, fallback int) int {
 	}
 	return fallback
 }
-`
+` + sentinelPoolFunc
 }
 
 func apiUserModelGo() string {
@@ -9648,6 +9617,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// Keys the audit log's hash chain: an entry edited by someone with the
 		// database but not this key fails verification on the dashboard.
 		sentinelStorage.AuditKey = cfg.SentinelAuditKey
+` + sentinelPoolLine + `
 
 		// Rate limits and AuthShield lockouts counted in Redis, so replicas
 		// share them. Counted per process, N replicas gave a client N times

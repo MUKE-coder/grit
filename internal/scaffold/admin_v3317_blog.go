@@ -4,7 +4,7 @@ package scaffold
 //
 // New flow:
 //   1. List page "New Blog" -> sheet with Title + Cover Image + Excerpt
-//   2. Submit -> POST /api/blogs -> redirect to /resources/blogs/[id]
+//   2. Submit -> POST /api/admin/blogs -> redirect to /resources/blogs/[id]
 //   3. Detail page renders a richer Tiptap editor (Word-style toolbar)
 //      with autosave on blur and a manual Save button. Publish/Unpublish
 //      + Delete are on the page header.
@@ -330,12 +330,11 @@ function ToolbarBtn({ children, onClick, active, disabled, ...rest }: ToolbarBtn
 func adminBlogDetailPage() string {
 	return `"use client";
 
-import { useEffect, useRef, useState } from "react";
+` + blogEditorNewReactImport + `
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/chrome/PageHeader";
-import { WordEditor } from "@/components/forms/word-editor";
 import { IconButton } from "@/components/ui/IconButton";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { useToastedMutation } from "@/hooks/use-toasted-mutation";
@@ -343,7 +342,7 @@ import { apiClient, uploadFile } from "@/lib/api-client";
 import { ArrowLeft, Save, Trash2, Upload, Check } from "@/lib/icons";
 import { inputClasses } from "@/components/ui/input";
 
-interface Blog {
+` + blogEditorDynamic + `interface Blog {
   id: string;
   title: string;
   slug: string;
@@ -393,7 +392,7 @@ export default function BlogDetailPage() {
 
   const save = useToastedMutation({
     mutationFn: async (patch: Partial<Blog>) => {
-      const { data } = await apiClient.put<ApiResponse<Blog>>("/api/blogs/" + params.id, patch);
+      const { data } = await apiClient.put<ApiResponse<Blog>>("/api/admin/blogs/" + params.id, patch);
       return data.data;
     },
     successMessage: "Saved",
@@ -403,7 +402,7 @@ export default function BlogDetailPage() {
 
   const publish = useToastedMutation({
     mutationFn: async (next: boolean) => {
-      const { data } = await apiClient.put<ApiResponse<Blog>>("/api/blogs/" + params.id, { published: next });
+      const { data } = await apiClient.put<ApiResponse<Blog>>("/api/admin/blogs/" + params.id, { published: next });
       return data.data;
     },
     successMessage: (b) => b.published ? "Published" : "Moved back to draft",
@@ -411,7 +410,7 @@ export default function BlogDetailPage() {
   });
 
   const del = useToastedMutation({
-    mutationFn: async () => apiClient.delete("/api/blogs/" + params.id),
+    mutationFn: async () => apiClient.delete("/api/admin/blogs/" + params.id),
     successMessage: "Deleted",
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
@@ -549,13 +548,7 @@ export default function BlogDetailPage() {
       {/* Word-style editor */}
       <section>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">Content</p>
-        <WordEditor
-          value={content}
-          onChange={setContent}
-          placeholder="Start your article here. Use the toolbar to format headings, lists, tables, images, and more."
-          minHeight={500}
-          onBlur={() => { if (content !== blog.content) save.mutate({ content }); }}
-        />
+` + blogEditorNewUsage + `
       </section>
 
       <div className="mt-3 flex items-center justify-between text-xs text-text-muted">

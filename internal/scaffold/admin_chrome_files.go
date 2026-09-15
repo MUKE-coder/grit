@@ -197,20 +197,14 @@ export function UserMenu() {
 `
 }
 
-// adminNotificationBellComponent — full bell + dropdown. Polls the
-// existing GET /api/notifications (returns {data, unread}) every 60s so
-// the count and the list stay aligned with one request. Opens a panel
-// with the most recent notifications + mark-read affordances.
-func adminNotificationBellComponent() string {
-	return `"use client";
-
-import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Check, AlertCircle, AlertTriangle, Activity } from "@/lib/icons";
+// adminUseNotifications emits hooks/use-notifications.ts: the one query for the
+// notification list, which the bell, the dashboard's tile and the
+// notifications page all read.
+func adminUseNotifications() string {
+	return `import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 
-interface Notification {
+export interface Notification {
   id: string;
   source: "sentinel" | "pulse" | "system";
   severity: "critical" | "high" | "medium" | "low" | "info";
@@ -222,10 +216,59 @@ interface Notification {
   created_at: string;
 }
 
-interface ListResponse {
+export interface NotificationList {
   data: Notification[];
   unread: number;
 }
+
+// One key for the notification list wherever it is read. The bell and the
+// dashboard's tile used to ask under keys of their own, so the dashboard
+// polled the same URL twice a minute, and marking one read in the bell left
+// the tile's count where it was.
+export const notificationKeys = {
+  all: ["notifications"] as const,
+  list: () => ["notifications", "list"] as const,
+};
+
+// useNotificationList polls the list once a minute. Pass select to read a part
+// of it, such as the unread count, without a request of its own.
+export function useNotificationList<TSelected = NotificationList>(
+  select?: (list: NotificationList) => TSelected,
+) {
+  return useQuery<NotificationList, Error, TSelected>({
+    queryKey: notificationKeys.list(),
+    queryFn: async () => {
+      try {
+        const { data } = await apiClient.get<NotificationList>("/api/notifications");
+        return data;
+      } catch {
+        // The bell is on every page, and a notifications outage should not
+        // break any of them.
+        return { data: [], unread: 0 };
+      }
+    },
+    select,
+    refetchInterval: 60_000,
+    retry: false,
+    staleTime: 30_000,
+  });
+}
+`
+}
+
+// adminNotificationBellComponent — full bell + dropdown. Polls the
+// existing GET /api/notifications (returns {data, unread}) every 60s so
+// the count and the list stay aligned with one request. Opens a panel
+// with the most recent notifications + mark-read affordances.
+func adminNotificationBellComponent() string {
+	return `"use client";
+
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Bell, Check, AlertCircle, AlertTriangle, Activity } from "@/lib/icons";
+import { apiClient } from "@/lib/api-client";
+import { notificationKeys, useNotificationList, type Notification } from "@/hooks/use-notifications";
 
 const severityColor: Record<Notification["severity"], string> = {
   critical: "text-danger",
@@ -252,29 +295,16 @@ export function NotificationBell() {
   const ref = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
-  const { data } = useQuery<ListResponse>({
-    queryKey: ["notifications", "list"],
-    queryFn: async () => {
-      try {
-        const { data } = await apiClient.get<ListResponse>("/api/notifications");
-        return data;
-      } catch {
-        return { data: [], unread: 0 };
-      }
-    },
-    refetchInterval: 60_000,
-    retry: false,
-    staleTime: 30_000,
-  });
+  const { data } = useNotificationList();
 
   const markRead = useMutation({
     mutationFn: async (id: string) => apiClient.post("/api/notifications/" + id + "/read"),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications", "list"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: notificationKeys.all }),
   });
 
   const markAllRead = useMutation({
     mutationFn: async () => apiClient.post("/api/notifications/read-all"),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications", "list"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: notificationKeys.all }),
   });
 
   useEffect(() => {

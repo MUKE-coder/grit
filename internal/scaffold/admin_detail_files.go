@@ -162,19 +162,26 @@ export function useResourceDetailController<T = Record<string, unknown>>(
 func adminResourceDetailPage() string {
 	return `"use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import type { ResourceDefinition, ColumnDefinition, FieldDefinition } from "@/lib/resource";
 import { useResource } from "@/hooks/use-resource";
 import { useResourceDetailController } from "@/hooks/use-resource-detail-controller";
 import { renderCell } from "@/components/tables/cell-renderers";
 import { DataTable } from "@/components/tables/data-table";
-import { FormSheet } from "@/components/forms/form-sheet";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { ArrowLeft, Pencil, Trash2, Loader2, Printer, Plus, FileText } from "@/lib/icons";
 import { useLocalizedResource } from "@/lib/i18n";
 import { buttonClasses } from "@/components/ui/button";
+
+// The form stack loads when a record is edited or a related one created, the way
+// the list page loads it. Suspense covers the Vite admin, where dynamic() is
+// React.lazy.
+const FormSheet = dynamic(() =>
+  import("@/components/forms/form-sheet").then((m) => m.FormSheet)
+);
 
 interface ResourceDetailPageProps {
   resource: ResourceDefinition;
@@ -369,7 +376,11 @@ function ResourceDetailView({ resource, id }: ResourceDetailPageProps) {
         onConfirm={c.confirmDelete.confirm}
       />
 
-      {editing && <FormSheet resource={resource} item={record} onClose={() => setEditing(false)} />}
+      {editing && (
+        <Suspense fallback={null}>
+          <FormSheet resource={resource} item={record} onClose={() => setEditing(false)} />
+        </Suspense>
+      )}
     </div>
   );
 }
@@ -427,12 +438,14 @@ function RelatedTable({
         />
       </div>
       {creating && createResource && (
-        <FormSheet
-          resource={createResource}
-          item={null}
-          defaults={{ [fk]: parentId }}
-          onClose={() => setCreating(false)}
-        />
+        <Suspense fallback={null}>
+          <FormSheet
+            resource={createResource}
+            item={null}
+            defaults={{ [fk]: parentId }}
+            onClose={() => setCreating(false)}
+          />
+        </Suspense>
       )}
     </div>
   );

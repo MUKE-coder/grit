@@ -27,9 +27,14 @@ func TestUpgradeRefreshesTheDashboardWidgets(t *testing.T) {
 		t.Fatalf("upgradeAdminFiles: %v", err)
 	}
 
+	// The card asks through the shared hook, by endpoint, and the hook takes
+	// the API's name for the resource from the endpoint's last segment.
 	got, _ := os.ReadFile(card)
-	if !strings.Contains(string(got), `resource.endpoint.split("/").filter(Boolean).pop()`) {
+	if !strings.Contains(string(got), `useResourceDashboardStats(resource.endpoint,`) {
 		t.Error("upgrade left the stat card asking for stats by the admin slug")
+	}
+	if !strings.Contains(adminUseResource(), `endpoint.split("/").filter(Boolean).pop()`) {
+		t.Error("the dashboard stats hook no longer asks by the API's resource name")
 	}
 	got, _ = os.ReadFile(chart)
 	if !strings.Contains(string(got), "const apiName =") {

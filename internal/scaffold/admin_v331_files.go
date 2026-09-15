@@ -326,30 +326,14 @@ func adminNotificationsPage() string {
 	return `"use client";
 
 import Link from "next/link";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { IconButton } from "@/components/ui/IconButton";
 import { SkeletonTable } from "@/components/ui/Skeleton";
 import { useToastedMutation } from "@/hooks/use-toasted-mutation";
+import { notificationKeys, useNotificationList, type Notification } from "@/hooks/use-notifications";
 import { Check, AlertCircle, AlertTriangle, Activity as ActivityIcon, Bell } from "@/lib/icons";
 import { apiClient } from "@/lib/api-client";
-
-interface Notification {
-  id: string;
-  source: "sentinel" | "pulse" | "system";
-  severity: "critical" | "high" | "medium" | "low" | "info";
-  title: string;
-  body: string;
-  link: string;
-  count: number;
-  read_at: string | null;
-  created_at: string;
-}
-
-interface ListResponse {
-  data: Notification[];
-  unread: number;
-}
 
 const severityClass: Record<Notification["severity"], string> = {
   critical: "bg-danger/10 text-danger",
@@ -367,25 +351,20 @@ const sourceIcon: Record<Notification["source"], React.ReactNode> = {
 
 export default function NotificationsPage() {
   const queryClient = useQueryClient();
-  const { data, isLoading } = useQuery<ListResponse>({
-    queryKey: ["notifications", "list"],
-    queryFn: async () => {
-      const { data } = await apiClient.get<ListResponse>("/api/notifications");
-      return data;
-    },
-  });
+  // The list the bell in the header reads, so the page adds no request of its own.
+  const { data, isLoading } = useNotificationList();
 
   const markRead = useToastedMutation({
     mutationFn: async (id: string) => apiClient.post("/api/notifications/" + id + "/read"),
     successMessage: "Marked read",
     silentSuccess: true,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: notificationKeys.all }),
   });
 
   const markAllRead = useToastedMutation({
     mutationFn: async () => apiClient.post("/api/notifications/read-all"),
     successMessage: "All notifications marked read",
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: notificationKeys.all }),
   });
 
   const items = data?.data || [];

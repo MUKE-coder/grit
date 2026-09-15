@@ -6,6 +6,8 @@ import "strings"
 func adminFormBuilder() string {
 	return `"use client";
 
+import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import { useT } from "@/lib/i18n";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import type { FieldDefinition, FormDefinition } from "@/lib/resource";
@@ -27,11 +29,23 @@ import { VideoField } from "./fields/video-field";
 import { VideosField } from "./fields/videos-field";
 import { FileField } from "./fields/file-field";
 import { FilesField } from "./fields/files-field";
-import { RichTextField } from "./fields/rich-text-field";
 import { Button } from "@/components/ui/button";
 import { RelationshipSelectField } from "./fields/relationship-select-field";
 import { MultiRelationshipSelectField } from "./fields/multi-relationship-select-field";
 import { LineItemsField } from "./fields/line-items-field";
+
+// Tiptap and ProseMirror load when a rich text field renders. Every form in the
+// panel is built here, so a static import put the editor in the first load of
+// every page with a form, whether or not the form had a rich text field.
+// Suspense shows the placeholder in the Vite admin, where dynamic() is React.lazy.
+const RichTextField = dynamic(
+  () => import("./fields/rich-text-field").then((m) => m.RichTextField),
+  { ssr: false, loading: RichTextPlaceholder },
+);
+
+function RichTextPlaceholder() {
+  return <div className="h-[260px] w-full animate-pulse rounded-lg border border-border bg-bg-hover/40" />;
+}
 
 interface FormBuilderProps {
   form: FormDefinition;
@@ -361,7 +375,9 @@ export function FieldRenderer({
           control={control}
           rules={field.required ? { required: ` + "`" + `${field.label} is required` + "`" + ` } : undefined}
           render={({ field: formField }) => (
-            <RichTextField field={field} value={formField.value ?? ""} onChange={formField.onChange} error={error} />
+            <Suspense fallback={<RichTextPlaceholder />}>
+              <RichTextField field={field} value={formField.value ?? ""} onChange={formField.onChange} error={error} />
+            </Suspense>
           )}
         />
       );
@@ -3335,10 +3351,9 @@ func adminRelationshipSelectField() string {
 
 import { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
 import { getResourceByEndpoint } from "@/resources";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useDebouncedValue, useRelationshipOptions } from "@/hooks/use-resource";
 import type { FieldDefinition } from "@/lib/resource";
 import { Plus } from "@/lib/icons";
 import { inputClasses } from "@/components/ui/input";
@@ -3369,14 +3384,24 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
 
-  const { data: options = [], isLoading } = useQuery({
-    queryKey: [field.relatedEndpoint, "options"],
-    queryFn: async () => {
-      const { data } = await apiClient.get(` + "`" + `${field.relatedEndpoint}?page_size=100` + "`" + `);
-      return data.data || data || [];
-    },
-    enabled: !!field.relatedEndpoint,
+  const endpoint = field.relatedEndpoint ?? "";
+  const debouncedSearch = useDebouncedValue(search.trim(), 250);
+  // The first page, which also names the selected record. Fetched when the list
+  // opens, or straight away when there is a value to show a label for.
+  const base = useRelationshipOptions(endpoint, { enabled: open || !!value });
+  // What was typed, searched on the server.
+  const searched = useRelationshipOptions(endpoint, {
+    search: debouncedSearch,
+    enabled: open && debouncedSearch !== "",
   });
+  const options = (debouncedSearch && searched.data) || base.data || [];
+  const isLoading = options.length === 0 && (base.isLoading || searched.isLoading);
+  // Once the server has answered for exactly what is in the box, its results
+  // stand as they are, matches on other columns included. Until then the last
+  // results are narrowed here, so what is on screen always fits the box.
+  const serverAnswered =
+    debouncedSearch !== "" && debouncedSearch === search.trim() &&
+    searched.isSuccess && !searched.isPlaceholderData;
 
   const updatePosition = useCallback(() => {
     if (triggerRef.current) {
@@ -3445,11 +3470,11 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
 
   const filtered = useMemo(() =>
     allOptions.filter((item) => {
-      if (!search) return true;
+      if (!search || serverAnswered) return true;
       const label = String(item[displayField] || item.name || item.title || item.id || "");
       return label.toLowerCase().includes(search.toLowerCase());
     }),
-    [allOptions, search, displayField]
+    [allOptions, search, serverAnswered, displayField]
   );
 
   const selectedLabel = useMemo(() => {
@@ -3591,10 +3616,9 @@ func adminMultiRelationshipSelectField() string {
 
 import { useState, useRef, useEffect, useMemo, useCallback, useId, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
 import { getResourceByEndpoint } from "@/resources";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useDebouncedValue, useRelationshipOptions } from "@/hooks/use-resource";
 import type { FieldDefinition } from "@/lib/resource";
 import { Plus, X, Check } from "@/lib/icons";
 import { inputClasses } from "@/components/ui/input";
@@ -3664,16 +3688,28 @@ export function MultiRelationshipSelectField({
   const endpoint = field.relatedEndpoint ?? "";
   const displayField = field.displayField ?? "name";
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["relationship-options", endpoint],
-    queryFn: async () => {
-      const { data } = await apiClient.get(endpoint, { params: { page_size: 100 } });
-      return data;
-    },
-    enabled: !!endpoint,
+  const debouncedSearch = useDebouncedValue(search.trim(), 250);
+  // The first page, which also names the chips. Fetched when the list opens, or
+  // straight away when there are chips to label. Under the related endpoint's
+  // own key, so a record created anywhere in the admin shows up here: the key
+  // this used before was one no save ever invalidated.
+  const base = useRelationshipOptions(endpoint, { enabled: open || value.length > 0 });
+  // What was typed, searched on the server.
+  const searched = useRelationshipOptions(endpoint, {
+    search: debouncedSearch,
+    enabled: open && debouncedSearch !== "",
   });
-
-  const options: Record<string, unknown>[] = useMemo(() => data?.data ?? [], [data]);
+  const options = useMemo(
+    () => (debouncedSearch && searched.data) || base.data || [],
+    [debouncedSearch, searched.data, base.data]
+  );
+  const isLoading = options.length === 0 && (base.isLoading || searched.isLoading);
+  // Once the server has answered for exactly what is in the box, its results
+  // stand as they are. Until then the last results are narrowed here, so Enter
+  // never toggles an option that does not match what was typed.
+  const serverAnswered =
+    debouncedSearch !== "" && debouncedSearch === search.trim() &&
+    searched.isSuccess && !searched.isPlaceholderData;
 
   const allOptions = useMemo(() => {
     if (justCreated.length === 0) return options;
@@ -3690,9 +3726,9 @@ export function MultiRelationshipSelectField({
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return allOptions;
+    if (!q || serverAnswered) return allOptions;
     return allOptions.filter((o) => labelOf(o).toLowerCase().includes(q));
-  }, [allOptions, search, labelOf]);
+  }, [allOptions, search, serverAnswered, labelOf]);
 
   const selectedLabels = useMemo(
     () =>

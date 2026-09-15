@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 14 to 20, 2026",
-    count: 17,
+    count: 18,
     entries: [
+      { version: "3.272.0", title: "Connection pools, the response cache, and a lighter admin panel" },
       { version: "3.271.0", title: "Background work: audit and activity writes, sync pushes, the outbox relay, cleanup jobs" },
       { version: "3.270.0", title: "Performance under load: request context, flags, API keys, dashboard stats, images" },
       { version: "3.269.0", title: "Deployment hardening: images, the production stack, CI and the admin gate" },
