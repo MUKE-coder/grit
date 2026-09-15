@@ -392,6 +392,7 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		// Hooks (same as Next.js versions)
 		filepath.Join(adminRoot, "src", "hooks", "use-auth.ts"):                       adminTanStackUseAuth(),
 		filepath.Join(adminRoot, "src", "hooks", "use-resource.ts"):                   nextToTanStack(adminUseResource()),
+		filepath.Join(adminRoot, "src", "hooks", "use-notifications.ts"):              nextToTanStack(adminUseNotifications()),
 		filepath.Join(adminRoot, "src", "hooks", "use-resource-controller.ts"):        nextToTanStack(adminUseResourceController()),
 		filepath.Join(adminRoot, "src", "hooks", "use-resource-detail-controller.ts"): nextToTanStack(adminUseResourceDetailController()),
 		filepath.Join(adminRoot, "src", "hooks", "use-system.ts"):                     nextToTanStack(adminUseSystem()),

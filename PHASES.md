@@ -1239,11 +1239,11 @@ pushed, and name the version.
 - [x] M18 F (v3.271.0) - every mutation writes an activity row synchronously (sign-ins and other LogActivity calls still write before the request returns)
 - [x] M19 F (v3.271.0) - outbox never pruned; no SKIP LOCKED; no shutdown (on MySQL a claim's locking read covers every row it scans, so a second relay skips them all and waits for its next poll rather than claiming alongside)
 - [x] M20 F (v3.271.0) - cleanup and cron jobs unbounded and retry-heavy (also fixed: every activity-log prune that deleted anything left a chain that failed verification)
-- [ ] M21 F - pool sizing ignores replicas and Sentinel's pool
-- [ ] M22 F - response cache has no stampede protection
-- [ ] M23 F - duplicate and drifting query keys
-- [ ] M24 F - admin QueryClient is a module-level singleton
-- [ ] M25 F - Tiptap and the form stack load eagerly
+- [x] M21 F (v3.272.0) - pool sizing ignores replicas and Sentinel's pool (production api through pgbouncer, whose health check never passed; Sentinel on a MySQL project mounts with the Postgres driver and fails, left for its own fix)
+- [x] M22 F (v3.272.0) - response cache has no stampede protection (and bodies stored raw instead of base64)
+- [x] M23 F (v3.272.0) - duplicate and drifting query keys (the standalone Vite admin is not upgraded, so it gets this on new projects only; the desktop client's own notifications query left as is)
+- [x] M24 F (v3.272.0) - admin QueryClient is a module-level singleton (the web app's root provider stays in app/layout.tsx and skips admin routes, rather than moving into (marketing) and forms: not-found, exposed pages and plugins rely on it)
+- [x] M25 F (v3.272.0) - Tiptap and the form stack load eagerly (also fixed: the blog editor saved, published and deleted through a route the API does not serve; upgrading a double dropped every generated resource from the admin registry)
 - [ ] M26 F - admin theme flash; duplicate theme system
 - [ ] M27 F - public shared-form page fetches in useEffect with raw axios
 - [ ] M28 F - hand-built error envelopes bypass respond

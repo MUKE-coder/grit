@@ -431,6 +431,16 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairBackgroundWork(root, opts); err != nil {
 			fmt.Printf("  ⚠ bounding background work: %v\n", err)
 		}
+		// The admin's React Query client is created per mount, and the blog
+		// editor loads Tiptap on demand.
+		if err := repairAdminBundles(root, opts); err != nil {
+			fmt.Printf("  ⚠ updating the admin's query client and editor loading: %v\n", err)
+		}
+		// Connection pools sized for replicas with Sentinel's capped, production
+		// through pgbouncer, and a response cache that runs a missed handler once.
+		if err := repairPoolAndCache(root, opts); err != nil {
+			fmt.Printf("  ⚠ sizing connection pools and the response cache: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {
@@ -507,7 +517,14 @@ func Upgrade(uOpts UpgradeOptions) error {
 	if hasWeb && !hasAdmin && !opts.ShouldEmbedAdminInSPA() {
 		spinner.Printf("  → Adding the admin panel to the web app at /admin...\n")
 		embedded := map[string]string{}
+		webHost := filepath.Join(root, "apps", "web")
 		for path, body := range embeddedAdminFileMap(root, opts) {
+			// Resource definitions, their pages and the registry are the reader's
+			// once they exist. Writing the template over the registry dropped every
+			// resource grit generate had registered.
+			if fileExists(path) && isUserOwnedEmbeddedAdminFile(webHost, path) {
+				continue
+			}
 			embedded[path] = body
 		}
 		n, err := writeUpgradeFiles(embedded, uOpts.Force)
@@ -542,6 +559,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		removeNextPanelFromViteApp(root, opts, green)
 
 		embedded := embeddedSingleAdminFileMap(root, opts)
+		spaSrc := filepath.Join(host, "src")
+		for path := range embedded {
+			if fileExists(path) && isUserOwnedEmbeddedAdminFile(spaSrc, path) {
+				delete(embedded, path)
+			}
+		}
 		if opts.Architecture == ArchSingle {
 			// Only a single mirrors the shared package: a monorepo has it as a
 			// workspace package already.
@@ -594,6 +617,14 @@ func Upgrade(uOpts UpgradeOptions) error {
 			return fmt.Errorf("updating admin files: %w", err)
 		}
 		updated += n
+	}
+
+	// Registry entries an earlier upgrade dropped from a panel inside the web app
+	// or SPA, now that upgrade leaves the registry alone.
+	if restored, err := restoreResourceRegistrations(root, opts); err != nil {
+		fmt.Printf("  ⚠ restoring admin resource registrations: %v\n", err)
+	} else if len(restored) > 0 {
+		green.Printf("  ✓ Registered %d admin resource(s) an earlier upgrade had dropped: %s\n", len(restored), strings.Join(restored, ", "))
 	}
 
 	// --- shadcn config for every frontend ---
@@ -1357,8 +1388,12 @@ func isUserOwnedAdminFile(adminRoot, path string) bool {
 	if err != nil {
 		return false
 	}
-	rel = filepath.ToSlash(rel)
+	return isUserOwnedAdminRel(filepath.ToSlash(rel))
+}
 
+// isUserOwnedAdminRel applies isUserOwnedAdminFile's rules to a path inside the
+// panel, written with forward slashes.
+func isUserOwnedAdminRel(rel string) bool {
 	if rel == "resources/users/users.ts" {
 		return false
 	}

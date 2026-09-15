@@ -121,7 +121,7 @@ services:
       retries: 5
 
   minio:
-    ` + minioImageNew + `    container_name: %s-minio
+    `+minioImageNew+`    container_name: %s-minio
     restart: unless-stopped
     ports:
       # Host 9002 / 9003 (not the MinIO-default 9000 / 9001) avoids
@@ -221,20 +221,9 @@ services:
       - "8080"
     env_file:
       - .env
-    # POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB come from .env
-    # (env_file above). We override POSTGRES_HOST so the API hits the
-    # postgres container on the Docker network, and POSTGRES_PORT back
-    # to 5432 because the postgres container listens on 5432 internally
-    # — only the dev host port mapping uses 5434. The Go config builds
-    # DATABASE_URL from these parts at startup.
-    environment:
-` + composeDBProvider + `      POSTGRES_HOST: postgres
-      POSTGRES_PORT: "5432"
-` + composeRedisURLNew + `      MINIO_ENDPOINT: http://minio:9000
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
+`+composeAPICommentNew+`    environment:
+`+composeDBProvider+composeAPIPostgresNew+composeRedisURLNew+`      MINIO_ENDPOINT: http://minio:9000
+`+composeAPIDependsNew+`      redis:
         condition: service_healthy
     networks:
       - %s
@@ -324,8 +313,7 @@ services:
   # uses none of those, but if you add them, point that code at postgres:5432
   # directly and leave everything else on the pooler.
   #
-  # To use it, set in .env:  DB_HOST=pgbouncer  DB_PORT=6432
-  pgbouncer:
+`+pgbouncerUseNew+`  pgbouncer:
     image: edoburu/pgbouncer:v1.25.2-p0
     container_name: %s-pgbouncer
     restart: unless-stopped
@@ -338,8 +326,7 @@ services:
       DB_USER: ${POSTGRES_USER:-grit}
       DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       DB_NAME: ${POSTGRES_DB:-%s}
-      POOL_MODE: transaction
-      # Client slots the app may open, against server connections actually held
+`+pgbouncerListenNew+`      # Client slots the app may open, against server connections actually held
       # open to Postgres. The whole point is that the first number can be much
       # larger than the second.
       MAX_CLIENT_CONN: 500
@@ -357,7 +344,7 @@ services:
     image: redis:7-alpine
     container_name: %s-redis
     restart: unless-stopped
-` + composeRedisAuth + `    volumes:
+`+composeRedisAuth+`    volumes:
       - redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -368,7 +355,7 @@ services:
       - %s
 
   minio:
-    ` + minioImageNew + `    container_name: %s-minio
+    `+minioImageNew+`    container_name: %s-minio
     restart: unless-stopped
     # Only its root credentials, with no default. Presigned uploads put MinIO
     # behind the public proxy, where minioadmin/minioadmin is the whole bucket.

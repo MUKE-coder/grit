@@ -2269,8 +2269,10 @@ import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 
 // Every query about a resource starts with its endpoint, so invalidating
-// [endpoint] still refreshes all of it. Lists, single records and stat cards
-// each have a branch below that, so a save can refresh what it moved.
+// [endpoint] still refreshes all of it. Each kind of read has a branch below
+// that, so a save can refresh what it moved. Build keys here and nowhere else:
+// two components asking for the same thing under two keys make two requests,
+// and a key that does not start with the endpoint is never refreshed by a save.
 export const resourceKeys = {
   all: (endpoint: string) => [endpoint] as const,
   lists: (endpoint: string) => [endpoint, "list"] as const,
@@ -2278,6 +2280,13 @@ export const resourceKeys = {
   detail: (endpoint: string, id: string) => [endpoint, "detail", id] as const,
   // PageHeader's stat cards key on [endpoint, "stat", ...].
   stats: (endpoint: string) => [endpoint, "stat"] as const,
+  // The dashboard's stat card and latest table, which share one response.
+  dashboardStats: (endpoint: string, params: object) => [endpoint, "dashboard-stats", params] as const,
+  // Relationship pickers, single and multi, by what was typed.
+  options: (endpoint: string, search = "") => [endpoint, "options", search] as const,
+  // A table tab's count badge, over the filters the tab applies.
+  tabCount: (endpoint: string, tab: string, filters: object) => [endpoint, "tab-count", tab, filters] as const,
+  tree: (endpoint: string) => [endpoint, "tree"] as const,
 };
 
 // useDebouncedValue follows value once it has stopped changing for delay
@@ -2394,6 +2403,74 @@ export function useResourceItem<T = Record<string, unknown>>(
       return data;
     },
     enabled: (options?.enabled ?? true) && !!id,
+  });
+}
+
+export interface ResourceDashboardStats {
+  resource: string;
+  total: number;
+  // Always 30 daily buckets, whatever the date range.
+  series: { date: string; count: number }[];
+  latest: Record<string, unknown>[];
+}
+
+// The most rows any dashboard widget shows. One number, so the stat card and
+// the latest table ask for the same URL and share its answer.
+export const DASHBOARD_LATEST_LIMIT = 10;
+
+// useResourceDashboardStats reads a resource's dashboard stats. The stat card
+// and the latest table used to fetch them separately under keys of their own,
+// which was two requests per resource on every load and two more every minute.
+// Both call this now and take their part with select.
+export function useResourceDashboardStats<TSelected = ResourceDashboardStats>(
+  endpoint: string,
+  params: Record<string, string>,
+  select?: (stats: ResourceDashboardStats) => TSelected,
+) {
+  return useQuery<ResourceDashboardStats, Error, TSelected>({
+    queryKey: resourceKeys.dashboardStats(endpoint, params),
+    queryFn: async ({ signal }) => {
+      const search = new URLSearchParams({ ...params, limit: String(DASHBOARD_LATEST_LIMIT) });
+      // The API registers stats under its own resource name, the last segment
+      // of the endpoint (purchase_requests), not the admin slug
+      // (purchase-requests), so every multi-word resource's card failed.
+      const name = endpoint.split("/").filter(Boolean).pop();
+      const { data } = await apiClient.get<{ data: ResourceDashboardStats }>(
+        "/api/admin/dashboard/resource-stats/" + name + "?" + search.toString(),
+        { signal },
+      );
+      return data.data;
+    },
+    select,
+    // Keep stats around so coming back to the dashboard does not re-flash
+    // the skeleton.
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+}
+
+// useRelationshipOptions lists the records a relationship picker offers: the
+// first 100 of the related resource, narrowed on the server by what was typed,
+// so a record past the first page can still be found. The single and the multi
+// picker both use it, so a record created from either one refreshes both.
+// Pass enabled: false until the options are needed, and a picker nobody opens
+// asks for nothing.
+export function useRelationshipOptions(
+  endpoint: string,
+  { search = "", enabled = true }: { search?: string; enabled?: boolean } = {},
+) {
+  const term = search.trim();
+  return useQuery<Record<string, unknown>[]>({
+    queryKey: resourceKeys.options(endpoint, term),
+    queryFn: async ({ signal }) => {
+      const params: Record<string, string> = { page_size: "100" };
+      if (term) params.search = term;
+      const { data } = await apiClient.get(endpoint, { params, signal });
+      return Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+    },
+    enabled: enabled && !!endpoint,
+    // The last answer stays up while the next search runs.
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -2749,9 +2826,11 @@ export default function AdminDashboard() {
 func adminTableTabs() string {
 	return `"use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
+import { useQueries } from "@tanstack/react-query";
 import type { TableTab } from "@/lib/resource";
 import { apiClient } from "@/lib/api-client";
+import { resourceKeys } from "@/hooks/use-resource";
 import { getIcon } from "@/lib/icons";
 
 /*
@@ -2769,7 +2848,8 @@ import { getIcon } from "@/lib/icons";
  * Counts are opt-in and arrive late. The badge is rendered only once its number
  * is known rather than showing a spinner or a zero, because a tab that says 0
  * and then says 47 is worse than a tab that said nothing for a moment. Each
- * count is one request with page_size=1, reading meta.total.
+ * count is one request with page_size=1, reading meta.total, cached under the
+ * resource's endpoint so a create, edit or delete refreshes the badges too.
  */
 
 export interface TableTabsProps {
@@ -2784,43 +2864,31 @@ export interface TableTabsProps {
 
 export function TableTabs({ tabs, active, onChange, endpoint, baseFilters }: TableTabsProps) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [counts, setCounts] = useState<Record<string, number>>({});
+  const counted = useMemo(() => tabs.filter((tab) => tab.count), [tabs]);
 
-  const wanted = tabs.filter((tab) => tab.count).map((tab) => tab.key).join(",");
-  const base = JSON.stringify(baseFilters ?? {});
-
-  useEffect(() => {
-    if (!wanted) return;
-    let cancelled = false;
-
-    const load = async () => {
-      const results = await Promise.all(
-        tabs
-          .filter((tab) => tab.count)
-          .map(async (tab) => {
-            const params = new URLSearchParams({
-              ...(JSON.parse(base) as Record<string, string>),
-              ...(tab.filters ?? {}),
-              page_size: "1",
-            });
-            try {
-              const { data } = await apiClient.get(endpoint + "?" + params.toString());
-              return [tab.key, Number(data?.meta?.total ?? 0)] as const;
-            } catch {
-              // A count that fails is a missing badge, not a broken page.
-              return null;
-            }
-          }),
-      );
-      if (cancelled) return;
-      setCounts(Object.fromEntries(results.filter(Boolean) as (readonly [string, number])[]));
-    };
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [wanted, endpoint, base, tabs]);
+  // Queries rather than an effect, so the counts live in the cache under the
+  // endpoint: saving a record refreshes them, and a tab strip mounted twice
+  // shares its requests.
+  const results = useQueries({
+    queries: counted.map((tab) => {
+      const filters: Record<string, string> = { ...(baseFilters ?? {}), ...(tab.filters ?? {}) };
+      return {
+        queryKey: resourceKeys.tabCount(endpoint, tab.key, filters),
+        queryFn: async ({ signal }: { signal: AbortSignal }) => {
+          const params = new URLSearchParams({ ...filters, page_size: "1" });
+          const { data } = await apiClient.get(endpoint + "?" + params.toString(), { signal });
+          return Number(data?.meta?.total ?? 0);
+        },
+        // A count that fails is a missing badge, not a broken page.
+        retry: false,
+      };
+    }),
+  });
+  const counts: Record<string, number> = {};
+  counted.forEach((tab, index) => {
+    const total = results[index]?.data;
+    if (typeof total === "number") counts[tab.key] = total;
+  });
 
   if (tabs.length === 0) return null;
 

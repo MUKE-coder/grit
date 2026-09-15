@@ -922,6 +922,7 @@ func adminPageHeader() string {
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { resourceKeys } from "@/hooks/use-resource";
 import { getIcon, TrendingUp, TrendingDown } from "@/lib/icons";
 
 export interface BreadcrumbItem {
@@ -969,16 +970,12 @@ function StatCardItem({ stat }: { stat: StatCard }) {
   const color = colorClasses[stat.color || "default"];
   const Icon = stat.icon ? getIcon(stat.icon) : null;
 
-  // v3.31.29: queryKey now starts with the base endpoint (no query
-  // string) so resource mutations -- which call
-  // invalidateQueries({ queryKey: [endpoint] }) -- prefix-match this
-  // stat and trigger a refetch. Previously the key started with
-  // "stat", so creates/updates/deletes never invalidated stat cards
-  // and the dashboard numbers went stale until manual reload.
+  // The key starts with the base endpoint (no query string) so a save to the
+  // resource, which invalidates [endpoint], reaches this card too.
   const baseEndpoint = stat.endpoint ? stat.endpoint.split("?")[0] : "stat";
 
   const { data, isLoading } = useQuery({
-    queryKey: [baseEndpoint, "stat", stat.endpoint, stat.field],
+    queryKey: [...resourceKeys.stats(baseEndpoint), stat.endpoint, stat.field],
     queryFn: async () => {
       if (!stat.endpoint) return null;
       const res = await apiClient.get(stat.endpoint);

@@ -50,8 +50,7 @@ func adminResourceStatCardTSX() string {
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
+import { useResourceDashboardStats, type ResourceDashboardStats } from "@/hooks/use-resource";
 import { dateRangeToQueryParams, type DateRange } from "@/components/tables/date-filter";
 import { getIcon, ArrowUpRight } from "@/lib/icons";
 import type { ResourceDefinition } from "@/lib/resource";
@@ -63,49 +62,20 @@ const ResourceSparkline = dynamic(
   { ssr: false },
 );
 
-// One sparkline bucket = one calendar day. Always 30 buckets so the
-// chart shape stays stable; counts inside the active date range only
-// affect the "Total" number, not the sparkline window.
-interface ResourceStatsBucket {
-  date: string;
-  count: number;
-}
-
-interface ResourceStatsResponse {
-  data: {
-    resource: string;
-    total: number;
-    series: ResourceStatsBucket[];
-    latest: Record<string, unknown>[];
-  };
-}
-
 interface Props {
   resource: ResourceDefinition;
   dateRange: DateRange;
 }
 
+// The card's part of the response the latest table shares. The sparkline is
+// always 30 daily buckets so its shape stays stable; the date range only
+// changes the total.
+function pickTotals(stats: ResourceDashboardStats) {
+  return { total: stats.total, series: stats.series };
+}
+
 export function ResourceStatCard({ resource, dateRange }: Props) {
-  const params = dateRangeToQueryParams(dateRange);
-  const query = useQuery<ResourceStatsResponse["data"]>({
-    queryKey: ["dashboard", "resource-stats", resource.slug, params],
-    queryFn: async () => {
-      const search = new URLSearchParams(params).toString();
-      const url =
-        "/api/admin/dashboard/resource-stats/" +
-        // The API registers stats under its own resource name, the last
-        // segment of the endpoint (purchase_requests), not the admin slug
-        // (purchase-requests), so every multi-word resource's card failed.
-        resource.endpoint.split("/").filter(Boolean).pop() +
-        (search ? "?" + search : "");
-      const { data } = await apiClient.get<ResourceStatsResponse>(url);
-      return data.data;
-    },
-    // The dashboard cycles between resources quickly; keep stats
-    // around so re-opening the page doesn't re-flash the skeleton.
-    staleTime: 30_000,
-    refetchInterval: 60_000,
-  });
+  const query = useResourceDashboardStats(resource.endpoint, dateRangeToQueryParams(dateRange), pickTotals);
 
   const Icon = getIcon(resource.icon);
   const label = resource.label?.plural ?? resource.slug;
@@ -161,26 +131,25 @@ func adminResourceLatestTableTSX() string {
 	return `"use client";
 
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
+import {
+  useResourceDashboardStats,
+  type ResourceDashboardStats,
+} from "@/hooks/use-resource";
 import { dateRangeToQueryParams, type DateRange } from "@/components/tables/date-filter";
 import { renderCell } from "@/components/tables/cell-renderers";
 import { FolderOpen } from "@/lib/icons";
 import type { ResourceDefinition, ColumnDefinition } from "@/lib/resource";
 
-interface ResourceStatsResponse {
-  data: {
-    resource: string;
-    total: number;
-    series: { date: string; count: number }[];
-    latest: Record<string, unknown>[];
-  };
-}
-
 interface Props {
   resource: ResourceDefinition;
   dateRange: DateRange;
+  /** Rows shown, up to DASHBOARD_LATEST_LIMIT. */
   limit?: number;
+}
+
+// The table's part of the response the stat card shares.
+function pickLatest(stats: ResourceDashboardStats) {
+  return stats.latest;
 }
 
 // v3.31.46 -- pickPreviewColumns now returns full ColumnDefinition
@@ -238,27 +207,11 @@ function timeAgo(iso: string): string {
 }
 
 export function ResourceLatestTable({ resource, dateRange, limit = 5 }: Props) {
-  const params = { ...dateRangeToQueryParams(dateRange), limit: String(limit) };
-  const query = useQuery<ResourceStatsResponse["data"]>({
-    queryKey: ["dashboard", "resource-latest", resource.slug, params],
-    queryFn: async () => {
-      const search = new URLSearchParams(params).toString();
-      const url =
-        "/api/admin/dashboard/resource-stats/" +
-        // The API registers stats under its own resource name, the last
-        // segment of the endpoint (purchase_requests), not the admin slug
-        // (purchase-requests), so every multi-word resource's card failed.
-        resource.endpoint.split("/").filter(Boolean).pop() +
-        (search ? "?" + search : "");
-      const { data } = await apiClient.get<ResourceStatsResponse>(url);
-      return data.data;
-    },
-    staleTime: 30_000,
-    refetchInterval: 60_000,
-  });
+  // The same query as the stat card beside it, so the two cost one request.
+  const query = useResourceDashboardStats(resource.endpoint, dateRangeToQueryParams(dateRange), pickLatest);
 
   const cols = pickPreviewColumns(resource);
-  const rows = query.data?.latest ?? [];
+  const rows = query.data ?? [];
   const label = resource.label?.plural ?? resource.slug;
 
   return (

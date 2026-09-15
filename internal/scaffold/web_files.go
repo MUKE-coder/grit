@@ -54,7 +54,7 @@ func webFileMap(root string, opts Options) map[string]string {
 		// banner prints (API, GORM Studio, Sentinel, Admin, MinIO,
 		// Mailhog, ...) on the landing page, dev-only.
 		filepath.Join(webRoot, "components", "dev-links.tsx"): webDevLinks(),
-		filepath.Join(webRoot, "components", "providers.tsx"): webProviders(),
+		filepath.Join(webRoot, "components", "providers.tsx"): webProvidersFor(opts),
 		// UserMenu, web-session marker, auth pages, useAuth, auth shells, the
 		// auth-aware navbar and the customer area are opt-in via
 		// `grit add web-auth` -- see webAuthFiles() in web_auth.go.
@@ -1138,6 +1138,72 @@ export function DevLinks() {
 }
 `
 }
+
+// webProvidersFor is components/providers.tsx for this project's web app.
+//
+// In a double the admin panel lives under app/admin, inside the root layout and
+// so inside these providers, and it brings a React Query client of its own with
+// the admin's defaults. The web client was created for every admin page and
+// never used. Contact-app review M24.
+func webProvidersFor(opts Options) string {
+	if opts.ShouldEmbedAdmin() {
+		return webProvidersEmbeddedAdmin
+	}
+	return webProviders()
+}
+
+// webProvidersEmbeddedAdmin provides the web app's client everywhere except the
+// admin section. Keyed on the route segment below the root layout rather than on
+// the URL: an unmatched /admin/... renders the root not-found page, whose navbar
+// can need a client, and its segment is not "admin".
+//
+// The provider stays in the tree on admin routes with no client in it, so
+// crossing between the site and the panel does not remount the pages below.
+const webProvidersEmbeddedAdmin = `"use client";
+
+import { QueryClient, QueryClientContext } from "@tanstack/react-query";
+import { useSelectedLayoutSegment } from "next/navigation";
+import { useEffect, useState } from "react";
+
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60 * 1000,
+        retry: 1,
+      },
+    },
+  });
+}
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  // Everything under app/admin renders inside the admin's own providers, with a
+  // client of its own. Creating this one there as well would be a second cache
+  // nothing reads.
+  const inAdmin = useSelectedLayoutSegment() === "admin";
+
+  // Created on the first page that needs it and kept, so the site's cache
+  // survives a visit to the panel and back.
+  const [queryClient, setQueryClient] = useState<QueryClient | null>(() =>
+    inAdmin ? null : makeQueryClient()
+  );
+  if (!inAdmin && queryClient === null) {
+    setQueryClient(makeQueryClient());
+  }
+  const active = inAdmin ? undefined : (queryClient ?? undefined);
+
+  // What QueryClientProvider does: refetch on focus and reconnect while mounted.
+  useEffect(() => {
+    if (!active) return;
+    active.mount();
+    return () => active.unmount();
+  }, [active]);
+
+  return (
+    <QueryClientContext.Provider value={active}>{children}</QueryClientContext.Provider>
+  );
+}
+`
 
 func webProviders() string {
 	return `"use client";

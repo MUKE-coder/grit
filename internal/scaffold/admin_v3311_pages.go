@@ -18,6 +18,7 @@ import dynamic from "next/dynamic";
 import { Suspense, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useMe } from "@/hooks/use-auth";
+import { useNotificationList, type NotificationList } from "@/hooks/use-notifications";
 import { usePermissions } from "@/hooks/use-permissions";
 import { resources } from "@/resources";
 import { PageHeader } from "@/components/chrome/PageHeader";
@@ -60,7 +61,10 @@ interface ActivityRow {
 }
 interface ActivityListResponse { data: ActivityRow[] }
 interface ActivityStatsResponse { data: { info: number; warn: number; critical: number; total: number } }
-interface NotificationsResponse { unread: number }
+
+function unreadCount(list: NotificationList) {
+  return list.unread || 0;
+}
 
 export default function DashboardPage() {
   const { data: user } = useMe();
@@ -120,18 +124,9 @@ export default function DashboardPage() {
     refetchInterval: 60_000,
   });
 
-  const notifications = useQuery<number>({
-    queryKey: ["dashboard", "notifications-unread"],
-    queryFn: async () => {
-      try {
-        const { data } = await apiClient.get<NotificationsResponse>("/api/notifications");
-        return data.unread || 0;
-      } catch {
-        return 0;
-      }
-    },
-    refetchInterval: 60_000,
-  });
+  // The bell in the header reads the same list, so the two share one request
+  // and a notification marked read in the bell updates this tile as well.
+  const notifications = useNotificationList(unreadCount);
 
   const recentActivity = useQuery<ActivityRow[]>({
     queryKey: ["dashboard", "recent-activity"],
