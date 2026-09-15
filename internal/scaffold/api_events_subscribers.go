@@ -37,9 +37,7 @@ func RegisterEventSubscribers(db *gorm.DB, hub *realtime.Hub, dispatch WebhookDi
 
 // registerAudit records every event in the activity feed.
 //
-// Sync, and deliberately so. The activity row should exist before the caller
-// is told the write succeeded, and this is the one subscriber that legitimately
-// needs the request context: the feed records IP and user agent.
+` + subscribersAuditCommentNew + `
 func registerAudit(db *gorm.DB) {
 	if db == nil {
 		return

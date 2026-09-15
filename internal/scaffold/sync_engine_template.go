@@ -23,6 +23,8 @@ func syncEngineTS() string {
 
 const FORCE_OFFLINE_KEY = "force_offline";
 const LAST_SYNCED_KEY = "last_synced_at";
+/** The most changes the server takes in one push. */
+const MAX_PUSH_CHANGES = 500;
 
 /**
  * The offline-first engine.
@@ -555,105 +557,110 @@ export class SyncEngine {
     overridden: number;
   }> {
     const all = await this.adapter.listOutbox();
-    const entries = all
+    const queued = all
       .filter((e) => !e.hasConflict)
       .sort((a, b) => a.createdAt - b.createdAt);
-    if (entries.length === 0) return { pushed: 0, conflicts: 0, overridden: 0 };
-
-    const changes: PushChange[] = entries.map((e) => ({
-      op: e.op,
-      model: e.model,
-      id: e.entityId,
-      version: e.version,
-      // Stripped here as well as on the server. The server enforces it,
-      // because a promise kept only by well-behaved clients is not one; the
-      // client strips it too so a local_only field is not sitting in a
-      // request body on the wire waiting to be enforced away.
-      data: this.stripLocalOnly(e.model, e.data),
-    }));
-
-    const response = await this.request(this.apiUrl + "/sync/push", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ changes }),
-    });
-    const body = (await response.json()) as { results: PushResult[] };
-    const results = body.results ?? [];
-    if (results.length !== entries.length) {
-      throw new Error(
-        "push: server returned " +
-          String(results.length) +
-          " results for " +
-          String(entries.length) +
-          " changes",
-      );
-    }
+    if (queued.length === 0) return { pushed: 0, conflicts: 0, overridden: 0 };
 
     let pushed = 0;
     let conflicts = 0;
     let overridden = 0;
-    for (let i = 0; i < results.length; i += 1) {
-      const result = results[i];
-      const entry = entries[i];
+    // The server takes at most MAX_PUSH_CHANGES a push, so a long offline
+    // stretch goes up in several.
+    for (let start = 0; start < queued.length; start += MAX_PUSH_CHANGES) {
+      const entries = queued.slice(start, start + MAX_PUSH_CHANGES);
+      const changes: PushChange[] = entries.map((e) => ({
+        op: e.op,
+        model: e.model,
+        id: e.entityId,
+        version: e.version,
+        // Stripped here as well as on the server. The server enforces it,
+        // because a promise kept only by well-behaved clients is not one; the
+        // client strips it too so a local_only field is not sitting in a
+        // request body on the wire waiting to be enforced away.
+        data: this.stripLocalOnly(e.model, e.data),
+      }));
 
-      if (result.ok) {
-        await this.adapter.deleteOutbox(entry.model, entry.entityId);
-        if (entry.op === "delete") {
-          await this.adapter.deleteRecord(entry.model, entry.entityId);
-        } else {
-          const record = await this.adapter.getRecord(entry.model, entry.entityId);
-          if (record) {
+      const response = await this.request(this.apiUrl + "/sync/push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ changes }),
+      });
+      const body = (await response.json()) as { results: PushResult[] };
+      const results = body.results ?? [];
+      if (results.length !== entries.length) {
+        throw new Error(
+          "push: server returned " +
+            String(results.length) +
+            " results for " +
+            String(entries.length) +
+            " changes",
+        );
+      }
+
+      for (let i = 0; i < results.length; i += 1) {
+        const result = results[i];
+        const entry = entries[i];
+
+        if (result.ok) {
+          await this.adapter.deleteOutbox(entry.model, entry.entityId);
+          if (entry.op === "delete") {
+            await this.adapter.deleteRecord(entry.model, entry.entityId);
+          } else {
+            const record = await this.adapter.getRecord(entry.model, entry.entityId);
+            if (record) {
+              await this.adapter.putRecord({
+                ...record,
+                version: result.new_version ?? record.version,
+              });
+            }
+          }
+          pushed += 1;
+          continue;
+        }
+
+        if (result.code === "SERVER_WINS") {
+          // The resource declared server_wins, so the server discarded this
+          // change and sent its row. Nobody is asked anything: the point of
+          // declaring server_wins is that there is no decision to make.
+          await this.adapter.deleteOutbox(entry.model, entry.entityId);
+          if (result.server_data) {
             await this.adapter.putRecord({
-              ...record,
-              version: result.new_version ?? record.version,
+              model: entry.model,
+              id: entry.entityId,
+              data: result.server_data,
+              version: result.server_version ?? 0,
+              updatedAt: nowSeconds(),
+              deleted: false,
             });
           }
+          overridden += 1;
+          continue;
         }
-        pushed += 1;
-        continue;
-      }
 
-      if (result.code === "SERVER_WINS") {
-        // The resource declared server_wins, so the server discarded this
-        // change and sent its row. Nobody is asked anything: the point of
-        // declaring server_wins is that there is no decision to make.
-        await this.adapter.deleteOutbox(entry.model, entry.entityId);
-        if (result.server_data) {
-          await this.adapter.putRecord({
-            model: entry.model,
-            id: entry.entityId,
-            data: result.server_data,
-            version: result.server_version ?? 0,
-            updatedAt: nowSeconds(),
-            deleted: false,
+        if (result.code === "VERSION_CONFLICT") {
+          // Park the server's copy on the entry, so a merge UI has both sides
+          // without a second round trip.
+          await this.adapter.putOutbox({
+            ...entry,
+            hasConflict: true,
+            serverData: result.server_data ?? null,
+            serverVersion: result.server_version ?? 0,
+            conflictMessage:
+              result.message ?? "This record changed on the server",
           });
+          conflicts += 1;
+          continue;
         }
-        overridden += 1;
-        continue;
-      }
 
-      if (result.code === "VERSION_CONFLICT") {
-        // Park the server's copy on the entry, so a merge UI has both sides
-        // without a second round trip.
+        // Anything else stays queued with the reason attached, so a transient
+        // server error retries instead of dropping the change on the floor.
         await this.adapter.putOutbox({
           ...entry,
-          hasConflict: true,
-          serverData: result.server_data ?? null,
-          serverVersion: result.server_version ?? 0,
           conflictMessage:
-            result.message ?? "This record changed on the server",
+            (result.code ?? "ERROR") + ": " + (result.message ?? ""),
         });
-        conflicts += 1;
-        continue;
       }
-
-      // Anything else stays queued with the reason attached, so a transient
-      // server error retries instead of dropping the change on the floor.
-      await this.adapter.putOutbox({
-        ...entry,
-        conflictMessage:
-          (result.code ?? "ERROR") + ": " + (result.message ?? ""),
-      });
     }
 
     await this.refreshCounts();

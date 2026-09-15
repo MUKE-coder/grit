@@ -96,6 +96,10 @@ func (h *NoteHandler) record(note *Note) error {
 func TestWorkersAndAuthLookupBindContext(t *testing.T) {
 	raw, _ := os.ReadFile("api_jobs_files.go")
 	for old, bound := range workerDBCalls {
+		// The audit prune's transaction moved into audit.Prune, which takes ctx.
+		if old == "return deps.DB.Transaction(" && strings.Contains(jobsWorkersGo(), "audit.Prune(ctx, deps.DB,") {
+			continue
+		}
 		if strings.Contains(string(raw), old) || !strings.Contains(string(raw), bound) {
 			t.Errorf("the job workers still call %q without the job's context", old)
 		}

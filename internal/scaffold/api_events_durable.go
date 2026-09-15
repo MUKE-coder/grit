@@ -89,18 +89,43 @@ const durableTopicPrefix = "event:"
 var (
 	durableMu   sync.RWMutex
 	durableDB   *gorm.DB
+	relayStop   func()
 	relayWarned sync.Once
 )
 
 // StartRelay starts delivering Durable subscribers. Call once at boot, after
 // Init. Every replica runs one; the outbox's row claims keep two of them from
-// delivering the same message at once.
+// delivering the same message at once. Calling it again replaces the relay.
 func StartRelay(db *gorm.DB) {
+	StopRelay()
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
 	durableMu.Lock()
 	durableDB = db
+	relayStop = func() {
+		cancel()
+		<-done
+	}
 	durableMu.Unlock()
 	relay := &outbox.Relay{DB: db, Deliver: deliverDurable, TopicPrefix: durableTopicPrefix}
-	go relay.Start(context.Background())
+	go func() {
+		defer close(done)
+		relay.Start(ctx)
+	}()
+}
+
+// StopRelay stops the relay and waits for the delivery in progress to finish.
+// cmd/server/main.go calls it on shutdown. The relay used to run on a context
+// nothing cancelled, so a replica being replaced kept claiming messages it would
+// not live to deliver, and they waited out the claim timeout elsewhere.
+func StopRelay() {
+	durableMu.Lock()
+	stop := relayStop
+	relayStop = nil
+	durableMu.Unlock()
+	if stop != nil {
+		stop()
+	}
 }
 
 // OnDurable registers a Durable subscriber that writes to the database, which

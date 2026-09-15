@@ -50,6 +50,7 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 
 	"{{MODULE}}/internal/config"
 )
@@ -189,6 +190,34 @@ func (s *Storage) Delete(ctx context.Context, key string) error {
 	})
 	if err != nil {
 		return fmt.Errorf("deleting %q: %w", key, err)
+	}
+	return nil
+}
+
+// DeleteMany removes keys from the bucket, 1,000 to a request, the most one
+// DeleteObjects call takes. A key that is already gone is not an error.
+func (s *Storage) DeleteMany(ctx context.Context, keys []string) error {
+	for start := 0; start < len(keys); start += 1000 {
+		end := start + 1000
+		if end > len(keys) {
+			end = len(keys)
+		}
+		objects := make([]types.ObjectIdentifier, 0, end-start)
+		for _, key := range keys[start:end] {
+			objects = append(objects, types.ObjectIdentifier{Key: aws.String(key)})
+		}
+		out, err := s.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+			Bucket: aws.String(s.bucket),
+			Delete: &types.Delete{Objects: objects, Quiet: aws.Bool(true)},
+		})
+		if err != nil {
+			return fmt.Errorf("deleting %d objects: %w", len(objects), err)
+		}
+		if len(out.Errors) > 0 {
+			first := out.Errors[0]
+			return fmt.Errorf("deleting %d of %d objects failed, the first %q: %s",
+				len(out.Errors), len(objects), aws.ToString(first.Key), aws.ToString(first.Message))
+		}
 	}
 	return nil
 }

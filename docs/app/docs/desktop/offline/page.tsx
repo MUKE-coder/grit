@@ -205,8 +205,8 @@ const SYNC_TABLES: string[] = [
                   upsert the results into the local mirror. Updates the cursor.
                 </li>
                 <li>
-                  <strong className="text-foreground/80">Push phase</strong> — POST the entire
-                  outbox to <code>/api/sync/push</code> in one batch. The server validates
+                  <strong className="text-foreground/80">Push phase</strong> — POST the
+                  outbox to <code>/api/sync/push</code> in pushes of up to 500 changes. The server validates
                   each entry&apos;s <code>version</code> against its current row.
                 </li>
                 <li>

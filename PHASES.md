@@ -1234,11 +1234,11 @@ pushed, and name the version.
 - [x] M13 F (v3.270.0) - API-key auth SELECT + UPDATE per request
 - [x] M14 F (v3.270.0) - dashboard stats load 30 days of rows into Go (count, series and latest still run one after another)
 - [x] M15 F (v3.270.0) - image processing inline with no concurrency cap (alpha check left as is: Opaque() already reads the pixel bytes of decoded NRGBA and RGBA images)
-- [ ] M16 F - audit writer inserts row by row under a cluster lock
-- [ ] M17 F - sync push unbounded, 3 queries per change, no transaction
-- [ ] M18 F - every mutation writes an activity row synchronously
-- [ ] M19 F - outbox never pruned; no SKIP LOCKED; no shutdown
-- [ ] M20 F - cleanup and cron jobs unbounded and retry-heavy
+- [x] M16 F (v3.271.0) - audit writer inserts row by row under a cluster lock
+- [x] M17 F (v3.271.0) - sync push unbounded, 3 queries per change, no transaction (a push takes 500 changes and the shipped clients send 500 at a time; still no transaction: each change stands alone, and a savepoint per change overflows Postgres's subtransaction cache)
+- [x] M18 F (v3.271.0) - every mutation writes an activity row synchronously (sign-ins and other LogActivity calls still write before the request returns)
+- [x] M19 F (v3.271.0) - outbox never pruned; no SKIP LOCKED; no shutdown (on MySQL a claim's locking read covers every row it scans, so a second relay skips them all and waits for its next poll rather than claiming alongside)
+- [x] M20 F (v3.271.0) - cleanup and cron jobs unbounded and retry-heavy (also fixed: every activity-log prune that deleted anything left a chain that failed verification)
 - [ ] M21 F - pool sizing ignores replicas and Sentinel's pool
 - [ ] M22 F - response cache has no stampede protection
 - [ ] M23 F - duplicate and drifting query keys

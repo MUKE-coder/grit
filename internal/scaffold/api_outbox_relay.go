@@ -64,6 +64,12 @@ type Relay struct {
 	// deliver the same message concurrently, which at-least-once permits but
 	// nobody enjoys.
 	ClaimTimeout time.Duration
+
+	// KeepDelivered is how long a delivered message stays in the table, seven
+	// days by default. The relay deletes older ones about once an hour, in
+	// chunks. Nothing pruned the outbox before, so it grew by every event ever
+	// delivered. Pending and failed messages are never pruned.
+	KeepDelivered time.Duration
 }
 
 func (r *Relay) defaults() {
@@ -85,6 +91,9 @@ func (r *Relay) defaults() {
 	if r.ClaimTimeout <= 0 {
 		r.ClaimTimeout = 5 * time.Minute
 	}
+	if r.KeepDelivered <= 0 {
+		r.KeepDelivered = 7 * 24 * time.Hour
+	}
 	if r.Name == "" {
 		r.Name = hostname()
 	}
@@ -99,9 +108,19 @@ func (r *Relay) Start(ctx context.Context) {
 	}
 
 	log.Printf("outbox: relay %s started (batch %d, every %s)", r.Name, r.Batch, r.Interval)
+	nextPrune := time.Now()
 	for {
+		if now := time.Now(); !now.Before(nextPrune) {
+			nextPrune = now.Add(pruneEvery)
+			if pruned, err := Prune(r.DB.WithContext(ctx), r.KeepDelivered); err != nil && ctx.Err() == nil {
+				log.Printf("outbox: pruning delivered messages: %v", err)
+			} else if pruned > 0 {
+				log.Printf("outbox: pruned %d delivered messages older than %s", pruned, r.KeepDelivered)
+			}
+		}
 		n, err := r.Tick(ctx)
-		if err != nil {
+		// An error once the context is cancelled is the relay being stopped.
+		if err != nil && ctx.Err() == nil {
 			log.Printf("outbox: %v", err)
 		}
 		// Work found means there is probably more. Only idle polls wait.
@@ -128,22 +147,39 @@ func (r *Relay) Tick(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	for _, m := range batch {
+	for i, m := range batch {
+		if ctx.Err() != nil {
+			// Stopping. Hand back what this relay claimed and has not tried, so
+			// another replica delivers it now rather than after ClaimTimeout.
+			r.release(batch[i:])
+			return i, nil
+		}
 		r.attempt(ctx, m)
 	}
 	return len(batch), nil
+}
+
+// release returns claimed messages to the queue untried.
+func (r *Relay) release(batch []Message) {
+	ids := make([]string, len(batch))
+	for i, m := range batch {
+		ids[i] = m.ID
+	}
+	if err := r.DB.Model(&Message{}).Where("id IN ? AND status = ? AND claimed_by = ?", ids, StatusClaimed, r.Name).
+		Updates(map[string]any{"status": StatusPending, "claimed_by": "", "claimed_at": nil}).Error; err != nil {
+		log.Printf("outbox: releasing %d claimed messages: %v", len(ids), err)
+	}
 }
 
 // claim marks a batch as ours, atomically.
 //
 // The select and the update are in one transaction with a row lock, because
 // two relays polling the same table will otherwise read the same rows and both
-// deliver them. Postgres and MySQL take the lock; SQLite serialises writes
-// anyway, so the transaction alone is enough there.
-//
-// SKIP LOCKED would be better on Postgres and does not exist on the other two,
-// and a locking clause that silently changes meaning per dialect is worse than
-// a plain lock: the contended case here is two relays, not two hundred.
+// deliver them. Postgres and MySQL lock with SKIP LOCKED, so a relay passes over
+// the rows another relay holds and claims the next ones, instead of waiting for
+// that relay's transaction to end. SQLite serialises writes anyway, so the
+// transaction alone is enough there. SKIP LOCKED needs MySQL 8.0 or MariaDB
+// 10.6.
 func (r *Relay) claim(ctx context.Context) ([]Message, error) {
 	var claimed []Message
 	now := time.Now()
@@ -163,7 +199,7 @@ func (r *Relay) claim(ctx context.Context) ([]Message, error) {
 		}
 
 		if r.DB.Dialector.Name() != "sqlite" {
-			q = q.Clauses(clause.Locking{Strength: "UPDATE"})
+			q = q.Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"})
 		}
 		if err := q.Find(&batch).Error; err != nil {
 			return err
@@ -254,15 +290,42 @@ func Retry(db *gorm.DB, id string) error {
 		}).Error
 }
 
-// Prune deletes delivered messages older than the given age.
+// pruneEvery is how often a relay prunes, and pruneChunk how many messages one
+// DELETE removes, so a large backlog is never one statement locking all of it.
+const (
+	pruneEvery = time.Hour
+	pruneChunk = 1000
+)
+
+// Prune deletes delivered messages older than the given age. The relay calls it
+// about once an hour with KeepDelivered.
 //
 // Only delivered ones. A failed message is a bug that has not been looked at
 // yet, and a pending one has not been sent; deleting either would lose an
 // event nobody ever saw.
 func Prune(db *gorm.DB, olderThan time.Duration) (int64, error) {
-	res := db.Where("status = ? AND delivered_at < ?", StatusDelivered, time.Now().Add(-olderThan)).
-		Delete(&Message{})
-	return res.RowsAffected, res.Error
+	cutoff := time.Now().Add(-olderThan)
+	var total int64
+	for {
+		var ids []string
+		if err := db.Model(&Message{}).
+			Where("status = ? AND delivered_at < ?", StatusDelivered, cutoff).
+			Limit(pruneChunk).
+			Pluck("id", &ids).Error; err != nil {
+			return total, err
+		}
+		if len(ids) == 0 {
+			return total, nil
+		}
+		res := db.Where("id IN ?", ids).Delete(&Message{})
+		if res.Error != nil {
+			return total, res.Error
+		}
+		total += res.RowsAffected
+		if len(ids) < pruneChunk {
+			return total, nil
+		}
+	}
 }
 
 // hostname names this relay in claimed_by, so a stuck message says which

@@ -80,8 +80,9 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "flags.go"):               apiFlagsHandlerGo(),
 
 		// v3.30 — semantic UserActivity log + ticket system
-		filepath.Join(apiRoot, "internal", "models", "user_activity.go"): userActivityModelGo(),
-		filepath.Join(apiRoot, "internal", "services", "activity.go"):    userActivityServiceGo(),
+		filepath.Join(apiRoot, "internal", "models", "user_activity.go"):     userActivityModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "activity.go"):        userActivityServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "activity_writer.go"): servicesActivityWriterGo(),
 		// v3.31.49 — ResolveClientIP honours the X-Public-IP-Hint
 		// header sent by the admin/web clients when the TCP peer is
 		// loopback, so dev activity logs show the operator's actual
@@ -439,6 +440,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/config"
 	"` + "{{MODULE}}" + `/internal/cron"
 	"` + "{{MODULE}}" + `/internal/database"
+	"` + "{{MODULE}}" + `/internal/events"
 	"` + "{{MODULE}}" + `/internal/jobs"
 	"` + "{{MODULE}}" + `/internal/mail"
 	"` + "{{MODULE}}" + `/internal/models"
@@ -719,7 +721,7 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatalf("Server forced to shutdown: %v", err)
 	}
-
+` + shutdownDrain + `
 	log.Println("Server exited")
 }
 `
@@ -5001,21 +5003,82 @@ type SyncPushRequest struct {
 	Changes []PushChange ` + "`" + `json:"changes"` + "`" + `
 }
 
-// Push handles POST /api/sync/push. Each change is applied
-// independently — one conflict does not abort the rest of the batch.
+// MaxPushChanges is the most changes one push may carry. The sync clients Grit
+// ships send their outbox in pushes of this size. An unbounded push of 20,000
+// changes was one request running 60,000 queries, which the client gave up on
+// and sent again.
+const MaxPushChanges = 500
 
+// Push handles POST /api/sync/push. Each change is applied
+// independently: one conflict does not abort the rest of the batch.
 func (h *SyncHandler) Push(c *gin.Context) {
 	var req SyncPushRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "INVALID_BODY", "message": err.Error()}})
 		return
 	}
+	if len(req.Changes) > MaxPushChanges {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": gin.H{
+			"code":    "TOO_MANY_CHANGES",
+			"message": fmt.Sprintf("a push may carry at most %d changes; send the rest in another push", MaxPushChanges),
+		}})
+		return
+	}
 
+	rows := h.loadCurrent(c, req.Changes)
 	results := make([]PushResult, len(req.Changes))
 	for i, ch := range req.Changes {
-		results[i] = h.applyChange(c, ch)
+		results[i] = h.applyChange(c, ch, rows)
 	}
 	c.JSON(http.StatusOK, gin.H{"results": results})
+}
+
+// currentRows holds the rows a push updates or deletes, keyed by model and
+// then id, read with one query per model rather than one per change.
+type currentRows map[string]map[string]interface{}
+
+// loadCurrent reads the rows the push's updates and deletes name. A row it did
+// not load is read by its change, so a failed preload costs queries, not
+// correctness.
+func (h *SyncHandler) loadCurrent(c *gin.Context, changes []PushChange) currentRows {
+	ids := map[string][]string{}
+	for _, ch := range changes {
+		if ch.Op == "update" || ch.Op == "delete" {
+			ids[ch.Model] = append(ids[ch.Model], ch.ID)
+		}
+	}
+	rows := currentRows{}
+	for model, list := range ids {
+		proto, err := h.Registry.New(model)
+		if err != nil {
+			continue
+		}
+		found := reflect.New(reflect.SliceOf(reflect.TypeOf(proto)))
+		if err := h.DB.WithContext(c.Request.Context()).Where("id IN ?", list).Find(found.Interface()).Error; err != nil {
+			log.Printf("sync push: preloading %s | id=%s: %v", model, c.GetString("request_id"), err)
+			continue
+		}
+		byID := make(map[string]interface{}, found.Elem().Len())
+		for i := 0; i < found.Elem().Len(); i++ {
+			row := found.Elem().Index(i).Interface()
+			if id := reflect.ValueOf(row).Elem().FieldByName("ID"); id.IsValid() {
+				byID[fmt.Sprint(id.Interface())] = row
+			}
+		}
+		rows[model] = byID
+	}
+	return rows
+}
+
+// current returns the row a change applies to and takes it out of rows, so a
+// second change to the same row in one push reads what the first one wrote.
+func (h *SyncHandler) current(c *gin.Context, rows currentRows, ch PushChange, proto interface{}) (interface{}, error) {
+	if row, ok := rows[ch.Model][ch.ID]; ok {
+		delete(rows[ch.Model], ch.ID)
+		return row, nil
+	}
+	err := h.DB.WithContext(c.Request.Context()).First(proto, "id = ?", ch.ID).Error
+	return proto, err
 }
 
 // syncIdentifier picks a human-friendly label for the semantic activity feed
@@ -5039,7 +5102,7 @@ func syncFault(c *gin.Context, ch PushChange, err error, message string) string 
 	return message
 }
 
-func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
+func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange, rows currentRows) PushResult {
 	proto, err := h.Registry.New(ch.Model)
 	if err != nil {
 		return PushResult{OK: false, Code: "UNKNOWN_MODEL", Message: err.Error()}
@@ -5079,8 +5142,8 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 
 	case "update":
 		// Versioned update: load current row, compare versions, update if match.
-		current := proto
-		if err := h.DB.WithContext(c.Request.Context()).First(current, "id = ?", ch.ID).Error; err != nil {
+		current, err := h.current(c, rows, ch, proto)
+		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return PushResult{OK: false, Code: "NOT_FOUND", Message: "row was deleted on the server"}
 			}
@@ -5130,7 +5193,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 		// json column ("cannot find encode plan for OID 0") — the update fails and
 		// the offline outbox entry gets stuck forever. Decoding first routes those
 		// fields through their driver.Valuer implementations, exactly like create.
-		obj := proto
+		obj := current
 		if err := decodeInto(obj, ch.Data); err != nil {
 			return PushResult{OK: false, Code: "DECODE_ERROR", Message: err.Error()}
 		}
@@ -5154,8 +5217,8 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 		return PushResult{OK: true, NewVersion: newVersion}
 
 	case "delete":
-		current := proto
-		if err := h.DB.WithContext(c.Request.Context()).First(current, "id = ?", ch.ID).Error; err != nil {
+		current, err := h.current(c, rows, ch, proto)
+		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				// Already gone — treat as success so the outbox can clear.
 				return PushResult{OK: true}
@@ -5742,12 +5805,11 @@ func appendBatch(db *gorm.DB, entries []models.ActivityLog) error {
 			}
 			e.PrevHash = prevHash
 			e.Hash = ComputeHash(prevHash, canonical)
-			if err := tx.Create(e).Error; err != nil {
-				return err
-			}
 			prevHash, last = e.Hash, e.CreatedAt
 		}
-		return nil
+		// One multi-row INSERT for the batch. An INSERT per entry kept the chain
+		// lock, which every replica's writer waits on, for 256 round trips.
+		return tx.CreateInBatches(entries, 256).Error
 	})
 }
 
@@ -5805,6 +5867,93 @@ func clip(s string, n int) string {
 		s = s[:len(s)-1]
 	}
 	return s
+}
+
+// PruneChunk is how many entries one prune transaction deletes.
+const PruneChunk = 5000
+
+// prunePath marks the SECURITY entry a prune appends.
+const prunePath = "audit.chain.pruned"
+
+// Prune deletes the entries created before cutoff, oldest first and PruneChunk
+// at a time, and returns how many it deleted.
+//
+// The entries that remain keep their hashes. The oldest of them now chains
+// from an entry that is gone, so each chunk appends a SECURITY entry naming the
+// hash it chains from, and VerifyChain accepts a log that starts there only
+// when that entry exists: old entries deleted any other way still fail
+// verification. Each chunk is one transaction holding the chain lock, so the
+// log verifies after every commit and a prune that stops part way keeps what
+// it did.
+//
+// Pruning used to rewrite the oldest remaining entry's hash, which broke the
+// link from the entry after it, so every prune that deleted anything left a
+// log that failed verification.
+func Prune(ctx context.Context, db *gorm.DB, cutoff time.Time) (int64, error) {
+	var total int64
+	for {
+		n, err := pruneChunk(db.WithContext(ctx), cutoff)
+		total += n
+		if err != nil || n < PruneChunk {
+			return total, err
+		}
+	}
+}
+
+func pruneChunk(db *gorm.DB, cutoff time.Time) (int64, error) {
+	var removed int64
+	err := db.Transaction(func(tx *gorm.DB) error {
+		if _, err := lockAndReadHead(tx); err != nil {
+			return err
+		}
+		// The chunk ends at its last entry, so it is deleted as an index range
+		// rather than a list of 5,000 ids.
+		var last models.ActivityLog
+		if err := tx.Where("created_at < ?", cutoff).
+			Order("created_at asc, id asc").
+			Offset(PruneChunk - 1).Limit(1).
+			Find(&last).Error; err != nil {
+			return fmt.Errorf("finding the end of the chunk: %w", err)
+		}
+		del := tx.Where("created_at < ?", cutoff)
+		if last.ID != "" {
+			del = del.Where("created_at < ? OR (created_at = ? AND id <= ?)", last.CreatedAt, last.CreatedAt, last.ID)
+		}
+		res := del.Delete(&models.ActivityLog{})
+		if res.Error != nil {
+			return fmt.Errorf("deleting entries: %w", res.Error)
+		}
+		if res.RowsAffected == 0 {
+			return nil
+		}
+		var first models.ActivityLog
+		if err := tx.Order("created_at asc, id asc").Limit(1).Find(&first).Error; err != nil {
+			return fmt.Errorf("reading the oldest remaining entry: %w", err)
+		}
+		removed = res.RowsAffected
+		return appendBatch(tx, []models.ActivityLog{{
+			Method:      "SECURITY",
+			Path:        prunePath,
+			Status:      200,
+			Resource:    "activity_logs",
+			ResourceIDs: first.PrevHash,
+			RecordCount: int(removed),
+		}})
+	})
+	if err != nil {
+		return 0, err
+	}
+	return removed, nil
+}
+
+// pruneRecorded reports whether a prune recorded that the log starts after the
+// entry whose hash is prevHash.
+func pruneRecorded(ctx context.Context, db *gorm.DB, prevHash string) (bool, error) {
+	var n int64
+	err := db.WithContext(ctx).Model(&models.ActivityLog{}).
+		Where("method = ? AND path = ? AND resource_ids = ?", "SECURITY", prunePath, prevHash).
+		Count(&n).Error
+	return n > 0, err
 }
 
 // ErrChainIntact is returned by Reseal when the chain verifies.
@@ -5959,6 +6108,23 @@ func VerifyChain(ctx context.Context, db *gorm.DB) (ChainStatus, error) {
 			canonical, err := Canonical(e)
 			if err != nil {
 				return ChainStatus{TotalEntries: total}, err
+			}
+			if total+i == 0 && e.PrevHash != "" {
+				// The oldest entry chains from one that is gone, which is what a
+				// prune leaves. It verifies only if the prune recorded that hash.
+				recorded, err := pruneRecorded(ctx, db, e.PrevHash)
+				if err != nil {
+					return ChainStatus{TotalEntries: total}, err
+				}
+				if !recorded {
+					return ChainStatus{
+						Valid:      false,
+						BrokenAtID: e.ID,
+						Got:        e.PrevHash,
+						Message:    "the log starts after entries that were deleted, and no prune recorded deleting them",
+					}, nil
+				}
+				prevHash = e.PrevHash
 			}
 			expected := ComputeHash(prevHash, canonical)
 			if expected != e.Hash {

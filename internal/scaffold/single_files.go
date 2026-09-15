@@ -204,10 +204,12 @@ import (
 	"{{MODULE}}/internal/config"
 	"{{MODULE}}/internal/cron"
 	"{{MODULE}}/internal/database"
+	"{{MODULE}}/internal/events"
 	"{{MODULE}}/internal/jobs"
 	"{{MODULE}}/internal/mail"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/routes"
+	"{{MODULE}}/internal/services"
 	"{{MODULE}}/internal/storage"
 )
 
@@ -454,7 +456,7 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Printf("Server shutdown error: %v", err)
 	}
-	log.Println("Server stopped")
+` + shutdownDrain + `	log.Println("Server stopped")
 }
 `
 }
