@@ -40,8 +40,7 @@ import (
 //
 //	public-*    any connection, no authorizer needed
 //	private-*   only a user the channel's authorizer accepts
-//	presence-*  authorized exactly like private-*
-//
+` + channelsPresenceDocNew + `//
 // Register authorizers once at startup, before the router serves requests:
 //
 //	realtime.Channel("invoices.{id}", func(c realtime.ChannelContext) bool {
@@ -58,9 +57,7 @@ import (
 type ChannelContext struct {
 	UserID  string
 	Channel string            // the full name, "private-invoices.42"
-	Params  map[string]string // "id" -> "42" for the pattern "invoices.{id}"
-}
-
+` + channelsContextNew + `
 // Param returns one parsed pattern parameter, "" when the pattern has none by that name.
 func (c ChannelContext) Param(name string) string { return c.Params[name] }
 
@@ -173,32 +170,7 @@ func matchChannel(channel string) (func(ChannelContext) bool, map[string]string)
 	return nil, nil
 }
 
-// authorizeChannel decides whether userID may subscribe to channel.
-func authorizeChannel(userID, channel string) (err error) {
-	if !validChannel(channel) {
-		return ErrInvalidChannel
-	}
-	if strings.HasPrefix(channel, "public-") {
-		return nil
-	}
-	authorize, params := matchChannel(channel)
-	if authorize == nil {
-		return ErrChannelForbidden
-	}
-	// The authorizer runs on the connection's read goroutine, where a panic
-	// would take the whole process down rather than one request.
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("[realtime] the authorizer for %s panicked: %v", channel, r)
-			err = ErrChannelForbidden
-		}
-	}()
-	if !authorize(ChannelContext{UserID: userID, Channel: channel, Params: params}) {
-		return ErrChannelForbidden
-	}
-	return nil
-}
-
+` + channelsAuthorizeNew + `
 // channelIndex records subscriptions both ways, so a publish finds a channel's
 // subscribers and a closing connection finds its channels without scanning
 // everything. The hub's mu guards it; the zero value is ready to use.
@@ -251,28 +223,7 @@ func (x *channelIndex) drop(c *Client) {
 	}
 }
 
-// Subscribe authorizes c for channel and adds it. A channel the connection
-// already holds is a no-op. The authorizer runs outside the hub's lock, so a
-// slow database check does not stall every other connection.
-func (h *Hub) Subscribe(c *Client, channel string) error {
-	if err := authorizeChannel(c.UserID, channel); err != nil {
-		return err
-	}
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if _, open := h.clients[c.UserID][c]; !open {
-		return nil // closed while the authorizer ran: nothing left to deliver to
-	}
-	return h.channels.add(c, channel)
-}
-
-// Unsubscribe removes c from channel. Unknown channels are ignored.
-func (h *Hub) Unsubscribe(c *Client, channel string) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.channels.remove(c, channel)
-}
-
+` + channelsSubscribeNew + `
 // Publish delivers evt to every subscriber of channel, on this process and,
 // through the backplane, on every other.
 //
@@ -358,8 +309,7 @@ func (h *Hub) HandleClientMessage(c *Client, raw []byte) {
 			h.reply(c, "subscription_error", msg.Channel, subscriptionError{Code: subscriptionErrorCode(err), Message: err.Error()})
 			return
 		}
-		h.reply(c, "subscribed", msg.Channel, nil)
-	case "unsubscribe":
+` + channelsSubscribedReplyNew + `	case "unsubscribe":
 		h.Unsubscribe(c, msg.Channel)
 		h.reply(c, "unsubscribed", msg.Channel, nil)
 	}

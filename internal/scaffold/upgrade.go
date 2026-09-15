@@ -452,6 +452,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairStorageDisk(root, opts); err != nil {
 			fmt.Printf("  ⚠ adding the local storage driver: %v\n", err)
 		}
+		// Hub sends no longer race a closing connection into a panic, and
+		// presence-* channels list their members across replicas.
+		if err := repairRealtimePresence(root, opts); err != nil {
+			fmt.Printf("  ⚠ adding realtime presence: %v\n", err)
+		}
 		// The admin's React Query client is created per mount, and the blog
 		// editor loads Tiptap on demand.
 		if err := repairAdminBundles(root, opts); err != nil {

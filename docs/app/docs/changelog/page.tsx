@@ -66,6 +66,43 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.277.0 */}
+            <div className="mb-12" id="v3.277.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.277.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Realtime presence, and a crash when a socket closed mid-send</h3>
+                <p>
+                  <strong>A message sent while a connection was closing could crash the API.</strong> The realtime
+                  hub picked its recipients under a lock and sent after releasing it, so a connection that closed in
+                  between turned the send into a &quot;send on closed channel&quot; panic, which stops the whole
+                  process. Sends now happen under the lock and never block. In a stress test of 50 rounds of 200
+                  closing connections, the previous hub crashed 3 runs out of 3; the fixed one completed 2,000 sends
+                  against 10,000 closing connections with no panic. Revoking a user&apos;s sessions also no longer
+                  panics ten seconds later for a connection that has no socket.
+                </p>
+                <p>
+                  <strong>Presence channels.</strong> Channels named <code>presence-*</code> now know who is in them.
+                  A subscriber receives the member list right after subscribing, and everyone else is told when a
+                  user joins or leaves, once per user however many tabs they have open. An authorizer can attach a
+                  name or avatar with <code>c.SetInfo</code>. With Redis, every replica sees the same list, and the
+                  members of a replica that dies leave on their own once their entry expires, 45 seconds by default.
+                  In a two-server test, a closed socket&apos;s member left in 17 ms and a dead server&apos;s member left
+                  in 3.9 seconds with a 4 second expiry. The React hook <code>usePresence(channel)</code> returns the
+                  list in the web app, the admin panel and the Expo app.
+                </p>
+                <p>
+                  <code>grit upgrade</code> repairs the hub in existing projects and adds presence to projects that
+                  already have channels.
+                </p>
+              </div>
+            </div>
+
             {/* v3.276.0 */}
             <div className="mb-12" id="v3.276.0">
               <div className="flex items-center gap-3 mb-4">
