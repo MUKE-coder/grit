@@ -62,11 +62,13 @@ func New(redisURL string) (*Scheduler, error) {
 
 	scheduler := asynq.NewScheduler(redisOpt, nil)
 
-	// Register built-in cron tasks
+	// Register built-in cron tasks. Each retries 3 times and has a deadline,
+	// rather than asynq's default of 25 retries: the next run is at most a week
+	// away, and 25 retries of a job that timed out is the same work 25 times.
 	RegisteredTasks = []Task{}
 
 	// Cleanup expired tokens — every hour
-	_, err = scheduler.Register("0 * * * *", asynq.NewTask("tokens:cleanup", nil))
+	_, err = scheduler.Register("0 * * * *", asynq.NewTask("tokens:cleanup", nil), asynq.MaxRetry(3), asynq.Timeout(10*time.Minute))
 	if err != nil {
 		return nil, fmt.Errorf("registering tokens cleanup: %w", err)
 	}
@@ -81,7 +83,7 @@ func New(redisURL string) (*Scheduler, error) {
 	// and that are older than 24h, deleting both the S3 object and
 	// the DB row. Uses a one-line files.RunOrphanCleanup helper so
 	// the cron handler stays thin.
-	_, err = scheduler.Register("15 3 * * *", asynq.NewTask("uploads:cleanup_orphans", nil))
+	_, err = scheduler.Register("15 3 * * *", asynq.NewTask("uploads:cleanup_orphans", nil), asynq.MaxRetry(3), asynq.Timeout(time.Hour))
 	if err != nil {
 		return nil, fmt.Errorf("registering orphan upload cleanup: %w", err)
 	}
@@ -95,7 +97,7 @@ func New(redisURL string) (*Scheduler, error) {
 	// carried a comment saying to add this; without it the tamper-evident log
 	// grows forever. Pruning re-anchors the hash chain so what remains still
 	// verifies. Disabled by setting AUDIT_RETENTION_DAYS to 0.
-	_, err = scheduler.Register("0 4 * * 0", asynq.NewTask("audit:prune", nil))
+	_, err = scheduler.Register("0 4 * * 0", asynq.NewTask("audit:prune", nil), asynq.MaxRetry(3), asynq.Timeout(2*time.Hour))
 	if err != nil {
 		return nil, fmt.Errorf("registering audit prune: %w", err)
 	}

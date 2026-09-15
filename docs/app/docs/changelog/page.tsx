@@ -66,6 +66,75 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.271.0 */}
+            <div className="mb-12" id="v3.271.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.271.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Background work: audit and activity writes, sync pushes, the outbox relay, cleanup jobs</h3>
+                <p>
+                  Five more findings from the contact-app review, each measured on a generated project before and
+                  after upgrading, against Postgres, MySQL and MinIO.
+                </p>
+                <p>
+                  <strong>The audit writer inserted one entry at a time while holding the chain lock.</strong> Every
+                  replica&apos;s writer waits on that lock. A batch is now chained in memory and written as one
+                  multi-row insert: 2,560 entries took 69 statements and 3.8 seconds instead of 2,920 statements and
+                  9.0 seconds, and the chain verified.
+                </p>
+                <p>
+                  <strong>A sync push had no size limit and ran three queries per change.</strong> A push now carries
+                  at most 500 changes; a larger one is refused with <code>413 TOO_MANY_CHANGES</code>. The rows it
+                  updates or deletes are read with one query per model rather than one per change: 500 updates ran
+                  501 queries on the table instead of 1,000 (and took 5.7 seconds instead of 12.7, with 88 activity inserts instead of 500). The web and desktop sync clients now send their
+                  outbox in pushes of 500, and <code>grit upgrade</code> updates both. An app already installed on a
+                  device, built before this release, with more than 500 changes queued will be refused until it is
+                  rebuilt. Changes in a push are still applied without a shared transaction: each one stands on its
+                  own, and a savepoint per change overflows Postgres&apos;s subtransaction cache.
+                </p>
+                <p>
+                  <strong>Every create, update and delete waited on an activity-feed insert.</strong> The row is still
+                  built in the request, where the IP address and user agent can be read, and is now written by a
+                  batching writer. Emitting 1,000 events took 0.02 ms each instead of 10 to 11 ms (and all 1,000 rows were stored within a quarter of a second). The server
+                  writes whatever is still queued when it shuts down. Sign-ins and other security events are still
+                  written before the request returns.
+                </p>
+                <p>
+                  <strong>The outbox relay was never pruned, blocked other replicas, and could not be stopped.</strong>{" "}
+                  Claims now use <code>SKIP LOCKED</code>: on Postgres, a second relay claimed the free messages at
+                  once instead of waiting 3.2 seconds for the rows another relay held. On MySQL a claim&apos;s
+                  locking read covers every row it scans, so the second relay no longer waits but claims nothing
+                  until its next poll. <code>SKIP LOCKED</code> needs MySQL 8.0 or MariaDB 10.6. The relay now
+                  deletes delivered messages older than seven days, in chunks, about once an hour; 100 delivered
+                  messages a month old were all still there before and none after. On shutdown the server stops the
+                  relay, and messages it had claimed but not tried go back to the queue instead of waiting out the
+                  five-minute claim timeout on another replica.
+                </p>
+                <p>
+                  <strong>Cleanup and scheduled jobs were unbounded and retried 25 times.</strong> The orphan upload
+                  cleanup now works 1,000 uploads at a time and deletes their files with one storage request per
+                  page: 2,500 orphans took 3.9 seconds, 7 statements and 3 storage requests instead of 48.6 seconds,
+                  2,502 statements and 2,500 requests. The built-in scheduled jobs retry 3 times with a deadline, and
+                  so do jobs made with <code>grit generate job --cron</code>. The activity-log prune deletes 5,000
+                  entries per transaction (pruning 100,001 of 200,000 entries took 1.2 seconds with no transaction longer than 132 ms, where the single DELETE it replaces took 210 ms and grows with the backlog).
+                </p>
+                <p>
+                  <strong>Pruning the activity log broke its verification.</strong> Found while measuring the prune:
+                  it rewrote the hash of the oldest remaining entry, and the entry after it still pointed at the old
+                  hash, so every prune that deleted anything left a log that failed verification. Remaining entries
+                  now keep their hashes, and each prune appends a security entry naming where the log now starts.
+                  Verification accepts a log that starts after deleted entries only when a prune recorded it: after
+                  pruning 100,001 of 200,000 entries the chain verified, and deleting the 10 oldest remaining entries
+                  by hand was reported as a break.
+                </p>
+              </div>
+            </div>
+
             {/* v3.270.0 */}
             <div className="mb-12" id="v3.270.0">
               <div className="flex items-center gap-3 mb-4">

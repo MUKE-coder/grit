@@ -804,6 +804,13 @@ export const errorCodeAreas: ErrorCodeArea[] = [
     label: 'Offline sync',
     codes: [
       {
+        code: 'TOO_MANY_CHANGES',
+        status: 413,
+        category: 'limit',
+        meaning: 'A sync push carried more than 500 changes.',
+        client: 'Send the outbox in pushes of at most 500 changes, as the Grit sync clients do.',
+      },
+      {
         code: 'MISSING_MODEL',
         status: 400,
         category: 'request',
@@ -955,7 +962,7 @@ export const errorCodeAreas: ErrorCodeArea[] = [
 ]
 
 /** How many codes the API documents. Shown on the page, so it cannot be stale. */
-export const errorCodeCount = 110
+export const errorCodeCount = 111
 
 /** Every row, flattened, for searching and for a test that checks coverage. */
 export const errorCodes: ErrorCodeRow[] = errorCodeAreas.flatMap((area) => area.codes)

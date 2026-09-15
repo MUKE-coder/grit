@@ -169,7 +169,7 @@ func registerCronTask(path string, names Names, taskType, spec string) error {
 			"Register it by hand in cron.New:\n\n  scheduler.Register(%q, asynq.NewTask(%q, nil))", spec, taskType)
 	}
 	human := strings.Join(splitPascal(names.Pascal), " ")
-	block := fmt.Sprintf("\t_, err = scheduler.Register(%q, asynq.NewTask(%q, nil))\n"+
+	block := fmt.Sprintf("\t_, err = scheduler.Register(%q, asynq.NewTask(%q, nil), asynq.MaxRetry(3))\n"+
 		"\tif err != nil {\n"+
 		"\t\treturn nil, fmt.Errorf(\"registering %s: %%w\", err)\n"+
 		"\t}\n"+

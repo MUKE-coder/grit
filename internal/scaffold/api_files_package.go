@@ -614,16 +614,29 @@ func ClaimRefs(ctx context.Context, db *gorm.DB, record interface{}) {
 		Error
 }
 
+// orphanPage is how many orphans one pass of RunOrphanCleanup reads, deletes
+// from storage in one request and deletes from the table in one statement.
+const orphanPage = 1000
+
+// batchDeleter is a Storage that deletes many keys in one request, as
+// storage.Storage does with S3's DeleteObjects.
+type batchDeleter interface {
+	DeleteMany(ctx context.Context, keys []string) error
+}
+
 // RunOrphanCleanup deletes Upload rows whose key was never claimed by
-// a parent record AND which are older than minAge. Designed to be
-// called from a daily cron job. Returns the count of rows + S3 objects
-// purged.
+// a parent record AND which are older than minAge, with their stored
+// objects. Designed to be called from a daily cron job. Returns the
+// count of rows purged.
 //
 // The minAge buffer matters: an upload immediately followed by a form
 // save has a small window between the POST /api/uploads success and
 // the parent Create handler's ClaimRefs call. minAge=24h is generous
 // -- you'd have to abandon the form for a full day for the cleanup to
 // catch it.
+//
+// Orphans go orphanPage at a time. The cleanup used to load every orphan
+// at once and delete each with a storage request and a statement of its own.
 func RunOrphanCleanup(ctx context.Context, db *gorm.DB, st Storage, minAge time.Duration) (int, error) {
 	if db == nil {
 		return 0, fmt.Errorf("RunOrphanCleanup: db is required")
@@ -635,29 +648,53 @@ func RunOrphanCleanup(ctx context.Context, db *gorm.DB, st Storage, minAge time.
 	}
 
 	cutoff := time.Now().Add(-minAge)
-	var orphans []orphan
-	err := db.WithContext(ctx).
-		Table("uploads").
-		Select("id", "path").
-		Where("claimed_at IS NULL AND created_at < ?", cutoff).
-		Find(&orphans).Error
-	if err != nil {
-		return 0, fmt.Errorf("query orphans: %w", err)
-	}
+	deleted, after := 0, ""
+	for {
+		var page []orphan
+		err := db.WithContext(ctx).
+			Table("uploads").
+			Select("id", "path").
+			Where("claimed_at IS NULL AND created_at < ? AND id > ?", cutoff, after).
+			Order("id").
+			Limit(orphanPage).
+			Find(&page).Error
+		if err != nil {
+			return deleted, fmt.Errorf("query orphans: %w", err)
+		}
+		if len(page) == 0 {
+			return deleted, nil
+		}
+		after = page[len(page)-1].ID
 
-	deleted := 0
-	for _, o := range orphans {
-		if st != nil && o.Path != "" {
-			// Best-effort S3 delete -- if it fails (already gone, perm
-			// issue, etc.) we still drop the DB row so we don't keep
-			// retrying the same orphan forever.
-			_ = st.Delete(ctx, o.Path)
+		ids := make([]string, 0, len(page))
+		keys := make([]string, 0, len(page))
+		for _, o := range page {
+			ids = append(ids, o.ID)
+			if o.Path != "" {
+				keys = append(keys, o.Path)
+			}
 		}
-		if err := db.WithContext(ctx).Table("uploads").Where("id = ?", o.ID).Delete(struct{}{}).Error; err == nil {
-			deleted++
+		// Best-effort, as it always was: a row whose object could not be
+		// deleted (already gone, a permissions issue) is still dropped, so the
+		// same orphan is not retried forever.
+		if st != nil && len(keys) > 0 {
+			if many, ok := st.(batchDeleter); ok {
+				_ = many.DeleteMany(ctx, keys)
+			} else {
+				for _, key := range keys {
+					_ = st.Delete(ctx, key)
+				}
+			}
+		}
+		res := db.WithContext(ctx).Table("uploads").Where("id IN ?", ids).Delete(struct{}{})
+		if res.Error != nil {
+			return deleted, fmt.Errorf("delete orphans: %w", res.Error)
+		}
+		deleted += int(res.RowsAffected)
+		if len(page) < orphanPage {
+			return deleted, nil
 		}
 	}
-	return deleted, nil
 }
 
 // derefPtr unwraps a single level of pointer indirection so callers

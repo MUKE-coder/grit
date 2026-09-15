@@ -113,45 +113,7 @@ type ActivityArgs struct {
 	Metadata     map[string]interface{} // optional JSON-encodable extras
 }
 
-// LogActivity writes a UserActivity row. Picks actor + IP + user-agent
-// from the request context automatically, falling back to args.UserID
-// when the caller is in an unauthenticated handler (auth flows).
-func LogActivity(db *gorm.DB, c *gin.Context, args ActivityArgs) {
-	userID := args.UserID
-	if userID == "" {
-		if v, ok := c.Get("user_id"); ok {
-			if s, ok := v.(string); ok {
-				userID = s
-			}
-		}
-	}
-
-	var metaJSON string
-	if args.Metadata != nil {
-		if b, err := json.Marshal(args.Metadata); err == nil {
-			metaJSON = string(b)
-		}
-	}
-
-	row := models.UserActivity{
-		UserID:       userID,
-		Action:       args.Action,
-		Severity:     args.Severity,
-		Summary:      args.Summary,
-		ResourceType: args.ResourceType,
-		ResourceID:   args.ResourceID,
-		IPAddress:    ResolveClientIP(c),
-		UserAgent:    c.GetHeader("User-Agent"),
-		Metadata:     metaJSON,
-	}
-
-	if err := db.Create(&row).Error; err != nil {
-		// Audit failures are non-fatal but worth knowing about — log and
-		// keep moving. In production, wire a metric to alert on a sudden
-		// surge in these (suggests DB write pressure).
-		log.Printf("activity: failed to write %s: %v", args.Action, err)
-	}
-}
+` + activityRowFuncs + `
 
 // Convenience helpers for the most common events. Use these in auth
 // handlers + middleware so the dotted action names stay consistent.
@@ -257,7 +219,7 @@ func LogCreate(db *gorm.DB, c *gin.Context, entityType, identifier, resourceID, 
 	if !hasActor(c) {
 		return
 	}
-	LogActivity(db, c, ActivityArgs{
+	queueActivity(db, c, ActivityArgs{
 		Action:       strings.ToLower(entityType) + ".create",
 		Severity:     "info",
 		Summary:      formatCUDSummary("Created", entityType, identifier, detail),
@@ -273,7 +235,7 @@ func LogUpdate(db *gorm.DB, c *gin.Context, entityType, identifier, resourceID, 
 	if !hasActor(c) {
 		return
 	}
-	LogActivity(db, c, ActivityArgs{
+	queueActivity(db, c, ActivityArgs{
 		Action:       strings.ToLower(entityType) + ".update",
 		Severity:     "info",
 		Summary:      formatCUDSummary("Updated", entityType, identifier, detail),
@@ -288,7 +250,7 @@ func LogDelete(db *gorm.DB, c *gin.Context, entityType, identifier, resourceID s
 	if !hasActor(c) {
 		return
 	}
-	LogActivity(db, c, ActivityArgs{
+	queueActivity(db, c, ActivityArgs{
 		Action:       strings.ToLower(entityType) + ".delete",
 		Severity:     "info",
 		Summary:      formatCUDSummary("Deleted", entityType, identifier, ""),

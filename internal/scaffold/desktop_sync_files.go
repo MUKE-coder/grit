@@ -431,6 +431,9 @@ func (e *Engine) Pull(modelName string) (int, error) {
 	return resp.Count, nil
 }
 
+// MaxPushChanges is the most changes the server takes in one push.
+const MaxPushChanges = 500
+
 // PushBatch is the JSON shape /api/sync/push expects.
 type PushBatch struct {
 	Changes []PushChange ` + "`" + `json:"changes"` + "`" + `
@@ -469,7 +472,22 @@ func (e *Engine) Push() (int, int, error) {
 	if err := e.DB.Where("has_conflict = 0").Order("created_at asc").Find(&entries).Error; err != nil {
 		return 0, 0, err
 	}
-	return e.pushEntries(entries)
+	// The server takes at most MaxPushChanges a push, so a long offline stretch
+	// goes up in several.
+	pushed, conflicts := 0, 0
+	for start := 0; start < len(entries); start += MaxPushChanges {
+		end := start + MaxPushChanges
+		if end > len(entries) {
+			end = len(entries)
+		}
+		p, c, err := e.pushEntries(entries[start:end])
+		pushed += p
+		conflicts += c
+		if err != nil {
+			return pushed, conflicts, err
+		}
+	}
+	return pushed, conflicts, nil
 }
 
 // PushOne pushes a single queued change immediately. Used by the "Confirm"

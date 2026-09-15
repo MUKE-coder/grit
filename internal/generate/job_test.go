@@ -102,7 +102,7 @@ func TestGenerateJobSchedulesWithCron(t *testing.T) {
 	}
 	cron := readTestFile(t, filepath.Join(api, "internal", "cron", "cron.go"))
 	for _, want := range []string{
-		`scheduler.Register("30 23 * * *", asynq.NewTask("reconcile_ledger", nil))`,
+		`scheduler.Register("30 23 * * *", asynq.NewTask("reconcile_ledger", nil), asynq.MaxRetry(3))`,
 		`Name:     "Reconcile Ledger"`,
 		`Type:     "reconcile_ledger"`,
 	} {

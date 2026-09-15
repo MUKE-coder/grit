@@ -388,6 +388,9 @@ var catalog = []Entry{
 		"Show the message. It is written for the person filling the form in."},
 
 	// ── Offline sync ───────────────────────────────────────────────────────────
+	{"TOO_MANY_CHANGES", http.StatusRequestEntityTooLarge, CategoryLimit, "sync",
+		"A sync push carried more than 500 changes.",
+		"Send the outbox in pushes of at most 500 changes, as the Grit sync clients do."},
 	{"MISSING_MODEL", http.StatusBadRequest, CategoryRequest, "sync",
 		"The request did not name a model to sync.",
 		"Send the model name the sync manifest lists."},
