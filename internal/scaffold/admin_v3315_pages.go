@@ -85,7 +85,7 @@ const TILES: SystemTile[] = [
   { href: "/system/files",       category: "Data & Files", title: "File Storage",        description: "Browse uploads, manage retention, audit usage.",                                      icon: <Upload className="h-5 w-5" /> , module: "files" },
   { href: "/system/form-shares", category: "Data & Files", title: "Public form sharing", description: "Token-gated public submission links. Generate, enable/disable, view submissions.",     icon: <LinkIcon className="h-5 w-5" /> },
   // ── Communication ───────────────────────────────────────────────────────
-  { href: "/system/mail",          category: "Communication", title: "Mail Preview",   description: "Email template gallery + recent send log.",         icon: <Mail className="h-5 w-5" /> , module: "mail" },
+  { href: "/system/mail",          category: "Communication", title: "Mail Preview",   description: "Every email template, rendered by the API.",       icon: <Mail className="h-5 w-5" /> , module: "mail" },
   { href: "/system/support",       category: "Communication", title: "Support",        description: "Incoming tickets, threads, assignments, closures.", icon: <MessageSquare className="h-5 w-5" /> },
   { href: "/system/notifications", category: "Communication", title: "Notifications",  description: "Recent system + Sentinel + Pulse notifications.",   icon: <Bell className="h-5 w-5" /> },
   // ── Settings ────────────────────────────────────────────────────────────
@@ -200,7 +200,7 @@ interface HealthResponse {
   redis?:    { ok: boolean; latency_ms?: number };
   api:       { ok: boolean };
   jobs?:     { ok: boolean; queued?: number; active?: number };
-  email?:    { ok: boolean; configured?: boolean };
+  email?:    { ok: boolean; configured?: boolean; driver?: string };
 }
 
 interface Card {
@@ -263,10 +263,10 @@ export default function SystemHealthPage() {
     },
     {
       key: "email",
-      label: "Email (Resend)",
+      label: "Email",
       icon: <Mail className="h-5 w-5" />,
       status: data.email?.configured ? "ok" : "unknown",
-      detail: data.email?.configured ? "Configured" : "Not configured",
+      detail: data.email?.driver ? "Sending with " + data.email.driver : (data.email?.configured ? "Configured" : "Not configured"),
     },
   ] : [];
 

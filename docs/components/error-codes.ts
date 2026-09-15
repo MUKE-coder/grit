@@ -381,6 +381,13 @@ export const errorCodeAreas: ErrorCodeArea[] = [
         meaning: 'The SMS provider refused or failed to send.',
         client: 'Retry once, then offer email. The number may be unreachable.',
       },
+      {
+        code: 'MAIL_FAILED',
+        status: 502,
+        category: 'upstream',
+        meaning: 'The mail driver refused or failed to send the verification code.',
+        client: 'Retry once. If it keeps failing, the address may be unreachable or mail is misconfigured.',
+      },
     ],
   },
   {
@@ -962,7 +969,7 @@ export const errorCodeAreas: ErrorCodeArea[] = [
 ]
 
 /** How many codes the API documents. Shown on the page, so it cannot be stale. */
-export const errorCodeCount = 111
+export const errorCodeCount = 112
 
 /** Every row, flattened, for searching and for a test that checks coverage. */
 export const errorCodes: ErrorCodeRow[] = errorCodeAreas.flatMap((area) => area.codes)

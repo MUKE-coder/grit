@@ -484,6 +484,18 @@ func Upgrade(uOpts UpgradeOptions) error {
 		green.Printf("  ✓ API documentation (gin-docs) configured in routes.go\n")
 	}
 
+	// --- A single's API ---
+	//
+	// A single keeps its Go code at the project root, so the block above, which
+	// looks for apps/api, never runs for one. The mail repair anchors on text
+	// Grit wrote and checks each step before the next, so it runs here too.
+	if !hasAPI && opts.Architecture == ArchSingle && fileExists(filepath.Join(root, "main.go")) &&
+		fileExists(filepath.Join(root, "internal", "config", "config.go")) {
+		if err := repairMailDrivers(root, opts); err != nil {
+			fmt.Printf("  ⚠ adding the mail drivers: %v\n", err)
+		}
+	}
+
 	// --- Shared package ---
 	if hasShared {
 		spinner.Printf("  → Updating shared package config...\n")

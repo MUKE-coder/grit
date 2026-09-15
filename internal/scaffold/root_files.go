@@ -502,10 +502,36 @@ B2_SECRET_KEY=your-b2-application-key
 B2_BUCKET=%s-uploads
 B2_REGION=us-west-004
 
-# ─── Email (Resend — https://resend.com) ───────────────
-# Sign up at resend.com, verify your domain, grab your API key
+# ─── Email ─────────────────────────────────────────────
+# MAIL_MAILER picks how mail is sent: resend, smtp, mailgun, postmark,
+# sendgrid, ses or failover. Left empty, a real RESEND_API_KEY means Resend.
+# MAIL_MAILER=
 RESEND_API_KEY=re_your_api_key_here
 MAIL_FROM=noreply@yourdomain.com
+MAIL_FROM_NAME=
+# MAIL_FAILOVER=resend,smtp
+
+# SMTP (MAIL_MAILER=smtp). SMTP_ENCRYPTION is tls, starttls or none.
+# SMTP_HOST=smtp.yourprovider.com
+# SMTP_PORT=587
+SMTP_USERNAME=
+SMTP_PASSWORD=
+SMTP_ENCRYPTION=
+
+# Mailgun (MAIL_MAILER=mailgun). api.eu.mailgun.net for a domain in the EU.
+MAILGUN_DOMAIN=
+MAILGUN_SECRET=
+MAILGUN_ENDPOINT=api.mailgun.net
+
+# Postmark (MAIL_MAILER=postmark)
+POSTMARK_TOKEN=
+POSTMARK_MESSAGE_STREAM=outbound
+
+# SendGrid (MAIL_MAILER=sendgrid)
+SENDGRID_API_KEY=
+
+# Amazon SES API v2 (MAIL_MAILER=ses), with the usual AWS keys.
+AWS_SES_REGION=us-east-1
 
 # ─── CORS ──────────────────────────────────────────────
 # Browser origins allowed to call the API. The Wails desktop webview does NOT

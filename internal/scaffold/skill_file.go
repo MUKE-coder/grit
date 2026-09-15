@@ -54,7 +54,7 @@ Navigation: import { useRouter } from 'next/navigation', import Link from 'next/
 │   ├── services/                 # Business logic
 │   ├── middleware/               # Auth, CORS, logger, cache, maintenance
 │   ├── routes/                   # Route registration
-│   ├── mail/                     # Email (Resend)
+│   ├── mail/                     # Email: drivers, Queue, templates/
 │   ├── storage/                  # File storage (S3)
 │   ├── jobs/                     # Background jobs (asynq)
 │   ├── cache/                    # Redis cache
@@ -783,29 +783,38 @@ url, err := storage.GetSignedURL(ctx, key, 1*time.Hour)
 
 ### Email
 
+MAIL_MAILER picks the driver (smtp, resend, mailgun, postmark, sendgrid, ses, log, failover); development sends to Mailhog.
+
 %[1]sgo
+// A built-in template, sent now
 mailer.Send(ctx, mail.SendOptions{
     To: "user@example.com", Subject: "Welcome!",
     Template: "welcome", Data: map[string]interface{}{"Name": "John"},
 })
+
+// Any message: several recipients, cc, bcc, a text part, attachments
+mailer.SendMessage(ctx, &mail.Message{To: []string{"a@example.com"}, Subject: "Hi", HTML: "<p>Hi</p>", Text: "Hi"})
+
+// Queued: the worker sends it and retries. Attachments over 256 KB are refused.
+mail.Queue(ctx, svc.Jobs, &mail.Message{To: []string{"a@example.com"}, Subject: "Hi", HTML: "<p>Hi</p>"})
 %[1]s
 
-Templates: %[1]swelcome%[1]s, %[1]spassword-reset%[1]s, %[1]semail-verification%[1]s, %[1]snotification%[1]s
+Templates: %[1]swelcome%[1]s, %[1]spassword-reset%[1]s, %[1]semail-verification%[1]s, %[1]snotification%[1]s. Add your own with %[1]sgrit generate mail OrderShipped%[1]s (internal/mail/templates/order_shipped.go: typed OrderShippedData, SendOrderShipped, QueueOrderShipped, listed in the admin Mail Preview). In tests, %[1]smailtest.New()%[1]s records mail: %[1]sfake.AssertSent(t, to, subject)%[1]s.
 
 ### Background Jobs
 
 %[1]sgo
 // Fire-and-forget enqueue (uses framework defaults: 5 max retries,
 // exponential backoff 1s/2s/4s.../5min cap, 5min per-attempt timeout).
-jobs.EnqueueSendEmail(ctx, "user@example.com", "Welcome", "welcome", data)
+svc.Jobs.EnqueueSendEmail(ctx, "user@example.com", "Welcome", "welcome", data)
 
 // Idempotency key — a retry of the same operation is deduped within
 // the 24h window. Critical for charge/notify/order-confirmation work.
-jobs.EnqueueSendEmail(ctx, user.Email, "Receipt", "receipt", data, jobs.EnqueueOption{
-    IdempotencyKey: "receipt:" + order.ID,
+svc.Jobs.EnqueueSendEmail(ctx, user.Email, "Your account", "notification", data, jobs.EnqueueOption{
+    IdempotencyKey: "account-notice:" + user.ID,
 })
 
-jobs.EnqueueProcessImage(ctx, uploadID, key, mimeType)
+svc.Jobs.EnqueueProcessImage(ctx, uploadID, key, mimeType)
 %[1]s
 
 ### Redis Cache

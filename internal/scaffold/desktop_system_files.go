@@ -610,7 +610,7 @@ interface Health {
   redis?: { ok: boolean; latency_ms?: number };
   api?: { ok: boolean };
   jobs?: { ok: boolean };
-  email?: { ok: boolean; configured?: boolean };
+  email?: { ok: boolean; configured?: boolean; driver?: string };
 }
 
 function SystemHealthPage() {
@@ -631,7 +631,7 @@ function SystemHealthPage() {
     { label: "Redis", icon: HardDrive, up: data?.redis?.ok, detail: data?.redis?.latency_ms != null ? data.redis.latency_ms + "ms" : "Cache & queue" },
     { label: "API Server", icon: Server, up: data?.api?.ok ?? true, detail: "HTTP gateway" },
     { label: "Background Jobs", icon: Activity, up: data?.jobs?.ok, detail: "Worker queue" },
-    { label: "Email (Resend)", icon: Mail, up: data?.email?.ok, detail: data?.email?.configured === false ? "Not configured" : "Transactional mail" },
+    { label: "Email", icon: Mail, up: data?.email?.ok, detail: data?.email?.driver ? "Sending with " + data.email.driver : data?.email?.configured === false ? "Not configured" : "Transactional mail" },
   ];
 
   return (

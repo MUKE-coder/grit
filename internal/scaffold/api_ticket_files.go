@@ -485,6 +485,7 @@ import (
 
 	"{{MODULE}}/internal/mail"
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/settings"
 )
 
 // SendTicketCreatedEmail forwards a freshly-opened ticket to the support
@@ -494,7 +495,7 @@ import (
 //
 // The body intentionally stays plain-text + minimal HTML so any inbox
 // renders it. The "Reply in dashboard" link points at the admin panel.
-func SendTicketCreatedEmail(m *mail.Mailer, t *models.Ticket, creator *models.User) error {
+` + ticketMailFuncOpen + ticketMailSettingCheck + `
 	to := os.Getenv("SUPPORT_EMAIL")
 	if to == "" {
 		log.Printf("ticket-mail: SUPPORT_EMAIL not set, skipping email for ticket %s", t.ID)

@@ -31,7 +31,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.277.0"
+var version = "3.278.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -361,8 +361,31 @@ func generateCmd() *cobra.Command {
 	cmd.AddCommand(generatePerfCmd())
 	cmd.AddCommand(generateFieldCmd())
 	cmd.AddCommand(generateJobCmd())
+	cmd.AddCommand(generateMailCmd())
 
 	return cmd
+}
+
+func generateMailCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "mail <Name>",
+		Short: "Generate an email template with typed data and Send and Queue helpers",
+		Long: `Generate an email and register it for the admin's Mail Preview.
+
+Writes internal/mail/templates/<name>.go with a typed data struct, an
+html/template body inside the shared mail layout, a plain-text alternative,
+and Render<Name>, Send<Name> and Queue<Name> helpers.
+
+Examples:
+  grit generate mail OrderShipped
+  grit generate mail WeeklyDigest`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+			cmd.SilenceUsage = true
+			return generate.GenerateMail(generate.MailOptions{Name: args[0]})
+		},
+	}
 }
 
 func generateSeederCmd() *cobra.Command {

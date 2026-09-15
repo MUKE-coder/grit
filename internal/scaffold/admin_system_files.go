@@ -637,150 +637,151 @@ export default function CronPage() {
 `
 }
 
+// adminMailPage is the Mail Preview. The templates and their rendering come
+// from the API (GET /api/admin/mail/templates and /preview/:template), so what
+// the page shows is what the mailer sends, including every template grit
+// generate mail adds. It used to be JSX copies of four templates.
 func adminMailPage() string {
 	return `"use client";
 
 import { useState } from "react";
-import { Mail } from "@/lib/icons";
+import { useQuery } from "@tanstack/react-query";
+import { Mail, AlertTriangle } from "@/lib/icons";
+import { apiClient } from "@/lib/api-client";
 
-const templates = [
-  {
-    name: "welcome",
-    label: "Welcome Email",
-    description: "Sent when a new user registers",
-    sampleData: {
-      AppName: "MyApp",
-      Name: "John Doe",
-      DashboardURL: "http://localhost:3000/dashboard",
-      Year: new Date().getFullYear(),
-    },
-  },
-  {
-    name: "password-reset",
-    label: "Password Reset",
-    description: "Sent when a user requests a password reset",
-    sampleData: {
-      AppName: "MyApp",
-      ResetURL: "http://localhost:3000/reset-password?token=abc123",
-      Year: new Date().getFullYear(),
-    },
-  },
-  {
-    name: "email-verification",
-    label: "Email Verification",
-    description: "Sent to verify a user's email address",
-    sampleData: {
-      AppName: "MyApp",
-      VerifyURL: "http://localhost:3000/verify?token=abc123",
-      Year: new Date().getFullYear(),
-    },
-  },
-  {
-    name: "notification",
-    label: "Notification",
-    description: "General purpose notification email",
-    sampleData: {
-      AppName: "MyApp",
-      Title: "New Activity",
-      Message: "Someone commented on your post. Check it out!",
-      ActionURL: "http://localhost:3000/activity",
-      ActionText: "View Activity",
-      Year: new Date().getFullYear(),
-    },
-  },
-];
+interface MailTemplate {
+  name: string;
+  description: string;
+  subject: string;
+  has_text: boolean;
+}
+
+interface MailTemplatesResponse {
+  data: MailTemplate[];
+  driver: string;
+}
+
+type Part = "html" | "text";
 
 export default function MailPage() {
-  const [selected, setSelected] = useState(templates[0]);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [part, setPart] = useState<Part>("html");
+
+  const templates = useQuery<MailTemplatesResponse>({
+    queryKey: ["mail-templates"],
+    queryFn: async () => {
+      const { data } = await apiClient.get<MailTemplatesResponse>("/api/admin/mail/templates");
+      return data;
+    },
+  });
+
+  const list = templates.data?.data ?? [];
+  const current = list.find((t) => t.name === selected) ?? list[0];
+  const shownPart: Part = part === "text" && current?.has_text ? "text" : "html";
+
+  // The HTML is rendered by the API with sample data and shown in a sandboxed
+  // iframe, so the page shows exactly what the mailer sends.
+  const preview = useQuery<string>({
+    queryKey: ["mail-preview", current?.name ?? "", shownPart],
+    enabled: Boolean(current),
+    queryFn: async () => {
+      const name = current ? current.name : "";
+      const { data } = await apiClient.get<string>(
+        "/api/admin/mail/preview/" + encodeURIComponent(name) + (shownPart === "text" ? "?part=text" : ""),
+        { responseType: "text", transformResponse: [(body: string) => body] },
+      );
+      return data;
+    },
+  });
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Email Templates</h1>
-        <p className="text-sm text-text-secondary mt-1">Preview email templates with sample data</p>
+        <p className="text-sm text-text-secondary mt-1">
+          Rendered by the API with sample data.{" "}
+          {templates.data && (templates.data.driver ? "Mail is sent with " + templates.data.driver + "." : "No mail driver is configured.")}
+        </p>
       </div>
 
+      {templates.isError && (
+        <div className="rounded-xl border border-warning/30 bg-warning/5 p-4 text-sm text-warning flex items-start gap-2">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>The templates could not be loaded from the API.</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Template selector */}
         <div className="space-y-2">
-          {templates.map((t) => (
-            <button
-              key={t.name}
-              onClick={() => setSelected(t)}
-              className={` + "`" + `w-full text-left rounded-xl border p-4 transition-colors ${
-                selected.name === t.name
-                  ? "border-accent bg-accent/5"
-                  : "border-border bg-bg-secondary hover:border-accent/30"
-              }` + "`" + `}
-            >
-              <div className="flex items-center gap-3">
-                <Mail className={` + "`" + `h-4 w-4 ${selected.name === t.name ? "text-accent" : "text-text-muted"}` + "`" + `} />
-                <div>
-                  <p className="text-sm font-medium text-foreground">{t.label}</p>
-                  <p className="text-xs text-text-muted mt-0.5">{t.description}</p>
+          {list.map((t) => {
+            const active = current?.name === t.name;
+            return (
+              <button
+                key={t.name}
+                type="button"
+                onClick={() => setSelected(t.name)}
+                aria-pressed={active}
+                className={
+                  "w-full text-left rounded-xl border p-4 transition-colors " +
+                  (active ? "border-accent bg-accent/5" : "border-border bg-bg-secondary hover:border-accent/30")
+                }
+              >
+                <div className="flex items-center gap-3">
+                  <Mail className={"h-4 w-4 " + (active ? "text-accent" : "text-text-muted")} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{t.name}</p>
+                    <p className="text-xs text-text-muted mt-0.5">{t.description}</p>
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Preview */}
         <div className="lg:col-span-3">
-          <div className="rounded-xl border border-border bg-bg-secondary overflow-hidden">
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <div>
-                <p className="text-sm font-medium text-foreground">{selected.label}</p>
-                <p className="text-xs text-text-muted">Template: {selected.name}</p>
-              </div>
-              <span className="rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                Preview
-              </span>
-            </div>
-            <div className="p-4">
-              <div className="rounded-lg border border-border bg-[#0a0a0f] p-6">
-                <div className="max-w-md mx-auto">
-                  <div className="rounded-xl border border-[#2a2a3a] bg-[#111118] p-8">
-                    <div className="text-center mb-6">
-                      <span className="text-2xl font-bold text-[#6c5ce7]">
-                        {selected.sampleData.AppName}
-                      </span>
-                    </div>
-                    <h2 className="text-lg font-semibold text-[#e8e8f0] mb-3">
-                      {selected.name === "welcome" && ` + "`" + `Welcome, ${selected.sampleData.Name}!` + "`" + `}
-                      {selected.name === "password-reset" && "Reset Your Password"}
-                      {selected.name === "email-verification" && "Verify Your Email"}
-                      {selected.name === "notification" && String((selected.sampleData as Record<string, unknown>).Title ?? "")}
-                    </h2>
-                    <p className="text-sm text-[#9090a8] mb-4 leading-relaxed">
-                      {selected.name === "welcome" && "Thanks for signing up. Your account is ready to use."}
-                      {selected.name === "password-reset" && "We received a request to reset your password. Click the button below to set a new one."}
-                      {selected.name === "email-verification" && "Please verify your email address by clicking the button below."}
-                      {selected.name === "notification" && String((selected.sampleData as Record<string, unknown>).Message ?? "")}
-                    </p>
-                    <div className="text-center">
-                      <span className="inline-block rounded-lg bg-[#6c5ce7] px-6 py-2.5 text-sm font-semibold text-white">
-                        {selected.name === "welcome" && "Go to Dashboard"}
-                        {selected.name === "password-reset" && "Reset Password"}
-                        {selected.name === "email-verification" && "Verify Email"}
-                        {selected.name === "notification" && String((selected.sampleData as Record<string, unknown>).ActionText ?? "View")}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-center text-xs text-[#606078] mt-4">
-                    &copy; {selected.sampleData.Year} {selected.sampleData.AppName}. All rights reserved.
-                  </p>
+          {current && (
+            <div className="rounded-xl border border-border bg-bg-secondary overflow-hidden">
+              <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{current.subject || current.name}</p>
+                  <p className="text-xs text-text-muted">Template: {current.name}</p>
+                </div>
+                <div className="flex items-center gap-1 rounded-lg border border-border p-0.5">
+                  {(["html", "text"] as Part[]).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      disabled={p === "text" && !current.has_text}
+                      onClick={() => setPart(p)}
+                      aria-pressed={shownPart === p}
+                      className={
+                        "rounded-md px-2.5 py-1 text-xs font-medium disabled:opacity-40 " +
+                        (shownPart === p ? "bg-accent/10 text-accent" : "text-text-secondary hover:text-foreground")
+                      }
+                    >
+                      {p === "html" ? "HTML" : "Text"}
+                    </button>
+                  ))}
                 </div>
               </div>
+              <div className="p-4">
+                {preview.isError ? (
+                  <p className="text-sm text-warning">The preview could not be rendered.</p>
+                ) : shownPart === "text" ? (
+                  <pre className="text-xs text-text-secondary font-mono bg-bg-tertiary rounded-lg p-4 whitespace-pre-wrap">
+                    {preview.data ?? ""}
+                  </pre>
+                ) : (
+                  <iframe
+                    title={"Preview of " + current.name}
+                    sandbox=""
+                    srcDoc={preview.data ?? ""}
+                    className="w-full h-[640px] rounded-lg border border-border bg-white"
+                  />
+                )}
+              </div>
             </div>
-
-            {/* Sample data */}
-            <div className="border-t border-border px-4 py-3">
-              <p className="text-xs font-medium text-text-muted uppercase mb-2">Template Data</p>
-              <pre className="text-xs text-text-secondary font-mono bg-bg-tertiary rounded-lg p-3 overflow-x-auto">
-                {JSON.stringify(selected.sampleData, null, 2)}
-              </pre>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

@@ -220,6 +220,13 @@ func registerAPIDocs(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	docs.Route("GET /api/v1/admin/cron/tasks").
 		Summary("Registered scheduled tasks").
 		Response(200, handlers.MessageResponse{}, "Every cron entry with its schedule")
+	docs.Route("GET /api/v1/admin/mail/templates").
+		Summary("Email templates registered for the Mail Preview").
+		Response(200, []handlers.MailTemplateView{}, "Each template's name, description and subject, and the mail driver in use")
+	docs.Route("GET /api/v1/admin/mail/preview/:template").
+		Summary("One email template rendered with sample data").
+		Response(200, handlers.MessageResponse{}, "The rendered HTML (text/html), or the text part with ?part=text").
+		Response(404, handlers.ErrorResponse{}, "No template by that name")
 
 	// ── Content ────────────────────────────────────────────────────
 	docs.Route("GET /api/v1/blogs").

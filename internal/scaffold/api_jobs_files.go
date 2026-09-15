@@ -236,7 +236,7 @@ func (c *Client) EnqueueSendEmail(ctx context.Context, to, subject, template str
 	}
 	return err
 }
-
+` + jobsEnqueuePayloadFunc + `
 // EnqueueProcessImage enqueues an image processing job. Image uploads
 // have a natural idempotency key (the upload's UUID): callers should set
 // EnqueueOption.IdempotencyKey = uploadID to prevent double-processing
@@ -367,12 +367,7 @@ func StartWorker(redisURL string, deps WorkerDeps) (func(), error) {
 
 func handleEmailSend(deps WorkerDeps) func(ctx context.Context, task *asynq.Task) error {
 	return func(ctx context.Context, task *asynq.Task) error {
-		if deps.Mailer == nil {
-			return fmt.Errorf("mailer not configured")
-		}
-
-		var payload EmailPayload
-		if err := json.Unmarshal(task.Payload(), &payload); err != nil {
+` + jobsWorkerMailNew + `		if err := json.Unmarshal(task.Payload(), &payload); err != nil {
 			return fmt.Errorf("unmarshaling email payload: %w", err)
 		}
 

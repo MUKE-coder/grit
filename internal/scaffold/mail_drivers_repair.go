@@ -256,7 +256,7 @@ func repairMailDrivers(root string, opts Options) error {
 			return err
 		}
 	}
-	return nil
+	return repairMailQueueAndPreview(root, opts, m)
 }
 
 func repairMailConfigSource(src string) (string, []string, []string) {

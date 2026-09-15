@@ -1290,27 +1290,33 @@ S3-compatible file storage with image processing:
 
 Upload endpoint: POST /api/uploads (multipart form data)
 
-## Email (Resend)
+## Email
 
 **Files:** internal/mail/
 
-Email service powered by Resend with 4 HTML templates:
+MAIL_MAILER picks the driver: smtp, resend, mailgun, postmark, sendgrid, ses, log or failover. Left empty, a real RESEND_API_KEY means Resend, and development sends to Mailhog (docker compose) and falls back to the log.
 
-- **Welcome** — New user registration
-- **Password Reset** — Reset link email
-- **Notification** — Generic notifications
-- **Invoice** — Payment/billing emails
+Built-in templates: welcome, password-reset, email-verification, notification.
 
 ` + "```go" + `
-mailer.Send(ctx, mail.Message{
-    To:       "user@example.com",
-    Subject:  "Welcome!",
-    Template: "welcome",
-    Data:     map[string]string{"name": "John"},
+// Send now
+err := mailer.SendMessage(ctx, &mail.Message{
+    To:      []string{"user@example.com"},
+    Subject: "Welcome!",
+    HTML:    "<p>Hello</p>",
+    Text:    "Hello",
 })
+
+// Or queue it: the worker sends it and retries on failure.
+// Attachments over 256 KB are refused; store the file and send a link.
+err = mail.Queue(ctx, jobsClient, &mail.Message{To: []string{"user@example.com"}, Subject: "Report", HTML: "<p>Ready</p>"})
 ` + "```" + `
 
-Preview emails at /system/mail in the admin panel.
+Write your own email with ` + "`grit generate mail OrderShipped`" + `: a typed data struct, a body inside the shared layout, a text part, and SendOrderShipped / QueueOrderShipped helpers in internal/mail/templates.
+
+Tests use internal/mail/mailtest: ` + "`fake := mailtest.New()`" + `, ` + "`fake.Mailer()`" + `, ` + "`fake.AssertSent(t, to, subject)`" + `.
+
+Preview every registered template at /system/mail in the admin panel.
 
 ## Background Jobs (asynq)
 
@@ -1323,8 +1329,8 @@ Redis-based background job processing:
 - **Cleanup jobs** — Remove expired data
 
 ` + "```go" + `
-// Enqueue a job
-client.Enqueue(jobs.NewEmailJob("user@example.com", "welcome"))
+// Enqueue a templated email job
+jobsClient.EnqueueSendEmail(ctx, "user@example.com", "Welcome", "welcome", data)
 ` + "```" + `
 
 Monitor jobs at /system/jobs in the admin panel.
@@ -1374,9 +1380,11 @@ S3_SECRET_KEY=your-secret-key
 S3_BUCKET=uploads
 S3_REGION=us-east-1
 
-# Email
-RESEND_API_KEY=re_...
+# Email: smtp, resend, mailgun, postmark, sendgrid, ses, log or failover
+MAIL_MAILER=smtp
 MAIL_FROM=noreply@example.com
+SMTP_HOST=localhost
+SMTP_PORT=1025
 
 # AI (Vercel AI Gateway — one key, hundreds of models)
 AI_GATEWAY_API_KEY=your-key
