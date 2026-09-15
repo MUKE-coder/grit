@@ -19,6 +19,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	"{{MODULE}}/internal/config"
+	"{{MODULE}}/internal/mail/mailtest"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
 )
@@ -100,6 +101,62 @@ func postJSON(tb testing.TB, r *gin.Engine, path string, body map[string]string)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	return w
+}
+
+// seedMailUser inserts a user directly. Registering would also start the
+// verification email on a goroutine, which these tests do not want racing them.
+func seedMailUser(t *testing.T, db *gorm.DB) models.User {
+	t.Helper()
+	user := models.User{FirstName: "Jane", LastName: "Doe", Email: "jane@example.com", Password: "not-a-real-hash", Role: "USER", Active: true}
+	require.NoError(t, db.Create(&user).Error)
+	return user
+}
+
+// The reset email goes through the Mailer, so the test reads it from the
+// mailtest fake instead of a provider or a log line.
+func TestAuthHandler_ForgotPassword_EmailsTheResetLink(t *testing.T) {
+	cfg := testCfg()
+	cfg.OAuthFrontendURL = "http://localhost:3001"
+	db := newTestDB(t)
+	require.NoError(t, db.AutoMigrate(&models.PasswordResetToken{}))
+	seedMailUser(t, db)
+	fake := mailtest.New()
+	h := &AuthHandler{DB: db, AuthService: newTestAuthSvc(cfg), Config: cfg, Mailer: fake.Mailer()}
+	r := newAuthRouter(h)
+	r.POST("/api/auth/forgot-password", h.ForgotPassword)
+
+	w := postJSON(t, r, "/api/auth/forgot-password", map[string]string{"email": "jane@example.com"})
+	assert.Equal(t, http.StatusOK, w.Code)
+	msg := fake.AssertSentWithin(t, 5*time.Second, "jane@example.com", "Reset your password")
+	assert.Contains(t, msg.HTML, "http://localhost:3001/reset-password?token=")
+
+	// An unknown address gets the same answer and no email.
+	fake.Reset()
+	w = postJSON(t, r, "/api/auth/forgot-password", map[string]string{"email": "nobody@example.com"})
+	assert.Equal(t, http.StatusOK, w.Code)
+	time.Sleep(100 * time.Millisecond)
+	fake.AssertNothingSent(t)
+}
+
+func TestAuthHandler_SendVerificationEmail_EmailsTheLink(t *testing.T) {
+	cfg := testCfg()
+	cfg.OAuthFrontendURL = "http://localhost:3001"
+	db := newTestDB(t)
+	require.NoError(t, db.AutoMigrate(&models.EmailVerificationToken{}))
+	user := seedMailUser(t, db)
+	fake := mailtest.New()
+	h := &AuthHandler{DB: db, AuthService: newTestAuthSvc(cfg), Config: cfg, Mailer: fake.Mailer()}
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.POST("/api/auth/send-verification", func(c *gin.Context) {
+		c.Set("user_id", user.ID)
+		h.SendVerificationEmail(c)
+	})
+
+	w := postJSON(t, r, "/api/auth/send-verification", map[string]string{})
+	assert.Equal(t, http.StatusOK, w.Code)
+	msg := fake.AssertSentWithin(t, 5*time.Second, "jane@example.com", "Confirm your email")
+	assert.Contains(t, msg.HTML, "http://localhost:3001/verify-email?token=")
 }
 
 func TestAuthHandler_Register_Success(t *testing.T) {

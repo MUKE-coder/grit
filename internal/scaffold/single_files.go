@@ -287,13 +287,7 @@ func main() {
 		log.Println("Storage configured")
 	}
 
-	// Email (Resend)
-	var mailer *mail.Mailer
-	if cfg.ResendAPIKey != "" && cfg.ResendAPIKey != "re_your_api_key" {
-		mailer = mail.New(cfg.ResendAPIKey, cfg.MailFrom)
-		log.Println("Email service configured")
-	}
-
+` + mailerInitNew + `
 	// AI service (Vercel AI Gateway)
 	var aiService *ai.AI
 	if cfg.AIGatewayAPIKey != "" {

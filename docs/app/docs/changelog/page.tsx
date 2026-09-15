@@ -66,6 +66,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.275.0 */}
+            <div className="mb-12" id="v3.275.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.275.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Mail drivers: SMTP, Resend, Mailgun, Postmark, SendGrid, Amazon SES, log and failover</h3>
+                <p>
+                  Email could only go through Resend, and a new project with no Resend key sent nothing at all: a
+                  password reset wrote its link to the log, and the Mailhog in docker compose received nothing. The
+                  mailer now sends through a driver picked by <code>MAIL_MAILER</code>: <code>smtp</code>,
+                  <code>resend</code>, <code>mailgun</code> (US or EU), <code>postmark</code>,
+                  <code>sendgrid</code>, <code>ses</code>, <code>log</code> or <code>failover</code>. They use the
+                  standard library only, with no vendor SDKs.
+                </p>
+                <p>
+                  <strong>Development mail arrives in Mailhog.</strong> With no driver set outside production, mail
+                  goes to Mailhog over SMTP and falls back to the log and <code>storage/mail</code> when Mailhog is
+                  not running. In a fresh project, one password reset delivered 2 emails to the local inbox where it
+                  used to deliver none.
+                </p>
+                <p>
+                  <strong>Nothing breaks for existing code.</strong> A project that only sets
+                  <code>RESEND_API_KEY</code> keeps sending through Resend, and <code>mail.New</code>,
+                  <code>Send</code> and <code>SendRaw</code> work unchanged. The new <code>SendMessage</code> adds
+                  several recipients, cc, bcc, reply-to, a text part, attachments and custom headers.
+                </p>
+                <p>
+                  <strong>Safe by default.</strong> A driver named without its keys stops startup with a message
+                  naming the missing keys. HTTP drivers retry once on a network or server error and never on a
+                  rejected message, and a Resend retry cannot send twice. Production refuses the log driver unless
+                  <code>MAIL_ALLOW_LOG_IN_PRODUCTION=true</code>. <code>/api/health</code> reports which driver is in
+                  use.
+                </p>
+                <p>
+                  <strong>Testing mail.</strong> The new <code>mailtest</code> package gives tests a fake mailer that
+                  records messages, with <code>AssertSent</code> and <code>AssertNothingSent</code>. New projects use it
+                  to test the password reset and verification emails.
+                </p>
+                <p>
+                  <code>grit upgrade</code> brings the drivers to projects with a separate API app. Single-binary
+                  projects keep working on Resend and get the drivers in new projects only.
+                </p>
+              </div>
+            </div>
+
             {/* v3.274.0 */}
             <div className="mb-12" id="v3.274.0">
               <div className="flex items-center gap-3 mb-4">

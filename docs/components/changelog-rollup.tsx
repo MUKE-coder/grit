@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 14 to 20, 2026",
-    count: 20,
+    count: 21,
     entries: [
+      { version: "3.275.0", title: "Mail drivers: SMTP, Resend, Mailgun, Postmark, SendGrid, Amazon SES, log and failover" },
       { version: "3.274.0", title: "Realtime channels with authorization" },
       { version: "3.273.0", title: "Realtime: the WebSocket refuses other origins, the module switch works, and connections are capped" },
       { version: "3.272.0", title: "Connection pools, the response cache, and a lighter admin panel" },

@@ -441,6 +441,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairRealtimeChannels(root, opts); err != nil {
 			fmt.Printf("  ⚠ adding realtime channels: %v\n", err)
 		}
+		// Mail drivers: MAIL_MAILER picks smtp, resend, mailgun, postmark,
+		// sendgrid, ses, log or failover, and development mail reaches Mailhog.
+		if err := repairMailDrivers(root, opts); err != nil {
+			fmt.Printf("  ⚠ adding the mail drivers: %v\n", err)
+		}
 		// The admin's React Query client is created per mount, and the blog
 		// editor loads Tiptap on demand.
 		if err := repairAdminBundles(root, opts); err != nil {
