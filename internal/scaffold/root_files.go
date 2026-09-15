@@ -321,10 +321,8 @@ B2_SECRET_KEY=
 B2_BUCKET=
 B2_REGION=us-west-004
 
-# Email (Resend)
-RESEND_API_KEY=re_your_api_key
-MAIL_FROM=noreply@%s.dev
-
+`+envMailHeadNew+`MAIL_FROM=noreply@%s.dev
+`+envMailDriversNew+`
 # Support inbox — every ticket opened in /system/support is emailed here
 # (when RESEND_API_KEY is set). Leave empty in dev to skip email-out.
 SUPPORT_EMAIL=

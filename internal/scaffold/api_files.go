@@ -518,15 +518,7 @@ func main() {
 		}
 	}
 
-	// Email (Resend)
-	var mailer *mail.Mailer
-	if cfg.ResendAPIKey != "" && cfg.ResendAPIKey != "re_your_api_key" {
-		mailer = mail.New(cfg.ResendAPIKey, cfg.MailFrom)
-		log.Println("Email service configured")
-	} else {
-		log.Println("Warning: Resend API key not set (emails disabled)")
-	}
-
+` + mailerInitNew + `
 	// AI service (Vercel AI Gateway)
 	var aiService *ai.AI
 	if cfg.AIGatewayAPIKey != "" {
@@ -868,9 +860,7 @@ type Config struct {
 	StorageDriver string        // "minio", "s3", "r2", or "b2"
 	Storage       StorageConfig // Resolved config for the active driver
 
-	ResendAPIKey string
-	MailFrom     string
-
+` + configMailFieldsNew + `
 	CORSOrigins []string
 
 	// Modules turns optional batteries off.
@@ -961,8 +951,7 @@ func Load() (*Config, error) {
 		Storage:       resolveStorage(storageDriver),
 
 		ResendAPIKey: getEnv("RESEND_API_KEY", ""),
-		MailFrom:     getEnv("MAIL_FROM", "noreply@localhost"),
-
+` + configMailLoadNew + `
 		// The Wails desktop webview is allowed by middleware.isWailsOrigin (it
 		// matches the wails.localhost host on any port), so it needs no entry
 		// here — its dev origin includes a configurable port.
@@ -1349,7 +1338,8 @@ func splitCSV(s string) []string {
 	}
 	return out
 }
-`
+
+` + configMailFuncs
 }
 
 // apiDialectGo emits internal/database/dialect.go.
@@ -9913,6 +9903,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			LatencyMS  int64  ` + "`" + `json:"latency_ms,omitempty"` + "`" + `
 			Tables     int    ` + "`" + `json:"tables,omitempty"` + "`" + `
 ` + healthQueueFields + `			Configured bool   ` + "`" + `json:"configured,omitempty"` + "`" + `
+			Driver     string ` + "`" + `json:"driver,omitempty"` + "`" + `
 			Error      string ` + "`" + `json:"error,omitempty"` + "`" + `
 		}
 
@@ -9954,13 +9945,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		}
 
 ` + healthJobsBlock + `
-		// Email is "configured" when Resend key is set + non-default. The
-		// dashboard treats unconfigured as "—" not "down".
-		mailStatus := compStatus{
-			Configured: cfg.ResendAPIKey != "" && cfg.ResendAPIKey != "re_your_api_key",
-			OK:         cfg.ResendAPIKey != "" && cfg.ResendAPIKey != "re_your_api_key",
-		}
-
+` + healthMailStatusNew + `
 		// Overall status — ok if every wired-up component is up. Components
 		// that aren't configured (e.g. Redis off in a single-binary dev
 		// run) don't drag the overall status down.

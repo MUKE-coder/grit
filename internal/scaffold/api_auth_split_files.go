@@ -118,7 +118,7 @@ func (h *AuthHandler) deliverPasswordReset(user models.User, clientIP string) {
 		// No mailer in production means nobody can complete a reset. Say so
 		// loudly rather than printing a working token into the log — a live
 		// reset link in a log file is a credential.
-		log.Printf("password reset: NO MAILER CONFIGURED: %s cannot receive a reset link. Set RESEND_API_KEY.", user.Email)
+		log.Printf("password reset: NO MAILER CONFIGURED: %s cannot receive a reset link. Set MAIL_MAILER (see .env.example).", user.Email)
 		return
 	}
 
@@ -308,7 +308,7 @@ func (h *AuthHandler) deliverVerificationEmail(user models.User) {
 	}
 
 	if h.Config.AppEnv == "production" {
-		log.Printf("email verification: NO MAILER CONFIGURED: %s cannot receive a link. Set RESEND_API_KEY.", user.Email)
+		log.Printf("email verification: NO MAILER CONFIGURED: %s cannot receive a link. Set MAIL_MAILER (see .env.example).", user.Email)
 		return
 	}
 
