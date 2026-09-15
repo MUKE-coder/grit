@@ -51,6 +51,9 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "realtime", "guard_test.go"):              apiRealtimeGuardTestGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "channels.go"):                apiRealtimeChannelsGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "channels_test.go"):           apiRealtimeChannelsTestGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "presence.go"):                apiRealtimePresenceGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "presence_test.go"):           apiRealtimePresenceTestGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "hub_send_test.go"):           apiRealtimeHubSendTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "realtime_channels_test.go"):  apiRealtimeChannelsHandlerTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "realtime_test.go"):           apiRealtimeHandlerTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):                apiRealtimeHandlerGo(),
@@ -8992,7 +8995,7 @@ const disconnectGrace = 10 * time.Second
 // Hub manages connected clients. Safe for concurrent use.
 type Hub struct {
 	mu      sync.RWMutex
-` + hubChannelsFieldNew + `
+` + hubChannelsFieldNew + hubPresenceFieldAdd + `
 	// nodeID identifies this process so it can ignore its own messages coming
 	// back off the backplane.
 	nodeID string
@@ -9059,8 +9062,7 @@ func NewHub(opts ...Option) *Hub {
 		ctx, cancel := context.WithCancel(context.Background())
 		h.cancel = cancel
 		go h.backplane.Subscribe(ctx, h.receive)
-		go h.publishLoop(ctx)
-	}
+` + hubPresenceStartNew + `	}
 	return h
 }
 
@@ -9091,10 +9093,7 @@ func (h *Hub) Register(c *Client) {
 
 // Unregister removes a client and closes its Send channel. Safe to call
 // once per client (e.g. from the read pump's defer).
-func (h *Hub) Unregister(c *Client) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if set, ok := h.clients[c.UserID]; ok {
+` + hubPresenceUnregisterNew + `	if set, ok := h.clients[c.UserID]; ok {
 		if _, exists := set[c]; exists {
 ` + hubUnregisterNew + `		}
 		if len(set) == 0 {
@@ -9143,10 +9142,7 @@ func (h *Hub) disconnectLocal(userID string) {
 	// the bound writePump is already operating under.
 	go func() {
 		time.Sleep(disconnectGrace)
-		for _, conn := range conns {
-			_ = conn.Close()
-		}
-	}()
+` + hubBackstopNew + `	}()
 }
 
 // SendToUser delivers an event to every connection bound to userID.
@@ -9157,51 +9153,7 @@ func (h *Hub) SendToUser(userID string, evt Event) {
 	h.SendToUsers([]string{userID}, evt)
 }
 
-// deliverLocal pushes an encoded event to this process's own connections.
-// It never touches the backplane, so it is also what a received message runs.
-func (h *Hub) deliverLocal(userIDs []string, bytes []byte) {
-	if len(bytes) == 0 {
-		return
-	}
-	h.mu.RLock()
-	targets := make([]*Client, 0, len(userIDs))
-	for _, uid := range userIDs {
-		for c := range h.clients[uid] {
-			targets = append(targets, c)
-		}
-	}
-	h.mu.RUnlock()
-	for _, c := range targets {
-		select {
-		case c.Send <- bytes:
-		default:
-			log.Printf("[realtime] dropping message for slow client user=%s", c.UserID)
-		}
-	}
-}
-
-// broadcastLocal is deliverLocal for every connection on this node.
-func (h *Hub) broadcastLocal(bytes []byte) {
-	if len(bytes) == 0 {
-		return
-	}
-	h.mu.RLock()
-	targets := make([]*Client, 0)
-	for _, set := range h.clients {
-		for c := range set {
-			targets = append(targets, c)
-		}
-	}
-	h.mu.RUnlock()
-	for _, c := range targets {
-		select {
-		case c.Send <- bytes:
-		default:
-			log.Printf("[realtime] dropping broadcast for slow client user=%s", c.UserID)
-		}
-	}
-}
-
+` + hubLocalSendsNew + `
 // SendToUsers fans out to a slice of user IDs.
 func (h *Hub) SendToUsers(userIDs []string, evt Event) {
 	if len(userIDs) == 0 {

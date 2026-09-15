@@ -138,6 +138,43 @@ function send(message: { type: string; channel: string }) {
   }
 }
 
+/** One user in a presence channel. info is what the channel's authorizer passed to SetInfo. */
+export type PresenceMember<Info = unknown> = { user_id: string; info?: Info; joined_at: string };
+
+/**
+ * The members of each presence channel something is subscribed to, from the
+ * server's presence.members snapshot and the joined and left events after it.
+ * Emptied when the socket closes: the reconnect subscribes again and the server
+ * sends a fresh snapshot, so a member who left meanwhile is not shown.
+ */
+const presence = new Map<string, Map<string, PresenceMember>>();
+
+function trackPresence(channel: string, evt: RealtimeEvent) {
+  if (!channel.startsWith("presence-") || !channels.has(channel)) return;
+  if (evt.type === "presence.members") {
+    const list = (evt.payload as { members?: PresenceMember[] } | null)?.members ?? [];
+    presence.set(
+      channel,
+      new Map(list.map((member): [string, PresenceMember] => [member.user_id, member])),
+    );
+    return;
+  }
+  const member = evt.payload as Partial<PresenceMember> | null;
+  if (!member || typeof member.user_id !== "string") return;
+  if (evt.type === "presence.joined") {
+    const members = presence.get(channel) ?? new Map<string, PresenceMember>();
+    members.set(member.user_id, member as PresenceMember);
+    presence.set(channel, members);
+  } else if (evt.type === "presence.left") {
+    presence.get(channel)?.delete(member.user_id);
+  }
+}
+
+/** Who is in a presence channel, as of the last presence event the server sent. */
+export function presenceMembers<Info = unknown>(channel: string): PresenceMember<Info>[] {
+  return Array.from(presence.get(channel)?.values() ?? []) as PresenceMember<Info>[];
+}
+
 function dispatchChannel(channel: string, evt: RealtimeEvent) {
   let handled = false;
   channels.get(channel)?.forEach(({ handlers: onChannel }) => {
@@ -225,7 +262,9 @@ export async function connect(): Promise<void> {
     if (!evt || typeof evt.type !== "string") return;
     if (typeof evt.channel === "string" && evt.channel !== "") {
       // Channel traffic, replies included, goes to that channel's subscribers
-      // only, never to the event-type handlers below.
+      // only, never to the event-type handlers below. Presence is tracked
+      // first, so a handler that reads presenceMembers sees this event applied.
+      trackPresence(evt.channel, evt);
       dispatchChannel(evt.channel, evt);
       return;
     }
@@ -243,6 +282,7 @@ export async function connect(): Promise<void> {
 
   ws.onclose = () => {
     if (socket === ws) socket = null;
+    presence.clear();
     setStatus("closed");
     // The server closes this socket when the token behind it expires or its
     // session is revoked. Reconnecting is right in both cases: a live session
@@ -266,6 +306,7 @@ export function disconnect() {
   socket?.close();
   socket = null;
   attempt = 0;
+  presence.clear();
   setStatus("closed");
 }
 
@@ -320,6 +361,7 @@ function subscribeChannel(channel: string, onChannel: ChannelHandlers): () => vo
     if (!subscribers.delete(entry)) return;
     if (subscribers.size === 0 && channels.get(channel) === subscribers) {
       channels.delete(channel);
+      presence.delete(channel);
       send({ type: "unsubscribe", channel });
     }
   };
@@ -355,11 +397,14 @@ import {
   connect,
   disconnect,
   onRealtimeStatus,
+  presenceMembers,
   type Handler,
+  type PresenceMember,
   type Status,
 } from "@/lib/realtime";
 
 export { connect as connectRealtime, disconnect as disconnectRealtime };
+export type { PresenceMember };
 
 /**
  * Subscribe to realtime events for as long as a component is mounted.
@@ -421,6 +466,45 @@ export function useChannel(channel: string | null | undefined, handlers: Record<
       });
     return subscribe(channel, stable);
   }, [channel, types]);
+}
+
+/**
+ * Who is in a presence channel, kept current for as long as a component is
+ * mounted.
+ *
+ *   const members = usePresence<{ name: string }>(room ? "presence-rooms." + room.id : null);
+ *   members.map((m) => m.info?.name);
+ *
+ * Each user appears once, however many tabs they have open, the signed-in user
+ * included. The list is empty while the connection is down and refills from the
+ * server's snapshot when it is back. Pass null while the channel is not known.
+ */
+export function usePresence<Info = unknown>(channel: string | null | undefined): PresenceMember<Info>[] {
+  const [members, setMembers] = useState<PresenceMember<Info>[]>(() =>
+    channel ? presenceMembers<Info>(channel) : [],
+  );
+
+  useEffect(() => {
+    if (!channel) {
+      setMembers([]);
+      return undefined;
+    }
+    const sync = () => setMembers(presenceMembers<Info>(channel));
+    const off = subscribe(channel, {
+      "presence.members": sync,
+      "presence.joined": sync,
+      "presence.left": sync,
+    });
+    // Called at once with the current status, which also picks up members
+    // another component on this channel already received.
+    const offStatus = onRealtimeStatus(sync);
+    return () => {
+      off();
+      offStatus();
+    };
+  }, [channel]);
+
+  return members;
 }
 
 /**
