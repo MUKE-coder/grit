@@ -17,6 +17,13 @@ func writeMediaFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "media", "transform.go"):      mediaTransformGo(),
 		filepath.Join(apiRoot, "internal", "media", "transform_vips.go"): mediaTransformVipsGo(),
 		filepath.Join(apiRoot, "internal", "media", "transform_test.go"): mediaTransformTestGo(module),
+		// The chainable API: media.Open(r).Cover(150, 150).ToWebP().Store(...).
+		filepath.Join(apiRoot, "internal", "media", "image.go"):              mediaImageGo(),
+		filepath.Join(apiRoot, "internal", "media", "image_load.go"):         mediaImageLoadGo(),
+		filepath.Join(apiRoot, "internal", "media", "image_purego.go"):       mediaImagePureGo(),
+		filepath.Join(apiRoot, "internal", "media", "image_vips.go"):         mediaImageVipsGo(),
+		filepath.Join(apiRoot, "internal", "media", "image_test.go"):         mediaImageTestGo(),
+		filepath.Join(apiRoot, "internal", "media", "image_storage_test.go"): mediaImageStorageTestGo(),
 	}
 
 	// Yours to edit, so it is written once and never overwritten.
@@ -498,16 +505,20 @@ func resize(src image.Image, s Size) image.Image {
 	if s.Width <= 0 && s.Height <= 0 {
 		return src
 	}
-	if s.Crop {
+	if s.Crop && s.Width > 0 && s.Height > 0 {
 		return imaging.Fill(src, s.Width, s.Height, imaging.Center, imaging.Lanczos)
 	}
 	// Fit never scales up: enlarging a small upload to the profile's box wastes
-	// bytes on pixels the source never had.
+	// bytes on pixels the source never had. A side of 0 is unbounded, so
+	// Fit(800, 0) keeps the aspect ratio; passed to imaging.Fit it produced an
+	// empty 0x0 image. A Fill with one side 0 has no box to crop to and scales
+	// the same way.
 	b := src.Bounds()
-	if b.Dx() <= s.Width && b.Dy() <= s.Height {
+	w, h := fitDimensions(b.Dx(), b.Dy(), s.Width, s.Height)
+	if w == b.Dx() && h == b.Dy() {
 		return src
 	}
-	return imaging.Fit(src, s.Width, s.Height, imaging.Lanczos)
+	return imaging.Resize(src, w, h, imaging.Lanczos)
 }
 
 // resolveFormat turns Auto into a concrete encoding.
@@ -980,23 +991,18 @@ func renderOne(buf []byte, s Size, p Profile) (Rendition, error) {
 		return Rendition{}, fmt.Errorf("orienting image: %w", err)
 	}
 
-	if s.Width > 0 || s.Height > 0 {
-		crop := vips.InterestingNone
-		if s.Crop {
-			// Centre, matching what the pure-Go backend does, so the two
-			// produce the same framing.
-			crop = vips.InterestingCentre
+	if s.Crop && s.Width > 0 && s.Height > 0 {
+		// Centre, matching what the pure-Go backend does, so the two produce
+		// the same framing.
+		if err := img.Thumbnail(s.Width, s.Height, vips.InterestingCentre); err != nil {
+			return Rendition{}, fmt.Errorf("resizing image: %w", err)
 		}
-		if s.Crop {
-			if err := img.Thumbnail(s.Width, s.Height, crop); err != nil {
-				return Rendition{}, fmt.Errorf("resizing image: %w", err)
-			}
-		} else if img.Width() > s.Width || img.Height() > s.Height {
-			// Fit, and never upscale: enlarging a small upload spends bytes on
-			// pixels the source never had.
-			if err := img.Thumbnail(s.Width, s.Height, vips.InterestingNone); err != nil {
-				return Rendition{}, fmt.Errorf("resizing image: %w", err)
-			}
+	} else if w, h := fitDimensions(img.Width(), img.Height(), s.Width, s.Height); w != img.Width() || h != img.Height() {
+		// Fit, and never upscale: enlarging a small upload spends bytes on
+		// pixels the source never had. A side of 0 is unbounded, so Fit(800, 0)
+		// keeps the aspect ratio instead of asking libvips for a zero height.
+		if err := img.Thumbnail(w, h, vips.InterestingNone); err != nil {
+			return Rendition{}, fmt.Errorf("resizing image: %w", err)
 		}
 	}
 

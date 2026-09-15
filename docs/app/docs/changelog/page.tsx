@@ -66,6 +66,52 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.279.0 */}
+            <div className="mb-12" id="v3.279.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.279.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Work on images in code, and one-sided resizes that no longer produce empty images</h3>
+                <p>
+                  <strong>A chainable image API.</strong> The media package could only run an upload through a fixed
+                  profile, so a handler had no way to crop, rotate, blur or inspect an image itself.
+                  <code>media.Open(r)</code>, <code>media.FromDisk(ctx, disk, key)</code> and
+                  <code>media.FromURL(ctx, url)</code> now return an image with <code>Cover</code>,
+                  <code>Fit</code>, <code>Resize</code>, <code>Crop</code>, <code>Rotate</code>,
+                  <code>FlipH</code>, <code>FlipV</code>, <code>Grayscale</code>, <code>Blur</code>,
+                  <code>Sharpen</code> and <code>Orient</code>. <code>Width</code>, <code>Height</code>,
+                  <code>MIME</code>, <code>Extension</code> and <code>DominantColor</code> inspect it, the
+                  <code>To...</code> methods pick the output format, and <code>Encode</code> or
+                  <code>Store(ctx, disk, &quot;avatars&quot;, media.PublicFile)</code> finishes it and returns the
+                  stored key.
+                </p>
+                <p>
+                  Every step returns a new image, so one decode can feed several outputs, and an error anywhere comes
+                  out at the end. The pixel limit is checked on the header and after any step that can grow an image,
+                  and all pixel work shares the per-CPU limit uploads already use. <code>FromURL</code> goes through
+                  the safe fetch client with a 20 MB and 10 second default, so loopback and cloud metadata addresses
+                  are refused before a connection is made. Lossy WebP and AVIF need the libvips build; without it they
+                  return an error naming <code>-tags vips</code> instead of quietly writing a lossless file. No new
+                  dependencies, and no cgo in the default build.
+                </p>
+                <p>
+                  <strong>One-sided sizes keep the aspect ratio.</strong> <code>media.Fit(800, 0)</code> on a
+                  2000x1000 photo produced an empty 0x0 image with no error, and it would have been stored. It now
+                  gives 800x400, and <code>Fill(800, 0)</code> scales the same way, on both the pure Go and libvips
+                  backends.
+                </p>
+                <p>
+                  The Image Optimisation docs gain a section on the chain, and <code>grit upgrade</code> delivers
+                  the new media files with the rest of the media package.
+                </p>
+              </div>
+            </div>
+
             {/* v3.278.0 */}
             <div className="mb-12" id="v3.278.0">
               <div className="flex items-center gap-3 mb-4">
