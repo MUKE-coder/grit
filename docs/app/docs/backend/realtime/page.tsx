@@ -162,6 +162,22 @@ useLiveResource('invoices', ['invoices'])`}
 
                 <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 mt-4">
                   <p className="text-sm text-muted-foreground leading-relaxed">
+                    <strong className="text-amber-400">Origins, limits and the module flag.</strong>{' '}
+                    A browser sends the cookie with a handshake from any page, so a cookie
+                    handshake is accepted only from an origin in <code>CORS_ORIGINS</code>{' '}
+                    (or the <code>cors.origins</code> setting) or from the API&apos;s own host,
+                    and refused with 403 otherwise. A wildcard does not count. Clients that
+                    send <code>?token=</code> or an <code>Authorization</code> header are not
+                    affected. Each user may hold <code>REALTIME_MAX_CONNECTIONS_PER_USER</code>{' '}
+                    sockets (default 10) and each process{' '}
+                    <code>REALTIME_MAX_CONNECTIONS</code> (default 10,000); a socket past either
+                    cap is closed with code 1013. With <code>MODULE_REALTIME=false</code> the
+                    Redis backplane is not started and <code>/api/ws</code> answers 404.
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 mt-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
                     <strong className="text-amber-400">The socket does not outlive its token.</strong>{' '}
                     The JWT is checked once, at the handshake. The connection carries that
                     token&apos;s expiry and closes when it passes, and revoking a session

@@ -103,8 +103,18 @@ func (g *Generator) ensureEventsBoot() error {
 		return nil
 	}
 
-	const anchor = "realtimeHub := realtime.NewHub()"
+	// The hub has been built with options since the backplane landed, and behind
+	// the module flag since realtime could be turned off, so match the start of
+	// the line and insert after its end.
+	const anchor = "realtimeHub := realtime.NewHub("
 	idx := strings.Index(content, anchor)
+	if idx >= 0 {
+		if end := strings.IndexByte(content[idx:], '\n'); end >= 0 {
+			idx += end
+		} else {
+			idx = len(content)
+		}
+	}
 	if idx < 0 {
 		yellow := color.New(color.FgHiYellow)
 		yellow.Printf("\n  ⚠ Could not find where routes.go creates the realtime hub, so the\n")
@@ -117,7 +127,7 @@ func (g *Generator) ensureEventsBoot() error {
 		return nil
 	}
 
-	insertAt := idx + len(anchor)
+	insertAt := idx
 	boot := "\n\n\t// Domain event bus: generated handlers emit here, and the audit log,\n" +
 		"\t// realtime and (when installed) webhooks subscribe.\n" +
 		"\tevents.Init(4)\n" +
