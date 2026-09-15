@@ -12,6 +12,9 @@ func writeStorageFiles(root string, opts Options) error {
 
 	files := map[string]string{
 		filepath.Join(apiRoot, "internal", "storage", "storage.go"):      storageServiceGo(),
+		filepath.Join(apiRoot, "internal", "storage", "disk.go"):         storageDiskGo(),
+		filepath.Join(apiRoot, "internal", "storage", "local.go"):        storageLocalGo(),
+		filepath.Join(apiRoot, "internal", "storage", "disk_test.go"):    storageDiskTestGo(),
 		filepath.Join(apiRoot, "internal", "storage", "image.go"):        storageImageGo(),
 		filepath.Join(apiRoot, "internal", "storage", "image_test.go"):   storageImageTestGo(),
 		filepath.Join(apiRoot, "internal", "storage", "url_test.go"):     storageURLTestGo(module),
@@ -38,15 +41,17 @@ func storageServiceGo() string {
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
-	"net/url"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -55,17 +60,31 @@ import (
 	"{{MODULE}}/internal/config"
 )
 
-// Storage provides S3-compatible file storage operations.
+// Storage is the file store the app started with.
+//
+// It holds one Disk, chosen by STORAGE_DRIVER: an S3-compatible bucket (minio,
+// s3, r2, b2) or a directory on this machine (local). New code can take the
+// Disk itself from Disk(). The methods below keep the names handlers have
+// always called, each a thin wrapper over the Disk, so code written before
+// the interface existed compiles and behaves as it did.
 type Storage struct {
-	client *s3.Client
-	bucket string
-	cfg    config.StorageConfig
+	disk Disk
 }
 
 // PublicPrefixes are the key prefixes anyone may read without a signature:
 // uploaded files and their thumbnails, which pages link to directly. Backups,
 // private originals and every other key are read through GetSignedURL.
 var PublicPrefixes = []string{"uploads/", "thumbnails/"}
+
+// IsPublicKey reports whether key is under one of PublicPrefixes.
+func IsPublicKey(key string) bool {
+	for _, prefix := range PublicPrefixes {
+		if strings.HasPrefix(key, prefix) {
+			return true
+		}
+	}
+	return false
+}
 
 // BucketPolicy allows anonymous reads under PublicPrefixes, and nothing else.
 func BucketPolicy(bucket string) string {
@@ -77,9 +96,106 @@ func BucketPolicy(bucket string) string {
 		"\"Action\":[\"s3:GetObject\"],\"Resource\":[" + strings.Join(resources, ",") + "]}]}"
 }
 
-// New creates a new Storage instance using the given config.
-// Works with AWS S3, MinIO, Cloudflare R2, and Backblaze B2.
+// New connects to an S3-compatible bucket: AWS S3, MinIO, Cloudflare R2 or
+// Backblaze B2.
 func New(cfg config.StorageConfig) (*Storage, error) {
+	disk, err := NewS3Disk(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &Storage{disk: disk}, nil
+}
+
+// NewLocal keeps files in a directory on this machine (STORAGE_DRIVER=local).
+func NewLocal(cfg LocalConfig) (*Storage, error) {
+	disk, err := NewLocalDisk(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &Storage{disk: disk}, nil
+}
+
+// Wrap returns a Storage over any Disk: a driver of your own, or a fake in a
+// test.
+func Wrap(disk Disk) *Storage {
+	return &Storage{disk: disk}
+}
+
+// Disk is the driver behind this store.
+func (s *Storage) Disk() Disk {
+	return s.disk
+}
+
+// Upload stores a file at the given key.
+func (s *Storage) Upload(ctx context.Context, key string, reader io.Reader, contentType string) error {
+	return s.disk.Put(ctx, key, reader, PutOptions{ContentType: contentType})
+}
+
+// Download opens a stored file. The caller closes it.
+func (s *Storage) Download(ctx context.Context, key string) (io.ReadCloser, error) {
+	return s.disk.Get(ctx, key)
+}
+
+// Delete removes a stored file.
+func (s *Storage) Delete(ctx context.Context, key string) error {
+	return s.disk.Delete(ctx, key)
+}
+
+// DeleteMany removes many stored files. A key that is already gone is not an
+// error.
+func (s *Storage) DeleteMany(ctx context.Context, keys []string) error {
+	return s.disk.Delete(ctx, keys...)
+}
+
+// GetURL returns the URL a browser loads a public file from.
+func (s *Storage) GetURL(key string) string {
+	return s.disk.URL(key)
+}
+
+// GetSignedURL returns a link to any file that stops working after duration.
+func (s *Storage) GetSignedURL(ctx context.Context, key string, duration time.Duration) (string, error) {
+	return s.disk.TemporaryURL(ctx, key, duration)
+}
+
+// Stat returns the size and content type of a stored file.
+func (s *Storage) Stat(ctx context.Context, key string) (int64, string, error) {
+	obj, err := s.disk.Stat(ctx, key)
+	if err != nil {
+		return 0, "", err
+	}
+	return obj.Size, obj.ContentType, nil
+}
+
+// PresignPutURL generates a pre-signed PUT URL for a direct browser upload,
+// valid for an hour. It returns ErrPresignUnsupported when the driver takes
+// uploads through the API instead, and the upload handler tells the client
+// to send the file to POST /uploads.
+func (s *Storage) PresignPutURL(ctx context.Context, key, contentType string, contentLength int64) (string, error) {
+	presigner, ok := s.disk.(Presigner)
+	if !ok {
+		return "", ErrPresignUnsupported
+	}
+	return presigner.PresignPut(ctx, key, contentType, contentLength, time.Hour)
+}
+
+// FileServer is the handler that serves this store's files from the API, or
+// nil when something else serves them (a bucket serves its own).
+func (s *Storage) FileServer() http.Handler {
+	if handler, ok := s.disk.(http.Handler); ok {
+		return handler
+	}
+	return nil
+}
+
+// S3Disk is a Disk over one S3-compatible bucket.
+type S3Disk struct {
+	client *s3.Client
+	bucket string
+	cfg    config.StorageConfig
+}
+
+// NewS3Disk connects to the bucket in cfg, creating it if it does not exist.
+func NewS3Disk(cfg config.StorageConfig) (*S3Disk, error) {
 	customResolver := aws.EndpointResolverWithOptionsFunc(
 		func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 			if cfg.Endpoint != "" {
@@ -149,19 +265,38 @@ func New(cfg config.StorageConfig) (*Storage, error) {
 			cfg.Bucket, err, strings.Join(PublicPrefixes, ", "))
 	}
 
-	return &Storage{
+	return &S3Disk{
 		client: client,
 		bucket: cfg.Bucket,
 		cfg:    cfg,
 	}, nil
 }
 
-// Upload stores a file in the bucket at the given key.
-func (s *Storage) Upload(ctx context.Context, key string, reader io.Reader, contentType string) error {
-	_, err := s.client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:      aws.String(s.bucket),
+// s3Failed wraps an SDK error, reporting a missing object as ErrNotFound.
+func s3Failed(op, key string, err error) error {
+	var noSuchKey *types.NoSuchKey
+	var notFound *types.NotFound
+	var response *awshttp.ResponseError
+	if errors.As(err, &noSuchKey) || errors.As(err, &notFound) ||
+		(errors.As(err, &response) && response.HTTPStatusCode() == http.StatusNotFound) {
+		return fmt.Errorf("%s %q: %w (%w)", op, key, ErrNotFound, err)
+	}
+	return fmt.Errorf("%s %q: %w", op, key, err)
+}
+
+// Put stores r in the bucket at key.
+func (d *S3Disk) Put(ctx context.Context, key string, r io.Reader, opts PutOptions) error {
+	if err := checkKey(key); err != nil {
+		return err
+	}
+	contentType := opts.ContentType
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+	_, err := d.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(d.bucket),
 		Key:         aws.String(key),
-		Body:        reader,
+		Body:        r,
 		ContentType: aws.String(contentType),
 	})
 	if err != nil {
@@ -170,33 +305,67 @@ func (s *Storage) Upload(ctx context.Context, key string, reader io.Reader, cont
 	return nil
 }
 
-// Download retrieves a file from the bucket.
-func (s *Storage) Download(ctx context.Context, key string) (io.ReadCloser, error) {
-	result, err := s.client.GetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(s.bucket),
+// Get opens the object at key.
+func (d *S3Disk) Get(ctx context.Context, key string) (io.ReadCloser, error) {
+	if err := checkKey(key); err != nil {
+		return nil, err
+	}
+	result, err := d.client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(d.bucket),
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("downloading %q: %w", key, err)
+		return nil, s3Failed("downloading", key, err)
 	}
 	return result.Body, nil
 }
 
-// Delete removes a file from the bucket.
-func (s *Storage) Delete(ctx context.Context, key string) error {
-	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
-		Bucket: aws.String(s.bucket),
+// Exists reports whether an object is stored at key.
+func (d *S3Disk) Exists(ctx context.Context, key string) (bool, error) {
+	return exists(ctx, d, key)
+}
+
+// Stat asks the bucket what it holds at key.
+//
+// Needed because a presigned upload never passes through this server: the only
+// way to know what actually landed in the bucket is to ask the bucket.
+func (d *S3Disk) Stat(ctx context.Context, key string) (Object, error) {
+	if err := checkKey(key); err != nil {
+		return Object{}, err
+	}
+	out, err := d.client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(d.bucket),
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		return fmt.Errorf("deleting %q: %w", key, err)
+		return Object{}, s3Failed("stat", key, err)
 	}
-	return nil
+	return Object{
+		Key:          key,
+		Size:         aws.ToInt64(out.ContentLength),
+		ContentType:  aws.ToString(out.ContentType),
+		LastModified: aws.ToTime(out.LastModified),
+	}, nil
 }
 
-// DeleteMany removes keys from the bucket, 1,000 to a request, the most one
+// Delete removes keys from the bucket, 1,000 to a request, the most one
 // DeleteObjects call takes. A key that is already gone is not an error.
-func (s *Storage) DeleteMany(ctx context.Context, keys []string) error {
+func (d *S3Disk) Delete(ctx context.Context, keys ...string) error {
+	for _, key := range keys {
+		if err := checkKey(key); err != nil {
+			return err
+		}
+	}
+	if len(keys) == 1 {
+		_, err := d.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+			Bucket: aws.String(d.bucket),
+			Key:    aws.String(keys[0]),
+		})
+		if err != nil {
+			return fmt.Errorf("deleting %q: %w", keys[0], err)
+		}
+		return nil
+	}
 	for start := 0; start < len(keys); start += 1000 {
 		end := start + 1000
 		if end > len(keys) {
@@ -206,8 +375,8 @@ func (s *Storage) DeleteMany(ctx context.Context, keys []string) error {
 		for _, key := range keys[start:end] {
 			objects = append(objects, types.ObjectIdentifier{Key: aws.String(key)})
 		}
-		out, err := s.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
-			Bucket: aws.String(s.bucket),
+		out, err := d.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+			Bucket: aws.String(d.bucket),
 			Delete: &types.Delete{Objects: objects, Quiet: aws.Bool(true)},
 		})
 		if err != nil {
@@ -222,75 +391,98 @@ func (s *Storage) DeleteMany(ctx context.Context, keys []string) error {
 	return nil
 }
 
-// GetURL returns the public URL for a stored file.
-// GetURL returns the URL a browser should load this object from.
+// Copy copies the object at from to to, inside the bucket.
+func (d *S3Disk) Copy(ctx context.Context, from, to string) error {
+	if err := checkKey(from); err != nil {
+		return err
+	}
+	if err := checkKey(to); err != nil {
+		return err
+	}
+	_, err := d.client.CopyObject(ctx, &s3.CopyObjectInput{
+		Bucket:     aws.String(d.bucket),
+		CopySource: aws.String(d.bucket + "/" + escapeKey(from)),
+		Key:        aws.String(to),
+	})
+	if err != nil {
+		return s3Failed("copying", from, err)
+	}
+	return nil
+}
+
+// Move copies the object at from to to, then deletes from. A bucket has no
+// rename.
+func (d *S3Disk) Move(ctx context.Context, from, to string) error {
+	if err := d.Copy(ctx, from, to); err != nil {
+		return err
+	}
+	return d.Delete(ctx, from)
+}
+
+// List returns every object whose key starts with prefix, in key order.
+func (d *S3Disk) List(ctx context.Context, prefix string) ([]Object, error) {
+	var objects []Object
+	pages := s3.NewListObjectsV2Paginator(d.client, &s3.ListObjectsV2Input{
+		Bucket: aws.String(d.bucket),
+		Prefix: aws.String(prefix),
+	})
+	for pages.HasMorePages() {
+		page, err := pages.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("listing %q: %w", prefix, err)
+		}
+		for _, item := range page.Contents {
+			objects = append(objects, Object{
+				Key:          aws.ToString(item.Key),
+				Size:         aws.ToInt64(item.Size),
+				LastModified: aws.ToTime(item.LastModified),
+			})
+		}
+	}
+	return objects, nil
+}
+
+// URL returns the URL a browser should load this object from.
 //
 // The SDK endpoint and the browser-facing origin are not always the same host.
 // MinIO serves objects from the host it takes API calls on, so the default
 // (<endpoint>/<bucket>/<key>) is right there. Cloudflare R2 is the case that
 // breaks: <account>.r2.cloudflarestorage.com only answers SigV4-signed
-// requests, so an <img> pointed at it gets a 401 — the upload succeeds and
+// requests, so an <img> pointed at it gets a 401: the upload succeeds and
 // nothing ever renders, which reads like a CORS problem and is not one.
 //
 // Setting R2_PUBLIC_URL (or STORAGE_PUBLIC_URL) switches this to
-// <PublicURL>/<key>. Public origins — an r2.dev subdomain, a custom domain, a
-// CDN in front of S3 — are already scoped to one bucket, so the bucket
+// <PublicURL>/<key>. Public origins (an r2.dev subdomain, a custom domain, a
+// CDN in front of S3) are already scoped to one bucket, so the bucket
 // segment is deliberately not repeated.
-func (s *Storage) GetURL(key string) string {
-	// Encode each path segment individually to preserve forward slashes
-	segments := strings.Split(key, "/")
-	for i, seg := range segments {
-		segments[i] = url.PathEscape(seg)
-	}
-	escaped := strings.Join(segments, "/")
-
-	if public := strings.TrimRight(s.cfg.PublicURL, "/"); public != "" {
+func (d *S3Disk) URL(key string) string {
+	escaped := escapeKey(key)
+	if public := strings.TrimRight(d.cfg.PublicURL, "/"); public != "" {
 		return fmt.Sprintf("%s/%s", public, escaped)
 	}
-
-	endpoint := strings.TrimRight(s.cfg.Endpoint, "/")
-	return fmt.Sprintf("%s/%s/%s", endpoint, s.bucket, escaped)
+	endpoint := strings.TrimRight(d.cfg.Endpoint, "/")
+	return fmt.Sprintf("%s/%s/%s", endpoint, d.bucket, escaped)
 }
 
-// GetSignedURL returns a pre-signed URL valid for the given duration.
-func (s *Storage) GetSignedURL(ctx context.Context, key string, duration time.Duration) (string, error) {
-	presigner := s3.NewPresignClient(s.client)
+// TemporaryURL returns a pre-signed GET URL valid for ttl.
+func (d *S3Disk) TemporaryURL(ctx context.Context, key string, ttl time.Duration) (string, error) {
+	if err := checkKey(key); err != nil {
+		return "", err
+	}
+	presigner := s3.NewPresignClient(d.client)
 	result, err := presigner.PresignGetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(s.bucket),
+		Bucket: aws.String(d.bucket),
 		Key:    aws.String(key),
-	}, s3.WithPresignExpires(duration))
+	}, s3.WithPresignExpires(ttl))
 	if err != nil {
 		return "", fmt.Errorf("generating signed URL for %q: %w", key, err)
 	}
 	return result.URL, nil
 }
 
-// Stat returns the size and content type of a stored object.
+// PresignPut generates a pre-signed PUT URL for a direct browser upload.
 //
-// Needed because a presigned upload never passes through this server: the only
-// way to know what actually landed in the bucket is to ask the bucket.
-func (s *Storage) Stat(ctx context.Context, key string) (int64, string, error) {
-	out, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{
-		Bucket: aws.String(s.bucket),
-		Key:    aws.String(key),
-	})
-	if err != nil {
-		return 0, "", fmt.Errorf("stat %q: %w", key, err)
-	}
-	var size int64
-	if out.ContentLength != nil {
-		size = *out.ContentLength
-	}
-	var ctype string
-	if out.ContentType != nil {
-		ctype = *out.ContentType
-	}
-	return size, ctype, nil
-}
-
-// PresignPutURL generates a pre-signed PUT URL for direct browser upload.
-//
-// contentLength is signed into the URL, so S3 rejects a PUT of any other size.
+// size is signed into the URL, so S3 rejects a PUT of any other size.
 // Without it the URL is an unbounded write capability: a client can ask to
 // upload two megabytes and then send five gigabytes, and nothing on this side
 // ever sees it happen.
@@ -298,14 +490,17 @@ func (s *Storage) Stat(ctx context.Context, key string) (int64, string, error) {
 // It is an exact match rather than a ceiling, which the client can satisfy
 // because it optimises the image first and therefore knows the byte count
 // before it asks for a URL.
-func (s *Storage) PresignPutURL(ctx context.Context, key, contentType string, contentLength int64) (string, error) {
-	presigner := s3.NewPresignClient(s.client)
+func (d *S3Disk) PresignPut(ctx context.Context, key, contentType string, size int64, ttl time.Duration) (string, error) {
+	if err := checkKey(key); err != nil {
+		return "", err
+	}
+	presigner := s3.NewPresignClient(d.client)
 	result, err := presigner.PresignPutObject(ctx, &s3.PutObjectInput{
-		ContentLength: aws.Int64(contentLength),
-		Bucket:      aws.String(s.bucket),
-		Key:         aws.String(key),
-		ContentType: aws.String(contentType),
-	}, s3.WithPresignExpires(1*time.Hour))
+		ContentLength: aws.Int64(size),
+		Bucket:        aws.String(d.bucket),
+		Key:           aws.String(key),
+		ContentType:   aws.String(contentType),
+	}, s3.WithPresignExpires(ttl))
 	if err != nil {
 		return "", fmt.Errorf("generating presigned PUT URL for %q: %w", key, err)
 	}
@@ -446,6 +641,7 @@ func uploadHandlerGo() string {
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -1139,6 +1335,15 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 	key := fmt.Sprintf("uploads/%s/%s/%s", userID, time.Now().Format("2006/01"), filename)
 
 	presignedURL, err := h.Storage.PresignPutURL(c.Request.Context(), key, req.ContentType, req.FileSize)
+	if errors.Is(err, storage.ErrPresignUnsupported) {
+		// This driver takes uploads through the API (STORAGE_DRIVER=local), so
+		// the client sends the file to POST /uploads as a multipart form.
+		c.JSON(http.StatusOK, gin.H{
+			"data":    gin.H{"method": "multipart"},
+			"message": "Send the file to POST /uploads",
+		})
+		return
+	}
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "PRESIGN_FAILED", "message": "Failed to generate upload URL"},
@@ -1382,7 +1587,7 @@ func TestGetURL(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			s := &Storage{bucket: c.cfg.Bucket, cfg: c.cfg}
+			s := Wrap(&S3Disk{bucket: c.cfg.Bucket, cfg: c.cfg})
 			if got := s.GetURL(c.key); got != c.want {
 				t.Errorf("GetURL(%%q) = %%q, want %%q", c.key, got, c.want)
 			}

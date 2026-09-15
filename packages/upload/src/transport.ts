@@ -35,6 +35,19 @@ export function createAxiosTransport(client: AxiosLike, basePath = ""): UploadTr
       (await client.post(at(path), body)).data as T,
     put: (url, body, contentType, onProgress) =>
       putWithProgress(url, body, contentType, onProgress),
+    postForm: async <T,>(path: string, form: FormData, onProgress?: (fraction: number) => void) =>
+      (
+        await client.post(at(path), form, {
+          // Named, so axios sends the form as it is instead of turning it into
+          // JSON. The browser then sets the boundary.
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: onProgress
+            ? (e: { loaded: number; total?: number }) => {
+                if (e.total) onProgress(e.loaded / e.total);
+              }
+            : undefined,
+        })
+      ).data as T,
   };
 }
 
@@ -78,6 +91,15 @@ export function createFetchTransport(
       ),
     put: (url, body, contentType, onProgress) =>
       putWithProgress(url, body, contentType, onProgress),
+    // No Content-Type: fetch sets multipart/form-data with its boundary.
+    postForm: async <T,>(path: string, form: FormData) => {
+      const h: Record<string, string> = {};
+      const token = await getToken?.();
+      if (token) h.Authorization = "Bearer " + token;
+      return json<T>(
+        await fetch(baseUrl + path, { method: "POST", headers: h, credentials: "include", body: form }),
+      );
+    },
   };
 }
 

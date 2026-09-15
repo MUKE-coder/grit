@@ -277,16 +277,7 @@ func main() {
 		}
 	}
 
-	// S3-compatible storage
-	var storageService *storage.Storage
-	s, err := storage.New(cfg.Storage)
-	if err != nil {
-		log.Printf("Warning: Storage unavailable: %v", err)
-	} else {
-		storageService = s
-		log.Println("Storage configured")
-	}
-
+` + mainStorageInit + `
 ` + mailerInitNew + `
 	// AI service (Vercel AI Gateway)
 	var aiService *ai.AI

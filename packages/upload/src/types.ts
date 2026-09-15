@@ -96,4 +96,12 @@ export interface UploadTransport {
    * to it makes S3 reject the request.
    */
   put(url: string, body: Blob, contentType: string, onProgress?: (fraction: number) => void): Promise<void>;
+  /**
+   * POST a multipart form to the API, returning parsed JSON.
+   *
+   * Used when the server's storage cannot presign (STORAGE_DRIVER=local): the
+   * file then goes to POST /uploads instead of straight to storage. Optional,
+   * so a transport written before it still compiles.
+   */
+  postForm?<T>(path: string, form: FormData, onProgress?: (fraction: number) => void): Promise<T>;
 }
