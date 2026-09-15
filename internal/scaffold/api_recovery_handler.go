@@ -5,6 +5,7 @@ func recoveryHandlerGo() string {
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -180,9 +181,16 @@ func (h *RecoveryHandler) SetEmail(c *gin.Context) {
 		// SendRaw rather than a template: this mail goes to an address that is
 		// not yet on the account, so it must carry nothing about the account
 		// beyond the code itself.
-		_ = h.Mail.SendRaw(c.Request.Context(), address, "Your recovery code",
+		err := h.Mail.SendRaw(c.Request.Context(), address, "Your recovery code",
 			"<p>Your recovery code is <strong>"+code+"</strong>. It expires in 15 minutes.</p>"+
 				"<p>If you did not ask for this, somebody may have your password. Change it.</p>")
+		if err != nil {
+			// The code did not go out, so answering "enter the code we sent"
+			// would leave somebody waiting for mail that is not coming.
+			log.Printf("recovery: sending the verification code for user %s: %v", user.ID, err)
+			fail(c, http.StatusBadGateway, "MAIL_FAILED", "The code could not be sent to that address. Try again in a moment.")
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{"sent_to": maskEmail(address)},

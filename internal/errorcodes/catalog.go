@@ -216,6 +216,9 @@ var catalog = []Entry{
 	{"SMS_FAILED", http.StatusBadGateway, CategoryUpstream, "recovery",
 		"The SMS provider refused or failed to send.",
 		"Retry once, then offer email. The number may be unreachable."},
+	{"MAIL_FAILED", http.StatusBadGateway, CategoryUpstream, "recovery",
+		"The mail driver refused or failed to send the verification code.",
+		"Retry once. If it keeps failing, the address may be unreachable or mail is misconfigured."},
 
 	// ── API keys ───────────────────────────────────────────────────────────────
 	{"API_KEY_REQUIRED", http.StatusUnauthorized, CategoryAuth, "apikeys",

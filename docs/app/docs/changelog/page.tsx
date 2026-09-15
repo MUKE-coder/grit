@@ -66,6 +66,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.278.0 */}
+            <div className="mb-12" id="v3.278.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.278.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Mail: queued sending, grit generate mail, and a preview of the real templates</h3>
+                <p>
+                  <strong>Queued mail.</strong> <code>mail.Queue(ctx, jobs, message)</code> sends any message through
+                  the background worker, which retries a provider that is briefly down. The job existed all along
+                  with nothing able to use it. Attachments over 256 KB in total are refused with an error telling you
+                  to store the file and send a link, because a queued message waits in Redis for every retry. In a
+                  fresh project, a queued message with an attachment reached the local inbox through the worker, and
+                  a 300 KB attachment was refused before it reached the queue.
+                </p>
+                <p>
+                  <strong><code>grit generate mail</code>.</strong> <code>grit generate mail OrderShipped</code> writes
+                  a typed email: a data struct, a body inside the shared mail layout, a plain-text part, and
+                  <code>SendOrderShipped</code> and <code>QueueOrderShipped</code> helpers. It registers itself for the
+                  admin&apos;s Mail Preview.
+                </p>
+                <p>
+                  <strong>Mail Preview shows what the API sends.</strong> The admin page used hand-written copies of
+                  four templates. It now renders the real ones from <code>GET /api/admin/mail/templates</code> and
+                  <code>/api/admin/mail/preview/:template</code>, staff only. The preview matched the Go render byte
+                  for byte, generated templates appear on their own, and a non-staff account gets 403. System Health
+                  names the mail driver in use instead of saying Resend.
+                </p>
+                <p>
+                  <strong>Two quiet failures fixed.</strong> Adding a recovery email claimed a code had been sent even
+                  when sending failed; it now answers 502 <code>MAIL_FAILED</code>. Turning off notification emails in
+                  Settings now stops the new-ticket email, which ignored the setting.
+                </p>
+                <p>
+                  <code>grit upgrade</code> now brings the mail drivers, queueing and the preview to single-binary
+                  projects too; before, its API repairs only ran for projects with a separate API app. The email docs,
+                  the generated project docs and the AI skill file describe the drivers, queueing, the test fake and the
+                  generator, and no longer show APIs that do not exist. The cloud <code>.env</code> template lists the
+                  mail driver keys.
+                </p>
+              </div>
+            </div>
+
             {/* v3.277.0 */}
             <div className="mb-12" id="v3.277.0">
               <div className="flex items-center gap-3 mb-4">

@@ -11,9 +11,11 @@ func writeMailFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	// The package is framework-owned: mailer.go, the drivers, FromConfig, their
-	// tests and the mailtest fake. templates.go is written with them.
+	// tests and the mailtest fake. templates.go is written with them, and so is
+	// the admin's Mail Preview handler, which reads the package's registry.
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "mail", "templates.go"): mailTemplatesGo(),
+		filepath.Join(apiRoot, "internal", "mail", "templates.go"):        mailTemplatesGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "mail_preview.go"): mailPreviewHandlerGo(),
 	}
 	for rel, content := range mailPackageFiles() {
 		files[filepath.Join(apiRoot, "internal", "mail", filepath.FromSlash(rel))] = content
