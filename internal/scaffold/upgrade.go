@@ -431,6 +431,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairBackgroundWork(root, opts); err != nil {
 			fmt.Printf("  ⚠ bounding background work: %v\n", err)
 		}
+		// The realtime socket takes a cookie handshake only from the CORS
+		// origins, caps connections, and is not mounted with MODULE_REALTIME=false.
+		if err := repairRealtimeSecurity(root, opts); err != nil {
+			fmt.Printf("  ⚠ securing the realtime socket: %v\n", err)
+		}
 		// The admin's React Query client is created per mount, and the blog
 		// editor loads Tiptap on demand.
 		if err := repairAdminBundles(root, opts); err != nil {

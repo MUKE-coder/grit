@@ -66,6 +66,52 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.273.0 */}
+            <div className="mb-12" id="v3.273.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.273.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Realtime: the WebSocket refuses other origins, the module switch works, and connections are capped</h3>
+                <p>
+                  <strong>Another page could open a signed-in user&apos;s socket.</strong> The WebSocket accepted a
+                  handshake from any origin while authenticating it with the <code>grit_access</code> cookie, which
+                  the browser sends whichever page opens the socket. A page on another origin could connect as the
+                  signed-in user and read their live events. A cookie handshake is now accepted only from an origin
+                  in <code>CORS_ORIGINS</code> (or the <code>cors.origins</code> setting) or from the API&apos;s own
+                  host, and refused with 403 otherwise. Clients that authenticate with <code>?token=</code> or an
+                  <code>Authorization</code> header, such as mobile and desktop apps, are unaffected, and the socket
+                  now accepts the <code>Authorization</code> header. On a test project, an attacker page opened the
+                  victim&apos;s socket before the fix and was refused after, while the admin panel&apos;s own origin
+                  still connected.
+                </p>
+                <p>
+                  <strong><code>MODULE_REALTIME=false</code> turns realtime off.</strong> The flag hid the UI, but
+                  <code>/api/ws</code> stayed mounted and the Redis backplane stayed subscribed. With the flag off,
+                  <code>/api/ws</code> now answers 404 and the API holds no realtime subscription.
+                </p>
+                <p>
+                  <strong>Connections are capped.</strong> Each user may hold 10 sockets and each process 10,000, set
+                  with <code>REALTIME_MAX_CONNECTIONS_PER_USER</code> and <code>REALTIME_MAX_CONNECTIONS</code>. A
+                  socket past either cap is closed with code 1013 and logged. One user opening 12 sockets held 12
+                  before and 10 after.
+                </p>
+                <p>
+                  <strong><code>grit generate resource</code> finds the realtime hub again.</strong> It looked for a
+                  line routes.go stopped containing when the hub gained options, so a project without the event bus
+                  got a warning instead of having it started.
+                </p>
+                <p>
+                  <code>grit upgrade</code> adds the origin guard and repairs routes.go and the realtime handler in
+                  existing projects, and says so when those files were edited and need the change by hand.
+                </p>
+              </div>
+            </div>
+
             {/* v3.272.0 */}
             <div className="mb-12" id="v3.272.0">
               <div className="flex items-center gap-3 mb-4">

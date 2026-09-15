@@ -47,6 +47,9 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "realtime", "hub.go"):                     apiRealtimeHubGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "backplane.go"):               apiRealtimeBackplaneGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "backplane_test.go"):          apiRealtimeBackplaneTestGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "guard.go"):                   apiRealtimeGuardGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "guard_test.go"):              apiRealtimeGuardTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "realtime_test.go"):           apiRealtimeHandlerTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):                apiRealtimeHandlerGo(),
 		filepath.Join(apiRoot, "internal", "sync", "registry.go"):                    apiSyncRegistryGo(),
 		filepath.Join(apiRoot, "internal", "sync", "policy.go"):                      apiSyncPolicyGo(),
@@ -9264,9 +9267,7 @@ func apiRealtimeHandlerGo() string {
 import (
 	"encoding/json"
 	"log"
-	"net/http"
-	"time"
-
+` + realtimeHandlerImportNew + `
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 
@@ -9281,15 +9282,7 @@ const (
 	wsMaxMessageSize = 1024 // we don't expect clients to send anything large
 )
 
-// upgrader allows any origin — desktop clients use Wails (file://) and
-// the API is mounted behind CORS that already restricts origins for
-// regular HTTP traffic.
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin:     func(r *http.Request) bool { return true },
-}
-
+` + realtimeUpgraderNew + `
 // RealtimeHandler upgrades an HTTP request to a WebSocket and registers
 // it with the hub. Authentication uses a query-string JWT (?token=...)
 // because browsers can't set custom Authorization headers on WebSocket
@@ -9313,13 +9306,7 @@ func (h *RealtimeHandler) Connect(c *gin.Context) {
 	// scripts cannot read it, which also means a script cannot put it in this
 	// query string. The cookie rides along with the handshake GET, so read it
 	// from there instead of inventing a way to hand the token to JavaScript.
-	tokenStr := c.Query("token")
-	if tokenStr == "" {
-		if cookie, err := c.Cookie("grit_access"); err == nil {
-			tokenStr = cookie
-		}
-	}
-	if tokenStr == "" {
+` + realtimeTokenNew + `	if tokenStr == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": gin.H{"code": "MISSING_TOKEN", "message": "a ?token query or a grit_access cookie is required"}})
 		return
 	}
@@ -9347,8 +9334,7 @@ func (h *RealtimeHandler) Connect(c *gin.Context) {
 	if exp := claims.ExpiresAt; exp != nil {
 		client.ExpiresAt = exp.Time
 	}
-	h.Hub.Register(client)
-
+` + realtimeRegisterNew + `
 	// Greeting so the client knows the link is live.
 	greeting, _ := json.Marshal(realtime.Event{
 		Type:    "system.connected",
@@ -9580,13 +9566,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// Origins come from the cors.origins setting when it has a value, and from
 	// CORS_ORIGINS otherwise. Resolved per request, so adding a domain in the
 	// admin takes effect immediately rather than at the next deploy.
-	r.Use(middleware.CORSDynamic(func() []string {
-		if stored := settings.String(context.Background(), "cors.origins"); strings.TrimSpace(stored) != "" {
-			return splitOrigins(stored)
-		}
-		return cfg.CORSOrigins
-	}))
-	r.Use(middleware.Gzip())
+` + routesCORSNew + `	r.Use(middleware.Gzip())
 
 	// CSRF defence — only enforces on cookie-authenticated mutations.
 	// Bearer (mobile/desktop) flows pass through with no header required.
@@ -9844,8 +9824,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// across every instance without a second thing to configure. Without a
 	// backplane, a user on replica A never sees an event published on
 	// replica B and nothing anywhere reports it.
-	realtimeHub := realtime.NewHub(realtime.WithRedis(cfg.RedisURL, ""))
-	// Revoking a session has to close that user's live sockets too. Without
+` + routesRealtimeHubNew + `	// Revoking a session has to close that user's live sockets too. Without
 	// this, "sign out of all devices" leaves every open WebSocket streaming.
 	services.OnSessionsRevoked = realtimeHub.DisconnectUser
 
@@ -9865,8 +9844,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	settingsHandler := &handlers.SettingsHandler{DB: db}
 	flagsEngine := flags.New(db, realtimeHub)
 	featureFlagHandler := handlers.NewFeatureFlagHandler(db, flagsEngine)
-	realtimeHandler := handlers.NewRealtimeHandler(realtimeHub, authService)
-	_ = realtimeHub // available to handlers/services that want to push events
+` + routesRealtimeHandlerNew + `	_ = realtimeHub // available to handlers/services that want to push events
 
 	// In-app Security + Observability dashboards — read from Sentinel/Pulse APIs
 	// over loopback. notificationHandler powers the admin bell.
@@ -10014,10 +9992,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		})
 	})
 
-	// WebSocket: realtime hub. Auth via ?token=<jwt> on the handshake
-	// because browsers can't set custom headers on WS upgrade.
-	r.GET("/api/ws", realtimeHandler.Connect)
-
+` + routesRealtimeRouteNew + `
 	// Public webhook receiver — no auth on the route itself; each
 	// provider's signature verification is the real auth boundary.
 	// POST /webhooks/:provider routes to whatever was registered via

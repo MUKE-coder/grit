@@ -280,7 +280,7 @@ func TestRealtimeHasACrossProcessBackplane(t *testing.T) {
 
 	// And the wiring, so a project with Redis gets it without being asked.
 	routes := read("internal", "routes", "routes.go")
-	if !strings.Contains(routes, "realtime.NewHub(realtime.WithRedis(cfg.RedisURL") {
+	if !strings.Contains(routes, "realtime.WithRedis(cfg.RedisURL, \"\")") {
 		t.Error("routes.Setup does not pass Redis to the hub, so every project " +
 			"stays single-process no matter what it has configured")
 	}
