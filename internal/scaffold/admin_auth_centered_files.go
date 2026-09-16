@@ -11,6 +11,7 @@ func centeredLoginPage() string {
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { apiUrl } from "@/lib/api-core";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLogin } from "@/hooks/use-auth";
@@ -37,7 +38,6 @@ export default function LoginPage() {
     });
   };
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   const base = "w-full h-11 rounded-lg border bg-bg-tertiary px-3.5 text-[14px] text-foreground placeholder:text-text-muted transition-colors focus:outline-none focus:ring-2 focus:ring-accent/20";
   const inputClass = ` + "`" + `${base} border-border focus:border-accent` + "`" + `;
   const errorInputClass = ` + "`" + `${base} border-danger focus:border-danger focus:ring-danger/20` + "`" + `;
@@ -158,7 +158,7 @@ export default function LoginPage() {
           {/* OAuth buttons */}
           <div className="grid grid-cols-2 gap-2.5">
             <a
-              href={` + "`" + `${apiUrl}/api/auth/oauth/google` + "`" + `}
+              href={apiUrl("/api/auth/oauth/google")}
               className="flex items-center justify-center gap-2 h-11 rounded-lg border border-border bg-bg-tertiary text-[13px] font-medium text-foreground hover:bg-bg-hover transition-colors"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -170,7 +170,7 @@ export default function LoginPage() {
               Google
             </a>
             <a
-              href={` + "`" + `${apiUrl}/api/auth/oauth/github` + "`" + `}
+              href={apiUrl("/api/auth/oauth/github")}
               className="flex items-center justify-center gap-2 h-11 rounded-lg border border-border bg-bg-tertiary text-[13px] font-medium text-foreground hover:bg-bg-hover transition-colors"
             >
               <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -210,6 +210,7 @@ func centeredSignUpPage() string {
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { apiUrl } from "@/lib/api-core";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRegister } from "@/hooks/use-auth";
@@ -236,7 +237,6 @@ export default function SignUpPage() {
     });
   };
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   const base = "w-full h-11 rounded-lg border bg-bg-tertiary px-3.5 text-[14px] text-foreground placeholder:text-text-muted transition-colors focus:outline-none focus:ring-2 focus:ring-accent/20";
   const inputClass = ` + "`" + `${base} border-border focus:border-accent` + "`" + `;
   const errorInputClass = ` + "`" + `${base} border-danger focus:border-danger focus:ring-danger/20` + "`" + `;
@@ -377,7 +377,7 @@ export default function SignUpPage() {
 
           <div className="grid grid-cols-2 gap-2.5">
             <a
-              href={` + "`" + `${apiUrl}/api/auth/oauth/google` + "`" + `}
+              href={apiUrl("/api/auth/oauth/google")}
               className="flex items-center justify-center gap-2 h-11 rounded-lg border border-border bg-bg-tertiary text-[13px] font-medium text-foreground hover:bg-bg-hover transition-colors"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -389,7 +389,7 @@ export default function SignUpPage() {
               Google
             </a>
             <a
-              href={` + "`" + `${apiUrl}/api/auth/oauth/github` + "`" + `}
+              href={apiUrl("/api/auth/oauth/github")}
               className="flex items-center justify-center gap-2 h-11 rounded-lg border border-border bg-bg-tertiary text-[13px] font-medium text-foreground hover:bg-bg-hover transition-colors"
             >
               <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">

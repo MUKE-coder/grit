@@ -2267,6 +2267,7 @@ func adminUseResource() string {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/api-core";
 
 // Every query about a resource starts with its endpoint, so invalidating
 // [endpoint] still refreshes all of it. Each kind of read has a branch below
@@ -2486,84 +2487,89 @@ function failed(label: string | undefined, verb: string) {
   return label ? "Failed to " + verb + " " + label.toLowerCase() : "Failed to " + verb;
 }
 
-export function useCreateResource(endpoint: string, label?: string) {
-  const queryClient = useQueryClient();
+// The four row mutations differ in three things: the HTTP method, the URL they
+// build, and the word in the toast. They were four copies of the same eighteen
+// lines, which is how usePatchResource ended up invalidating differently from
+// useUpdateResource for no reason anybody could name.
+//
+// refresh says what a success should refetch: "all" for a create or delete,
+// which can add or remove a row from any list, and "saved" for an edit, which
+// cannot change a count and so leaves the stat cards alone.
+type MutationSpec<TVars> = {
+  method: "post" | "put" | "patch" | "delete";
+  url: (endpoint: string, vars: TVars) => string;
+  body?: (vars: TVars) => Record<string, unknown> | undefined;
+  refresh: "all" | "saved";
+  success: (label?: string) => string;
+  failure: (label?: string) => string;
+};
 
-  return useMutation({
-    mutationFn: async (body: Record<string, unknown>) => {
-      const { data } = await apiClient.post(endpoint, body);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endpoint] });
-      toast.success(said(label, "created successfully"));
-    },
-    onError: (err: unknown) => {
-      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(axiosErr?.response?.data?.error?.message || failed(label, "create"));
-    },
-  });
+function makeResourceMutation<TVars>(spec: MutationSpec<TVars>) {
+  return function useResourceMutation(endpoint: string, label?: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+      mutationFn: async (vars: TVars) => {
+        const { data } = await apiClient.request({
+          method: spec.method,
+          url: spec.url(endpoint, vars),
+          data: spec.body?.(vars),
+        });
+        return data;
+      },
+      onSuccess: () => {
+        if (spec.refresh === "all") {
+          queryClient.invalidateQueries({ queryKey: resourceKeys.all(endpoint) });
+        } else {
+          refreshAfterSave(queryClient, endpoint);
+        }
+        toast.success(spec.success(label));
+      },
+      onError: (err: unknown) => {
+        toast.error(getApiErrorMessage(err, spec.failure(label)));
+      },
+    });
+  };
 }
 
-export function useUpdateResource(endpoint: string, label?: string) {
-  const queryClient = useQueryClient();
+export const useCreateResource = makeResourceMutation<Record<string, unknown>>({
+  method: "post",
+  url: (endpoint) => endpoint,
+  body: (body) => body,
+  refresh: "all",
+  success: (label) => said(label, "created successfully"),
+  failure: (label) => failed(label, "create"),
+});
 
-  return useMutation({
-    mutationFn: async ({ id, body }: { id: string; body: Record<string, unknown> }) => {
-      const { data } = await apiClient.put(` + "`" + `${endpoint}/${id}` + "`" + `, body);
-      return data;
-    },
-    onSuccess: () => {
-      refreshAfterSave(queryClient, endpoint);
-      toast.success(said(label, "updated successfully"));
-    },
-    onError: (err: unknown) => {
-      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(axiosErr?.response?.data?.error?.message || failed(label, "update"));
-    },
-  });
-}
+export const useUpdateResource = makeResourceMutation<{ id: string; body: Record<string, unknown> }>({
+  method: "put",
+  url: (endpoint, { id }) => endpoint + "/" + id,
+  body: ({ body }) => body,
+  refresh: "saved",
+  success: (label) => said(label, "updated successfully"),
+  failure: (label) => failed(label, "update"),
+});
 
-// v3.31.18: partial updates for the grouped update view. Each group's
-// Save button calls patch() with only the fields it owns. The Go-side
-// Patch handler whitelists writable columns and silently drops anything
-// else, so it's safe to send only a subset.
-export function usePatchResource(endpoint: string, label?: string) {
-  const queryClient = useQueryClient();
+// v3.31.18: partial updates for the grouped update view. Each group's Save
+// button calls patch() with only the fields it owns. The Go-side Patch handler
+// whitelists writable columns and silently drops anything else, so it is safe
+// to send only a subset.
+export const usePatchResource = makeResourceMutation<{ id: string; body: Record<string, unknown> }>({
+  method: "patch",
+  url: (endpoint, { id }) => endpoint + "/" + id,
+  body: ({ body }) => body,
+  refresh: "saved",
+  success: (label) => (label ? label + " saved" : "Saved"),
+  failure: (label) => failed(label, "save"),
+});
 
-  return useMutation({
-    mutationFn: async ({ id, body }: { id: string; body: Record<string, unknown> }) => {
-      const { data } = await apiClient.patch(` + "`" + `${endpoint}/${id}` + "`" + `, body);
-      return data;
-    },
-    onSuccess: () => {
-      refreshAfterSave(queryClient, endpoint);
-      toast.success(label ? label + " saved" : "Saved");
-    },
-    onError: (err: unknown) => {
-      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(axiosErr?.response?.data?.error?.message || failed(label, "save"));
-    },
-  });
-}
-
-export function useDeleteResource(endpoint: string, label?: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      await apiClient.delete(` + "`" + `${endpoint}/${id}` + "`" + `);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endpoint] });
-      toast.success(said(label, "deleted successfully"));
-    },
-    onError: (err: unknown) => {
-      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(axiosErr?.response?.data?.error?.message || failed(label, "delete"));
-    },
-  });
-}
+export const useDeleteResource = makeResourceMutation<string>({
+  method: "delete",
+  url: (endpoint, id) => endpoint + "/" + id,
+  refresh: "all",
+  success: (label) => said(label, "deleted successfully"),
+  failure: (label) => failed(label, "delete"),
+});
 
 export type BulkOperation = "delete" | "archive" | "restore" | "patch";
 
@@ -2652,11 +2658,7 @@ export function useBulkResource(endpoint: string, pluralLabel?: string, singular
       );
     },
     onError: (err: unknown) => {
-      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(
-        axiosErr?.response?.data?.error?.message ||
-          "Bulk action failed. Nothing was changed."
-      );
+      toast.error(getApiErrorMessage(err, "Bulk action failed. Nothing was changed."));
     },
   });
 }
@@ -2688,9 +2690,10 @@ import { StatsCard } from "@/components/widgets/stats-card";
 import { WidgetGrid } from "@/components/widgets/widget-grid";
 import { getIcon } from "@/lib/icons";
 
-// The API origin the browser talks to. Hardcoding localhost:8080 here meant
-// the Quick Links pointed at the wrong port whenever the API moved.
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+// The API origin the browser talks to, from the one module that knows it.
+// Hardcoding localhost:8080 here meant the Quick Links pointed at the wrong
+// port whenever the API moved.
+import { API_URL, apiUrl } from "@/lib/api-core";
 
 export default function AdminDashboard() {
   const { data: user } = useMe();
@@ -2775,7 +2778,7 @@ export default function AdminDashboard() {
               </div>
             </a>
             <a
-              href={API_URL + "/api/health"}
+              href={apiUrl("/api/health")}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 rounded-lg border border-border bg-bg-tertiary px-4 py-3 hover:border-accent/30 hover:bg-bg-hover transition-all group"

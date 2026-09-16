@@ -16,8 +16,16 @@ func adminFormSharesPage() string {
 	return `"use client";
 
 import { useEffect, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
+import {
+  useFormShares,
+  useFormSubmissions,
+  useFormShareResources,
+  useFormShareFields,
+  useCreateFormShare,
+  useUpdateFormShare,
+  useDeleteFormShare,
+} from "@/hooks/use-form-shares";
+import { getApiErrorMessage } from "@/lib/api-core";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { SkeletonCards } from "@/components/ui/Skeleton";
 import { Plus, Copy, Lock, Unlock, Trash2, X, ExternalLink, Activity, Pencil } from "@/lib/icons";
@@ -58,13 +66,11 @@ const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL || "http://localhost:3000";
 export default function FormSharesPage() {
   const [createOpen, setCreateOpen] = useState(false);
 
-  const { data, isLoading } = useQuery<{ data: FormShare[] }>({
-    queryKey: ["form-shares"],
-    queryFn: async () => {
-      const { data } = await apiClient.get("/api/admin/form-shares");
-      return data;
-    },
-  });
+  // Every request this screen makes is in hooks/use-form-shares.ts. It was
+  // eight apiClient calls and four useMutation blocks spread over four
+  // components here, each with its own query key, so a share created in one
+  // modal and edited in another invalidated two different things.
+  const { data, isLoading } = useFormShares<FormShare>();
 
   const shares = data?.data ?? [];
 
@@ -121,29 +127,17 @@ export default function FormSharesPage() {
 }
 
 function ShareRow({ share }: { share: FormShare }) {
-  const qc = useQueryClient();
   const publicURL = WEB_URL + "/forms/" + share.token;
   const [submissionsOpen, setSubmissionsOpen] = useState(false);
   // v3.31.50 — Edit modal lets the operator change the title,
   // description, password mode, and hidden fields after creation.
   const [editOpen, setEditOpen] = useState(false);
 
-  const { mutate: update } = useMutation({
-    mutationFn: async (body: Record<string, unknown>) => {
-      await apiClient.patch("/api/admin/form-shares/" + share.id, body);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["form-shares"] }),
-  });
-
-  const { mutate: remove } = useMutation({
-    mutationFn: async () => {
-      await apiClient.delete("/api/admin/form-shares/" + share.id);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["form-shares"] });
-      toast.success("Share deleted");
-    },
-  });
+  const updateM = useUpdateFormShare();
+  const deleteM = useDeleteFormShare();
+  const update = (body: Record<string, unknown>) => updateM.mutate({ id: share.id, body });
+  const remove = () =>
+    deleteM.mutate(share.id, { onSuccess: () => toast.success("Share deleted") });
 
   const copyLink = async () => {
     try {
@@ -239,15 +233,7 @@ function ShareRow({ share }: { share: FormShare }) {
 // 100 most recent submissions with their record ID, IP, and User-Agent.
 // v3.31.25.
 function SubmissionsModal({ share, onClose }: { share: FormShare; onClose: () => void }) {
-  const { data, isLoading } = useQuery<{ data: FormSubmission[] }>({
-    queryKey: ["form-submissions", share.id],
-    queryFn: async () => {
-      const { data } = await apiClient.get("/api/admin/form-submissions", {
-        params: { share_id: share.id },
-      });
-      return data;
-    },
-  });
+  const { data, isLoading } = useFormSubmissions<FormSubmission>(share.id);
 
   const rows = data?.data ?? [];
 
@@ -313,41 +299,7 @@ function SubmissionsModal({ share, onClose }: { share: FormShare; onClose: () =>
   );
 }
 
-// v3.31.50 -- shared types + queries used by both New + Edit modals.
-interface PublicField {
-  key: string;
-  label: string;
-  type: string;
-  required: boolean;
-}
-
-function useRegisteredResources() {
-  return useQuery<string[]>({
-    queryKey: ["form-shares", "resources"],
-    queryFn: async () => {
-      const { data } = await apiClient.get<{ data: string[] }>("/api/admin/form-shares/resources");
-      return data.data ?? [];
-    },
-    staleTime: 5 * 60_000,
-  });
-}
-
-function useFieldPreview(resourceName: string) {
-  return useQuery<PublicField[]>({
-    queryKey: ["form-shares", "fields", resourceName],
-    queryFn: async () => {
-      const { data } = await apiClient.get<{ data: { fields: PublicField[] } }>(
-        "/api/admin/form-shares/resources/" + resourceName + "/fields",
-      );
-      return data.data?.fields ?? [];
-    },
-    enabled: !!resourceName,
-    staleTime: 5 * 60_000,
-  });
-}
-
 function CreateShareModal({ onClose }: { onClose: () => void }) {
-  const qc = useQueryClient();
   const [resourceName, setResourceName] = useState("");
   const [label, setLabel] = useState("");
   const [password, setPassword] = useState("");
@@ -356,8 +308,8 @@ function CreateShareModal({ onClose }: { onClose: () => void }) {
   const [customDescription, setCustomDescription] = useState("");
   const [hiddenFields, setHiddenFields] = useState<Set<string>>(new Set());
 
-  const { data: resources, isLoading: resourcesLoading } = useRegisteredResources();
-  const { data: fields, isLoading: fieldsLoading } = useFieldPreview(resourceName);
+  const { data: resources, isLoading: resourcesLoading } = useFormShareResources();
+  const { data: fields, isLoading: fieldsLoading } = useFormShareFields(resourceName);
 
   useEffect(() => { setHiddenFields(new Set()); }, [resourceName]);
 
@@ -369,28 +321,26 @@ function CreateShareModal({ onClose }: { onClose: () => void }) {
     });
   };
 
-  const { mutate: create, isPending } = useMutation({
-    mutationFn: async () => {
-      const { data } = await apiClient.post("/api/admin/form-shares", {
+  const createM = useCreateFormShare();
+  const isPending = createM.isPending;
+  const create = () =>
+    createM.mutate(
+      {
         resource_name: resourceName,
         label,
         password,
         custom_title: customTitle,
         custom_description: customDescription,
         hidden_fields: Array.from(hiddenFields),
-      });
-      return data;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["form-shares"] });
-      toast.success("Share created");
-      onClose();
-    },
-    onError: (err: unknown) => {
-      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(axiosErr?.response?.data?.error?.message || "Failed to create");
-    },
-  });
+      },
+      {
+        onSuccess: () => {
+          toast.success("Share created");
+          onClose();
+        },
+        onError: (err: unknown) => toast.error(getApiErrorMessage(err, "Failed to create")),
+      }
+    );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -498,7 +448,6 @@ function CreateShareModal({ onClose }: { onClose: () => void }) {
 type PasswordMode = "keep" | "set" | "remove";
 
 function EditShareModal({ share, onClose }: { share: FormShare; onClose: () => void }) {
-  const qc = useQueryClient();
   const [label, setLabel] = useState(share.label ?? "");
   const [customTitle, setCustomTitle] = useState(share.custom_title ?? "");
   const [customDescription, setCustomDescription] = useState(share.custom_description ?? "");
@@ -506,7 +455,7 @@ function EditShareModal({ share, onClose }: { share: FormShare; onClose: () => v
   const [passwordMode, setPasswordMode] = useState<PasswordMode>("keep");
   const [newPassword, setNewPassword] = useState("");
 
-  const { data: fields, isLoading: fieldsLoading } = useFieldPreview(share.resource_name);
+  const { data: fields, isLoading: fieldsLoading } = useFormShareFields(share.resource_name);
 
   const toggleHidden = (key: string, hide: boolean) => {
     setHiddenFields((prev) => {
@@ -516,29 +465,28 @@ function EditShareModal({ share, onClose }: { share: FormShare; onClose: () => v
     });
   };
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: async () => {
-      const body: Record<string, unknown> = {
-        label,
-        custom_title: customTitle,
-        custom_description: customDescription,
-        hidden_fields: Array.from(hiddenFields),
-      };
-      if (passwordMode === "set" && newPassword) body.password = newPassword;
-      else if (passwordMode === "remove") body.password = "-";
-      const { data } = await apiClient.patch("/api/admin/form-shares/" + share.id, body);
-      return data;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["form-shares"] });
-      toast.success("Share updated");
-      onClose();
-    },
-    onError: (err: unknown) => {
-      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(axiosErr?.response?.data?.error?.message || "Failed to save");
-    },
-  });
+  const saveM = useUpdateFormShare();
+  const isPending = saveM.isPending;
+  const save = () => {
+    const body: Record<string, unknown> = {
+      label,
+      custom_title: customTitle,
+      custom_description: customDescription,
+      hidden_fields: Array.from(hiddenFields),
+    };
+    if (passwordMode === "set" && newPassword) body.password = newPassword;
+    else if (passwordMode === "remove") body.password = "-";
+    saveM.mutate(
+      { id: share.id, body },
+      {
+        onSuccess: () => {
+          toast.success("Share updated");
+          onClose();
+        },
+        onError: (err: unknown) => toast.error(getApiErrorMessage(err, "Failed to save")),
+      }
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

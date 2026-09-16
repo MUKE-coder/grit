@@ -410,8 +410,8 @@ func buildPublicFormPage(resource string, s *generate.GoStruct, token string) st
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
+import { apiUrl } from "@/lib/api-core";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const FORM_TOKEN: string = %s;
 
 interface ShareInfo {
@@ -441,7 +441,7 @@ export default function %sFormPage() {
       return;
     }
     axios
-      .get(API_URL + "/api/public/forms/" + FORM_TOKEN)
+      .get(apiUrl("/api/public/forms/" + FORM_TOKEN))
       .then((res) => setInfo(res.data.data))
       .catch((err) => {
         setLinkError(err?.response?.data?.error?.message ?? "Link not found or disabled");
@@ -456,7 +456,7 @@ export default function %sFormPage() {
       // optional _password field is filtered out of the rest map so
       // it doesn't sneak into the resource record itself.
       const { _password, ...fields } = input as { _password?: string };
-      await axios.post(API_URL + "/api/public/forms/" + FORM_TOKEN + "/submit", {
+      await axios.post(apiUrl("/api/public/forms/" + FORM_TOKEN + "/submit"), {
         _password: _password ?? "",
         fields,
       });

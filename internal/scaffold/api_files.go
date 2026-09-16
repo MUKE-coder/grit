@@ -2363,7 +2363,125 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	})
 }
 
-// Login authenticates a user and returns tokens.
+// loginRefusalReason is a decision not to let an account sign in, taken before
+// its password is read.
+//
+// Each of these used to be an if-block in the middle of Login, with its own
+// c.JSON and its own activity row, which is most of why that handler was 182
+// lines. Answering them here means the order is visible in one place: disabled,
+// then locked, then unverified, then social-only.
+type loginRefusalReason struct {
+	Status  int
+	Code    string
+	Message string
+	// Action is the activity action to record, or "" when the refusal is not
+	// worth an audit row. Only the two that suggest an attack are.
+	Action  string
+	Summary string
+}
+
+// loginRefusal reports why user may not sign in, or nil when it may.
+//
+// Nothing here compares the password. A disabled or locked account answers the
+// same way whether or not the password was right, so neither can be probed by
+// timing the comparison.
+func (h *AuthHandler) loginRefusal(user *models.User) *loginRefusalReason {
+	if !user.Active {
+		return &loginRefusalReason{
+			Status:  http.StatusForbidden,
+			Code:    "ACCOUNT_DISABLED",
+			Message: "Your account has been disabled",
+			Action:  "auth.login_blocked",
+			Summary: "Sign-in blocked for disabled account " + user.Email,
+		}
+	}
+
+	if user.LockedUntil != nil && time.Now().Before(*user.LockedUntil) {
+		remaining := time.Until(*user.LockedUntil).Round(time.Minute)
+		if remaining < time.Minute {
+			remaining = time.Minute
+		}
+		return &loginRefusalReason{
+			Status:  http.StatusTooManyRequests,
+			Code:    "ACCOUNT_LOCKED",
+			Message: fmt.Sprintf("Too many failed attempts. Try again in about %d minute(s), or reset your password.", int(remaining.Minutes())),
+			Action:  "auth.login_locked",
+			Summary: "Sign-in refused: account is temporarily locked",
+		}
+	}
+
+	// Opt-in gate. Social and SSO sign-ins are unaffected — the IdP already
+	// proved the address, and those paths set EmailVerifiedAt on first login.
+	if h.Config.RequireEmailVerification && user.EmailVerifiedAt == nil && user.Password != "" {
+		return &loginRefusalReason{
+			Status:  http.StatusForbidden,
+			Code:    "EMAIL_NOT_VERIFIED",
+			Message: "Confirm your email address before signing in. Check your inbox for the link.",
+		}
+	}
+
+	if user.Password == "" {
+		provider := user.Provider
+		if provider == "" || provider == "local" {
+			provider = "social login"
+		}
+		return &loginRefusalReason{
+			Status:  http.StatusBadRequest,
+			Code:    "SOCIAL_AUTH_ONLY",
+			Message: fmt.Sprintf("This account uses %s. Please sign in with your social account.", provider),
+		}
+	}
+
+	return nil
+}
+
+// startTOTPChallenge issues the second-factor challenge, and reports whether it
+// answered the request.
+//
+// true means Login is finished: the response carries a short-lived pending
+// token the client exchanges at /auth/totp/verify. false means there is no
+// second factor to ask for, either because the account has none or because this
+// device is already trusted, and Login should carry on and issue tokens.
+func (h *AuthHandler) startTOTPChallenge(c *gin.Context, user *models.User) bool {
+	var totpConfig models.TwoFactorConfig
+	if err := h.DB.WithContext(c.Request.Context()).
+		Where("user_id = ? AND enabled = ?", user.ID, true).First(&totpConfig).Error; err != nil {
+		return false
+	}
+	if IsTrustedDevice(c, h.DB, user.ID) {
+		return false
+	}
+
+	pendingToken, err := totp.GeneratePendingToken()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "TOKEN_ERROR", "message": "Failed to create verification session"},
+		})
+		return true
+	}
+
+	// The token is stored hashed, so somebody who can read the table cannot
+	// finish another account's half-completed sign-in with what they find.
+	if err := h.DB.WithContext(c.Request.Context()).Create(&models.TOTPPendingToken{
+		UserID:    user.ID,
+		TokenHash: totp.HashToken(pendingToken),
+		ExpiresAt: time.Now().Add(totp.PendingTokenExpiry),
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "TOKEN_ERROR", "message": "Failed to create verification session"},
+		})
+		return true
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"totp_required": true,
+			"pending_token": pendingToken,
+		},
+		"message": "Two-factor authentication required",
+	})
+	return true
+}
 
 // Login authenticates a user and returns tokens.
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -2393,68 +2511,21 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	if !user.Active {
-		services.LogActivity(h.DB, c, services.ActivityArgs{
-			Action:       "auth.login_blocked",
-			Severity:     "warn",
-			Summary:      "Sign-in blocked for disabled account " + user.Email,
-			ResourceType: "user",
-			ResourceID:   user.ID,
-		})
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{
-				"code":    "ACCOUNT_DISABLED",
-				"message": "Your account has been disabled",
-			},
-		})
-		return
-	}
-
-	// Locked accounts are refused before the password is even compared, so a
-	// lockout cannot be probed by timing the comparison.
-	if user.LockedUntil != nil && time.Now().Before(*user.LockedUntil) {
-		remaining := time.Until(*user.LockedUntil).Round(time.Minute)
-		if remaining < time.Minute {
-			remaining = time.Minute
+	// Everything that refuses this account before its password is read. Kept out
+	// of Login so the handler reads as the sequence it is, and so the rules can
+	// be answered as one question rather than four scattered ifs.
+	if refusal := h.loginRefusal(&user); refusal != nil {
+		if refusal.Action != "" {
+			services.LogActivity(h.DB, c, services.ActivityArgs{
+				Action:       refusal.Action,
+				Severity:     "warn",
+				Summary:      refusal.Summary,
+				ResourceType: "user",
+				ResourceID:   user.ID,
+			})
 		}
-		services.LogActivity(h.DB, c, services.ActivityArgs{
-			Action:       "auth.login_locked",
-			Severity:     "warn",
-			Summary:      "Sign-in refused: account is temporarily locked",
-			ResourceType: "user",
-			ResourceID:   user.ID,
-		})
-		c.JSON(http.StatusTooManyRequests, gin.H{
-			"error": gin.H{
-				"code":    "ACCOUNT_LOCKED",
-				"message": fmt.Sprintf("Too many failed attempts. Try again in about %d minute(s), or reset your password.", int(remaining.Minutes())),
-			},
-		})
-		return
-	}
-
-	// Opt-in gate. Social and SSO sign-ins are unaffected — the IdP already
-	// proved the address, and those paths set EmailVerifiedAt on first login.
-	if h.Config.RequireEmailVerification && user.EmailVerifiedAt == nil && user.Password != "" {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{
-				"code":    "EMAIL_NOT_VERIFIED",
-				"message": "Confirm your email address before signing in. Check your inbox for the link.",
-			},
-		})
-		return
-	}
-
-	if user.Password == "" {
-		provider := user.Provider
-		if provider == "" || provider == "local" {
-			provider = "social login"
-		}
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    "SOCIAL_AUTH_ONLY",
-				"message": fmt.Sprintf("This account uses %s. Please sign in with your social account.", provider),
-			},
+		c.JSON(refusal.Status, gin.H{
+			"error": gin.H{"code": refusal.Code, "message": refusal.Message},
 		})
 		return
 	}
@@ -2473,41 +2544,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// Check if user has TOTP enabled
-	var totpConfig models.TwoFactorConfig
-	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ? AND enabled = ?", user.ID, true).First(&totpConfig).Error; err == nil {
-		// TOTP is enabled — check for trusted device
-		if !IsTrustedDevice(c, h.DB, user.ID) {
-			// Generate a short-lived pending token for TOTP verification
-			pendingToken, err := totp.GeneratePendingToken()
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": gin.H{"code": "TOKEN_ERROR", "message": "Failed to create verification session"},
-				})
-				return
-			}
-
-			// Store hashed pending token in DB
-			if err := h.DB.WithContext(c.Request.Context()).Create(&models.TOTPPendingToken{
-				UserID:    user.ID,
-				TokenHash: totp.HashToken(pendingToken),
-				ExpiresAt: time.Now().Add(totp.PendingTokenExpiry),
-			}).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": gin.H{"code": "TOKEN_ERROR", "message": "Failed to create verification session"},
-				})
-				return
-			}
-
-			c.JSON(http.StatusOK, gin.H{
-				"data": gin.H{
-					"totp_required": true,
-					"pending_token": pendingToken,
-				},
-				"message": "Two-factor authentication required",
-			})
-			return
-		}
+	// The second factor, when this account has one and this device is not
+	// already trusted. It answers the request itself when it does.
+	if h.startTOTPChallenge(c, &user) {
+		return
 	}
 
 	// The failure count is cleared when the sign-in completes. Cleared at the
@@ -9480,15 +9520,30 @@ type Services struct {
 	SecObs  *services.SecObsBridge
 }
 
-// Setup configures all routes and returns the Gin engine.
-func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
-	if cfg.AppEnv == "production" {
-		gin.SetMode(gin.ReleaseMode)
-	}
+// Setup wires the application, and these five are the parts of it that are
+// configuration rather than wiring.
+//
+// Setup was 902 lines. Most of that was not the shape of the application, which
+// is what you open routes.go to see: it was the Sentinel config literal, the
+// Pulse options, the Studio mount and the middleware chain, in the middle of
+// it. They are here now, each named for what it mounts, and Setup reads as the
+// sequence it always was.
+//
+// What deliberately stays in Setup: the handler construction and every route
+// group with a // grit: marker in it. Those markers are where plugins and
+// grit generate resource inject code, and injected code refers to handlers
+// Setup builds, so the marker and the variable have to share a scope.
 
-	r := gin.New()
-
-	// Global middleware
+// mountGlobalMiddleware installs the chain every request passes through.
+//
+// Order matters and is the reason this is one function rather than a list:
+// maintenance mode answers before anything else does the work, the request id
+// exists before the logger prints it, and CSRF runs after the body limits so an
+// oversized body is refused before it is parsed.
+// It returns the CORS origin resolver, because two things outside the chain
+// read the same list: the realtime socket, which accepts a cookie handshake
+// only from an origin CORS allows.
+func mountGlobalMiddleware(r *gin.Engine, cfg *config.Config, svc *Services) func() []string {
 	r.Use(middleware.Maintenance())
 	r.Use(middleware.SecurityHeaders())
 ` + routesRequestLimitsBlock + `	r.Use(middleware.RequestID())
@@ -9509,6 +9564,16 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// sends an Idempotency-Key header; cached for 24h on 2xx responses.
 	r.Use(middleware.Idempotency(svc.Cache))
 
+	return corsOrigins
+}
+
+// mountSentinel mounts the security suite: WAF, rate limiting, auth shield and
+// anomaly detection, with its dashboard at /sentinel.
+//
+// A mount failure is logged rather than fatal. Sentinel refuses to start on a
+// misconfiguration, and in development that should not take the API down with
+// it.
+func mountSentinel(r *gin.Engine, db *gorm.DB, cfg *config.Config, svc *Services) {
 	// Mount Sentinel security suite (WAF, rate limiting, auth shield, anomaly detection)
 	if cfg.SentinelEnabled {
 		// In development, use relaxed rate limits so devs don't get blocked while testing
@@ -9624,7 +9689,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			log.Println("Sentinel mounted at /sentinel")
 		}
 	}
+}
 
+// mountStudio mounts the database browser at /studio.
+func mountStudio(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	// Mount GORM Studio
 	if cfg.GORMStudioEnabled {
 		studioCfg := studio.Config{
@@ -9640,13 +9708,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		studio.Mount(r, db, []interface{}{&models.User{}, &models.Upload{}, &models.Blog{}, /* grit:studio */}, studioCfg)
 		log.Println("GORM Studio mounted at /studio")
 	}
+}
 
-	// API Documentation (gin-docs — auto-generated from routes + models)
-	//
-	// The OpenAPI reference. Its 141 route overrides live in apidocs.go, where
-	// they are 500 lines of description rather than 500 lines in the middle of
-	// the file that wires your application together.
-` + routesDocsBlock + `
+// mountPulse mounts observability at /pulse: request tracing, database
+// monitoring, runtime metrics and error tracking.
+func mountPulse(r *gin.Engine, db *gorm.DB, cfg *config.Config, svc *Services) {
 	// Mount Pulse observability (request tracing, DB monitoring, runtime metrics, error tracking)
 	if cfg.PulseEnabled {
 		// Pulse v1.0 uses functional options + a context. The context
@@ -9692,6 +9758,90 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 
 		log.Println("Pulse observability mounted at /pulse")
 	}
+}
+
+// mountAuthRoutes mounts everything a caller with no session yet can reach:
+// the password flow, OAuth, enterprise SSO over OIDC and SAML, and the two
+// second factors.
+//
+// Public by necessity. These are the sign-in, so there is nobody to
+// authenticate yet; what makes each safe is its own protocol, a server-side
+// challenge for passkeys and a short-lived pending token for TOTP.
+func mountAuthRoutes(v1 *gin.RouterGroup, authHandler *handlers.AuthHandler, ssoHandler *handlers.SSOHandler, totpHandler *handlers.TOTPHandler, passkeyHandler *handlers.PasskeyHandler) {
+	// Public auth routes
+	auth := v1.Group("/auth")
+	{
+		auth.POST("/register", authHandler.Register)
+		auth.POST("/login", authHandler.Login)
+		auth.POST("/refresh", authHandler.Refresh)
+		auth.POST("/forgot-password", authHandler.ForgotPassword)
+		auth.POST("/reset-password", authHandler.ResetPassword)
+		auth.POST("/verify-email", authHandler.VerifyEmail)
+	}
+
+	// OAuth2 social login
+	oauth := auth.Group("/oauth")
+	{
+		oauth.GET("/:provider", authHandler.OAuthBegin)
+		oauth.GET("/:provider/callback", authHandler.OAuthCallback)
+	}
+
+	// Enterprise SSO (OIDC). Public by design — these ARE the login flow.
+	// Discover tells the login form whether an address belongs to a connection;
+	// the other two are the redirect out to the IdP and the return trip.
+	//
+	// Like the OAuth callbacks above, /callback is registered in the customer's
+	// IdP console, so its unversioned path must keep working — see the note on
+	// APIVersion.
+	sso := auth.Group("/sso")
+	{
+		sso.POST("/discover", ssoHandler.Discover)
+		sso.GET("/:slug", ssoHandler.Begin)
+		sso.GET("/:slug/callback", ssoHandler.Callback)
+	}
+
+	// SAML 2.0. /metadata is what the customer uploads to their IdP and /acs is
+	// where that IdP POSTs the signed assertion — both get registered on their
+	// side, so like the OAuth callbacks these unversioned paths must keep
+	// working across API version bumps.
+	samlGroup := auth.Group("/saml")
+	{
+		samlGroup.GET("/:slug/metadata", ssoHandler.SAMLMetadata)
+		samlGroup.GET("/:slug", ssoHandler.SAMLBegin)
+		samlGroup.POST("/:slug/acs", ssoHandler.SAMLACS)
+	}
+
+	// TOTP verification (public — uses pending tokens, not JWT)
+	// Passkey sign-in. Public because there is no session yet; the
+	// server-side challenge is what makes it safe.
+	auth.POST("/passkeys/login/begin", passkeyHandler.BeginLogin)
+	auth.POST("/passkeys/login/finish", passkeyHandler.FinishLogin)
+	auth.POST("/totp/verify", totpHandler.Verify)
+	auth.POST("/totp/backup-codes/verify", totpHandler.VerifyBackupCode)
+}
+
+// Setup configures all routes and returns the Gin engine.
+func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
+	if cfg.AppEnv == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	r := gin.New()
+
+	// Global middleware
+	corsOrigins := mountGlobalMiddleware(r, cfg, svc)
+
+	mountSentinel(r, db, cfg, svc)
+
+	mountStudio(r, db, cfg)
+
+	// API Documentation (gin-docs — auto-generated from routes + models)
+	//
+	// The OpenAPI reference. Its 141 route overrides live in apidocs.go, where
+	// they are 500 lines of description rather than 500 lines in the middle of
+	// the file that wires your application together.
+` + routesDocsBlock + `
+	mountPulse(r, db, cfg, svc)
 
 	// Auth service
 	authService := &services.AuthService{
@@ -9845,7 +9995,13 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// timeout so a hung dependency doesn't pile up health requests; failing
 	// probes mark themselves down and the overall status downgrades to
 	// "degraded" rather than failing the endpoint.
-	r.GET("/api/health", func(c *gin.Context) {
+	// Registered at two paths, not one. The frontends' axios client rewrites
+	// /api/... to /api/v1/..., so the admin's System Health page asked for
+	// /api/v1/health, no route matched, and the unversioned fallback refused to
+	// rewrite a path that already names the version: the page read "degraded"
+	// with a 404 behind it. /api/health stays for probes, load balancers and the
+	// desktop client's heartbeat, which are configured outside this repo.
+	healthCheck := func(c *gin.Context) {
 		type compStatus struct {
 			OK         bool   ` + "`" + `json:"ok"` + "`" + `
 			LatencyMS  int64  ` + "`" + `json:"latency_ms,omitempty"` + "`" + `
@@ -9915,7 +10071,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			// small, and "did my webhook fire" deserves a better answer than
 			// reading logs.
 ` + healthRealtimeNew + `		})
-	})
+	}
+	r.GET("/api/health", healthCheck)
+	r.GET("/api/"+APIVersion+"/health", healthCheck)
 
 ` + routesRealtimeRouteNew + `
 	// Public webhook receiver — no auth on the route itself; each
@@ -9978,56 +10136,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// grit:routes:public
 	}
 
-	// Public auth routes
-	auth := v1.Group("/auth")
-	{
-		auth.POST("/register", authHandler.Register)
-		auth.POST("/login", authHandler.Login)
-		auth.POST("/refresh", authHandler.Refresh)
-		auth.POST("/forgot-password", authHandler.ForgotPassword)
-		auth.POST("/reset-password", authHandler.ResetPassword)
-		auth.POST("/verify-email", authHandler.VerifyEmail)
-	}
-
-	// OAuth2 social login
-	oauth := auth.Group("/oauth")
-	{
-		oauth.GET("/:provider", authHandler.OAuthBegin)
-		oauth.GET("/:provider/callback", authHandler.OAuthCallback)
-	}
-
-	// Enterprise SSO (OIDC). Public by design — these ARE the login flow.
-	// Discover tells the login form whether an address belongs to a connection;
-	// the other two are the redirect out to the IdP and the return trip.
-	//
-	// Like the OAuth callbacks above, /callback is registered in the customer's
-	// IdP console, so its unversioned path must keep working — see the note on
-	// APIVersion.
-	sso := auth.Group("/sso")
-	{
-		sso.POST("/discover", ssoHandler.Discover)
-		sso.GET("/:slug", ssoHandler.Begin)
-		sso.GET("/:slug/callback", ssoHandler.Callback)
-	}
-
-	// SAML 2.0. /metadata is what the customer uploads to their IdP and /acs is
-	// where that IdP POSTs the signed assertion — both get registered on their
-	// side, so like the OAuth callbacks these unversioned paths must keep
-	// working across API version bumps.
-	samlGroup := auth.Group("/saml")
-	{
-		samlGroup.GET("/:slug/metadata", ssoHandler.SAMLMetadata)
-		samlGroup.GET("/:slug", ssoHandler.SAMLBegin)
-		samlGroup.POST("/:slug/acs", ssoHandler.SAMLACS)
-	}
-
-	// TOTP verification (public — uses pending tokens, not JWT)
-	// Passkey sign-in. Public because there is no session yet; the
-	// server-side challenge is what makes it safe.
-	auth.POST("/passkeys/login/begin", passkeyHandler.BeginLogin)
-	auth.POST("/passkeys/login/finish", passkeyHandler.FinishLogin)
-	auth.POST("/totp/verify", totpHandler.Verify)
-	auth.POST("/totp/backup-codes/verify", totpHandler.VerifyBackupCode)
+	mountAuthRoutes(v1, authHandler, ssoHandler, totpHandler, passkeyHandler)
 
 	// Protected routes
 	protected := v1.Group("")

@@ -44,6 +44,7 @@ import {
 } from "@/hooks/use-roles";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { ShieldCheck, Lock, Users, Plus, ArrowLeft, Save, Trash2, Search, Copy } from "@/lib/icons";
+import { getApiErrorMessage } from "@/lib/api-core";
 import { buttonClasses } from "@/components/ui/button";
 import { inputClasses } from "@/components/ui/input";
 
@@ -385,12 +386,8 @@ function RoleEditor({
 				await create.mutateAsync({ name, description, grants });
 			}
 			onBack();
-		} catch (e: any) {
-			setError(
-				(e && e.response && e.response.data && e.response.data.error
-					? e.response.data.error.message
-					: null) || "Could not save the role."
-			);
+		} catch (e: unknown) {
+			setError(getApiErrorMessage(e, "Could not save the role."));
 		}
 	}
 
@@ -404,12 +401,8 @@ function RoleEditor({
 		try {
 			await remove.mutateAsync(role.id);
 			onBack();
-		} catch (e: any) {
-			setError(
-				(e && e.response && e.response.data && e.response.data.error
-					? e.response.data.error.message
-					: null) || "Could not delete the role."
-			);
+		} catch (e: unknown) {
+			setError(getApiErrorMessage(e, "Could not delete the role."));
 		}
 	}
 

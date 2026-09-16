@@ -58,6 +58,25 @@ func registerAPIDocs(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		},
 	})
 
+	// The 141 route overrides, by what they are about. They were one 613-line
+	// function; each is now a page of related endpoints with a name, so a
+	// reader looking for how uploads are documented opens docsPeopleRoutes
+	// rather than scrolling.
+	docsAuthRoutes(docs)
+	docsContentRoutes(docs)
+	docsPeopleRoutes(docs)
+	docsEnterpriseRoutes(docs)
+	docsOperationsRoutes(docs)
+	docsAdminRoutes(docs)
+	docsRedirectAndStreamRoutes(docs)
+
+	// grit:docs:routes — "grit generate resource" registers each resource here.
+	// grit:docs:routes:end
+	log.Println("API docs available at /docs")
+}
+
+// docsAuthRoutes describes sign-in, sessions and the second factors.
+func docsAuthRoutes(docs *gindocs.GinDocs) {
 	// Core endpoints. The generated summaries are derived from the path, which
 	// turns POST /auth/login into "Create a new login" — worth overriding for
 	// the handful of routes every reader hits first.
@@ -227,7 +246,10 @@ func registerAPIDocs(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		Summary("One email template rendered with sample data").
 		Response(200, handlers.MessageResponse{}, "The rendered HTML (text/html), or the text part with ?part=text").
 		Response(404, handlers.ErrorResponse{}, "No template by that name")
+}
 
+// docsContentRoutes describes the blog and the support tickets.
+func docsContentRoutes(docs *gindocs.GinDocs) {
 	// ── Content ────────────────────────────────────────────────────
 	docs.Route("GET /api/v1/blogs").
 		Summary("List published posts").
@@ -281,7 +303,10 @@ func registerAPIDocs(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	docs.Route("PATCH /api/v1/tickets/:id/reopen").
 		Summary("Reopen a closed ticket").
 		Response(200, models.Ticket{}, "The reopened ticket")
+}
 
+// docsPeopleRoutes describes roles, users, uploads and the profile.
+func docsPeopleRoutes(docs *gindocs.GinDocs) {
 	// ── Roles ──────────────────────────────────────────────────────
 	docs.Route("GET /api/v1/roles/:id").
 		Summary("Get one role").
@@ -341,7 +366,10 @@ func registerAPIDocs(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	docs.Route("DELETE /api/v1/profile").
 		Summary("Delete your own account").
 		Response(200, handlers.MessageResponse{}, "Account deleted and every session signed out")
+}
 
+// docsEnterpriseRoutes describes SSO and the access-review campaigns.
+func docsEnterpriseRoutes(docs *gindocs.GinDocs) {
 	// ── SSO ────────────────────────────────────────────────────────
 	docs.Route("POST /api/v1/sso/connections").
 		Summary("Add an SSO connection").
@@ -371,7 +399,11 @@ func registerAPIDocs(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		Summary("Keep or revoke one grant").
 		RequestBody(handlers.ReviewDecisionRequest{}).
 		Response(200, models.AccessReviewItem{}, "The decided item")
+}
 
+// docsOperationsRoutes describes notifications, the dashboard, the audit
+// trail, imports, backups and offline sync.
+func docsOperationsRoutes(docs *gindocs.GinDocs) {
 	// ── Notifications, dashboard, activity ─────────────────────────
 	docs.Route("POST /api/v1/notifications/:id/read").
 		Summary("Mark one notification read").
@@ -426,7 +458,11 @@ func registerAPIDocs(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	docs.Route("GET /api/v1/sync/policy").
 		Summary("How each model behaves offline").
 		Response(200, handlers.SyncPolicyResponse{}, "Sync mode, conflict strategy, synced fields and offline age limit per model")
+}
 
+// docsAdminRoutes describes public form sharing and the admin-only surface:
+// flags, shares, jobs, webhooks and the Sentinel/Pulse summaries.
+func docsAdminRoutes(docs *gindocs.GinDocs) {
 	// ── Public form sharing ────────────────────────────────────────
 	docs.Route("GET /api/v1/public/forms/:token").
 		Summary("Fetch a shared form's fields").
@@ -507,7 +543,12 @@ func registerAPIDocs(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	docs.Route("GET /api/v1/admin/dashboard/resource-stats/:resource").
 		Summary("Totals and trend for one resource").
 		Response(200, services.ResourceStats{}, "Count, change against the previous period, and a sparkline")
+}
 
+// docsRedirectAndStreamRoutes describes the endpoints that do not answer with
+// JSON: the OAuth and SSO redirects, the AI stream, the WebSocket and the
+// inbound webhook receiver.
+func docsRedirectAndStreamRoutes(docs *gindocs.GinDocs) {
 	// ── Auth: the endpoints a browser redirects to ─────────────────
 	// These return redirects rather than JSON, which is worth stating
 	// explicitly: a client that follows them expecting a body gets HTML.
@@ -596,10 +637,6 @@ func registerAPIDocs(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		Summary("Inbound webhook from a third party").
 		Response(200, handlers.MessageResponse{}, "Accepted").
 		Response(401, handlers.ErrorResponse{}, "Signature check failed")
-
-	// grit:docs:routes — "grit generate resource" registers each resource here.
-	// grit:docs:routes:end
-	log.Println("API docs available at /docs")
 }
 `
 }

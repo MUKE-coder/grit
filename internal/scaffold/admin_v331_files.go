@@ -12,6 +12,7 @@ func adminToastHook() string {
 
 import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-core";
 
 interface ToastedOptions<TData, TError, TVariables, TContext>
   extends UseMutationOptions<TData, TError, TVariables, TContext> {
@@ -81,12 +82,11 @@ function readElapsed(ctx: MutationContext): number | null {
   return Math.round(performance.now() - t);
 }
 
+// The message this hook shows when the caller gave no errorMessage. It was a
+// private copy of the same cast 21 other files had written out; now there is
+// one, in lib/api-core.ts, and this names the default it wants.
 function pickErrorMessage(err: unknown): string {
-  const m = (err as { response?: { data?: { error?: { message?: string } } } })
-    ?.response?.data?.error?.message;
-  if (m) return m;
-  if (err instanceof Error) return err.message;
-  return "Something went wrong";
+  return getApiErrorMessage(err, "Something went wrong");
 }
 
 // Re-export sonner's toast so pages can drop ad-hoc toasts (e.g. on a

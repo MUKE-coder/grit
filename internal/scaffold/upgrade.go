@@ -448,6 +448,17 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairBackgroundWork(root, opts); err != nil {
 			fmt.Printf("  ⚠ bounding background work: %v\n", err)
 		}
+		// A GDPR erasure is refused without a compliance reason, and a failure to
+		// write its audit row is reported rather than swallowed.
+		if err := repairGDPRErase(root, opts); err != nil {
+			fmt.Printf("  ⚠ requiring a reason for an erasure: %v\n", err)
+		}
+		// /api/health answers under the version prefix too. The frontends rewrite
+		// every /api/... path to /api/v1/..., and this was the one route mounted
+		// outside the version group, so the health page read its 404 as degraded.
+		if err := repairHealthVersionedRoute(root, opts); err != nil {
+			fmt.Printf("  ⚠ mounting the health probe under the version prefix: %v\n", err)
+		}
 		// The realtime socket takes a cookie handshake only from the CORS
 		// origins, caps connections, and is not mounted with MODULE_REALTIME=false.
 		if err := repairRealtimeSecurity(root, opts); err != nil {

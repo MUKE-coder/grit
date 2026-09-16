@@ -153,12 +153,15 @@ func TestSingleAdminContentIsRepointed(t *testing.T) {
 
 // The API base. A triple admin is on its own port and talks across origins; here
 // the binary serves the page and the API, so the origin of the page is the API.
+//
+// In lib/api-core.ts since v3.281.0, which is the one module that writes the
+// API's address down; api-client.ts re-exports it.
 func TestSingleAdminTalksToItsOwnOrigin(t *testing.T) {
 	root := t.TempDir()
-	client := filepath.Join(root, "frontend", "src", "admin-panel", "lib", "api-client.ts")
+	client := filepath.Join(root, "frontend", "src", "admin-panel", "lib", "api-core.ts")
 	content, ok := embeddedSingleAdminFileMap(root, singleOptions())[client]
 	if !ok {
-		t.Fatal("the panel has no api-client")
+		t.Fatal("the panel has no api-core module")
 	}
 	final := embeddedSingleAdminContent(client, content)
 	if strings.Contains(final, "localhost:8080") {

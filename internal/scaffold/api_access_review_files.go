@@ -300,10 +300,15 @@ func adminAccessReviewPage() string {
 	src := `"use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { ResponsiveSheet } from "@/components/ui/ResponsiveSheet";
-import { apiClient } from "@/lib/api-client";
+import {
+  useAccessReviews,
+  useAccessReview,
+  useOpenAccessReview,
+  useDecideAccessReviewItem,
+  useCompleteAccessReview,
+} from "@/hooks/use-access-reviews";
 import { ShieldCheck, Check, X, Plus, Loader2, UserCheck } from "@/lib/icons";
 
 interface ReviewSummary {
@@ -333,7 +338,6 @@ interface ReviewDetail extends ReviewSummary {
 }
 
 export default function AccessReviewPage() {
-  const qc = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
   // "New review" opens a proper form (name + optional note) rather than a
   // browser prompt — the note is stored on the campaign as context for whoever
@@ -342,63 +346,27 @@ export default function AccessReviewPage() {
   const [newName, setNewName] = useState("");
   const [newNote, setNewNote] = useState("");
 
-  const listQ = useQuery({
-    queryKey: ["access-reviews"],
-    queryFn: async () => {
-      const { data } = await apiClient.get("/api/access-reviews");
-      return (data.data ?? []) as ReviewSummary[];
-    },
-  });
-
-  const detailQ = useQuery({
-    queryKey: ["access-review", selected],
-    enabled: !!selected,
-    queryFn: async () => {
-      const { data } = await apiClient.get("/api/access-reviews/" + selected);
-      return data.data as ReviewDetail;
-    },
-  });
-
-  const openM = useMutation({
-    mutationFn: async (body: { name: string; note?: string }) => {
-      const { data } = await apiClient.post("/api/access-reviews", body);
-      return data.data as ReviewDetail;
-    },
-    onSuccess: (r) => {
-      qc.invalidateQueries({ queryKey: ["access-reviews"] });
-      setSelected(r.id);
-      setNewOpen(false);
-      setNewName("");
-      setNewNote("");
-    },
-  });
-
-  const decideM = useMutation({
-    mutationFn: async (args: { itemId: string; decision: "approved" | "revoked" }) => {
-      await apiClient.post(
-        "/api/access-reviews/" + selected + "/items/" + args.itemId + "/decision",
-        { decision: args.decision }
-      );
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["access-review", selected] });
-      qc.invalidateQueries({ queryKey: ["access-reviews"] });
-    },
-  });
-
-  const completeM = useMutation({
-    mutationFn: async () => {
-      await apiClient.post("/api/access-reviews/" + selected + "/complete");
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["access-review", selected] });
-      qc.invalidateQueries({ queryKey: ["access-reviews"] });
-    },
-  });
+  // The five requests are in hooks/use-access-reviews.ts, which also knows
+  // that a decision moves both the campaign's rows and the list's counts.
+  const listQ = useAccessReviews<ReviewSummary>();
+  const detailQ = useAccessReview<ReviewDetail>(selected);
+  const openM = useOpenAccessReview<ReviewDetail>();
+  const decideM = useDecideAccessReviewItem(selected);
+  const completeM = useCompleteAccessReview(selected);
 
   const startReview = () => {
     if (!newName.trim()) return;
-    openM.mutate({ name: newName.trim(), note: newNote.trim() || undefined });
+    openM.mutate(
+      { name: newName.trim(), note: newNote.trim() || undefined },
+      {
+        onSuccess: (r) => {
+          setSelected(r.id);
+          setNewOpen(false);
+          setNewName("");
+          setNewNote("");
+        },
+      }
+    );
   };
 
   const detail = detailQ.data;

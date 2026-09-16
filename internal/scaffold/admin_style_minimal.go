@@ -9,6 +9,7 @@ func minimalLoginPage() string {
 
 import { useState } from "react";
 import Link from "next/link";
+import { apiUrl } from "@/lib/api-core";
 import { Eye, EyeOff } from "@/lib/icons";
 import { buttonClasses } from "@/components/ui/button";
 import { useLogin } from "@/hooks/use-auth";
@@ -126,6 +127,7 @@ func minimalSignUpPage() string {
 
 import { useState } from "react";
 import Link from "next/link";
+import { apiUrl } from "@/lib/api-core";
 import { Eye, EyeOff } from "@/lib/icons";
 import { useRegister } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
@@ -413,9 +415,10 @@ import { StatsCard } from "@/components/widgets/stats-card";
 import { WidgetGrid } from "@/components/widgets/widget-grid";
 import { getIcon } from "@/lib/icons";
 
-// The API origin the browser talks to. Hardcoding localhost:8080 here meant
-// the Quick Links pointed at the wrong port whenever the API moved.
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+// The API origin the browser talks to, from the one module that knows it.
+// Hardcoding localhost:8080 here meant the Quick Links pointed at the wrong
+// port whenever the API moved.
+import { API_URL, apiUrl } from "@/lib/api-core";
 
 export default function AdminDashboard() {
   const { data: user } = useMe();
@@ -504,7 +507,7 @@ export default function AdminDashboard() {
             GORM Studio
           </a>
           <a
-            href={API_URL + "/api/health"}
+            href={apiUrl("/api/health")}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-full border border-border bg-bg-secondary px-3.5 py-1.5 text-xs font-medium text-text-secondary hover:text-foreground hover:border-accent/40 transition-colors"

@@ -23,13 +23,22 @@ const activityRowFuncs = `// LogActivity writes a UserActivity row before it ret
 // user-agent from the request context automatically, falling back to
 // args.UserID when the caller is in an unauthenticated handler (auth flows).
 func LogActivity(db *gorm.DB, c *gin.Context, args ActivityArgs) {
-	row := activityRow(c, args)
-	if err := db.Create(&row).Error; err != nil {
+	if err := LogActivityErr(db, c, args); err != nil {
 		// Audit failures are non-fatal but worth knowing about: log and keep
 		// moving. In production, wire a metric to alert on a sudden surge in
 		// these (suggests DB write pressure).
 		log.Printf("activity: failed to write %s: %v", args.Action, err)
 	}
+}
+
+// LogActivityErr is LogActivity for the handful of events where losing the row
+// matters more than the noise: a GDPR erasure, a key revocation, anything an
+// auditor will later ask you to produce. It writes the same row and hands back
+// the error instead of logging it, so the caller can tell the client the audit
+// trail is incomplete.
+func LogActivityErr(db *gorm.DB, c *gin.Context, args ActivityArgs) error {
+	row := activityRow(c, args)
+	return db.Create(&row).Error
 }
 
 // activityRow builds the row for args from the request: the actor, the client

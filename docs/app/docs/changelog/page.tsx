@@ -66,6 +66,71 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.283.0 */}
+            <div className="mb-12" id="v3.283.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.283.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>GDPR erasure needs a reason, the API address lives in one place, and four admin screens use hooks</h3>
+                <p>
+                  <strong>A GDPR erasure now needs a reason.</strong> The handler ignored its request body, so a call
+                  with no body at all erased an account and wrote an empty reason into the deletion journal. It now
+                  answers 422 unless the reason is 3 to 500 characters, identifies the caller with
+                  <code>authz.CurrentUserID</code>, and writes its audit row through
+                  <code>services.LogActivityErr</code>: if that row cannot be written, the response says so instead of
+                  reporting a clean erasure. The admin&apos;s confirm button stays disabled until a reason is typed.
+                  An erase call that sends no reason, which used to succeed, is now refused.
+                </p>
+                <p>
+                  <strong>The API&apos;s address is written in one place.</strong> A new <code>lib/api-core.ts</code>
+                  exports <code>API_URL</code>, <code>apiUrl()</code>, <code>createApiClient()</code> and
+                  <code>getApiErrorMessage()</code>, and both frontends build their client from it. Copies of the
+                  environment expression went from 15 to 7, and hand-built URLs that skipped the <code>/api/v1</code>
+                  prefix from 8 to none: public forms, the OAuth buttons, SSO discovery, and the SAML URLs an admin
+                  pastes into their identity provider. <code>/api/health</code> now also answers at
+                  <code>/api/v1/health</code>, so the admin&apos;s System Health page no longer reads a 404 as
+                  degraded.
+                </p>
+                <p>
+                  <strong>Four system screens go through hooks.</strong> Form shares, access reviews, SSO and API keys
+                  made 21 API calls inline from their pages; they now make none, through four new hook files. The
+                  observability and security screens poll with <code>useQuery</code> instead of a
+                  <code>setInterval</code> loop that also hid the browser&apos;s own <code>fetch</code>.
+                </p>
+                <p>
+                  <strong>Less copy-pasted error handling.</strong> <code>getApiErrorMessage(err, fallback)</code>
+                  replaces the error cast in the resource hooks, the toasted-mutation hook, the roles page and the auth
+                  pages, taking the copies from 26 to 17, and the four near-identical resource mutations are one
+                  factory.
+                </p>
+                <p>
+                  <strong>Three oversized functions got smaller.</strong> <code>routes.Setup</code> went from 966
+                  lines to 703: the middleware chain, Sentinel, Studio, Pulse and the public auth routes are named
+                  functions. <code>registerAPIDocs</code> went from 567 lines to 40 plus seven section functions, and
+                  <code>Login</code> from 189 to 111. The route groups with <code>grit:</code> markers stay in
+                  <code>Setup</code>, because plugins and generated resources insert code there that uses its
+                  variables.
+                </p>
+                <p>
+                  <strong>grit doctor is quiet on a fresh project again.</strong> v3.282.0 moved the built-in users and
+                  ticket lists onto paginate, and doctor had been recognising a generated resource by its list config.
+                  So every project fresh from <code>grit new</code> reported User and Ticket as resources, with an
+                  error about encryption keys and a warning about ownership, neither of which applied. A generated
+                  resource is now recognised by its bulk request, which the generator has written since v3.142.0 and no
+                  built-in declares.
+                </p>
+                <p>
+                  <code>grit upgrade</code> fixes the GDPR handler and registers the versioned health route in existing
+                  projects, and delivers the new frontend files with the rest of the frontend.
+                </p>
+              </div>
+            </div>
+
             {/* v3.282.0 */}
             <div className="mb-12" id="v3.282.0">
               <div className="flex items-center gap-3 mb-4">

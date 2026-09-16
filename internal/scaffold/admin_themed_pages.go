@@ -393,6 +393,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/api-core";
 import { AuthShell } from "@/components/auth/AuthShell";
 
 const inputBase =
@@ -437,8 +438,7 @@ function ResetPasswordForm() {
       // return to except a fresh login.
       setTimeout(() => router.push("/login"), 2500);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      setError(msg || "Something went wrong. Please try again.");
+      setError(getApiErrorMessage(err, "Something went wrong. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -544,6 +544,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ForgotPasswordSchema, type ForgotPasswordInput } from "@repo/shared/schemas";
 import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/api-core";
 import { AuthShell } from "@/components/auth/AuthShell";
 
 const inputBase =
@@ -567,8 +568,7 @@ export default function ForgotPasswordPage() {
       await apiClient.post("/api/auth/forgot-password", data);
       setSubmitted(true);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      setError(msg || "Something went wrong. Please try again.");
+      setError(getApiErrorMessage(err, "Something went wrong. Please try again."));
     } finally {
       setLoading(false);
     }

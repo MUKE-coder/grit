@@ -90,7 +90,7 @@ func socialLoginButtonsJSX() string {
 
           <div className="flex gap-3">
             <a
-              href={` + "`" + `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/auth/oauth/google` + "`" + `}
+              href={apiUrl("/api/auth/oauth/google")}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -102,7 +102,7 @@ func socialLoginButtonsJSX() string {
               Google
             </a>
             <a
-              href={` + "`" + `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/auth/oauth/github` + "`" + `}
+              href={apiUrl("/api/auth/oauth/github")}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-[#24292f] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#2f363d] transition-colors"
             >
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -319,6 +319,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"): adminDashboardLayout(),
 
 		// Lib
+		filepath.Join(adminRoot, "lib", "api-core.ts"):     apiCoreTS(),
 		filepath.Join(adminRoot, "lib", "api-client.ts"):   adminAPIClient(),
 		filepath.Join(adminRoot, "lib", "query-client.ts"): adminQueryClient(),
 		filepath.Join(adminRoot, "lib", "utils.ts"):        adminUtils(),
@@ -431,6 +432,10 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "hooks", "use-resource-controller.ts"):        adminUseResourceController(),
 		filepath.Join(adminRoot, "hooks", "use-resource-detail-controller.ts"): adminUseResourceDetailController(),
 		filepath.Join(adminRoot, "hooks", "use-system.ts"):                     adminUseSystem(),
+		filepath.Join(adminRoot, "hooks", "use-api-keys.ts"):                   adminUseAPIKeys(),
+		filepath.Join(adminRoot, "hooks", "use-sso.ts"):                        adminUseSSO(),
+		filepath.Join(adminRoot, "hooks", "use-form-shares.ts"):                adminUseFormShares(),
+		filepath.Join(adminRoot, "hooks", "use-access-reviews.ts"):             adminUseAccessReviews(),
 		filepath.Join(adminRoot, "hooks", "use-profile.ts"):                    adminUseProfile(),
 		// v3.31.40 — per-user dashboard customisation
 		filepath.Join(adminRoot, "hooks", "use-dashboard-layout.ts"):                        adminUseDashboardLayoutTS(),
@@ -1341,11 +1346,15 @@ export function useLogout() {
 }
 
 func adminAPIClient() string {
-	return `import axios from "axios";
-import { createUploader, createAxiosTransport } from "@repo/upload";
+	return `import { createUploader, createAxiosTransport } from "@repo/upload";
 import { optimizeImage } from "@repo/upload/web";
+import { createApiClient } from "@/lib/api-core";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+// The API's address, the /api/v1 rewrite, the CSRF header and the idempotency
+// key are in lib/api-core.ts, whose copy in the web app is the same file. What
+// is left here is what only the admin needs: the public-IP hint and the
+// 401-refresh retry.
+export { API_URL, API_VERSION, apiUrl, versionedPath } from "@/lib/api-core";
 
 // Auth storage policy (Grit 3.27+):
 //   - The API issues HttpOnly grit_access + grit_refresh cookies on
@@ -1360,34 +1369,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 //   - The 401-refresh interceptor below POSTS /api/auth/refresh with no
 //     body — the API reads grit_refresh from the cookie and issues a
 //     new grit_access via Set-Cookie. JS still never sees a token.
-// The API is served under a version prefix (/api/v1/...). Rather than bake
-// "v1" into the ~200 endpoint strings scattered across resources, hooks and
-// pages, every request is pinned here — so bumping to v2 is a one-line change
-// and the app can never end up half-migrated. Endpoints stay written as
-// "/api/users"; this rewrites them on the way out.
-export const API_VERSION = "v1";
-
-export const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  withCredentials: true,
-});
-
-apiClient.interceptors.request.use((config) => {
-  const url = config.url ?? "";
-  // Skip the WebSocket endpoint (not part of the versioned REST surface) and
-  // anything already carrying a version, so re-entrant calls stay idempotent.
-  if (
-    url.startsWith("/api/") &&
-    url !== "/api/ws" &&
-    !url.startsWith("/api/" + API_VERSION + "/")
-  ) {
-    config.url = "/api/" + API_VERSION + url.slice("/api".length);
-  }
-  return config;
-});
+export const apiClient = createApiClient();
 
 // v3.31.49 -- public-IP hint. When the operator runs the admin on
 // localhost (the default), the API sees the TCP peer as ::1 and
@@ -1433,30 +1415,12 @@ if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
   void getPublicIPHint();
 }
 
+// The CSRF header and the Idempotency-Key come from createApiClient. This one
+// is the admin's alone.
 apiClient.interceptors.request.use((config) => {
-  // Echo grit_csrf into X-CSRF-Token. The cookie is intentionally not
-  // HttpOnly so JS can read it; the API checks both sides match
-  // (double-submit pattern) before accepting a mutation.
-  if (typeof document !== "undefined") {
-    const m = document.cookie.match(/(?:^|; )grit_csrf=([^;]+)/);
-    if (m && config.headers) {
-      config.headers["X-CSRF-Token"] = decodeURIComponent(m[1]);
-    }
-  }
-
   // v3.31.49 -- attach the cached public-IP hint when we have one.
   if (publicIPCache && config.headers) {
     config.headers["X-Public-IP-Hint"] = publicIPCache;
-  }
-
-  // Auto-attach Idempotency-Key on unsafe methods. The 401-refresh
-  // interceptor below replays the same config object so retries reuse
-  // this key — the server caches the first 2xx response for 24h
-  // keyed by (method, path, key).
-  const method = (config.method || "get").toUpperCase();
-  const unsafe = method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE";
-  if (unsafe && config.headers && !config.headers["Idempotency-Key"]) {
-    config.headers["Idempotency-Key"] = crypto.randomUUID();
   }
   return config;
 });
@@ -1706,6 +1670,7 @@ func adminLoginPage() string {
 
 import { useState } from "react";
 import Link from "next/link";
+import { apiUrl } from "@/lib/api-core";
 import { Eye, EyeOff } from "@/lib/icons";
 import { buttonClasses } from "@/components/ui/button";
 import { useLogin } from "@/hooks/use-auth";
@@ -1849,6 +1814,7 @@ func adminSignUpPage() string {
 
 import { useState } from "react";
 import Link from "next/link";
+import { apiUrl } from "@/lib/api-core";
 import { Eye, EyeOff } from "@/lib/icons";
 import { useRegister } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";

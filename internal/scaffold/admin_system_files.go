@@ -28,6 +28,35 @@ interface Job {
   last_error: string;
 }
 
+// ── Security + observability summaries ──────────────────────────
+// Both screens poll. They used to do it with useEffect and setInterval, which
+// meant hand-written cancellation, a local fetch that shadowed the global one,
+// and a second copy of the request in every page that wanted the same numbers.
+// React Query already owns polling, deduplication and cancellation, so these
+// are useQuery with a refetchInterval and nothing else.
+
+export function useSecuritySummary<T = Record<string, unknown>>() {
+  return useQuery<T>({
+    queryKey: ["admin", "security", "summary"],
+    queryFn: async () => {
+      const { data } = await apiClient.get("/api/admin/security/summary");
+      return (data?.data ?? data) as T;
+    },
+    refetchInterval: 20_000,
+  });
+}
+
+export function useObservabilitySummary<T = Record<string, unknown>>() {
+  return useQuery<T>({
+    queryKey: ["admin", "observability", "summary"],
+    queryFn: async () => {
+      const { data } = await apiClient.get("/api/admin/observability/summary");
+      return (data?.data ?? data) as T;
+    },
+    refetchInterval: 10_000,
+  });
+}
+
 export function useJobStats() {
   return useQuery<QueueStats[]>({
     queryKey: ["admin", "jobs", "stats"],
@@ -793,11 +822,11 @@ export default function MailPage() {
 func adminSecurityPage() string {
 	return `"use client";
 
-import { useEffect, useState } from "react";
 import { Shield, ExternalLink, AlertTriangle, Zap, Activity, AlertCircle, Globe } from "@/lib/icons";
-import { apiClient as api } from "@/lib/api-client";
+import { useSecuritySummary } from "@/hooks/use-system";
+import { getApiErrorMessage } from "@/lib/api-core";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+import { API_URL } from "@/lib/api-core";
 
 interface ScoreCard {
   score?: number
@@ -818,27 +847,12 @@ interface Summary {
 }
 
 export default function SecurityPage() {
-  const [data, setData] = useState<Summary | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-    const fetch = async () => {
-      try {
-        const res = await api.get("/api/admin/security/summary");
-        if (alive) setData(res.data?.data || res.data);
-        setErr(null);
-      } catch (e: any) {
-        if (alive) setErr(e?.response?.data?.error?.message || "Failed to load");
-      } finally {
-        if (alive) setLoading(false);
-      }
-    };
-    fetch();
-    const t = setInterval(fetch, 20_000); // refresh every 20s
-    return () => { alive = false; clearInterval(t); };
-  }, []);
+  // Polls every 20 seconds. The hook owns the interval, the in-flight request
+  // and its cancellation, so this page has no effect of its own to get wrong.
+  const query = useSecuritySummary<Summary>();
+  const data = query.data ?? null;
+  const loading = query.isPending;
+  const err = query.error ? getApiErrorMessage(query.error, "Failed to load") : null;
 
   return (
     <div className="space-y-6">
@@ -991,11 +1005,11 @@ function SeverityChip({ severity, cvss }: { severity?: string; cvss?: number }) 
 func adminObservabilityPage() string {
 	return `"use client";
 
-import { useEffect, useState } from "react";
 import { Activity, ExternalLink, AlertTriangle, Zap } from "@/lib/icons";
-import { apiClient as api } from "@/lib/api-client";
+import { useObservabilitySummary } from "@/hooks/use-system";
+import { getApiErrorMessage } from "@/lib/api-core";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+import { API_URL } from "@/lib/api-core";
 
 interface Summary {
   overview?: { p50_ms?: number; p95_ms?: number; p99_ms?: number; rps?: number; error_rate?: number; total_requests?: number }
@@ -1017,27 +1031,13 @@ const BAND_CLS: Record<string, string> = {
 };
 
 export default function ObservabilityPage() {
-  const [data, setData] = useState<Summary | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-    const fetch = async () => {
-      try {
-        const res = await api.get("/api/admin/observability/summary");
-        if (alive) setData(res.data?.data || res.data);
-        setErr(null);
-      } catch (e: any) {
-        if (alive) setErr(e?.response?.data?.error?.message || "Failed to load");
-      } finally {
-        if (alive) setLoading(false);
-      }
-    };
-    fetch();
-    const t = setInterval(fetch, 10_000);
-    return () => { alive = false; clearInterval(t); };
-  }, []);
+  // Polls every 10 seconds. The local helper this replaced was called "fetch",
+  // which shadowed the global one for the rest of the effect: any code added
+  // there that reached for fetch() would have called the poller instead.
+  const query = useObservabilitySummary<Summary>();
+  const data = query.data ?? null;
+  const loading = query.isPending;
+  const err = query.error ? getApiErrorMessage(query.error, "Failed to load") : null;
 
   return (
     <div className="space-y-6">
