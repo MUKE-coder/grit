@@ -54,6 +54,10 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "realtime", "presence.go"):                apiRealtimePresenceGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "presence_test.go"):           apiRealtimePresenceTestGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "hub_send_test.go"):           apiRealtimeHubSendTestGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "whispers.go"):                apiRealtimeWhispersGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "whispers_test.go"):           apiRealtimeWhispersTestGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "stats.go"):                   apiRealtimeStatsGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "realtime_greeting_test.go"):  apiRealtimeGreetingTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "realtime_channels_test.go"):  apiRealtimeChannelsHandlerTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "realtime_test.go"):           apiRealtimeHandlerTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):                apiRealtimeHandlerGo(),
@@ -8983,8 +8987,7 @@ type Client struct {
 	// a session that has since been signed out. writePump closes the
 	// connection at this instant and the client reconnects with a fresh
 	// token, which is the same bound REST already operates under.
-	ExpiresAt time.Time
-}
+` + hubClientEventsFieldNew + `
 
 // disconnectGrace is how long DisconnectUser waits for writePump to send its
 // close frame and tear the socket down before forcing it. It matches the write
@@ -8994,7 +8997,7 @@ const disconnectGrace = 10 * time.Second
 // Hub manages connected clients. Safe for concurrent use.
 type Hub struct {
 	mu      sync.RWMutex
-` + hubChannelsFieldNew + hubPresenceFieldAdd + `
+` + hubChannelsFieldNew + hubPresenceFieldAdd + hubStatsFieldAdd + `
 	// nodeID identifies this process so it can ignore its own messages coming
 	// back off the backplane.
 	nodeID string
@@ -9152,7 +9155,7 @@ func (h *Hub) SendToUser(userID string, evt Event) {
 	h.SendToUsers([]string{userID}, evt)
 }
 
-` + hubLocalSendsNew + `
+` + hubLocalSendsCounted + `
 // SendToUsers fans out to a slice of user IDs.
 func (h *Hub) SendToUsers(userIDs []string, evt Event) {
 	if len(userIDs) == 0 {
@@ -9204,8 +9207,7 @@ const (
 	wsWriteWait      = 10 * time.Second
 	wsPongWait       = 60 * time.Second
 	wsPingPeriod     = (wsPongWait * 9) / 10
-	wsMaxMessageSize = 1024 // we don't expect clients to send anything large
-)
+` + realtimeReadLimitNew + `)
 
 ` + realtimeUpgraderNew + `
 // RealtimeHandler upgrades an HTTP request to a WebSocket and registers
@@ -9259,17 +9261,7 @@ func (h *RealtimeHandler) Connect(c *gin.Context) {
 	if exp := claims.ExpiresAt; exp != nil {
 		client.ExpiresAt = exp.Time
 	}
-` + realtimeRegisterNew + `
-	// Greeting so the client knows the link is live.
-	greeting, _ := json.Marshal(realtime.Event{
-		Type:    "system.connected",
-		Payload: gin.H{"user_id": claims.UserID},
-	})
-	select {
-	case client.Send <- greeting:
-	default:
-	}
-
+` + realtimeGreetingNew + `
 	go writePump(client)
 	go readPump(h.Hub, client)
 }
@@ -9902,8 +9894,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			// from outside that a subscriber is too slow or the queue too
 			// small, and "did my webhook fire" deserves a better answer than
 			// reading logs.
-			"events": eventBusStatus(),
-		})
+` + healthRealtimeNew + `		})
 	})
 
 ` + routesRealtimeRouteNew + `

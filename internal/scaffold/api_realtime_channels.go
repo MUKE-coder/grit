@@ -259,12 +259,7 @@ func (h *Hub) deliverChannelLocal(channel string, bytes []byte) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	for c := range h.channels.members[channel] {
-		select {
-		case c.Send <- bytes:
-		default:
-			log.Printf("[realtime] dropping a %s message for slow client user=%s", channel, c.UserID)
-		}
-	}
+` + channelsDeliverSendNew + `	}
 }
 
 // channelEnvelope is an Event on the wire with the channel it arrived on.
@@ -295,10 +290,7 @@ func subscriptionErrorCode(err error) string {
 	}
 }
 
-// HandleClientMessage applies one message a client sent on the socket:
-// subscribe or unsubscribe. Anything else is ignored, so a client newer than
-// the server does not break the connection.
-func (h *Hub) HandleClientMessage(c *Client, raw []byte) {
+` + channelsHandleDocNew + `func (h *Hub) HandleClientMessage(c *Client, raw []byte) {
 	var msg clientMessage
 	if err := json.Unmarshal(raw, &msg); err != nil {
 		return
@@ -309,9 +301,7 @@ func (h *Hub) HandleClientMessage(c *Client, raw []byte) {
 			h.reply(c, "subscription_error", msg.Channel, subscriptionError{Code: subscriptionErrorCode(err), Message: err.Error()})
 			return
 		}
-` + channelsSubscribedReplyNew + `	case "unsubscribe":
-		h.Unsubscribe(c, msg.Channel)
-		h.reply(c, "unsubscribed", msg.Channel, nil)
+` + channelsSubscribedReplyNew + channelsClientEventCaseNew + `		h.reply(c, "unsubscribed", msg.Channel, nil)
 	}
 }
 
@@ -327,12 +317,7 @@ func (h *Hub) reply(c *Client, kind, channel string, payload interface{}) {
 	if _, open := h.clients[c.UserID][c]; !open {
 		return
 	}
-	select {
-	case c.Send <- bytes:
-	default:
-		log.Printf("[realtime] dropping a %s reply for slow client user=%s", kind, c.UserID)
-	}
-}
+` + channelsReplySendNew + `}
 `
 }
 

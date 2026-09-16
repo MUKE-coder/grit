@@ -14,7 +14,9 @@ func TestRealtimePresenceShipsInTheTemplates(t *testing.T) {
 	read := apiSource(t)
 
 	hub := read("internal", "realtime", "hub.go")
-	for _, want := range []string{hubLocalSendsNew, hubBackstopNew, hubPresenceFieldNew, hubPresenceStartNew, hubPresenceUnregisterNew} {
+	// hubLocalSendsCounted, not hubLocalSendsNew: A4 counts the two sends inside
+	// it, and reverting those two hunks gives A3's text back.
+	for _, want := range []string{hubLocalSendsCounted, hubBackstopNew, hubPresenceFieldNew, hubPresenceStartNew, hubPresenceUnregisterNew} {
 		if strings.Count(hub, want) != 1 {
 			t.Errorf("realtime/hub.go does not hold exactly one %q", want)
 		}
@@ -50,7 +52,10 @@ func TestRealtimePresenceShipsInTheTemplates(t *testing.T) {
 
 func TestRealtimePresenceRepairsProduceTheTemplate(t *testing.T) {
 	read := apiSource(t)
-	hub, channels := read("internal", "realtime", "hub.go"), read("internal", "realtime", "channels.go")
+	// The files as v3.277.0 wrote them: A4 layers its own hunks on top, and
+	// reverting those is what leaves A3's text to check.
+	hub := revertRealtimeHunks(read("internal", "realtime", "hub.go"), realtimeHubWhisperHunks)
+	channels := revertRealtimeHunks(read("internal", "realtime", "channels.go"), realtimeChannelsWhisperHunks)
 	cases := []struct {
 		name     string
 		template string
@@ -104,9 +109,11 @@ func oldRealtimePresenceProject(t *testing.T) (string, string, map[string]string
 		t.Fatalf("writeAPIFiles: %v", err)
 	}
 	dir := filepath.Join(root, "apps", "api", "internal", "realtime")
-	files := map[string][][2]string{
-		filepath.Join(dir, "hub.go"):      append(append([][2]string{}, realtimeHubSendsHunks...), realtimeHubPresenceHunks...),
-		filepath.Join(dir, "channels.go"): realtimeChannelsPresenceHunks,
+	files := map[string][2][][2]string{
+		// A4's hunks first: this repair puts a file back to v3.277.0, which is
+		// what it is checked against, and A4's own repair carries on from there.
+		filepath.Join(dir, "hub.go"):      {realtimeHubWhisperHunks, append(append([][2]string{}, realtimeHubSendsHunks...), realtimeHubPresenceHunks...)},
+		filepath.Join(dir, "channels.go"): {realtimeChannelsWhisperHunks, realtimeChannelsPresenceHunks},
 	}
 	want := map[string]string{}
 	for path, hunks := range files {
@@ -114,8 +121,9 @@ func oldRealtimePresenceProject(t *testing.T) (string, string, map[string]string
 		if err != nil {
 			t.Fatal(err)
 		}
-		want[path] = gofmtSource(t, string(b))
-		if err := os.WriteFile(path, []byte(oldRealtimeFile(t, string(b), hunks)), 0o644); err != nil {
+		beforeWhispers := revertRealtimeHunks(string(b), hunks[0])
+		want[path] = gofmtSource(t, beforeWhispers)
+		if err := os.WriteFile(path, []byte(oldRealtimeFile(t, beforeWhispers, hunks[1])), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -165,7 +173,7 @@ func TestRepairRealtimePresenceOnAnOldProject(t *testing.T) {
 // A v3.273.0 project takes the channels repair and then this one, and ends with
 // the channels.go a fresh scaffold writes.
 func TestRepairRealtimePresenceAfterTheChannelsRepair(t *testing.T) {
-	template := apiSource(t)("internal", "realtime", "hub.go")
+	template := revertRealtimeHunks(apiSource(t)("internal", "realtime", "hub.go"), realtimeHubWhisperHunks)
 	root, api, _ := oldRealtimeChannelsProject(t)
 	dir := filepath.Join(api, "realtime")
 	hub := filepath.Join(dir, "hub.go")
@@ -193,7 +201,7 @@ func TestRepairRealtimePresenceAfterTheChannelsRepair(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gofmtSource(t, string(got)) != gofmtSource(t, apiRealtimeChannelsGo()) {
+	if gofmtSource(t, string(got)) != gofmtSource(t, revertRealtimeHunks(apiRealtimeChannelsGo(), realtimeChannelsWhisperHunks)) {
 		t.Error("channels.go after both repairs differs from the template")
 	}
 	hubNow, err := os.ReadFile(hub)

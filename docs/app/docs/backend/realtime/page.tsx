@@ -25,13 +25,15 @@ export default function RealtimePage() {
                 Realtime (WebSockets)
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Push live updates to the browser &mdash; a toast when a background
-                job finishes, a new-message badge, a &quot;someone edited this&quot;
-                notice. Grit&apos;s <code>realtime</code> package is a tiny WebSocket
-                fan-out <strong>Hub</strong>: clients connect once at{' '}
-                <code>GET /api/ws</code>, and any handler, service, or worker can call{' '}
-                <code>SendToUser</code> or <code>Broadcast</code> from anywhere in the
-                app.
+                Push live updates to the browser: a toast when a background job
+                finishes, a new-message badge, who else has this invoice open,
+                &quot;Ada is typing&quot;. Grit&apos;s <code>realtime</code> package is a
+                WebSocket <strong>Hub</strong>. Clients connect once at{' '}
+                <code>GET /api/ws</code>, and any handler, service or worker can call{' '}
+                <code>SendToUser</code>, <code>Broadcast</code> or{' '}
+                <code>Publish</code> on a channel from anywhere in the app. Clients
+                subscribe to channels, presence channels say who is in one, and client
+                events go straight from one browser to the others in the channel.
               </p>
             </div>
 
@@ -100,14 +102,15 @@ export default function RealtimePage() {
                   Connecting: GET /api/ws
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  The one endpoint upgrades an HTTP request to a WebSocket. Auth is a{' '}
-                  <strong>query-string JWT</strong> (<code>?token=…</code>) &mdash;
-                  browsers can&apos;t set an <code>Authorization</code> header on a
-                  WebSocket handshake, so the token rides the query string and is
-                  validated with the same <code>AuthService.ValidateToken</code> as
-                  the REST API. On success the server registers the client and sends a{' '}
-                  <code>system.connected</code> greeting so the client knows the link
-                  is live.
+                  The one endpoint upgrades an HTTP request to a WebSocket. A browser
+                  authenticates with the <strong>HttpOnly <code>grit_access</code>{' '}
+                  cookie</strong>, which rides along with the handshake GET; a native or
+                  service client, which has no cookie jar, passes{' '}
+                  <code>?token=&lt;jwt&gt;</code> or an <code>Authorization</code> header
+                  instead. Either way the token goes through the same{' '}
+                  <code>AuthService.ValidateAccessToken</code> as the REST API. On success
+                  the server sends a <code>system.connected</code> greeting so the client
+                  knows the link is live, then registers the connection.
                 </p>
 
                 <p className="mt-4">
@@ -192,12 +195,15 @@ useLiveResource('invoices', ['invoices'])`}
 
                 <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-4">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    <strong className="text-foreground">One-way by design.</strong> The{' '}
-                    <code>readPump</code> doesn&apos;t accept commands from clients
-                    &mdash; all mutations go through the authenticated REST API. It
-                    only services ping/pong keepalives (55s ping, 60s pong deadline)
-                    and cleans up when the socket closes. Think of the WebSocket as a
-                    push channel, not an RPC transport.
+                    <strong className="text-foreground">Not an RPC transport.</strong> A
+                    client may send exactly three things on the socket:{' '}
+                    <code>subscribe</code>, <code>unsubscribe</code> and{' '}
+                    <code>client-event</code>, all covered below. Every mutation still
+                    goes through the authenticated REST API, and the read limit is 2 KB,
+                    which is a subscribe message many times over and one client event.
+                    The rest of the <code>readPump</code> services ping and pong
+                    keepalives (a ping every 54 s, a 60 s pong deadline) and cleans up
+                    when the socket closes.
                   </p>
                 </div>
               </div>
@@ -264,7 +270,8 @@ useLiveResource('invoices', ['invoices'])`}
                     <tbody>
                       <tr className="border-b border-border/50"><td className="px-4 py-2 font-mono text-[13px]">SendToUser(userID, evt)</td><td className="px-4 py-2 text-muted-foreground">Every connection bound to one user (all their devices)</td></tr>
                       <tr className="border-b border-border/50"><td className="px-4 py-2 font-mono text-[13px]">SendToUsers(ids, evt)</td><td className="px-4 py-2 text-muted-foreground">A slice of users &mdash; fans out SendToUser per id</td></tr>
-                      <tr><td className="px-4 py-2 font-mono text-[13px]">Broadcast(evt)</td><td className="px-4 py-2 text-muted-foreground">Every connected client, all users &mdash; use sparingly</td></tr>
+                      <tr className="border-b border-border/50"><td className="px-4 py-2 font-mono text-[13px]">Broadcast(evt)</td><td className="px-4 py-2 text-muted-foreground">Every connected client, all users. Use sparingly</td></tr>
+                      <tr><td className="px-4 py-2 font-mono text-[13px]">Publish(channel, evt)</td><td className="px-4 py-2 text-muted-foreground">Every connection subscribed to one channel, whoever they are</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -328,6 +335,230 @@ func (w *ExportWorker) Handle(ctx context.Context, userID string) error {
                 </p>
               </div>
 
+              {/* Channels */}
+              <section className="mb-12">
+                <h2 className="text-2xl font-bold text-foreground mb-4">
+                  Channels: subscribe, and who is allowed to
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  A user id is not always the right address. &quot;Everyone looking at
+                  invoice 42&quot; is a channel, and a channel is the only way for a
+                  client to say what it wants to hear about. A client sends{' '}
+                  <code>subscribe</code> with a channel name; the server answers{' '}
+                  <code>subscribed</code> or <code>subscription_error</code>, and from
+                  then on the connection receives everything published on that channel,
+                  from any replica.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The prefix decides the rules. <code>public-</code> needs no check and
+                  lets any connected client in. <code>private-</code> and{' '}
+                  <code>presence-</code> call the authorizer you registered for the
+                  pattern, with the user id and the parsed parameters, and a channel with
+                  no registered pattern is refused outright. Register the patterns once,
+                  where the hub is built:
+                </p>
+                <CodeBlock
+                  language="go"
+                  filename="internal/routes/routes.go, after the hub is built"
+                  code={`// private-invoices.42 → authorize(userID="u1", params{"id": "42"})
+realtime.Channel("invoices.{id}", func(c realtime.ChannelContext) bool {
+    return canReadInvoice(db, c.UserID, c.Param("id"))
+})
+
+// Anyone signed in may watch the status board.
+realtime.Channel("status", func(realtime.ChannelContext) bool { return true })`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  The pattern is the name without its prefix, so one registration covers{' '}
+                  <code>private-invoices.42</code> and{' '}
+                  <code>presence-invoices.42</code>. An authorizer runs on the
+                  connection&apos;s own goroutine, so keep it to a query; one that panics
+                  refuses the subscription rather than taking the process down. A
+                  connection may hold 100 channels, and a name is one of the three
+                  prefixes followed by up to 155 letters, digits or{' '}
+                  <code>_ - = @ , . ;</code>
+                </p>
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  Publishing is one call, and it reaches subscribers on every replica:
+                </p>
+                <CodeBlock
+                  language="go"
+                  filename="anywhere with the hub"
+                  code={`hub.Publish("private-invoices."+invoice.ID, realtime.Event{
+    Type:    "invoices.paid",
+    Payload: map[string]any{"id": invoice.ID, "paid_at": invoice.PaidAt},
+})`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  On the client, <code>useChannel</code> subscribes for as long as the
+                  component is mounted and again after every reconnect. Pass{' '}
+                  <code>null</code> while the name is not known yet:
+                </p>
+                <CodeBlock
+                  language="typescript"
+                  filename="apps/web: following one record"
+                  code={`import { useChannel } from '@/hooks/use-realtime'
+
+useChannel(invoice ? 'private-invoices.' + invoice.id : null, {
+  'invoices.paid': () => refetch(),
+  subscription_error: (p) => console.warn(p.message),
+})`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  Generated resource events still go to{' '}
+                  <code>services.RealtimeAudience</code> by user id, unchanged. To send
+                  one to a channel as well, set{' '}
+                  <code>services.RealtimeChannels</code>, which returns the channel names
+                  an event should also be published on.
+                </p>
+              </section>
+
+              {/* Presence */}
+              <section className="mb-12">
+                <h2 className="text-2xl font-bold text-foreground mb-4">
+                  Presence: who else is here
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  A <code>presence-</code> channel is a private channel that also keeps a
+                  member list. Subscribing gets you a <code>presence.members</code>{' '}
+                  snapshot, and everyone already in the channel gets{' '}
+                  <code>presence.joined</code>; closing the last socket a user holds on
+                  the channel sends <code>presence.left</code>. The list lives in Redis,
+                  keyed per channel and per node, with a TTL the heartbeat refreshes, so a
+                  replica that dies takes its members out of the list within about a
+                  minute rather than leaving ghosts.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  What each member looks like is up to the authorizer. Call{' '}
+                  <code>SetInfo</code> on the context and that object travels with the
+                  member, capped at 1 KB:
+                </p>
+                <CodeBlock
+                  language="go"
+                  filename="internal/routes/routes.go"
+                  code={`realtime.Channel("rooms.{id}", func(c realtime.ChannelContext) bool {
+    user, err := users.ByID(db, c.UserID)
+    if err != nil || !canJoinRoom(db, user.ID, c.Param("id")) {
+        return false
+    }
+    // Shown to the other members. Do not put anything here they may not see.
+    c.SetInfo(map[string]any{"name": user.Name, "avatar": user.AvatarURL})
+    return true
+})`}
+                />
+                <CodeBlock
+                  language="typescript"
+                  filename="apps/web: the member list"
+                  code={`import { usePresence } from '@/hooks/use-realtime'
+
+const members = usePresence<{ name: string }>('presence-rooms.' + room.id)
+// each user once, however many tabs they have open
+return <AvatarStack names={members.map((m) => m.info?.name ?? m.user_id)} />`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  A user appears once however many devices they have open, and the list
+                  empties while the connection is down and refills from a fresh snapshot
+                  when it is back, so a member who left meanwhile is never left on screen.
+                </p>
+              </section>
+
+              {/* Client events */}
+              <section className="mb-12">
+                <h2 className="text-2xl font-bold text-foreground mb-4">
+                  Client events: browser to browser
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Some things are worth telling the other people in a channel and worth
+                  nothing a second later: &quot;Ada is typing&quot;, a cursor position,
+                  &quot;is viewing this invoice&quot;. A client event, or whisper, goes
+                  from one socket to the others through the hub with no REST call and
+                  nothing stored.
+                </p>
+                <CodeBlock
+                  language="typescript"
+                  filename="apps/web: a typing indicator"
+                  code={`import { useChannel, useWhisper } from '@/hooks/use-realtime'
+
+const channel = 'presence-rooms.' + room.id
+const say = useWhisper(channel)
+
+useChannel(channel, {
+  // handle one whisper by name, or "client-event" for all of them
+  'client-event:typing': (p) => setTyping(p.user_id, p.data.typing),
+})
+
+<input onChange={() => say('typing', { typing: true })} />`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  The rules the server applies, in order: only{' '}
+                  <code>private-</code> and <code>presence-</code> channels, because
+                  everyone subscribed to one passed its authorizer; only a channel this
+                  connection is subscribed to; at most ten a second per connection; a
+                  payload under 1 KB; and an event name of 1 to 64 letters, digits or{' '}
+                  <code>_ . : -</code> A whisper never comes back to the connection that
+                  sent it, though the same user&apos;s other tabs do receive it.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  A refusal arrives on the sender&apos;s socket only, as a{' '}
+                  <code>client_event_error</code> with a code:{' '}
+                  <code>INVALID_CHANNEL</code>, <code>PUBLIC_CHANNEL</code>,{' '}
+                  <code>NOT_SUBSCRIBED</code>, <code>INVALID_EVENT</code>,{' '}
+                  <code>PAYLOAD_TOO_LARGE</code> or <code>RATE_LIMITED</code>. The rate
+                  limit answers once per second however many whispers that second drops,
+                  so a runaway loop does not get a reply per message.
+                </p>
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 mt-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    <strong className="text-amber-400">The payload is user input.</strong>{' '}
+                    <code>user_id</code> is filled in by the hub from the
+                    connection&apos;s token, so a receiver can trust who sent a whisper.
+                    Everything else is whatever that browser typed. Never write a whisper
+                    to the database or render it as HTML without escaping, and never use
+                    one to grant anything.
+                  </p>
+                </div>
+              </section>
+
+              {/* Stats */}
+              <section className="mb-12">
+                <h2 className="text-2xl font-bold text-foreground mb-4">
+                  What the hub reports
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  <code>/api/health</code> carries a <code>realtime</code> object, and the
+                  admin&apos;s System Health page shows it as a card. The three counts are
+                  this process&apos;s own, so with several replicas each reports its
+                  share; the counters run from process start, which means a number that
+                  keeps climbing is the signal, not its size.
+                </p>
+                <CodeBlock
+                  language="json"
+                  filename="GET /api/health"
+                  code={`"realtime": {
+  "connections": 412,
+  "users": 310,
+  "channels": 88,
+  "messages_sent": 1904221,
+  "messages_dropped": 17,
+  "client_events": 40233,
+  "client_events_rate_limited": 12,
+  "backplane": true,
+  "backplane_publish_errors": 0
+}`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  <code>messages_dropped</code> climbing steadily means clients cannot
+                  drain their 32 message buffer fast enough: they are not losing data,
+                  since the database is the record and every client resyncs on its next
+                  REST call, but they are seeing stale screens.{' '}
+                  <code>backplane_publish_errors</code> above zero means events are not
+                  reaching the other replicas, which looks to a user like realtime working
+                  for some people and not others.{' '}
+                  <code>client_events_rate_limited</code> rising is usually a client
+                  whispering on every keystroke rather than on a timer.
+                </p>
+              </section>
+
               {/* Who receives an event */}
               <section className="mb-12">
                 <h2 className="text-2xl font-bold text-foreground mb-4">
@@ -388,7 +619,11 @@ func (w *ExportWorker) Handle(ctx context.Context, userID string) error {
                 <CodeBlock
                   language="go"
                   filename="internal/routes/routes.go"
-                  code={`realtimeHub := realtime.NewHub(realtime.WithRedis(cfg.RedisURL, ""))`}
+                  code={`var realtimeOptions []realtime.Option
+if cfg.Modules.Realtime {
+    realtimeOptions = append(realtimeOptions, realtime.WithRedis(cfg.RedisURL, ""))
+}
+realtimeHub := realtime.NewHub(realtimeOptions...)`}
                 />
                 <p className="text-muted-foreground leading-relaxed mt-4">
                   <code>WithRedis</code> is a no-op on an empty URL, so a project with no

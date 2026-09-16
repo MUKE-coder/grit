@@ -320,12 +320,7 @@ func (h *Hub) publishPresence(channel, kind string, payload interface{}, except 
 		if c == except {
 			continue
 		}
-		select {
-		case c.Send <- bytes:
-		default:
-			log.Printf("[realtime] dropping a %s message for slow client user=%s", kind, c.UserID)
-		}
-	}
+` + presencePublishSendNew + `	}
 	h.mu.RUnlock()
 	h.publish(fanout{Channel: channel, Event: bytes})
 }

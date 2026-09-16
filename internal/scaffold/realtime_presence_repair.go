@@ -84,7 +84,9 @@ func repairRealtimePresence(root string, opts Options) error {
 			return err
 		}
 	}
-	if err := addFile(filepath.Join(realtimeDir, "presence.go"), apiRealtimePresenceGo()); err != nil {
+	// As v3.277.0 wrote it: repairRealtimeWhispers counts its sends, and only
+	// beside a hub that has the counters.
+	if err := addFile(filepath.Join(realtimeDir, "presence.go"), revertRealtimeHunks(apiRealtimePresenceGo(), realtimePresenceWhisperHunks)); err != nil {
 		return err
 	}
 	return addFile(filepath.Join(realtimeDir, "presence_test.go"), apiRealtimePresenceTestGo())
