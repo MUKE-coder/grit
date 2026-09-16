@@ -674,26 +674,20 @@ export function Sidebar({ user, collapsed, mobileOpen, onMobileClose }: SidebarP
 `
 }
 
-// adminPageHeader returns a consistent <PageHeader /> component used by every
-// dashboard page (including generated resource pages). Structure:
-//   - Breadcrumbs (optional)
-//   - Title + Description + Actions row
-//   - 4-card stats grid (optional)
+// adminStatCards is components/chrome/StatCards.tsx: the stat cards a page
+// header shows under its title row.
 //
-// Follows GRIT_STYLE_GUIDE §7.8.
-func adminPageHeader() string {
+// They were part of a second page header, components/layout/page-header.tsx,
+// which only resource-page.tsx used while 21 other pages used
+// components/chrome/PageHeader.tsx (contact-app review M44). The cards moved
+// here, PageHeader gained a stats prop, and the second header is gone.
+func adminStatCards() string {
 	return `"use client";
 
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { resourceKeys } from "@/hooks/use-resource";
 import { getIcon, TrendingUp, TrendingDown } from "@/lib/icons";
-
-export interface BreadcrumbItem {
-  label: string;
-  href?: string;
-}
 
 export interface StatCard {
   label: string;
@@ -710,14 +704,6 @@ export interface StatCard {
   loading?: boolean;
 }
 
-export interface PageHeaderProps {
-  title: string;
-  description?: string;
-  breadcrumbs?: BreadcrumbItem[];
-  actions?: React.ReactNode;
-  stats?: StatCard[];
-}
-
 const colorClasses: Record<string, { bg: string; text: string }> = {
   default: { bg: "bg-accent/10", text: "text-accent" },
   success: { bg: "bg-success/10", text: "text-success" },
@@ -727,8 +713,11 @@ const colorClasses: Record<string, { bg: string; text: string }> = {
 };
 
 // Reads a dotted path from an object. e.g. getPath(data, "meta.total") → data.meta.total
-function getPath(obj: any, path: string): any {
-  return path.split(".").reduce((acc, key) => (acc == null ? acc : acc[key]), obj);
+function getPath(obj: unknown, path: string): unknown {
+  return path.split(".").reduce<unknown>(
+    (acc, key) => (acc == null ? acc : (acc as Record<string, unknown>)[key]),
+    obj,
+  );
 }
 
 function StatCardItem({ stat }: { stat: StatCard }) {
@@ -753,7 +742,7 @@ function StatCardItem({ stat }: { stat: StatCard }) {
     stat.value !== undefined
       ? stat.value
       : stat.endpoint && stat.field
-      ? getPath(data, stat.field) ?? "—"
+      ? (getPath(data, stat.field) as string | number | undefined) ?? "—"
       : "—";
 
   return (
@@ -797,54 +786,13 @@ function StatCardItem({ stat }: { stat: StatCard }) {
   );
 }
 
-export function PageHeader({ title, description, breadcrumbs, actions, stats }: PageHeaderProps) {
+/** The row of stat cards under a page header. */
+export function StatCards({ stats }: { stats: StatCard[] }) {
   return (
-    <div className="mb-8">
-      {/* v3.31.8: Header row (breadcrumbs + title + actions) is sticky to
-          the top of the scrollable main area with a backdrop-blur background
-          and a bottom border so long tables/forms scroll behind it. The
-          stats grid stays in normal flow below — it's content, not chrome. */}
-      <div className="sticky top-0 z-20 -mx-4 border-b border-border bg-bg-primary/90 backdrop-blur supports-[backdrop-filter]:bg-bg-primary/75 md:-mx-8">
-        <div className="px-4 py-4 md:px-8">
-          {breadcrumbs && breadcrumbs.length > 0 && (
-            <nav className="mb-3 flex items-center gap-1.5 text-xs">
-              {breadcrumbs.map((crumb, i) => (
-                <span key={i} className="flex items-center gap-1.5">
-                  {i > 0 && <span className="text-text-muted">/</span>}
-                  {crumb.href && i < breadcrumbs.length - 1 ? (
-                    <Link
-                      href={crumb.href}
-                      className="text-text-secondary hover:text-foreground transition-colors"
-                    >
-                      {crumb.label}
-                    </Link>
-                  ) : (
-                    <span className="text-foreground font-medium">{crumb.label}</span>
-                  )}
-                </span>
-              ))}
-            </nav>
-          )}
-
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-bold text-foreground tracking-tight truncate">{title}</h1>
-              {description && (
-                <p className="mt-1 text-sm text-text-secondary line-clamp-2">{description}</p>
-              )}
-            </div>
-            {actions && <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">{actions}</div>}
-          </div>
-        </div>
-      </div>
-
-      {stats && stats.length > 0 && (
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat, i) => (
-            <StatCardItem key={i} stat={stat} />
-          ))}
-        </div>
-      )}
+    <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {stats.map((stat, i) => (
+        <StatCardItem key={i} stat={stat} />
+      ))}
     </div>
   );
 }

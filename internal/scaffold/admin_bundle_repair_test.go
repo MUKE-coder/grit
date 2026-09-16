@@ -59,7 +59,7 @@ func TestFormsLoadTheEditorAndFormStackOnDemand(t *testing.T) {
 	}{
 		{"form builder", adminFormBuilder(), `import { RichTextField } from`, `import("./fields/rich-text-field")`},
 		{"resource detail page", adminResourceDetailPage(), `import { FormSheet } from`, `import("@/components/forms/form-sheet")`},
-		{"blog editor page", adminBlogDetailPage(), `import { WordEditor } from`, `import("@/components/forms/word-editor")`},
+		{"blog editor page", legacyAdminBlogDetailPage(), `import { WordEditor } from`, `import("@/components/forms/word-editor")`},
 	}
 	for _, c := range cases {
 		if strings.Contains(c.src, c.static) {
@@ -79,14 +79,14 @@ func TestFormsLoadTheEditorAndFormStackOnDemand(t *testing.T) {
 		}
 	}
 	if !strings.Contains(adminFormBuilder(), "{ ssr: false, loading: RichTextPlaceholder }") ||
-		!strings.Contains(adminBlogDetailPage(), "{ ssr: false, loading: EditorPlaceholder }") {
+		!strings.Contains(legacyAdminBlogDetailPage(), "{ ssr: false, loading: EditorPlaceholder }") {
 		t.Error("the editors must not render on the server: Tiptap's DOM never matches React's")
 	}
 }
 
 // oldBlogEditorPage is the blog editor page as Grit wrote it before M25.
 func oldBlogEditorPage() string {
-	src := adminBlogDetailPage()
+	src := legacyAdminBlogDetailPage()
 	src = strings.Replace(src, blogEditorNewReactImport, blogEditorOldReactImport, 1)
 	src = strings.Replace(src, `import { PageHeader } from "@/components/chrome/PageHeader";
 `, `import { PageHeader } from "@/components/chrome/PageHeader";
@@ -105,7 +105,7 @@ func TestRepairBlogEditorProducesTheTemplate(t *testing.T) {
 	if len(fixed) != 1 || len(warn) != 0 {
 		t.Fatalf("not repaired: %v %v", fixed, warn)
 	}
-	if out != adminBlogDetailPage() {
+	if out != legacyAdminBlogDetailPage() {
 		t.Errorf("the repaired page is not the template:\n%s", out)
 	}
 	if again, fixed, _ := repairBlogEditorSource(out, triple); again != out || len(fixed) != 0 {
@@ -116,7 +116,7 @@ func TestRepairBlogEditorProducesTheTemplate(t *testing.T) {
 	double := adminPanelShape{alias: "@admin"}
 	embeddedOld := embedAdminContent(old, adminRoutePrefixes)
 	out, fixed, warn = repairBlogEditorSource(embeddedOld, double)
-	if len(fixed) != 1 || len(warn) != 0 || out != embedAdminContent(adminBlogDetailPage(), adminRoutePrefixes) {
+	if len(fixed) != 1 || len(warn) != 0 || out != embedAdminContent(legacyAdminBlogDetailPage(), adminRoutePrefixes) {
 		t.Errorf("the embedded page was not repaired to its template (%v %v):\n%s", fixed, warn, out)
 	}
 

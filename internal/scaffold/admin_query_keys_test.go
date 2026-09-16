@@ -111,7 +111,7 @@ func TestTreeAndStatCardsKeyUnderTheEndpoint(t *testing.T) {
 		!strings.Contains(tree, "resourceKeys.all(resource.endpoint)") {
 		t.Error("the tree view does not key through resourceKeys")
 	}
-	if !strings.Contains(adminPageHeader(), "queryKey: [...resourceKeys.stats(baseEndpoint), stat.endpoint, stat.field]") {
+	if !strings.Contains(adminStatCards(), "queryKey: [...resourceKeys.stats(baseEndpoint), stat.endpoint, stat.field]") {
 		t.Error("PageHeader's stat cards do not key through resourceKeys")
 	}
 }

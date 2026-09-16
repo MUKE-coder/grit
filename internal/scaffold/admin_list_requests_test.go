@@ -36,10 +36,11 @@ func TestResourceListAsksOncePerSearchAndKeepsRows(t *testing.T) {
 		t.Errorf("create and delete should refresh every view of the resource; found %d", n)
 	}
 
-	controller := adminUseResourceController()
+	// The debounce lives in the URL state hook the controller is built from.
+	controller := adminUseResourceController() + adminUseResourceURLState()
 	for _, want := range []string{
 		"useDebouncedValue(search, 300)",
-		"search: debouncedSearch,",
+		"search: url.debouncedSearch,",
 		"counts: statsEnabled && !customStatCards ? DEFAULT_STAT_COUNTS : undefined,",
 		"isFetching: isFetching && !isLoading,",
 	} {
@@ -54,7 +55,7 @@ func TestResourceListAsksOncePerSearchAndKeepsRows(t *testing.T) {
 	if !strings.Contains(adminDataTable(), "{isFetching && (") {
 		t.Error("the table has no refetch indicator, so a slow search looks like nothing happened")
 	}
-	if !strings.Contains(adminPageHeader(), "|| stat.loading ?") {
+	if !strings.Contains(adminStatCards(), "|| stat.loading ?") {
 		t.Error("a stat card with a static value has no loading state")
 	}
 }

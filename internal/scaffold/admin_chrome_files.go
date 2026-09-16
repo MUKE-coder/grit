@@ -213,19 +213,15 @@ export function UserMenu() {
 // notifications page all read.
 func adminUseNotifications() string {
 	return `import { useQuery } from "@tanstack/react-query";
+import type { Notification as NotificationRow } from "@repo/shared/types";
 import { apiClient } from "@/lib/api-client";
 
-export interface Notification {
-  id: string;
+// The row is the model's, from grit sync, with the two strings that are really
+// enums narrowed so the bell can switch on them.
+export type Notification = Omit<NotificationRow, "source" | "severity"> & {
   source: "sentinel" | "pulse" | "system";
   severity: "critical" | "high" | "medium" | "low" | "info";
-  title: string;
-  body: string;
-  link: string;
-  count: number;
-  read_at: string | null;
-  created_at: string;
-}
+};
 
 export interface NotificationList {
   data: Notification[];
@@ -446,6 +442,7 @@ import { RefreshCw, Search, ArrowLeft } from "@/lib/icons";
 import { DarkModeToggle } from "./DarkModeToggle";
 import { UserMenu } from "./UserMenu";
 import { NotificationBell } from "./NotificationBell";
+import { StatCards, type StatCard } from "./StatCards";
 import { inputClasses } from "@/components/ui/input";
 
 interface PageHeaderProps {
@@ -469,6 +466,8 @@ interface PageHeaderProps {
   backHref?: string | null;
   /** Label for the back link. Defaults to "Back to System Hub". */
   backLabel?: string;
+  /** Stat cards shown under the header, e.g. a resource page's totals. */
+  stats?: StatCard[];
 }
 
 /**
@@ -489,6 +488,7 @@ export function PageHeader({
   hideRefresh,
   backHref,
   backLabel,
+  stats,
 }: PageHeaderProps) {
   const queryClient = useQueryClient();
   const pathname = usePathname();
@@ -521,11 +521,12 @@ export function PageHeader({
   };
 
   return (
-    // v3.31.6: PageHeader is now sticky — pinned to the top of the
-    // scrollable main area with a solid background + bottom border so
-    // long page content scrolls behind it. -mx-4 md:-mx-8 cancels the
-    // main's px-* padding so the bg + border stretch to the edges, and
-    // px-* inside brings the content back inside the original gutter.
+    <>
+    {/* v3.31.6: PageHeader is now sticky, pinned to the top of the
+        scrollable main area with a solid background + bottom border so
+        long page content scrolls behind it. -mx-4 md:-mx-8 cancels the
+        main's px-* padding so the bg + border stretch to the edges, and
+        px-* inside brings the content back inside the original gutter. */}
     <header className="sticky top-0 z-20 -mx-4 mb-6 border-b border-border bg-bg-primary/90 backdrop-blur supports-[backdrop-filter]:bg-bg-primary/75 md:-mx-8">
       <div className="flex flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-8">
         {/* Title block — min-w-0 + flex-shrink lets the title wrap
@@ -578,6 +579,9 @@ export function PageHeader({
         </div>
       </div>
     </header>
+    {/* The cards are content, not chrome: they scroll away under the header. */}
+    {stats && stats.length > 0 && <StatCards stats={stats} />}
+    </>
   );
 }
 `

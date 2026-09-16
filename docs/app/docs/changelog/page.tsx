@@ -66,6 +66,67 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.286.0 */}
+            <div className="mb-12" id="v3.286.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.286.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Tiptap 3, one editor that keeps your formatting, a paginated blog admin, and shared types for built-in models</h3>
+                <p>
+                  <strong>Tiptap 3, and the security advisory is gone.</strong> The admin moves from Tiptap 2.27.3 to
+                  3.31.3, clearing GHSA-cp6q-959q-f8rh (prototype pollution through <code>mergeAttributes()</code>), so
+                  <code>pnpm audit</code> on a new project goes from 8 advisories to 7, and the 7 left are all development
+                  tooling. Every Tiptap package is pinned to exactly the same version, because each one requires its
+                  siblings at that version and a range could install two copies of the core. The package list shrinks from
+                  15 to 10, since Link and Underline are now part of StarterKit and the table parts part of TableKit.
+                </p>
+                <p>
+                  <strong>One editor, one content schema.</strong> The form field and the blog editor each built their own
+                  list of extensions: the field knew 13 kinds of content and the blog editor 22. Saving a post from the
+                  field silently dropped 9 of them, including tables, text colour, highlight, underline, images and
+                  alignment; a test post went from 954 bytes of HTML to 440. Both now use
+                  <code>lib/tiptap-extensions.ts</code>, and a test in every new project loads and saves a post with every
+                  kind of formatting and checks nothing is lost.
+                </p>
+                <p>
+                  <strong>The blog admin runs on its resource definition.</strong> The list was a hand-written page that
+                  fetched one page of 100 posts, so post 101 could not be reached, and the columns, filters, bulk actions and
+                  export declared in <code>blogs.ts</code> did nothing. It is now <code>ResourcePage</code>, 20 posts a page
+                  with all of those working, the detail page is <code>ResourceDetailPage</code>, and posts are written on a
+                  full form page.
+                </p>
+                <p>
+                  <strong>Shared types for the built-in models.</strong> New projects had no shared types for API keys, form
+                  shares, form submissions, notifications, SSO connections, tickets and ticket replies until
+                  <code>grit sync</code> first ran, so pages declared their own copies that drifted. New projects ship them,
+                  byte for byte what <code>grit sync</code> writes, along with the profile page&apos;s Zod schemas, and the
+                  support pages, ticket thread and notification hook import them.
+                </p>
+                <p>
+                  <strong>One page header and a smaller resource controller.</strong> The admin had two page headers, one
+                  used only by the resource page; the stat cards moved into <code>components/chrome/StatCards.tsx</code> and
+                  the second header is gone. The 759-line resource controller with 19 pieces of state is now 583 lines with
+                  1, built from three focused hooks, and returns exactly what it did before.
+                </p>
+                <p>
+                  <strong>A version conflict names the current version as a number again.</strong> v3.285.0 changed the
+                  409 for a stale <code>If-Match</code> write to send <code>&quot;current_version&quot;: &quot;2&quot;</code>
+                  instead of <code>2</code>, which broke any client comparing it with the version it holds. It is a number
+                  again, as it was through v3.284.0, and a test in every new project checks the shape.
+                </p>
+                <p>
+                  <code>grit upgrade</code> adds the shared type files without overwriting existing ones, replaces the blog
+                  pages and removes the old header when they are unedited, and raises the Tiptap versions in any app whose
+                  editor has moved onto the shared extension list. An edited file gets a message saying what to change.
+                </p>
+              </div>
+            </div>
+
             {/* v3.285.0 */}
             <div className="mb-12" id="v3.285.0">
               <div className="flex items-center gap-3 mb-4">
