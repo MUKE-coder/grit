@@ -1,4 +1,13 @@
 {
   "$schema": "./testimonials.schema.json",
-  "approved": []
+  "approved": [
+    {
+      "quote": "Grit makes my work easier and faster",
+      "name": "Obi Anthony Uchenna",
+      "role": "CEO, Megagig Software Solution LTD",
+      "photo": "/testimonials/obi-anthony-uchenna.jpg",
+      "link": "https://www.linkedin.com/in/obi-anthony/",
+      "source": "https://github.com/MUKE-coder/grit/issues/88"
+    }
+  ]
 }

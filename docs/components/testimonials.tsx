@@ -32,7 +32,15 @@ export function Testimonials() {
             </p>
           </div>
 
-          <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <ul
+            className={
+              TESTIMONIALS.length === 1
+                ? 'mx-auto mt-12 grid max-w-md gap-5'
+                : TESTIMONIALS.length === 2
+                  ? 'mx-auto mt-12 grid max-w-3xl gap-5 sm:grid-cols-2'
+                  : 'mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3'
+            }
+          >
             {TESTIMONIALS.map((t) => (
               <li
                 key={t.name + t.quote.slice(0, 24)}
