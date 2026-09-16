@@ -16,10 +16,9 @@ func adminAPIKeysPage() string {
 	return `"use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
-import { apiClient } from "@/lib/api-client";
+import { useAPIKeys, useCreateAPIKey, useRevokeAPIKey } from "@/hooks/use-api-keys";
 import { toast } from "sonner";
 import { KeyRound, Plus, Copy, Check, Loader2, Trash2, AlertTriangle } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
@@ -133,7 +132,6 @@ function RevealPanel({ token, onDone }: { token: string; onDone: () => void }) {
 }
 
 export default function APIKeysPage() {
-  const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [kind, setKind] = useState<"publishable" | "secret">("publishable");
   const [endpoints, setEndpoints] = useState("");
@@ -143,54 +141,37 @@ export default function APIKeysPage() {
   const [token, setToken] = useState<string | null>(null);
   const [pendingRevoke, setPendingRevoke] = useState<APIKey | null>(null);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["api-keys"],
-    queryFn: async () => {
-      const { data: res } = await apiClient.get("/api/api-keys");
-      return (res.data ?? []) as APIKey[];
-    },
-  });
+  // The requests, their query keys and their invalidation are in
+  // hooks/use-api-keys.ts. What is left here is the form and the reveal panel.
+  const { data, isLoading } = useAPIKeys();
+  const create = useCreateAPIKey();
+  const revoke = useRevokeAPIKey();
 
-  const create = useMutation({
-    mutationFn: async () => {
-      const body: Record<string, unknown> = { name: name.trim(), kind };
-      if (lines(endpoints).length) body.endpoints = lines(endpoints);
-      if (lines(origins).length) body.origins = lines(origins);
-      const rpm = parseInt(rateLimit, 10);
-      if (!Number.isNaN(rpm) && rpm > 0) body.rate_limit = rpm;
-      const days = parseInt(expiresIn, 10);
-      if (!Number.isNaN(days) && days > 0) body.expires_in_days = days;
-      const { data: res } = await apiClient.post("/api/api-keys", body);
-      return res.data as { token: string };
-    },
-    onSuccess: (d) => {
-      // Only a secret key gets the one-time reveal. A publishable key is
-      // readable from the table forever, so putting it behind a "save this now
-      // or lose it" panel would teach the wrong lesson about what it is.
-      if (kind === "secret") setToken(d.token);
-      else toast.success("Publishable key created. It stays readable below.");
-      setName("");
-      setEndpoints("");
-      setOrigins("");
-      setRateLimit("");
-      setExpiresIn("");
-      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
-    },
-    onError: () => toast.error("Could not create the key."),
-  });
+  const submit = () => {
+    const body: Record<string, unknown> = { name: name.trim(), kind };
+    if (lines(endpoints).length) body.endpoints = lines(endpoints);
+    if (lines(origins).length) body.origins = lines(origins);
+    const rpm = parseInt(rateLimit, 10);
+    if (!Number.isNaN(rpm) && rpm > 0) body.rate_limit = rpm;
+    const days = parseInt(expiresIn, 10);
+    if (!Number.isNaN(days) && days > 0) body.expires_in_days = days;
+    create.mutate(body, {
+      onSuccess: (d) => {
+        // Only a secret key gets the one-time reveal. A publishable key is
+        // readable from the table forever, so putting it behind a "save this
+        // now or lose it" panel would teach the wrong lesson about what it is.
+        if (kind === "secret") setToken(d.token);
+        else toast.success("Publishable key created. It stays readable below.");
+        setName("");
+        setEndpoints("");
+        setOrigins("");
+        setRateLimit("");
+        setExpiresIn("");
+      },
+    });
+  };
 
-  const revoke = useMutation({
-    mutationFn: async (id: string) => {
-      await apiClient.delete("/api/api-keys/" + id);
-    },
-    onSuccess: () => {
-      toast.success("Key revoked. Requests using it will now be refused.");
-      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
-    },
-    onError: () => toast.error("Could not revoke the key."),
-  });
-
-  const keys = data ?? [];
+  const keys = (data ?? []) as APIKey[];
 
   return (
     <div>
@@ -328,7 +309,7 @@ export default function APIKeysPage() {
 
           <div className="mt-4">
             <Button
-              onClick={() => create.mutate()}
+              onClick={submit}
               disabled={!name.trim()}
               loading={create.isPending}
             >

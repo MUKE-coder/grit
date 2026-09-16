@@ -13,11 +13,16 @@ func adminSSOPage() string {
 	src := `"use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { ResponsiveSheet } from "@/components/ui/ResponsiveSheet";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
-import { apiClient } from "@/lib/api-client";
+import {
+  useSSOConnections,
+  useSaveSSOConnection,
+  useDeleteSSOConnection,
+  useTestSSOConnection,
+} from "@/hooks/use-sso";
+import { apiUrl, getApiErrorMessage } from "@/lib/api-core";
 import { toast } from "sonner";
 import { ShieldCheck, Plus, Trash2, Loader2, Check, AlertTriangle, Copy } from "@/lib/icons";
 import { buttonClasses } from "@/components/ui/button";
@@ -72,50 +77,35 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 export default function SSOPage() {
-  const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Connection | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Connection | null>(null);
   const [testing, setTesting] = useState<string | null>(null);
   const [form, setForm] = useState({ ...BLANK });
 
-  const listQ = useQuery({
-    queryKey: ["sso-connections"],
-    queryFn: async () => {
-      const { data } = await apiClient.get("/api/sso/connections");
-      return { rows: (data.data ?? []) as Connection[], live: data.meta?.live ?? 0 };
-    },
-  });
+  // The five requests this screen makes are in hooks/use-sso.ts, with their
+  // query key and their invalidation. The page keeps the form and the sheet.
+  const listQ = useSSOConnections<Connection>();
+  const saveM = useSaveSSOConnection();
+  const deleteM = useDeleteSSOConnection();
+  const testM = useTestSSOConnection();
 
-  const saveM = useMutation({
-    mutationFn: async () => {
-      if (editing) {
-        const { data } = await apiClient.put("/api/sso/connections/" + editing.id, form);
-        return data;
+  const save = () => {
+    const wasEditing = editing;
+    saveM.mutate(
+      { id: editing?.id, body: form },
+      {
+        onSuccess: () => {
+          setOpen(false);
+          setEditing(null);
+          setForm({ ...BLANK });
+          toast.success(wasEditing ? "Connection updated" : "Connection created");
+        },
+        onError: (e: unknown) =>
+          toast.error(getApiErrorMessage(e, "Could not save the connection")),
       }
-      const { data } = await apiClient.post("/api/sso/connections", form);
-      return data;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sso-connections"] });
-      setOpen(false);
-      setEditing(null);
-      setForm({ ...BLANK });
-      toast.success(editing ? "Connection updated" : "Connection created");
-    },
-    onError: (e: unknown) => {
-      const err = e as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(err?.response?.data?.error?.message || "Could not save the connection");
-    },
-  });
-
-  const deleteM = useMutation({
-    mutationFn: async (id: string) => apiClient.delete("/api/sso/connections/" + id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sso-connections"] });
-      toast.success("Connection deleted");
-    },
-  });
+    );
+  };
 
   const rows = listQ.data?.rows ?? [];
 
@@ -126,9 +116,9 @@ export default function SSOPage() {
   const testConnection = async (c: Connection) => {
     setTesting(c.id);
     try {
-      const { data } = await apiClient.get("/api/sso/connections/" + c.id + "/test");
-      const ok = data?.data?.ok;
-      toast[ok ? "success" : "error"](data?.data?.message ?? (ok ? "Connection is live." : "Not live."));
+      const result = await testM.mutateAsync(c.id);
+      const ok = result?.ok;
+      toast[ok ? "success" : "error"](result?.message ?? (ok ? "Connection is live." : "Not live."));
     } catch {
       toast.error("Could not reach the API to run the test.");
     } finally {
@@ -162,18 +152,21 @@ export default function SSOPage() {
   // SAML needs two URLs on the IdP side (where to POST the assertion, and
   // where to fetch our metadata); OIDC needs one redirect URI.
   const copyCallback = (c: Connection) => {
-    const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    // Through apiUrl, so what an admin pastes into their IdP carries the API
+    // version. Assembled by hand these were unversioned, which worked only
+    // because of the transitional alias, and an IdP configuration outlives
+    // that alias by years.
     if ((c.protocol || "oidc") === "saml") {
       navigator.clipboard?.writeText(
         [
-          "ACS URL: " + api + "/api/auth/saml/" + c.slug + "/acs",
-          "SP metadata: " + api + "/api/auth/saml/" + c.slug + "/metadata",
+          "ACS URL: " + apiUrl("/api/auth/saml/" + c.slug + "/acs"),
+          "SP metadata: " + apiUrl("/api/auth/saml/" + c.slug + "/metadata"),
         ].join("\n")
       );
       toast.success("ACS + metadata URLs copied — give these to the IdP admin");
       return;
     }
-    navigator.clipboard?.writeText(api + "/api/auth/sso/" + c.slug + "/callback");
+    navigator.clipboard?.writeText(apiUrl("/api/auth/sso/" + c.slug + "/callback"));
     toast.success("Callback URL copied — paste it into the provider");
   };
 
@@ -279,7 +272,11 @@ export default function SSOPage() {
         loading={deleteM.isPending}
         onCancel={() => setPendingDelete(null)}
         onConfirm={() => {
-          if (pendingDelete) deleteM.mutate(pendingDelete.id);
+          if (pendingDelete) {
+            deleteM.mutate(pendingDelete.id, {
+              onSuccess: () => toast.success("Connection deleted"),
+            });
+          }
           setPendingDelete(null);
         }}
       />
@@ -296,7 +293,7 @@ export default function SSOPage() {
               Cancel
             </button>
             <button
-              onClick={() => saveM.mutate()}
+              onClick={save}
               disabled={saveM.isPending}
               className={buttonClasses()}
             >

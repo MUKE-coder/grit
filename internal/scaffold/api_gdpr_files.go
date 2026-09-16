@@ -260,13 +260,13 @@ func apiGDPRHandlerGo() string {
 
 import (
 	"errors"
-	"log"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/authz"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/services"
@@ -285,9 +285,8 @@ func NewGDPRHandler(db *gorm.DB) *GDPRHandler {
 // A user may export their own data; an admin may export anyone's.
 func (h *GDPRHandler) Export(c *gin.Context) {
 	targetID := c.Param("id")
-	callerID, _ := c.Get("user_id")
 	callerRole, _ := c.Get("user_role")
-	if fmt.Sprint(callerID) != targetID && fmt.Sprint(callerRole) != models.RoleAdmin {
+	if authz.CurrentUserID(c) != targetID && fmt.Sprint(callerRole) != models.RoleAdmin {
 		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{"code": "FORBIDDEN", "message": "you may only export your own data"}})
 		return
 	}
@@ -307,7 +306,12 @@ func (h *GDPRHandler) Export(c *gin.Context) {
 }
 
 type EraseRequest struct {
-	Reason string ~json:"reason"~
+	// Required, not optional. An erasure is irreversible and its journal row is
+	// what an auditor reads a year later; an empty reason tells them nothing
+	// about why a person's data was destroyed. The previous handler ignored the
+	// bind error, so a request with no body at all, or with the field
+	// misspelled, erased an account and recorded no reason for it.
+	Reason string ~json:"reason" binding:"required,min=3,max=500"~
 }
 
 // Erase fulfils a right-to-erasure request (admin only). It refuses to let an
@@ -315,18 +319,23 @@ type EraseRequest struct {
 // orphan the operation.
 func (h *GDPRHandler) Erase(c *gin.Context) {
 	targetID := c.Param("id")
-	callerID, _ := c.Get("user_id")
+	callerID := authz.CurrentUserID(c)
 	callerEmail, _ := c.Get("user_email")
 
-	if fmt.Sprint(callerID) == targetID {
+	if callerID == targetID {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "SELF_ERASE", "message": "you cannot erase your own account here"}})
 		return
 	}
 
 	var req EraseRequest
-	_ = c.ShouldBindJSON(&req)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Validation(c, "A reason is required for an erasure", map[string]string{
+			"reason": "Give the compliance reason for this erasure (3 to 500 characters). It is written to the deletion journal.",
+		})
+		return
+	}
 
-	journal, err := services.EraseUser(h.DB, targetID, fmt.Sprint(callerID), fmt.Sprint(callerEmail), req.Reason)
+	journal, err := services.EraseUser(h.DB, targetID, callerID, fmt.Sprint(callerEmail), req.Reason)
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code": "NOT_FOUND", "message": "user not found"}})
@@ -338,19 +347,31 @@ func (h *GDPRHandler) Erase(c *gin.Context) {
 
 	// Record the erasure in the semantic activity log too, so it shows up in the
 	// dashboard and flows out through the OCSF/SIEM export.
-	// The erasure itself succeeded; a missing activity row is logged loudly,
-	// because this is the record an auditor will ask for.
-	if err := h.DB.WithContext(c.Request.Context()).Create(&models.UserActivity{
-		UserID:       fmt.Sprint(callerID),
+	//
+	// LogActivityErr rather than a bare Create: the erasure itself has already
+	// happened, so a lost audit row must not fail the request, but it is the
+	// record an auditor asks for. The response says so rather than reporting a
+	// clean erasure that left no trace.
+	activityLogged := true
+	if err := services.LogActivityErr(h.DB, c, services.ActivityArgs{
+		UserID:       callerID,
 		Action:       "user.gdpr_erase",
 		Severity:     "warn",
 		Summary:      fmt.Sprintf("Erased all personal data for user %s (%d records)", targetID, journal.RecordsAffected),
 		ResourceType: "user",
 		ResourceID:   targetID,
-	}).Error; err != nil {
-		log.Printf("gdpr: user %s was erased, but the activity row was not written: %v", targetID, err)
+	}); err != nil {
+		activityLogged = false
 	}
 
+	if !activityLogged {
+		c.JSON(http.StatusOK, gin.H{
+			"data":    journal,
+			"message": "User data erased, but the activity row could not be written",
+			"meta":    gin.H{"activity_logged": false},
+		})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"data": journal, "message": "User data erased"})
 }
 
@@ -805,12 +826,14 @@ export default function GDPRPage() {
               <input
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="reason (recorded in the journal)"
+                placeholder="reason (required, recorded in the journal)"
                 className="min-w-[280px] flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               />
+              {/* The API refuses an erasure with no reason (422). The button is
+                  disabled to say so before the request rather than after it. */}
               <button
                 type="button"
-                disabled={eraseM.isPending}
+                disabled={eraseM.isPending || reason.trim().length < 3}
                 onClick={() => eraseM.mutate()}
                 className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600 disabled:opacity-40"
               >

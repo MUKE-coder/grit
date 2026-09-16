@@ -11,6 +11,7 @@ func webThemedLoginPage() string {
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/api-core";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { setWebSessionMarker } from "@/lib/web-session";
 
@@ -47,8 +48,7 @@ function LoginForm() {
       const next = searchParams?.get("next");
       router.push(next && next.startsWith("/") ? next : "/");
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      setError(msg || "Invalid email or password");
+      setError(getApiErrorMessage(err, "Invalid email or password"));
     } finally {
       setLoading(false);
     }
@@ -134,6 +134,7 @@ func webThemedRegisterPage() string {
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/api-core";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { setWebSessionMarker } from "@/lib/web-session";
 
@@ -165,8 +166,7 @@ export default function RegisterPage() {
       setWebSessionMarker();
       router.push("/");
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      setError(msg || "Registration failed");
+      setError(getApiErrorMessage(err, "Registration failed"));
     } finally {
       setLoading(false);
     }
@@ -266,6 +266,7 @@ func webThemedResetPasswordPage() string {
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/api-core";
 import { AuthShell } from "@/components/auth/AuthShell";
 
 const inputBase =
@@ -301,8 +302,7 @@ function ResetPasswordForm() {
       // The reset signed every device out, so there is nowhere to go but login.
       setTimeout(() => router.push("/login"), 2500);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      setError(msg || "Something went wrong. Please try again.");
+      setError(getApiErrorMessage(err, "Something went wrong. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -405,6 +405,7 @@ func webThemedForgotPasswordPage() string {
 
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/api-core";
 import { AuthShell } from "@/components/auth/AuthShell";
 
 const inputBase =
@@ -425,8 +426,7 @@ export default function ForgotPasswordPage() {
       await api.post("/api/auth/forgot-password", { email });
       setSubmitted(true);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      setError(msg || "Something went wrong. Please try again.");
+      setError(getApiErrorMessage(err, "Something went wrong. Please try again."));
     } finally {
       setLoading(false);
     }

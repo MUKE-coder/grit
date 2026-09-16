@@ -224,12 +224,16 @@ func loadProject(root string) (*project, error) {
 	// framework tables as possibly-owned, including a project with no resources
 	// of its own at all.
 	//
-	// Every generated resource declares a bulk request and a list config, and no
-	// built-in declares either.
+	// Every generated resource declares a bulk request, and no built-in does. The
+	// generator has written one since v3.142.0, before it wrote list configs, so
+	// the bulk request alone finds every generated resource. A list config is no
+	// longer a mark of the generator: since v3.282.0 the built-in users and
+	// ticket lists use paginate too, and counting them made every fresh project
+	// report User and Ticket as resources it had to fix.
 	for name := range p.models {
 		snake := p.snake[name]
 		code := p.handlers[snake] + p.services[snake]
-		if !strings.Contains(code, "Bulk"+name+"Request") && !strings.Contains(code, lowerFirst(name)+"ListConfig") {
+		if !strings.Contains(code, "Bulk"+name+"Request") {
 			continue
 		}
 		p.resources = append(p.resources, name)

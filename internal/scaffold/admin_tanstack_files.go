@@ -74,6 +74,14 @@ func nextToTanStack(code string) string {
 // so the prefix has to change as well as the accessor.
 var nextPublicEnvPattern = regexp.MustCompile(`process\.env\.NEXT_PUBLIC_([A-Z0-9_]+)`)
 
+// adminTanStackAPICore adapts lib/api-core.ts for Vite: it is the same module
+// the Next.js admin gets, with the one Next-only expression in it rewritten.
+func adminTanStackAPICore() string {
+	return strings.ReplaceAll(apiCoreTS(),
+		`process.env.NEXT_PUBLIC_API_URL`,
+		`(import.meta as any).env?.VITE_API_URL`)
+}
+
 // adminTanStackAPIClient adapts the shared Next.js admin api-client for Vite:
 //   - process.env.NEXT_PUBLIC_API_URL → import.meta.env.VITE_API_URL (Vite has no
 //     process.env at build or runtime).
@@ -373,6 +381,7 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "form-shares.tsx"):       adminTanStackPageRoute("/_dashboard/system/form-shares", "@/pages/system/form-shares"),
 
 		// Lib (same as Next.js versions)
+		filepath.Join(adminRoot, "src", "lib", "api-core.ts"):     adminTanStackAPICore(),
 		filepath.Join(adminRoot, "src", "lib", "api-client.ts"):   adminTanStackAPIClient(),
 		filepath.Join(adminRoot, "src", "lib", "query-client.ts"): adminQueryClient(),
 		filepath.Join(adminRoot, "src", "lib", "utils.ts"):        adminUtils(),
@@ -396,6 +405,10 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "hooks", "use-resource-controller.ts"):        nextToTanStack(adminUseResourceController()),
 		filepath.Join(adminRoot, "src", "hooks", "use-resource-detail-controller.ts"): nextToTanStack(adminUseResourceDetailController()),
 		filepath.Join(adminRoot, "src", "hooks", "use-system.ts"):                     nextToTanStack(adminUseSystem()),
+		filepath.Join(adminRoot, "src", "hooks", "use-api-keys.ts"):                   nextToTanStack(adminUseAPIKeys()),
+		filepath.Join(adminRoot, "src", "hooks", "use-sso.ts"):                        nextToTanStack(adminUseSSO()),
+		filepath.Join(adminRoot, "src", "hooks", "use-form-shares.ts"):                nextToTanStack(adminUseFormShares()),
+		filepath.Join(adminRoot, "src", "hooks", "use-access-reviews.ts"):             nextToTanStack(adminUseAccessReviews()),
 		filepath.Join(adminRoot, "src", "hooks", "use-profile.ts"):                    nextToTanStack(adminUseProfile()),
 		filepath.Join(adminRoot, "src", "hooks", "use-roles.ts"):                      nextToTanStack(adminUseRoles()),
 		filepath.Join(adminRoot, "src", "hooks", "use-permissions.ts"):                nextToTanStack(adminUsePermissions()),

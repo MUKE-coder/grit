@@ -69,6 +69,7 @@ func adminAuthSocialButtons() string {
 
 import { useState } from "react";
 import { isSocialAuthEnabled } from "@repo/shared/themes";
+import { apiUrl } from "@/lib/api-core";
 
 // SSOSignIn is the enterprise entry point. Rather than listing every customer's
 // identity provider on a public page (which leaks your customer list), the user
@@ -76,7 +77,6 @@ import { isSocialAuthEnabled } from "@repo/shared/themes";
 // with no connection falls back to the password form, which is what happens for
 // most users of most apps.
 export function SSOSignIn() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
@@ -87,7 +87,7 @@ export function SSOSignIn() {
     setBusy(true);
     setError("");
     try {
-      const res = await fetch(apiUrl + "/api/auth/sso/discover", {
+      const res = await fetch(apiUrl("/api/auth/sso/discover"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim() }),
@@ -99,7 +99,7 @@ export function SSOSignIn() {
       // SAML user ends up at the OIDC endpoint and is told their sign-in method
       // doesn't exist.
       if (res.ok && body?.data?.sso && body.data.redirect_url) {
-        window.location.href = apiUrl + body.data.redirect_url;
+        window.location.href = apiUrl(body.data.redirect_url);
         return;
       }
       setError("No single sign-on is set up for that address. Use your password below.");
@@ -149,12 +149,10 @@ export function SSOSignIn() {
 export function SocialAuthButtons() {
   if (!isSocialAuthEnabled()) return null;
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-
   return (
     <div className="flex gap-3">
       <a
-        href={apiUrl + "/api/auth/oauth/google"}
+        href={apiUrl("/api/auth/oauth/google")}
         className="flex flex-1 items-center justify-center gap-2 rounded-[var(--auth-radius)] border border-[var(--auth-border)] bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
       >
         <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -166,7 +164,7 @@ export function SocialAuthButtons() {
         Google
       </a>
       <a
-        href={apiUrl + "/api/auth/oauth/github"}
+        href={apiUrl("/api/auth/oauth/github")}
         className="flex flex-1 items-center justify-center gap-2 rounded-[var(--auth-radius)] border border-[var(--auth-border)] bg-[#24292f] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#2f363d] transition-colors"
       >
         <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">

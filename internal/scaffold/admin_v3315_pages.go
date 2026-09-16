@@ -390,7 +390,7 @@ import {
 // The Sentinel UI is mounted on the Go API, not on this admin host. Use
 // the API base so "Open Sentinel" works whether the admin is on :3001
 // in dev or a different origin in prod.
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+import { API_URL } from "@/lib/api-core";
 
 // DegradedBanner says which panels have no data behind them.
 //
@@ -632,7 +632,7 @@ import {
 // The Pulse UI is mounted on the Go API, not on this admin host. Use the
 // API base so "Open Pulse" works whether the admin is on :3001 in dev or
 // a different origin in prod.
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+import { API_URL } from "@/lib/api-core";
 
 // DegradedBanner says which panels have no data behind them.
 //

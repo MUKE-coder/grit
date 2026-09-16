@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 14 to 20, 2026",
-    count: 28,
+    count: 29,
     entries: [
+      { version: "3.283.0", title: "GDPR erasure needs a reason, the API address lives in one place, and four admin screens use hooks" },
       { version: "3.282.0", title: "Race-free signups, working user filters, tickets that do not leak, honest dashboards, and errors.Is everywhere" },
       { version: "3.281.0", title: "Client events between browsers, a hub that reports itself, and no panic on a revoked session" },
       { version: "3.280.0", title: "Storage helpers, named disks, private files that stay private, and AWS S3 with no endpoint" },

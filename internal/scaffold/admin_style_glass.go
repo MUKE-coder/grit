@@ -8,6 +8,7 @@ func glassLoginPage() string {
 
 import { useState } from "react";
 import Link from "next/link";
+import { apiUrl } from "@/lib/api-core";
 import { Eye, EyeOff } from "@/lib/icons";
 import { useLogin } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
@@ -153,6 +154,7 @@ func glassSignUpPage() string {
 
 import { useState } from "react";
 import Link from "next/link";
+import { apiUrl } from "@/lib/api-core";
 import { Eye, EyeOff } from "@/lib/icons";
 import { useRegister } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
@@ -483,9 +485,10 @@ import { StatsCard } from "@/components/widgets/stats-card";
 import { WidgetGrid } from "@/components/widgets/widget-grid";
 import { getIcon } from "@/lib/icons";
 
-// The API origin the browser talks to. Hardcoding localhost:8080 here meant
-// the Quick Links pointed at the wrong port whenever the API moved.
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+// The API origin the browser talks to, from the one module that knows it.
+// Hardcoding localhost:8080 here meant the Quick Links pointed at the wrong
+// port whenever the API moved.
+import { API_URL, apiUrl } from "@/lib/api-core";
 
 export default function AdminDashboard() {
   const { data: user } = useMe();
@@ -612,7 +615,7 @@ export default function AdminDashboard() {
             </div>
           </a>
           <a
-            href={API_URL + "/api/health"}
+            href={apiUrl("/api/health")}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 backdrop-blur-sm px-4 py-3 hover:border-accent/20 hover:bg-white/10 transition-all group"

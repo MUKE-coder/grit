@@ -58,6 +58,7 @@ func webFileMap(root string, opts Options) map[string]string {
 		// UserMenu, web-session marker, auth pages, useAuth, auth shells, the
 		// auth-aware navbar and the customer area are opt-in via
 		// `grit add web-auth` -- see webAuthFiles() in web_auth.go.
+		filepath.Join(webRoot, "lib", "api-core.ts"):                               apiCoreTS(),
 		filepath.Join(webRoot, "lib", "api.ts"):                                    webAPIClient(),
 		filepath.Join(webRoot, "hooks", "use-blogs.ts"):                            webUseBlogsHook(),
 		filepath.Join(webRoot, "app", "(marketing)", "blog", "page.tsx"):           webBlogListPage(),
@@ -1054,6 +1055,7 @@ import {
   FileText,
   ExternalLink,
 } from "lucide-react";
+import { API_URL, apiUrl } from "@/lib/api-core";
 
 // Where the admin panel is.
 //
@@ -1062,7 +1064,6 @@ import {
 // http://localhost:3001 pointed at nothing, which is what a double's navbar did
 // until v3.235.0. NEXT_PUBLIC_ADMIN_URL still overrides both.
 const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "{{ADMIN_HREF}}";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 interface DevLink {
   title: string;
@@ -1279,61 +1280,16 @@ api.interceptors.request.use((config) => {
 }
 
 func webAPIClient() string {
-	return `import axios from "axios";
+	return `// The client. Its address, the /api/v1 rewrite, the CSRF header and the
+// idempotency key all live in lib/api-core.ts, which the admin panel uses too,
+// so the two clients cannot drift apart again.
+import { createApiClient } from "@/lib/api-core";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+export const api = createApiClient();
 
-export const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  // The browser attaches the HttpOnly grit_access / grit_refresh cookies
-  // set by /api/auth/login automatically. Without this, axios skips them
-  // on cross-origin requests in dev (api on :8080, web on :3000) and the
-  // server treats every request as anonymous.
-  withCredentials: true,
-});
-
-// The API is served under a version prefix (/api/v1/...). Endpoints are
-// written as "/api/..." throughout the app and pinned to the version here, so
-// moving to v2 is a one-line change instead of a find-and-replace.
-export const API_VERSION = "v1";
-
-api.interceptors.request.use((config) => {
-  const url = config.url ?? "";
-  if (
-    url.startsWith("/api/") &&
-    url !== "/api/ws" &&
-    !url.startsWith("/api/" + API_VERSION + "/")
-  ) {
-    config.url = "/api/" + API_VERSION + url.slice("/api".length);
-  }
-  return config;
-});
-
-// Echo the grit_csrf cookie into X-CSRF-Token on every state-changing
-// request. The cookie is intentionally not HttpOnly — it's the
-// double-submit token, paired with the cookie the AutoCSRF middleware
-// enforces. Safe-method requests don't need it; the middleware skips
-// them and issues / refreshes the cookie as a side effect.
-api.interceptors.request.use((config) => {
-  if (typeof document !== "undefined") {
-    const m = document.cookie.match(/(?:^|; )grit_csrf=([^;]+)/);
-    if (m && config.headers) {
-      config.headers["X-CSRF-Token"] = decodeURIComponent(m[1]);
-    }
-  }
-
-  // Auto-attach Idempotency-Key on unsafe methods so any mutation gets
-  // safe-retry semantics for free.
-  const method = (config.method || "get").toUpperCase();
-  const unsafe = method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE";
-  if (unsafe && config.headers && !config.headers["Idempotency-Key"]) {
-    config.headers["Idempotency-Key"] = crypto.randomUUID();
-  }
-  return config;
-});
+// Re-exported so "@/lib/api" stays the one import a page needs, whether it
+// wants the client or just the URL.
+export { API_URL, API_VERSION, apiUrl, versionedPath } from "@/lib/api-core";
 
 // v3.31.21: alias kept so generated React Query hooks that import
 // { apiClient } from "@/lib/api" resolve symmetrically with apps/admin
@@ -1533,6 +1489,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/api-core";
 import { isSocialAuthEnabled } from "@repo/shared/themes";
 import { brand } from "@repo/shared/brand";
 
@@ -1557,14 +1514,11 @@ export default function LoginPage() {
       await api.post("/api/auth/login", { email, password });
       router.push("/");
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      setError(msg || "Invalid email or password");
+      setError(getApiErrorMessage(err, "Invalid email or password"));
     } finally {
       setLoading(false);
     }
   };
-
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -1649,7 +1603,7 @@ export default function LoginPage() {
 
         <div className="flex gap-3">
           <a
-            href={` + "`" + `${API_URL}/api/auth/oauth/google` + "`" + `}
+            href={apiUrl("/api/auth/oauth/google")}
             className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -1661,7 +1615,7 @@ export default function LoginPage() {
             Google
           </a>
           <a
-            href={` + "`" + `${API_URL}/api/auth/oauth/github` + "`" + `}
+            href={apiUrl("/api/auth/oauth/github")}
             className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-[#24292f] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#2f363d] transition-colors"
           >
             <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -1692,6 +1646,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/api-core";
 import { isSocialAuthEnabled } from "@repo/shared/themes";
 
 const inputClass = "w-full rounded-lg border border-border bg-bg-elevated px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
@@ -1734,14 +1689,11 @@ export default function RegisterPage() {
       });
       router.push("/");
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
-      setError(msg || "Registration failed. Please try again.");
+      setError(getApiErrorMessage(err, "Registration failed. Please try again."));
     } finally {
       setLoading(false);
     }
   };
-
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
@@ -1866,7 +1818,7 @@ export default function RegisterPage() {
 
         <div className="flex gap-3">
           <a
-            href={` + "`" + `${API_URL}/api/auth/oauth/google` + "`" + `}
+            href={apiUrl("/api/auth/oauth/google")}
             className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -1878,7 +1830,7 @@ export default function RegisterPage() {
             Google
           </a>
           <a
-            href={` + "`" + `${API_URL}/api/auth/oauth/github` + "`" + `}
+            href={apiUrl("/api/auth/oauth/github")}
             className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-[#24292f] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#2f363d] transition-colors"
           >
             <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -2271,8 +2223,7 @@ func webPublicFormPage() string {
 
 import { useEffect, useState, use } from "react";
 import axios from "axios";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+import { apiUrl } from "@/lib/api-core";
 
 interface PageProps {
   params: Promise<{ token: string }>;
@@ -2312,7 +2263,7 @@ export default function PublicFormPage({ params }: PageProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get(API_URL + "/api/public/forms/" + token)
+    axios.get(apiUrl("/api/public/forms/" + token))
       .then((res) => setInfo(res.data.data))
       .catch((err) => {
         setError(err?.response?.data?.error?.message || "Link not found or disabled");
@@ -2400,7 +2351,7 @@ function PublicForm({ token, info }: PublicFormProps) {
         if (f.type === "file") continue;
         payload[f.key] = fields[f.key];
       }
-      await axios.post(API_URL + "/api/public/forms/" + token + "/submit", {
+      await axios.post(apiUrl("/api/public/forms/" + token + "/submit"), {
         _password: password,
         fields: payload,
       });

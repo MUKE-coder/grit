@@ -23,8 +23,17 @@ func TestResourceListAsksOncePerSearchAndKeepsRows(t *testing.T) {
 			t.Errorf("use-resource is missing %q", want)
 		}
 	}
-	if n := strings.Count(hook, "refreshAfterSave(queryClient, endpoint);"); n != 2 {
+	// The four row mutations come from one factory, so "refresh what a save can
+	// move, and leave the stat cards alone" is written once and chosen per
+	// mutation. Update and patch are the two that choose it.
+	if !strings.Contains(hook, "refreshAfterSave(queryClient, endpoint);") {
+		t.Error("the mutation factory no longer refreshes without refetching the stat cards")
+	}
+	if n := strings.Count(hook, `refresh: "saved",`); n != 2 {
 		t.Errorf("update and patch should both refresh without refetching the stat cards; found %d", n)
+	}
+	if n := strings.Count(hook, `refresh: "all",`); n != 2 {
+		t.Errorf("create and delete should refresh every view of the resource; found %d", n)
 	}
 
 	controller := adminUseResourceController()

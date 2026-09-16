@@ -87,6 +87,9 @@ func (s *InvoiceService) Bulk(ctx context.Context, action string, ids []string, 
 		"apps/api/internal/handlers/invoice.go": "package handlers\n\n" +
 			"type CreateInvoiceRequest struct {\n" +
 			"\tNumber string `json:\"number\" binding:\"required\"`\n" +
+			"}\n\n" +
+			"type BulkInvoiceRequest struct {\n" +
+			"\tAction string `json:\"action\" binding:\"required\"`\n" +
 			"}\n",
 		// A framework table, with the handler and service the scaffold ships for
 		// it and none of the generator's marks. It references a user, as a
@@ -234,6 +237,9 @@ func TestOwnerAcceptedFromTheBody(t *testing.T) {
 		"type CreateInvoiceRequest struct {\n" +
 		"\tNumber string `json:\"number\"`\n" +
 		"\tUserID string `json:\"user_id\"`\n" +
+		"}\n\n" +
+		"type BulkInvoiceRequest struct {\n" +
+		"\tAction string `json:\"action\"`\n" +
 		"}\n"})
 	found := fired(report, "owner-settable-from-body")
 	if len(found) != 1 || found[0].Level != "error" {
@@ -475,5 +481,30 @@ func TestOutboxCheckIgnoresComments(t *testing.T) {
 	})
 	if f := fired(report, "outbox-topic-undelivered"); len(f) != 0 {
 		t.Errorf("a doc comment was read as code: %s", f[0].Message)
+	}
+}
+
+// The built-in users and ticket lists use paginate since v3.282.0, so their
+// handlers declare a list config the way generated resources do. Counted as
+// resources, they made grit doctor fail on a project fresh from grit new:
+// "User has encrypted fields" and "Ticket references a user but is not scoped".
+func TestABuiltInListConfigIsNotAResource(t *testing.T) {
+	report := run(t, map[string]string{
+		"apps/api/internal/models/ticket.go": "package models\n\n" +
+			"type Ticket struct {\n" +
+			"\tID     string `gorm:\"primaryKey\" json:\"id\"`\n" +
+			"\tUserID string `gorm:\"size:36;index\" json:\"user_id\"`\n" +
+			"\tUser   User   `gorm:\"foreignKey:UserID\" json:\"user,omitempty\"`\n" +
+			"}\n",
+		"apps/api/internal/handlers/ticket.go": "package handlers\n\n" +
+			"var ticketListConfig = paginate.Config{Searchable: []string{\"subject\"}}\n",
+	})
+	for _, r := range report.Resources {
+		if r == "Ticket" {
+			t.Fatalf("a built-in with a list config and no bulk request was read as a resource: %v", report.Resources)
+		}
+	}
+	if len(report.Findings) != 0 {
+		t.Fatalf("a built-in list config produced findings: %+v", report.Findings)
 	}
 }
