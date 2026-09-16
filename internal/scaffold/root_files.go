@@ -135,6 +135,10 @@ APP_NAME=%s
 # on, the WAF blocking, GORM Studio and /docs off, and a default or short secret
 # stops the server from starting.
 APP_ENV=development
+# The password grit seed gives admin@example.com. Unset, APP_ENV=development
+# seeds admin123 and four demo accounts; any other APP_ENV refuses to seed the
+# admin without a password of 12 or more characters, and skips the demo accounts.
+# SEED_ADMIN_PASSWORD=
 # Serve the API reference at /docs in production as well. It maps every route
 # and has a console that calls them, so it is off there unless you say so.
 API_DOCS_PUBLIC=false
@@ -201,7 +205,7 @@ MAILHOG_SMTP_PORT=1025
 MAILHOG_UI_PORT=8025
 MINIO_PORT=9002
 MINIO_CONSOLE_PORT=9003
-
+{{MINIO_BIND_ADDRESS}}
 # Override the connection string ONLY if you're pointing at an external
 # Postgres (Neon, Supabase, RDS) or want to use SQLite. When set, this
 # wins over the POSTGRES_* parts above.
@@ -436,6 +440,7 @@ SOCIAL_AUTH_ENABLED=false
 	out = strings.Replace(out, "{{MINIO_ACCESS_KEY}}", "grit"+randomHex(8), 1)
 	out = strings.Replace(out, "{{MINIO_SECRET_KEY}}", randomHex(24), 1)
 	out = strings.Replace(out, "{{REDIS_PASSWORD}}", randomHex(24), 1)
+	out = strings.Replace(out, "{{MINIO_BIND_ADDRESS}}", minioBindEnv(opts), 1)
 
 	// The admin panel's URL is not a URL in every shape: see adminURLEnv.
 	return strings.Replace(out, "{{ADMIN_URL_ENV}}", adminURLEnv(opts), 1)
@@ -802,7 +807,7 @@ func rootPackageJSON(opts Options) string {
     "@playwright/test": "^1.48.0",
     "turbo": "^2.0.0"
   },
-  "packageManager": "pnpm@10.0.0"
+  `+packageManagerNew+`
 }
 `, opts.ProjectName, scripts)
 }

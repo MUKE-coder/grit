@@ -60,7 +60,7 @@ Adds a /link page to the web app and a Link a device screen to the admin.`,
 		GoDeps: []Dependency{
 			// Already present for TOTP enrolment in most projects; declared so
 			// an --api project that never enabled 2FA still resolves.
-			{Name: "github.com/skip2/go-qrcode", Version: "v0.0.0-20200617195104-da1b6568686e"},
+			{Name: "github.com/boombuler/barcode", Version: "v1.1.0"},
 		},
 
 		Files:      devicePairingFiles,

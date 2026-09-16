@@ -45,6 +45,40 @@ const ciEmbedPlaceholderStep = `      # The server embeds frontend/dist, which i
         run: mkdir -p frontend/dist && [ -e frontend/dist/index.html ] || echo '<!doctype html><title>Build the frontend</title>' > frontend/dist/index.html
 `
 
+// dependabotDocker keeps the Dockerfiles' base images current. They are pinned
+// to a release (node:22.23-alpine, alpine:3.24) so a build is reproducible, and
+// a pin nothing moves goes out of support: the runtime sat on Alpine 3.19 past
+// its end of life.
+func dependabotDocker(opts Options) string {
+	dirs := []string{"/"}
+	if opts.Architecture != ArchSingle {
+		dirs = []string{"/apps/api"}
+		if opts.ShouldIncludeWeb() {
+			dirs = append(dirs, "/apps/web")
+		}
+		if opts.ShouldIncludeAdmin() {
+			dirs = append(dirs, "/apps/admin")
+		}
+		if opts.ShouldIncludeDocs() {
+			dirs = append(dirs, "/apps/docs")
+		}
+	}
+	list := ""
+	for _, d := range dirs {
+		list += "      - \"" + d + "\"\n"
+	}
+	return `
+  # Base images in the Dockerfiles.
+  - package-ecosystem: docker
+    directories:
+` + list + `    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - docker
+`
+}
+
 // ciPnpmSteps installs the frontend. The project's package.json names pnpm for a
 // monorepo; a single app's frontend does not, so the version is given here.
 func ciPnpmSteps(l ciLayout) string {
@@ -106,7 +140,7 @@ updates:
     labels:
       - dependencies
       - go
-`+npm+`
+`+npm+dependabotDocker(opts)+`
   # GitHub Actions workflows
   - package-ecosystem: github-actions
     directory: "/"

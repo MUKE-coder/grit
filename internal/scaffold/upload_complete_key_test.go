@@ -14,7 +14,9 @@ func TestCompleteUploadRecordsOnlyTheCallersPresignedKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	src := string(raw)
+	// A Windows checkout with core.autocrlf writes CRLF, and the search for the
+	// end of the handler below looks for "\n}\n".
+	src := strings.ReplaceAll(string(raw), "\r\n", "\n")
 
 	if !strings.Contains(src, `key := fmt.Sprintf("uploads/%s/%s/%s", userID, time.Now().Format("2006/01"), filename)`) {
 		t.Error("presigned keys are not under the caller's own prefix")

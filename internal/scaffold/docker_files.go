@@ -3,6 +3,7 @@ package scaffold
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 )
 
 func writeDockerFiles(root string, opts Options) error {
@@ -129,15 +130,7 @@ services:
       # stacks that grab 9000/9001. Container still listens on 9000/9001
       # inside the Docker network.
       #
-      # Bound to all interfaces (not 127.0.0.1) so a phone/emulator on your LAN
-      # can load uploaded images: stored URLs point at this host:9002 and the
-      # Expo app rewrites "localhost" to your dev IP (apps/expo/lib/images.ts).
-      - "${MINIO_PORT:-9002}:9000"
-      - "${MINIO_CONSOLE_PORT:-9003}:9001"
-    # The root credentials are generated per project into .env. They were
-    # minioadmin/minioadmin, on a port bound to every interface so a phone on
-    # the LAN can load images, so anyone on the same network owned the bucket.
-    environment:
+`+devMinioPortsNew+``+devMinioCredsCommentNew+`    environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?set MINIO_ACCESS_KEY in .env}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?set MINIO_SECRET_KEY in .env}
     volumes:
@@ -384,15 +377,14 @@ volumes:
 // dockerfileSingle is the Dockerfile for --single architecture: one binary
 // that bundles the Go server and an embedded SPA. Multi-stage:
 //
-//  1. node:22-alpine   builds the frontend bundle to /app/frontend/dist
+//  1. nodeImage        builds the frontend bundle to /app/frontend/dist
 //  2. golang:1.26.6-alpine builds the Go binary with //go:embed picking up
 //     the frontend output from the project root
-//  3. alpine:3.19      runtime, drops to a non-root user
+//  3. runtimeAlpineImage runtime, drops to a non-root user, with a HEALTHCHECK
 //
 // Notes that paid for themselves debugging real deploys:
-//   - pnpm is pinned to a version compatible with Node 22 (pnpm@latest
-//     started pulling pnpm 11 which assumes node:sqlite from Node 22.x and
-//     broke node:20 base images).
+//   - pnpm is pinned to pnpmVersion, the release CI installs. pnpm@latest
+//     moves between majors, and pnpm 9 ignored onlyBuiltDependencies.
 //   - chown /app to the runtime user BEFORE the USER directive. Otherwise
 //     Sentinel/Pulse fail to open their embedded SQLite stores and report
 //     the misleading "out of memory (14)" — which is actually
@@ -400,13 +392,10 @@ volumes:
 func dockerfileSingle() string {
 	return `# syntax=docker/dockerfile:1.7
 # ---------- Stage 1: build the SPA bundle ----------
-FROM node:22-alpine AS frontend
+FROM ` + nodeImage + ` AS frontend
 WORKDIR /app/frontend
 
-# Pin pnpm — pnpm@latest started resolving to pnpm 11 which needs Node 22's
-# node:sqlite builtin; pinning avoids surprise breakage from that drift.
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
-
+` + pnpmPinNew + `
 COPY frontend/package.json frontend/pnpm-lock.yaml* ./
 RUN pnpm install --no-frozen-lockfile
 
@@ -429,7 +418,7 @@ COPY --from=frontend /app/frontend/dist ./frontend/dist
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/server .
 
 # ---------- Stage 3: minimal runtime ----------
-FROM alpine:3.19
+FROM ` + runtimeAlpineImage + `
 RUN apk add --no-cache ca-certificates tzdata
 
 # Create non-root user.
@@ -448,7 +437,7 @@ USER app
 EXPOSE 8080
 ENV PORT=8080
 
-CMD ["./server"]
+` + apiHealthcheck + `CMD ["./server"]
 `
 }
 
@@ -486,7 +475,7 @@ ARG IMAGE_BACKEND
 RUN if [ "$IMAGE_BACKEND" = "vips" ]; then       apk --no-cache add vips-dev build-base pkgconfig &&       CGO_ENABLED=1 GOOS=linux go build -tags vips -o /app/server ./cmd/server ;     else       CGO_ENABLED=0 GOOS=linux go build -o /app/server ./cmd/server ;     fi
 
 # Run stage
-FROM alpine:3.19
+FROM ` + runtimeAlpineImage + `
 ARG IMAGE_BACKEND
 
 RUN apk --no-cache add ca-certificates tzdata
@@ -510,18 +499,15 @@ USER app
 
 EXPOSE 8080
 
-CMD ["./server"]
+` + apiHealthcheck + `CMD ["./server"]
 `
 }
 
 func dockerfileNextJS(app string) string {
 	return fmt.Sprintf(`# Build stage
-FROM node:22-alpine AS base
+FROM `+nodeImage+` AS base
 
-# Pin pnpm — pnpm@latest started resolving to pnpm 11 which needs Node 22's
-# node:sqlite builtin. Pinning here avoids surprise breakage on rebuilds.
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
-
+`+pnpmPinNew+`
 # Install dependencies
 FROM base AS deps
 WORKDIR /app
@@ -557,10 +543,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 RUN pnpm --filter %s build
 
-# Run
-FROM base AS runner
-WORKDIR /app
-
+`+nextRunnerNew+`
 ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
@@ -581,7 +564,7 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "apps/%s/server.js"]
+`+strings.ReplaceAll(nextHealthcheck, "%", "%%")+`CMD ["node", "apps/%s/server.js"]
 `, app, app, app, app, app, app, app, app, app, app, app)
 }
 
