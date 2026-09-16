@@ -628,21 +628,21 @@ func webRootLayout(opts Options) string {
 	case "aurora":
 		fontImport = `import { Geist, Geist_Mono } from "next/font/google";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-display", weight: ["400", "500", "600", "700"] });
-const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500", "600"] });`
+const geist = Geist({ subsets: ["latin"], variable: "--font-display" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono", preload: false });`
 		fontVars = "${geist.variable} ${geistMono.variable}"
 	case "pulse":
 		fontImport = `import { Onest, JetBrains_Mono } from "next/font/google";
 
 // Pulse is Cloudflare-inspired: a clean sans throughout, no serif display face.
-const onest = Onest({ subsets: ["latin"], variable: "--font-display", weight: ["400", "500", "600", "700"] });
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500", "600"] });`
+const onest = Onest({ subsets: ["latin"], variable: "--font-display" });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", preload: false });`
 		fontVars = "${onest.variable} ${jetbrainsMono.variable}"
 	default: // atlas
 		fontImport = `import { Inter, JetBrains_Mono } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-display", weight: ["400", "500", "600", "700"] });
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500", "600"] });`
+const inter = Inter({ subsets: ["latin"], variable: "--font-display" });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", preload: false });`
 		fontVars = "${inter.variable} ${jetbrainsMono.variable}"
 	}
 

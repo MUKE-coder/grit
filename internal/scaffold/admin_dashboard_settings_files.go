@@ -15,7 +15,7 @@ func adminDashboardCatalogTS() string {
 // Settings → Dashboard page. The catalog is computed from two sources:
 //
 //   1. A fixed list of "system" widgets (users count, events 24h,
-//      activity 7d, severity mix, recent activity, etc) -- these
+//      severity mix, recent activity, etc) -- these
 //      ship with every Grit admin and are the legacy out-of-the-box
 //      dashboard tiles + charts.
 //
@@ -61,7 +61,6 @@ const SYSTEM_WIDGETS: CatalogWidget[] = [
   { key: "system:events-24h", kind: "card", module: "System", moduleIcon: "Shield", label: "Events (24h)", description: "Activity events in past 24h" },
   { key: "system:notifications-unread", kind: "card", module: "System", moduleIcon: "Shield", label: "Notifications", description: "Unread notifications" },
   { key: "system:resources-count", kind: "card", module: "System", moduleIcon: "Shield", label: "Resources", description: "Registered modules" },
-  { key: "system:activity-7d", kind: "chart", module: "System", moduleIcon: "Shield", label: "Activity, past 7 days", description: "Area chart of events per day" },
   { key: "system:severity-mix", kind: "chart", module: "System", moduleIcon: "Shield", label: "Severity mix", description: "Pie chart of event severity (24h)" },
   { key: "system:recent-activity", kind: "table", module: "System", moduleIcon: "Shield", label: "Recent activity", description: "Last 8 events across the platform" },
   { key: "system:quick-access", kind: "table", module: "System", moduleIcon: "Shield", label: "Quick access", description: "Tiles linking to each resource module" },

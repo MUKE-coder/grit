@@ -4,7 +4,7 @@ package scaffold
 func adminDropzone() string {
 	return `"use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDropzone, type Accept } from "react-dropzone";
 import {
   Upload,
@@ -109,6 +109,27 @@ export function Dropzone({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  // Blob URLs this dropzone made for local previews. Each one pins its File in
+  // memory until it is revoked, so they are released when the file leaves the
+  // list (removed, or pushed out by a newer pick) and when the dropzone
+  // unmounts. URLs that came from the server are never in here.
+  const previewUrls = useRef<Set<string>>(new Set());
+  const releasePreviews = useCallback((kept: UploadedFile[], previous: UploadedFile[]) => {
+    const still = new Set(kept.map((f) => f.url));
+    for (const f of previous) {
+      if (!still.has(f.url) && previewUrls.current.delete(f.url)) {
+        URL.revokeObjectURL(f.url);
+      }
+    }
+  }, []);
+  useEffect(() => {
+    const urls = previewUrls.current;
+    return () => {
+      for (const url of urls) URL.revokeObjectURL(url);
+      urls.clear();
+    };
+  }, []);
+
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       if (onDropProp) {
@@ -116,13 +137,13 @@ export function Dropzone({
       }
 
       if (!autoUpload) {
-        const newFiles: UploadedFile[] = acceptedFiles.map((f) => ({
-          url: URL.createObjectURL(f),
-          name: f.name,
-          size: f.size,
-          type: f.type,
-        }));
+        const newFiles: UploadedFile[] = acceptedFiles.map((f) => {
+          const url = URL.createObjectURL(f);
+          previewUrls.current.add(url);
+          return { url, name: f.name, size: f.size, type: f.type };
+        });
         const updated = maxFiles === 1 ? newFiles : [...files, ...newFiles].slice(0, maxFiles);
+        releasePreviews(updated, [...files, ...newFiles]);
         setFiles(updated);
         onFilesChange?.(updated);
         return;
@@ -171,16 +192,18 @@ export function Dropzone({
       }
 
       const updated = maxFiles === 1 ? uploaded : [...files, ...uploaded].slice(0, maxFiles);
+      releasePreviews(updated, files);
       setFiles(updated);
       onFilesChange?.(updated);
       setUploading(false);
       setUploadProgress(0);
     },
-    [files, maxFiles, autoUpload, uploadEndpoint, onFilesChange, onDropProp]
+    [files, maxFiles, autoUpload, uploadEndpoint, onFilesChange, onDropProp, releasePreviews]
   );
 
   const removeFile = (index: number) => {
     const updated = files.filter((_, i) => i !== index);
+    releasePreviews(updated, files);
     setFiles(updated);
     onFilesChange?.(updated);
   };

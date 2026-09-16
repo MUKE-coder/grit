@@ -5,7 +5,7 @@ func adminDataTable() string {
 	return `"use client";
 
 import { useT } from "@/lib/i18n";
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 import type { ColumnDefinition, RowActionDefinition } from "@/lib/resource";
 import { ColumnHeader } from "./column-header";
@@ -106,6 +106,10 @@ interface DataTableProps<T extends object = Record<string, unknown>> {
   rowActions?: RowActionDefinition[];
 }
 
+// The default for selectedRows. A fresh [] per render would rebuild the
+// selection Set below on every render of a table nobody is selecting in.
+const noSelection: string[] = [];
+
 export function DataTable<T extends object = Record<string, unknown>>({
   columns: columnsProp,
   data: dataProp,
@@ -114,7 +118,7 @@ export function DataTable<T extends object = Record<string, unknown>>({
   sortBy,
   sortOrder,
   onSort,
-  selectedRows = [],
+  selectedRows = noSelection,
   onSelectRows,
   onView: onViewProp,
   onEdit: onEditProp,
@@ -131,6 +135,29 @@ export function DataTable<T extends object = Record<string, unknown>>({
   const onEdit = onEditProp as ((item: Record<string, unknown>) => void) | undefined;
   const t = useT();
 
+  // One Set per selection change, so each row asks "am I selected?" in
+  // constant time. selectedRows.includes per row made a page of 100 rows with
+  // 100 selected do 10,000 comparisons on every render.
+  const selected = useMemo(() => new Set(selectedRows), [selectedRows]);
+  const allIds = useMemo(() => data.map((row) => String(row.id)), [data]);
+  const allSelected = allIds.length > 0 && allIds.every((id) => selected.has(id));
+
+  // toggleRow reads the selection through a ref so its identity survives a
+  // selection change. That is what lets the memoised rows below skip
+  // re-rendering: ticking one box re-renders one row, not the page.
+  const selectionRef = useRef(selectedRows);
+  useEffect(() => {
+    selectionRef.current = selectedRows;
+  }, [selectedRows]);
+  const toggleRow = useCallback(
+    (id: string) => {
+      if (!onSelectRows) return;
+      const current = selectionRef.current;
+      onSelectRows(current.includes(id) ? current.filter((r) => r !== id) : [...current, id]);
+    },
+    [onSelectRows],
+  );
+
   if (isLoading) {
     return <TableSkeleton columns={columns.length + (onSelectRows ? 1 : 0) + (onView || onEdit || onDelete || (rowActions && rowActions.length) ? 1 : 0)} />;
   }
@@ -139,22 +166,12 @@ export function DataTable<T extends object = Record<string, unknown>>({
     return <TableEmptyState />;
   }
 
-  const allIds = data.map((row) => String(row.id));
-  const allSelected = allIds.length > 0 && allIds.every((id) => selectedRows.includes(id));
-
   const toggleAll = () => {
     if (!onSelectRows) return;
     onSelectRows(allSelected ? [] : allIds);
   };
 
-  const toggleRow = (id: string) => {
-    if (!onSelectRows) return;
-    onSelectRows(
-      selectedRows.includes(id)
-        ? selectedRows.filter((r) => r !== id)
-        : [...selectedRows, id]
-    );
-  };
+  const hasActions = Boolean(onView || onEdit || onDelete || (rowActions && rowActions.length > 0));
 
   return (
     <div className="relative overflow-x-auto" aria-busy={isFetching || undefined}>
@@ -183,7 +200,7 @@ export function DataTable<T extends object = Record<string, unknown>>({
                 onSort={onSort}
               />
             ))}
-            {(onView || onEdit || onDelete || (rowActions && rowActions.length > 0)) && (
+            {hasActions && (
               <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider w-[140px]">
                 {t("table.actions", "Actions")}
               </th>
@@ -192,105 +209,22 @@ export function DataTable<T extends object = Record<string, unknown>>({
         </thead>
         <tbody>
           {data.map((row, idx) => {
-            const id = String(row.id);
-            const isSelected = selectedRows.includes(id);
-
+            const id = allIds[idx];
             return (
-              <tr
+              <DataTableRow
                 key={id || idx}
-                className={` + "`" + `border-b border-border/50 transition-colors ${
-                  isSelected ? "bg-accent/5" : "hover:bg-bg-hover/50"
-                }` + "`" + `}
-              >
-                {onSelectRows && (
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleRow(id)}
-                      className="h-4 w-4 rounded border-border bg-bg-tertiary accent-accent"
-                    />
-                  </td>
-                )}
-                {columns.map((col) => (
-                  <td
-                    key={col.key}
-                    className="px-4 py-3 text-sm text-foreground"
-                    style={col.width ? { width: col.width } : undefined}
-                  >
-                    <ClickableCell
-                      column={col}
-                      value={getNestedValue(row, col.key)}
-                      row={row}
-                      onView={onView}
-                    >
-                      {renderCell(col, getNestedValue(row, col.key), row)}
-                    </ClickableCell>
-                  </td>
-                ))}
-                {(onView || onEdit || onDelete || (rowActions && rowActions.length > 0)) && (
-                  <td className="px-4 py-3 text-right text-sm">
-                    <div className="flex items-center justify-end gap-2">
-                      {onView && (
-                        <button
-                          onClick={() => onView(row)}
-                          className="rounded-md p-1.5 text-text-secondary hover:text-info hover:bg-info/10 transition-colors"
-                          title={t("table.view", "View")}
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                      {onEdit && (
-                        <button
-                          onClick={() => onEdit(row)}
-                          className="text-xs text-text-secondary hover:text-accent transition-colors"
-                        >
-                          {t("form.edit", "Edit")}
-                        </button>
-                      )}
-                      {onDelete && (
-                        <button
-                          onClick={() => onDelete(id)}
-                          className="text-xs text-text-secondary hover:text-danger transition-colors"
-                        >
-                          {t("form.delete", "Delete")}
-                        </button>
-                      )}
-                      {(rowActions ?? [])
-                        .filter((a) => !a.visible || a.visible(row))
-                        .map((a) =>
-                          a.href ? (
-                            <Link
-                              key={a.label}
-                              href={a.href(row)}
-                              className={
-                                "text-xs transition-colors " +
-                                (a.variant === "danger"
-                                  ? "text-text-secondary hover:text-danger"
-                                  : "text-text-secondary hover:text-accent")
-                              }
-                            >
-                              {a.label}
-                            </Link>
-                          ) : (
-                            <button
-                              key={a.label}
-                              onClick={() => a.onClick?.(row)}
-                              className={
-                                "text-xs transition-colors " +
-                                (a.variant === "danger"
-                                  ? "text-text-secondary hover:text-danger"
-                                  : "text-text-secondary hover:text-accent")
-                              }
-                            >
-                              {a.label}
-                            </button>
-                          )
-                        )}
-                    </div>
-                  </td>
-                )}
-              </tr>
+                id={id}
+                row={row}
+                columns={columns}
+                isSelected={selected.has(id)}
+                selectable={Boolean(onSelectRows)}
+                onToggle={toggleRow}
+                hasActions={hasActions}
+                onView={onView}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                rowActions={rowActions}
+              />
             );
           })}
         </tbody>
@@ -298,6 +232,134 @@ export function DataTable<T extends object = Record<string, unknown>>({
     </div>
   );
 }
+
+interface DataTableRowProps {
+  id: string;
+  row: Record<string, unknown>;
+  columns: ColumnDefinition[];
+  isSelected: boolean;
+  selectable: boolean;
+  onToggle: (id: string) => void;
+  hasActions: boolean;
+  onView?: (item: Record<string, unknown>) => void;
+  onEdit?: (item: Record<string, unknown>) => void;
+  onDelete?: (id: string) => void;
+  rowActions?: RowActionDefinition[];
+}
+
+// One row, memoised: it re-renders when its own row, its selected state or the
+// table's column and action props change, and not when a neighbour is ticked.
+const DataTableRow = memo(function DataTableRow({
+  id,
+  row,
+  columns,
+  isSelected,
+  selectable,
+  onToggle,
+  hasActions,
+  onView,
+  onEdit,
+  onDelete,
+  rowActions,
+}: DataTableRowProps) {
+  const t = useT();
+
+  return (
+    <tr
+      className={` + "`" + ` border-b border-border/50 transition-colors ${
+        isSelected ? "bg-accent/5" : "hover:bg-bg-hover/50"
+      }` + "`" + `}
+    >
+      {selectable && (
+        <td className="px-4 py-3">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggle(id)}
+            className="h-4 w-4 rounded border-border bg-bg-tertiary accent-accent"
+          />
+        </td>
+      )}
+      {columns.map((col) => {
+        // Read once: the value feeds both the click wrapper and the renderer.
+        const value = getNestedValue(row, col.key);
+        return (
+          <td
+            key={col.key}
+            className="px-4 py-3 text-sm text-foreground"
+            style={col.width ? { width: col.width } : undefined}
+          >
+            <ClickableCell column={col} value={value} row={row} onView={onView}>
+              {renderCell(col, value, row)}
+            </ClickableCell>
+          </td>
+        );
+      })}
+      {hasActions && (
+        <td className="px-4 py-3 text-right text-sm">
+          <div className="flex items-center justify-end gap-2">
+            {onView && (
+              <button
+                onClick={() => onView(row)}
+                className="rounded-md p-1.5 text-text-secondary hover:text-info hover:bg-info/10 transition-colors"
+                title={t("table.view", "View")}
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {onEdit && (
+              <button
+                onClick={() => onEdit(row)}
+                className="text-xs text-text-secondary hover:text-accent transition-colors"
+              >
+                {t("form.edit", "Edit")}
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => onDelete(id)}
+                className="text-xs text-text-secondary hover:text-danger transition-colors"
+              >
+                {t("form.delete", "Delete")}
+              </button>
+            )}
+            {(rowActions ?? [])
+              .filter((a) => !a.visible || a.visible(row))
+              .map((a) =>
+                a.href ? (
+                  <Link
+                    key={a.label}
+                    href={a.href(row)}
+                    className={
+                      "text-xs transition-colors " +
+                      (a.variant === "danger"
+                        ? "text-text-secondary hover:text-danger"
+                        : "text-text-secondary hover:text-accent")
+                    }
+                  >
+                    {a.label}
+                  </Link>
+                ) : (
+                  <button
+                    key={a.label}
+                    onClick={() => a.onClick?.(row)}
+                    className={
+                      "text-xs transition-colors " +
+                      (a.variant === "danger"
+                        ? "text-text-secondary hover:text-danger"
+                        : "text-text-secondary hover:text-accent")
+                    }
+                  >
+                    {a.label}
+                  </button>
+                )
+              )}
+          </div>
+        </td>
+      )}
+    </tr>
+  );
+});
 `
 }
 
