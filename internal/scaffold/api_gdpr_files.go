@@ -259,6 +259,7 @@ func apiGDPRHandlerGo() string {
 	src := `package handlers
 
 import (
+	"errors"
 	"log"
 	"fmt"
 	"net/http"
@@ -286,14 +287,14 @@ func (h *GDPRHandler) Export(c *gin.Context) {
 	targetID := c.Param("id")
 	callerID, _ := c.Get("user_id")
 	callerRole, _ := c.Get("user_role")
-	if fmt.Sprint(callerID) != targetID && fmt.Sprint(callerRole) != "ADMIN" {
+	if fmt.Sprint(callerID) != targetID && fmt.Sprint(callerRole) != models.RoleAdmin {
 		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{"code": "FORBIDDEN", "message": "you may only export your own data"}})
 		return
 	}
 
 	bundle, err := services.ExportUserData(h.DB, targetID)
 	if err != nil {
-		if err == services.ErrUserNotFound {
+		if errors.Is(err, services.ErrUserNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code": "NOT_FOUND", "message": "user not found"}})
 			return
 		}
@@ -327,7 +328,7 @@ func (h *GDPRHandler) Erase(c *gin.Context) {
 
 	journal, err := services.EraseUser(h.DB, targetID, fmt.Sprint(callerID), fmt.Sprint(callerEmail), req.Reason)
 	if err != nil {
-		if err == services.ErrUserNotFound {
+		if errors.Is(err, services.ErrUserNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code": "NOT_FOUND", "message": "user not found"}})
 			return
 		}
@@ -376,6 +377,7 @@ func apiGDPRTestGo() string {
 	src := `package services
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/glebarez/sqlite"
@@ -441,7 +443,7 @@ func TestExportGathersEverything(t *testing.T) {
 
 func TestExportUnknownUser(t *testing.T) {
 	db := gdprDB(t)
-	if _, err := ExportUserData(db, "nope"); err != ErrUserNotFound {
+	if _, err := ExportUserData(db, "nope"); !errors.Is(err, ErrUserNotFound) {
 		t.Errorf("err = %v, want ErrUserNotFound", err)
 	}
 }

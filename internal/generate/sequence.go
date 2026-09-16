@@ -137,6 +137,7 @@ func sequencePackageGo() string {
 package sequence
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -195,7 +196,7 @@ func Next(db *gorm.DB, cfg Config, t time.Time) (string, error) {
 		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("name = ? AND bucket = ?", cfg.Name, bucket).
 			First(&c).Error
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c = Counter{Name: cfg.Name, Bucket: bucket, NextValue: 1}
 			next = 1
 			return tx.Create(&c).Error

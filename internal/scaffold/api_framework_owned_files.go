@@ -63,6 +63,13 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "models", "feature_flag.go"): apiFeatureFlagModelGo(),
 		filepath.Join(apiRoot, "internal", "flags", "flags.go"):         apiFlagsGo(),
 		filepath.Join(apiRoot, "internal", "flags", "flags_test.go"):    apiFlagsTestGo(),
+
+		// The one insert of a user row, which registration and the admin's
+		// Create User both call. Here because the handlers that call it are
+		// repaired in place on upgrade, and a repair that calls a function the
+		// project has not got is a project that does not compile.
+		filepath.Join(apiRoot, "internal", "services", "user_write.go"):      apiUserWriteServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "user_write_test.go"): apiUserWriteServiceTestGo(),
 	}
 
 	for path, content := range files {

@@ -33,6 +33,7 @@ package sync
 
 import (
 	"bytes"
+	"errors"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -496,7 +497,7 @@ func (e *Engine) Push() (int, int, error) {
 func (e *Engine) PushOne(table, entityID string) (int, int, error) {
 	var entry Outbox
 	if err := e.DB.Where("model = ? AND entity_id = ? AND has_conflict = 0", table, entityID).First(&entry).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return 0, 0, fmt.Errorf("no pending change for %s/%s", table, entityID)
 		}
 		return 0, 0, err
@@ -628,7 +629,7 @@ func (e *Engine) ResolveConflict(tableName, entityID string, mergedData map[stri
 func (e *Engine) RevertChange(table, entityID string) error {
 	var entry Outbox
 	if err := e.DB.Where("model = ? AND entity_id = ?", table, entityID).First(&entry).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil // already gone — nothing to revert
 		}
 		return err
@@ -907,6 +908,7 @@ func desktopSyncLocalGo() string {
 	return `package sync
 
 import (
+	"errors"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -977,7 +979,7 @@ func (e *Engine) LocalCreate(tableName, id string, data map[string]interface{}) 
 func (e *Engine) LocalUpdate(tableName, id string, data map[string]interface{}) error {
 	var rec Record
 	if err := e.DB.First(&rec, "model = ? AND id = ?", tableName, id).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("local update: %s/%s not found", tableName, id)
 		}
 		return err
@@ -1010,7 +1012,7 @@ func (e *Engine) LocalDelete(tableName, id string) error {
 	if err == nil {
 		knownVersion = rec.Version
 		e.DB.Delete(&rec)
-	} else if err != gorm.ErrRecordNotFound {
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}
 	return enqueue(e, tableName, id, "delete", nil, knownVersion)
@@ -1021,7 +1023,7 @@ func (e *Engine) LocalDelete(tableName, id string) error {
 func (e *Engine) LocalGet(tableName, id string) (map[string]interface{}, error) {
 	var rec Record
 	if err := e.DB.First(&rec, "model = ? AND id = ? AND deleted = ?", tableName, id, false).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err

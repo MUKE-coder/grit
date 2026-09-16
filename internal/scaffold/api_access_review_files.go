@@ -802,6 +802,7 @@ func apiAccessReviewHandlerGo() string {
 	src := `package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -906,12 +907,15 @@ func (h *AccessReviewHandler) Decide(c *gin.Context) {
 	)
 	if err != nil {
 		status, code := http.StatusBadRequest, "INVALID_DECISION"
-		switch err {
-		case services.ErrReviewClosed:
+		// errors.Is rather than a switch on err: a switch compares with ==,
+		// so the day one of these is wrapped with %w every case stops matching
+		// and the caller gets a 400 that says nothing.
+		switch {
+		case errors.Is(err, services.ErrReviewClosed):
 			code = "REVIEW_CLOSED"
-		case services.ErrItemDecided:
+		case errors.Is(err, services.ErrItemDecided):
 			code = "ITEM_LOCKED"
-		case gorm.ErrRecordNotFound:
+		case errors.Is(err, gorm.ErrRecordNotFound):
 			status, code = http.StatusNotFound, "NOT_FOUND"
 		}
 		c.JSON(status, gin.H{"error": gin.H{"code": code, "message": err.Error()}})
@@ -925,12 +929,12 @@ func (h *AccessReviewHandler) Complete(c *gin.Context) {
 	review, err := services.CompleteAccessReview(h.DB, c.Param("id"), c.GetString("user_id"), c.GetString("user_email"))
 	if err != nil {
 		status, code := http.StatusBadRequest, "CANNOT_COMPLETE"
-		switch err {
-		case services.ErrReviewIncomplete:
+		switch {
+		case errors.Is(err, services.ErrReviewIncomplete):
 			code = "REVIEW_INCOMPLETE"
-		case services.ErrReviewClosed:
+		case errors.Is(err, services.ErrReviewClosed):
 			code = "REVIEW_CLOSED"
-		case gorm.ErrRecordNotFound:
+		case errors.Is(err, gorm.ErrRecordNotFound):
 			status, code = http.StatusNotFound, "NOT_FOUND"
 		}
 		c.JSON(status, gin.H{"error": gin.H{"code": code, "message": err.Error()}})

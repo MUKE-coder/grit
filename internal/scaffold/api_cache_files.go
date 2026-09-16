@@ -31,6 +31,7 @@ func cacheServiceGo() string {
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -108,7 +109,7 @@ func New(redisURL string) (*Cache, error) {
 // Returns false if the key does not exist.
 func (c *Cache) Get(ctx context.Context, key string, dest interface{}) (bool, error) {
 	val, err := c.client.Get(ctx, key).Result()
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		return false, nil
 	}
 	if err != nil {

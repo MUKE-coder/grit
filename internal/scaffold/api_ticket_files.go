@@ -125,6 +125,54 @@ type AssignTicketRequest struct {
 	AssigneeID string ` + "`" + `json:"assignee_id" binding:"required"` + "`" + `
 }
 
+// ticketListConfig is what the ticket list may be searched and sorted by.
+var ticketListConfig = paginate.Config{
+	Searchable:   []string{"subject", "description"},
+	Sortable:     map[string]bool{"created_at": true, "priority": true, "status": true},
+	DefaultSort:  "created_at",
+	DefaultOrder: "desc",
+}
+
+// ticketStaff reports whether the caller handles everyone's tickets.
+//
+// One definition, because there were five, each spelling ADMIN and EDITOR out
+// as string literals. models.RoleAdmin and models.RoleEditor exist precisely so
+// a project that renames a role renames it once.
+func ticketStaff(c *gin.Context) bool {
+	role, _ := c.Get("user_role")
+	return role == models.RoleAdmin || role == models.RoleEditor
+}
+
+// visibleTicket loads the ticket named by :id, or answers the request itself
+// and returns false.
+//
+// The rule it replaces was written out four times, in Get, Reply, Assign and
+// transitionStatus, and every copy read the ticket first and then answered
+// somebody else's with 403. A 403 is a confirmation: it tells whoever is
+// walking the id space which ids are real. The scope is part of the query now,
+// so a ticket the caller may not see comes back as not found, exactly like one
+// that never existed.
+//
+// with runs before First, for the endpoints that need preloads.
+func (h *TicketHandler) visibleTicket(c *gin.Context, with func(*gorm.DB) *gorm.DB) (models.Ticket, bool) {
+	var t models.Ticket
+	q := h.DB.WithContext(c.Request.Context())
+	if with != nil {
+		q = with(q)
+	}
+	if !ticketStaff(c) {
+		userID, _ := c.Get("user_id")
+		q = q.Where("user_id = ?", userID)
+	}
+	if err := q.First(&t, "id = ?", c.Param("id")).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{"code": "NOT_FOUND", "message": "ticket not found"},
+		})
+		return t, false
+	}
+	return t, true
+}
+
 // Create opens a ticket for the authenticated user. Fires an email to
 // SUPPORT_EMAIL when Resend is configured + a Notification for every
 // ADMIN so the bell lights up.
@@ -191,30 +239,39 @@ func (h *TicketHandler) Create(c *gin.Context) {
 //
 //	GET /api/tickets?status=open&q=billing
 func (h *TicketHandler) List(c *gin.Context) {
-	userID, _ := c.Get("user_id")
-	role, _ := c.Get("user_role")
-	isAdmin := role == "ADMIN" || role == "EDITOR"
-
 	q := h.DB.WithContext(c.Request.Context()).Model(&models.Ticket{}).
-		Preload("User").Preload("Assignee").
-		Order("COALESCE(last_reply_at, created_at) DESC")
+		Preload("User").Preload("Assignee")
 
-	if !isAdmin {
+	if !ticketStaff(c) {
+		userID, _ := c.Get("user_id")
 		q = q.Where("user_id = ?", userID)
 	}
+
 	params := paginate.Bind(c).
 		With("status", c.Query("status")).
 		With("priority", c.Query("priority")).
 		With("assignee_id", c.Query("assignee_id"))
+
+	// ?q= is this endpoint's spelling of ?search=, so hand it to paginate
+	// rather than building the clause here. paginate compares with
+	// LOWER(col) LIKE LOWER(?); the clause it replaces was a bare LIKE, which
+	// on Postgres means a search for "Billing" found nothing filed as
+	// "billing".
 	if needle := c.Query("q"); needle != "" {
-		q = q.Where("subject LIKE ? OR description LIKE ?", "%"+needle+"%", "%"+needle+"%")
+		params.Search = needle
 	}
 
-	res, err := paginate.List[models.Ticket](q, params, paginate.Config{
-		Sortable:     map[string]bool{"created_at": true, "priority": true, "status": true},
-		DefaultSort:  "created_at",
-		DefaultOrder: "desc",
-	})
+	// Newest activity first, but only when the caller asked for nothing.
+	//
+	// This ORDER BY used to be applied always, and paginate's own ordering was
+	// appended after it, so ?sort_by=priority never did more than break ties
+	// inside a last-reply ordering. The column the support queue wants to sort
+	// by is not a column at all, which is why it cannot go in Sortable.
+	if !ticketListConfig.Sortable[params.SortBy] {
+		q = q.Order("COALESCE(last_reply_at, created_at) DESC")
+	}
+
+	res, err := paginate.List[models.Ticket](q, params, ticketListConfig)
 	if err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
@@ -226,25 +283,12 @@ func (h *TicketHandler) List(c *gin.Context) {
 //
 //	GET /api/tickets/:id
 func (h *TicketHandler) Get(c *gin.Context) {
-	id := c.Param("id")
-	userID, _ := c.Get("user_id")
-	role, _ := c.Get("user_role")
-	isAdmin := role == "ADMIN" || role == "EDITOR"
-
-	var t models.Ticket
-	q := h.DB.WithContext(c.Request.Context()).Preload("User").Preload("Assignee").
-		Preload("Replies", func(db *gorm.DB) *gorm.DB { return db.Order("created_at ASC") }).
-		Preload("Replies.User")
-	if err := q.First(&t, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "ticket not found"},
-		})
-		return
-	}
-	if !isAdmin && t.UserID != userID {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{"code": "FORBIDDEN", "message": "not your ticket"},
-		})
+	t, ok := h.visibleTicket(c, func(db *gorm.DB) *gorm.DB {
+		return db.Preload("User").Preload("Assignee").
+			Preload("Replies", func(db *gorm.DB) *gorm.DB { return db.Order("created_at ASC") }).
+			Preload("Replies.User")
+	})
+	if !ok {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": t})
@@ -255,7 +299,6 @@ func (h *TicketHandler) Get(c *gin.Context) {
 //
 //	POST /api/tickets/:id/reply
 func (h *TicketHandler) Reply(c *gin.Context) {
-	id := c.Param("id")
 	var req TicketReplyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -266,20 +309,9 @@ func (h *TicketHandler) Reply(c *gin.Context) {
 
 	userIDv, _ := c.Get("user_id")
 	userID, _ := userIDv.(string)
-	role, _ := c.Get("user_role")
-	isAdmin := role == "ADMIN" || role == "EDITOR"
 
-	var t models.Ticket
-	if err := h.DB.WithContext(c.Request.Context()).First(&t, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "ticket not found"},
-		})
-		return
-	}
-	if !isAdmin && t.UserID != userID {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{"code": "FORBIDDEN", "message": "not your ticket"},
-		})
+	t, ok := h.visibleTicket(c, nil)
+	if !ok {
 		return
 	}
 
@@ -287,7 +319,7 @@ func (h *TicketHandler) Reply(c *gin.Context) {
 		TicketID:     t.ID,
 		UserID:       userID,
 		Body:         req.Body,
-		IsAdminReply: isAdmin,
+		IsAdminReply: ticketStaff(c),
 	}
 	now := time.Now()
 	if err := h.DB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
@@ -329,8 +361,7 @@ func (h *TicketHandler) Reopen(c *gin.Context) {
 //
 //	PATCH /api/tickets/:id/assign
 func (h *TicketHandler) Assign(c *gin.Context) {
-	role, _ := c.Get("user_role")
-	if role != "ADMIN" && role != "EDITOR" {
+	if !ticketStaff(c) {
 		c.JSON(http.StatusForbidden, gin.H{
 			"error": gin.H{"code": "FORBIDDEN", "message": "admins only"},
 		})
@@ -344,12 +375,8 @@ func (h *TicketHandler) Assign(c *gin.Context) {
 		return
 	}
 
-	id := c.Param("id")
-	var t models.Ticket
-	if err := h.DB.WithContext(c.Request.Context()).First(&t, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "ticket not found"},
-		})
+	t, ok := h.visibleTicket(c, nil)
+	if !ok {
 		return
 	}
 	if err := h.DB.WithContext(c.Request.Context()).Model(&t).Update("assignee_id", req.AssigneeID).Error; err != nil {
@@ -368,22 +395,8 @@ func (h *TicketHandler) Assign(c *gin.Context) {
 }
 
 func (h *TicketHandler) transitionStatus(c *gin.Context, status string) {
-	id := c.Param("id")
-	userID, _ := c.Get("user_id")
-	role, _ := c.Get("user_role")
-	isAdmin := role == "ADMIN" || role == "EDITOR"
-
-	var t models.Ticket
-	if err := h.DB.WithContext(c.Request.Context()).First(&t, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "ticket not found"},
-		})
-		return
-	}
-	if !isAdmin && t.UserID != userID {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{"code": "FORBIDDEN", "message": "not your ticket"},
-		})
+	t, ok := h.visibleTicket(c, nil)
+	if !ok {
 		return
 	}
 
@@ -420,7 +433,7 @@ func (h *TicketHandler) emitTicketCreated(t *models.Ticket, creator *models.User
 
 	// Fan-out an admin notification per ADMIN — bell lights up.
 	var admins []models.User
-	h.DB.Where("role = ? AND active = ?", "ADMIN", true).Find(&admins)
+	h.DB.Where("role = ? AND active = ?", models.RoleAdmin, true).Find(&admins)
 	for _, a := range admins {
 		n := models.Notification{
 			UserID:   a.ID,

@@ -201,6 +201,7 @@ func authzGrantsGo() string {
 	src := `package authz
 
 import (
+	"errors"
 	"log"
 	"sync"
 	"sync/atomic"
@@ -318,7 +319,7 @@ func GrantsForRole(db *gorm.DB, roleID string) ([]string, error) {
 
 	var role models.Role
 	if err := db.Where("id = ?", roleID).First(&role).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
@@ -345,7 +346,7 @@ func resolveGrants(db *gorm.DB, userID string) ([]string, error) {
 	if len(roles) == 0 {
 		var user models.User
 		if err := db.Select("id", "role").Where("id = ?", userID).First(&user).Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, nil
 			}
 			return nil, err

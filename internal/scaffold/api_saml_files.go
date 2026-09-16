@@ -249,7 +249,7 @@ func EnsureSAMLKeypair(db *gorm.DB) (*loadedKeypair, error) {
 	if err == nil {
 		return parseKeypair(row)
 	}
-	if err != gorm.ErrRecordNotFound {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 

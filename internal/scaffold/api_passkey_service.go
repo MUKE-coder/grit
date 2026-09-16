@@ -331,6 +331,7 @@ func passkeyServiceTestGo() string {
 	return `package services
 
 import (
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -373,7 +374,7 @@ func TestRelyingPartyIDComesFromTheOrigin(t *testing.T) {
 
 func TestNoOriginsIsRefused(t *testing.T) {
 	db := passkeyDB(t)
-	if _, err := NewPasskeys(db, "Grit", []string{"", "*"}); err != ErrPasskeyNotConfigured {
+	if _, err := NewPasskeys(db, "Grit", []string{"", "*"}); !errors.Is(err, ErrPasskeyNotConfigured) {
 		t.Errorf("a deployment with no usable origin should refuse, got %v", err)
 	}
 }
@@ -397,7 +398,7 @@ func TestCeremonyIsSingleUse(t *testing.T) {
 	if _, _, err := p.takeSession(sid, "register"); err != nil {
 		t.Fatalf("the first read should succeed: %v", err)
 	}
-	if _, _, err := p.takeSession(sid, "register"); err != ErrPasskeyChallengeGone {
+	if _, _, err := p.takeSession(sid, "register"); !errors.Is(err, ErrPasskeyChallengeGone) {
 		t.Errorf("a spent challenge must not be readable again, got %v", err)
 	}
 }
@@ -419,7 +420,7 @@ func TestExpiredCeremonyIsRefused(t *testing.T) {
 	db.Model(&models.WebAuthnSession{}).Where("id = ?", sid).
 		Update("expires_at", time.Now().Add(-time.Minute))
 
-	if _, _, err := p.takeSession(sid, "register"); err != ErrPasskeyChallengeGone {
+	if _, _, err := p.takeSession(sid, "register"); !errors.Is(err, ErrPasskeyChallengeGone) {
 		t.Errorf("an expired challenge must be refused, got %v", err)
 	}
 }
@@ -439,7 +440,7 @@ func TestPurposeIsChecked(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := p.takeSession(sid, "login"); err != ErrPasskeyChallengeGone {
+	if _, _, err := p.takeSession(sid, "login"); !errors.Is(err, ErrPasskeyChallengeGone) {
 		t.Errorf("a register challenge must not pass as a login one, got %v", err)
 	}
 }
@@ -461,7 +462,7 @@ func TestDeleteIsScopedToTheOwner(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := p.Delete(mine.ID, key.ID); err != ErrPasskeyUnknown {
+	if err := p.Delete(mine.ID, key.ID); !errors.Is(err, ErrPasskeyUnknown) {
 		t.Errorf("deleting another user's passkey must fail, got %v", err)
 	}
 	var still int64

@@ -404,6 +404,23 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairListCounts(root, opts); err != nil {
 			fmt.Printf("  ⚠ returning list counts for the stat cards: %v\n", err)
 		}
+		// A duplicate email is a 409 and not a race, a user's role assignment
+		// and row move together, and the users list goes through paginate so
+		// its search, sort and filters work.
+		if err := repairUserWrites(root, opts); err != nil {
+			fmt.Printf("  ⚠ making the user writes atomic: %v\n", err)
+		}
+		// The support desk's visibility rule in one place answering 404, the
+		// notification scope in one place including MarkRead, and dashboards
+		// that say when Sentinel or Pulse is down instead of rendering zeros.
+		if err := refreshSupportAndDashboards(root, opts); err != nil {
+			fmt.Printf("  ⚠ refreshing the support desk and the dashboards: %v\n", err)
+		}
+		// A sentinel error is compared with errors.Is, so wrapping one no
+		// longer turns a 404 into a 500.
+		if err := repairSentinelErrors(root, opts); err != nil {
+			fmt.Printf("  ⚠ comparing sentinel errors with errors.Is: %v\n", err)
+		}
 		// A server error is logged with its request id, and its text no longer
 		// reaches the client or, from /api/health, anonymous callers.
 		if err := repairServerErrors(root, opts); err != nil {

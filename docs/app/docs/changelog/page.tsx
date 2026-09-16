@@ -66,6 +66,80 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.282.0 */}
+            <div className="mb-12" id="v3.282.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.282.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Race-free signups, working user filters, tickets that do not leak, honest dashboards, and errors.Is everywhere</h3>
+                <p>
+                  <strong>A duplicate email is a conflict, not a race.</strong> Registration and the admin&apos;s Create
+                  User both looked the email up and inserted only when nothing came back. Two signups for the same
+                  address arriving together both passed that check, and the one that lost at the unique index got a 500.
+                  Both now insert through <code>services.CreateUser</code>, which lets the index decide and answers a
+                  duplicate with 409 <code>EMAIL_EXISTS</code>. Updating a user is one transaction: the role assignment
+                  used to be committed first, so a failed row update left the account with the new role&apos;s
+                  permissions while <code>users.role</code> still showed the old one. The two reloads that ignored their
+                  error now report it instead of returning the row as it was before the update.
+                </p>
+                <p>
+                  <strong>The users list goes through paginate, and its filters work.</strong> 65 lines of hand-written
+                  paging are gone, including a <code>Count</code> whose error was thrown away, so a failed count showed
+                  a total of 0 above a full page of rows. The list now reads <code>?role=</code>,
+                  <code>?active=</code> and <code>?provider=</code>. Before, the admin&apos;s Role and Status filters
+                  had no effect, and the Active Users card showed the total number of users. The ticket list applies
+                  its latest-activity order only when the caller asks for no other sort, so <code>?sort_by=priority</code>
+                  no longer only breaks ties, and ticket search ignores case, so on Postgres &quot;Billing&quot; finds
+                  tickets filed as &quot;billing&quot;.
+                </p>
+                <p>
+                  <strong>One visibility rule for tickets, answering 404.</strong> Get, Reply, Assign and the close and
+                  reopen actions each had their own copy of the rule, and each answered someone else&apos;s ticket with
+                  a 403, which confirms the id exists. The owner check is now part of the query, so a ticket you cannot
+                  see looks exactly like one that does not exist. The notification scope was written out three times
+                  and missing from <code>MarkRead</code>, so any signed-in account could mark any notification as read
+                  by its id. One helper now covers all four paths and answers 404 for notifications that are not yours.
+                  Role checks in those handlers use <code>models.RoleAdmin</code> instead of the string
+                  &quot;ADMIN&quot;.
+                </p>
+                <p>
+                  <strong>The security and performance dashboards say when Sentinel or Pulse is down.</strong> Seven
+                  upstream calls threw their errors away, so a dead service rendered as a 200 full of zeros: no banned
+                  IPs, no threats, no errors, which reads as safe and fast. Each response now carries a
+                  <code>degraded</code> list naming the calls that failed, and the admin pages show it in a banner.
+                  When nothing answers at all, the endpoint returns 502 with <code>SENTINEL_UNAVAILABLE</code> or
+                  <code>PULSE_UNAVAILABLE</code>, both in the error code catalogue.
+                </p>
+                <p>
+                  <strong>Sentinel errors are compared with errors.Is.</strong> A generated API had 27 comparisons
+                  against errors such as <code>gorm.ErrRecordNotFound</code> using <code>==</code>, plus two
+                  <code>switch err</code> blocks. Each one stops matching the moment someone wraps the error with
+                  <code>%w</code>, which quietly turns a 404 into a 500, and wrapping is exactly what a careful developer
+                  does. All of them now use <code>errors.Is</code>, including the generated tests and the cache&apos;s
+                  <code>redis.Nil</code> check, and <code>.golangci.yml</code> turns on errorlint&apos;s comparison
+                  check, which reports nothing on a fresh project.
+                </p>
+                <p>
+                  <strong>No more false alarm about the realtime hub.</strong> On any project already on v3.281.0,
+                  <code>grit upgrade</code> warned that <code>internal/realtime/hub.go</code> &quot;does not send the way
+                  Grit wrote it&quot; and could panic, about a hub that was exactly as Grit wrote it. The check predated
+                  the counted sends v3.281.0 introduced and recognised neither form. It now accepts them, and nothing in
+                  the file changes.
+                </p>
+                <p>
+                  <code>grit upgrade</code> patches the user and auth handlers where they still read as Grit wrote them,
+                  refreshes the ticket, notification, security and observability handlers (an edited copy is reported
+                  as a conflict, not overwritten), and rewrites sentinel comparisons across <code>apps/api/internal</code>,
+                  tests included.
+                </p>
+              </div>
+            </div>
+
             {/* v3.281.0 */}
             <div className="mb-12" id="v3.281.0">
               <div className="flex items-center gap-3 mb-4">

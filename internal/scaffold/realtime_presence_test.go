@@ -285,3 +285,18 @@ func TestRealtimeClientTracksPresence(t *testing.T) {
 		}
 	}
 }
+
+// A hub written by v3.281.0 or later counts its sends, so the fixed text the
+// send repair looks for is not there verbatim. Upgrading such a project used to
+// warn that its hub "does not send the way Grit wrote it", on every upgrade,
+// about a hub that was exactly as Grit wrote it.
+func TestHubSendsRepairAcceptsTheCountedHub(t *testing.T) {
+	src := apiRealtimeHubGo()
+	out, fixed, warnings := repairRealtimeHubSendsSource(src)
+	if len(warnings) != 0 {
+		t.Fatalf("the current hub template drew a warning: %v", warnings)
+	}
+	if len(fixed) != 0 || out != src {
+		t.Fatalf("the current hub template was changed: %v", fixed)
+	}
+}

@@ -316,6 +316,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/models"
 )
 
 // Ownable is implemented by domain models whose ownership is identified
@@ -368,7 +370,7 @@ func MustOwn(c *gin.Context, db *gorm.DB, dest Ownable, id string) error {
 // to have created themselves.
 func IsAdmin(c *gin.Context) bool {
 	role, _ := c.Get("user_role")
-	return asString(role) == "ADMIN"
+	return asString(role) == models.RoleAdmin
 }
 
 // MustOwnUnlessAdmin is MustOwn with that exemption. It is what a generated

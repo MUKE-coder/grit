@@ -325,6 +325,7 @@ func apiAuthOAuthGo() string {
 	return `package handlers
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -376,7 +377,7 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 	result := h.DB.WithContext(c.Request.Context()).Where("email = ?", gothUser.Email).First(&user)
 
 	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			// Create new user from OAuth data
 			now := time.Now()
 			user = models.User{
