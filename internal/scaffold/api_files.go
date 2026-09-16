@@ -727,6 +727,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -847,8 +848,7 @@ type Config struct {
 	RedisURL string
 
 	// Storage
-` + configStorageDriverFieldNew + `	Storage       StorageConfig // Resolved config for the active driver
-
+` + configStorageDriverFieldNew + configStorageDisksField + `
 ` + configMailFieldsNew + `
 	CORSOrigins []string
 
@@ -936,8 +936,7 @@ func Load() (*Config, error) {
 		RedisURL:    resolveRedisURL(),
 
 		StorageDriver: storageDriver,
-		Storage:       resolveStorage(storageDriver),
-
+` + configStorageDisksLoad + `
 		ResendAPIKey: getEnv("RESEND_API_KEY", ""),
 ` + configMailLoadNew + `
 		// The Wails desktop webview is allowed by middleware.isWailsOrigin (it
@@ -1212,7 +1211,7 @@ func warnProviderMismatch(provider, dsn string) {
 	}
 }
 
-` + configResolveStorageDriverFunc + `// resolveStorage returns the StorageConfig for the active driver.
+` + configResolveStorageDriverFunc + configStorageDisksFuncs + `// resolveStorage returns the StorageConfig for the active driver.
 //
 // For AWS S3, leave S3_ENDPOINT empty — the AWS SDK will use the
 // regional endpoint automatically (s3.<region>.amazonaws.com).
@@ -10099,8 +10098,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		protected.POST("/uploads/complete", uploadHandler.CompleteUpload)
 		protected.GET("/uploads", uploadHandler.List)
 		protected.GET("/uploads/stats", uploadHandler.Stats)
-		protected.GET("/uploads/:id", uploadHandler.GetByID)
-		protected.DELETE("/uploads/:id", uploadHandler.Delete)
+` + routesUploadDownload + `		protected.DELETE("/uploads/:id", uploadHandler.Delete)
 
 		// Offline-first sync — desktop clients call these to flush their
 		// local outbox and pull server-side updates.

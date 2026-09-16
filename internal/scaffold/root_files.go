@@ -255,16 +255,7 @@ API_URL=http://localhost:8080
 
 {{ADMIN_URL_ENV}}
 
-# Storage: which provider to use: local, minio, s3, r2, b2
-STORAGE_DRIVER=minio
-# local keeps files in STORAGE_LOCAL_ROOT and the API serves them from
-# APP_URL/files. Outside production, minio with no MINIO_ACCESS_KEY uses local,
-# so uploads work before Docker is running. Production refuses local unless
-# ALLOW_LOCAL_STORAGE_IN_PRODUCTION=true (one server, the directory on a volume).
-# STORAGE_LOCAL_ROOT=storage/app
-# Signs local temporary URLs. Unset, JWT_SECRET is used.
-# STORAGE_URL_SECRET=
-
+`+envStorageHeadNew+`
 # Browser-facing storage origin. Uploads are presigned PUTs the browser makes
 # straight to object storage, and stored images load from the same host, so
 # this origin must be allowed by the frontend Content-Security-Policy. In dev

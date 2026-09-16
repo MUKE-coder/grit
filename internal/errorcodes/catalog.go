@@ -265,6 +265,9 @@ var catalog = []Entry{
 	{"STORAGE_UNAVAILABLE", http.StatusServiceUnavailable, CategoryDisabled, "uploads",
 		"Object storage is not configured here, or is not answering.",
 		"Retry later. Nothing the client sends will fix it."},
+	{"RANGE_NOT_SATISFIABLE", http.StatusRequestedRangeNotSatisfiable, CategoryRequest, "uploads",
+		"The Range header asks for bytes outside the file. The Content-Range header gives the real size.",
+		"Read the size from Content-Range and request a range inside it, or drop the Range header to get the whole file."},
 
 	// ── AI gateway ─────────────────────────────────────────────────────────────
 	{"AI_UNAVAILABLE", http.StatusServiceUnavailable, CategoryDisabled, "ai",

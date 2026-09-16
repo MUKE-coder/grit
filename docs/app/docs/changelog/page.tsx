@@ -66,6 +66,73 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.280.0 */}
+            <div className="mb-12" id="v3.280.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.280.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Storage helpers, named disks, private files that stay private, and AWS S3 with no endpoint</h3>
+                <p>
+                  <strong>Store and serve files in one call.</strong> <code>storage.Store</code> and
+                  <code>storage.StoreAs</code> save a form upload under a generated
+                  <code>&lt;dir&gt;/&lt;yyyy&gt;/&lt;mm&gt;/&lt;uuid&gt;&lt;ext&gt;</code> key. They sniff the real
+                  content type (HTML and SVG are always refused), enforce a size limit and return the key.
+                  <code>storage.ServeFile</code> streams a stored file through the API with Content-Type,
+                  Content-Length, Last-Modified, inline or attachment disposition, 304 and single-range 206 support; on
+                  S3 a range is one ranged GET. The upload handler now uses them, so the name a file arrived with never
+                  reaches a storage key, and the new <code>GET /api/v1/uploads/:id/download</code> serves any upload
+                  the caller can see, private files included, on every driver. A range outside the file answers 416
+                  with the new <code>RANGE_NOT_SATISFIABLE</code> code, which is in the error code catalogue.
+                </p>
+                <p>
+                  <strong>Named disks.</strong> <code>STORAGE_DISKS=backups</code> with
+                  <code>STORAGE_DISK_BACKUPS_BUCKET</code> opens a second store, reachable through
+                  <code>storage.Disks.Get(&quot;backups&quot;)</code>. The Data &amp; Backup page, scheduled backups
+                  and <code>grit backup</code> write archives there when it exists, and older archives on the default
+                  disk still download and prune. <code>grit backup</code> now opens the storage the API uses: with
+                  <code>STORAGE_DRIVER=local</code> it used to exit with
+                  <code>bucket &quot;&quot; not accessible</code>, and now writes the archive.
+                </p>
+                <p>
+                  <strong>Visibility.</strong> <code>PutOptions.Visibility</code> states whether a file is public or
+                  private, and <code>Put</code> refuses a key whose prefix says otherwise, so a private file cannot
+                  land where anyone can read it. <code>STORAGE_PUBLIC_PREFIXES</code> sets the public prefixes
+                  (default <code>uploads/,thumbnails/</code>) and the bucket policy follows them. Cloudflare R2 and
+                  Backblaze B2 have no bucket policies, so there private files belong in a private bucket, served with
+                  a temporary URL.
+                </p>
+                <p>
+                  <strong>Upright thumbnails.</strong> Thumbnails for presigned uploads, and for images the upload
+                  pipeline skipped, now go through the media pipeline: EXIF orientation applied, metadata stripped, at
+                  400px. A portrait phone photo used to get a sideways 300x300 thumbnail; it now gets an upright
+                  400x400 one.
+                </p>
+                <p>
+                  <strong>AWS S3 without an endpoint.</strong> <code>STORAGE_DRIVER=s3</code> with no
+                  <code>S3_ENDPOINT</code> now connects to the AWS regional endpoint, and with no access key the SDK
+                  credential chain (an IAM role) is used. Before, the API silently skipped storage and every upload
+                  answered <code>STORAGE_UNAVAILABLE</code>.
+                </p>
+                <p>
+                  <strong>A clean security scan for the image API.</strong> v3.279.0&apos;s
+                  <code>DominantColor</code> tripped gosec in generated projects (an 8-bit conversion it could not
+                  prove safe, and an index it could not bound). It is rewritten so the scan passes, with the same
+                  result.
+                </p>
+                <p>
+                  The file storage docs are rewritten to cover drivers, local development, the Disk interface, the
+                  helpers, named disks, visibility, the presign fallback, file lifecycle and the real endpoints.
+                  <code>grit upgrade</code> updates config.go, main.go, routes.go, cmd/backup and .env.example in
+                  existing projects.
+                </p>
+              </div>
+            </div>
+
             {/* v3.279.0 */}
             <div className="mb-12" id="v3.279.0">
               <div className="flex items-center gap-3 mb-4">

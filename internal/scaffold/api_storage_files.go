@@ -15,6 +15,9 @@ func writeStorageFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "storage", "disk.go"):         storageDiskGo(),
 		filepath.Join(apiRoot, "internal", "storage", "local.go"):        storageLocalGo(),
 		filepath.Join(apiRoot, "internal", "storage", "disk_test.go"):    storageDiskTestGo(),
+		filepath.Join(apiRoot, "internal", "storage", "store.go"):        storageStoreGo(),
+		filepath.Join(apiRoot, "internal", "storage", "store_test.go"):   storageStoreTestGo(),
+		filepath.Join(apiRoot, "internal", "storage", "disks.go"):        storageDisksGo(),
 		filepath.Join(apiRoot, "internal", "storage", "image.go"):        storageImageGo(),
 		filepath.Join(apiRoot, "internal", "storage", "image_test.go"):   storageImageTestGo(),
 		filepath.Join(apiRoot, "internal", "storage", "url_test.go"):     storageURLTestGo(module),
@@ -74,7 +77,25 @@ type Storage struct {
 // PublicPrefixes are the key prefixes anyone may read without a signature:
 // uploaded files and their thumbnails, which pages link to directly. Backups,
 // private originals and every other key are read through GetSignedURL.
+//
+// STORAGE_PUBLIC_PREFIXES replaces them, through SetPublicPrefixes.
 var PublicPrefixes = []string{"uploads/", "thumbnails/"}
+
+// SetPublicPrefixes replaces PublicPrefixes. Call it before opening a store: a
+// bucket's policy is written from the prefixes when it connects. Each prefix
+// is given a trailing slash, so "media" cannot make "media-private/" public,
+// and an empty list keeps the prefixes there are.
+func SetPublicPrefixes(prefixes []string) {
+	cleaned := make([]string, 0, len(prefixes))
+	for _, prefix := range prefixes {
+		if prefix = strings.Trim(strings.TrimSpace(prefix), "/"); prefix != "" {
+			cleaned = append(cleaned, prefix+"/")
+		}
+	}
+	if len(cleaned) > 0 {
+		PublicPrefixes = cleaned
+	}
+}
 
 // IsPublicKey reports whether key is under one of PublicPrefixes.
 func IsPublicKey(key string) bool {
@@ -124,6 +145,21 @@ func Wrap(disk Disk) *Storage {
 // Disk is the driver behind this store.
 func (s *Storage) Disk() Disk {
 	return s.disk
+}
+
+// Describe says where this store keeps files, for a startup log line.
+func (s *Storage) Describe() string {
+	switch d := s.disk.(type) {
+	case *LocalDisk:
+		return fmt.Sprintf("local disk at %s, served from %s", d.root, d.publicURL)
+	case *S3Disk:
+		if d.cfg.Endpoint == "" {
+			return fmt.Sprintf("bucket %q on AWS S3 (%s)", d.bucket, d.cfg.Region)
+		}
+		return fmt.Sprintf("bucket %q at %s", d.bucket, d.cfg.Endpoint)
+	default:
+		return fmt.Sprintf("%T", d)
+	}
 }
 
 // Upload stores a file at the given key.
@@ -209,13 +245,18 @@ func NewS3Disk(cfg config.StorageConfig) (*S3Disk, error) {
 		},
 	)
 
-	awsCfg, err := awsconfig.LoadDefaultConfig(context.Background(),
+	loadOptions := []func(*awsconfig.LoadOptions) error{
 		awsconfig.WithRegion(cfg.Region),
-		awsconfig.WithCredentialsProvider(
-			credentials.NewStaticCredentialsProvider(cfg.AccessKey, cfg.SecretKey, ""),
-		),
 		awsconfig.WithEndpointResolverWithOptions(customResolver),
-	)
+	}
+	// With no key, the SDK's own chain finds credentials: AWS_* variables, a
+	// shared profile, or the IAM role of the EC2, ECS or Lambda it runs on.
+	if cfg.AccessKey != "" {
+		loadOptions = append(loadOptions, awsconfig.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider(cfg.AccessKey, cfg.SecretKey, ""),
+		))
+	}
+	awsCfg, err := awsconfig.LoadDefaultConfig(context.Background(), loadOptions...)
 	if err != nil {
 		return nil, fmt.Errorf("loading AWS config: %w", err)
 	}
@@ -261,7 +302,7 @@ func NewS3Disk(cfg config.StorageConfig) (*S3Disk, error) {
 		// is switched on per bucket in their dashboards. Anywhere else, a refusal
 		// leaves the bucket with whatever policy it had before.
 		log.Printf("storage: could not set the bucket policy on %q: %v. Where the provider has bucket policies, allow anonymous reads on %s only; "+
-			"where it has none (R2, B2), do not give the bucket that holds backups a public domain",
+			"where it has none (R2, B2), every key in a public bucket is public, so put backups in a private bucket of their own (STORAGE_DISKS=backups) and serve private files with a temporary URL",
 			cfg.Bucket, err, strings.Join(PublicPrefixes, ", "))
 	}
 
@@ -289,6 +330,9 @@ func (d *S3Disk) Put(ctx context.Context, key string, r io.Reader, opts PutOptio
 	if err := checkKey(key); err != nil {
 		return err
 	}
+	if err := checkVisibility(key, opts.Visibility); err != nil {
+		return err
+	}
 	contentType := opts.ContentType
 	if contentType == "" {
 		contentType = "application/octet-stream"
@@ -313,6 +357,26 @@ func (d *S3Disk) Get(ctx context.Context, key string) (io.ReadCloser, error) {
 	result, err := d.client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(d.bucket),
 		Key:    aws.String(key),
+	})
+	if err != nil {
+		return nil, s3Failed("downloading", key, err)
+	}
+	return result.Body, nil
+}
+
+// GetRange opens length bytes of the object at key from offset, so ServeFile
+// answers a Range request with one ranged GET rather than the whole object.
+func (d *S3Disk) GetRange(ctx context.Context, key string, offset, length int64) (io.ReadCloser, error) {
+	if err := checkKey(key); err != nil {
+		return nil, err
+	}
+	if offset < 0 || length <= 0 {
+		return nil, fmt.Errorf("storage: invalid range %d+%d for %q", offset, length, key)
+	}
+	result, err := d.client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(d.bucket),
+		Key:    aws.String(key),
+		Range:  aws.String(fmt.Sprintf("bytes=%d-%d", offset, offset+length-1)),
 	})
 	if err != nil {
 		return nil, s3Failed("downloading", key, err)
@@ -461,6 +525,14 @@ func (d *S3Disk) URL(key string) string {
 		return fmt.Sprintf("%s/%s", public, escaped)
 	}
 	endpoint := strings.TrimRight(d.cfg.Endpoint, "/")
+	if endpoint == "" {
+		// AWS S3 at its regional default, where a bucket is addressed by host.
+		region := d.cfg.Region
+		if region == "" {
+			region = "us-east-1"
+		}
+		return fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", d.bucket, region, escaped)
+	}
 	return fmt.Sprintf("%s/%s/%s", endpoint, d.bucket, escaped)
 }
 
@@ -518,21 +590,28 @@ import (
 	"fmt"
 	"image"
 	_ "image/gif"
-	"image/jpeg"
-	"image/png"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"strings"
-
-	"github.com/disintegration/imaging"
 
 	"{{MODULE}}/internal/media"
 )
 
+// These helpers are the path an image takes when the upload pipeline did not
+// handle it: a presigned upload, which goes straight to storage, or a type the
+// pipeline skipped. They run through media.Transform, the pipeline itself, so
+// EXIF orientation is applied and metadata stripped the same way on both paths.
+// Before, they decoded without orientation, and a portrait phone photo got a
+// sideways thumbnail.
+
 // MaxImageWidth is the maximum width for processed images.
 const MaxImageWidth = 1920
 
-// ThumbnailSize is the size of generated thumbnails.
-const ThumbnailSize = 300
+// ThumbnailSize is the edge of the square thumbnail GenerateThumbnail makes:
+// the "thumb" rendition of media's default profile, so a thumbnail is the same
+// size whichever path made it.
+const ThumbnailSize = 400
 
 // MaxImageBytes is the most the helpers read of an image. Uploads are capped at
 // 50 MB, and the one byte over tells a larger file from one exactly at the cap.
@@ -550,11 +629,12 @@ var (
 	ErrUnreadableImage = errors.New("image cannot be decoded")
 )
 
-// readImage reads and decodes an image, refusing it first when its header
-// claims more pixels than media.Get("").MaxPixels. image.Decode commits the
-// memory for every pixel before it reads them, so the header is the only place
-// a decompression bomb can be stopped.
-func readImage(reader io.Reader) (image.Image, error) {
+// readImage reads an image and checks its header, refusing it when the header
+// claims more pixels than media.Get("").MaxPixels. Decoding commits the memory
+// for every pixel before it reads them, so the header is the only place a
+// decompression bomb can be stopped, and it is stopped here with an error a job
+// knows not to retry.
+func readImage(reader io.Reader) ([]byte, error) {
 	data, err := io.ReadAll(io.LimitReader(reader, MaxImageBytes))
 	if err != nil {
 		return nil, fmt.Errorf("reading image: %w", err)
@@ -571,49 +651,44 @@ func readImage(reader io.Reader) (image.Image, error) {
 		return nil, fmt.Errorf("image is %dx%d, over the %d megapixel limit: %w",
 			cfg.Width, cfg.Height, limit/1000000, ErrImageTooLarge)
 	}
-	img, _, err := image.Decode(bytes.NewReader(data))
-	if err != nil {
-		return nil, fmt.Errorf("decoding image: %v: %w", err, ErrUnreadableImage)
-	}
-	return img, nil
+	return data, nil
 }
 
-// ProcessImage resizes an image if it exceeds MaxImageWidth, preserving aspect ratio.
-// Returns the processed image bytes and format.
+// transformImage runs one image through media.Transform at size, keeping the
+// format it came in: PNG stays PNG, anything else becomes JPEG.
+func transformImage(reader io.Reader, mimeType string, size media.Size) ([]byte, error) {
+	data, err := readImage(reader)
+	if err != nil {
+		return nil, err
+	}
+	profile := media.Get("")
+	profile.Max = size
+	profile.Quality = 0.85
+	profile.Format = media.JPEG
+	if strings.EqualFold(mimeType, "image/png") {
+		profile.Format = media.PNG
+	}
+	// No extra renditions: the caller wants this one image.
+	profile.Renditions = map[string]media.Size{}
+	result, err := media.Transform(bytes.NewReader(data), profile)
+	if err != nil {
+		return nil, fmt.Errorf("processing image: %v: %w", err, ErrUnreadableImage)
+	}
+	return result.Primary.Bytes, nil
+}
+
+// ProcessImage resizes an image wider than MaxImageWidth, keeping its aspect
+// ratio and applying its EXIF orientation, and returns the encoded bytes.
 func ProcessImage(reader io.Reader, mimeType string) ([]byte, error) {
-	img, err := readImage(reader)
-	if err != nil {
-		return nil, err
-	}
-
-	bounds := img.Bounds()
-	if bounds.Dx() > MaxImageWidth {
-		img = imaging.Resize(img, MaxImageWidth, 0, imaging.Lanczos)
-	}
-
-	var buf bytes.Buffer
-	if err := encodeImage(&buf, img, mimeType); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	// The bound is the width: the height limit is far past any image under the
+	// pixel limit that is also this wide.
+	return transformImage(reader, mimeType, media.Fit(MaxImageWidth, MaxImageWidth*64))
 }
 
-// GenerateThumbnail creates a square thumbnail of the given size.
+// GenerateThumbnail makes a ThumbnailSize square thumbnail, cropped from the
+// centre of the image the right way up.
 func GenerateThumbnail(reader io.Reader, mimeType string) ([]byte, error) {
-	img, err := readImage(reader)
-	if err != nil {
-		return nil, err
-	}
-
-	thumb := imaging.Fill(img, ThumbnailSize, ThumbnailSize, imaging.Center, imaging.Lanczos)
-
-	var buf bytes.Buffer
-	if err := encodeImage(&buf, thumb, mimeType); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	return transformImage(reader, mimeType, media.Fill(ThumbnailSize, ThumbnailSize))
 }
 
 // IsImageMimeType returns true if the MIME type is a supported image format.
@@ -623,15 +698,6 @@ func IsImageMimeType(mimeType string) bool {
 		return true
 	}
 	return false
-}
-
-func encodeImage(buf *bytes.Buffer, img image.Image, mimeType string) error {
-	switch strings.ToLower(mimeType) {
-	case "image/png":
-		return png.Encode(buf, img)
-	default:
-		return jpeg.Encode(buf, img, &jpeg.Options{Quality: 85})
-	}
 }
 `
 }
@@ -857,52 +923,37 @@ func (h *UploadHandler) Create(c *gin.Context) {
 		return
 	}
 
-	mimeType := header.Header.Get("Content-Type")
-
-	// The client-declared Content-Type is trivially spoofable, so sniff the
-	// real type from the first 512 bytes and reconcile. This stops an
-	// executable or HTML payload from masquerading as an allowed image.
-	sniff := make([]byte, 512)
-	n, _ := io.ReadFull(file, sniff)
-	if _, serr := file.Seek(0, io.SeekStart); serr != nil {
+	// The declared Content-Type is trivially spoofed, so the real type is sniffed
+	// from the bytes and reconciled with it: HTML and SVG are refused whatever
+	// they claim, and a claimed image must be one.
+	mimeType, err := storage.DetectContentType(file, header.Header.Get("Content-Type"))
+	switch {
+	case errors.Is(err, storage.ErrContentMismatch):
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "File content does not match its declared type"},
+		})
+		return
+	case errors.Is(err, storage.ErrFileTypeNotAllowed):
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "File type not allowed"},
+		})
+		return
+	case err != nil:
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "UPLOAD_FAILED", "message": "Could not read the uploaded file"},
 		})
 		return
 	}
-	detected := strings.SplitN(http.DetectContentType(sniff[:n]), ";", 2)[0]
-
-	// Never trust an HTML/SVG payload (stored-XSS vectors), regardless of the
-	// declared type.
-	if detected == "text/html" || detected == "image/svg+xml" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "File type not allowed"},
-		})
-		return
-	}
-	// If the client claims an image, the bytes must actually be one.
-	if strings.HasPrefix(mimeType, "image/") && !strings.HasPrefix(detected, "image/") {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "File content does not match its declared type"},
-		})
-		return
-	}
-	// Prefer the sniffed type for the allow-list decision + storage when it's a
-	// concrete image type; otherwise keep the declared type (some valid
-	// documents sniff as application/octet-stream).
-	if strings.HasPrefix(detected, "image/") {
-		mimeType = detected
-	}
 
 	// If accepts was provided, validate against the per-field allow set.
 	// Otherwise fall back to the global allowlist (backwards-compat).
-	allowed := false
-	if len(acceptsList) > 0 {
-		allowed = files.AllowsMIME(acceptsList, mimeType)
-	} else {
-		allowed = AllowedMimeTypes[mimeType]
+	allowed := func(contentType string) bool {
+		if len(acceptsList) > 0 {
+			return files.AllowsMIME(acceptsList, contentType)
+		}
+		return AllowedMimeTypes[contentType]
 	}
-	if !allowed {
+	if !allowed(mimeType) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{
 				"code":    "INVALID_FILE_TYPE",
@@ -912,13 +963,10 @@ func (h *UploadHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Generate unique filename
-	ext := filepath.Ext(header.Filename)
-	base := strings.TrimSuffix(filepath.Base(header.Filename), ext)
-	stamp := time.Now()
-	filename := fmt.Sprintf("%d-%s%s", stamp.UnixNano(), base, ext)
-	prefix := fmt.Sprintf("uploads/%s", stamp.Format("2006/01"))
-	key := fmt.Sprintf("%s/%s", prefix, filename)
+	// Every key is generated, <yyyy>/<mm>/<uuid><ext>: the name the file
+	// arrived with is kept on the row and never reaches storage.
+	var key string
+	disk := h.Storage.Disk()
 
 	// The optimisation profile this field asked for. An unknown or absent name
 	// resolves to the default profile rather than failing, so a stale name in a
@@ -960,14 +1008,16 @@ func (h *UploadHandler) Create(c *gin.Context) {
 			log.Printf("media: keeping %s unoptimised: %v", header.Filename, terr)
 		} else {
 			optimised = true
+			key = storage.NewKey("uploads", res.Primary.Ext)
+			stem := strings.TrimSuffix(key, res.Primary.Ext)
 
 			// The original, under a prefix of its own. Private, because it is
 			// kept for reprocessing rather than for serving, and a 5 MB file
 			// reachable by anyone who guesses the key defeats the exercise.
 			if !profile.DiscardOriginal {
 				if _, serr := file.Seek(0, io.SeekStart); serr == nil {
-					origKey := fmt.Sprintf("originals/%s/%s", stamp.Format("2006/01"), filename)
-					if err := h.Storage.Upload(c.Request.Context(), origKey, file, mimeType); err == nil {
+					origKey := "originals/" + strings.TrimPrefix(stem, "uploads/") + storage.Extension(header.Filename, mimeType)
+					if err := disk.Put(c.Request.Context(), origKey, file, storage.PutOptions{ContentType: mimeType, Visibility: storage.VisibilityPrivate}); err == nil {
 						ref.OriginalKey = origKey
 						ref.OriginalSize = header.Size
 					} else {
@@ -978,11 +1028,9 @@ func (h *UploadHandler) Create(c *gin.Context) {
 				}
 			}
 
-			key = fmt.Sprintf("%s/%s-%d%s", prefix, base, stamp.UnixNano(), res.Primary.Ext)
-			filename = filepath.Base(key)
 			storedMIME = res.Primary.MIME
 			storedSize = int64(len(res.Primary.Bytes))
-			if err := h.Storage.Upload(c.Request.Context(), key, bytes.NewReader(res.Primary.Bytes), storedMIME); err != nil {
+			if err := disk.Put(c.Request.Context(), key, bytes.NewReader(res.Primary.Bytes), storage.PutOptions{ContentType: storedMIME}); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": gin.H{"code": "UPLOAD_FAILED", "message": "Failed to upload file"},
 				})
@@ -1009,8 +1057,8 @@ func (h *UploadHandler) Create(c *gin.Context) {
 						<-uploadSlots
 						renditionsWG.Done()
 					}()
-					rk := fmt.Sprintf("%s/%s-%d-%s%s", prefix, base, stamp.UnixNano(), r.Name, r.Ext)
-					if err := h.Storage.Upload(c.Request.Context(), rk, bytes.NewReader(r.Bytes), r.MIME); err != nil {
+					rk := stem + "-" + r.Name + r.Ext
+					if err := disk.Put(c.Request.Context(), rk, bytes.NewReader(r.Bytes), storage.PutOptions{ContentType: r.MIME}); err != nil {
 						// A missing rendition is a smaller problem than a failed
 						// upload: the primary is already stored and usable.
 						log.Printf("media: rendition %q failed for %s: %v", r.Name, header.Filename, err)
@@ -1044,13 +1092,9 @@ func (h *UploadHandler) Create(c *gin.Context) {
 
 	// Not optimisable, or optimisation was declined: store what arrived.
 	if !optimised {
-		if _, serr := file.Seek(0, io.SeekStart); serr != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": gin.H{"code": "UPLOAD_FAILED", "message": "Could not read the uploaded file"},
-			})
-			return
-		}
-		if err := h.Storage.Upload(c.Request.Context(), key, file, mimeType); err != nil {
+		stored, err := storage.Store(c.Request.Context(), disk, "uploads", header, storage.StoreOptions{MaxSize: maxSize, Allow: allowed})
+		if err != nil {
+			log.Printf("[uploads] storing %s: %v", header.Filename, err)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": gin.H{
 					"code":    "UPLOAD_FAILED",
@@ -1059,13 +1103,14 @@ func (h *UploadHandler) Create(c *gin.Context) {
 			})
 			return
 		}
+		key = stored
 	}
 	ref.Optimised = optimised
 
 	userID, _ := c.Get("user_id")
 
 	upload := models.Upload{
-		Filename:     filename,
+		Filename:     filepath.Base(key),
 		OriginalName: header.Filename,
 		// The stored file, not the file that arrived. Recording the source
 		// type and size here would make every storage total in the admin a
@@ -1232,6 +1277,34 @@ func (h *UploadHandler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": upload,
 	})
+}
+
+// Download streams one stored file through the API under the name it was
+// uploaded with, as an attachment, or inline with ?inline=true.
+//
+// The caller must be able to see the upload, and the bytes never need a public
+// URL, so this serves private files on every driver, R2 and B2 included, where
+// the bucket rather than the key decides what is public. Range requests work,
+// so a video seeks and a large download resumes.
+func (h *UploadHandler) Download(c *gin.Context) {
+	if h.Storage == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": gin.H{"code": "STORAGE_UNAVAILABLE", "message": "File storage is not configured"},
+		})
+		return
+	}
+	var upload models.Upload
+	if err := h.uploadScope(c, "view").Where("id = ?", c.Param("id")).First(&upload).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{"code": "NOT_FOUND", "message": "Upload not found"},
+		})
+		return
+	}
+	disposition := storage.Attachment
+	if c.Query("inline") == "true" {
+		disposition = storage.Inline
+	}
+	storage.ServeFileAs(c, h.Storage.Disk(), upload.Path, disposition, upload.OriginalName)
 }
 
 // Delete removes an upload and its stored file.
@@ -1610,9 +1683,12 @@ import (
 	"hash/crc32"
 	"image"
 	"image/color"
+	"image/jpeg"
 	"image/png"
 	"runtime"
 	"testing"
+
+	"{{MODULE}}/internal/media"
 )
 
 // pngClaiming is a PNG whose header claims w x h RGBA pixels, with one short
@@ -1682,6 +1758,78 @@ func TestAnOrdinaryImageStillMakesAThumbnail(t *testing.T) {
 	got, _, err := image.DecodeConfig(bytes.NewReader(thumb))
 	if err != nil || got.Width != ThumbnailSize || got.Height != ThumbnailSize {
 		t.Errorf("thumbnail is %dx%d (%v), want %dx%d", got.Width, got.Height, err, ThumbnailSize, ThumbnailSize)
+	}
+	if thumb := media.DefaultProfile().Renditions["thumb"]; thumb.Width != ThumbnailSize || thumb.Height != ThumbnailSize {
+		t.Errorf("ThumbnailSize is %d, the media pipeline's thumb is %dx%d", ThumbnailSize, thumb.Width, thumb.Height)
+	}
+}
+
+// jpegWithOrientation encodes img as a JPEG carrying an EXIF Orientation tag,
+// as a phone writes a portrait photo: the pixels stay landscape and the tag
+// says how to turn them.
+func jpegWithOrientation(t *testing.T, img image.Image, orientation byte) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 95}); err != nil {
+		t.Fatal(err)
+	}
+	src := buf.Bytes()
+	// A big-endian TIFF header and one IFD entry: tag 0x0112, SHORT, count 1.
+	tiff := []byte{'M', 'M', 0, 42, 0, 0, 0, 8, 0, 1, 0x01, 0x12, 0, 3, 0, 0, 0, 1, 0, orientation, 0, 0, 0, 0, 0, 0}
+	payload := append([]byte("Exif\x00\x00"), tiff...)
+	out := append([]byte{}, src[:2]...)
+	out = append(out, 0xFF, 0xE1, byte((len(payload)+2)>>8), byte(len(payload)+2))
+	out = append(out, payload...)
+	return append(out, src[2:]...)
+}
+
+func isRed(c color.Color) bool {
+	r, g, b, _ := c.RGBA()
+	return r > 0xa000 && g < 0x6000 && b < 0x6000
+}
+
+func isBlue(c color.Color) bool {
+	r, g, b, _ := c.RGBA()
+	return b > 0xa000 && r < 0x6000 && g < 0x6000
+}
+
+// A photo whose EXIF says "turn me 90 degrees clockwise" gets a thumbnail the
+// right way up. The helpers used to decode without orientation, so a presigned
+// upload or a skipped one got a sideways thumbnail.
+func TestThumbnailsFollowEXIFOrientation(t *testing.T) {
+	// Landscape pixels: red on the left, blue on the right. Turned clockwise,
+	// red is on top.
+	wide := image.NewRGBA(image.Rect(0, 0, 160, 80))
+	for y := 0; y < 80; y++ {
+		for x := 0; x < 160; x++ {
+			c := color.RGBA{R: 255, A: 255}
+			if x >= 80 {
+				c = color.RGBA{B: 255, A: 255}
+			}
+			wide.Set(x, y, c)
+		}
+	}
+	photo := jpegWithOrientation(t, wide, 6)
+
+	thumb, err := GenerateThumbnail(bytes.NewReader(photo), "image/jpeg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	img, _, err := image.Decode(bytes.NewReader(thumb))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !isRed(img.At(100, 60)) || !isRed(img.At(300, 60)) || !isBlue(img.At(100, 340)) || !isBlue(img.At(300, 340)) {
+		t.Errorf("the thumbnail is not the right way up: top %v %v, bottom %v %v",
+			img.At(100, 60), img.At(300, 60), img.At(100, 340), img.At(300, 340))
+	}
+
+	processed, err := ProcessImage(bytes.NewReader(photo), "image/jpeg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg, _, err := image.DecodeConfig(bytes.NewReader(processed)); err != nil || cfg.Width != 80 || cfg.Height != 160 {
+		t.Errorf("ProcessImage = %dx%d (%v), want the photo turned upright at 80x160", cfg.Width, cfg.Height, err)
 	}
 }
 `

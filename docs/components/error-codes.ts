@@ -498,6 +498,13 @@ export const errorCodeAreas: ErrorCodeArea[] = [
         meaning: 'Object storage is not configured here, or is not answering.',
         client: 'Retry later. Nothing the client sends will fix it.',
       },
+      {
+        code: 'RANGE_NOT_SATISFIABLE',
+        status: 416,
+        category: 'request',
+        meaning: 'The Range header asks for bytes outside the file. The Content-Range header gives the real size.',
+        client: 'Read the size from Content-Range and request a range inside it, or drop the Range header to get the whole file.',
+      },
     ],
   },
   {
@@ -969,7 +976,7 @@ export const errorCodeAreas: ErrorCodeArea[] = [
 ]
 
 /** How many codes the API documents. Shown on the page, so it cannot be stale. */
-export const errorCodeCount = 112
+export const errorCodeCount = 113
 
 /** Every row, flattened, for searching and for a test that checks coverage. */
 export const errorCodes: ErrorCodeRow[] = errorCodeAreas.flatMap((area) => area.codes)

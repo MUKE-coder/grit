@@ -30,7 +30,7 @@ var statusValues = map[string]int{
 	"OK": 200, "Created": 201, "NoContent": 204,
 	"BadRequest": 400, "Unauthorized": 401, "Forbidden": 403, "NotFound": 404,
 	"MethodNotAllowed": 405, "Conflict": 409, "Gone": 410,
-	"RequestEntityTooLarge": 413, "UnsupportedMediaType": 415,
+	"RequestEntityTooLarge": 413, "UnsupportedMediaType": 415, "RequestedRangeNotSatisfiable": 416,
 	"UnprocessableEntity": 422, "TooManyRequests": 429,
 	"InternalServerError": 500, "NotImplemented": 501, "BadGateway": 502,
 	"ServiceUnavailable": 503,
