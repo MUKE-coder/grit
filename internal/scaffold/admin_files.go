@@ -319,17 +319,18 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"): adminDashboardLayout(),
 
 		// Lib
-		filepath.Join(adminRoot, "lib", "api-core.ts"):     apiCoreTS(),
-		filepath.Join(adminRoot, "lib", "api-client.ts"):   adminAPIClient(),
-		filepath.Join(adminRoot, "lib", "query-client.ts"): adminQueryClient(),
-		filepath.Join(adminRoot, "lib", "utils.ts"):        adminUtils(),
-		filepath.Join(adminRoot, "components.json"):        nextComponentsJSON(),
-		filepath.Join(adminRoot, "lib", "resource.ts"):     adminResourceTypes(),
-		filepath.Join(adminRoot, "lib", "form-values.ts"):  adminFormValues(),
-		filepath.Join(adminRoot, "lib", "icons.ts"):        adminIconMap(),
-		filepath.Join(adminRoot, "lib", "i18n.tsx"):        adminI18nLib(),
-		filepath.Join(adminRoot, "lib", "formatters.ts"):   adminFormatters(),
-		filepath.Join(adminRoot, "lib", "file-accepts.ts"): adminFileAcceptsLib(),
+		filepath.Join(adminRoot, "lib", "api-core.ts"):          apiCoreTS(),
+		filepath.Join(adminRoot, "lib", "api-client.ts"):        adminAPIClient(),
+		filepath.Join(adminRoot, "lib", "tiptap-extensions.ts"): adminTiptapExtensions(),
+		filepath.Join(adminRoot, "lib", "query-client.ts"):      adminQueryClient(),
+		filepath.Join(adminRoot, "lib", "utils.ts"):             adminUtils(),
+		filepath.Join(adminRoot, "components.json"):             nextComponentsJSON(),
+		filepath.Join(adminRoot, "lib", "resource.ts"):          adminResourceTypes(),
+		filepath.Join(adminRoot, "lib", "form-values.ts"):       adminFormValues(),
+		filepath.Join(adminRoot, "lib", "icons.ts"):             adminIconMap(),
+		filepath.Join(adminRoot, "lib", "i18n.tsx"):             adminI18nLib(),
+		filepath.Join(adminRoot, "lib", "formatters.ts"):        adminFormatters(),
+		filepath.Join(adminRoot, "lib", "file-accepts.ts"):      adminFileAcceptsLib(),
 		// v3.31.35 — SheetJS-backed Excel/CSV/JSON helpers used by the
 		// export menu and import modal on every resource list page.
 		filepath.Join(adminRoot, "lib", "excel-utils.ts"): adminExcelUtils(),
@@ -340,7 +341,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		// Layout components
 		filepath.Join(adminRoot, "components", "layout", "admin-layout.tsx"): adminLayoutComponent(),
 		filepath.Join(adminRoot, "components", "layout", "sidebar.tsx"):      adminSidebar(),
-		filepath.Join(adminRoot, "components", "layout", "page-header.tsx"):  adminPageHeader(),
+		filepath.Join(adminRoot, "components", "chrome", "StatCards.tsx"):    adminStatCards(),
 
 		// Table components
 		filepath.Join(adminRoot, "components", "tables", "data-table.tsx"):      adminDataTable(),
@@ -428,6 +429,9 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "hooks", "use-resource.ts"):                   adminUseResource(),
 		filepath.Join(adminRoot, "hooks", "use-notifications.ts"):              adminUseNotifications(),
 		filepath.Join(adminRoot, "hooks", "use-resource-controller.ts"):        adminUseResourceController(),
+		filepath.Join(adminRoot, "hooks", "use-resource-url-state.ts"):         adminUseResourceURLState(),
+		filepath.Join(adminRoot, "hooks", "use-resource-selection.ts"):         adminUseResourceSelection(),
+		filepath.Join(adminRoot, "hooks", "use-resource-dialogs.ts"):           adminUseResourceDialogs(),
 		filepath.Join(adminRoot, "hooks", "use-resource-detail-controller.ts"): adminUseResourceDetailController(),
 		filepath.Join(adminRoot, "hooks", "use-system.ts"):                     adminUseSystem(),
 		filepath.Join(adminRoot, "hooks", "use-api-keys.ts"):                   adminUseAPIKeys(),
@@ -445,10 +449,11 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "app", "(dashboard)", "profile", "page.tsx"):                    adminCaptivatingProfile(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"):         adminUsersPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "[id]", "page.tsx"): adminResourceDetailRoute("users", "users", "Users"),
-		// v3.31.7: blog list uses a two-step create flow (sheet -> redirect
-		// to detail page with WordEditor) instead of the stock resource page.
-		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "page.tsx"):         adminBlogsListPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "[id]", "page.tsx"): adminBlogDetailPage(),
+		// The Blog resource runs on <ResourcePage> like every other resource
+		// (contact-app review M42). Its content field is a richtext field, which
+		// renders the Word-style editor below.
+		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "page.tsx"):         adminBlogsPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "[id]", "page.tsx"): adminResourceDetailRoute("blogs", "blogs", "Blogs"),
 		filepath.Join(adminRoot, "components", "forms", "word-editor.tsx"):                       adminWordEditor(),
 
 		// System pages — under (dashboard) route group
@@ -540,22 +545,7 @@ func adminPackageJSON(opts Options) string {
     "next": "^16.1.6",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "@tiptap/extension-link": "^2.1.0",
-    "@tiptap/extension-text-align": "^2.1.0",
-    "@tiptap/extension-text-style": "^2.1.0",
-    "@tiptap/extension-color": "^2.1.0",
-    "@tiptap/extension-highlight": "^2.1.0",
-    "@tiptap/extension-underline": "^2.1.0",
-    "@tiptap/extension-image": "^2.1.0",
-    "@tiptap/extension-table": "^2.1.0",
-    "@tiptap/extension-table-row": "^2.1.0",
-    "@tiptap/extension-table-cell": "^2.1.0",
-    "@tiptap/extension-table-header": "^2.1.0",
-    "@tiptap/extension-placeholder": "^2.1.0",
-    "@tiptap/pm": "^2.1.0",
-    "@tiptap/react": "^2.1.0",
-    "@tiptap/starter-kit": "^2.1.0",
-    "react-dropzone": "^14.2.0",
+`+tiptapDependencyLines("    ")+`    "react-dropzone": "^14.2.0",
     "react-hook-form": "^7.49.0",
     "recharts": "^2.12.0",
     "sonner": "^1.3.0",

@@ -1043,7 +1043,7 @@ import dynamic from "next/dynamic";
 import type { ResourceDefinition } from "@/lib/resource";
 import { useResourceController } from "@/hooks/use-resource-controller";
 import type { ResourceController } from "@/hooks/use-resource-controller";
-import { PageHeader } from "@/components/layout/page-header";
+import { PageHeader } from "@/components/chrome/PageHeader";
 import { DataTable } from "@/components/tables/data-table";
 // Lazy: only resources declaring tree: true ever render this, and an eager
 // import would put the drag-and-drop tree in every admin page's bundle.
@@ -1194,7 +1194,7 @@ function ResourceListView({ resource }: ResourcePageProps) {
     <div>
       <PageHeader
         title={c.pluralName}
-        description={` + "`" + `Manage ${c.pluralName.toLowerCase()}` + "`" + `}
+        subtitle={` + "`" + `Manage ${c.pluralName.toLowerCase()}` + "`" + `}
         actions={headerActions}
         stats={c.stats}
       />
@@ -1493,16 +1493,15 @@ export default function UsersPage() {
 // wants their own table and their own page shell but not to reimplement
 // URL-synced sorting, paging, filters, bulk delete and toasts. They call this,
 // render whatever they like, and keep all of it.
+//
+// Since contact-app review M44 its state lives in use-resource-url-state.ts,
+// use-resource-selection.ts and use-resource-dialogs.ts
+// (admin_resource_controller_files.go); this composes them.
 func adminUseResourceController() string {
 	return `"use client";
 
 import { useCallback, useMemo, useState } from "react";
-import {
-  usePathname,
-  useRouter,
-  useSearchParams,
-  type ReadonlyURLSearchParams,
-} from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import type {
   BulkAction,
@@ -1512,59 +1511,16 @@ import type {
   TableAction,
   TableTab,
 } from "@/lib/resource";
-import {
-  useBulkResource,
-  useDebouncedValue,
-  useDeleteResource,
-  useResource,
-} from "@/hooks/use-resource";
-import type { StatCard } from "@/components/layout/page-header";
-import { dateRangeToQueryParams, type DateRange } from "@/components/tables/date-filter";
+import { useBulkResource, useDeleteResource, useResource } from "@/hooks/use-resource";
+import { useResourceURLState } from "@/hooks/use-resource-url-state";
+import { useResourceSelection } from "@/hooks/use-resource-selection";
+import { useResourceDialogs } from "@/hooks/use-resource-dialogs";
+import type { StatCard } from "@/components/chrome/StatCards";
+import type { DateRange } from "@/components/tables/date-filter";
 
 // The windows the default stat cards show beside the total. The list request
 // asks for them (?counts=), so the cards cost no requests of their own.
 const DEFAULT_STAT_COUNTS = ["created_7d", "created_30d", "updated_7d"];
-
-// Read the date filter back out of the address bar so a refresh or a shared
-// link rehydrates the same view.
-function readDateRangeFromURL(sp: ReadonlyURLSearchParams | null): DateRange {
-  if (!sp) return {};
-  const preset = sp.get("date") as DateRange["preset"] | null;
-  if (preset === "custom") {
-    return {
-      preset: "custom",
-      from: sp.get("date_from") ?? undefined,
-      to: sp.get("date_to") ?? undefined,
-    };
-  }
-  if (preset === "today" || preset === "7d" || preset === "30d" || preset === "month") {
-    return { preset };
-  }
-  return {};
-}
-
-// replace, not push: the back button should not collect one entry per filter
-// tweak.
-function writeDateRangeToURL(
-  router: ReturnType<typeof useRouter>,
-  pathname: string,
-  current: ReadonlyURLSearchParams | null,
-  range: DateRange,
-) {
-  const params = new URLSearchParams(current?.toString() ?? "");
-  params.delete("date");
-  params.delete("date_from");
-  params.delete("date_to");
-  if (range.preset) {
-    params.set("date", range.preset);
-    if (range.preset === "custom") {
-      if (range.from) params.set("date_from", range.from);
-      if (range.to) params.set("date_to", range.to);
-    }
-  }
-  const qs = params.toString();
-  router.replace(qs ? pathname + "?" + qs : pathname, { scroll: false });
-}
 
 export interface ResourceControllerOptions {
   /** Start on a page other than 1. */
@@ -1702,86 +1658,24 @@ export interface ResourceController<T = Record<string, unknown>> {
  *
  * const c = useResourceController(productsResource)
  * <MyTable rows={c.rows} onSort={c.setSort} onRowClick={c.edit} />
+ *
+ * Built from three hooks you can also use on their own: useResourceURLState
+ * (what is being asked for), useResourceSelection (what is ticked) and
+ * useResourceDialogs (what is open). This function joins them to the API.
  */
 export function useResourceController<T = Record<string, unknown>>(
   resource: ResourceDefinition,
   options: ResourceControllerOptions = {},
 ): ResourceController<T> {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
 
   const isFormPage = resource.formView === "page" || resource.formView === "page-steps";
   const isSteps = resource.formView === "modal-steps" || resource.formView === "page-steps";
 
-  const [page, setPage] = useState(options.initialPage ?? 1);
-  const [pageSize, setPageSizeState] = useState(
-    options.initialPageSize ?? resource.table.pageSize ?? 20,
-  );
-  const [search, setSearchState] = useState("");
-  // The box shows every keystroke; the list asks once typing pauses.
-  const debouncedSearch = useDebouncedValue(search, 300);
-  const [sortBy, setSortBy] = useState(resource.table.defaultSort?.key ?? "");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
-    resource.table.defaultSort?.direction ?? "desc",
-  );
-  const [selection, setSelection] = useState<string[]>([]);
-  const [filters, setFilters] = useState<Record<string, string>>({});
-  const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
-
-  const [dateRange, setDateRangeState] = useState<DateRange>(() =>
-    readDateRangeFromURL(searchParams),
-  );
-  const dateParams = useMemo(() => dateRangeToQueryParams(dateRange), [dateRange]);
-  const setDateRange = useCallback(
-    (next: DateRange) => {
-      setDateRangeState(next);
-      writeDateRangeToURL(router, pathname, searchParams, next);
-      setPage(1);
-    },
-    [router, pathname, searchParams],
-  );
-
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<T | null>(null);
-  // Starting values for the next create. Used by "add a child here" in the tree
-  // view, and by anything else that opens a form already scoped to a parent.
-  const [formDefaults, setFormDefaults] = useState<Record<string, unknown> | undefined>(undefined);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
-  const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
-  const [bulkEditOpen, setBulkEditOpen] = useState(false);
-  const [pendingCustom, setPendingCustom] = useState<CustomBulkAction<T> | null>(null);
-  const [importOpen, setImportOpen] = useState(false);
-  const tabs = useMemo(() => resource.table.tabs ?? [], [resource.table.tabs]);
-  // First tab on load. A tab strip where nothing is selected reads as broken,
-  // and the first tab is conventionally the unfiltered one.
-  const [activeTab, setActiveTabState] = useState(() => tabs[0]?.key ?? "");
-  const [showArchived, setShowArchivedState] = useState(false);
+  const url = useResourceURLState(resource, options);
+  const dialogs = useResourceDialogs<T>();
   const [liveMessage, setLiveMessage] = useState("");
-
-  const queryClient = useQueryClient();
-
-  // Mirrors the query useResource builds, so an export applies the same
-  // filter and sort the operator is looking at.
-  const apiSearchParams = useMemo(() => {
-    const sp = new URLSearchParams();
-    if (debouncedSearch) sp.set("search", debouncedSearch);
-    if (sortBy) {
-      sp.set("sort_by", sortBy);
-      sp.set("sort_order", sortOrder);
-    }
-    Object.entries(filters).forEach(([k, v]) => {
-      if (v) sp.set(k, v);
-    });
-    Object.entries(dateParams).forEach(([k, v]) => {
-      if (v) sp.set(k, v);
-    });
-    const df = resource.table.dateFilter?.field;
-    if (df && df !== "created_at") sp.set("date_field", df);
-    return sp;
-  }, [debouncedSearch, sortBy, sortOrder, filters, dateParams, resource.table.dateFilter?.field]);
 
   const statsConfig = resource.stats;
   const statsEnabled =
@@ -1795,42 +1689,45 @@ export function useResourceController<T = Record<string, unknown>>(
     statsConfig.cards.length > 0;
 
   const { data, isLoading, isFetching } = useResource<T>(resource.endpoint, {
-    page,
-    pageSize,
-    search: debouncedSearch,
-    sortBy,
-    sortOrder,
+    page: url.page,
+    pageSize: url.pageSize,
+    search: url.debouncedSearch,
+    sortBy: url.sortBy,
+    sortOrder: url.sortOrder,
     // Tab filters, then the operator's own, then the archived flag. The
     // operator's win: picking "Unpaid" and then filtering by customer should
     // narrow the tab, not silently leave it.
     filters: {
-      ...(tabs.find((t) => t.key === activeTab)?.filters ?? {}),
-      ...filters,
-      ...(showArchived ? { archived: "true" } : {}),
+      ...(url.tabs.find((t) => t.key === url.activeTab)?.filters ?? {}),
+      ...url.filters,
+      ...(url.showArchived ? { archived: "true" } : {}),
     },
-    dateParams,
+    dateParams: url.dateParams,
     dateField: resource.table.dateFilter?.field,
     counts: statsEnabled && !customStatCards ? DEFAULT_STAT_COUNTS : undefined,
   });
 
   const rows = useMemo(() => data?.data ?? [], [data]);
+  const { selection, setSelection, clearSelection, selectedRows } = useResourceSelection<T>(rows);
 
-  // Switching views changes which rows exist, so a selection made in the
-  // other one is stale. Keeping it is how you archive something you cannot
-  // see.
-  // Switching tabs changes which rows exist, so a selection made under the
-  // other one is stale, the same reasoning as the archived view.
-  const setActiveTab = useCallback((key: string) => {
-    setActiveTabState(key);
-    setSelection([]);
-    setPage(1);
-  }, []);
-
-  const setShowArchived = useCallback((value: boolean) => {
-    setShowArchivedState(value);
-    setSelection([]);
-    setPage(1);
-  }, []);
+  // Switching tabs or the archived view changes which rows exist, so a
+  // selection made in the other one is stale. Keeping it is how you archive
+  // something you cannot see.
+  const { setActiveTab: setURLActiveTab, setShowArchived: setURLShowArchived } = url;
+  const setActiveTab = useCallback(
+    (key: string) => {
+      setURLActiveTab(key);
+      clearSelection();
+    },
+    [setURLActiveTab, clearSelection],
+  );
+  const setShowArchived = useCallback(
+    (value: boolean) => {
+      setURLShowArchived(value);
+      clearSelection();
+    },
+    [setURLShowArchived, clearSelection],
+  );
 
   const singularName = resource.label?.singular ?? resource.name;
   const pluralName = resource.label?.plural ?? resource.slug;
@@ -1848,55 +1745,7 @@ export function useResourceController<T = Record<string, unknown>>(
   // for delete specifically, not for any bulk action in flight.
   const isBulkDeleting = isBulkPending;
 
-  const columns = useMemo(
-    () => resource.table.columns.filter((col) => !col.hidden && !hiddenColumns.includes(col.key)),
-    [resource.table.columns, hiddenColumns],
-  );
-
-  const toggleColumn = useCallback((key: string) => {
-    setHiddenColumns((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
-    );
-  }, []);
-
-  // Any change to what is being queried resets to page 1 — otherwise a
-  // search from page 7 lands on an empty page 7 of two results.
-  const setSearch = useCallback((value: string) => {
-    setSearchState(value);
-    setPage(1);
-  }, []);
-
-  const setPageSize = useCallback((size: number) => {
-    setPageSizeState(size);
-    setPage(1);
-  }, []);
-
-  const setSort = useCallback(
-    (key: string) => {
-      if (sortBy === key) {
-        setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-      } else {
-        setSortBy(key);
-        setSortOrder("asc");
-      }
-      setPage(1);
-    },
-    [sortBy],
-  );
-
-  const setFilter = useCallback((key: string, value: string) => {
-    setFilters((prev) => {
-      if (!value) {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      }
-      return { ...prev, [key]: value };
-    });
-    setPage(1);
-  }, []);
-
-  const clearSelection = useCallback(() => setSelection([]), []);
+  const { openForm, setDeletingId, setBulkDeleteOpen, setBulkArchiveOpen, setBulkEditOpen, setPendingCustom } = dialogs;
 
   const view = useCallback(
     (row: T) => {
@@ -1912,22 +1761,19 @@ export function useResourceController<T = Record<string, unknown>>(
         const id = String((row as Record<string, unknown>).id);
         router.push("/resources/" + resource.slug + "?action=edit&edit=" + id);
       } else {
-        setEditingItem(row);
-        setFormOpen(true);
+        openForm(row);
       }
     },
-    [isFormPage, router, resource.slug],
+    [isFormPage, router, resource.slug, openForm],
   );
 
   const create = useCallback(() => {
-    setFormDefaults(undefined);
     if (isFormPage) {
       router.push("/resources/" + resource.slug + "?action=create");
     } else {
-      setEditingItem(null);
-      setFormOpen(true);
+      openForm(null);
     }
-  }, [isFormPage, router, resource.slug]);
+  }, [isFormPage, router, resource.slug, openForm]);
 
   /**
    * Create, with some fields already filled in.
@@ -1946,53 +1792,37 @@ export function useResourceController<T = Record<string, unknown>>(
         router.push("/resources/" + resource.slug + "?" + params.toString());
         return;
       }
-      setFormDefaults(defaults);
-      setEditingItem(null);
-      setFormOpen(true);
+      openForm(null, defaults);
     },
-    [isFormPage, router, resource.slug],
+    [isFormPage, router, resource.slug, openForm],
   );
 
-  const remove = useCallback((id: string) => {
-    setDeletingId(id);
-    setConfirmOpen(true);
-  }, []);
+  const remove = useCallback((id: string) => setDeletingId(id), [setDeletingId]);
 
+  const { deletingId } = dialogs;
   const doDelete = useCallback(() => {
     if (deletingId !== null) {
-      deleteItem(deletingId, {
-        onSuccess: () => {
-          setConfirmOpen(false);
-          setDeletingId(null);
-        },
-      });
+      deleteItem(deletingId, { onSuccess: () => setDeletingId(null) });
     }
-  }, [deleteItem, deletingId]);
+  }, [deleteItem, deletingId, setDeletingId]);
 
   const bulkRemove = useCallback(() => {
-    if (selection.length > 0) setBulkConfirmOpen(true);
-  }, [selection]);
+    if (selection.length > 0) setBulkDeleteOpen(true);
+  }, [selection, setBulkDeleteOpen]);
 
   const doBulkDelete = useCallback(() => {
     runBulk(
       { action: "delete", ids: selection },
       {
         onSuccess: () => {
-          setBulkConfirmOpen(false);
+          setBulkDeleteOpen(false);
           setSelection([]);
         },
       },
     );
-  }, [runBulk, selection]);
+  }, [runBulk, selection, setBulkDeleteOpen, setSelection]);
 
   // ── the rest of the bulk surface ──────────────────────────────────────
-
-  // The rows behind the selection. Custom actions get these so "email the
-  // people I ticked" does not need a second round trip for data already here.
-  const selectedRows = useMemo(
-    () => rows.filter((row) => selection.includes(String((row as Record<string, unknown>).id))),
-    [rows, selection],
-  );
 
   const announce = useCallback((message: string) => {
     // Cleared first: setting the same string twice is not a change, and a
@@ -2008,7 +1838,7 @@ export function useResourceController<T = Record<string, unknown>>(
 
   const bulkArchive = useCallback(() => {
     if (selection.length > 0) setBulkArchiveOpen(true);
-  }, [selection]);
+  }, [selection, setBulkArchiveOpen]);
 
   const doBulkArchive = useCallback(() => {
     runBulk(
@@ -2021,7 +1851,7 @@ export function useResourceController<T = Record<string, unknown>>(
         },
       },
     );
-  }, [runBulk, selection, announce]);
+  }, [runBulk, selection, setBulkArchiveOpen, setSelection, announce]);
 
   // No confirm: putting something back is not destructive, and a dialog in
   // front of an undo is a dialog nobody reads.
@@ -2036,11 +1866,11 @@ export function useResourceController<T = Record<string, unknown>>(
         },
       },
     );
-  }, [runBulk, selection, announce]);
+  }, [runBulk, selection, setSelection, announce]);
 
   const bulkEdit = useCallback(() => {
     if (selection.length > 0) setBulkEditOpen(true);
-  }, [selection]);
+  }, [selection, setBulkEditOpen]);
 
   const applyBulkEdit = useCallback(
     (patch: Record<string, unknown>) => {
@@ -2055,18 +1885,18 @@ export function useResourceController<T = Record<string, unknown>>(
         },
       );
     },
-    [runBulk, selection, announce],
+    [runBulk, selection, setBulkEditOpen, setSelection, announce],
   );
 
   const runCustom = useCallback(
     (action: CustomBulkAction<T>) => {
       void action.onSelect(selection, selectedRows, {
         refresh,
-        clearSelection: () => setSelection([]),
+        clearSelection,
         announce,
       });
     },
-    [selection, selectedRows, refresh, announce],
+    [selection, selectedRows, refresh, clearSelection, announce],
   );
 
   const runBulkAction = useCallback(
@@ -2077,12 +1907,13 @@ export function useResourceController<T = Record<string, unknown>>(
       }
       runCustom(action);
     },
-    [runCustom],
+    [runCustom, setPendingCustom],
   );
 
   // Restore only makes sense on rows that are archived, and archive only on
   // rows that are not, so the two never appear together. Offering both is how
   // an operator ends up archiving what they meant to bring back.
+  const { showArchived, dateParams } = url;
   const bulkActions = useMemo(() => {
     // ["edit", "export", "delete"] rather than ["delete"] alone: a resource
     // that predates bulkActions still gets the three that work against any
@@ -2100,11 +1931,6 @@ export function useResourceController<T = Record<string, unknown>>(
     const all = (resource.customBulkActions ?? []) as CustomBulkAction<T>[];
     return all.filter((action) => !action.visible || action.visible(selectedRows));
   }, [resource.customBulkActions, selectedRows]);
-
-  const closeForm = useCallback(() => {
-    setFormOpen(false);
-    setEditingItem(null);
-  }, []);
 
   const actions = resource.table.actions ?? ["create", "view", "edit", "delete"];
   const can = useCallback((action: TableAction) => actions.includes(action), [actions]);
@@ -2157,24 +1983,24 @@ export function useResourceController<T = Record<string, unknown>>(
     isLoading,
     isFetching: isFetching && !isLoading,
 
-    page,
-    pageSize,
-    search,
-    sortBy,
-    sortOrder,
-    filters,
-    dateRange,
-    setPage,
-    setPageSize,
-    setSearch,
-    setSort,
-    setFilter,
-    setDateRange,
+    page: url.page,
+    pageSize: url.pageSize,
+    search: url.search,
+    sortBy: url.sortBy,
+    sortOrder: url.sortOrder,
+    filters: url.filters,
+    dateRange: url.dateRange,
+    setPage: url.setPage,
+    setPageSize: url.setPageSize,
+    setSearch: url.setSearch,
+    setSort: url.setSort,
+    setFilter: url.setFilter,
+    setDateRange: url.setDateRange,
 
-    columns,
+    columns: url.columns,
     allColumns: resource.table.columns,
-    hiddenColumns,
-    toggleColumn,
+    hiddenColumns: url.hiddenColumns,
+    toggleColumn: url.toggleColumn,
 
     selection,
     setSelection,
@@ -2204,48 +2030,50 @@ export function useResourceController<T = Record<string, unknown>>(
     announce,
     liveMessage,
 
-    tabs,
-    activeTab,
+    tabs: url.tabs,
+    activeTab: url.activeTab,
     setActiveTab,
 
     showArchived,
     setShowArchived,
 
-    form: { open: formOpen, item: editingItem, defaults: formDefaults, close: closeForm },
+    form: {
+      open: dialogs.formOpen,
+      item: dialogs.editingItem,
+      defaults: dialogs.formDefaults,
+      close: dialogs.closeForm,
+    },
     confirmDelete: {
-      open: confirmOpen,
+      open: deletingId !== null,
       confirm: doDelete,
-      cancel: () => {
-        setConfirmOpen(false);
-        setDeletingId(null);
-      },
+      cancel: () => setDeletingId(null),
     },
     confirmBulkDelete: {
-      open: bulkConfirmOpen,
+      open: dialogs.bulkDeleteOpen,
       confirm: doBulkDelete,
-      cancel: () => setBulkConfirmOpen(false),
+      cancel: () => setBulkDeleteOpen(false),
     },
     confirmBulkArchive: {
-      open: bulkArchiveOpen,
+      open: dialogs.bulkArchiveOpen,
       confirm: doBulkArchive,
       cancel: () => setBulkArchiveOpen(false),
     },
     bulkEditor: {
-      open: bulkEditOpen,
+      open: dialogs.bulkEditOpen,
       close: () => setBulkEditOpen(false),
     },
     confirmCustom: {
-      open: pendingCustom !== null,
-      action: pendingCustom,
+      open: dialogs.pendingCustom !== null,
+      action: dialogs.pendingCustom,
       confirm: () => {
-        if (pendingCustom) runCustom(pendingCustom);
+        if (dialogs.pendingCustom) runCustom(dialogs.pendingCustom);
         setPendingCustom(null);
       },
       cancel: () => setPendingCustom(null),
     },
-    importer: { open: importOpen, setOpen: setImportOpen },
+    importer: { open: dialogs.importOpen, setOpen: dialogs.setImportOpen },
 
-    apiSearchParams,
+    apiSearchParams: url.apiSearchParams,
     stats,
     singularName,
     pluralName,
@@ -3480,7 +3308,7 @@ export const blogsResource = defineResource({
   endpoint: "/api/admin/blogs",
   icon: "Newspaper",
   label: { singular: "Blog", plural: "Blogs" },
-
+` + blogsResourceFormView + `
   table: {
     columns: [
       // grit:cols:auto-start
@@ -3563,7 +3391,10 @@ export const blogsResource = defineResource({
 `
 }
 
-// adminBlogsPage returns the blogs resource page.
+// adminBlogsPage returns the blogs resource page. Until contact-app review M42
+// the blog had hand-written list and detail pages instead, which ignored the
+// columns, filters, bulk actions and export declared in resources/blogs/blogs.ts
+// and fetched a single page of 100 rows with no pagination.
 func adminBlogsPage() string {
 	return `"use client";
 

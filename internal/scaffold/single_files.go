@@ -86,7 +86,7 @@ func writeSingleFrontendFiles(root string, opts Options) error {
 // missing one of them is a build that fails on an import of "./money".
 func singleSharedMirrorFiles(root string, opts Options) map[string]string {
 	shared := filepath.Join(root, "frontend", "src", "shared")
-	return map[string]string{
+	files := map[string]string{
 		filepath.Join(shared, "schemas", "user.ts"):     sharedUserSchema(),
 		filepath.Join(shared, "schemas", "index.ts"):    sharedSchemasIndex(),
 		filepath.Join(shared, "schemas", "blog.ts"):     sharedBlogSchema(),
@@ -97,18 +97,23 @@ func singleSharedMirrorFiles(root string, opts Options) map[string]string {
 		// there. Nothing failed because the SPA's own use of this package is
 		// type-only, which esbuild erases; the first value import from it, which
 		// the admin panel brings, could not resolve.
-		filepath.Join(shared, "schemas", "money.ts"):  sharedMoneySchema(),
-		filepath.Join(shared, "types", "money.ts"):    sharedMoneyTypes(),
-		filepath.Join(shared, "types", "errors.ts"):   sharedErrorsTS(),
-		filepath.Join(shared, "types", "user.ts"):     sharedUserTypes(),
-		filepath.Join(shared, "types", "api.ts"):      sharedAPITypes(),
-		filepath.Join(shared, "types", "index.ts"):    sharedTypesIndex(),
-		filepath.Join(shared, "types", "upload.ts"):   sharedUploadTypes(),
-		filepath.Join(shared, "types", "blog.ts"):     sharedBlogTypes(),
-		filepath.Join(shared, "types", "file-ref.ts"): sharedFileRefTypes(),
-		filepath.Join(shared, "brand.config.ts"):      sharedBrandConfig(opts),
-		filepath.Join(shared, "themes.ts"):            singleSharedThemes(opts),
+		filepath.Join(shared, "schemas", "money.ts"):   sharedMoneySchema(),
+		filepath.Join(shared, "types", "money.ts"):     sharedMoneyTypes(),
+		filepath.Join(shared, "types", "errors.ts"):    sharedErrorsTS(),
+		filepath.Join(shared, "types", "user.ts"):      sharedUserTypes(),
+		filepath.Join(shared, "types", "api.ts"):       sharedAPITypes(),
+		filepath.Join(shared, "types", "index.ts"):     sharedTypesIndex(),
+		filepath.Join(shared, "types", "upload.ts"):    sharedUploadTypes(),
+		filepath.Join(shared, "types", "blog.ts"):      sharedBlogTypes(),
+		filepath.Join(shared, "types", "file-ref.ts"):  sharedFileRefTypes(),
+		filepath.Join(shared, "brand.config.ts"):       sharedBrandConfig(opts),
+		filepath.Join(shared, "themes.ts"):             singleSharedThemes(opts),
+		filepath.Join(shared, "schemas", "profile.ts"): sharedProfileSchemas(),
 	}
+	for path, body := range sharedModelTypeFiles(shared) {
+		files[path] = body
+	}
+	return files
 }
 
 // singleFrontendOwnFiles is the SPA itself: its app shell, routes, components and
@@ -532,22 +537,7 @@ func singleFrontendPackageJSON(opts Options) string {
     "zod": "^3.22.0",
     "@hookform/resolvers": "^3.3.0",
     "@react-pdf/renderer": "^4.1.5",
-    "@tiptap/extension-color": "^2.1.0",
-    "@tiptap/extension-highlight": "^2.1.0",
-    "@tiptap/extension-image": "^2.1.0",
-    "@tiptap/extension-link": "^2.1.0",
-    "@tiptap/extension-placeholder": "^2.1.0",
-    "@tiptap/extension-table": "^2.1.0",
-    "@tiptap/extension-table-cell": "^2.1.0",
-    "@tiptap/extension-table-header": "^2.1.0",
-    "@tiptap/extension-table-row": "^2.1.0",
-    "@tiptap/extension-text-align": "^2.1.0",
-    "@tiptap/extension-text-style": "^2.1.0",
-    "@tiptap/extension-underline": "^2.1.0",
-    "@tiptap/pm": "^2.1.0",
-    "@tiptap/react": "^2.1.0",
-    "@tiptap/starter-kit": "^2.1.0",
-    "react-dropzone": "^14.2.0",
+`+tiptapDependencyLines("    ")+`    "react-dropzone": "^14.2.0",
     "react-hook-form": "^7.49.0",
     "recharts": "^2.12.0",
     "sonner": "^1.3.0",

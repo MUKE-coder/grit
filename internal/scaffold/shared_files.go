@@ -31,6 +31,9 @@ func writeSharedFiles(root string, opts Options) error {
 		filepath.Join(sharedRoot, "types", "file-ref.ts"):   sharedFileRefTypes(),
 		filepath.Join(sharedRoot, "schemas", "money.ts"):    sharedMoneySchema(),
 		filepath.Join(sharedRoot, "types", "money.ts"):      sharedMoneyTypes(),
+		// Contact-app review M41: the admin imports these rather than declaring
+		// its own copies.
+		filepath.Join(sharedRoot, "schemas", "profile.ts"): sharedProfileSchemas(),
 
 		// v3.28: brand identity + theme tokens — single source of truth for
 		// logo, brand name, hero copy, social links, and the 3 theme palettes
@@ -38,6 +41,9 @@ func writeSharedFiles(root string, opts Options) error {
 		// apps/web import these so a rebrand is one file, not a grep + edit.
 		filepath.Join(sharedRoot, "brand.config.ts"): sharedBrandConfig(opts),
 		filepath.Join(sharedRoot, "themes.ts"):       sharedThemes(),
+	}
+	for path, content := range sharedModelTypeFiles(sharedRoot) {
+		files[path] = content
 	}
 
 	for path, content := range files {
@@ -164,7 +170,7 @@ export {
 } from "./blog";
 export { FileRefSchema, type FileRef } from "./file-ref";
 export { MoneySchema, type Money } from "./money";
-// grit:schemas
+` + sharedProfileSchemaExport + `// grit:schemas
 `
 }
 
@@ -329,7 +335,7 @@ export {
   formatMoney,
   zeroMoney,
 } from "./money";
-// grit:types
+` + sharedModelTypeExports() + `// grit:types
 `
 }
 

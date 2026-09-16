@@ -234,20 +234,15 @@ import { Plus, MessageSquare, AlertCircle } from "@/lib/icons";
 import { apiClient } from "@/lib/api-client";
 import { buttonClasses } from "@/components/ui/button";
 import { inputClasses } from "@/components/ui/input";
+import type { Ticket as TicketRow } from "@repo/shared/types";
 
-interface Ticket {
-  id: string;
-  user_id: string;
-  subject: string;
-  description: string;
+// The row is the model's, from grit sync. Narrowed here only where a Go struct
+// cannot say more: the two string enums, and the user the list preloads.
+type Ticket = Omit<TicketRow, "status" | "priority" | "user"> & {
   status: "open" | "closed";
   priority: "low" | "medium" | "high" | "critical";
-  labels: string;
-  assignee_id: string;
-  last_reply_at: string | null;
-  created_at: string;
   user?: { first_name: string; last_name: string; email: string };
-}
+};
 
 interface ListResponse {
   data: Ticket[];
@@ -510,28 +505,21 @@ import { Check, ArrowLeft } from "@/lib/icons";
 import { apiClient } from "@/lib/api-client";
 import { buttonClasses } from "@/components/ui/button";
 import { inputClasses } from "@/components/ui/input";
+import type { Ticket as TicketRow, TicketReply } from "@repo/shared/types";
 
-interface Reply {
-  id: string;
-  ticket_id: string;
-  user_id: string;
-  body: string;
-  is_admin_reply: boolean;
-  created_at: string;
-  user?: { first_name: string; last_name: string; email: string };
-}
+// The rows are the models', from grit sync. Narrowed here only where a Go
+// struct cannot say more: the two string enums, and the relations the thread
+// preloads, which sync types as unknown.
+type Author = { first_name: string; last_name: string; email: string };
 
-interface Ticket {
-  id: string;
-  subject: string;
-  description: string;
+type Reply = Omit<TicketReply, "user"> & { user?: Author };
+
+type Ticket = Omit<TicketRow, "status" | "priority" | "user" | "replies"> & {
   status: "open" | "closed";
   priority: "low" | "medium" | "high" | "critical";
-  labels: string;
-  created_at: string;
-  user?: { first_name: string; last_name: string; email: string };
+  user?: Author;
   replies: Reply[];
-}
+};
 
 const priorityClass: Record<Ticket["priority"], string> = {
   low: "bg-bg-hover text-text-secondary",

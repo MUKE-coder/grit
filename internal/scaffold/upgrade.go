@@ -736,6 +736,14 @@ func Upgrade(uOpts UpgradeOptions) error {
 		green.Printf("  ✓ Registered %d admin resource(s) an earlier upgrade had dropped: %s\n", len(restored), strings.Join(restored, ", "))
 	}
 
+	// Model types and profile schemas the admin imports from the shared package,
+	// the blog on its resource definition, one rich text editor on Tiptap 3, and
+	// one page header. After the panel is written, not with the API repairs:
+	// the package.json raised to Tiptap 3 may be one the panel's writer replaced.
+	if err := repairAdminScreens(root, opts); err != nil {
+		fmt.Printf("  ⚠ updating the admin's shared types, blog pages and editor: %v\n", err)
+	}
+
 	// --- shadcn config for every frontend ---
 	//
 	// Created when missing, never overwritten. Without it,

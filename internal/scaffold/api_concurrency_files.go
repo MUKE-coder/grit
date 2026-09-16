@@ -47,13 +47,12 @@ func apiConcurrencyGo() string {
 package concurrency
 
 import (
+	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-
-	"{{MODULE}}/internal/respond"
 )
 
 const askedKey = "concurrency.if_match"
@@ -89,10 +88,19 @@ func Conflicted(c *gin.Context, res *gorm.DB) bool {
 
 // WriteConflict answers 409 with the version the record is at now, so the
 // client can reload and decide.
+//
+// Built by hand rather than through respond.Fail: Fail's details are strings,
+// and current_version is a number on the wire. v3.285.0 sent it as "2", which
+// broke every client comparing it with the version it holds.
 func WriteConflict(c *gin.Context, current int) {
 	c.Header("ETag", Tag(current))
-	respond.Fail(c, respond.CodeVersionConflict, "This record changed after you loaded it. Reload it and try again.",
-		map[string]string{"current_version": strconv.Itoa(current)})
+	c.JSON(http.StatusConflict, gin.H{
+		"error": gin.H{
+			"code":    "VERSION_CONFLICT",
+			"message": "This record changed after you loaded it. Reload it and try again.",
+			"details": gin.H{"current_version": current},
+		},
+	})
 }
 
 // Tag is the ETag for a version, the value a client sends back as If-Match.
@@ -170,6 +178,7 @@ func apiConcurrencyTestGo() string {
 	return `package concurrency
 
 import (
+	"encoding/json"
 	"net/http/httptest"
 	"testing"
 
@@ -283,6 +292,34 @@ func TestTheSecondWriterOfAVersionConflicts(t *testing.T) {
 	res = db.Model(&lot{ID: item.ID}).Scopes(IfMatch(junk)).Updates(map[string]interface{}{"bid": 1})
 	if !Conflicted(junk, res) {
 		t.Error("an unreadable If-Match wrote anyway")
+	}
+}
+
+// current_version is a number on the wire, because a client compares it with
+// the version it holds. v3.285.0 sent it as a string and broke that.
+func TestAConflictNamesTheCurrentVersionAsANumber(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	WriteConflict(c, 2)
+
+	if w.Code != 409 {
+		t.Fatalf("status %d, want 409", w.Code)
+	}
+	var body map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("body is not JSON: %v", err)
+	}
+	errObj, _ := body["error"].(map[string]interface{})
+	details, _ := errObj["details"].(map[string]interface{})
+	if errObj["code"] != "VERSION_CONFLICT" {
+		t.Errorf("code %v, want VERSION_CONFLICT", errObj["code"])
+	}
+	if v, ok := details["current_version"].(float64); !ok || v != 2 {
+		t.Errorf("current_version is %#v, want the number 2", details["current_version"])
+	}
+	if got := w.Header().Get("ETag"); got != Tag(2) {
+		t.Errorf("ETag %q, want %q", got, Tag(2))
 	}
 }
 `

@@ -244,27 +244,15 @@ func ensureSPAAdminWiring(feRoot string, opts Options) ([]string, error) {
 	deps := [][2]string{
 		{"@hookform/resolvers", "^3.3.0"},
 		{"@react-pdf/renderer", "^4.1.5"},
-		{"@tiptap/extension-color", "^2.1.0"},
-		{"@tiptap/extension-highlight", "^2.1.0"},
-		{"@tiptap/extension-image", "^2.1.0"},
-		{"@tiptap/extension-link", "^2.1.0"},
-		{"@tiptap/extension-placeholder", "^2.1.0"},
-		{"@tiptap/extension-table", "^2.1.0"},
-		{"@tiptap/extension-table-cell", "^2.1.0"},
-		{"@tiptap/extension-table-header", "^2.1.0"},
-		{"@tiptap/extension-table-row", "^2.1.0"},
-		{"@tiptap/extension-text-align", "^2.1.0"},
-		{"@tiptap/extension-text-style", "^2.1.0"},
-		{"@tiptap/extension-underline", "^2.1.0"},
-		{"@tiptap/pm", "^2.1.0"},
-		{"@tiptap/react", "^2.1.0"},
-		{"@tiptap/starter-kit", "^2.1.0"},
 		{"react-dropzone", "^14.2.0"},
 		{"react-hook-form", "^7.49.0"},
 		{"recharts", "^2.12.0"},
 		{"sonner", "^1.3.0"},
 		{"tw-animate-css", "^1.4.0"},
 		{"xlsx", "^0.18.5"},
+	}
+	for _, name := range tiptapPackages {
+		deps = append(deps, [2]string{name, tiptapVersion})
 	}
 	var depLines []string
 	for _, d := range deps {
