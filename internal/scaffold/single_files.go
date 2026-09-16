@@ -240,10 +240,8 @@ func main() {
 		}
 	}
 
-	// First-boot seed: only runs when the users table is empty. Off by default
-	// in production unless AUTO_SEED=true is set explicitly.
-	autoSeed := strings.ToLower(os.Getenv("AUTO_SEED"))
-	seedEnabled := autoSeed == "true" || (autoSeed != "false" && cfg.AppEnv != "production")
+` + singleAutoSeedCommentNew + `	autoSeed := strings.ToLower(os.Getenv("AUTO_SEED"))
+	` + singleAutoSeedNew + `
 	if seedEnabled {
 		var userCount int64
 		db.Model(&models.User{}).Count(&userCount)

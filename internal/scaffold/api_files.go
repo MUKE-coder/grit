@@ -296,6 +296,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.31
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.30
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.106.0
+	// The QR code on the 2FA setup screen. Replaced skip2/go-qrcode, last
+	// released in 2020.
+	github.com/boombuler/barcode v1.1.0
 	github.com/brianvoe/gofakeit/v7 v7.15.0
 	// SAML 2.0 service provider for enterprise SSO. OIDC covers every modern
 	// IdP and needs no library, but SAML is still what a lot of enterprise
@@ -314,6 +317,8 @@ require (
 	github.com/go-pdf/fpdf v1.4.3
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
+	// Linked in through goth's gothic, which still asks for v1.6.2 from 2018.
+	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/sessions v1.4.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/hibiken/asynq v0.24.1
@@ -324,7 +329,6 @@ require (
 	// the way in rather than trusted on the way out.
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/redis/go-redis/v9 v9.22.0
-	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	// CVE-2026-54063 and CVE-2026-59161: the worksheet and streaming
 	// parsers could be made to allocate without bound, and this is what
 	// the CSV/XLSX importer hands user uploads to.

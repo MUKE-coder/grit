@@ -285,14 +285,19 @@ func totpHandlerGo() string {
 	return `package handlers
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"image"
+	"image/color"
+	"image/draw"
+	"image/png"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/boombuler/barcode/qr"
 	"github.com/gin-gonic/gin"
-	qrcode "github.com/skip2/go-qrcode"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
@@ -370,7 +375,7 @@ func (h *TOTPHandler) Setup(c *gin.Context) {
 
 	// Medium recovery level: a phone camera reads it reliably at the size a
 	// setup dialog shows it, without the density High produces.
-	qrPNG, err := qrcode.Encode(uri, qrcode.Medium, 256)
+	qrPNG, err := qrCodePNG(uri, 256)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to render the QR code"},
@@ -961,5 +966,41 @@ func IsTrustedDevice(c *gin.Context, db *gorm.DB, userID string) bool {
 
 	return true
 }
-`
+` + totpQRHelper
 }
+
+// totpQRHelper draws the 2FA setup QR code with boombuler/barcode, which
+// replaced skip2/go-qrcode (last released in 2020).
+const totpQRHelper = `
+// qrCodePNG renders content as a PNG QR code at most size pixels square, at the
+// Medium recovery level, with the four-module quiet zone a phone camera needs
+// to find the code on a dark page. Whole pixels per module keep the edges sharp.
+func qrCodePNG(content string, size int) ([]byte, error) {
+	code, err := qr.Encode(content, qr.M, qr.Auto)
+	if err != nil {
+		return nil, err
+	}
+	bounds := code.Bounds()
+	modules := bounds.Dx() + 8
+	scale := size / modules
+	if scale < 1 {
+		scale = 1
+	}
+	img := image.NewGray(image.Rect(0, 0, modules*scale, modules*scale))
+	draw.Draw(img, img.Bounds(), image.White, image.Point{}, draw.Src)
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			if color.GrayModel.Convert(code.At(x, y)).(color.Gray).Y >= 128 {
+				continue
+			}
+			left, top := (x-bounds.Min.X+4)*scale, (y-bounds.Min.Y+4)*scale
+			draw.Draw(img, image.Rect(left, top, left+scale, top+scale), image.Black, image.Point{}, draw.Src)
+		}
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+`

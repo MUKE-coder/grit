@@ -832,6 +832,8 @@ Seeds the database with:
 - **Admin user** — admin@example.com / admin123 (role: ADMIN)
 - **Demo users** — jane@example.com, robert@example.com, emily@example.com, michael@example.com (all admin123)
 
+These accounts are seeded with APP_ENV=development only. Any other APP_ENV needs SEED_ADMIN_PASSWORD (12 characters or more) for the admin and skips the demo users.
+
 The seeder is idempotent — it skips records that already exist. Add your own seeders in apps/api/internal/database/seed.go.
 
 ## grit update
@@ -958,6 +960,8 @@ This creates:
 | Robert Fox | robert@example.com | admin123 | USER |
 | Emily Davis | emily@example.com | admin123 | USER |
 | Michael Chen | michael@example.com | admin123 | USER (inactive) |
+
+With APP_ENV=development only. Anywhere else, set SEED_ADMIN_PASSWORD for the admin; the demo users are skipped.
 
 ### How Seeders Work
 

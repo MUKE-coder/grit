@@ -459,6 +459,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairHealthVersionedRoute(root, opts); err != nil {
 			fmt.Printf("  ⚠ mounting the health probe under the version prefix: %v\n", err)
 		}
+		// Supported, pinned base images with health checks, one pnpm everywhere,
+		// development-only seed accounts, the maintained QR library, and MinIO on
+		// 127.0.0.1 unless .env opens it.
+		if err := repairInfraHygiene(root, opts); err != nil {
+			fmt.Printf("  ⚠ updating images, pnpm, seeds and MinIO: %v\n", err)
+		}
 		// The realtime socket takes a cookie handshake only from the CORS
 		// origins, caps connections, and is not mounted with MODULE_REALTIME=false.
 		if err := repairRealtimeSecurity(root, opts); err != nil {
@@ -527,6 +533,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		fileExists(filepath.Join(root, "internal", "config", "config.go")) {
 		if err := repairMailDrivers(root, opts); err != nil {
 			fmt.Printf("  ⚠ adding the mail drivers: %v\n", err)
+		}
+		if err := repairInfraHygiene(root, opts); err != nil {
+			fmt.Printf("  ⚠ updating images, pnpm, seeds and MinIO: %v\n", err)
 		}
 	}
 

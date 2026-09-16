@@ -66,6 +66,77 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.284.0 */}
+            <div className="mb-12" id="v3.284.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.284.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Supported images with health checks, no guessable seed accounts, private dev storage, and a faster admin</h3>
+                <p>
+                  <strong>Supported, pinned base images with health checks.</strong> The API runtime moves from Alpine
+                  3.19, which is out of support, to Alpine 3.24, Node is pinned to 22.23 and nginx moves to 1.30. All
+                  three images (API, web, admin) now carry a <code>HEALTHCHECK</code>, where none did; the API&apos;s
+                  calls <code>/api/health</code>. The Next.js runtime image starts from a clean Node image with npm,
+                  corepack and yarn removed, instead of inheriting pnpm from the build stage, and Dependabot opens pull
+                  requests for the base images.
+                </p>
+                <p>
+                  <strong>One pnpm everywhere.</strong> The Dockerfiles installed pnpm 9.15.0 while
+                  <code>package.json</code> named pnpm 10.0.0, so image builds ignored
+                  <code>onlyBuiltDependencies</code> and ran every dependency&apos;s install script. Both now use pnpm
+                  10.33.4. Not the newest 10.x on purpose: from 10.34.0 pnpm refuses a tarball dependency whose
+                  lockfile entry has no integrity hash, and pnpm 10 never records one for the SheetJS CDN tarball the
+                  web app installs <code>xlsx</code> from, so a fresh project could not install at all.
+                </p>
+                <p>
+                  <strong>No guessable accounts outside development.</strong> <code>grit seed</code> created
+                  <code>admin@example.com</code> with the password <code>admin123</code>, plus four demo accounts, in
+                  any environment not spelled exactly &quot;production&quot;, so a staging database got five guessable
+                  logins. Those accounts are now seeded only with <code>APP_ENV=development</code>. Anywhere else the
+                  seeder needs a <code>SEED_ADMIN_PASSWORD</code> of at least 12 characters and skips the demo users.
+                </p>
+                <p>
+                  <strong>Maintained dependencies.</strong> The two-factor QR code now comes from
+                  <code>boombuler/barcode</code> v1.1.0, which has no dependencies, in place of
+                  <code>skip2/go-qrcode</code>, unreleased since 2020. <code>gorilla/mux</code>, which the social sign-in
+                  library still requests at v1.6.2 from 2018, is pinned to v1.8.1.
+                </p>
+                <p>
+                  <strong>Development storage stays on your machine.</strong> Dev MinIO answered on every network
+                  interface, so anyone on the same network could reach the bucket. Its API now listens on 127.0.0.1
+                  unless <code>MINIO_BIND_ADDRESS</code> says otherwise, and its console always does. Projects with the
+                  Expo app need the phone to reach it, so they get <code>MINIO_BIND_ADDRESS=0.0.0.0</code>, and
+                  <code>grit upgrade</code> adds that line to an existing Expo project&apos;s <code>.env</code> so its
+                  images keep loading.
+                </p>
+                <p>
+                  <strong>A faster admin.</strong> Tables checked every row against the whole selection and redrew
+                  every row when one box was ticked: on a 200-row, 5-column page that was 1,000 cells redrawn per tick,
+                  and it is now 5. <code>usePermissions</code> builds its permission set once per fetch and returns the
+                  same <code>can</code> function every render, so components depending on it stop re-running their
+                  effects. The upload dropzone releases the preview URLs it creates, where picking three files used to
+                  keep all three in memory for the life of the page. Each route now preloads one font file (48 KB)
+                  instead of two (80 KB), and the generated CSS has 13 font rules instead of 46.
+                </p>
+                <p>
+                  <strong>No invented numbers on the dashboard.</strong> The &quot;Activity, past 7 days&quot; chart
+                  plotted <code>Math.random()</code>, because no API endpoint counts activity per day. It is gone, along
+                  with its dashboard setting, and &quot;Recent activity&quot; sits beside &quot;Severity mix&quot; in its
+                  place, both showing real data.
+                </p>
+                <p>
+                  <code>grit upgrade</code> patches existing Dockerfiles, <code>package.json</code>, the compose file,
+                  the seeder and a single app&apos;s <code>main.go</code>, and swaps the QR library; the admin fixes
+                  arrive with the rest of the admin files.
+                </p>
+              </div>
+            </div>
+
             {/* v3.283.0 */}
             <div className="mb-12" id="v3.283.0">
               <div className="flex items-center gap-3 mb-4">

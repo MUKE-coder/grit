@@ -235,12 +235,9 @@ const securityHeaders = {
 // applies the security headers + SPA history fallback (see viteNginxConf).
 func dockerfileVite(app string) string {
 	return `# Build stage
-FROM node:22-alpine AS base
+FROM ` + nodeImage + ` AS base
 
-# Pin pnpm — pnpm@latest started resolving to pnpm 11 which needs Node 22's
-# node:sqlite builtin. Pinning here avoids surprise breakage on rebuilds.
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
-
+` + pnpmPinNew + `
 # Install dependencies
 FROM base AS deps
 WORKDIR /app
@@ -282,14 +279,14 @@ ENV VITE_THEME=$VITE_THEME
 RUN pnpm --filter ` + app + ` build
 
 # Run — nginx serves the built SPA. No Node in the runtime image.
-FROM nginx:1.27-alpine AS runner
+FROM ` + nginxImage + ` AS runner
 
 COPY --from=builder /app/apps/` + app + `/dist /usr/share/nginx/html
 COPY apps/` + app + `/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 3000
 
-CMD ["nginx", "-g", "daemon off;"]
+` + viteHealthcheck + `CMD ["nginx", "-g", "daemon off;"]
 `
 }
 
