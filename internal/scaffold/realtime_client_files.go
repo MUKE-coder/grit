@@ -132,11 +132,36 @@ export type ChannelHandlers = Record<string, Handler>;
  */
 const channels = new Map<string, Set<{ handlers: ChannelHandlers }>>();
 
-function send(message: { type: string; channel: string }) {
+function send(message: { type: string; channel: string; event?: string; payload?: unknown }): boolean {
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify(message));
+    return true;
   }
+  return false;
 }
+
+/**
+ * Tell the other subscribers of a private or presence channel something the
+ * server does not need to know: typing, a cursor, "is viewing this".
+ *
+ *   whisper("presence-rooms." + room.id, "typing", { typing: true });
+ *
+ * It reaches every other connection subscribed to that channel, on every
+ * replica, and never comes back to this one. Returns false when the socket is
+ * down, in which case nothing was sent and nothing is queued: a whisper is only
+ * worth anything now.
+ *
+ * The rules the server applies: only private- and presence- channels, only a
+ * channel this connection is subscribed to, at most ten a second per connection
+ * and a payload under 1 KB. A refusal arrives as a client_event_error event on
+ * that channel.
+ */
+export function whisper(channel: string, event: string, data?: unknown): boolean {
+  return send({ type: "client-event", channel, event, payload: data ?? {} });
+}
+
+/** A client event as the other subscribers receive it. data is whatever the sender sent, so treat it as user input. */
+export type ClientEvent<Data = unknown> = { event: string; user_id: string; data?: Data };
 
 /** One user in a presence channel. info is what the channel's authorizer passed to SetInfo. */
 export type PresenceMember<Info = unknown> = { user_id: string; info?: Info; joined_at: string };
@@ -177,8 +202,12 @@ export function presenceMembers<Info = unknown>(channel: string): PresenceMember
 
 function dispatchChannel(channel: string, evt: RealtimeEvent) {
   let handled = false;
+  // A client event is also offered under its own name, so a component can
+  // handle "client-event:typing" and ignore every other whisper on the channel.
+  const name = evt.type === "client-event" ? (evt.payload as ClientEvent | null)?.event : undefined;
+  const named = typeof name === "string" ? "client-event:" + name : undefined;
   channels.get(channel)?.forEach(({ handlers: onChannel }) => {
-    const fn = onChannel[evt.type] ?? onChannel["*"];
+    const fn = (named ? onChannel[named] : undefined) ?? onChannel[evt.type] ?? onChannel["*"];
     if (!fn) return;
     handled = true;
     try {
@@ -389,7 +418,7 @@ func useRealtimeTS(nextApp bool) string {
 		directive = "\"use client\";\n\n"
 	}
 	return directive + `
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -398,13 +427,15 @@ import {
   disconnect,
   onRealtimeStatus,
   presenceMembers,
+  whisper,
+  type ClientEvent,
   type Handler,
   type PresenceMember,
   type Status,
 } from "@/lib/realtime";
 
-export { connect as connectRealtime, disconnect as disconnectRealtime };
-export type { PresenceMember };
+export { connect as connectRealtime, disconnect as disconnectRealtime, whisper };
+export type { ClientEvent, PresenceMember };
 
 /**
  * Subscribe to realtime events for as long as a component is mounted.
@@ -466,6 +497,25 @@ export function useChannel(channel: string | null | undefined, handlers: Record<
       });
     return subscribe(channel, stable);
   }, [channel, types]);
+}
+
+/**
+ * Send client events on a channel for as long as a component is mounted.
+ *
+ *   const whisperTyping = useWhisper("presence-rooms." + room.id);
+ *   <input onChange={() => whisperTyping("typing", { typing: true })} />
+ *
+ * The returned function is stable, and returns false when the socket is down.
+ * Subscribe to the channel separately, with useChannel or usePresence: the
+ * server only relays a whisper from a connection already subscribed to it.
+ */
+export function useWhisper(channel: string | null | undefined) {
+  const current = useRef(channel);
+  current.current = channel;
+  return useCallback((event: string, data?: unknown) => {
+    const name = current.current;
+    return name ? whisper(name, event, data) : false;
+  }, []);
 }
 
 /**

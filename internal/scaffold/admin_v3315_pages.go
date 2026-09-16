@@ -191,7 +191,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { apiClient } from "@/lib/api-client";
 import {
   CheckCircle, AlertCircle, RefreshCw, Database, Mail, Server,
-  Activity as ActivityIcon, HardDrive,
+  Activity as ActivityIcon, HardDrive, Zap,
 } from "@/lib/icons";
 
 interface HealthResponse {
@@ -201,6 +201,17 @@ interface HealthResponse {
   api:       { ok: boolean };
   jobs?:     { ok: boolean; queued?: number; active?: number };
   email?:    { ok: boolean; configured?: boolean; driver?: string };
+  // This replica's hub. With several replicas each reports its own share, so
+  // the numbers are per process, not per deployment.
+  realtime?: {
+    connections: number;
+    users: number;
+    channels: number;
+    messages_sent: number;
+    messages_dropped: number;
+    backplane: boolean;
+    backplane_publish_errors: number;
+  };
 }
 
 interface Card {
@@ -262,6 +273,18 @@ export default function SystemHealthPage() {
       detail: data.jobs?.queued != null ? data.jobs.queued + " queued, " + (data.jobs.active ?? 0) + " running" : (data.jobs?.ok ? "Worker pool healthy" : "Not configured"),
     },
     {
+      key: "realtime",
+      label: "Realtime",
+      icon: <Zap className="h-5 w-5" />,
+      status: data.realtime ? "ok" : "unknown",
+      detail: data.realtime
+        ? data.realtime.connections + " sockets, " + data.realtime.users + " users, " + data.realtime.channels + " channels"
+        : "Not reported",
+      meta: data.realtime
+        ? data.realtime.messages_dropped + " dropped / " + data.realtime.messages_sent + " sent"
+        : undefined,
+    },
+    {
       key: "email",
       label: "Email",
       icon: <Mail className="h-5 w-5" />,
@@ -301,9 +324,9 @@ export default function SystemHealthPage() {
       <h2 className="mb-3 text-xl font-bold text-foreground">Infrastructure</h2>
 
       {isLoading ? (
-        <SkeletonCards count={5} />
+        <SkeletonCards count={6} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {cards.map((c) => (
             <HealthCard key={c.key} card={c} />
           ))}

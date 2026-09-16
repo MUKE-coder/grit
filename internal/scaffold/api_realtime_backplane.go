@@ -107,8 +107,7 @@ func (h *Hub) publish(f fanout) {
 		// Same policy as a client whose send buffer is full: drop it. The
 		// alternative is blocking a request on a backplane that is not
 		// keeping up, and the receiving clients resync on their next REST call.
-		log.Printf("[realtime] backplane buffer full, dropping an event")
-	}
+` + backplaneBufferFullNew + `	}
 }
 
 // publishLoop drains the queue on one goroutine, which keeps publishes in the
@@ -123,8 +122,7 @@ func (h *Hub) publishLoop(ctx context.Context) {
 			// than forever; the queue absorbs the difference.
 			pctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 			if err := h.backplane.Publish(pctx, msg); err != nil {
-				log.Printf("[realtime] backplane publish: %v", err)
-			}
+` + backplanePublishErrNew + `			}
 			cancel()
 		}
 	}

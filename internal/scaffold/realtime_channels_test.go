@@ -45,9 +45,10 @@ func TestRealtimeChannelsShipInTheTemplates(t *testing.T) {
 	if !strings.Contains(handler, "hub.HandleClientMessage(c, msg)") {
 		t.Error("readPump does not hand client messages to the hub")
 	}
-	// The longest subscribe message is about 200 bytes, so the limit stays.
-	if !strings.Contains(handler, "wsMaxMessageSize = 1024") {
-		t.Error("the socket read limit changed; channel messages do not need more than 1 KB")
+	// The longest subscribe message is about 200 bytes. A4 raised the limit to
+	// 2048 for a client event's payload, and no further.
+	if !strings.Contains(handler, "wsMaxMessageSize = 2048") {
+		t.Error("the socket read limit is not 2048; a subscribe message needs far less and a client event no more")
 	}
 
 	subs := read("internal", "services", "event_subscribers.go")

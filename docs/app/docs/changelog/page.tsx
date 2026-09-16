@@ -66,6 +66,64 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.281.0 */}
+            <div className="mb-12" id="v3.281.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.281.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Client events between browsers, a hub that reports itself, and no panic on a revoked session</h3>
+                <p>
+                  <strong>Client events.</strong> A channel could only carry what the server published, so &quot;Ada
+                  is typing&quot; cost a POST per keystroke or was never built. A connection subscribed to a private or
+                  presence channel can now send a client event, and the hub relays it to the other subscribers of that
+                  channel on every replica, storing nothing:
+                </p>
+                <pre><code>{`{"type":"client-event","channel":"presence-rooms.1","event":"typing","payload":{"typing":true}}`}</code></pre>
+                <p>
+                  The hub fills in <code>user_id</code> from the connection&apos;s token, so a receiver can trust who
+                  sent one. The rest is the sender&apos;s browser talking, so treat it as user input. The rules are the
+                  server&apos;s: private and presence channels only, whose subscribers passed an authorizer; only a
+                  channel this connection is subscribed to; ten a second per connection; a payload under 1 KB; and an
+                  event name of 1 to 64 characters. A refusal comes back on the sender&apos;s socket alone, and the
+                  rate limit answers once a second however many it drops. The socket read limit goes from 1024 to 2048
+                  bytes to fit one. Every frontend gets <code>whisper()</code> and a <code>useWhisper</code> hook, and
+                  a handler keyed <code>client-event:typing</code> sees one kind and ignores the rest.
+                </p>
+                <p>
+                  <strong>The numbers the hub had and never showed.</strong> A hub that dropped a message for a slow
+                  client said so in a log line and nowhere else. <code>/api/health</code> now carries a
+                  <code>realtime</code> object: this replica&apos;s open sockets, distinct users and channels, and
+                  counters for messages sent, messages dropped for slow clients, client events relayed, client events
+                  refused by the rate limit, and events that never reached the other replicas. The admin&apos;s System
+                  Health page shows it as a sixth card. The three counts are per process, so with several replicas each
+                  reports its share.
+                </p>
+                <p>
+                  <strong>A revoked session no longer panics a connecting socket.</strong> Connect queued its &quot;you
+                  are connected&quot; greeting after the hub had taken the connection, so a session revoked in that
+                  instant closed the send channel underneath it and the send panicked, taking the API down. 300 sockets
+                  signed out as they were admitted panicked 7 times on v3.280.0 and 0 times now. The greeting is queued
+                  before the hub can reach the connection at all.
+                </p>
+                <p>
+                  <strong>Docs and the chat course.</strong> The realtime page documents channels, presence, client
+                  events and the health numbers, and corrects three things that were wrong: the ping interval is 54
+                  seconds, a browser authenticates with the <code>grit_access</code> cookie rather than a query string
+                  token, and the socket takes three kinds of message rather than none. The realtime chat course is
+                  rewritten on the scaffolded hub: it used to tell readers to install a separate plugin with its own
+                  routes, which is a second hub with a second connection and no share of the application&apos;s
+                  authentication. It now builds rooms as authorized channels, a member list from presence, typing
+                  indicators from client events and history from REST, with 12 challenges against a project that
+                  installs nothing.
+                </p>
+              </div>
+            </div>
+
             {/* v3.280.0 */}
             <div className="mb-12" id="v3.280.0">
               <div className="flex items-center gap-3 mb-4">

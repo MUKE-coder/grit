@@ -457,6 +457,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairRealtimePresence(root, opts); err != nil {
 			fmt.Printf("  ⚠ adding realtime presence: %v\n", err)
 		}
+		// Client events between the subscribers of a channel, and the sockets,
+		// deliveries, drops and publish failures the hub reports on /api/health.
+		// After presence: it counts presence messages too.
+		if err := repairRealtimeWhispers(root, opts); err != nil {
+			fmt.Printf("  ⚠ adding realtime client events and stats: %v\n", err)
+		}
 		// The admin's React Query client is created per mount, and the blog
 		// editor loads Tiptap on demand.
 		if err := repairAdminBundles(root, opts); err != nil {

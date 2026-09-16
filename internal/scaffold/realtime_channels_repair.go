@@ -58,9 +58,10 @@ func repairRealtimeChannels(root string, opts Options) error {
 
 	module := opts.Module()
 	for _, f := range []struct{ path, content string }{
-		// As v3.274.0 wrote it: presence changes it, and repairRealtimePresence
-		// applies those only beside a hub that can take them.
-		{filepath.Join(realtimeDir, "channels.go"), revertRealtimeHunks(apiRealtimeChannelsGo(), realtimeChannelsPresenceHunks)},
+		// As v3.274.0 wrote it: presence and client events change it, and each of
+		// those repairs applies its own changes only beside files that can take
+		// them.
+		{filepath.Join(realtimeDir, "channels.go"), revertRealtimeHunks(revertRealtimeHunks(apiRealtimeChannelsGo(), realtimeChannelsWhisperHunks), realtimeChannelsPresenceHunks)},
 		{filepath.Join(realtimeDir, "channels_test.go"), apiRealtimeChannelsTestGo()},
 	} {
 		if fileExists(f.path) {
