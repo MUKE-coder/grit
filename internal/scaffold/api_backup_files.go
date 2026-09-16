@@ -28,6 +28,12 @@ func writeBackupFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "cmd", "backup", "main.go"):          backupCmdMainGo(),
 		filepath.Join(apiRoot, "cmd", "restore", "main.go"):         restoreCmdMainGo(),
 	}
+	// cmd/backup opens the stores config.go describes. An older config.go does
+	// not describe them, so the command it has stays until the storage repair
+	// has brought config.go up to date, and that repair writes it then.
+	if configPath := filepath.Join(apiRoot, "internal", "config", "config.go"); fileExists(configPath) && !fileContains(configPath, backupCLIConfigMarker) {
+		delete(files, filepath.Join(apiRoot, "cmd", "backup", "main.go"))
+	}
 
 	for path, content := range files {
 		content = strings.ReplaceAll(content, "~", "`")
@@ -147,6 +153,44 @@ var ErrStorageUnconfigured = errors.New("object storage is not configured")
 type Service struct {
 	DB      *gorm.DB
 	Storage *storage.Storage
+}
+
+// DiskName is the storage disk archives go to when STORAGE_DISKS defines it.
+// An archive holds every row of the database, so it belongs in a private
+// bucket of its own rather than beside the files the app serves.
+const DiskName = "backups"
+
+// Store is where new archives go: the disk named DiskName when one is
+// configured, and Storage otherwise.
+func (s *Service) Store() *storage.Storage {
+	if named := storage.Disks.Get(DiskName); named != nil {
+		return named
+	}
+	return s.Storage
+}
+
+// stores are the places an archive may be: the backups disk, and the default
+// store for archives taken before that disk was configured.
+func (s *Service) stores() []*storage.Storage {
+	var out []*storage.Storage
+	store := s.Store()
+	if store != nil {
+		out = append(out, store)
+	}
+	if s.Storage != nil && s.Storage != store {
+		out = append(out, s.Storage)
+	}
+	return out
+}
+
+// Locate is the store holding key, looking on the backups disk first.
+func (s *Service) Locate(ctx context.Context, key string) *storage.Storage {
+	for _, store := range s.stores() {
+		if ok, err := store.Disk().Exists(ctx, key); err == nil && ok {
+			return store
+		}
+	}
+	return s.Store()
 }
 
 // Manifest is metadata.json — enough to verify a restore landed everything.
@@ -444,7 +488,8 @@ func (s *Service) Start(kind string) (*models.Backup, error) {
 // Run builds the archive, uploads it, flips the row to READY, then prunes old
 // archives. A failed prune never fails the backup — the archive is already safe.
 func (s *Service) Run(ctx context.Context, rec *models.Backup) error {
-	if s.Storage == nil {
+	store := s.Store()
+	if store == nil {
 		s.fail(rec, ErrStorageUnconfigured)
 		return ErrStorageUnconfigured
 	}
@@ -476,7 +521,8 @@ func (s *Service) Run(ctx context.Context, rec *models.Backup) error {
 	}
 
 	key := fmt.Sprintf("backups/%s-%s.zip", time.Now().UTC().Format("2006-01-02"), rec.ID)
-	if err := s.Storage.Upload(ctx, key, tmp, "application/zip"); err != nil {
+	// Private, and refused if STORAGE_PUBLIC_PREFIXES would make backups/ public.
+	if err := store.Disk().Put(ctx, key, tmp, storage.PutOptions{ContentType: "application/zip", Visibility: storage.VisibilityPrivate}); err != nil {
 		s.fail(rec, err)
 		return err
 	}
@@ -529,7 +575,8 @@ func (s *Service) fail(rec *models.Backup, cause error) {
 // object storage. Rows are marked PURGED rather than removed, so the audit trail
 // still shows a backup ran that week.
 func (s *Service) RollingCleanup(ctx context.Context, keep int) error {
-	if s.Storage == nil {
+	stores := s.stores()
+	if len(stores) == 0 {
 		return nil
 	}
 	var ready []models.Backup
@@ -541,8 +588,11 @@ func (s *Service) RollingCleanup(ctx context.Context, keep int) error {
 	}
 	for _, b := range ready[keep:] {
 		if b.StorageKey != "" {
-			if err := s.Storage.Delete(ctx, b.StorageKey); err != nil {
-				return fmt.Errorf("deleting %s: %w", b.StorageKey, err)
+			// From every store it may be on. A key already gone is not an error.
+			for _, store := range stores {
+				if err := store.Delete(ctx, b.StorageKey); err != nil {
+					return fmt.Errorf("deleting %s: %w", b.StorageKey, err)
+				}
 			}
 		}
 		if err := s.DB.Model(&models.Backup{}).Where("id = ?", b.ID).
@@ -1090,7 +1140,7 @@ func (h *BackupHandler) List(c *gin.Context) {
 // Generate starts a manual backup in the background and returns the RUNNING row
 // immediately — a full dump can take a while. Poll List until it flips to READY.
 func (h *BackupHandler) Generate(c *gin.Context) {
-	if h.Storage == nil {
+	if h.svc().Store() == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"error": gin.H{"code": "STORAGE_UNAVAILABLE", "message": "Object storage is not configured"},
 		})
@@ -1131,7 +1181,7 @@ func (h *BackupHandler) Generate(c *gin.Context) {
 // Download mints a short-lived pre-signed URL so the client pulls the archive
 // straight from object storage — no proxying a multi-hundred-MB file through the API.
 func (h *BackupHandler) Download(c *gin.Context) {
-	if h.Storage == nil {
+	if h.svc().Store() == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"error": gin.H{"code": "STORAGE_UNAVAILABLE", "message": "Object storage is not configured"},
 		})
@@ -1152,7 +1202,9 @@ func (h *BackupHandler) Download(c *gin.Context) {
 		return
 	}
 
-	url, err := h.Storage.GetSignedURL(c.Request.Context(), b.StorageKey, downloadURLTTL)
+	// On the backups disk, or on the default store for an archive taken before
+	// STORAGE_DISKS named one.
+	url, err := h.svc().Locate(c.Request.Context(), b.StorageKey).GetSignedURL(c.Request.Context(), b.StorageKey, downloadURLTTL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to sign download URL"},
@@ -1222,7 +1274,8 @@ import (
 )
 
 // Backs up every registered model to a ZIP (CSV per table + dump.sql +
-// metadata.json). By default it uploads to object storage and records the row;
+// metadata.json). By default it uploads to the storage the API uses, or to the
+// "backups" disk when STORAGE_DISKS defines one, and records the row;
 // --output writes a local file instead and touches nothing else.
 func main() {
 	out := flag.String("output", "", "Write the archive to this local path instead of uploading")
@@ -1263,18 +1316,44 @@ func main() {
 		return
 	}
 
-	st, err := storage.New(cfg.Storage)
-	if err != nil {
-		log.Fatalf("Object storage is not configured: %v\n(use --output <file> to write a local archive)", err)
+	// The stores the API opens, from the same settings, so the archive lands
+	// where the Data & Backup page looks for it: STORAGE_DRIVER=local included,
+	// and the backups disk when there is one.
+	storage.SetPublicPrefixes(cfg.StoragePublicPrefixes)
+	if st, err := storage.Open(cfg.StorageDriver, cfg.Storage, storage.LocalConfig{
+		Root:      cfg.Storage.LocalRoot,
+		PublicURL: cfg.Storage.PublicURL,
+		Secret:    cfg.Storage.URLSecret,
+	}); err != nil {
+		log.Printf("Default storage unavailable: %v", err)
+	} else {
+		svc.Storage = st
 	}
-	svc.Storage = st
+	for _, named := range cfg.StorageDisks {
+		if named.Name != backup.DiskName {
+			continue
+		}
+		st, err := storage.Open(named.Driver, named.Storage, storage.LocalConfig{
+			Root:      named.Storage.LocalRoot,
+			PublicURL: named.Storage.PublicURL,
+			Secret:    named.Storage.URLSecret,
+		})
+		if err != nil {
+			log.Fatalf("The %q storage disk is not available: %v", named.Name, err)
+		}
+		storage.Disks.Add(named.Name, st)
+	}
+	store := svc.Store()
+	if store == nil {
+		log.Fatal("Storage is not configured\n(use --output <file> to write a local archive)")
+	}
 
 	rec, err := svc.Generate(ctx, "CLI")
 	if err != nil {
 		log.Fatalf("Backup failed: %v", err)
 	}
-	fmt.Printf("Backup %s uploaded: %d tables, %d rows, %.1f KB\n",
-		rec.ID, rec.TableCount, rec.RowCount, float64(rec.SizeBytes)/1024)
+	fmt.Printf("Backup %s uploaded to %s: %d tables, %d rows, %.1f KB\n",
+		rec.ID, store.Describe(), rec.TableCount, rec.RowCount, float64(rec.SizeBytes)/1024)
 }
 `
 }

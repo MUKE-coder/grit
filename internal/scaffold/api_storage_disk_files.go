@@ -56,6 +56,53 @@ type PutOptions struct {
 	// ContentType is recorded with the file where the driver records one.
 	// Empty means application/octet-stream.
 	ContentType string
+	// Visibility says who may read the file, and empty follows the key.
+	//
+	// Every driver decides visibility by key prefix: a key under PublicPrefixes
+	// is readable by anyone, every other key only through TemporaryURL. On S3
+	// and MinIO the bucket policy says so, on the local disk the file route
+	// does. Naming a visibility is a check, not a switch: Put refuses a key whose
+	// prefix disagrees with ErrVisibilityMismatch, so a file you meant to keep
+	// private never lands where anyone can read it.
+	//
+	// Cloudflare R2 and Backblaze B2 have no bucket policies. There the bucket
+	// is public or it is not, whatever the key, so keep private files in a
+	// private bucket (a named disk) and serve them with TemporaryURL.
+	Visibility Visibility
+}
+
+// Visibility is who may read a stored file.
+type Visibility string
+
+const (
+	// VisibilityPublic is a file anyone with its URL may read.
+	VisibilityPublic Visibility = "public"
+	// VisibilityPrivate is a file read only through a TemporaryURL, or through
+	// the API with ServeFile.
+	VisibilityPrivate Visibility = "private"
+)
+
+// VisibilityOf reports who may read the file at key.
+func VisibilityOf(key string) Visibility {
+	if IsPublicKey(key) {
+		return VisibilityPublic
+	}
+	return VisibilityPrivate
+}
+
+// checkVisibility refuses a Put whose visibility disagrees with its key.
+func checkVisibility(key string, visibility Visibility) error {
+	switch visibility {
+	case "":
+		return nil
+	case VisibilityPublic, VisibilityPrivate:
+		if actual := VisibilityOf(key); actual != visibility {
+			return fmt.Errorf("%w: %q is %s, not %s, because storage.PublicPrefixes (STORAGE_PUBLIC_PREFIXES) decides", ErrVisibilityMismatch, key, actual, visibility)
+		}
+		return nil
+	default:
+		return fmt.Errorf("storage: unknown visibility %q, use public or private", visibility)
+	}
 }
 
 // Object describes one stored file.
@@ -82,6 +129,9 @@ var (
 	// ErrPresignUnsupported is returned by PresignPutURL when the driver takes
 	// uploads through the API instead (STORAGE_DRIVER=local).
 	ErrPresignUnsupported = errors.New("storage: this driver cannot presign uploads")
+	// ErrVisibilityMismatch is returned, wrapped, by Put for a visibility the
+	// key's prefix does not give.
+	ErrVisibilityMismatch = errors.New("storage: the key does not have that visibility")
 )
 
 // checkKey refuses a key that no driver should accept. A bucket would store
@@ -155,6 +205,10 @@ const (
 	// localTempPrefix names a write in progress. List skips these, and no key
 	// may start with it.
 	localTempPrefix = ".grit-tmp-"
+	// localNamedSegment is where the default local disk serves a named local
+	// disk's files: /files/_disks/<name>/<key>. No key on a local disk may start
+	// with it.
+	localNamedSegment = "_disks"
 )
 
 // LocalConfig configures a LocalDisk.
@@ -222,8 +276,8 @@ func (d *LocalDisk) path(key string) (string, error) {
 	if strings.Contains(key, "\\") || (runtime.GOOS == "windows" && strings.Contains(key, ":")) {
 		return "", fmt.Errorf("%w: %q", ErrInvalidKey, key)
 	}
-	for _, segment := range strings.Split(key, "/") {
-		if segment == "" || strings.HasPrefix(segment, localTempPrefix) {
+	for i, segment := range strings.Split(key, "/") {
+		if segment == "" || strings.HasPrefix(segment, localTempPrefix) || (i == 0 && segment == localNamedSegment) {
 			return "", fmt.Errorf("%w: %q", ErrInvalidKey, key)
 		}
 	}
@@ -248,6 +302,9 @@ func failed(op, key string, err error) error {
 func (d *LocalDisk) Put(ctx context.Context, key string, r io.Reader, opts PutOptions) error {
 	full, err := d.path(key)
 	if err != nil {
+		return err
+	}
+	if err := checkVisibility(key, opts.Visibility); err != nil {
 		return err
 	}
 	if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
@@ -506,8 +563,28 @@ func (d *LocalDisk) validSignature(key, expires, signature string) bool {
 // The files come from the API's own origin, where its cookies live, so each
 // is sent with a sandboxing Content-Security-Policy: an uploaded page or SVG
 // opened directly cannot run script as the API.
+//
+// A named local disk (STORAGE_DISKS) has no route of its own: its files are
+// served here under _disks/<name>/, by that disk and with its own checks.
 func (d *LocalDisk) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	key := strings.TrimPrefix(r.URL.Path, localFilesPrefix)
+	if rest, ok := strings.CutPrefix(key, localNamedSegment+"/"); ok {
+		name, namedKey, _ := strings.Cut(rest, "/")
+		if name != "" && name != "default" {
+			if named := Disks.Get(name); named != nil {
+				if other, ok := named.Disk().(*LocalDisk); ok && other != d {
+					other.serve(w, r, namedKey)
+					return
+				}
+			}
+		}
+		writeFileError(w, http.StatusNotFound, "NOT_FOUND", "File not found")
+		return
+	}
+	d.serve(w, r, key)
+}
+
+func (d *LocalDisk) serve(w http.ResponseWriter, r *http.Request, key string) {
 	full, err := d.path(key)
 	if err != nil {
 		writeFileError(w, http.StatusNotFound, "NOT_FOUND", "File not found")
@@ -855,6 +932,18 @@ func runDiskSuite(t *testing.T, disk Disk, expiredURL func(key string) string) {
 		}
 		if status, body := fetch(t, link); status != http.StatusOK || body != "public body" {
 			t.Fatalf("GET %s = %d %q", link, status, body)
+		}
+	})
+
+	t.Run("ServeFile streams a range", func(t *testing.T) {
+		key := private + "range.txt"
+		put(t, key, "0123456789")
+		rec := serve(t, disk, key, Attachment, http.MethodGet, map[string]string{"Range": "bytes=3-6"})
+		if rec.Code != http.StatusPartialContent || rec.Body.String() != "3456" || rec.Header().Get("Content-Range") != "bytes 3-6/10" {
+			t.Fatalf("Range 3-6 = %d %q %v", rec.Code, rec.Body.String(), rec.Header())
+		}
+		if full := serve(t, disk, key, Attachment, http.MethodGet, nil); full.Code != http.StatusOK || full.Body.String() != "0123456789" || full.Header().Get("Content-Length") != "10" {
+			t.Fatalf("GET = %d %q %v", full.Code, full.Body.String(), full.Header())
 		}
 	})
 

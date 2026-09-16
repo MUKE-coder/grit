@@ -323,6 +323,9 @@ func registerAPIDocs(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		Summary("Get one stored file").
 		Response(200, models.Upload{}, "The file record").
 		Response(404, handlers.ErrorResponse{}, "Not found")
+	docs.Route("GET /api/v1/uploads/:id/download").
+		Summary("Download a stored file through the API, with Range support; ?inline=true shows it instead").
+		Response(404, handlers.ErrorResponse{}, "Not found")
 	docs.Route("GET /api/v1/uploads/stats").
 		Summary("Storage totals").
 		Response(200, handlers.MessageResponse{}, "Count and bytes, by type")

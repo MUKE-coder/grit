@@ -514,17 +514,17 @@ func (i *Image) DominantColor() (color.RGBA, error) {
 			buckets[k].b += int(c.B)
 		}
 	}
-	best := -1
-	for k := range buckets {
-		if buckets[k].n > 0 && (best < 0 || buckets[k].n > buckets[best].n) {
-			best = k
+	var best bucket
+	for _, bk := range &buckets {
+		if bk.n > best.n {
+			best = bk
 		}
 	}
-	if best < 0 {
+	if best.n == 0 {
 		return color.RGBA{}, errors.New("media: the image is fully transparent and has no dominant colour")
 	}
-	bk := buckets[best]
-	return color.RGBA{R: uint8(bk.r / bk.n), G: uint8(bk.g / bk.n), B: uint8(bk.b / bk.n), A: 255}, nil
+	// #nosec G115 -- the mean of 8-bit samples is itself between 0 and 255.
+	return color.RGBA{R: uint8(best.r / best.n), G: uint8(best.g / best.n), B: uint8(best.b / best.n), A: 255}, nil
 }
 
 // HexColor formats a colour as #rrggbb, for CSS.

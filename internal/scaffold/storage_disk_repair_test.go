@@ -58,7 +58,18 @@ func TestStorageTemplatesShipTheDiskInterfaceAndLocalDriver(t *testing.T) {
 			t.Errorf("the storage package reads config.StorageConfig.%s, which an unrepaired config.go does not have", field)
 		}
 	}
-	for name, src := range map[string]string{"storage.go": service, "disk.go": disk, "local.go": local, "disk_test.go": storageDiskTestGo()} {
+	// Nor may the helpers and the registry, which arrive with it.
+	for name, src := range map[string]string{"store.go": storageStoreGo(), "disks.go": storageDisksGo()} {
+		for _, field := range []string{"LocalRoot", "URLSecret", "StorageDisks", "StoragePublicPrefixes"} {
+			if strings.Contains(src, "."+field) {
+				t.Errorf("%s reads %s, which an unrepaired config.go does not have", name, field)
+			}
+		}
+	}
+	for name, src := range map[string]string{
+		"storage.go": service, "disk.go": disk, "local.go": local, "disk_test.go": storageDiskTestGo(),
+		"store.go": storageStoreGo(), "store_test.go": storageStoreTestGo(), "disks.go": storageDisksGo(),
+	} {
 		gofmtOrFatal(t, name, strings.ReplaceAll(src, "{{MODULE}}", "example.com/app"))
 	}
 	if !strings.Contains(storageDiskTestGo(), "func TestS3Disk(t *testing.T)") || !strings.Contains(storageDiskTestGo(), "runDiskSuite(t, d,") {
@@ -74,7 +85,8 @@ func TestStorageWiringTemplates(t *testing.T) {
 		}
 	}
 	config := apiConfigGo()
-	for _, want := range []string{configStorageFields, configStorageDriverNew, configLocalStorageCheck, configResolveStorageDriverFunc, configLocalCase} {
+	for _, want := range []string{configStorageFields, configStorageDriverNew, configLocalStorageCheck, configResolveStorageDriverFunc, configLocalCase,
+		configStorageDisksField, configStorageDisksLoad, configStorageDisksFuncs} {
 		if !strings.Contains(config, want) {
 			t.Errorf("config.go is missing %q", want)
 		}
@@ -105,9 +117,10 @@ func TestStorageDiskRepairsReproduceTheTemplate(t *testing.T) {
 		repair func(string) (string, []string, []string)
 	}{
 		{
-			name:  "config.go",
+			name:  "config.go from before v3.276.0",
 			fresh: apiConfigGo(),
 			old: func(s string) string {
+				s = withoutStorageDisksConfig(s)
 				s = strings.Replace(s, configStorageFields, configStorageFieldsAnchor, 1)
 				s = strings.Replace(s, configStorageDriverFieldNew, configStorageDriverFieldOld, 1)
 				s = strings.Replace(s, configStorageDriverNew, configStorageDriverOld, 1)
@@ -115,13 +128,35 @@ func TestStorageDiskRepairsReproduceTheTemplate(t *testing.T) {
 				s = strings.Replace(s, configResolveStorageDriverFunc, "", 1)
 				return strings.Replace(s, configLocalCase, "", 1)
 			},
-			repair: repairStorageConfigSource,
+			repair: func(s string) (string, []string, []string) {
+				out, fixed, warn := repairStorageConfigSource(s)
+				more, fixedMore, warnMore := repairStorageDisksConfigSource(out)
+				return more, append(fixed, fixedMore...), append(warn, warnMore...)
+			},
+		},
+		{
+			name:   "config.go from v3.276.0",
+			fresh:  apiConfigGo(),
+			old:    withoutStorageDisksConfig,
+			repair: repairStorageDisksConfigSource,
+		},
+		{
+			name:   "main.go from v3.276.0",
+			fresh:  apiMainGo(opts),
+			old:    func(s string) string { return strings.Replace(s, mainStorageInit, mainStorageInitC1, 1) },
+			repair: repairStorageInitSource,
 		},
 		{
 			name:   "main.go",
 			fresh:  apiMainGo(opts),
 			old:    func(s string) string { return strings.Replace(s, mainStorageInit, mainStorageInitOld, 1) },
 			repair: repairStorageInitSource,
+		},
+		{
+			name:   "routes.go without the download route",
+			fresh:  apiRoutesGo(),
+			old:    func(s string) string { return strings.Replace(s, routesUploadDownload, routesUploadDownloadAnchor, 1) },
+			repair: repairUploadDownloadRouteSource,
 		},
 		{
 			name:   "single main.go",
@@ -155,6 +190,14 @@ func TestStorageDiskRepairsReproduceTheTemplate(t *testing.T) {
 			}
 		})
 	}
+}
+
+// withoutStorageDisksConfig is config.go as v3.276.0 wrote it.
+func withoutStorageDisksConfig(s string) string {
+	s = strings.Replace(s, configStorageDisksField, configStorageDisksFieldAnchor, 1)
+	s = strings.Replace(s, configStorageDisksLoad, configStorageDisksLoadAnchor, 1)
+	s = strings.Replace(s, configStorageDisksFuncs, "", 1)
+	return strings.Replace(s, "\t\"path/filepath\"\n", "", 1)
 }
 
 func TestStorageDiskRepairsLeaveUnknownFilesAlone(t *testing.T) {
