@@ -86,6 +86,7 @@ import (
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
 )
 
 // DashboardLayoutHandler exposes GET + PUT for the per-user dashboard
@@ -103,9 +104,7 @@ type DashboardLayoutHandler struct {
 func (h *DashboardLayoutHandler) Get(c *gin.Context) {
 	userID, ok := c.Get("user_id")
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{"code": "UNAUTHORIZED", "message": "Not signed in"},
-		})
+		respond.Fail(c, respond.CodeUnauthorized, "Not signed in")
 		return
 	}
 
@@ -128,9 +127,7 @@ func (h *DashboardLayoutHandler) Get(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to load layout"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to load layout")
 		return
 	}
 
@@ -170,17 +167,13 @@ type DashboardLayoutRequest struct {
 func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 	userID, ok := c.Get("user_id")
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{"code": "UNAUTHORIZED", "message": "Not signed in"},
-		})
+		respond.Fail(c, respond.CodeUnauthorized, "Not signed in")
 		return
 	}
 
 	var req DashboardLayoutRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -257,9 +250,7 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		layout = models.DashboardLayout{UserID: userID.(string)}
 	} else if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to load layout"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to load layout")
 		return
 	}
 
@@ -284,9 +275,7 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 	layout.DatePreset = req.DatePreset
 
 	if err := h.DB.WithContext(c.Request.Context()).Save(&layout).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to save layout"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to save layout")
 		return
 	}
 

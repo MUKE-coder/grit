@@ -15,6 +15,7 @@ import (
 
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
+	"{{MODULE}}/internal/respond"
 )
 
 // PasskeyHandler exposes the two WebAuthn ceremonies.
@@ -36,10 +37,7 @@ func NewPasskeyHandler(db *gorm.DB, p *services.Passkeys, auth *AuthHandler) *Pa
 // relying party, and saying so beats a nil dereference.
 func (h *PasskeyHandler) available(c *gin.Context) bool {
 	if h.Passkeys == nil {
-		c.JSON(http.StatusNotImplemented, gin.H{"error": gin.H{
-			"code":    "PASSKEYS_NOT_CONFIGURED",
-			"message": "Passkeys are not configured on this deployment",
-		}})
+		respond.Fail(c, respond.CodePasskeysNotConfigured, "Passkeys are not configured on this deployment")
 		return false
 	}
 	return true
@@ -52,9 +50,7 @@ func (h *PasskeyHandler) List(c *gin.Context) {
 	}
 	rows, err := h.Passkeys.List(c.GetString("user_id"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Could not load your passkeys",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Could not load your passkeys")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": rows})
@@ -67,9 +63,7 @@ func (h *PasskeyHandler) BeginRegistration(c *gin.Context) {
 	}
 	opts, sessionID, err := h.Passkeys.BeginRegistration(c.GetString("user_id"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Could not start registration",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Could not start registration")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{
@@ -94,18 +88,14 @@ func (h *PasskeyHandler) FinishRegistration(c *gin.Context) {
 	}
 	raw, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
-			"code": "INVALID_BODY", "message": "Could not read the request",
-		}})
+		respond.Fail(c, respond.CodeInvalidBody, "Could not read the request")
 		return
 	}
 
 	sessionID := c.Query("session")
 	name := c.Query("name")
 	if sessionID == "" {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
-			"code": "VALIDATION_ERROR", "message": "session is required",
-		}})
+		respond.Fail(c, respond.CodeValidationError, "session is required")
 		return
 	}
 
@@ -130,9 +120,7 @@ func (h *PasskeyHandler) BeginLogin(c *gin.Context) {
 	}
 	opts, sessionID, err := h.Passkeys.BeginLogin()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Could not start sign-in",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Could not start sign-in")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{
@@ -149,16 +137,12 @@ func (h *PasskeyHandler) FinishLogin(c *gin.Context) {
 	}
 	raw, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
-			"code": "INVALID_BODY", "message": "Could not read the request",
-		}})
+		respond.Fail(c, respond.CodeInvalidBody, "Could not read the request")
 		return
 	}
 	sessionID := c.Query("session")
 	if sessionID == "" {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
-			"code": "VALIDATION_ERROR", "message": "session is required",
-		}})
+		respond.Fail(c, respond.CodeValidationError, "session is required")
 		return
 	}
 
@@ -174,9 +158,7 @@ func (h *PasskeyHandler) FinishLogin(c *gin.Context) {
 		return
 	}
 	if !user.Active {
-		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{
-			"code": "ACCOUNT_DISABLED", "message": "That account is disabled",
-		}})
+		respond.Fail(c, respond.CodeAccountDisabled, "That account is disabled")
 		return
 	}
 
@@ -184,9 +166,7 @@ func (h *PasskeyHandler) FinishLogin(c *gin.Context) {
 	// device shows up in Active Sessions and can be revoked like any other.
 	tokens, err := h.Auth.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Could not complete sign-in",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Could not complete sign-in")
 		return
 	}
 	if _, err := services.CreateSession(h.DB, c, user.ID, tokens.RefreshToken); err != nil {
@@ -213,25 +193,19 @@ func (h *PasskeyHandler) Rename(c *gin.Context) {
 	}
 	var req renamePasskeyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
-			"code": "VALIDATION_ERROR", "message": err.Error(),
-		}})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 	name := strings.TrimSpace(req.Name)
 	if name == "" {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
-			"code": "VALIDATION_ERROR", "message": "A name is required",
-		}})
+		respond.Fail(c, respond.CodeValidationError, "A name is required")
 		return
 	}
 	res := h.DB.WithContext(c.Request.Context()).Model(&models.Passkey{}).
 		Where("id = ? AND user_id = ?", c.Param("id"), c.GetString("user_id")).
 		Update("name", name)
 	if res.Error != nil || res.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{
-			"code": "NOT_FOUND", "message": "No such passkey",
-		}})
+		respond.Fail(c, respond.CodeNotFound, "No such passkey")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Renamed"})
@@ -243,9 +217,7 @@ func (h *PasskeyHandler) Delete(c *gin.Context) {
 		return
 	}
 	if err := h.Passkeys.Delete(c.GetString("user_id"), c.Param("id")); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{
-			"code": "NOT_FOUND", "message": "No such passkey",
-		}})
+		respond.Fail(c, respond.CodeNotFound, "No such passkey")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Passkey removed"})

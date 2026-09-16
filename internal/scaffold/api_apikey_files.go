@@ -555,7 +555,6 @@ func apiAPIKeyMiddlewareGo() string {
 	return `package middleware
 
 import (
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -567,6 +566,7 @@ import (
 	"{{MODULE}}/internal/cache"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
+	"{{MODULE}}/internal/respond"
 )
 
 // APIKeyOrAuth accepts either an API key or the normal JWT.
@@ -589,12 +589,7 @@ func APIKeyOrAuth(db *gorm.DB, jwtAuth gin.HandlerFunc) gin.HandlerFunc {
 
 		key, err := services.VerifyAPIKey(db.WithContext(c.Request.Context()), token)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": gin.H{
-					"code":    "INVALID_API_KEY",
-					"message": "That API key is not valid, has expired, or was revoked",
-				},
-			})
+			respond.Fail(c, respond.CodeInvalidAPIKey, "That API key is not valid, has expired, or was revoked")
 			return
 		}
 
@@ -607,46 +602,26 @@ func APIKeyOrAuth(db *gorm.DB, jwtAuth gin.HandlerFunc) gin.HandlerFunc {
 		// this. If a publishable key leaks, and it will, the worst it opens is
 		// what you already marked public.
 		if key.Publishable() {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": gin.H{
-					"code": "PUBLISHABLE_KEY_NOT_ALLOWED",
-					"message": "This is a protected endpoint. A publishable key reaches " +
-						"public endpoints only; use a secret key from a server, or sign in.",
-				},
-			})
+			respond.Fail(c, respond.CodePublishableKeyNotAllowed, "This is a protected endpoint. A publishable key reaches " + "public endpoints only; use a secret key from a server, or sign in.")
 			return
 		}
 
 		if !key.AllowsEndpoint(c.Request.Method, c.FullPath()) {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": gin.H{
-					"code":    "ENDPOINT_NOT_ALLOWED",
-					"message": "That key is not allowed to call this endpoint",
-				},
-			})
+			respond.Fail(c, respond.CodeEndpointNotAllowed, "That key is not allowed to call this endpoint")
 			return
 		}
 		if !key.AllowsOrigin(c.GetHeader("Origin")) {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": gin.H{
-					"code":    "ORIGIN_NOT_ALLOWED",
-					"message": "That key is not allowed from this origin",
-				},
-			})
+			respond.Fail(c, respond.CodeOriginNotAllowed, "That key is not allowed from this origin")
 			return
 		}
 
 		var user models.User
 		if err := db.First(&user, "id = ?", key.UserID).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": gin.H{"code": "INVALID_API_KEY", "message": "The owner of that key no longer exists"},
-			})
+			respond.Fail(c, respond.CodeInvalidAPIKey, "The owner of that key no longer exists")
 			return
 		}
 		if !user.Active {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": gin.H{"code": "ACCOUNT_DISABLED", "message": "The owner of that key is disabled"},
-			})
+			respond.Fail(c, respond.CodeAccountDisabled, "The owner of that key is disabled")
 			return
 		}
 
@@ -692,41 +667,21 @@ func RequireAPIKey(db *gorm.DB, limiter *cache.Cache) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := extractAPIKey(c)
 		if token == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": gin.H{
-					"code":    "API_KEY_REQUIRED",
-					"message": "Send your publishable key as X-API-Key",
-				},
-			})
+			respond.Fail(c, respond.CodeAPIKeyRequired, "Send your publishable key as X-API-Key")
 			return
 		}
 
 		key, err := services.VerifyAPIKey(db.WithContext(c.Request.Context()), token)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": gin.H{
-					"code":    "INVALID_API_KEY",
-					"message": "That API key is not valid, has expired, or was revoked",
-				},
-			})
+			respond.Fail(c, respond.CodeInvalidAPIKey, "That API key is not valid, has expired, or was revoked")
 			return
 		}
 		if !key.AllowsEndpoint(c.Request.Method, c.FullPath()) {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": gin.H{
-					"code":    "ENDPOINT_NOT_ALLOWED",
-					"message": "That key is not allowed to call this endpoint",
-				},
-			})
+			respond.Fail(c, respond.CodeEndpointNotAllowed, "That key is not allowed to call this endpoint")
 			return
 		}
 		if !key.AllowsOrigin(c.GetHeader("Origin")) {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": gin.H{
-					"code":    "ORIGIN_NOT_ALLOWED",
-					"message": "That key is not allowed from this origin",
-				},
-			})
+			respond.Fail(c, respond.CodeOriginNotAllowed, "That key is not allowed from this origin")
 			return
 		}
 
@@ -785,13 +740,7 @@ func allowKeyRequest(c *gin.Context, limiter *cache.Cache, key *models.APIKey) b
 
 	if int(count) > key.RateLimit {
 		c.Header("Retry-After", "60")
-		c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
-			"error": gin.H{
-				"code": "RATE_LIMITED",
-				"message": "This API key is limited to " +
-					strconv.Itoa(key.RateLimit) + " requests per minute",
-			},
-		})
+		respond.Fail(c, respond.CodeRateLimited, "This API key is limited to " + strconv.Itoa(key.RateLimit) + " requests per minute")
 		return false
 	}
 	return true
@@ -829,6 +778,7 @@ import (
 
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
+	"{{MODULE}}/internal/respond"
 )
 
 // APIKeyHandler manages a user's own machine credentials.
@@ -844,9 +794,7 @@ func (h *APIKeyHandler) List(c *gin.Context) {
 	var keys []models.APIKey
 	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).
 		Order("created_at desc").Find(&keys).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to load API keys"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to load API keys")
 		return
 	}
 
@@ -873,9 +821,7 @@ func (h *APIKeyHandler) Create(c *gin.Context) {
 
 	var req CreateAPIKeyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -896,9 +842,7 @@ func (h *APIKeyHandler) Create(c *gin.Context) {
 		ExpiresAt: expiresAt,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to create the API key"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to create the API key")
 		return
 	}
 
@@ -924,9 +868,7 @@ func (h *APIKeyHandler) Revoke(c *gin.Context) {
 	userID := c.GetString("user_id")
 
 	if err := services.RevokeAPIKey(h.DB, c.Param("id"), userID); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "Key not found, or already revoked"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Key not found, or already revoked")
 		return
 	}
 

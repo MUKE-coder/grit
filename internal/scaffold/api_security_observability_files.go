@@ -161,9 +161,7 @@ func (h *NotificationHandler) MarkRead(c *gin.Context) {
 		return
 	}
 	if res.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "notification not found"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "notification not found")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "marked read"})
@@ -389,6 +387,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"{{MODULE}}/internal/services"
+	"{{MODULE}}/internal/respond"
 )
 
 type SecurityHandler struct {
@@ -462,9 +461,7 @@ type sentinelThreats struct {
 // the truth, not a bug.
 func (h *SecurityHandler) Summary(c *gin.Context) {
 	if h.Bridge == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": gin.H{"code": "SENTINEL_OFF", "message": "Sentinel is not enabled"},
-		})
+		respond.Fail(c, respond.CodeSentinelOff, "Sentinel is not enabled")
 		return
 	}
 
@@ -561,6 +558,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"{{MODULE}}/internal/services"
+	"{{MODULE}}/internal/respond"
 )
 
 type ObservabilityHandler struct {
@@ -623,9 +621,7 @@ func nsToMs(ns int64) float64 { return float64(ns) / 1_000_000.0 }
 // "No X yet" empty state for empty arrays.
 func (h *ObservabilityHandler) Summary(c *gin.Context) {
 	if h.Bridge == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": gin.H{"code": "PULSE_OFF", "message": "Pulse is not enabled"},
-		})
+		respond.Fail(c, respond.CodePulseOff, "Pulse is not enabled")
 		return
 	}
 

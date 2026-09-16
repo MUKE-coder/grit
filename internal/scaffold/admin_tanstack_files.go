@@ -453,13 +453,11 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "components", "forms", "word-editor.tsx"):  nextToTanStack(adminWordEditor()),
 
 		// Shared components
-		filepath.Join(adminRoot, "src", "components", "shared", "providers.tsx"):      nextToTanStack(adminProviders()),
-		filepath.Join(adminRoot, "src", "components", "shared", "theme-provider.tsx"): nextToTanStack(adminThemeProvider()),
+		filepath.Join(adminRoot, "src", "components", "shared", "providers.tsx"): nextToTanStack(adminProviders()),
 
 		// Layout components (reuse with stripped "use client")
 		filepath.Join(adminRoot, "src", "components", "layout", "admin-layout.tsx"): nextToTanStack(adminLayoutComponent()),
 		filepath.Join(adminRoot, "src", "components", "layout", "sidebar.tsx"):      nextToTanStack(adminSidebar()),
-		filepath.Join(adminRoot, "src", "components", "layout", "navbar.tsx"):       nextToTanStack(adminNavbar()),
 		filepath.Join(adminRoot, "src", "components", "layout", "page-header.tsx"):  nextToTanStack(adminPageHeader()),
 
 		// Chrome components imported by the admin layout (collapsible sidebar,
@@ -728,13 +726,19 @@ func adminTanStackIndexHTML(opts Options) string {
       }
     </style>
     <title>%s — Admin</title>
+    <!--
+      The stored theme, applied before the browser paints. The SPA mounts after
+      its bundle loads and after /auth/me answers, so without this the dashboard
+      shows a light frame first on every load of a dark one.
+    -->
+    <script>%s</script>
   </head>
   <body class="min-h-screen font-sans antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-`, theme, fontLink, fontVars, opts.ProjectName)
+`, theme, fontLink, fontVars, opts.ProjectName, adminThemeScript)
 }
 
 func adminTanStackTSConfig() string {

@@ -47,12 +47,13 @@ func apiConcurrencyGo() string {
 package concurrency
 
 import (
-	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/respond"
 )
 
 const askedKey = "concurrency.if_match"
@@ -90,13 +91,8 @@ func Conflicted(c *gin.Context, res *gorm.DB) bool {
 // client can reload and decide.
 func WriteConflict(c *gin.Context, current int) {
 	c.Header("ETag", Tag(current))
-	c.JSON(http.StatusConflict, gin.H{
-		"error": gin.H{
-			"code":    "VERSION_CONFLICT",
-			"message": "This record changed after you loaded it. Reload it and try again.",
-			"details": gin.H{"current_version": current},
-		},
-	})
+	respond.Fail(c, respond.CodeVersionConflict, "This record changed after you loaded it. Reload it and try again.",
+		map[string]string{"current_version": strconv.Itoa(current)})
 }
 
 // Tag is the ETag for a version, the value a client sends back as If-Match.

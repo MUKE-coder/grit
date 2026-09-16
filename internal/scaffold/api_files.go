@@ -130,10 +130,12 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "models", "import_job.go"):    importJobModelGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "import_job.go"):  importJobHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "ticket_mail.go"): ticketMailGo(),
-		filepath.Join(apiRoot, "internal", "routes", "routes.go"):        apiRoutesGo(),
-		filepath.Join(apiRoot, "internal", "routes", "resources.go"):     apiRoutesRegistryGo(),
-		filepath.Join(apiRoot, "internal", "routes", "apidocs.go"):       apiDocsRoutesGo(),
-		filepath.Join(apiRoot, ".air.toml"):                              airConfig(),
+		// M29: the ticket rules and queries, out of the handler.
+		filepath.Join(apiRoot, "internal", "services", "ticket.go"):  ticketServiceGo(),
+		filepath.Join(apiRoot, "internal", "routes", "routes.go"):    apiRoutesGo(),
+		filepath.Join(apiRoot, "internal", "routes", "resources.go"): apiRoutesRegistryGo(),
+		filepath.Join(apiRoot, "internal", "routes", "apidocs.go"):   apiDocsRoutesGo(),
+		filepath.Join(apiRoot, ".air.toml"):                          airConfig(),
 		// Test files — give the generated API a working test suite out of the box
 		filepath.Join(apiRoot, "internal", "handlers", "auth_test.go"):               apiAuthTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "sso_test.go"):                apiSSOTestGo(),
@@ -236,6 +238,7 @@ import (
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
 )
 
 // ImportJobHandler serves the progress/result of background CSV imports.
@@ -249,9 +252,7 @@ type ImportJobHandler struct {
 func (h *ImportJobHandler) GetByID(c *gin.Context) {
 	var job models.ImportJob
 	if err := h.DB.WithContext(c.Request.Context()).First(&job, "id = ?", c.Param("id")).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "Import job not found"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Import job not found")
 		return
 	}
 
@@ -2143,10 +2144,12 @@ import (
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/config"
+	"{{MODULE}}/internal/jobs"
 	"{{MODULE}}/internal/mail"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
 	"{{MODULE}}/internal/totp"
+	"{{MODULE}}/internal/respond"
 )
 
 // AuthHandler handles authentication endpoints.
@@ -2158,6 +2161,10 @@ type AuthHandler struct {
 	// which is what you want in dev and must never be what happens in prod —
 	// ForgotPassword refuses to log the token when APP_ENV is production.
 	Mailer *mail.Mailer
+	// Jobs is optional too: it is nil when the project runs without Redis.
+	// When it is there, every email this handler sends goes onto the queue
+	// instead of a goroutine, so it is retried and survives a restart.
+	Jobs *jobs.Client
 }
 
 // AuthResponse documents the body returned by register, login and refresh.
@@ -2286,12 +2293,7 @@ type ResetPasswordRequest struct {
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -2332,16 +2334,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	// Off the request path: signup should not wait on SMTP, and a mail failure
 	// must not fail an account that was created successfully.
-	go h.deliverVerificationEmail(user)
+	h.deliverVerificationEmail(c.Request.Context(), user)
 
 	tokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "TOKEN_ERROR",
-				"message": "Failed to generate tokens",
-			},
-		})
+		respond.Fail(c, respond.CodeTokenError, "Failed to generate tokens")
 		return
 	}
 
@@ -2458,9 +2455,7 @@ func (h *AuthHandler) startTOTPChallenge(c *gin.Context, user *models.User) bool
 
 	pendingToken, err := totp.GeneratePendingToken()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOKEN_ERROR", "message": "Failed to create verification session"},
-		})
+		respond.Fail(c, respond.CodeTokenError, "Failed to create verification session")
 		return true
 	}
 
@@ -2471,9 +2466,7 @@ func (h *AuthHandler) startTOTPChallenge(c *gin.Context, user *models.User) bool
 		TokenHash: totp.HashToken(pendingToken),
 		ExpiresAt: time.Now().Add(totp.PendingTokenExpiry),
 	}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOKEN_ERROR", "message": "Failed to create verification session"},
-		})
+		respond.Fail(c, respond.CodeTokenError, "Failed to create verification session")
 		return true
 	}
 
@@ -2491,12 +2484,7 @@ func (h *AuthHandler) startTOTPChallenge(c *gin.Context, user *models.User) bool
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -2506,12 +2494,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		// surface it in /system/activity as "warn" severity so operators
 		// can spot credential-stuffing spikes.
 		services.LogLoginFailed(h.DB, c, req.Email)
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_CREDENTIALS",
-				"message": "Invalid email or password",
-			},
-		})
+		respond.Fail(c, respond.CodeInvalidCredentials, "Invalid email or password")
 		return
 	}
 
@@ -2539,12 +2522,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		// because Sentinel's brute-force heuristics weight these higher.
 		services.LogLoginFailed(h.DB, c, req.Email)
 		h.registerFailedLogin(&user)
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_CREDENTIALS",
-				"message": "Invalid email or password",
-			},
-		})
+		respond.Fail(c, respond.CodeInvalidCredentials, "Invalid email or password")
 		return
 	}
 
@@ -2566,12 +2544,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	tokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "TOKEN_ERROR",
-				"message": "Failed to generate tokens",
-			},
-		})
+		respond.Fail(c, respond.CodeTokenError, "Failed to generate tokens")
 		return
 	}
 
@@ -2616,12 +2589,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	} else {
 		var req RefreshRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusUnprocessableEntity, gin.H{
-				"error": gin.H{
-					"code":    "VALIDATION_ERROR",
-					"message": err.Error(),
-				},
-			})
+			respond.Fail(c, respond.CodeValidationError, err.Error())
 			return
 		}
 		refreshToken = req.RefreshToken
@@ -2629,12 +2597,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 	claims, err := h.AuthService.ValidateRefreshToken(refreshToken)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_TOKEN",
-				"message": "Invalid or expired refresh token",
-			},
-		})
+		respond.Fail(c, respond.CodeInvalidToken, "Invalid or expired refresh token")
 		return
 	}
 
@@ -2645,21 +2608,11 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	// server-side token store).
 	var user models.User
 	if err := h.DB.WithContext(c.Request.Context()).First(&user, "id = ?", claims.UserID).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_TOKEN",
-				"message": "Account no longer exists",
-			},
-		})
+		respond.Fail(c, respond.CodeInvalidToken, "Account no longer exists")
 		return
 	}
 	if !user.Active {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{
-				"code":    "ACCOUNT_DISABLED",
-				"message": "This account has been disabled",
-			},
-		})
+		respond.Fail(c, respond.CodeAccountDisabled, "This account has been disabled")
 		return
 	}
 
@@ -2672,12 +2625,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	}
 	tokens, err := h.AuthService.GenerateSessionTokenPair(user.ID, user.Email, user.Role, sessionID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "TOKEN_ERROR",
-				"message": "Failed to generate tokens",
-			},
-		})
+		respond.Fail(c, respond.CodeTokenError, "Failed to generate tokens")
 		return
 	}
 
@@ -2690,12 +2638,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	// was replayed after rotation has no live row, and the refresh is refused.
 	if _, err := services.RotateSession(h.DB, c, refreshToken, tokens.RefreshToken); err != nil {
 		h.AuthService.ClearAuthCookies(c)
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{
-				"code":    "SESSION_REVOKED",
-				"message": "This session is no longer valid. Please sign in again.",
-			},
-		})
+		respond.Fail(c, respond.CodeSessionRevoked, "This session is no longer valid. Please sign in again.")
 		return
 	}
 	h.AuthService.SetAuthCookies(c, tokens)
@@ -2751,12 +2694,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 func (h *AuthHandler) Me(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{
-				"code":    "UNAUTHORIZED",
-				"message": "Not authenticated",
-			},
-		})
+		respond.Fail(c, respond.CodeUnauthorized, "Not authenticated")
 		return
 	}
 
@@ -2795,6 +2733,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/paginate"
 	"` + "{{MODULE}}" + `/internal/services"
+	"` + "{{MODULE}}" + `/internal/respond"
 )
 
 // UserHandler handles user management endpoints.
@@ -2825,21 +2764,14 @@ func (h *UserHandler) Create(c *gin.Context) {
 	var req CreateUserRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
 	// Only an ADMIN makes an ADMIN, and nobody hands out a role that grants more
 	// than they hold.
 	if reason := authz.RoleBeyondCaller(c, h.DB, req.Role); reason != "" {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{"code": "FORBIDDEN", "message": "You cannot give that role: " + reason},
-		})
+		respond.Fail(c, respond.CodeForbidden, "You cannot give that role: "+reason)
 		return
 	}
 
@@ -2941,12 +2873,7 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 
 	var user models.User
 	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", id).First(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{
-				"code":    "NOT_FOUND",
-				"message": "User not found",
-			},
-		})
+		respond.Fail(c, respond.CodeNotFound, "User not found")
 		return
 	}
 
@@ -3022,24 +2949,14 @@ func (h *UserHandler) Update(c *gin.Context) {
 
 	var user models.User
 	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", id).First(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{
-				"code":    "NOT_FOUND",
-				"message": "User not found",
-			},
-		})
+		respond.Fail(c, respond.CodeNotFound, "User not found")
 		return
 	}
 
 	var req UpdateUserRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -3047,15 +2964,11 @@ func (h *UserHandler) Update(c *gin.Context) {
 	// holder could PUT {"role":"ADMIN"} on themselves, or reset an
 	// administrator's password or email and sign in as them.
 	if !authz.IsAdmin(c) && authz.IsAdminAccount(h.DB, &user) {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{"code": "FORBIDDEN", "message": "Only an ADMIN can change an ADMIN account"},
-		})
+		respond.Fail(c, respond.CodeForbidden, "Only an ADMIN can change an ADMIN account")
 		return
 	}
 	if reason := authz.RoleBeyondCaller(c, h.DB, req.Role); reason != "" {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{"code": "FORBIDDEN", "message": "You cannot give that role: " + reason},
-		})
+		respond.Fail(c, respond.CodeForbidden, "You cannot give that role: "+reason)
 		return
 	}
 
@@ -3072,12 +2985,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 	if req.Password != "" {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": gin.H{
-					"code":    "INTERNAL_ERROR",
-					"message": "Failed to hash password",
-				},
-			})
+			respond.Fail(c, respond.CodeInternalError, "Failed to hash password")
 			return
 		}
 		updates["password"] = string(hashedPassword)
@@ -3161,30 +3069,18 @@ func (h *UserHandler) Delete(c *gin.Context) {
 
 	var user models.User
 	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", id).First(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{
-				"code":    "NOT_FOUND",
-				"message": "User not found",
-			},
-		})
+		respond.Fail(c, respond.CodeNotFound, "User not found")
 		return
 	}
 
 	// Deleting an administrator is an ADMIN's call too.
 	if !authz.IsAdmin(c) && authz.IsAdminAccount(h.DB, &user) {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{"code": "FORBIDDEN", "message": "Only an ADMIN can change an ADMIN account"},
-		})
+		respond.Fail(c, respond.CodeForbidden, "Only an ADMIN can change an ADMIN account")
 		return
 	}
 
 	if err := h.DB.WithContext(c.Request.Context()).Delete(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to delete user",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to delete user")
 		return
 	}
 
@@ -3199,12 +3095,7 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 
 	var user models.User
 	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", userID).First(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{
-				"code":    "NOT_FOUND",
-				"message": "User not found",
-			},
-		})
+		respond.Fail(c, respond.CodeNotFound, "User not found")
 		return
 	}
 
@@ -3234,24 +3125,14 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 
 	var user models.User
 	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", userID).First(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{
-				"code":    "NOT_FOUND",
-				"message": "User not found",
-			},
-		})
+		respond.Fail(c, respond.CodeNotFound, "User not found")
 		return
 	}
 
 	var req UpdateProfileRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -3266,12 +3147,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 ` + profileEmailNew + `	if req.Password != "" {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": gin.H{
-					"code":    "INTERNAL_ERROR",
-					"message": "Failed to hash password",
-				},
-			})
+			respond.Fail(c, respond.CodeInternalError, "Failed to hash password")
 			return
 		}
 		updates["password"] = string(hashedPassword)
@@ -3288,12 +3164,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	}
 
 	if err := h.DB.WithContext(c.Request.Context()).Model(&user).Updates(updates).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to update profile",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to update profile")
 		return
 	}
 
@@ -3343,22 +3214,12 @@ func (h *UserHandler) DeleteProfile(c *gin.Context) {
 
 	var user models.User
 	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", userID).First(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{
-				"code":    "NOT_FOUND",
-				"message": "User not found",
-			},
-		})
+		respond.Fail(c, respond.CodeNotFound, "User not found")
 		return
 	}
 
 	if err := h.DB.WithContext(c.Request.Context()).Delete(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to delete account",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to delete account")
 		return
 	}
 
@@ -3383,7 +3244,6 @@ func apiAuthMiddlewareGo() string {
 	return `package middleware
 
 import (
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -3392,6 +3252,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/authz"
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/services"
+	"` + "{{MODULE}}" + `/internal/respond"
 )
 
 // Auth creates a JWT authentication middleware.
@@ -3408,12 +3269,7 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 		} else if authHeader := c.GetHeader("Authorization"); authHeader != "" {
 			parts := strings.SplitN(authHeader, " ", 2)
 			if len(parts) != 2 || parts[0] != "Bearer" {
-				c.JSON(http.StatusUnauthorized, gin.H{
-					"error": gin.H{
-						"code":    "UNAUTHORIZED",
-						"message": "Invalid authorization header format",
-					},
-				})
+				respond.Fail(c, respond.CodeUnauthorized, "Invalid authorization header format")
 				c.Abort()
 				return
 			}
@@ -3421,12 +3277,7 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 		}
 
 		if token == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": gin.H{
-					"code":    "UNAUTHORIZED",
-					"message": "Authentication required",
-				},
-			})
+			respond.Fail(c, respond.CodeUnauthorized, "Authentication required")
 			c.Abort()
 			return
 		}
@@ -3435,12 +3286,7 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 		// token from a session that logged out, is refused here.
 		claims, err := authService.ValidateAccessToken(token)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": gin.H{
-					"code":    "UNAUTHORIZED",
-					"message": "Invalid or expired token",
-				},
-			})
+			respond.Fail(c, respond.CodeUnauthorized, "Invalid or expired token")
 			c.Abort()
 			return
 		}
@@ -3451,23 +3297,13 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 		// primary keys with "trailing junk after numeric literal".
 		var user models.User
 		if err := db.WithContext(c.Request.Context()).Where("id = ?", claims.UserID).First(&user).Error; err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": gin.H{
-					"code":    "UNAUTHORIZED",
-					"message": "User not found",
-				},
-			})
+			respond.Fail(c, respond.CodeUnauthorized, "User not found")
 			c.Abort()
 			return
 		}
 
 		if !user.Active {
-			c.JSON(http.StatusForbidden, gin.H{
-				"error": gin.H{
-					"code":    "ACCOUNT_DISABLED",
-					"message": "Your account has been disabled",
-				},
-			})
+			respond.Fail(c, respond.CodeAccountDisabled, "Your account has been disabled")
 			c.Abort()
 			return
 		}
@@ -3530,36 +3366,21 @@ func RequireRole(rolesOrPerms ...string) gin.HandlerFunc {
 
 		// No permission matched; fall back to the legacy role names.
 		if len(roles) == 0 {
-			c.JSON(http.StatusForbidden, gin.H{
-				"error": gin.H{
-					"code":    "FORBIDDEN",
-					"message": "You do not have permission to perform this action",
-				},
-			})
+			respond.Fail(c, respond.CodeForbidden, "You do not have permission to perform this action")
 			c.Abort()
 			return
 		}
 
 		userRole, exists := c.Get("user_role")
 		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": gin.H{
-					"code":    "UNAUTHORIZED",
-					"message": "Not authenticated",
-				},
-			})
+			respond.Fail(c, respond.CodeUnauthorized, "Not authenticated")
 			c.Abort()
 			return
 		}
 
 		role, ok := userRole.(string)
 		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": gin.H{
-					"code":    "INTERNAL_ERROR",
-					"message": "Invalid user role",
-				},
-			})
+			respond.Fail(c, respond.CodeInternalError, "Invalid user role")
 			c.Abort()
 			return
 		}
@@ -3571,12 +3392,7 @@ func RequireRole(rolesOrPerms ...string) gin.HandlerFunc {
 			}
 		}
 
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{
-				"code":    "FORBIDDEN",
-				"message": "You do not have permission to access this resource",
-			},
-		})
+		respond.Fail(c, respond.CodeForbidden, "You do not have permission to access this resource")
 		c.Abort()
 	}
 }
@@ -3597,12 +3413,7 @@ func RequireStaff() gin.HandlerFunc {
 				return
 			}
 		}
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{
-				"code":    "FORBIDDEN",
-				"message": "You do not have permission to access this resource",
-			},
-		})
+		respond.Fail(c, respond.CodeForbidden, "You do not have permission to access this resource")
 		c.Abort()
 	}
 }
@@ -3622,12 +3433,7 @@ func RequirePermissionFor(param, action string) gin.HandlerFunc {
 				return
 			}
 		}
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{
-				"code":    "FORBIDDEN",
-				"message": "You do not have permission to access this resource",
-			},
-		})
+		respond.Fail(c, respond.CodeForbidden, "You do not have permission to access this resource")
 		c.Abort()
 	}
 }
@@ -3744,6 +3550,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"{{MODULE}}/internal/respond"
 )
 
 // RequestID injects a unique X-Request-ID header into every request and
@@ -3812,12 +3619,7 @@ func SecurityHeaders() gin.HandlerFunc {
 func MaxBodySize(limit int64) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.ContentLength > limit {
-			c.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
-				"error": gin.H{
-					"code":    "PAYLOAD_TOO_LARGE",
-					"message": fmt.Sprintf("Request body exceeds %dMB limit", limit/(1024*1024)),
-				},
-			})
+			respond.Fail(c, respond.CodePayloadTooLarge, fmt.Sprintf("Request body exceeds %dMB limit", limit/(1024*1024)))
 			return
 		}
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
@@ -4745,10 +4547,11 @@ func apiMaintenanceMiddlewareGo() string {
 	return `package middleware
 
 import (
-	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
+
+	"{{MODULE}}/internal/respond"
 )
 
 // Maintenance returns a middleware that checks for a .maintenance file.
@@ -4757,12 +4560,7 @@ import (
 func Maintenance() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if _, err := os.Stat(".maintenance"); err == nil {
-			c.JSON(http.StatusServiceUnavailable, gin.H{
-				"error": gin.H{
-					"code":    "MAINTENANCE",
-					"message": "Application is in maintenance mode. Please try again later.",
-				},
-			})
+			respond.Fail(c, respond.CodeMaintenance, "Application is in maintenance mode. Please try again later.")
 			c.Abort()
 			return
 		}
@@ -5034,14 +4832,11 @@ const MaxPushChanges = 500
 func (h *SyncHandler) Push(c *gin.Context) {
 	var req SyncPushRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "INVALID_BODY", "message": err.Error()}})
+		respond.Fail(c, respond.CodeInvalidBody, err.Error())
 		return
 	}
 	if len(req.Changes) > MaxPushChanges {
-		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": gin.H{
-			"code":    "TOO_MANY_CHANGES",
-			"message": fmt.Sprintf("a push may carry at most %d changes; send the rest in another push", MaxPushChanges),
-		}})
+		respond.Fail(c, respond.CodeTooManyChanges, fmt.Sprintf("a push may carry at most %d changes; send the rest in another push", MaxPushChanges))
 		return
 	}
 
@@ -5290,7 +5085,7 @@ func (h *SyncHandler) Policy(c *gin.Context) {
 func (h *SyncHandler) Pull(c *gin.Context) {
 	model := c.Query("model")
 	if model == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "MISSING_MODEL", "message": "?model is required"}})
+		respond.Fail(c, respond.CodeMissingModel, "?model is required")
 		return
 	}
 	sinceStr := c.DefaultQuery("since", "")
@@ -5301,17 +5096,14 @@ func (h *SyncHandler) Pull(c *gin.Context) {
 
 	proto, err := h.Registry.New(model)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "UNKNOWN_MODEL", "message": err.Error()}})
+		respond.Fail(c, respond.CodeUnknownModel, err.Error())
 		return
 	}
 	policy := h.Registry.PolicyFor(model)
 	if policy.Mode == sync.ModeOnlineOnly {
 		// Answering with an empty page would look like "nothing has changed",
 		// and the client would mirror an empty table forever.
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
-			"code":    "NOT_SYNCABLE",
-			"message": model + " is registered online_only and is not mirrored",
-		}})
+		respond.Fail(c, respond.CodeNotSyncable, model + " is registered online_only and is not mirrored")
 		return
 	}
 
@@ -5320,10 +5112,7 @@ func (h *SyncHandler) Pull(c *gin.Context) {
 	// Before this, any signed-in account pulled every row of every synced table.
 	seeAll := syncGranted(c, model, "view")
 	if _, owned := proto.(ownedRow); !seeAll && !owned {
-		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{
-			"code":    "FORBIDDEN",
-			"message": "you do not have permission to read " + model,
-		}})
+		respond.Fail(c, respond.CodeForbidden, "you do not have permission to read " + model)
 		return
 	}
 
@@ -5344,7 +5133,7 @@ func (h *SyncHandler) Pull(c *gin.Context) {
 	if sinceStr != "" {
 		since, afterID, err := parseSyncCursor(sinceStr)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "INVALID_SINCE", "message": err.Error()}})
+			respond.Fail(c, respond.CodeInvalidSince, err.Error())
 			return
 		}
 		if afterID == "" {
@@ -6632,34 +6421,26 @@ func (h *WebhookHandler) Receive(c *gin.Context) {
 	providerName := c.Param("provider")
 	provider, ok := webhooks.LookupProvider(providerName)
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "UNKNOWN_PROVIDER", "message": "no webhook provider registered for " + providerName},
-		})
+		respond.Fail(c, respond.CodeUnknownProvider, "no webhook provider registered for " + providerName)
 		return
 	}
 
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "READ_BODY_FAILED", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeReadBodyFailed, err.Error())
 		return
 	}
 
 	headers := flattenHeaders(c.Request.Header)
 	secret := os.Getenv(provider.SecretEnv)
 	if err := provider.Verify(secret, body, headers); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{"code": "INVALID_SIGNATURE", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeInvalidSignature, err.Error())
 		return
 	}
 
 	eventType, externalID, err := provider.Extract(body, headers)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "EXTRACT_FAILED", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeExtractFailed, err.Error())
 		return
 	}
 
@@ -6746,9 +6527,7 @@ func (h *WebhookHandler) Replay(c *gin.Context) {
 	var event models.WebhookEvent
 	if err := h.DB.WithContext(c.Request.Context()).First(&event, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": gin.H{"code": "NOT_FOUND", "message": "webhook event not found"},
-			})
+			respond.Fail(c, respond.CodeNotFound, "webhook event not found")
 			return
 		}
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
@@ -7471,15 +7250,11 @@ type FeatureFlagRequest struct {
 func (h *FeatureFlagHandler) Create(c *gin.Context) {
 	var body FeatureFlagRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 	if body.Name == "" {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": "name is required"},
-		})
+		respond.Fail(c, respond.CodeValidationError, "name is required")
 		return
 	}
 
@@ -7509,9 +7284,7 @@ func (h *FeatureFlagHandler) Update(c *gin.Context) {
 	var flag models.FeatureFlag
 	if err := h.DB.WithContext(c.Request.Context()).First(&flag, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": gin.H{"code": "NOT_FOUND", "message": "flag not found"},
-			})
+			respond.Fail(c, respond.CodeNotFound, "flag not found")
 			return
 		}
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
@@ -7520,9 +7293,7 @@ func (h *FeatureFlagHandler) Update(c *gin.Context) {
 
 	var body FeatureFlagRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -7551,9 +7322,7 @@ func (h *FeatureFlagHandler) Delete(c *gin.Context) {
 	var flag models.FeatureFlag
 	if err := h.DB.WithContext(c.Request.Context()).First(&flag, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": gin.H{"code": "NOT_FOUND", "message": "flag not found"},
-			})
+			respond.Fail(c, respond.CodeNotFound, "flag not found")
 			return
 		}
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
@@ -7861,9 +7630,7 @@ type ResealResponse struct {
 func (h *ActivityHandler) Reseal(c *gin.Context) {
 	var req ResealRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)
@@ -7874,9 +7641,7 @@ func (h *ActivityHandler) Reseal(c *gin.Context) {
 	n, err := audit.Reseal(ctx, h.DB, req.FromID, uid, c.ClientIP(), c.Request.UserAgent())
 	switch {
 	case errors.Is(err, audit.ErrChainIntact), errors.Is(err, audit.ErrNotTheBreak):
-		c.JSON(http.StatusConflict, gin.H{
-			"error": gin.H{"code": "RESEAL_REFUSED", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeResealRefused, err.Error())
 		return
 	case err != nil:
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
@@ -8222,54 +7987,53 @@ type Error struct {
 	Details map[string]string ` + "`" + `json:"details,omitempty"` + "`" + `
 }
 
-// fail writes the standard error envelope at the given status code.
-func fail(c *gin.Context, status int, code, message string, details ...map[string]string) {
-	body := gin.H{"error": Error{Code: code, Message: message}}
-	if len(details) > 0 {
-		body = gin.H{"error": Error{Code: code, Message: message, Details: details[0]}}
-	}
-	c.AbortWithStatusJSON(status, body)
-}
+// The named helpers, each one line over Fail.
+//
+// They used to carry a status and a code side by side, hardcoded here, while
+// codes.go carried the same pairs generated from the catalogue. Two tables for
+// one fact is how VALIDATION_ERROR came back as 422 from one helper and 400
+// from a handler that wrote its own envelope. There is one table now, in
+// codes.go, and everything below reads the status out of it.
 
-// 400 — malformed request that the client can't possibly fix without
+// BadRequest is 400: a malformed request the client cannot fix without
 // changing what it sent.
 func BadRequest(c *gin.Context, message string) {
-	fail(c, http.StatusBadRequest, "BAD_REQUEST", message)
+	Fail(c, CodeBadRequest, message)
 }
 
-// 401 — missing or invalid credentials.
+// Unauthorized is 401: missing or invalid credentials.
 func Unauthorized(c *gin.Context, message string) {
 	if message == "" {
 		message = "Authentication required"
 	}
-	fail(c, http.StatusUnauthorized, "UNAUTHORIZED", message)
+	Fail(c, CodeUnauthorized, message)
 }
 
-// 403 — authenticated but not allowed.
+// Forbidden is 403: authenticated, but not allowed.
 func Forbidden(c *gin.Context, message string) {
 	if message == "" {
 		message = "You don't have permission to do that"
 	}
-	fail(c, http.StatusForbidden, "FORBIDDEN", message)
+	Fail(c, CodeForbidden, message)
 }
 
-// 404 — entity didn't exist (or is filtered out by access rules).
+// NotFound is 404: the entity did not exist, or access rules filtered it out.
 func NotFound(c *gin.Context, message string) {
 	if message == "" {
 		message = "Not found"
 	}
-	fail(c, http.StatusNotFound, "NOT_FOUND", message)
+	Fail(c, CodeNotFound, message)
 }
 
-// 409 — conflict (e.g. unique constraint, version conflict).
+// Conflict is 409: a unique constraint, or a version conflict.
 func Conflict(c *gin.Context, message string) {
-	fail(c, http.StatusConflict, "CONFLICT", message)
+	Fail(c, CodeConflict, message)
 }
 
-// 422 — payload was well-formed but failed validation. Pass per-field
-// errors via details map so the frontend can highlight them.
+// Validation is 422: the payload was well formed and failed validation. Pass
+// per-field messages so the frontend can highlight the fields.
 func Validation(c *gin.Context, message string, fields map[string]string) {
-	fail(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", message, fields)
+	Fail(c, CodeValidationError, message, fields)
 }
 
 // RuleError is a business rule the caller broke, phrased for the caller.
@@ -8369,7 +8133,10 @@ func ServerError(c *gin.Context, code string, err error, message string) {
 		_ = c.Error(err)
 	}
 	log.Printf("[500] %s %s | id=%s | %s: %v", c.Request.Method, c.Request.URL.Path, c.GetString("request_id"), code, err)
-	fail(c, http.StatusInternalServerError, code, message)
+	// Not Fail: code is a plain string here, so callers can name the subsystem
+	// that broke (DB_ERROR, STORAGE_ERROR) without every one of them being a
+	// catalogued constant. The status is 500 either way.
+	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": Error{Code: code, Message: message}})
 }
 
 // OK writes 200 with { data, message? }.
@@ -9298,12 +9065,16 @@ func (h *RealtimeHandler) Connect(c *gin.Context) {
 	// query string. The cookie rides along with the handshake GET, so read it
 	// from there instead of inventing a way to hand the token to JavaScript.
 ` + realtimeTokenNew + `	if tokenStr == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": gin.H{"code": "MISSING_TOKEN", "message": "a ?token query or a grit_access cookie is required"}})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": gin.H{"code": "MISSING_TOKEN", "message": "a ?token query or a grit_access cookie is required"},
+		})
 		return
 	}
 	claims, err := h.Auth.ValidateAccessToken(tokenStr)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": gin.H{"code": "INVALID_TOKEN", "message": err.Error()}})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": gin.H{"code": "INVALID_TOKEN", "message": err.Error()},
+		})
 		return
 	}
 
@@ -9414,6 +9185,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/jobs"
 	"` + "{{MODULE}}" + `/internal/realtime"
+	"` + "{{MODULE}}" + `/internal/respond"
 	"` + "{{MODULE}}" + `/internal/services"
 	"` + "{{MODULE}}" + `/internal/storage"
 	"` + "{{MODULE}}" + `/internal/flags"
@@ -9551,6 +9323,9 @@ func mountGlobalMiddleware(r *gin.Engine, cfg *config.Config, svc *Services) fun
 	r.Use(middleware.Maintenance())
 	r.Use(middleware.SecurityHeaders())
 ` + routesRequestLimitsBlock + `	r.Use(middleware.RequestID())
+	// The client IP, the user agent and the request id, on the request's
+	// context, so a service can read them without taking a *gin.Context.
+	r.Use(middleware.RequestMeta())
 	r.Use(middleware.Logger())
 	r.Use(gin.Recovery())
 	// Origins come from the cors.origins setting when it has a value, and from
@@ -9866,6 +9641,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		AuthService: authService,
 		Config:      cfg,
 		Mailer:      svc.Mailer,
+		Jobs:        svc.Jobs,
 	}
 	apiKeyHandler := &handlers.APIKeyHandler{DB: db}
 
@@ -9944,7 +9720,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	ocsfHandler := handlers.NewOCSFHandler(db, cfg.AppName)
 	accessReviewHandler := handlers.NewAccessReviewHandler(db)
 	gdprHandler := handlers.NewGDPRHandler(db)
-	ticketHandler := &handlers.TicketHandler{DB: db, Mail: svc.Mailer}
+	ticketHandler := &handlers.TicketHandler{DB: db, Mail: svc.Mailer, Jobs: svc.Jobs}
 	// v3.31.20 — public form sharing (Phase 2)
 	formShareHandler := &handlers.FormShareHandler{DB: db}
 	// v3.31.40 — per-user dashboard customisation
@@ -10478,12 +10254,7 @@ func mountLegacyAPIAlias(r *gin.Engine) {
 			return
 		}
 
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{
-				"code":    "NOT_FOUND",
-				"message": "no route matches " + c.Request.Method + " " + p,
-			},
-		})
+		respond.Fail(c, respond.CodeNotFound, "no route matches " + c.Request.Method + " " + p)
 	})
 }
 `

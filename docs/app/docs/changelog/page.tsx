@@ -66,6 +66,71 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.285.0 */}
+            <div className="mb-12" id="v3.285.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.285.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>No theme flash, a server-rendered shared form, one source for errors, a ticket service, and mail on the queue</h3>
+                <p>
+                  <strong>The admin applies its theme before the first paint.</strong> The stored theme was applied in
+                  an effect inside the dark mode toggle, which lives in the dashboard chrome and only mounts once
+                  <code>/auth/me</code> answers, so every load of a dark dashboard showed a light one first. A small
+                  script in the layout&apos;s head now sets the theme before anything paints, in the Next.js admin, the
+                  panel embedded in <code>apps/web</code> and the Vite SPA. The second theme system is gone:
+                  <code>theme-provider.tsx</code> stored a key nothing else read, and its only consumer was a navbar no
+                  layout has rendered since v3.29.
+                </p>
+                <p>
+                  <strong>The public shared-form page renders on the server.</strong> It was a client component that
+                  fetched in a <code>useEffect</code>, so someone opening a link waited for the bundle, then a round
+                  trip, behind a spinner. The page now reads the share on the server with no caching, so a disabled link
+                  stops working at once and the form arrives rendered. The interactive half posts through the web
+                  app&apos;s own API client, and every input has a label tied to its field.
+                </p>
+                <p>
+                  <strong>Error responses have one source of truth.</strong> In a project upgraded from v3.284.0,
+                  hand-built error envelopes fall from 306 to 167 and <code>respond.Fail</code> calls rise from 2 to
+                  139; a new project has 25 envelopes and 281 calls. <code>respond.Fail</code> takes the status from the
+                  generated error catalogue, and the named helpers such as <code>respond.NotFound</code> are now one line
+                  over it instead of hardcoding a second copy of each status and code. The envelopes left either choose
+                  their status in a switch, carry a list in their details, or are text an upgrade repair still matches.
+                  <code>concurrency.WriteConflict</code> now sends <code>current_version</code> as a string, which is
+                  what its type always said.
+                </p>
+                <p>
+                  <strong>Tickets have a service.</strong> The ticket handler held every ticket query and rule, 396
+                  lines with 9 direct database calls, and there was no service. <code>services.TicketService</code> now
+                  holds Open, Query, Visible, Reply, SetStatus and Assign, each taking a context and the acting user. The
+                  visibility rule stays part of the query, so somebody else&apos;s ticket still answers 404 exactly like
+                  one that never existed. The handler, now 256 lines with no query of its own, binds, calls one method
+                  and responds. Services no longer need a gin context to learn about the request: a middleware records
+                  the client IP, user agent and request id on the request context, so a job or a test can call
+                  <code>LogActivityCtx</code>, <code>CreateSessionCtx</code> and <code>RotateSessionCtx</code>.
+                </p>
+                <p>
+                  <strong>Mail no longer leaves a handler from a bare goroutine.</strong> Registration, resend
+                  verification, forgot password and new ticket each started one: nothing bounded them, nothing retried
+                  them, and a restart dropped whatever was in flight. The verification and new-ticket emails now go on
+                  the job queue, keyed so a replayed request does not send twice, and send inline with a 15 second
+                  timeout when the project runs without Redis. Forgot password keeps its work off the request path, so
+                  its response time still does not reveal whether an address has an account, but through a helper that
+                  caps concurrent tasks at 32, recovers panics, and runs the work inline rather than dropping it when the
+                  cap is reached.
+                </p>
+                <p>
+                  <code>grit upgrade</code> adds the theme script, rewrites the shared-form page while it is still the
+                  old one, writes the ticket service together with its handler, and moves the auth handlers onto the
+                  queue by anchor, leaving all three auth files alone if any of them has been edited.
+                </p>
+              </div>
+            </div>
+
             {/* v3.284.0 */}
             <div className="mb-12" id="v3.284.0">
               <div className="flex items-center gap-3 mb-4">

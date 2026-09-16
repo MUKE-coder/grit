@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"{{MODULE}}/internal/respond"
 )
 
 const (
@@ -63,12 +64,7 @@ func RequestLimits(transfers map[string]Transfer) gin.HandlerFunc {
 			limit = t.Body
 		}
 		if c.Request.ContentLength > limit {
-			c.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
-				"error": gin.H{
-					"code":    "PAYLOAD_TOO_LARGE",
-					"message": fmt.Sprintf("Request body exceeds %dMB limit", limit/(1<<20)),
-				},
-			})
+			respond.Fail(c, respond.CodePayloadTooLarge, fmt.Sprintf("Request body exceeds %dMB limit", limit/(1<<20)))
 			return
 		}
 		if c.Request.Body != nil {

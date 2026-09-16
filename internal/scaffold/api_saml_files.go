@@ -416,6 +416,7 @@ import (
 
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
+	"{{MODULE}}/internal/respond"
 )
 
 // SAMLMetadata publishes this application's service-provider metadata.
@@ -430,17 +431,13 @@ func (h *SSOHandler) SAMLMetadata(c *gin.Context) {
 
 	sp, err := h.SAML.Provider(slug)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "no SAML connection named " + slug},
-		})
+		respond.Fail(c, respond.CodeNotFound, "no SAML connection named " + slug)
 		return
 	}
 
 	out, err := xml.MarshalIndent(sp.Metadata(), "", "  ")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "could not render metadata"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "could not render metadata")
 		return
 	}
 	c.Data(http.StatusOK, "application/samlmetadata+xml", append([]byte(xml.Header), out...))

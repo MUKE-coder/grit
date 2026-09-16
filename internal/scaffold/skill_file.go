@@ -686,13 +686,9 @@ c.JSON(http.StatusOK, gin.H{
     },
 })
 
-// Error
-c.JSON(http.StatusUnprocessableEntity, gin.H{
-    "error": gin.H{
-        "code":    "VALIDATION_ERROR",
-        "message": "Email is required",
-    },
-})
+// Error. respond.Fail takes the status from the error catalogue, so a code
+// cannot be paired with two different statuses in two different handlers.
+respond.Fail(c, respond.CodeValidationError, "Email is required")
 %[1]s
 
 ### Error Codes

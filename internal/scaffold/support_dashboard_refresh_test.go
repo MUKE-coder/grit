@@ -10,12 +10,24 @@ import (
 // rather than string literals.
 func TestTicketVisibilityIsOneRuleAnswering404(t *testing.T) {
 	src := ticketHandlerGo()
+	service := ticketServiceGo()
 
-	if n := strings.Count(src, "h.visibleTicket(c,"); n != 4 {
-		t.Errorf("the four endpoints that reach a ticket should all load it through visibleTicket; found %d", n)
+	// Since M29 the rule lives in services.TicketService: Reply, SetStatus and
+	// Assign load through Visible, and Visible and Query both apply scope.
+	if n := strings.Count(service, "s.Visible(ctx, actor, id, false)"); n != 3 {
+		t.Errorf("Reply, SetStatus and Assign should all load the ticket through Visible; found %d", n)
 	}
-	if strings.Contains(src, `"message": "not your ticket"`) {
+	if !strings.Contains(service, "s.scope(q, actor).First(&t,") {
+		t.Error("the visibility rule is checked after the query instead of being part of it")
+	}
+	if strings.Contains(src+service, "not your ticket") || strings.Contains(service, "ErrTicketNotYours") {
 		t.Error("somebody else's ticket is still answered with 403, which confirms the id exists")
+	}
+	if strings.Contains(src, "h.DB.WithContext") {
+		t.Error("the ticket handler runs a query of its own again")
+	}
+	if strings.Count(service, `"ADMIN"`) != 0 || !strings.Contains(service, "models.RoleAdmin, true") {
+		t.Error("the admin notification fan-out spells ADMIN as a literal")
 	}
 	if n := strings.Count(src, `role == "ADMIN"`) + strings.Count(src, `role != "ADMIN"`) + strings.Count(src, `"ADMIN", true`); n != 0 {
 		t.Errorf("the ticket handler still spells ADMIN as a literal %d times; models.RoleAdmin exists", n)

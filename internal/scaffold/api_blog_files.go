@@ -224,6 +224,7 @@ import (
 	"{{MODULE}}/internal/paginate"
 	"{{MODULE}}/internal/sanitize"
 	"{{MODULE}}/internal/services"
+	"{{MODULE}}/internal/respond"
 )
 
 // BlogHandler handles blog endpoints.
@@ -267,12 +268,7 @@ func (h *BlogHandler) List(c *gin.Context) {
 
 	blogs, total, pages, err := h.Service.List(page, pageSize, search, sortBy, sortOrder)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to fetch blogs",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to fetch blogs")
 		return
 	}
 ` + blogListCounts + `
@@ -301,12 +297,7 @@ func (h *BlogHandler) ListPublished(c *gin.Context) {
 
 	blogs, total, pages, err := h.Service.ListPublished(page, pageSize)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to fetch blogs",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to fetch blogs")
 		return
 	}
 
@@ -328,12 +319,7 @@ func (h *BlogHandler) GetBySlug(c *gin.Context) {
 
 	blog, err := h.Service.GetBySlug(slug)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{
-				"code":    "NOT_FOUND",
-				"message": "Blog not found",
-			},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Blog not found")
 		return
 	}
 
@@ -350,12 +336,7 @@ func (h *BlogHandler) GetByID(c *gin.Context) {
 	id := c.Param("id")
 	blog, err := h.Service.GetByID(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{
-				"code":    "NOT_FOUND",
-				"message": "Blog not found",
-			},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Blog not found")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": blog})
@@ -376,12 +357,7 @@ func (h *BlogHandler) Create(c *gin.Context) {
 	var req CreateBlogRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -399,12 +375,7 @@ func (h *BlogHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.Service.Create(&blog); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to create blog",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to create blog")
 		return
 	}
 
@@ -431,24 +402,14 @@ func (h *BlogHandler) Update(c *gin.Context) {
 	// Fetch existing blog to check published state
 	existing, err := h.Service.GetByID(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{
-				"code":    "NOT_FOUND",
-				"message": "Blog not found",
-			},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Blog not found")
 		return
 	}
 
 	var req UpdateBlogRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -479,12 +440,7 @@ func (h *BlogHandler) Update(c *gin.Context) {
 
 	blog, err := h.Service.Update(id, updates)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to update blog",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to update blog")
 		return
 	}
 
@@ -499,12 +455,7 @@ func (h *BlogHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 
 	if err := h.Service.Delete(id); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{
-				"code":    "NOT_FOUND",
-				"message": "Blog not found",
-			},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Blog not found")
 		return
 	}
 

@@ -1103,6 +1103,7 @@ import (
 	"{{MODULE}}/internal/backup"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/storage"
+	"{{MODULE}}/internal/respond"
 )
 
 const (
@@ -1129,9 +1130,7 @@ func (h *BackupHandler) svc() *backup.Service {
 func (h *BackupHandler) List(c *gin.Context) {
 	var items []models.Backup
 	if err := h.DB.WithContext(c.Request.Context()).Order("created_at desc").Limit(50).Find(&items).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to list backups"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to list backups")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": items})
@@ -1141,31 +1140,23 @@ func (h *BackupHandler) List(c *gin.Context) {
 // immediately — a full dump can take a while. Poll List until it flips to READY.
 func (h *BackupHandler) Generate(c *gin.Context) {
 	if h.svc().Store() == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": gin.H{"code": "STORAGE_UNAVAILABLE", "message": "Object storage is not configured"},
-		})
+		respond.Fail(c, respond.CodeStorageUnavailable, "Object storage is not configured")
 		return
 	}
 
 	limited, err := h.svc().ManualRateLimited(manualBackupWindow)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to check rate limit"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to check rate limit")
 		return
 	}
 	if limited {
-		c.JSON(http.StatusTooManyRequests, gin.H{
-			"error": gin.H{"code": "RATE_LIMITED", "message": "A manual backup was already taken in the last 24 hours"},
-		})
+		respond.Fail(c, respond.CodeRateLimited, "A manual backup was already taken in the last 24 hours")
 		return
 	}
 
 	rec, err := h.svc().Start("MANUAL")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to start backup"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to start backup")
 		return
 	}
 
@@ -1182,23 +1173,17 @@ func (h *BackupHandler) Generate(c *gin.Context) {
 // straight from object storage — no proxying a multi-hundred-MB file through the API.
 func (h *BackupHandler) Download(c *gin.Context) {
 	if h.svc().Store() == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": gin.H{"code": "STORAGE_UNAVAILABLE", "message": "Object storage is not configured"},
-		})
+		respond.Fail(c, respond.CodeStorageUnavailable, "Object storage is not configured")
 		return
 	}
 
 	var b models.Backup
 	if err := h.DB.WithContext(c.Request.Context()).First(&b, "id = ?", c.Param("id")).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "Backup not found"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Backup not found")
 		return
 	}
 	if b.Status != "READY" || b.StorageKey == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "NOT_AVAILABLE", "message": "This backup is not available for download"},
-		})
+		respond.Fail(c, respond.CodeNotAvailable, "This backup is not available for download")
 		return
 	}
 
@@ -1206,9 +1191,7 @@ func (h *BackupHandler) Download(c *gin.Context) {
 	// STORAGE_DISKS named one.
 	url, err := h.svc().Locate(c.Request.Context(), b.StorageKey).GetSignedURL(c.Request.Context(), b.StorageKey, downloadURLTTL)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to sign download URL"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to sign download URL")
 		return
 	}
 
@@ -1221,9 +1204,7 @@ func (h *BackupHandler) Download(c *gin.Context) {
 func (h *BackupHandler) GetSettings(c *gin.Context) {
 	sc, err := h.svc().GetSchedule()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to load backup schedule"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to load backup schedule")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": sc})
@@ -1242,12 +1223,12 @@ type BackupSettingsRequest struct {
 func (h *BackupHandler) UpdateSettings(c *gin.Context) {
 	var req BackupSettingsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "INVALID_BODY", "message": err.Error()}})
+		respond.Fail(c, respond.CodeInvalidBody, err.Error())
 		return
 	}
 	sc, err := h.svc().SaveSchedule(req.Frequency, req.Time, req.Enabled)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "INVALID_SCHEDULE", "message": err.Error()}})
+		respond.Fail(c, respond.CodeInvalidSchedule, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": sc, "message": "Backup schedule updated"})

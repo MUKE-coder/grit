@@ -84,20 +84,29 @@ func (r *TicketReply) BeforeCreate(tx *gorm.DB) error {
 `
 }
 
-// ticketHandlerGo emits internal/handlers/ticket_handler.go.
+// ticketHandlerGo emits internal/handlers/ticket.go.
+//
+// Contact-app review M29: this file used to hold every query and every rule the
+// ticket system has, and there was no ticket service at all. None of it could
+// be called from a job, a seeder or a test without a *gin.Context. The handler
+// binds, calls services.TicketService, and responds. It runs no query of its
+// own, which is the pattern the generated resource handlers already follow.
+//
+// M32 and M33 live on in the service and here: a ticket the caller may not see
+// is answered 404 by a scoped query, the last-activity order applies only when
+// no sort was asked for, search is case-insensitive through paginate, and the
+// roles are models.RoleAdmin and models.RoleEditor rather than literals.
 func ticketHandlerGo() string {
 	return `package handlers
 
 import (
-	"log"
 	"fmt"
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/jobs"
 	"{{MODULE}}/internal/mail"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
@@ -107,7 +116,10 @@ import (
 
 type TicketHandler struct {
 	DB   *gorm.DB
-	Mail *mail.Mailer // can be nil — handler logs instead of emailing
+	Mail *mail.Mailer // can be nil — the new-ticket email is skipped
+	// Jobs is optional: with it the new-ticket email goes on the background
+	// queue, so a provider that is briefly down does not lose it.
+	Jobs *jobs.Client
 }
 
 type CreateTicketRequest struct {
@@ -133,6 +145,19 @@ var ticketListConfig = paginate.Config{
 	DefaultOrder: "desc",
 }
 
+// tickets is the service every method below calls. Built per request because it
+// is three fields and a struct literal, and because building it here means the
+// wiring in routes.go did not have to change.
+func (h *TicketHandler) tickets() *services.TicketService {
+	svc := &services.TicketService{DB: h.DB, Mail: h.Mail}
+	// A typed nil pointer in an interface field is not a nil interface, so the
+	// queue is only set when there really is one.
+	if h.Jobs != nil {
+		svc.Queue = h.Jobs
+	}
+	return svc
+}
+
 // ticketStaff reports whether the caller handles everyone's tickets.
 //
 // One definition, because there were five, each spelling ADMIN and EDITOR out
@@ -143,84 +168,43 @@ func ticketStaff(c *gin.Context) bool {
 	return role == models.RoleAdmin || role == models.RoleEditor
 }
 
-// visibleTicket loads the ticket named by :id, or answers the request itself
-// and returns false.
-//
-// The rule it replaces was written out four times, in Get, Reply, Assign and
-// transitionStatus, and every copy read the ticket first and then answered
-// somebody else's with 403. A 403 is a confirmation: it tells whoever is
-// walking the id space which ids are real. The scope is part of the query now,
-// so a ticket the caller may not see comes back as not found, exactly like one
-// that never existed.
-//
-// with runs before First, for the endpoints that need preloads.
-func (h *TicketHandler) visibleTicket(c *gin.Context, with func(*gorm.DB) *gorm.DB) (models.Ticket, bool) {
-	var t models.Ticket
-	q := h.DB.WithContext(c.Request.Context())
-	if with != nil {
-		q = with(q)
+// actorOf reads who is acting from the request. With ticketStaff, the only
+// place in the ticket code that knows what a gin context is.
+func (h *TicketHandler) actorOf(c *gin.Context) services.TicketActor {
+	return services.TicketActor{
+		UserID: c.GetString("user_id"),
+		Staff:  ticketStaff(c),
 	}
-	if !ticketStaff(c) {
-		userID, _ := c.Get("user_id")
-		q = q.Where("user_id = ?", userID)
-	}
-	if err := q.First(&t, "id = ?", c.Param("id")).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "ticket not found"},
-		})
-		return t, false
-	}
-	return t, true
 }
 
-// Create opens a ticket for the authenticated user. Fires an email to
-// SUPPORT_EMAIL when Resend is configured + a Notification for every
-// ADMIN so the bell lights up.
+// Create opens a ticket for the authenticated user. The service emails
+// SUPPORT_EMAIL through the job queue and lights up every admin's bell.
 //
 //	POST /api/tickets
 func (h *TicketHandler) Create(c *gin.Context) {
 	var req CreateTicketRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+	actor := h.actorOf(c)
+	if actor.UserID == "" {
+		respond.Fail(c, respond.CodeUnauthorized, "Sign in to open a ticket")
 		return
 	}
 
-	userIDv, _ := c.Get("user_id")
-	userID, _ := userIDv.(string)
-	if userID == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{"code": "UNAUTHORIZED", "message": "sign in to open a ticket"},
-		})
-		return
-	}
-
-	// Cap labels at 8 — protects against accidental spam pasted into the
-	// field. Trim each one so "bug , billing" doesn't store the space.
-	labels := normalizeLabels(req.Labels, 8)
-
-	ticket := models.Ticket{
-		UserID:      userID,
+	ticket, err := h.tickets().Open(services.ContextOf(c), actor, services.NewTicket{
 		Subject:     req.Subject,
 		Description: req.Description,
 		Priority:    req.Priority,
-		Labels:      labels,
-	}
-	if err := h.DB.WithContext(c.Request.Context()).Create(&ticket).Error; err != nil {
-		respond.ServerError(c, "DB_ERROR", err, "Internal server error")
+		Labels:      req.Labels,
+	})
+	if err != nil {
+		respond.WriteError(c, err, "Could not open the ticket")
 		return
 	}
 
-	// Hydrate the user for the email + audit. Best-effort.
-	var creator models.User
-	h.DB.WithContext(c.Request.Context()).First(&creator, "id = ?", userID)
-
-	// Fire-and-forget email + admin notifications. We don't fail the
-	// request if either side trips — the ticket itself is persisted.
-	go h.emitTicketCreated(&ticket, &creator)
-
-	services.LogActivity(h.DB, c, services.ActivityArgs{
+	services.LogActivityCtx(services.ContextOf(c), h.DB, services.ActivityArgs{
 		Action:       "ticket.create",
 		Severity:     "info",
 		Summary:      fmt.Sprintf("Opened ticket %q (priority %s)", ticket.Subject, ticket.Priority),
@@ -228,10 +212,7 @@ func (h *TicketHandler) Create(c *gin.Context) {
 		ResourceID:   ticket.ID,
 	})
 
-	c.JSON(http.StatusCreated, gin.H{
-		"data":    ticket,
-		"message": "Ticket opened",
-	})
+	respond.Created(c, ticket, "Ticket opened")
 }
 
 // List returns tickets the caller can see. Regular users see their own;
@@ -239,13 +220,7 @@ func (h *TicketHandler) Create(c *gin.Context) {
 //
 //	GET /api/tickets?status=open&q=billing
 func (h *TicketHandler) List(c *gin.Context) {
-	q := h.DB.WithContext(c.Request.Context()).Model(&models.Ticket{}).
-		Preload("User").Preload("Assignee")
-
-	if !ticketStaff(c) {
-		userID, _ := c.Get("user_id")
-		q = q.Where("user_id = ?", userID)
-	}
+	q := h.tickets().Query(services.ContextOf(c), h.actorOf(c))
 
 	params := paginate.Bind(c).
 		With("status", c.Query("status")).
@@ -254,19 +229,17 @@ func (h *TicketHandler) List(c *gin.Context) {
 
 	// ?q= is this endpoint's spelling of ?search=, so hand it to paginate
 	// rather than building the clause here. paginate compares with
-	// LOWER(col) LIKE LOWER(?); the clause it replaces was a bare LIKE, which
-	// on Postgres means a search for "Billing" found nothing filed as
-	// "billing".
+	// LOWER(col) LIKE LOWER(?); a bare LIKE on Postgres means a search for
+	// "Billing" finds nothing filed as "billing".
 	if needle := c.Query("q"); needle != "" {
 		params.Search = needle
 	}
 
 	// Newest activity first, but only when the caller asked for nothing.
-	//
-	// This ORDER BY used to be applied always, and paginate's own ordering was
-	// appended after it, so ?sort_by=priority never did more than break ties
-	// inside a last-reply ordering. The column the support queue wants to sort
-	// by is not a column at all, which is why it cannot go in Sortable.
+	// Applied always, paginate's own ordering was appended after it, so
+	// ?sort_by=priority never did more than break ties. The column the support
+	// queue wants to sort by is not a column at all, which is why it cannot go
+	// in Sortable.
 	if !ticketListConfig.Sortable[params.SortBy] {
 		q = q.Order("COALESCE(last_reply_at, created_at) DESC")
 	}
@@ -279,19 +252,16 @@ func (h *TicketHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-// Get returns one ticket with replies. Same auth rule as List.
+// Get returns one ticket with its replies. Same visibility rule as List.
 //
 //	GET /api/tickets/:id
 func (h *TicketHandler) Get(c *gin.Context) {
-	t, ok := h.visibleTicket(c, func(db *gorm.DB) *gorm.DB {
-		return db.Preload("User").Preload("Assignee").
-			Preload("Replies", func(db *gorm.DB) *gorm.DB { return db.Order("created_at ASC") }).
-			Preload("Replies.User")
-	})
-	if !ok {
+	ticket, err := h.tickets().Visible(services.ContextOf(c), h.actorOf(c), c.Param("id"), true)
+	if err != nil {
+		respond.WriteError(c, err, "Could not load the ticket")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": t})
+	respond.OK(c, ticket)
 }
 
 // Reply adds a message to the thread. Sets is_admin_reply when the
@@ -301,46 +271,24 @@ func (h *TicketHandler) Get(c *gin.Context) {
 func (h *TicketHandler) Reply(c *gin.Context) {
 	var req TicketReplyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+	reply, ticket, err := h.tickets().Reply(services.ContextOf(c), h.actorOf(c), c.Param("id"), req.Body)
+	if err != nil {
+		respond.WriteError(c, err, "Could not add the reply")
 		return
 	}
 
-	userIDv, _ := c.Get("user_id")
-	userID, _ := userIDv.(string)
-
-	t, ok := h.visibleTicket(c, nil)
-	if !ok {
-		return
-	}
-
-	reply := models.TicketReply{
-		TicketID:     t.ID,
-		UserID:       userID,
-		Body:         req.Body,
-		IsAdminReply: ticketStaff(c),
-	}
-	now := time.Now()
-	if err := h.DB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(&reply).Error; err != nil {
-			return err
-		}
-		return tx.Model(&t).Update("last_reply_at", now).Error
-	}); err != nil {
-		respond.ServerError(c, "DB_ERROR", err, "Internal server error")
-		return
-	}
-
-	services.LogActivity(h.DB, c, services.ActivityArgs{
+	services.LogActivityCtx(services.ContextOf(c), h.DB, services.ActivityArgs{
 		Action:       "ticket.reply",
 		Severity:     "info",
-		Summary:      fmt.Sprintf("Replied on ticket %q", t.Subject),
+		Summary:      fmt.Sprintf("Replied on ticket %q", ticket.Subject),
 		ResourceType: "ticket",
-		ResourceID:   t.ID,
+		ResourceID:   ticket.ID,
 	})
 
-	c.JSON(http.StatusCreated, gin.H{"data": reply, "message": "Reply added"})
+	respond.Created(c, reply, "Reply added")
 }
 
 // Close stamps ClosedAt + status. Only the owner or an admin can close.
@@ -361,43 +309,258 @@ func (h *TicketHandler) Reopen(c *gin.Context) {
 //
 //	PATCH /api/tickets/:id/assign
 func (h *TicketHandler) Assign(c *gin.Context) {
-	if !ticketStaff(c) {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{"code": "FORBIDDEN", "message": "admins only"},
-		})
+	actor := h.actorOf(c)
+	// Refused before the body is read, as it always was: a caller who may not
+	// assign learns nothing from a validation message.
+	if !actor.Staff {
+		respond.WriteError(c, services.ErrTicketStaffOnly, "Admins only")
 		return
 	}
 	var req AssignTicketRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+	ticket, err := h.tickets().Assign(services.ContextOf(c), actor, c.Param("id"), req.AssigneeID)
+	if err != nil {
+		respond.WriteError(c, err, "Could not assign the ticket")
 		return
 	}
 
-	t, ok := h.visibleTicket(c, nil)
-	if !ok {
-		return
-	}
-	if err := h.DB.WithContext(c.Request.Context()).Model(&t).Update("assignee_id", req.AssigneeID).Error; err != nil {
-		respond.ServerError(c, "DB_ERROR", err, "Internal server error")
-		return
-	}
-
-	services.LogActivity(h.DB, c, services.ActivityArgs{
+	services.LogActivityCtx(services.ContextOf(c), h.DB, services.ActivityArgs{
 		Action:       "ticket.assign",
 		Severity:     "info",
-		Summary:      fmt.Sprintf("Assigned ticket %q", t.Subject),
+		Summary:      fmt.Sprintf("Assigned ticket %q", ticket.Subject),
 		ResourceType: "ticket",
-		ResourceID:   t.ID,
+		ResourceID:   ticket.ID,
 	})
-	c.JSON(http.StatusOK, gin.H{"message": "Assignee updated"})
+	respond.OK(c, ticket, "Assignee updated")
 }
 
 func (h *TicketHandler) transitionStatus(c *gin.Context, status string) {
-	t, ok := h.visibleTicket(c, nil)
-	if !ok {
+	ticket, err := h.tickets().SetStatus(services.ContextOf(c), h.actorOf(c), c.Param("id"), status)
+	if err != nil {
+		respond.WriteError(c, err, "Could not update the ticket")
 		return
+	}
+
+	services.LogActivityCtx(services.ContextOf(c), h.DB, services.ActivityArgs{
+		Action:       "ticket." + status,
+		Severity:     "info",
+		Summary:      fmt.Sprintf("Marked ticket %q as %s", ticket.Subject, status),
+		ResourceType: "ticket",
+		ResourceID:   ticket.ID,
+	})
+	respond.OK(c, ticket, "Status updated")
+}
+`
+}
+
+// ticketServiceGo emits internal/services/ticket.go.
+func ticketServiceGo() string {
+	return `package services
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"strings"
+	"time"
+
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/mail"
+	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
+)
+
+// Tickets, as a service rather than as a handler.
+//
+// Contact-app review M29: every query and every rule the ticket system has used
+// to live in handlers/ticket.go, so none of it could be called from a job, a
+// seeder or a test without a *gin.Context.
+//
+// Nothing here knows what an HTTP request is. The handler turns the request
+// into a TicketActor, calls one method, and responds.
+
+// TicketActor is who is acting, as much as the ticket rules need to know.
+type TicketActor struct {
+	UserID string
+	// Staff see the whole queue and can assign; everyone else sees their own.
+	Staff bool
+}
+
+// ticketError is a ticket rule the caller broke, carrying the code it comes
+// back as. respond.WriteError answers it without the handler mapping anything.
+type ticketError struct {
+	message string
+	code    respond.Code
+}
+
+func (e ticketError) Error() string           { return e.message }
+func (e ticketError) ErrorCode() respond.Code { return e.code }
+
+var (
+	// ErrTicketNotFound is a ticket that does not exist, or one the actor may
+	// not see. The two are deliberately the same answer: a 403 for somebody
+	// else's ticket tells whoever is walking the id space which ids are real.
+	ErrTicketNotFound error = ticketError{"Ticket not found", respond.CodeNotFound}
+	// ErrTicketStaffOnly is an action only the support queue's owners can take.
+	ErrTicketStaffOnly error = ticketError{"Admins only", respond.CodeForbidden}
+)
+
+// TicketService is everything opening, reading and answering a ticket does.
+type TicketService struct {
+	DB *gorm.DB
+	// Mail is optional: without it the new-ticket email is skipped.
+	Mail *mail.Mailer
+	// Queue is optional. With it the new-ticket email goes to the background
+	// worker, which retries a provider that is briefly down and survives a
+	// restart; without it the send is inline. Leave it nil rather than
+	// assigning a nil *jobs.Client: a typed nil in an interface is not nil.
+	Queue mail.Enqueuer
+}
+
+// NewTicket is what a caller asks for when opening one.
+type NewTicket struct {
+	Subject     string
+	Description string
+	Priority    string
+	Labels      string
+}
+
+// Open creates the ticket, notifies the admins and sends the support email.
+func (s *TicketService) Open(ctx context.Context, actor TicketActor, in NewTicket) (*models.Ticket, error) {
+	ticket := models.Ticket{
+		UserID:      actor.UserID,
+		Subject:     in.Subject,
+		Description: in.Description,
+		Priority:    in.Priority,
+		// Capped at 8, which stops a paste into the field becoming 400 labels.
+		Labels: NormalizeTicketLabels(in.Labels, 8),
+	}
+	if err := s.DB.WithContext(ctx).Create(&ticket).Error; err != nil {
+		return nil, fmt.Errorf("creating the ticket: %w", err)
+	}
+
+	// Hydrate the creator for the email and the notification. Best-effort: the
+	// ticket is saved either way.
+	var creator models.User
+	if err := s.DB.WithContext(ctx).First(&creator, "id = ?", actor.UserID).Error; err != nil {
+		log.Printf("tickets: loading the creator of %s: %v", ticket.ID, err)
+	}
+
+	s.announce(ctx, &ticket, &creator)
+	return &ticket, nil
+}
+
+// announce emails the support inbox and lights up every admin's bell.
+//
+// It used to run in a goroutine the request started, which meant the email was
+// never retried and was lost outright on a restart. The mail is queued now, and
+// the notification rows are written before the response goes out: there are as
+// many as there are admins, and that is a number a support queue can hold.
+func (s *TicketService) announce(ctx context.Context, t *models.Ticket, creator *models.User) {
+	switch {
+	case s.Queue != nil:
+		if err := QueueTicketCreatedEmail(ctx, s.Queue, t, creator); err != nil {
+			log.Printf("tickets: queueing the email for %s: %v", t.ID, err)
+		}
+	case s.Mail != nil:
+		if err := SendTicketCreatedEmail(s.Mail, t, creator); err != nil {
+			log.Printf("tickets: emailing support about %s: %v", t.ID, err)
+		}
+	}
+
+	var admins []models.User
+	if err := s.DB.WithContext(ctx).Where("role = ? AND active = ?", models.RoleAdmin, true).Find(&admins).Error; err != nil {
+		log.Printf("tickets: listing admins to notify about %s: %v", t.ID, err)
+		return
+	}
+	for _, a := range admins {
+		n := models.Notification{
+			UserID:   a.ID,
+			Source:   "system",
+			Severity: TicketSeverity(t.Priority),
+			Title:    "New ticket: " + t.Subject,
+			Body:     "Opened by " + creator.Email + ".",
+			Link:     "/system/support/" + t.ID,
+			Dedup:    "ticket-created:" + t.ID + ":" + a.ID,
+		}
+		// FirstOrCreate on the dedup key, so a duplicate fire is a no-op.
+		if err := s.DB.WithContext(ctx).FirstOrCreate(&n, models.Notification{Dedup: n.Dedup}).Error; err != nil {
+			log.Printf("tickets: notifying %s of ticket %s: %v", a.ID, t.ID, err)
+		}
+	}
+}
+
+// Query is the list query, scoped to what the actor may see. The caller orders,
+// pages and filters it.
+func (s *TicketService) Query(ctx context.Context, actor TicketActor) *gorm.DB {
+	q := s.DB.WithContext(ctx).Model(&models.Ticket{}).Preload("User").Preload("Assignee")
+	return s.scope(q, actor)
+}
+
+// scope is the visibility rule, in one place. Staff see the whole queue;
+// everyone else sees the tickets they opened.
+func (s *TicketService) scope(q *gorm.DB, actor TicketActor) *gorm.DB {
+	if actor.Staff {
+		return q
+	}
+	return q.Where("user_id = ?", actor.UserID)
+}
+
+// Visible loads a ticket the actor is allowed to see. withThread also loads the
+// replies, oldest first, with their authors.
+//
+// The scope is part of the query, not a check after it, so a ticket the actor
+// may not see comes back as ErrTicketNotFound exactly like one that never
+// existed.
+func (s *TicketService) Visible(ctx context.Context, actor TicketActor, id string, withThread bool) (*models.Ticket, error) {
+	q := s.DB.WithContext(ctx)
+	if withThread {
+		q = q.Preload("User").Preload("Assignee").
+			Preload("Replies", func(db *gorm.DB) *gorm.DB { return db.Order("created_at ASC") }).
+			Preload("Replies.User")
+	}
+	var t models.Ticket
+	if err := s.scope(q, actor).First(&t, "id = ?", id).Error; err != nil {
+		return nil, ErrTicketNotFound
+	}
+	return &t, nil
+}
+
+// Reply adds a message to the thread and touches the ticket's last reply.
+func (s *TicketService) Reply(ctx context.Context, actor TicketActor, id, body string) (*models.TicketReply, *models.Ticket, error) {
+	t, err := s.Visible(ctx, actor, id, false)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	reply := models.TicketReply{
+		TicketID:     t.ID,
+		UserID:       actor.UserID,
+		Body:         body,
+		IsAdminReply: actor.Staff,
+	}
+	now := time.Now()
+	if err := s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&reply).Error; err != nil {
+			return err
+		}
+		return tx.Model(t).Update("last_reply_at", now).Error
+	}); err != nil {
+		return nil, nil, fmt.Errorf("saving the reply: %w", err)
+	}
+	t.LastReplyAt = &now
+	return &reply, t, nil
+}
+
+// SetStatus closes or reopens a ticket. "closed" stamps ClosedAt.
+func (s *TicketService) SetStatus(ctx context.Context, actor TicketActor, id, status string) (*models.Ticket, error) {
+	t, err := s.Visible(ctx, actor, id, false)
+	if err != nil {
+		return nil, err
 	}
 
 	updates := map[string]interface{}{"status": status}
@@ -407,51 +570,30 @@ func (h *TicketHandler) transitionStatus(c *gin.Context, status string) {
 	} else {
 		updates["closed_at"] = nil
 	}
-	if err := h.DB.WithContext(c.Request.Context()).Model(&t).Updates(updates).Error; err != nil {
-		respond.ServerError(c, "DB_ERROR", err, "Internal server error")
-		return
+	if err := s.DB.WithContext(ctx).Model(t).Updates(updates).Error; err != nil {
+		return nil, fmt.Errorf("updating the ticket status: %w", err)
 	}
-
-	services.LogActivity(h.DB, c, services.ActivityArgs{
-		Action:       "ticket." + status,
-		Severity:     "info",
-		Summary:      fmt.Sprintf("Marked ticket %q as %s", t.Subject, status),
-		ResourceType: "ticket",
-		ResourceID:   t.ID,
-	})
-	c.JSON(http.StatusOK, gin.H{"message": "Status updated"})
+	return t, nil
 }
 
-// emitTicketCreated is the fire-and-forget side-effect of opening a
-// ticket: email SUPPORT_EMAIL via Resend (if configured), and create
-// an in-app Notification for every ADMIN.
-func (h *TicketHandler) emitTicketCreated(t *models.Ticket, creator *models.User) {
-	// Email to SUPPORT_EMAIL — best-effort, never blocks the request.
-	if h.Mail != nil {
-		_ = services.SendTicketCreatedEmail(h.Mail, t, creator)
+// Assign points the ticket at somebody. Staff only.
+func (s *TicketService) Assign(ctx context.Context, actor TicketActor, id, assigneeID string) (*models.Ticket, error) {
+	if !actor.Staff {
+		return nil, ErrTicketStaffOnly
 	}
-
-	// Fan-out an admin notification per ADMIN — bell lights up.
-	var admins []models.User
-	h.DB.Where("role = ? AND active = ?", models.RoleAdmin, true).Find(&admins)
-	for _, a := range admins {
-		n := models.Notification{
-			UserID:   a.ID,
-			Source:   "system",
-			Severity: ticketSeverity(t.Priority),
-			Title:    "New ticket: " + t.Subject,
-			Body:     "Opened by " + creator.Email + ".",
-			Link:     "/system/support/" + t.ID,
-			Dedup:    "ticket-created:" + t.ID + ":" + a.ID,
-		}
-		// FirstOrCreate on the dedup key, so a duplicate fire is a no-op.
-		if err := h.DB.FirstOrCreate(&n, models.Notification{Dedup: n.Dedup}).Error; err != nil {
-			log.Printf("tickets: notifying %s of ticket %s: %v", a.ID, t.ID, err)
-		}
+	t, err := s.Visible(ctx, actor, id, false)
+	if err != nil {
+		return nil, err
 	}
+	if err := s.DB.WithContext(ctx).Model(t).Update("assignee_id", assigneeID).Error; err != nil {
+		return nil, fmt.Errorf("assigning the ticket: %w", err)
+	}
+	t.AssigneeID = assigneeID
+	return t, nil
 }
 
-func ticketSeverity(priority string) string {
+// TicketSeverity maps a ticket priority onto a notification severity.
+func TicketSeverity(priority string) string {
 	switch priority {
 	case "critical":
 		return "critical"
@@ -464,7 +606,8 @@ func ticketSeverity(priority string) string {
 	}
 }
 
-func normalizeLabels(raw string, cap int) string {
+// NormalizeTicketLabels trims each label and caps how many a ticket carries.
+func NormalizeTicketLabels(raw string, max int) string {
 	if raw == "" {
 		return ""
 	}
@@ -476,7 +619,7 @@ func normalizeLabels(raw string, cap int) string {
 			continue
 		}
 		out = append(out, p)
-		if len(out) >= cap {
+		if len(out) >= max {
 			break
 		}
 	}
@@ -509,6 +652,38 @@ import (
 // The body intentionally stays plain-text + minimal HTML so any inbox
 // renders it. The "Reply in dashboard" link points at the admin panel.
 ` + ticketMailFuncOpen + ticketMailSettingCheck + `
+	msg := TicketCreatedMessage(t, creator)
+	if msg == nil {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return m.SendMessage(ctx, msg)
+}
+
+// QueueTicketCreatedEmail puts the new-ticket email on the background queue.
+//
+// Contact-app review M30: this email used to be sent from a goroutine the
+// request started, so a provider that was down for a minute lost it and a
+// deploy dropped whatever was in flight. Queued, the worker retries it.
+func QueueTicketCreatedEmail(ctx context.Context, q mail.Enqueuer, t *models.Ticket, creator *models.User) error {
+	if !settings.Bool(ctx, "notifications.email_enabled") {
+		log.Printf("ticket-mail: notification emails are turned off in settings, skipping ticket %s", t.ID)
+		return nil
+	}
+	msg := TicketCreatedMessage(t, creator)
+	if msg == nil {
+		return nil
+	}
+	return mail.Queue(ctx, q, msg)
+}
+
+// TicketCreatedMessage builds the new-ticket email, or nil when SUPPORT_EMAIL
+// is not set, which is the normal state of a development machine.
+//
+// Split out of SendTicketCreatedEmail so the same message can be queued or sent
+// directly without the body existing in two places.
+func TicketCreatedMessage(t *models.Ticket, creator *models.User) *mail.Message {
 	to := os.Getenv("SUPPORT_EMAIL")
 	if to == "" {
 		log.Printf("ticket-mail: SUPPORT_EMAIL not set, skipping email for ticket %s", t.ID)
@@ -544,9 +719,7 @@ import (
 		creatorLine, t.Description, dashURL, t.ID,
 	)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	return m.SendRaw(ctx, to, subject, html)
+	return &mail.Message{To: []string{to}, Subject: subject, HTML: html}
 }
 
 func short(id string) string {

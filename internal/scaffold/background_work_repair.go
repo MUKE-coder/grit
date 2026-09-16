@@ -44,34 +44,13 @@ func LogActivityErr(db *gorm.DB, c *gin.Context, args ActivityArgs) error {
 // activityRow builds the row for args from the request: the actor, the client
 // IP and the user agent. It reads the request, so it runs before the handler
 // returns even when the row is written later.
+//
+// The building itself is activityRowCtx, in request_meta.go, which takes those
+// three facts from a context.Context instead. This is the gin-shaped front door
+// to it, and the only reason it still exists is that handlers hold a gin
+// context and jobs do not.
 func activityRow(c *gin.Context, args ActivityArgs) models.UserActivity {
-	userID := args.UserID
-	if userID == "" {
-		if v, ok := c.Get("user_id"); ok {
-			if s, ok := v.(string); ok {
-				userID = s
-			}
-		}
-	}
-
-	var metaJSON string
-	if args.Metadata != nil {
-		if b, err := json.Marshal(args.Metadata); err == nil {
-			metaJSON = string(b)
-		}
-	}
-
-	return models.UserActivity{
-		UserID:       userID,
-		Action:       args.Action,
-		Severity:     args.Severity,
-		Summary:      args.Summary,
-		ResourceType: args.ResourceType,
-		ResourceID:   args.ResourceID,
-		IPAddress:    ResolveClientIP(c),
-		UserAgent:    c.GetHeader("User-Agent"),
-		Metadata:     metaJSON,
-	}
+	return activityRowCtx(ContextOf(c), args)
 }`
 
 // The create, update and delete helpers queue their row instead of writing it.

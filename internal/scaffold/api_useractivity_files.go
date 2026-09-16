@@ -71,7 +71,6 @@ func userActivityServiceGo() string {
 	return `package services
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"sort"

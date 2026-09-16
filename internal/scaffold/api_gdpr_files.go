@@ -287,14 +287,14 @@ func (h *GDPRHandler) Export(c *gin.Context) {
 	targetID := c.Param("id")
 	callerRole, _ := c.Get("user_role")
 	if authz.CurrentUserID(c) != targetID && fmt.Sprint(callerRole) != models.RoleAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{"code": "FORBIDDEN", "message": "you may only export your own data"}})
+		respond.Fail(c, respond.CodeForbidden, "you may only export your own data")
 		return
 	}
 
 	bundle, err := services.ExportUserData(h.DB, targetID)
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code": "NOT_FOUND", "message": "user not found"}})
+			respond.Fail(c, respond.CodeNotFound, "user not found")
 			return
 		}
 		respond.ServerError(c, "EXPORT_FAILED", err, "Internal server error")
@@ -323,7 +323,7 @@ func (h *GDPRHandler) Erase(c *gin.Context) {
 	callerEmail, _ := c.Get("user_email")
 
 	if callerID == targetID {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "SELF_ERASE", "message": "you cannot erase your own account here"}})
+		respond.Fail(c, respond.CodeSelfErase, "you cannot erase your own account here")
 		return
 	}
 
@@ -338,7 +338,7 @@ func (h *GDPRHandler) Erase(c *gin.Context) {
 	journal, err := services.EraseUser(h.DB, targetID, callerID, fmt.Sprint(callerEmail), req.Reason)
 	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code": "NOT_FOUND", "message": "user not found"}})
+			respond.Fail(c, respond.CodeNotFound, "user not found")
 			return
 		}
 		respond.ServerError(c, "ERASE_FAILED", err, "Internal server error")

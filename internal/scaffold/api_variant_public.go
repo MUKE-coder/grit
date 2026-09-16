@@ -199,9 +199,7 @@ func (h *` + pascal + `VariantHandler) ListPublic(c *gin.Context) {
 
 	options, err := h.Variants.OptionsFor(` + snake + `.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to load the options",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Failed to load the options")
 		return
 	}
 	byID := make(map[string]models.Option, len(options))
@@ -211,9 +209,7 @@ func (h *` + pascal + `VariantHandler) ListPublic(c *gin.Context) {
 
 	variants, err := h.Variants.VariantsFor(` + snake + `.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to load the variants",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Failed to load the variants")
 		return
 	}
 

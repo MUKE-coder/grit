@@ -392,9 +392,7 @@ func (h *FormShareHandler) FieldsPreview(c *gin.Context) {
 	resourceName := c.Param("resource")
 	fields := services.PublicFields(resourceName)
 	if fields == nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "Resource not registered"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Resource not registered")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -439,17 +437,13 @@ type CreateFormShareRequest struct {
 func (h *FormShareHandler) Create(c *gin.Context) {
 	var req CreateFormShareRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
 	token, err := randomToken(24)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "token generation failed"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "token generation failed")
 		return
 	}
 
@@ -473,9 +467,7 @@ func (h *FormShareHandler) Create(c *gin.Context) {
 	if req.Password != "" {
 		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": gin.H{"code": "INTERNAL_ERROR", "message": "password hash failed"},
-			})
+			respond.Fail(c, respond.CodeInternalError, "password hash failed")
 			return
 		}
 		share.PasswordHash = string(hash)
@@ -506,17 +498,13 @@ func (h *FormShareHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 	var share models.FormShare
 	if err := h.DB.WithContext(c.Request.Context()).First(&share, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "Share not found"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Share not found")
 		return
 	}
 
 	var req UpdateFormShareRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 	if req.Label != nil {
@@ -531,9 +519,7 @@ func (h *FormShareHandler) Update(c *gin.Context) {
 		} else if *req.Password != "" {
 			hash, err := bcrypt.GenerateFromPassword([]byte(*req.Password), bcrypt.DefaultCost)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": gin.H{"code": "INTERNAL_ERROR", "message": "password hash failed"},
-				})
+				respond.Fail(c, respond.CodeInternalError, "password hash failed")
 				return
 			}
 			share.PasswordHash = string(hash)
@@ -583,9 +569,7 @@ func (h *FormShareHandler) PublicGet(c *gin.Context) {
 	token := c.Param("token")
 	var share models.FormShare
 	if err := h.DB.WithContext(c.Request.Context()).First(&share, "token = ? AND enabled = ?", token, true).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "Link not found or disabled"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Link not found or disabled")
 		return
 	}
 	// v3.31.50 — filter hidden fields out of the schema before
@@ -629,25 +613,19 @@ func (h *FormShareHandler) PublicSubmit(c *gin.Context) {
 	token := c.Param("token")
 	var share models.FormShare
 	if err := h.DB.WithContext(c.Request.Context()).First(&share, "token = ? AND enabled = ?", token, true).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "Link not found or disabled"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Link not found or disabled")
 		return
 	}
 
 	var body PublicFormSubmitRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
 	if share.PasswordHash != "" {
 		if body.Password == "" || bcrypt.CompareHashAndPassword([]byte(share.PasswordHash), []byte(body.Password)) != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": gin.H{"code": "PASSWORD_REQUIRED", "message": "Password incorrect or missing"},
-			})
+			respond.Fail(c, respond.CodePasswordRequired, "Password incorrect or missing")
 			return
 		}
 	}

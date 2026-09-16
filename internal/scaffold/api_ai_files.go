@@ -267,6 +267,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"{{MODULE}}/internal/ai"
+	"{{MODULE}}/internal/respond"
 )
 
 // aiFailure turns an error from the ai package into something the caller can
@@ -288,39 +289,20 @@ func aiFailure(c *gin.Context, op string, err error) {
 	msg := err.Error()
 	switch {
 	case strings.Contains(msg, "(401)"):
-		c.JSON(http.StatusBadGateway, gin.H{"error": gin.H{
-			"code": "AI_UNAUTHORIZED",
-			"message": "The AI gateway rejected the API key. Check AI_GATEWAY_API_KEY " +
-				"in your .env, and that it is a gateway key rather than a provider key.",
-		}})
+		respond.Fail(c, respond.CodeAIUnauthorized, "The AI gateway rejected the API key. Check AI_GATEWAY_API_KEY " + "in your .env, and that it is a gateway key rather than a provider key.")
 	case strings.Contains(msg, "(403)"):
 		// 403 from the gateway is usually entitlement rather than identity:
 		// the key is real and the plan does not cover the model. The default
 		// AI_GATEWAY_MODEL is a large one, so this is what a free-tier key
 		// meets first, and "rejected the key" sends people to look in the
 		// wrong place.
-		c.JSON(http.StatusBadGateway, gin.H{"error": gin.H{
-			"code": "AI_FORBIDDEN",
-			"message": "The AI gateway accepted the key but refused the request. This is " +
-				"usually the plan not covering AI_GATEWAY_MODEL. The server log has " +
-				"the gateway's own words.",
-		}})
+		respond.Fail(c, respond.CodeAIForbidden, "The AI gateway accepted the key but refused the request. This is " + "usually the plan not covering AI_GATEWAY_MODEL. The server log has " + "the gateway's own words.")
 	case strings.Contains(msg, "(429)"):
-		c.JSON(http.StatusTooManyRequests, gin.H{"error": gin.H{
-			"code":    "AI_RATE_LIMITED",
-			"message": "The AI gateway is rate limiting this key. Try again shortly.",
-		}})
+		respond.Fail(c, respond.CodeAIRateLimited, "The AI gateway is rate limiting this key. Try again shortly.")
 	case strings.Contains(msg, "(404)"):
-		c.JSON(http.StatusBadGateway, gin.H{"error": gin.H{
-			"code": "AI_MODEL_NOT_FOUND",
-			"message": "The AI gateway does not know that model. Check AI_GATEWAY_MODEL " +
-				"in your .env.",
-		}})
+		respond.Fail(c, respond.CodeAIModelNotFound, "The AI gateway does not know that model. Check AI_GATEWAY_MODEL " + "in your .env.")
 	default:
-		c.JSON(http.StatusBadGateway, gin.H{"error": gin.H{
-			"code":    "AI_ERROR",
-			"message": "The AI gateway did not answer. The server log has the detail.",
-		}})
+		respond.Fail(c, respond.CodeAIError, "The AI gateway did not answer. The server log has the detail.")
 	}
 }
 
@@ -344,23 +326,13 @@ type ChatRequest struct {
 // Complete handles a single prompt completion.
 func (h *AIHandler) Complete(c *gin.Context) {
 	if h.AI == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": gin.H{
-				"code":    "AI_UNAVAILABLE",
-				"message": "AI service is not configured",
-			},
-		})
+		respond.Fail(c, respond.CodeAIUnavailable, "AI service is not configured")
 		return
 	}
 
 	var req CompleteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -382,23 +354,13 @@ func (h *AIHandler) Complete(c *gin.Context) {
 // Chat handles a multi-turn conversation.
 func (h *AIHandler) Chat(c *gin.Context) {
 	if h.AI == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": gin.H{
-				"code":    "AI_UNAVAILABLE",
-				"message": "AI service is not configured",
-			},
-		})
+		respond.Fail(c, respond.CodeAIUnavailable, "AI service is not configured")
 		return
 	}
 
 	var req ChatRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -420,23 +382,13 @@ func (h *AIHandler) Chat(c *gin.Context) {
 // Stream handles a streaming completion via SSE.
 func (h *AIHandler) Stream(c *gin.Context) {
 	if h.AI == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": gin.H{
-				"code":    "AI_UNAVAILABLE",
-				"message": "AI service is not configured",
-			},
-		})
+		respond.Fail(c, respond.CodeAIUnavailable, "AI service is not configured")
 		return
 	}
 
 	var req ChatRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 

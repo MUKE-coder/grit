@@ -356,6 +356,7 @@ import (
 	// For its init functions: every email grit generate mail writes registers
 	// itself for this preview.
 	_ "{{MODULE}}/internal/mail/templates"
+	"{{MODULE}}/internal/respond"
 )
 
 // MailPreviewHandler serves the admin's Mail Preview: the registered email
@@ -397,13 +398,13 @@ func (h *MailPreviewHandler) Templates(c *gin.Context) {
 func (h *MailPreviewHandler) Preview(c *gin.Context) {
 	t, ok := mail.LookupTemplate(c.Param("template"))
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code": "NOT_FOUND", "message": "No mail template by that name"}})
+		respond.Fail(c, respond.CodeNotFound, "No mail template by that name")
 		return
 	}
 	msg, err := t.Render()
 	if err != nil {
 		log.Printf("mail preview: rendering %s: %v", t.Name, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": "The template could not be rendered"}})
+		respond.Fail(c, respond.CodeInternalError, "The template could not be rendered")
 		return
 	}
 	// The admin shows this in a sandboxed iframe. Opened on its own, the page

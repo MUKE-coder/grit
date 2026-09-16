@@ -24,6 +24,7 @@ package errorcodes
 import (
 	"net/http"
 	"sort"
+	"strings"
 )
 
 // Category is what kind of problem a code reports, which is what decides how a
@@ -539,4 +540,29 @@ func StatusOf(code string) int {
 		return entry.Status
 	}
 	return 0
+}
+
+// GoConstName turns VALIDATION_ERROR into CodeValidationError, which is what
+// internal/respond/codes.go calls it in every generated project.
+//
+// It lives here rather than in the generator because two things need it: the
+// generator that writes the constants, and the test that reads a handler saying
+// respond.Fail(c, respond.CodeValidationError, ...) and has to work out which
+// code that is.
+func GoConstName(code string) string {
+	var out strings.Builder
+	out.WriteString("Code")
+	for _, word := range strings.Split(strings.ToLower(code), "_") {
+		if word == "" {
+			continue
+		}
+		// Initialisms read better kept whole: AI, CSV, SMS, CSRF, TOTP, DB, PDF.
+		switch word {
+		case "ai", "csv", "sms", "csrf", "totp", "db", "pdf", "api", "url", "id":
+			out.WriteString(strings.ToUpper(word))
+		default:
+			out.WriteString(strings.ToUpper(word[:1]) + word[1:])
+		}
+	}
+	return out.String()
 }
