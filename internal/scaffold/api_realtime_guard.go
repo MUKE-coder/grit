@@ -409,7 +409,9 @@ const realtimeTokenNew = `	tokenStr := c.Query("token")
 			// the browser send, so it counts only from an allowed origin.
 			if !realtime.CheckOrigin(c.Request) {
 				log.Printf("[ws] refused a cookie handshake from origin %q", c.GetHeader("Origin"))
-				c.JSON(http.StatusForbidden, gin.H{"error": gin.H{"code": "FORBIDDEN", "message": "this origin may not open the realtime socket with a cookie"}})
+				c.JSON(http.StatusForbidden, gin.H{
+					"error": gin.H{"code": "FORBIDDEN", "message": "this origin may not open the realtime socket with a cookie"},
+				})
 				return
 			}
 			tokenStr = cookie

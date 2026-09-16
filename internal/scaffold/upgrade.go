@@ -182,6 +182,18 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeRespondFiles(root, opts); err != nil {
 			return fmt.Errorf("updating respond files: %w", err)
 		}
+		// Mail leaves a handler through internal/handlers/mail_dispatch.go now
+		// rather than a bare goroutine. A new file, and the repaired auth
+		// handlers below do not compile without it.
+		if err := writeMailDispatchFiles(root, opts); err != nil {
+			return fmt.Errorf("updating mail dispatch files: %w", err)
+		}
+		// RequestMeta: the three facts a service wanted from *gin.Context, on
+		// the request's context instead. Two new files, and the ticket service
+		// and session helpers below call into them.
+		if err := writeRequestMetaFiles(root, opts); err != nil {
+			return fmt.Errorf("updating request meta files: %w", err)
+		}
 		// The generator writes calls into appendonly for --append-only, and a
 		// model registering with a guard the project never installs protects
 		// nothing. So the package, and the two calls that install it.
@@ -497,6 +509,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairRealtimeWhispers(root, opts); err != nil {
 			fmt.Printf("  ⚠ adding realtime client events and stats: %v\n", err)
 		}
+		// Tickets get a service instead of 350 lines of queries in a handler,
+		// and the auth emails go on the job queue instead of into goroutines.
+		if err := repairThinServices(root, opts); err != nil {
+			fmt.Printf("  ⚠ moving the ticket rules into a service: %v\n", err)
+		}
 		// The admin's React Query client is created per mount, and the blog
 		// editor loads Tiptap on demand.
 		if err := repairAdminBundles(root, opts); err != nil {
@@ -698,6 +715,17 @@ func Upgrade(uOpts UpgradeOptions) error {
 			return fmt.Errorf("updating admin files: %w", err)
 		}
 		updated += n
+	}
+
+	// The stored theme is applied before the first paint instead of in an
+	// effect, and the second theme system the navbar used is removed.
+	if err := repairThemeFlash(root, opts); err != nil {
+		fmt.Printf("  ⚠ applying the admin theme before first paint: %v\n", err)
+	}
+
+	// The public share page reads its share on the server.
+	if err := repairPublicFormPage(root, opts); err != nil {
+		fmt.Printf("  ⚠ moving the public form's fetch to the server: %v\n", err)
 	}
 
 	// Registry entries an earlier upgrade dropped from a panel inside the web app

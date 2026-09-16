@@ -25,18 +25,23 @@ const userListCounts = `
 	// same search as the total.
 	counts, err := paginate.Counts(c, query)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to count users",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to count users")
 		return
 	}
 `
 
 // blogListAnchor is the blog admin list's fetch and its error response.
 const blogListAnchor = `	blogs, total, pages, err := h.Service.List(page, pageSize, search, sortBy, sortOrder)
+	if err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to fetch blogs")
+		return
+	}
+`
+
+// blogListAnchorLegacy is the same fetch in a project written before the error
+// envelopes moved to respond.Fail. Kept so a project that skipped several
+// releases still gets the counts rather than a warning.
+const blogListAnchorLegacy = `	blogs, total, pages, err := h.Service.List(page, pageSize, search, sortBy, sortOrder)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
@@ -57,12 +62,7 @@ const blogListCounts = `
 	}
 	counts, err := paginate.Counts(c, countQuery)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to count blogs",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to count blogs")
 		return
 	}
 `
@@ -126,7 +126,11 @@ func repairBlogListCountsSource(src, module string) (string, []string, []string)
 	if !strings.Contains(src, "func (h *BlogHandler) List(") {
 		return src, nil, nil
 	}
-	return insertListCounts(src, module, "blog_handler.go", blogListAnchor, blogListCounts,
+	anchor := blogListAnchor
+	if !strings.Contains(src, anchor) && strings.Contains(src, blogListAnchorLegacy) {
+		anchor = blogListAnchorLegacy
+	}
+	return insertListCounts(src, module, "blog_handler.go", anchor, blogListCounts,
 		"in the admin List, call paginate.Counts over the blog query and return the result as meta.counts, or the blog page's This Week, This Month and Updated Recently cards show a dash")
 }
 
@@ -150,6 +154,11 @@ func insertListCounts(src, module, file, anchor, block, what string) (string, []
 	var ok bool
 	if out, ok = addImportGroup(out, module+"/internal/paginate"); !ok {
 		return src, nil, []string{"could not add the paginate import to " + file}
+	}
+	// The block answers a failed count with respond.Fail, so a handler written
+	// before the envelopes moved there needs the import as well.
+	if out, ok = addImportGroup(out, module+"/internal/respond"); !ok {
+		return src, nil, []string{"could not add the respond import to " + file}
 	}
 	return out, []string{file + " returns the counts the admin's stat cards ask for on the list request"}, nil
 }

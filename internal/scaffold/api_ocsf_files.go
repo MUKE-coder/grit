@@ -192,7 +192,6 @@ func apiOCSFHandlerGo() string {
 import (
 	"bufio"
 	"encoding/json"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -201,6 +200,7 @@ import (
 
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
+	"{{MODULE}}/internal/respond"
 )
 
 // OCSFHandler streams the semantic activity log as OCSF events for a SIEM to
@@ -253,9 +253,7 @@ func (h *OCSFHandler) Export(c *gin.Context) {
 	if v := c.Query("since"); v != "" {
 		t, err := time.Parse(time.RFC3339, v)
 		if err != nil {
-			c.JSON(http.StatusUnprocessableEntity, gin.H{
-				"error": gin.H{"code": "VALIDATION_ERROR", "message": "since must be RFC3339, e.g. 2026-07-01T00:00:00Z"},
-			})
+			respond.Fail(c, respond.CodeValidationError, "since must be RFC3339, e.g. 2026-07-01T00:00:00Z")
 			return
 		}
 		since = t
@@ -274,9 +272,7 @@ func (h *OCSFHandler) Export(c *gin.Context) {
 
 	var rows []models.UserActivity
 	if err := q.Find(&rows).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "failed to read audit log"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "failed to read audit log")
 		return
 	}
 

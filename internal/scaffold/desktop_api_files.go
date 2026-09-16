@@ -293,17 +293,13 @@ var allowedMIME = map[string]bool{
 func (s *Server) CreateUpload(c *gin.Context) {
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "INVALID_FILE", "message": "No file provided"},
-		})
+		respond.Fail(c, respond.CodeInvalidFile, "No file provided")
 		return
 	}
 	defer file.Close()
 
 	if header.Size > maxUploadSize {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "FILE_TOO_LARGE", "message": "File exceeds the 50MB limit"},
-		})
+		respond.Fail(c, respond.CodeFileTooLarge, "File exceeds the 50MB limit")
 		return
 	}
 
@@ -313,24 +309,18 @@ func (s *Server) CreateUpload(c *gin.Context) {
 	sniff := make([]byte, 512)
 	n, _ := io.ReadFull(file, sniff)
 	if _, serr := file.Seek(0, io.SeekStart); serr != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "UPLOAD_FAILED", "message": "Could not read the uploaded file"},
-		})
+		respond.Fail(c, respond.CodeUploadFailed, "Could not read the uploaded file")
 		return
 	}
 	mime := strings.SplitN(http.DetectContentType(sniff[:n]), ";", 2)[0]
 	if !allowedMIME[mime] {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "Only JPEG, PNG, GIF and WebP images are allowed"},
-		})
+		respond.Fail(c, respond.CodeInvalidFileType, "Only JPEG, PNG, GIF and WebP images are allowed")
 		return
 	}
 
 	ref, err := s.Storage.Save(file, header)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "UPLOAD_FAILED", "message": "Failed to store the file"},
-		})
+		respond.Fail(c, respond.CodeUploadFailed, "Failed to store the file")
 		return
 	}
 

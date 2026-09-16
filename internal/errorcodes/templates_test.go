@@ -21,7 +21,21 @@ var (
 	codeAssigned   = regexp.MustCompile(`\bcode\s*=\s*"([A-Z][A-Z0-9_]+)"`)
 	codeInFail     = regexp.MustCompile(`\bfail\(c,\s*[^,]+,\s*"([A-Z][A-Z0-9_]+)"`)
 	statusNamed    = regexp.MustCompile(`http\.Status([A-Za-z]+)`)
+	// The fourth shape, and the one the templates use now: the status is not
+	// written next to the code at all, it is looked up in the catalogue.
+	codeInRespondFail = regexp.MustCompile(`\brespond\.Fail\(c,\s*respond\.(Code[A-Za-z0-9]+)`)
 )
+
+// constToCode inverts GoConstName, so CodeValidationError reads as
+// VALIDATION_ERROR. Built from the catalogue, so a constant that names no code
+// is not in it and is reported.
+var constToCode = func() map[string]string {
+	out := make(map[string]string, len(catalog))
+	for _, entry := range catalog {
+		out[GoConstName(entry.Code)] = entry.Code
+	}
+	return out
+}()
 
 // statusValues are the names gin handlers use, mapped to their numbers. Only the
 // ones the templates actually use: an unrecognised name is reported rather than
@@ -75,6 +89,19 @@ func scanTemplates(t *testing.T) []emission {
 					for _, match := range pattern.FindAllStringSubmatch(line, -1) {
 						found = append(found, match[1])
 					}
+				}
+				// respond.Fail names a constant rather than a code. A constant
+				// the catalogue does not produce is reported here, not silently
+				// skipped: it would not compile in a generated project either.
+				for _, match := range codeInRespondFail.FindAllStringSubmatch(line, -1) {
+					code, ok := constToCode[match[1]]
+					if !ok {
+						t.Errorf("%s:%d: respond.%s is not a constant the catalogue generates", path, i+1, match[1])
+						continue
+					}
+					// The status comes from the catalogue by construction, so
+					// this one is recorded without a status of its own.
+					out = append(out, emission{code: code, status: 0, file: path, line: i + 1})
 				}
 				if len(found) == 0 {
 					continue

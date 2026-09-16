@@ -26,6 +26,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
+	"{{MODULE}}/internal/respond"
 )
 
 // DefaultMaxFileSize is Store's size limit when StoreOptions.MaxSize is zero.
@@ -263,9 +265,7 @@ func ServeFileAs(c *gin.Context, disk Disk, key string, disposition Disposition,
 	start, length, partial, ok := parseRange(r.Header.Get("Range"), obj.Size)
 	if !ok {
 		header.Set("Content-Range", fmt.Sprintf("bytes */%d", obj.Size))
-		c.JSON(http.StatusRequestedRangeNotSatisfiable, gin.H{
-			"error": gin.H{"code": "RANGE_NOT_SATISFIABLE", "message": "The requested range is outside the file"},
-		})
+		respond.Fail(c, respond.CodeRangeNotSatisfiable, "The requested range is outside the file")
 		return
 	}
 	// If-Range names the version a client resumed from. Any other version gets
@@ -402,15 +402,11 @@ func openRange(ctx context.Context, disk Disk, key string, start, length int64, 
 
 func serveFileError(c *gin.Context, err error) {
 	if errors.Is(err, ErrNotFound) || errors.Is(err, ErrInvalidKey) {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "File not found"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "File not found")
 		return
 	}
 	_ = c.Error(err)
-	c.JSON(http.StatusInternalServerError, gin.H{
-		"error": gin.H{"code": "INTERNAL_ERROR", "message": "Could not read the file"},
-	})
+	respond.Fail(c, respond.CodeInternalError, "Could not read the file")
 }
 `
 }

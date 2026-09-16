@@ -223,6 +223,8 @@ export const metadata: Metadata = {
   description: "Admin panel — Built with Grit",
 };
 
+` + adminThemeScriptSource() + `
+
 // The admin panel, as a route group inside this app.
 //
 // Everything under /admin renders inside these providers: React Query for the
@@ -237,7 +239,17 @@ export default function AdminSectionLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <Providers>{children}</Providers>;
+  return (
+    <>
+      {/*
+        The stored theme, applied before any admin markup paints. The web app's
+        root layout owns <head>, so the script rides at the top of this layout
+        instead; it still runs ahead of everything under /admin.
+      */}
+      <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      <Providers>{children}</Providers>
+    </>
+  );
 }
 `
 }

@@ -728,6 +728,7 @@ import (
 	"{{MODULE}}/internal/jobs"
 	"{{MODULE}}/internal/media"
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/storage"
 )
 
@@ -837,12 +838,7 @@ type UploadHandler struct {
 // store it verbatim in form state, no shape massaging needed.
 func (h *UploadHandler) Create(c *gin.Context) {
 	if h.Storage == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": gin.H{
-				"code":    "STORAGE_UNAVAILABLE",
-				"message": "File storage is not configured",
-			},
-		})
+		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured")
 		return
 	}
 
@@ -880,12 +876,7 @@ func (h *UploadHandler) Create(c *gin.Context) {
 		}
 		log.Printf("[uploads] no file part: content-type=%q file-fields=%v content-length=%d",
 			c.ContentType(), fields, c.Request.ContentLength)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_FILE",
-				"message": "No file provided",
-			},
-		})
+		respond.Fail(c, respond.CodeInvalidFile, "No file provided")
 		return
 	}
 	defer file.Close()
@@ -914,12 +905,7 @@ func (h *UploadHandler) Create(c *gin.Context) {
 	}
 
 	if header.Size > maxSize {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    "FILE_TOO_LARGE",
-				"message": fmt.Sprintf("File size exceeds maximum of %d MB", maxSize/(1<<20)),
-			},
-		})
+		respond.Fail(c, respond.CodeFileTooLarge, fmt.Sprintf("File size exceeds maximum of %d MB", maxSize/(1<<20)))
 		return
 	}
 
@@ -929,19 +915,13 @@ func (h *UploadHandler) Create(c *gin.Context) {
 	mimeType, err := storage.DetectContentType(file, header.Header.Get("Content-Type"))
 	switch {
 	case errors.Is(err, storage.ErrContentMismatch):
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "File content does not match its declared type"},
-		})
+		respond.Fail(c, respond.CodeInvalidFileType, "File content does not match its declared type")
 		return
 	case errors.Is(err, storage.ErrFileTypeNotAllowed):
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "File type not allowed"},
-		})
+		respond.Fail(c, respond.CodeInvalidFileType, "File type not allowed")
 		return
 	case err != nil:
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "UPLOAD_FAILED", "message": "Could not read the uploaded file"},
-		})
+		respond.Fail(c, respond.CodeUploadFailed, "Could not read the uploaded file")
 		return
 	}
 
@@ -954,12 +934,7 @@ func (h *UploadHandler) Create(c *gin.Context) {
 		return AllowedMimeTypes[contentType]
 	}
 	if !allowed(mimeType) {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_FILE_TYPE",
-				"message": "File type not allowed",
-			},
-		})
+		respond.Fail(c, respond.CodeInvalidFileType, "File type not allowed")
 		return
 	}
 
@@ -997,12 +972,7 @@ func (h *UploadHandler) Create(c *gin.Context) {
 			// A file nobody can decode is not necessarily a lost cause: the
 			// profile decides whether to refuse it or keep it as it came.
 			if profile.OnError == media.Reject {
-				c.JSON(http.StatusBadRequest, gin.H{
-					"error": gin.H{
-						"code":    "INVALID_FILE_TYPE",
-						"message": "That image could not be processed",
-					},
-				})
+				respond.Fail(c, respond.CodeInvalidFileType, "That image could not be processed")
 				return
 			}
 			log.Printf("media: keeping %s unoptimised: %v", header.Filename, terr)
@@ -1031,9 +1001,7 @@ func (h *UploadHandler) Create(c *gin.Context) {
 			storedMIME = res.Primary.MIME
 			storedSize = int64(len(res.Primary.Bytes))
 			if err := disk.Put(c.Request.Context(), key, bytes.NewReader(res.Primary.Bytes), storage.PutOptions{ContentType: storedMIME}); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": gin.H{"code": "UPLOAD_FAILED", "message": "Failed to upload file"},
-				})
+				respond.Fail(c, respond.CodeUploadFailed, "Failed to upload file")
 				return
 			}
 
@@ -1095,12 +1063,7 @@ func (h *UploadHandler) Create(c *gin.Context) {
 		stored, err := storage.Store(c.Request.Context(), disk, "uploads", header, storage.StoreOptions{MaxSize: maxSize, Allow: allowed})
 		if err != nil {
 			log.Printf("[uploads] storing %s: %v", header.Filename, err)
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": gin.H{
-					"code":    "UPLOAD_FAILED",
-					"message": "Failed to upload file",
-				},
-			})
+			respond.Fail(c, respond.CodeUploadFailed, "Failed to upload file")
 			return
 		}
 		key = stored
@@ -1125,12 +1088,7 @@ func (h *UploadHandler) Create(c *gin.Context) {
 
 	if err := h.DB.WithContext(c.Request.Context()).Create(&upload).Error; err != nil {
 		_ = h.Storage.Delete(c.Request.Context(), key)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to save upload record",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to save upload record")
 		return
 	}
 
@@ -1169,9 +1127,7 @@ func (h *UploadHandler) Stats(c *gin.Context) {
 
 	var total int64
 	if err := h.uploadScope(c, "view").Count(&total).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to compute stats"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to compute stats")
 		return
 	}
 
@@ -1225,24 +1181,14 @@ func (h *UploadHandler) List(c *gin.Context) {
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to count uploads",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to count uploads")
 		return
 	}
 
 	var uploads []models.Upload
 	offset := (page - 1) * pageSize
 	if err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&uploads).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to fetch uploads",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to fetch uploads")
 		return
 	}
 
@@ -1265,12 +1211,7 @@ func (h *UploadHandler) GetByID(c *gin.Context) {
 
 	var upload models.Upload
 	if err := h.uploadScope(c, "view").Where("id = ?", id).First(&upload).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{
-				"code":    "NOT_FOUND",
-				"message": "Upload not found",
-			},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Upload not found")
 		return
 	}
 
@@ -1288,16 +1229,12 @@ func (h *UploadHandler) GetByID(c *gin.Context) {
 // so a video seeks and a large download resumes.
 func (h *UploadHandler) Download(c *gin.Context) {
 	if h.Storage == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": gin.H{"code": "STORAGE_UNAVAILABLE", "message": "File storage is not configured"},
-		})
+		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured")
 		return
 	}
 	var upload models.Upload
 	if err := h.uploadScope(c, "view").Where("id = ?", c.Param("id")).First(&upload).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "Upload not found"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Upload not found")
 		return
 	}
 	disposition := storage.Attachment
@@ -1313,12 +1250,7 @@ func (h *UploadHandler) Delete(c *gin.Context) {
 
 	var upload models.Upload
 	if err := h.uploadScope(c, "delete").Where("id = ?", id).First(&upload).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{
-				"code":    "NOT_FOUND",
-				"message": "Upload not found",
-			},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Upload not found")
 		return
 	}
 
@@ -1333,12 +1265,7 @@ func (h *UploadHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.DB.WithContext(c.Request.Context()).Delete(&upload).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to delete upload",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to delete upload")
 		return
 	}
 
@@ -1359,17 +1286,13 @@ type PresignRequest struct {
 
 func (h *UploadHandler) Presign(c *gin.Context) {
 	if h.Storage == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": gin.H{"code": "STORAGE_UNAVAILABLE", "message": "File storage is not configured"},
-		})
+		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured")
 		return
 	}
 
 	var req PresignRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -1380,16 +1303,12 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 		allowed = files.AllowsMIME(req.Accepts, req.ContentType)
 	}
 	if !allowed {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "File type not allowed"},
-		})
+		respond.Fail(c, respond.CodeInvalidFileType, "File type not allowed")
 		return
 	}
 
 	if req.FileSize > MaxUploadSize {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "FILE_TOO_LARGE", "message": fmt.Sprintf("File size exceeds maximum of %d MB", MaxUploadSize/(1<<20))},
-		})
+		respond.Fail(c, respond.CodeFileTooLarge, fmt.Sprintf("File size exceeds maximum of %d MB", MaxUploadSize/(1<<20)))
 		return
 	}
 
@@ -1400,9 +1319,7 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 	// that is not theirs, and then deleting the object through that row.
 	userID := c.GetString("user_id")
 	if userID == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{"code": "UNAUTHORIZED", "message": "Sign in to upload"},
-		})
+		respond.Fail(c, respond.CodeUnauthorized, "Sign in to upload")
 		return
 	}
 	key := fmt.Sprintf("uploads/%s/%s/%s", userID, time.Now().Format("2006/01"), filename)
@@ -1418,9 +1335,7 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "PRESIGN_FAILED", "message": "Failed to generate upload URL"},
-		})
+		respond.Fail(c, respond.CodePresignFailed, "Failed to generate upload URL")
 		return
 	}
 
@@ -1466,9 +1381,7 @@ type CompleteUploadRequest struct {
 func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 	var req CompleteUploadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -1480,9 +1393,7 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 		allowed = files.AllowsMIME(req.Accepts, req.ContentType)
 	}
 	if !allowed {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "File type not allowed"},
-		})
+		respond.Fail(c, respond.CodeInvalidFileType, "File type not allowed")
 		return
 	}
 
@@ -1494,24 +1405,18 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 	// key exists.
 	userID := c.GetString("user_id")
 	if userID == "" || !strings.HasPrefix(req.Key, "uploads/"+userID+"/") || strings.Contains(req.Key, "..") {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{"code": "UPLOAD_KEY_FORBIDDEN", "message": "That upload was not issued to you"},
-		})
+		respond.Fail(c, respond.CodeUploadKeyForbidden, "That upload was not issued to you")
 		return
 	}
 	// Once per key. A second row for the same object would let one delete remove
 	// a file another row still points at.
 	var recorded int64
 	if err := h.DB.WithContext(c.Request.Context()).Model(&models.Upload{}).Where("path = ?", req.Key).Count(&recorded).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to check the upload"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to check the upload")
 		return
 	}
 	if recorded > 0 {
-		c.JSON(http.StatusConflict, gin.H{
-			"error": gin.H{"code": "UPLOAD_ALREADY_RECORDED", "message": "That upload has already been recorded"},
-		})
+		respond.Fail(c, respond.CodeUploadAlreadyRecorded, "That upload has already been recorded")
 		return
 	}
 
@@ -1524,17 +1429,13 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 	// Content-Length already makes a mismatch hard; this makes it pointless.
 	storedSize, storedType, err := h.Storage.Stat(c.Request.Context(), req.Key)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "UPLOAD_NOT_FOUND", "message": "No file was uploaded to that key"},
-		})
+		respond.Fail(c, respond.CodeUploadNotFound, "No file was uploaded to that key")
 		return
 	}
 	if storedSize > MaxUploadSize {
 		// It got past the presign somehow. Do not keep it.
 		_ = h.Storage.Delete(c.Request.Context(), req.Key)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "FILE_TOO_LARGE", "message": fmt.Sprintf("File size exceeds maximum of %d MB", MaxUploadSize/(1<<20))},
-		})
+		respond.Fail(c, respond.CodeFileTooLarge, fmt.Sprintf("File size exceeds maximum of %d MB", MaxUploadSize/(1<<20)))
 		return
 	}
 	// The stored type is what S3 recorded from the signed presign, so prefer it
@@ -1554,9 +1455,7 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 	}
 
 	if err := h.DB.WithContext(c.Request.Context()).Create(&upload).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to save upload record"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to save upload record")
 		return
 	}
 

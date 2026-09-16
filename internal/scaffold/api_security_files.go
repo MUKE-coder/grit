@@ -312,12 +312,12 @@ package authz
 
 import (
 	"errors"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
 )
 
 // Ownable is implemented by domain models whose ownership is identified
@@ -345,9 +345,7 @@ var (
 func MustOwn(c *gin.Context, db *gorm.DB, dest Ownable, id string) error {
 	userID, ok := c.Get("user_id")
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{"code": "UNAUTHORIZED", "message": "Authentication required"},
-		})
+		respond.Fail(c, respond.CodeUnauthorized, "Authentication required")
 		return ErrForbidden
 	}
 
@@ -450,9 +448,7 @@ func RequireRoles(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, _ := c.Get("user_role")
 		if _, ok := allowed[asString(role)]; !ok {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": gin.H{"code": "FORBIDDEN", "message": "Insufficient role"},
-			})
+			respond.Fail(c, respond.CodeForbidden, "Insufficient role")
 			return
 		}
 		c.Next()
@@ -470,9 +466,7 @@ func asString(v interface{}) string {
 }
 
 func writeNotFound(c *gin.Context) {
-	c.JSON(http.StatusNotFound, gin.H{
-		"error": gin.H{"code": "NOT_FOUND", "message": "Resource not found"},
-	})
+	respond.Fail(c, respond.CodeNotFound, "Resource not found")
 }
 `
 }
@@ -542,6 +536,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"{{MODULE}}/internal/respond"
 )
 
 // CSRF implements double-submit-cookie protection (OWASP Top 10:2025
@@ -582,12 +577,7 @@ func CSRF() gin.HandlerFunc {
 		headerToken := c.GetHeader(headerName)
 		if cookieToken == "" || headerToken == "" ||
 			subtle.ConstantTimeCompare([]byte(cookieToken), []byte(headerToken)) != 1 {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": gin.H{
-					"code":    "CSRF_INVALID",
-					"message": "CSRF token missing or invalid",
-				},
-			})
+			respond.Fail(c, respond.CodeCSRFInvalid, "CSRF token missing or invalid")
 			return
 		}
 		c.Next()
@@ -704,12 +694,7 @@ func AutoCSRF() gin.HandlerFunc {
 		headerToken := c.GetHeader(csrfHeader)
 		if cookieToken == "" || headerToken == "" ||
 			subtle.ConstantTimeCompare([]byte(cookieToken), []byte(headerToken)) != 1 {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": gin.H{
-					"code":    "CSRF_INVALID",
-					"message": "CSRF token missing or invalid",
-				},
-			})
+			respond.Fail(c, respond.CodeCSRFInvalid, "CSRF token missing or invalid")
 			return
 		}
 		c.Next()

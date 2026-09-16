@@ -45,24 +45,35 @@ function applyMode(mode: Mode) {
 /**
  * Two-mode light/dark toggle. Persists to localStorage("grit-theme-mode").
  *
- * The button stays mounted in SSR (initial render returns the light icon)
- * to avoid a layout jump when the client picks up the stored preference.
- * The actual mode is settled in useEffect after hydration; before that
- * point, the button is decorative.
+ * The theme itself is NOT this component's job any more. A blocking script in
+ * the layout applies it before the first paint, because this button lives in
+ * the dashboard chrome, which mounts only after /auth/me answers: a dark
+ * dashboard used to paint light first on every single load. All the button does
+ * now is read what the script decided and flip it.
+ *
+ * The button stays mounted in SSR (initial render returns the light icon) to
+ * avoid a layout jump; the icon settles after hydration.
  */
 export function DarkModeToggle({ className = "" }: { className?: string }) {
   const [mode, setMode] = useState<Mode>("light");
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const stored = (typeof window !== "undefined"
-      ? (window.localStorage.getItem("grit-theme-mode") as Mode | null)
-      : null);
-    // Prefer stored choice; fall back to OS-level preference; default light.
-    const osDark = typeof window !== "undefined"
-      && window.matchMedia
+    // The layout script already wrote data-theme-mode. Read it rather than
+    // deciding again: two places deciding is how they disagree.
+    const applied = document.documentElement.getAttribute("data-theme-mode");
+    if (applied === "dark" || applied === "light") {
+      setMode(applied);
+      setHydrated(true);
+      return;
+    }
+    // Fallback for a host document that carries no theme script (a panel
+    // mounted inside an app Grit did not write the shell for). Same decision
+    // the script makes, just late enough to flash.
+    const stored = window.localStorage.getItem("grit-theme-mode") as Mode | null;
+    const osDark = window.matchMedia
       && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initial: Mode = stored || (osDark ? "dark" : "light");
+    const initial: Mode = stored === "dark" || stored === "light" ? stored : (osDark ? "dark" : "light");
     setMode(initial);
     applyMode(initial);
     setHydrated(true);

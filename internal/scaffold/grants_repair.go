@@ -151,8 +151,8 @@ func repairRoleTestCallerSource(src string) (string, []string, []string) {
 }
 
 const (
-	userRoleCheck  = "\tif reason := authz.RoleBeyondCaller(c, h.DB, req.Role); reason != \"\" {\n\t\tc.JSON(http.StatusForbidden, gin.H{\n\t\t\t\"error\": gin.H{\"code\": \"FORBIDDEN\", \"message\": \"You cannot give that role: \" + reason},\n\t\t})\n\t\treturn\n\t}\n"
-	userAdminCheck = "\tif !authz.IsAdmin(c) && authz.IsAdminAccount(h.DB, &user) {\n\t\tc.JSON(http.StatusForbidden, gin.H{\n\t\t\t\"error\": gin.H{\"code\": \"FORBIDDEN\", \"message\": \"Only an ADMIN can change an ADMIN account\"},\n\t\t})\n\t\treturn\n\t}\n"
+	userRoleCheck  = "\tif reason := authz.RoleBeyondCaller(c, h.DB, req.Role); reason != \"\" {\n\t\trespond.Fail(c, respond.CodeForbidden, \"You cannot give that role: \"+reason)\n\t\treturn\n\t}\n"
+	userAdminCheck = "\tif !authz.IsAdmin(c) && authz.IsAdminAccount(h.DB, &user) {\n\t\trespond.Fail(c, respond.CodeForbidden, \"Only an ADMIN can change an ADMIN account\")\n\t\treturn\n\t}\n"
 )
 
 func repairUserCeilingSource(src string) (string, []string, []string) {
@@ -172,12 +172,18 @@ func repairUserCeilingSource(src string) (string, []string, []string) {
 	if !strings.Contains(src, createAnchor) {
 		createAnchor = "\tuser := models.User{\n\t\tFirstName: req.FirstName,"
 	}
+	// And the failure it answers with is respond.Fail in handlers written since
+	// the error envelopes moved there, and a hand-built gin.H before it.
+	deleteFail := "\tif err := " + deleteCall + ".Error; err != nil {\n\t\trespond.Fail(c, respond.CodeInternalError, \"Failed to delete user\")"
+	if !strings.Contains(src, deleteFail) {
+		deleteFail = "\tif err := " + deleteCall + ".Error; err != nil {\n\t\tc.JSON(http.StatusInternalServerError, gin.H{\n\t\t\t\"error\": gin.H{\n\t\t\t\t\"code\":    \"INTERNAL_ERROR\",\n\t\t\t\t\"message\": \"Failed to delete user\","
+	}
 	out, ok := applyInsertions(src, []insertion{
 		{anchor: createAnchor, before: true,
 			text: "\t// Only an ADMIN makes an ADMIN, and nobody hands out a role that grants more\n\t// than they hold.\n" + userRoleCheck + "\n"},
 		{anchor: "\tupdates := map[string]interface{}{}\n\tif req.FirstName != \"\" {", before: true,
 			text: "\t// Only an ADMIN changes an ADMIN account or makes one. Before, a users.edit\n\t// holder could PUT {\"role\":\"ADMIN\"} on themselves, or reset an\n\t// administrator's password or email and sign in as them.\n" + userAdminCheck + userRoleCheck + "\n"},
-		{anchor: "\tif err := " + deleteCall + ".Error; err != nil {\n\t\tc.JSON(http.StatusInternalServerError, gin.H{\n\t\t\t\"error\": gin.H{\n\t\t\t\t\"code\":    \"INTERNAL_ERROR\",\n\t\t\t\t\"message\": \"Failed to delete user\",", before: true,
+		{anchor: deleteFail, before: true,
 			text: "\t// Deleting an administrator is an ADMIN's call too.\n" + userAdminCheck + "\n"},
 	})
 	if !ok {

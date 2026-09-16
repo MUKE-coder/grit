@@ -68,7 +68,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.284.0"
+const DefaultVersion = "3.285.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -458,6 +458,12 @@ func Run(opts Options) error {
 	if err := writeJobsFiles(root, opts); err != nil {
 		return fmt.Errorf("writing jobs files: %w", err)
 	}
+	if err := writeMailDispatchFiles(root, opts); err != nil {
+		return fmt.Errorf("writing mail dispatch files: %w", err)
+	}
+	if err := writeRequestMetaFiles(root, opts); err != nil {
+		return fmt.Errorf("writing request meta files: %w", err)
+	}
 	if err := writeCronFiles(root, opts); err != nil {
 		return fmt.Errorf("writing cron files: %w", err)
 	}
@@ -727,6 +733,12 @@ func RunSingle(opts Options) error {
 	}
 	if err := writeJobsFiles(root, opts); err != nil {
 		return fmt.Errorf("writing jobs files: %w", err)
+	}
+	if err := writeMailDispatchFiles(root, opts); err != nil {
+		return fmt.Errorf("writing mail dispatch files: %w", err)
+	}
+	if err := writeRequestMetaFiles(root, opts); err != nil {
+		return fmt.Errorf("writing request meta files: %w", err)
 	}
 	if err := writeCronFiles(root, opts); err != nil {
 		return fmt.Errorf("writing cron files: %w", err)

@@ -777,6 +777,7 @@ import (
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/services"
 )
 
@@ -795,9 +796,7 @@ func NewAccessReviewHandler(db *gorm.DB) *AccessReviewHandler {
 func (h *AccessReviewHandler) List(c *gin.Context) {
 	var reviews []models.AccessReview
 	if err := h.DB.WithContext(c.Request.Context()).Order("created_at desc").Find(&reviews).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "failed to load reviews"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "failed to load reviews")
 		return
 	}
 
@@ -819,9 +818,7 @@ func (h *AccessReviewHandler) Get(c *gin.Context) {
 	if err := h.DB.WithContext(c.Request.Context()).Preload("Items", func(db *gorm.DB) *gorm.DB {
 		return db.Order("user_email asc, role_name asc")
 	}).First(&review, "id = ?", c.Param("id")).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "access review not found"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "access review not found")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": review})
@@ -836,16 +833,12 @@ type OpenReviewRequest struct {
 func (h *AccessReviewHandler) Open(c *gin.Context) {
 	var req OpenReviewRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 	review, err := services.OpenAccessReview(h.DB, req.Name, req.Note, c.GetString("user_id"), c.GetString("user_email"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "failed to open review"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "failed to open review")
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
@@ -863,9 +856,7 @@ type ReviewDecisionRequest struct {
 func (h *AccessReviewHandler) Decide(c *gin.Context) {
 	var req ReviewDecisionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 	item, err := services.DecideAccessReviewItem(

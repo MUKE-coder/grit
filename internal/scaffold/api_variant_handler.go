@@ -45,9 +45,7 @@ func (h *` + pascal + `VariantHandler) ListOptions(c *gin.Context) {
 		return db.Order("position asc, label asc")
 	}).Order("position asc, name asc").Find(&options).Error
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to load options",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Failed to load options")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": options})
@@ -62,9 +60,7 @@ func (h *` + pascal + `VariantHandler) CreateOption(c *gin.Context) {
 		Position     int    ` + "`" + `json:"position"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
-			"code": "VALIDATION_ERROR", "message": err.Error(),
-		}})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 	if req.Kind == "" {
@@ -76,9 +72,7 @@ func (h *` + pascal + `VariantHandler) CreateOption(c *gin.Context) {
 		AffectsPrice: req.AffectsPrice, Position: req.Position,
 	}
 	if err := h.DB.Create(&option).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to create the option",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Failed to create the option")
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": option, "message": "Option created"})
@@ -104,10 +98,7 @@ func (h *` + pascal + `VariantHandler) DeleteOption(c *gin.Context) {
 		Where("option_values.option_id = ?", optionID).
 		Count(&inVariants)
 	if inVariants > 0 {
-		c.JSON(http.StatusConflict, gin.H{"error": gin.H{
-			"code":    "OPTION_IN_USE",
-			"message": "Variants are built on this option. Clear their combinations first.",
-		}})
+		respond.Fail(c, respond.CodeOptionInUse, "Variants are built on this option. Clear their combinations first.")
 		return
 	}
 
@@ -131,9 +122,7 @@ func (h *` + pascal + `VariantHandler) DeleteOption(c *gin.Context) {
 		return tx.Delete(&models.Option{}, "id = ?", optionID).Error
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to delete the option",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Failed to delete the option")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Option deleted"})
@@ -148,9 +137,7 @@ func (h *` + pascal + `VariantHandler) CreateOptionValue(c *gin.Context) {
 		Position   int     ` + "`" + `json:"position"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
-			"code": "VALIDATION_ERROR", "message": err.Error(),
-		}})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -159,9 +146,7 @@ func (h *` + pascal + `VariantHandler) CreateOptionValue(c *gin.Context) {
 		PriceDelta: req.PriceDelta, Position: req.Position,
 	}
 	if err := h.DB.Create(&value).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to add the value",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Failed to add the value")
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": value, "message": "Value added"})
@@ -178,17 +163,12 @@ func (h *` + pascal + `VariantHandler) DeleteOptionValue(c *gin.Context) {
 		Where("option_value_id = ?", c.Param("id")).
 		Count(&used)
 	if used > 0 {
-		c.JSON(http.StatusConflict, gin.H{"error": gin.H{
-			"code":    "VALUE_IN_USE",
-			"message": "That value is part of existing variants. Delete those first.",
-		}})
+		respond.Fail(c, respond.CodeValueInUse, "That value is part of existing variants. Delete those first.")
 		return
 	}
 
 	if err := h.DB.Delete(&models.OptionValue{}, "id = ?", c.Param("id")).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to delete the value",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Failed to delete the value")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Value deleted"})
@@ -201,9 +181,7 @@ func (h *` + pascal + `VariantHandler) SetOptions(c *gin.Context) {
 		OptionIDs []string ` + "`" + `json:"option_ids"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
-			"code": "VALIDATION_ERROR", "message": err.Error(),
-		}})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -216,9 +194,7 @@ func (h *` + pascal + `VariantHandler) SetOptions(c *gin.Context) {
 	err := h.DB.Where("` + snake + `_id = ?", ` + snake + `ID).
 		Order("position asc").Find(&current).Error
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to read the current options",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Failed to read the current options")
 		return
 	}
 	if same` + pascal + `OptionOrder(current, req.OptionIDs) {
@@ -269,9 +245,7 @@ func (h *` + pascal + `VariantHandler) SetOptions(c *gin.Context) {
 		return nil
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to set the options",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Failed to set the options")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -355,9 +329,7 @@ func (h *` + pascal + `VariantHandler) GenerateMatrix(c *gin.Context) {
 	if err != nil {
 		// The caller asked for something that cannot be done rather than the
 		// server failing, and the message says which.
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
-			"code": "CANNOT_GENERATE", "message": err.Error(),
-		}})
+		respond.Fail(c, respond.CodeCannotGenerate, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -379,9 +351,7 @@ func (h *` + pascal + `VariantHandler) Update(c *gin.Context) {
 		ClearPrice bool ` + "`" + `json:"clear_price"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
-			"code": "VALIDATION_ERROR", "message": err.Error(),
-		}})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -410,9 +380,7 @@ func (h *` + pascal + `VariantHandler) Update(c *gin.Context) {
 		Where("id = ?", c.Param("id")).
 		Updates(updates).Error
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "INTERNAL_ERROR", "message": "Failed to update the variant",
-		}})
+		respond.Fail(c, respond.CodeInternalError, "Failed to update the variant")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Variant updated"})

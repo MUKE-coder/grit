@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"{{MODULE}}/internal/mail"
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/services"
 	"strings"
 	"time"
@@ -38,12 +39,7 @@ import (
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	var req ForgotPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -65,22 +61,22 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	// wording with a distinguishable response time is still an oracle.
 	//
 	// c.ClientIP() is read here: the gin context must not be touched once the
-	// handler has returned.
-	go h.deliverPasswordReset(user, c.ClientIP())
+	// handler has returned. detach caps how many of these can be in flight at
+	// once; it used to be one unbounded goroutine per request.
+	clientIP := c.ClientIP()
+	detach(func(ctx context.Context) { h.deliverPasswordReset(ctx, user, clientIP) })
 
 	c.JSON(http.StatusOK, gin.H{"message": genericResponse})
 }
 
-// deliverPasswordReset issues a reset token and sends the link. It runs in its
-// own goroutine, so it owns its context and reports failures only to the log —
-// there is no caller left to tell, and telling the original one would have
-// confirmed the address exists.
-
-// deliverPasswordReset issues a reset token and sends the link. It runs in its
-// own goroutine, so it owns its context and reports failures only to the log —
-// there is no caller left to tell, and telling the original one would have
-// confirmed the address exists.
-func (h *AuthHandler) deliverPasswordReset(user models.User, clientIP string) {
+// deliverPasswordReset issues a reset token and queues the link.
+//
+// It runs off the request path, through detach, so it owns its context and
+// reports failures only to the log: there is no caller left to tell, and
+// telling the original one how long the work took would confirm the address
+// exists. The mail itself goes on the background queue, so a provider that is
+// down for a minute no longer loses the reset link.
+func (h *AuthHandler) deliverPasswordReset(ctx context.Context, user models.User, clientIP string) {
 	token, err := services.GenerateResetToken()
 	if err != nil {
 		log.Printf("password reset: generating token for %s: %v", user.Email, err)
@@ -94,10 +90,8 @@ func (h *AuthHandler) deliverPasswordReset(user models.User, clientIP string) {
 
 	resetURL := strings.TrimSuffix(h.Config.OAuthFrontendURL, "/") + "/reset-password?token=" + url.QueryEscape(token)
 
-	if h.Mailer != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
-		if err := h.Mailer.Send(ctx, mail.SendOptions{
+	if h.Jobs != nil || h.Mailer != nil {
+		if err := dispatchMail(ctx, h.Mailer, h.Jobs, "password-reset:"+user.ID+":"+token, mail.SendOptions{
 			To:       user.Email,
 			Subject:  "Reset your password",
 			Template: "password-reset",
@@ -134,12 +128,7 @@ func (h *AuthHandler) deliverPasswordReset(user models.User, clientIP string) {
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	var req ResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -147,34 +136,19 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	// work means a failure later can't leave a still-valid token behind.
 	userID, err := services.ConsumePasswordResetToken(h.DB, req.Token)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_LINK",
-				"message": "This reset link is invalid or has expired. Request a new one.",
-			},
-		})
+		respond.Fail(c, respond.CodeInvalidLink, "This reset link is invalid or has expired. Request a new one.")
 		return
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to hash password",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to hash password")
 		return
 	}
 
 	if err := h.DB.WithContext(c.Request.Context()).Model(&models.User{}).Where("id = ?", userID).
 		Update("password", string(hashedPassword)).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to update password",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to update password")
 		return
 	}
 
@@ -205,6 +179,7 @@ import (
 	"net/url"
 	"{{MODULE}}/internal/mail"
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/services"
 	"strings"
 	"time"
@@ -222,20 +197,16 @@ func (h *AuthHandler) SendVerificationEmail(c *gin.Context) {
 
 	var user models.User
 	if err := h.DB.WithContext(c.Request.Context()).First(&user, "id = ?", userID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "User not found"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "User not found")
 		return
 	}
 
 	if user.EmailVerifiedAt != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "ALREADY_VERIFIED", "message": "This email is already verified"},
-		})
+		respond.Fail(c, respond.CodeAlreadyVerified, "This email is already verified")
 		return
 	}
 
-	go h.deliverVerificationEmail(user)
+	h.deliverVerificationEmail(c.Request.Context(), user)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Verification email sent. The link is valid for 48 hours.",
@@ -247,33 +218,28 @@ func (h *AuthHandler) SendVerificationEmail(c *gin.Context) {
 func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 	var req VerifyEmailRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
 	if _, err := services.ConsumeEmailVerificationToken(h.DB, req.Token); err != nil {
 		// One message for expired, spent, unknown and address-changed. Telling
 		// them apart tells an attacker which tokens once existed.
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_LINK",
-				"message": "That verification link is invalid or has expired. Request a new one.",
-			},
-		})
+		respond.Fail(c, respond.CodeInvalidLink, "That verification link is invalid or has expired. Request a new one.")
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Email verified"})
 }
 
-// deliverVerificationEmail mints a token and sends the link, off the request
-// path so a slow SMTP call cannot hold the response open.
-
-// deliverVerificationEmail mints a token and sends the link, off the request
-// path so a slow SMTP call cannot hold the response open.
-func (h *AuthHandler) deliverVerificationEmail(user models.User) {
+// deliverVerificationEmail mints a token and queues the link.
+//
+// It used to run in a goroutine the request started, so a slow SMTP call could
+// not hold the response open. The mail goes on the background queue now, which
+// keeps the response just as short and, unlike a goroutine, retries a provider
+// that is briefly down and survives a deploy. Without a queue the send is
+// inline, which is what development without Redis does.
+func (h *AuthHandler) deliverVerificationEmail(ctx context.Context, user models.User) {
 	token, err := services.GenerateVerificationToken()
 	if err != nil {
 		log.Printf("email verification: generating token for %s: %v", user.Email, err)
@@ -287,10 +253,11 @@ func (h *AuthHandler) deliverVerificationEmail(user models.User) {
 
 	verifyURL := strings.TrimSuffix(h.Config.OAuthFrontendURL, "/") + "/verify-email?token=" + url.QueryEscape(token)
 
-	if h.Mailer != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
-		if err := h.Mailer.Send(ctx, mail.SendOptions{
+	if h.Jobs != nil || h.Mailer != nil {
+		// Keyed on the token, so one enqueue per link: a client that retries
+		// the request mints a new token and gets a new key, and a proxy that
+		// replays the same one does not send the mail twice.
+		if err := dispatchMail(ctx, h.Mailer, h.Jobs, "verify:"+user.ID+":"+token, mail.SendOptions{
 			To:       user.Email,
 			Subject:  "Confirm your email address",
 			Template: "email-verification",
@@ -483,6 +450,7 @@ import (
 	"log"
 	"net/http"
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/services"
 	"time"
 
@@ -504,15 +472,11 @@ func (h *UserHandler) Unlock(c *gin.Context) {
 	res := h.DB.WithContext(c.Request.Context()).Model(&models.User{}).Where("id = ?", id).
 		Updates(map[string]interface{}{"locked_until": nil, "failed_login_count": 0})
 	if res.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to unlock the account"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to unlock the account")
 		return
 	}
 	if res.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "User not found"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "User not found")
 		return
 	}
 

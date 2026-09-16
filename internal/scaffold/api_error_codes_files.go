@@ -17,22 +17,12 @@ import (
 // any code the templates emit that the catalogue does not carry.
 
 // goConstName turns VALIDATION_ERROR into CodeValidationError.
+//
+// The rule itself lives in the catalogue package, because the test that checks
+// every code a template emits is catalogued has to read the same constants this
+// writes, and two copies of a naming rule is one copy too many.
 func goConstName(code string) string {
-	var out strings.Builder
-	out.WriteString("Code")
-	for _, word := range strings.Split(strings.ToLower(code), "_") {
-		if word == "" {
-			continue
-		}
-		// Initialisms read better kept whole: AI, CSV, SMS, CSRF, TOTP, DB, PDF.
-		switch word {
-		case "ai", "csv", "sms", "csrf", "totp", "db", "pdf", "api", "url", "id":
-			out.WriteString(strings.ToUpper(word))
-		default:
-			out.WriteString(strings.ToUpper(word[:1]) + word[1:])
-		}
-	}
-	return out.String()
+	return errorcodes.GoConstName(code)
 }
 
 // apiRespondCodesGo returns internal/respond/codes.go: the catalogue as Go.

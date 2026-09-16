@@ -107,7 +107,10 @@ func repairRoutesMailPreviewSource(src string) (string, []string, []string) {
 var ticketMailModelsImport = regexp.MustCompile(`\n\t"([^"\n]+)/internal/models"\n\)\n`)
 
 func repairTicketMailSettingSource(src string) (string, []string, []string) {
-	if strings.Contains(src, "notifications.email_enabled") || !strings.Contains(src, "func SendTicketCreatedEmail(") {
+	// The check has to be inside SendTicketCreatedEmail specifically: the same
+	// setting is read by QueueTicketCreatedEmail further down the file, and
+	// looking for the setting name alone found that one and stopped.
+	if strings.Contains(src, ticketMailFuncOpen+ticketMailSettingCheck) || !strings.Contains(src, "func SendTicketCreatedEmail(") {
 		return src, nil, nil
 	}
 	loc := ticketMailModelsImport.FindAllStringSubmatchIndex(src, -1)

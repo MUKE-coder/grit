@@ -304,6 +304,7 @@ import (
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
 	"{{MODULE}}/internal/totp"
+	"{{MODULE}}/internal/respond"
 )
 
 // TOTPHandler handles two-factor authentication endpoints.
@@ -354,20 +355,13 @@ func (h *TOTPHandler) Setup(c *gin.Context) {
 	// Check if TOTP is already enabled
 	var existing models.TwoFactorConfig
 	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).First(&existing).Error; err == nil && existing.Enabled {
-		c.JSON(http.StatusConflict, gin.H{
-			"error": gin.H{
-				"code":    "TOTP_ALREADY_ENABLED",
-				"message": "Two-factor authentication is already enabled",
-			},
-		})
+		respond.Fail(c, respond.CodeTOTPAlreadyEnabled, "Two-factor authentication is already enabled")
 		return
 	}
 
 	secret, err := totp.GenerateSecret()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to generate secret"},
-		})
+		respond.Fail(c, respond.CodeTOTPError, "Failed to generate secret")
 		return
 	}
 
@@ -377,9 +371,7 @@ func (h *TOTPHandler) Setup(c *gin.Context) {
 	// setup dialog shows it, without the density High produces.
 	qrPNG, err := qrCodePNG(uri, 256)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to render the QR code"},
-		})
+		respond.Fail(c, respond.CodeTOTPError, "Failed to render the QR code")
 		return
 	}
 	qrDataURI := "data:image/png;base64," + base64.StdEncoding.EncodeToString(qrPNG)
@@ -401,9 +393,7 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 
 	var req EnableTOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -412,42 +402,28 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 	// attacker holds. Disabling first asks for the password.
 	var existing models.TwoFactorConfig
 	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).First(&existing).Error; err == nil && existing.Enabled {
-		c.JSON(http.StatusConflict, gin.H{
-			"error": gin.H{
-				"code":    "TOTP_ALREADY_ENABLED",
-				"message": "Two-factor authentication is already enabled. Disable it first.",
-			},
-		})
+		respond.Fail(c, respond.CodeTOTPAlreadyEnabled, "Two-factor authentication is already enabled. Disable it first.")
 		return
 	}
 
 	// Verify the code matches the secret
 	step, valid, err := totp.ValidateCodeStep(req.Secret, req.Code)
 	if err != nil || !valid {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_TOTP_CODE",
-				"message": "Invalid verification code. Make sure your authenticator app is synced.",
-			},
-		})
+		respond.Fail(c, respond.CodeInvalidTOTPCode, "Invalid verification code. Make sure your authenticator app is synced.")
 		return
 	}
 
 	// Generate backup codes
 	codes, hashes, err := totp.GenerateBackupCodes(0)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to generate backup codes"},
-		})
+		respond.Fail(c, respond.CodeTOTPError, "Failed to generate backup codes")
 		return
 	}
 
 	// Upsert the TwoFactorConfig
 	var config models.TwoFactorConfig
 	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).FirstOrCreate(&config, models.TwoFactorConfig{UserID: userID}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to enable two-factor authentication"},
-		})
+		respond.Fail(c, respond.CodeTOTPError, "Failed to enable two-factor authentication")
 		return
 	}
 
@@ -458,9 +434,7 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 	config.LastUsedStep = step
 
 	if err := h.DB.WithContext(c.Request.Context()).Save(&config).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to enable two-factor authentication"},
-		})
+		respond.Fail(c, respond.CodeTOTPError, "Failed to enable two-factor authentication")
 		return
 	}
 
@@ -478,9 +452,7 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 func (h *TOTPHandler) Verify(c *gin.Context) {
 	var req VerifyTOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -501,12 +473,7 @@ func (h *TOTPHandler) Verify(c *gin.Context) {
 	}
 	if err != nil || !valid {
 		h.failSecondFactor(pending, user)
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_TOTP_CODE",
-				"message": "Invalid verification code",
-			},
-		})
+		respond.Fail(c, respond.CodeInvalidTOTPCode, "Invalid verification code")
 		return
 	}
 
@@ -517,9 +484,7 @@ func (h *TOTPHandler) Verify(c *gin.Context) {
 func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 	var req VerifyBackupCodeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
@@ -531,12 +496,7 @@ func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 	idx := totp.VerifyBackupCode(req.Code, config.BackupCodes)
 	if idx < 0 {
 		h.failSecondFactor(pending, user)
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_BACKUP_CODE",
-				"message": "Invalid backup code",
-			},
-		})
+		respond.Fail(c, respond.CodeInvalidBackupCode, "Invalid backup code")
 		return
 	}
 
@@ -550,25 +510,19 @@ func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 	// the first to write can spend it, and the other is refused.
 	read, err := json.Marshal([]string(config.BackupCodes))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to use the backup code"},
-		})
+		respond.Fail(c, respond.CodeTOTPError, "Failed to use the backup code")
 		return
 	}
 	res := h.DB.WithContext(c.Request.Context()).Model(&models.TwoFactorConfig{}).
 		Where("id = ? AND backup_codes = ?", config.ID, string(read)).
 		Update("backup_codes", datatypes.JSONSlice[string](remaining))
 	if res.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to use the backup code"},
-		})
+		respond.Fail(c, respond.CodeTOTPError, "Failed to use the backup code")
 		return
 	}
 	if res.RowsAffected != 1 {
 		h.failSecondFactor(pending, user)
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{"code": "INVALID_BACKUP_CODE", "message": "Invalid backup code"},
-		})
+		respond.Fail(c, respond.CodeInvalidBackupCode, "Invalid backup code")
 		return
 	}
 	config.BackupCodes = remaining
@@ -583,12 +537,7 @@ func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 // the same account checks; before, the second step skipped them.
 func (h *TOTPHandler) beginSecondFactor(c *gin.Context, pendingToken string) (*models.TOTPPendingToken, *models.User, *models.TwoFactorConfig, bool) {
 	invalid := func() {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_PENDING_TOKEN",
-				"message": "Invalid or expired verification session. Please log in again.",
-			},
-		})
+		respond.Fail(c, respond.CodeInvalidPendingToken, "Invalid or expired verification session. Please log in again.")
 	}
 
 	var pending models.TOTPPendingToken
@@ -607,23 +556,17 @@ func (h *TOTPHandler) beginSecondFactor(c *gin.Context, pendingToken string) (*m
 		return nil, nil, nil, false
 	}
 	if !user.Active {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": gin.H{"code": "ACCOUNT_DISABLED", "message": "Your account has been disabled"},
-		})
+		respond.Fail(c, respond.CodeAccountDisabled, "Your account has been disabled")
 		return nil, nil, nil, false
 	}
 	if user.LockedUntil != nil && time.Now().Before(*user.LockedUntil) {
-		c.JSON(http.StatusTooManyRequests, gin.H{
-			"error": gin.H{"code": "ACCOUNT_LOCKED", "message": "Too many failed attempts. Try again later, or reset your password."},
-		})
+		respond.Fail(c, respond.CodeAccountLocked, "Too many failed attempts. Try again later, or reset your password.")
 		return nil, nil, nil, false
 	}
 
 	var config models.TwoFactorConfig
 	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ? AND enabled = ?", pending.UserID, true).First(&config).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOTP_ERROR", "message": "Two-factor configuration not found"},
-		})
+		respond.Fail(c, respond.CodeTOTPError, "Two-factor configuration not found")
 		return nil, nil, nil, false
 	}
 	return &pending, &user, &config, true
@@ -670,12 +613,7 @@ func (h *TOTPHandler) completeSecondFactor(c *gin.Context, pending *models.TOTPP
 	// requests carrying one token cannot both sign in.
 	res := h.DB.WithContext(c.Request.Context()).Delete(&models.TOTPPendingToken{}, pending.ID)
 	if res.Error != nil || res.RowsAffected != 1 {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_PENDING_TOKEN",
-				"message": "Invalid or expired verification session. Please log in again.",
-			},
-		})
+		respond.Fail(c, respond.CodeInvalidPendingToken, "Invalid or expired verification session. Please log in again.")
 		return
 	}
 	if user.FailedLoginCount > 0 || user.LockedUntil != nil {
@@ -687,9 +625,7 @@ func (h *TOTPHandler) completeSecondFactor(c *gin.Context, pending *models.TOTPP
 
 	tokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOKEN_ERROR", "message": "Failed to generate tokens"},
-		})
+		respond.Fail(c, respond.CodeTokenError, "Failed to generate tokens")
 		return
 	}
 	// Record the session. An access token names its session, and one whose
@@ -719,28 +655,19 @@ func (h *TOTPHandler) Disable(c *gin.Context) {
 
 	var req DisableTOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
-		})
+		respond.Fail(c, respond.CodeValidationError, err.Error())
 		return
 	}
 
 	// Verify password
 	var user models.User
 	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", userID).First(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "User not found"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "User not found")
 		return
 	}
 
 	if !user.CheckPassword(req.Password) {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_PASSWORD",
-				"message": "Incorrect password",
-			},
-		})
+		respond.Fail(c, respond.CodeInvalidPassword, "Incorrect password")
 		return
 	}
 
@@ -755,9 +682,7 @@ func (h *TOTPHandler) Disable(c *gin.Context) {
 		}
 		return nil
 	}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to disable two-factor authentication"},
-		})
+		respond.Fail(c, respond.CodeTOTPError, "Failed to disable two-factor authentication")
 		return
 	}
 
@@ -798,28 +723,19 @@ func (h *TOTPHandler) RegenerateBackupCodes(c *gin.Context) {
 
 	var config models.TwoFactorConfig
 	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ? AND enabled = ?", userID, true).First(&config).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    "TOTP_NOT_ENABLED",
-				"message": "Two-factor authentication is not enabled",
-			},
-		})
+		respond.Fail(c, respond.CodeTOTPNotEnabled, "Two-factor authentication is not enabled")
 		return
 	}
 
 	codes, hashes, err := totp.GenerateBackupCodes(0)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to generate backup codes"},
-		})
+		respond.Fail(c, respond.CodeTOTPError, "Failed to generate backup codes")
 		return
 	}
 
 	config.BackupCodes = hashes
 	if err := h.DB.WithContext(c.Request.Context()).Save(&config).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to save backup codes"},
-		})
+		respond.Fail(c, respond.CodeTOTPError, "Failed to save backup codes")
 		return
 	}
 
@@ -846,9 +762,7 @@ func (h *TOTPHandler) ListTrustedDevices(c *gin.Context) {
 		Where("user_id = ? AND expires_at > ?", userID, time.Now()).
 		Order("created_at desc").
 		Find(&devices).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to load trusted devices"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to load trusted devices")
 		return
 	}
 
@@ -883,15 +797,11 @@ func (h *TOTPHandler) RevokeTrustedDevice(c *gin.Context) {
 	res := h.DB.WithContext(c.Request.Context()).Where("id = ? AND user_id = ?", c.Param("id"), userID).
 		Delete(&models.TrustedDevice{})
 	if res.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to revoke the device"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to revoke the device")
 		return
 	}
 	if res.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "Trusted device not found"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Trusted device not found")
 		return
 	}
 
@@ -903,9 +813,7 @@ func (h *TOTPHandler) RevokeTrustedDevices(c *gin.Context) {
 	userID := c.GetString("user_id")
 
 	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).Delete(&models.TrustedDevice{}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to revoke trusted devices"},
-		})
+		respond.Fail(c, respond.CodeTOTPError, "Failed to revoke trusted devices")
 		return
 	}
 

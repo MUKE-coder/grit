@@ -580,24 +580,14 @@ func (h *JobsHandler) getInspector() (*asynq.Inspector, error) {
 func (h *JobsHandler) Stats(c *gin.Context) {
 	inspector, err := h.getInspector()
 	if err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": gin.H{
-				"code":    "REDIS_UNAVAILABLE",
-				"message": "Job queue not available",
-			},
-		})
+		respond.Fail(c, respond.CodeRedisUnavailable, "Job queue not available")
 		return
 	}
 	defer inspector.Close()
 
 	queues, err := inspector.Queues()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to fetch queue info",
-			},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to fetch queue info")
 		return
 	}
 
@@ -641,12 +631,7 @@ func (h *JobsHandler) ListByStatus(c *gin.Context) {
 
 	inspector, err := h.getInspector()
 	if err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": gin.H{
-				"code":    "REDIS_UNAVAILABLE",
-				"message": "Job queue not available",
-			},
-		})
+		respond.Fail(c, respond.CodeRedisUnavailable, "Job queue not available")
 		return
 	}
 	defer inspector.Close()
@@ -701,12 +686,7 @@ func (h *JobsHandler) ListByStatus(c *gin.Context) {
 			}
 		}
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_STATUS",
-				"message": "Status must be: active, pending, completed, failed, or retry",
-			},
-		})
+		respond.Fail(c, respond.CodeInvalidStatus, "Status must be: active, pending, completed, failed, or retry")
 		return
 	}
 
@@ -726,12 +706,7 @@ func (h *JobsHandler) Retry(c *gin.Context) {
 
 	inspector, err := h.getInspector()
 	if err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": gin.H{
-				"code":    "REDIS_UNAVAILABLE",
-				"message": "Job queue not available",
-			},
-		})
+		respond.Fail(c, respond.CodeRedisUnavailable, "Job queue not available")
 		return
 	}
 	defer inspector.Close()
@@ -752,23 +727,13 @@ func (h *JobsHandler) ClearQueue(c *gin.Context) {
 
 	inspector, err := h.getInspector()
 	if err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": gin.H{
-				"code":    "REDIS_UNAVAILABLE",
-				"message": "Job queue not available",
-			},
-		})
+		respond.Fail(c, respond.CodeRedisUnavailable, "Job queue not available")
 		return
 	}
 	defer inspector.Close()
 
 	if _, err := inspector.DeleteAllCompletedTasks(queue); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "CLEAR_FAILED",
-				"message": "Failed to clear queue",
-			},
-		})
+		respond.Fail(c, respond.CodeClearFailed, "Failed to clear queue")
 		return
 	}
 

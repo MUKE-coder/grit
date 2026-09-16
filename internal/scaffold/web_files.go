@@ -64,9 +64,11 @@ func webFileMap(root string, opts Options) map[string]string {
 		filepath.Join(webRoot, "app", "(marketing)", "blog", "page.tsx"):           webBlogListPage(),
 		filepath.Join(webRoot, "app", "(marketing)", "blog", "[slug]", "page.tsx"): webBlogDetailPage(),
 		filepath.Join(webRoot, "lib", "blog-api.ts"):                               webBlogAPILib(),
-		// v3.31.20: public form-share page (Phase 2)
-		filepath.Join(webRoot, "app", "forms", "[token]", "page.tsx"): webPublicFormPage(),
-		filepath.Join(webRoot, "public", ".gitkeep"):                  "",
+		// v3.31.20: public form-share page (Phase 2). The share is read in the
+		// server component; public-form.tsx is the interactive half.
+		filepath.Join(webRoot, "app", "forms", "[token]", "page.tsx"):        webPublicFormPage(),
+		filepath.Join(webRoot, "app", "forms", "[token]", "public-form.tsx"): webPublicFormClient(),
+		filepath.Join(webRoot, "public", ".gitkeep"):                         "",
 	}
 }
 
@@ -2192,94 +2194,73 @@ export function useAuthContext() {
 `
 }
 
-// webPublicFormPage — public-facing page at /forms/[token] that
-// renders a generic submission form for any FormShare-exposed resource.
+// webPublicFormPage — the public page at /forms/[token].
 //
-// Designed to be minimal but functional:
-//   - Fetches /api/public/forms/<token> to confirm the link works +
-//     learn the resource_name and whether a password is required.
-//   - If password required, shows a gate input. Submitting hits the
-//     submit endpoint with the password+empty fields to probe; on a
-//     successful probe we move to the form. (Phase 2 hardens this by
-//     adding a dedicated /check-password endpoint that issues a
-//     short-lived cookie — for v1 the password is sent with each
-//     submit so the page itself stays stateless.)
-//   - The form itself is a one-size-fits-all key/value editor where
-//     visitors fill labelled inputs. The shape is hard-coded to a
-//     name+email+message pattern that covers the dominant case (lead
-//     forms, contact forms, applications). Resources with different
-//     shapes are best exposed via `grit expose form` once Phase 3
-//     lands — that command generates a page tailored to the resource's
-//     actual fields.
+// Contact-app review M27: this page used to be a client component that asked
+// for the share in a useEffect with a raw axios call, so a visitor on a link
+// somebody sent them waited for the JS bundle and then for a round trip before
+// the form existed, and saw a spinner for both. The share is read on the server
+// now and the form arrives rendered.
+//
+// The share is fetched with cache: "no-store" because a link that has been
+// disabled has to stop working when it is disabled, not when a cache expires.
+//
+// The form itself is whatever the resource's struct tags expose: the API builds
+// the field list in services.PublicFields, and the operator's custom title,
+// description and hidden-field list are applied there too.
 func webPublicFormPage() string {
-	return `"use client";
+	return `import type { Metadata } from "next";
 
-// v3.31.43+: ShareInfo carries the resource's actual field shape
-// (built server-side by services.PublicFields). v3.31.50 adds
-// operator-customised title + description and respects the
-// hidden_fields list -- so this page no longer renders a hardcoded
-// name/email/phone/message contact form. Whatever fields the
-// resource's struct tags expose are what the visitor sees.
-
-import { useEffect, useState, use } from "react";
-import axios from "axios";
 import { apiUrl } from "@/lib/api-core";
+
+import { PublicForm, type ShareInfo } from "./public-form";
+
+export const metadata: Metadata = {
+  title: "Submit a form",
+  robots: { index: false, follow: false },
+};
+
+// A share can be revoked at any moment, so nothing about this page is
+// prerendered or revalidated.
+export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ token: string }>;
 }
 
-type PublicFieldType =
-  | "text"
-  | "email"
-  | "tel"
-  | "textarea"
-  | "number"
-  | "checkbox"
-  | "date"
-  | "datetime"
-  | "file";
-
-interface PublicField {
-  key: string;
-  label: string;
-  type: PublicFieldType;
-  required: boolean;
+interface LoadResult {
+  info?: ShareInfo;
+  error?: string;
 }
 
-interface ShareInfo {
-  resource_name: string;
-  has_password: boolean;
-  label: string;
-  custom_title: string;
-  custom_description: string;
-  fields: PublicField[];
-}
-
-export default function PublicFormPage({ params }: PageProps) {
-  const { token } = use(params);
-  const [info, setInfo] = useState<ShareInfo | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    axios.get(apiUrl("/api/public/forms/" + token))
-      .then((res) => setInfo(res.data.data))
-      .catch((err) => {
-        setError(err?.response?.data?.error?.message || "Link not found or disabled");
-      })
-      .finally(() => setLoading(false));
-  }, [token]);
-
-  if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
-        <div className="text-sm text-slate-500">Loading…</div>
-      </main>
+// loadShare asks the API about the link. A 404 or a disabled share is a normal
+// answer here, not an exception: it renders the "link unavailable" card.
+async function loadShare(token: string): Promise<LoadResult> {
+  try {
+    const res = await fetch(
+      apiUrl("/api/public/forms/" + encodeURIComponent(token)),
+      { cache: "no-store", headers: { Accept: "application/json" } },
     );
+    const body = await res.json().catch(() => null);
+    if (!res.ok) {
+      return { error: body?.error?.message ?? "Link not found or disabled" };
+    }
+    if (!body?.data) {
+      return { error: "Link not found or disabled" };
+    }
+    return { info: body.data as ShareInfo };
+  } catch {
+    // The API being unreachable is the operator's problem, not the visitor's,
+    // so they get a sentence rather than a stack.
+    return { error: "This form could not be loaded. Try again in a moment." };
   }
+}
 
-  if (error || !info) {
+export default async function PublicFormPage({ params }: PageProps) {
+  const { token } = await params;
+  const { info, error } = await loadShare(token);
+
+  if (!info) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
@@ -2290,10 +2271,10 @@ export default function PublicFormPage({ params }: PageProps) {
     );
   }
 
-  // v3.31.50 -- title falls back through three sources:
+  // Title falls back through three sources:
   //   1. operator-set custom_title (best)
-  //   2. operator-set label (legacy -- pre-v3.31.50 shares)
-  //   3. resource name (worst -- bare default)
+  //   2. operator-set label (legacy — pre-v3.31.50 shares)
+  //   3. resource name (worst — bare default)
   const title =
     info.custom_title?.trim() ||
     info.label?.trim() ||
@@ -2313,13 +2294,54 @@ export default function PublicFormPage({ params }: PageProps) {
     </main>
   );
 }
+`
+}
+
+// webPublicFormClient — app/forms/[token]/public-form.tsx.
+//
+// The interactive half of the public share page: the fields the server told it
+// about, the password gate, and the submit. It posts through the web app's own
+// api client rather than a bare axios import, so it picks up the version prefix
+// and the CSRF header the rest of the app uses.
+func webPublicFormClient() string {
+	return `"use client";
+
+import { useState } from "react";
+import { api } from "@/lib/api";
+
+export type PublicFieldType =
+  | "text"
+  | "email"
+  | "tel"
+  | "textarea"
+  | "number"
+  | "checkbox"
+  | "date"
+  | "datetime"
+  | "file";
+
+export interface PublicField {
+  key: string;
+  label: string;
+  type: PublicFieldType;
+  required: boolean;
+}
+
+export interface ShareInfo {
+  resource_name: string;
+  has_password: boolean;
+  label: string;
+  custom_title: string;
+  custom_description: string;
+  fields: PublicField[];
+}
 
 interface PublicFormProps {
   token: string;
   info: ShareInfo;
 }
 
-function PublicForm({ token, info }: PublicFormProps) {
+export function PublicForm({ token, info }: PublicFormProps) {
   const [password, setPassword] = useState("");
   // Mixed value types so checkbox + number fields can survive the
   // round-trip without coercion ceremony at submit time.
@@ -2343,7 +2365,7 @@ function PublicForm({ token, info }: PublicFormProps) {
     setError(null);
     setSubmitting(true);
     try {
-      // Strip file fields -- not supported on public shares yet
+      // Strip file fields — not supported on public shares yet
       // (auth-gated /api/uploads endpoint). Sending them would
       // confuse the dispatcher's typed unmarshal.
       const payload: Record<string, string | number | boolean> = {};
@@ -2351,7 +2373,7 @@ function PublicForm({ token, info }: PublicFormProps) {
         if (f.type === "file") continue;
         payload[f.key] = fields[f.key];
       }
-      await axios.post(apiUrl("/api/public/forms/" + token + "/submit"), {
+      await api.post("/api/public/forms/" + token + "/submit", {
         _password: password,
         fields: payload,
       });
@@ -2431,12 +2453,13 @@ function Field({ field, value, onChange, inputType, hint }: FieldProps) {
   const labelClass = "block text-sm font-medium text-slate-700";
   const inputClass =
     "block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10";
+  const fieldId = "public-field-" + field.key;
 
   if (field.type === "file") {
     return (
       <div className="space-y-1.5">
-        <label className={labelClass}>{field.label}</label>
-        <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-xs text-slate-500">
+        <label className={labelClass} htmlFor={fieldId}>{field.label}</label>
+        <div id={fieldId} className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-xs text-slate-500">
           File uploads aren&apos;t supported on public-share forms.
           {field.required
             ? " The operator must collect this file through a different channel."
@@ -2449,11 +2472,12 @@ function Field({ field, value, onChange, inputType, hint }: FieldProps) {
   if (field.type === "textarea") {
     return (
       <div className="space-y-1.5">
-        <label className={labelClass}>
+        <label className={labelClass} htmlFor={fieldId}>
           {field.label}
           {field.required && <span className="ml-1 text-red-500">*</span>}
         </label>
         <textarea
+          id={fieldId}
           value={String(value)}
           onChange={(e) => onChange(e.target.value)}
           required={field.required}
@@ -2468,8 +2492,9 @@ function Field({ field, value, onChange, inputType, hint }: FieldProps) {
   if (field.type === "checkbox") {
     return (
       <div className="space-y-1.5">
-        <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+        <label className="flex items-center gap-2 text-sm font-medium text-slate-700" htmlFor={fieldId}>
           <input
+            id={fieldId}
             type="checkbox"
             checked={Boolean(value)}
             onChange={(e) => onChange(e.target.checked)}
@@ -2486,11 +2511,12 @@ function Field({ field, value, onChange, inputType, hint }: FieldProps) {
   if (field.type === "number") {
     return (
       <div className="space-y-1.5">
-        <label className={labelClass}>
+        <label className={labelClass} htmlFor={fieldId}>
           {field.label}
           {field.required && <span className="ml-1 text-red-500">*</span>}
         </label>
         <input
+          id={fieldId}
           type="number"
           value={value === "" ? "" : String(value)}
           onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))}
@@ -2516,11 +2542,12 @@ function Field({ field, value, onChange, inputType, hint }: FieldProps) {
 
   return (
     <div className="space-y-1.5">
-      <label className={labelClass}>
+      <label className={labelClass} htmlFor={fieldId}>
         {field.label}
         {field.required && <span className="ml-1 text-red-500">*</span>}
       </label>
       <input
+        id={fieldId}
         type={htmlType}
         value={String(value)}
         onChange={(e) => onChange(e.target.value)}

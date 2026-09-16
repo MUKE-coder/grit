@@ -93,17 +93,13 @@ type UpdateSettingsRequest struct {
 func (h *SettingsHandler) Update(c *gin.Context) {
 	var req UpdateSettingsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
-			"code": "INVALID_BODY", "message": err.Error(),
-		}})
+		respond.Fail(c, respond.CodeInvalidBody, err.Error())
 		return
 	}
 
 	store := settings.Default()
 	if store == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "SETTINGS_UNAVAILABLE", "message": "the settings store is not initialised",
-		}})
+		respond.Fail(c, respond.CodeSettingsUnavailable, "the settings store is not initialised")
 		return
 	}
 
@@ -119,10 +115,7 @@ func (h *SettingsHandler) Update(c *gin.Context) {
 		scopeID = stringClaim(c, "tenant_id")
 	}
 	if scope != settings.Global && scopeID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{
-			"code":    "NO_SCOPE",
-			"message": "cannot write a " + string(scope) + " override without a " + string(scope),
-		}})
+		respond.Fail(c, respond.CodeNoScope, "cannot write a " + string(scope) + " override without a " + string(scope))
 		return
 	}
 
@@ -132,23 +125,15 @@ func (h *SettingsHandler) Update(c *gin.Context) {
 	for key, value := range req.Values {
 		declared, ok := settings.Get(key)
 		if !ok {
-			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{
-				"code": "UNKNOWN_SETTING", "message": "no setting named " + key + " is declared",
-			}})
+			respond.Fail(c, respond.CodeUnknownSetting, "no setting named " + key + " is declared")
 			return
 		}
 		if declared.Permission != "" && !authz.Granted(grants, declared.Permission) {
-			c.JSON(http.StatusForbidden, gin.H{"error": gin.H{
-				"code":    "FORBIDDEN",
-				"message": "you do not have permission to change " + declared.Label,
-			}})
+			respond.Fail(c, respond.CodeForbidden, "you do not have permission to change " + declared.Label)
 			return
 		}
 		if err := declared.Parse(value); err != nil {
-			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
-				"code": "VALIDATION_ERROR", "message": err.Error(),
-				"details": gin.H{key: err.Error()},
-			}})
+			respond.Fail(c, respond.CodeValidationError, err.Error(), map[string]string{key: err.Error()})
 			return
 		}
 		details[key] = value
@@ -157,9 +142,7 @@ func (h *SettingsHandler) Update(c *gin.Context) {
 	actor := stringClaim(c, "user_id")
 	for key, value := range details {
 		if err := store.Set(key, scope, scopeID, value, actor); err != nil {
-			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
-				"code": "SETTING_REJECTED", "message": err.Error(),
-			}})
+			respond.Fail(c, respond.CodeSettingRejected, err.Error())
 			return
 		}
 	}
@@ -186,23 +169,17 @@ func (h *SettingsHandler) Reset(c *gin.Context) {
 	key := c.Param("key")
 	declared, ok := settings.Get(key)
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{
-			"code": "UNKNOWN_SETTING", "message": "no setting named " + key + " is declared",
-		}})
+		respond.Fail(c, respond.CodeUnknownSetting, "no setting named " + key + " is declared")
 		return
 	}
 	if declared.Permission != "" && !authz.Granted(grantsOf(c), declared.Permission) {
-		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{
-			"code": "FORBIDDEN", "message": "you do not have permission to change " + declared.Label,
-		}})
+		respond.Fail(c, respond.CodeForbidden, "you do not have permission to change " + declared.Label)
 		return
 	}
 
 	store := settings.Default()
 	if store == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{
-			"code": "SETTINGS_UNAVAILABLE", "message": "the settings store is not initialised",
-		}})
+		respond.Fail(c, respond.CodeSettingsUnavailable, "the settings store is not initialised")
 		return
 	}
 

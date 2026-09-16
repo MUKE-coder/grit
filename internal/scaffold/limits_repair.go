@@ -57,7 +57,10 @@ func repairRequestLimits(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "limits.go"):      middlewareLimitsGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "limits_test.go"): middlewareLimitsTestGo(),
 	} {
-		if err := writeFile(path, content); err != nil {
+		// limits.go now answers a body over the cap with respond.Fail, so the
+		// module placeholder in its import has to be filled in like everywhere
+		// else. Written raw, it produced a file importing {{MODULE}}/internal/respond.
+		if err := writeFile(path, strings.ReplaceAll(content, "{{MODULE}}", opts.Module())); err != nil {
 			return fmt.Errorf("writing %s: %w", path, err)
 		}
 	}

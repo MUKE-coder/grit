@@ -39,7 +39,7 @@ func TestCompleteUploadRecordsOnlyTheCallersPresignedKey(t *testing.T) {
 	case prefix > stat:
 		t.Error("the bucket is asked before the key is checked, so the answer reveals whether any key exists")
 	}
-	if !strings.Contains(body, "UPLOAD_ALREADY_RECORDED") {
+	if !strings.Contains(body, "respond.CodeUploadAlreadyRecorded") {
 		t.Error("a key can be recorded more than once")
 	}
 	if strings.Contains(body, "userID.(string)") {

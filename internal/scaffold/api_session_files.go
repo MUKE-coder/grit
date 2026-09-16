@@ -92,6 +92,7 @@ func apiSessionServiceGo() string {
 	return `package services
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"time"
@@ -116,18 +117,30 @@ var (
 var ErrSessionInvalid = errors.New("session is not valid")
 
 // CreateSession records a newly issued refresh token as a logged-in device.
+//
+// The gin-shaped front door to CreateSessionCtx, kept because handlers call it
+// with the request in hand. Everything it needs from that request is the three
+// fields in RequestMeta.
 func CreateSession(db *gorm.DB, c *gin.Context, userID, refreshToken string) (*models.Session, error) {
+	return CreateSessionCtx(ContextOf(c), db, MetaOf(c), userID, refreshToken)
+}
+
+// CreateSessionCtx records a newly issued refresh token as a logged-in device.
+//
+// Contact-app review M29: this took a *gin.Context, so signing somebody in from
+// a job, a CLI command or a test meant building a fake HTTP request first.
+func CreateSessionCtx(ctx context.Context, db *gorm.DB, meta RequestMeta, userID, refreshToken string) (*models.Session, error) {
 	now := time.Now()
 	s := &models.Session{
 		ID:         sessionIDFromToken(refreshToken),
 		UserID:     userID,
 		TokenHash:  models.HashSessionToken(refreshToken),
-		UserAgent:  truncateStr(c.Request.UserAgent(), 512),
-		IP:         c.ClientIP(),
+		UserAgent:  truncateStr(meta.UserAgent, 512),
+		IP:         meta.IP,
 		LastSeenAt: now,
 		ExpiresAt:  now.Add(SessionAbsoluteTimeout),
 	}
-	if err := db.Create(s).Error; err != nil {
+	if err := db.WithContext(ctx).Create(s).Error; err != nil {
 		return nil, err
 	}
 	return s, nil
@@ -140,6 +153,13 @@ func CreateSession(db *gorm.DB, c *gin.Context, userID, refreshToken string) (*m
 // rotated token — which lands in the PrevTokenHash branch and kills the session
 // for both, surfacing the theft instead of silently sharing the account.
 func RotateSession(db *gorm.DB, c *gin.Context, oldToken, newToken string) (*models.Session, error) {
+	return RotateSessionCtx(ContextOf(c), db, MetaOf(c), oldToken, newToken)
+}
+
+// RotateSessionCtx is RotateSession without the gin context. See M29 on
+// CreateSessionCtx for why both exist.
+func RotateSessionCtx(ctx context.Context, db *gorm.DB, meta RequestMeta, oldToken, newToken string) (*models.Session, error) {
+	db = db.WithContext(ctx)
 	oldHash := models.HashSessionToken(oldToken)
 
 	var s models.Session
@@ -172,8 +192,8 @@ func RotateSession(db *gorm.DB, c *gin.Context, oldToken, newToken string) (*mod
 		"token_hash":      models.HashSessionToken(newToken),
 		"prev_token_hash": oldHash,
 		"last_seen_at":    now,
-		"ip":              c.ClientIP(),
-		"user_agent":      truncateStr(c.Request.UserAgent(), 512),
+		"ip":              meta.IP,
+		"user_agent":      truncateStr(meta.UserAgent, 512),
 	}).Error; err != nil {
 		return nil, err
 	}
@@ -378,6 +398,7 @@ import (
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/services"
 )
 
@@ -403,9 +424,7 @@ func (h *SessionHandler) List(c *gin.Context) {
 	userID := c.GetString("user_id")
 	sessions, err := services.ListUserSessions(h.DB, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to load sessions"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to load sessions")
 		return
 	}
 
@@ -425,9 +444,7 @@ func (h *SessionHandler) List(c *gin.Context) {
 func (h *SessionHandler) Revoke(c *gin.Context) {
 	userID := c.GetString("user_id")
 	if err := services.RevokeSession(h.DB, userID, c.Param("id")); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{"code": "NOT_FOUND", "message": "Session not found"},
-		})
+		respond.Fail(c, respond.CodeNotFound, "Session not found")
 		return
 	}
 	services.LogActivity(h.DB, c, services.ActivityArgs{
@@ -443,9 +460,7 @@ func (h *SessionHandler) RevokeAll(c *gin.Context) {
 	userID := c.GetString("user_id")
 	current, _ := c.Cookie("grit_refresh")
 	if err := services.RevokeAllUserSessions(h.DB, userID, current); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to revoke sessions"},
-		})
+		respond.Fail(c, respond.CodeInternalError, "Failed to revoke sessions")
 		return
 	}
 	services.LogActivity(h.DB, c, services.ActivityArgs{

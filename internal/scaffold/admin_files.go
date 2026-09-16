@@ -335,13 +335,11 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "lib", "excel-utils.ts"): adminExcelUtils(),
 
 		// Shared components
-		filepath.Join(adminRoot, "components", "shared", "providers.tsx"):      adminProviders(),
-		filepath.Join(adminRoot, "components", "shared", "theme-provider.tsx"): adminThemeProvider(),
+		filepath.Join(adminRoot, "components", "shared", "providers.tsx"): adminProviders(),
 
 		// Layout components
 		filepath.Join(adminRoot, "components", "layout", "admin-layout.tsx"): adminLayoutComponent(),
 		filepath.Join(adminRoot, "components", "layout", "sidebar.tsx"):      adminSidebar(),
-		filepath.Join(adminRoot, "components", "layout", "navbar.tsx"):       adminNavbar(),
 		filepath.Join(adminRoot, "components", "layout", "page-header.tsx"):  adminPageHeader(),
 
 		// Table components
@@ -1020,6 +1018,8 @@ export const metadata: Metadata = {
   description: "Admin panel — Built with Grit",
 };
 
+%s
+
 export default function RootLayout({
   children,
 }: {
@@ -1032,48 +1032,58 @@ export default function RootLayout({
   const dataTheme = process.env.NEXT_PUBLIC_THEME || "atlas";
 
   return (
-    // suppressHydrationWarning: DarkModeToggle mutates html.classList +
-    // data-theme-mode + style after hydration. Without this React would
-    // log a noisy mismatch on the first paint even though the behaviour
-    // is intentional.
+    // suppressHydrationWarning: the theme script below and DarkModeToggle both
+    // mutate html.classList + data-theme-mode + style. Without this React would
+    // log a noisy mismatch on the first paint even though the behaviour is
+    // intentional.
     <html lang="en" data-theme={dataTheme} suppressHydrationWarning>
+      <head>
+        {/*
+          The stored theme is applied before the browser paints anything. It used
+          to be applied in an effect inside DarkModeToggle, which mounts only
+          after /auth/me answers, so every load of a dark dashboard showed a
+          light one first for as long as that request took.
+
+          dangerouslySetInnerHTML is the only way to get a synchronous inline
+          script into the document: next/script defers it, and a deferred script
+          is the flash again.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className={`+"`%s "+`%s`+"`"+`}>
         <Providers>{children}</Providers>
       </body>
     </html>
   );
 }
-`, fontImport, opts.ProjectName, fontVars, bodyClass)
+`, fontImport, opts.ProjectName, adminThemeScriptSource(), fontVars, bodyClass)
 }
 
 func adminProviders() string {
 	return `"use client";
 
 ` + adminProvidersNewImports + `
-import { ThemeProvider } from "./theme-provider";
 
 ` + adminProvidersNewBody + `
-    <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        {children}
-        {/*
-          richColors gives us sonner's tinted success/error/warning/info
-          surfaces. We override sonner's default palette via CSS vars in
-          globals.css so green = Grit success (#00b894), red = danger
-          (#ff6b6b), etc. — matching the rest of the design system.
-        */}
-        <Toaster
-          richColors
-          position="bottom-right"
-          theme="dark"
-          toastOptions={{
-            classNames: {
-              toast: "grit-toast",
-            },
-          }}
-        />
-      </QueryClientProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      {children}
+      {/*
+        richColors gives us sonner's tinted success/error/warning/info
+        surfaces. We override sonner's default palette via CSS vars in
+        globals.css so green = Grit success (#00b894), red = danger
+        (#ff6b6b), etc. — matching the rest of the design system.
+      */}
+      <Toaster
+        richColors
+        position="bottom-right"
+        theme="dark"
+        toastOptions={{
+          classNames: {
+            toast: "grit-toast",
+          },
+        }}
+      />
+    </QueryClientProvider>
   );
 }
 `
