@@ -331,6 +331,7 @@ func moneyTestGo() string {
 	return `package money
 
 import (
+	"errors"
 	"encoding/json"
 	"testing"
 )
@@ -384,7 +385,7 @@ func TestConvertRefusesNonsense(t *testing.T) {
 			t.Errorf("rate %q was accepted", rate)
 		}
 	}
-	if _, err := New(100, "USD").Convert("EU", "1.1"); err != ErrBadCurrency {
+	if _, err := New(100, "USD").Convert("EU", "1.1"); !errors.Is(err, ErrBadCurrency) {
 		t.Errorf("a two-letter currency was accepted: %v", err)
 	}
 }

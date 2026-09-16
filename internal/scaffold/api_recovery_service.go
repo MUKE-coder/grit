@@ -219,6 +219,7 @@ func recoveryServiceTestGo() string {
 	return `package services
 
 import (
+	"errors"
 	"testing"
 
 	"gorm.io/driver/sqlite"
@@ -353,7 +354,7 @@ func TestPrimaryAddressIsRefused(t *testing.T) {
 	db := recoveryDB(t)
 	u := seedUser(t, db, "primary@example.com")
 
-	if err := ValidateRecoveryEmail(db, u.ID, u.Email, "Primary@Example.com"); err != ErrRecoverySameAsPrimary {
+	if err := ValidateRecoveryEmail(db, u.ID, u.Email, "Primary@Example.com"); !errors.Is(err, ErrRecoverySameAsPrimary) {
 		t.Errorf("the primary address must be refused, case-insensitively: %v", err)
 	}
 }
@@ -365,7 +366,7 @@ func TestAnotherUsersAddressIsRefused(t *testing.T) {
 	mine := seedUser(t, db, "mine@example.com")
 	seedUser(t, db, "theirs@example.com")
 
-	if err := ValidateRecoveryEmail(db, mine.ID, mine.Email, "theirs@example.com"); err != ErrRecoveryInUse {
+	if err := ValidateRecoveryEmail(db, mine.ID, mine.Email, "theirs@example.com"); !errors.Is(err, ErrRecoveryInUse) {
 		t.Errorf("another account's address must be refused: %v", err)
 	}
 }

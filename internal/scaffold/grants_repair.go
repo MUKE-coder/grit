@@ -165,8 +165,15 @@ func repairUserCeilingSource(src string) (string, []string, []string) {
 	if strings.Contains(src, "h.DB.WithContext(c.Request.Context()).Delete(&user)") {
 		deleteCall = "h.DB.WithContext(c.Request.Context()).Delete(&user)"
 	}
+	// Create read the email before inserting it until v3.281.0, and builds the
+	// row straight away since; the ceiling check goes before whichever of the
+	// two this file has.
+	createAnchor := "\t// Check email uniqueness\n\tvar existing models.User"
+	if !strings.Contains(src, createAnchor) {
+		createAnchor = "\tuser := models.User{\n\t\tFirstName: req.FirstName,"
+	}
 	out, ok := applyInsertions(src, []insertion{
-		{anchor: "\t// Check email uniqueness\n\tvar existing models.User", before: true,
+		{anchor: createAnchor, before: true,
 			text: "\t// Only an ADMIN makes an ADMIN, and nobody hands out a role that grants more\n\t// than they hold.\n" + userRoleCheck + "\n"},
 		{anchor: "\tupdates := map[string]interface{}{}\n\tif req.FirstName != \"\" {", before: true,
 			text: "\t// Only an ADMIN changes an ADMIN account or makes one. Before, a users.edit\n\t// holder could PUT {\"role\":\"ADMIN\"} on themselves, or reset an\n\t// administrator's password or email and sign in as them.\n" + userAdminCheck + userRoleCheck + "\n"},

@@ -94,7 +94,7 @@ func ensureKey(db *gorm.DB, want models.APIKey) (string, error) {
 	if err == nil {
 		return "", nil
 	}
-	if err != gorm.ErrRecordNotFound {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return "", err
 	}
 

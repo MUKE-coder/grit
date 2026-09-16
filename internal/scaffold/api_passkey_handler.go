@@ -4,6 +4,7 @@ func passkeyHandlerGo() string {
 	return `package handlers
 
 import (
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -111,7 +112,7 @@ func (h *PasskeyHandler) FinishRegistration(c *gin.Context) {
 	key, err := h.Passkeys.FinishRegistration(sessionID, name, raw)
 	if err != nil {
 		status := http.StatusUnprocessableEntity
-		if err == services.ErrPasskeyChallengeGone {
+		if errors.Is(err, services.ErrPasskeyChallengeGone) {
 			status = http.StatusGone
 		}
 		c.JSON(status, gin.H{"error": gin.H{
@@ -164,7 +165,7 @@ func (h *PasskeyHandler) FinishLogin(c *gin.Context) {
 	user, err := h.Passkeys.FinishLogin(sessionID, raw)
 	if err != nil {
 		status := http.StatusUnauthorized
-		if err == services.ErrPasskeyChallengeGone {
+		if errors.Is(err, services.ErrPasskeyChallengeGone) {
 			status = http.StatusGone
 		}
 		c.JSON(status, gin.H{"error": gin.H{

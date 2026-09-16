@@ -392,6 +392,23 @@ import {
 // in dev or a different origin in prod.
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+// DegradedBanner says which panels have no data behind them.
+//
+// The dashboard used to answer a dead upstream with a page of zeros and a 200,
+// which reads as good news. The API now names the calls that failed, and this
+// puts that on the screen above the numbers it applies to.
+function DegradedBanner({ source, degraded }: { source: string; degraded?: string[] }) {
+  if (!degraded || degraded.length === 0) return null;
+  return (
+    <div className="mt-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+      <span>
+        {source} did not answer for {degraded.join(", ")}. Those panels are empty rather than zero.
+      </span>
+    </div>
+  );
+}
+
 interface SecuritySummary {
   banned_ips_now: number;
   auto_bans_24h: number;
@@ -399,6 +416,8 @@ interface SecuritySummary {
   active_bans?: Array<{ ip: string; reason: string; expires_at: string; level: number }>;
   rate_limit_hits_5min?: Array<{ ip: string; hits: number; last_hit: string }>;
   recent_threats?: Array<{ id: string; type: string; ip: string; description: string; created_at: string }>;
+  // The calls to Sentinel that did not answer. Empty is the healthy case.
+  degraded?: string[];
 }
 
 export default function SecurityPage() {
@@ -409,7 +428,9 @@ export default function SecurityPage() {
         const { data } = await apiClient.get<SecuritySummary>("/api/admin/security/summary");
         return data;
       } catch {
-        return { banned_ips_now: 0, auto_bans_24h: 0, rate_limited_last_hour: 0 };
+        // Nothing came back. A page of zeros would read as "no IP is banned and
+        // nothing has attacked you", so say what actually happened instead.
+        return { banned_ips_now: 0, auto_bans_24h: 0, rate_limited_last_hour: 0, degraded: ["the whole summary"] };
       }
     },
     refetchInterval: 60_000,
@@ -432,6 +453,8 @@ export default function SecurityPage() {
           </a>
         }
       />
+
+      <DegradedBanner source="Sentinel" degraded={data?.degraded} />
 
       {/* KPI row */}
       {isLoading ? (
@@ -602,7 +625,7 @@ import { PageHeader } from "@/components/chrome/PageHeader";
 import { SkeletonCards } from "@/components/ui/Skeleton";
 import { apiClient } from "@/lib/api-client";
 import {
-  TrendingUp, AlertCircle, ExternalLink, Activity as ActivityIcon,
+  TrendingUp, AlertCircle, AlertTriangle, ExternalLink, Activity as ActivityIcon,
   Cpu, Database, Gauge,
 } from "@/lib/icons";
 
@@ -610,6 +633,23 @@ import {
 // API base so "Open Pulse" works whether the admin is on :3001 in dev or
 // a different origin in prod.
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+// DegradedBanner says which panels have no data behind them.
+//
+// The dashboard used to answer a dead upstream with a page of zeros and a 200,
+// which reads as good news. The API now names the calls that failed, and this
+// puts that on the screen above the numbers it applies to.
+function DegradedBanner({ source, degraded }: { source: string; degraded?: string[] }) {
+  if (!degraded || degraded.length === 0) return null;
+  return (
+    <div className="mt-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+      <span>
+        {source} did not answer for {degraded.join(", ")}. Those panels are empty rather than zero.
+      </span>
+    </div>
+  );
+}
 
 interface PerformanceSummary {
   latency?: { p50: number; p95: number; p99: number; avg: number };
@@ -619,6 +659,8 @@ interface PerformanceSummary {
   slowest_routes?: Array<{ route: string; method: string; requests: number; avg: number; p95: number; p99: number; error_rate: number }>;
   n1_detections?: Array<{ route: string; query_count: number; first_seen: string }>;
   recent_errors?: Array<{ id: string; route: string; message: string; created_at: string }>;
+  // The calls to Pulse that did not answer. Empty is the healthy case.
+  degraded?: string[];
 }
 
 export default function PerformancePage() {
@@ -629,7 +671,9 @@ export default function PerformancePage() {
         const { data } = await apiClient.get<PerformanceSummary>("/api/admin/observability/summary");
         return data;
       } catch {
-        return {};
+        // Nothing came back. Every signal would render as a dash, which looks
+        // like an idle app rather than a dashboard that cannot see one.
+        return { degraded: ["the whole summary"] };
       }
     },
     refetchInterval: 30_000,
@@ -652,6 +696,8 @@ export default function PerformancePage() {
           </a>
         }
       />
+
+      <DegradedBanner source="Pulse" degraded={data?.degraded} />
 
       {isLoading ? <SkeletonCards count={4} /> : (
         <>

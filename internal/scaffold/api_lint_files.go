@@ -51,7 +51,23 @@ linters:
     - noctx          # an HTTP request with no context, so nothing can cancel it
     - contextcheck   # a function that should inherit a context but makes its own
 
+    # -- Error identity ---------------------------------------------------
+    # Comparing a sentinel error with == works until somebody wraps it with
+    # %w, and then it silently stops working. Twenty-three places in this API
+    # were written that way and all of them were one fmt.Errorf away from
+    # turning a 404 into a 500. Only the comparison check is on; see the
+    # errorlint settings below for the two that are not.
+    - errorlint
+
   settings:
+    errorlint:
+      # errors.Is over ==, which is the check this starts green on.
+      comparison: true
+      # %w over %v in fmt.Errorf. Worth adopting; it reports on code this
+      # project already has, so it is off rather than greeting you with a wall.
+      errorf: false
+      # errors.As over a type assertion on an error. Same reason.
+      asserts: false
     govet:
       disable:
         # "Constant reflect.Ptr should be inlined" - pure style, and the single
@@ -91,8 +107,10 @@ issues:
 #   staticcheck  (~26)  mostly SA1019 deprecation notices from the AWS SDK
 #                       endpoint resolver. Real, but upgrade work with its own
 #                       migration path.
-#   errorlint    (~22)  %v on an error instead of %w, which breaks errors.Is
-#                       and errors.As for every caller downstream.
+#   errorlint    (~22)  the errorf and asserts checks, which are switched off
+#                       in the settings above: %v on an error instead of %w,
+#                       and a type assertion where errors.As belongs. The
+#                       comparison check is already on and already green.
 #   gosec         (~7)  review individually. G404 (math/rand) is fine for
 #                       jitter and bucketing; anything that must be
 #                       unpredictable already uses crypto/rand.

@@ -454,6 +454,12 @@ var catalog = []Entry{
 	{"PULSE_OFF", http.StatusServiceUnavailable, CategoryDisabled, "observability",
 		"Pulse is not enabled in this deployment.",
 		"Hide the metrics dashboard unless the API says it is on."},
+	{"SENTINEL_UNAVAILABLE", http.StatusBadGateway, CategoryServer, "observability",
+		"Sentinel is enabled but answered none of the security dashboard's calls. The dashboard used to render zeros here, which reads as \"nothing is attacking you\".",
+		"Show the dashboard as unavailable rather than empty. details.degraded names the calls that failed."},
+	{"PULSE_UNAVAILABLE", http.StatusBadGateway, CategoryServer, "observability",
+		"Pulse is enabled but answered none of the performance dashboard's calls. The dashboard used to render zeros here, which reads as \"no traffic and no errors\".",
+		"Show the dashboard as unavailable rather than empty. details.degraded names the calls that failed."},
 }
 
 // areaLabels name the areas for a reader. The key is what the entries carry; the

@@ -66,7 +66,6 @@ func TestHandWrittenListsReturnCounts(t *testing.T) {
 		block  string
 		repair func(string, string) (string, []string, []string)
 	}{
-		{"user.go", apiUserHandlerGo(), userListCounts, repairUserListCountsSource},
 		{"blog_handler.go", blogHandlerGo(), blogListCounts, repairBlogListCountsSource},
 	}
 	for _, tc := range cases {
@@ -95,11 +94,36 @@ func TestHandWrittenListsReturnCounts(t *testing.T) {
 				t.Errorf("the repaired file is not valid Go: %v", err)
 			}
 
-			edited := strings.Replace(old, "Count total", "Count everything", 1)
-			edited = strings.Replace(edited, "Failed to fetch blogs", "Could not fetch blogs", 1)
+			edited := strings.Replace(old, "Failed to fetch blogs", "Could not fetch blogs", 1)
 			if _, _, warnings := tc.repair(edited, "{{MODULE}}"); len(warnings) != 1 {
 				t.Errorf("an edited %s should be left alone with a warning, got %v", tc.name, warnings)
 			}
 		})
+	}
+}
+
+// The users list stopped splicing paginate.Counts in v3.281.0 because it stopped
+// counting by hand: paginate.List answers ?counts= for it, the way it does for
+// every generated resource. It also reads the filters the admin's users page
+// sends, which the hand-rolled version did not.
+func TestUsersListGoesThroughPaginate(t *testing.T) {
+	src := apiUserHandlerGo()
+	for _, want := range []string{
+		"paginate.List[models.User](",
+		"userListConfig",
+		`Filterable:   map[string]bool{"role": true, "active": true, "provider": true}`,
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("the users list is missing %q", want)
+		}
+	}
+	for _, gone := range []string{"allowedSorts", "offset := (page - 1) * pageSize", "query.Count(&total)"} {
+		if strings.Contains(src, gone) {
+			t.Errorf("the users list still hand-rolls %q", gone)
+		}
+	}
+	// repairListCounts must leave it alone rather than warn about a missing anchor.
+	if out, fixed, warnings := repairUserListCountsSource(src, "{{MODULE}}"); out != src || len(fixed)+len(warnings) != 0 {
+		t.Errorf("a paginate-backed users list needs no counts repair, got fixed %v warnings %v", fixed, warnings)
 	}
 }

@@ -113,6 +113,11 @@ func repairUserListCountsSource(src, module string) (string, []string, []string)
 	if !strings.Contains(src, "func (h *UserHandler) List(") {
 		return src, nil, nil
 	}
+	// The users list went through paginate.List in v3.281.0, and paginate.List
+	// answers ?counts= itself. Nothing to splice, and nothing to warn about.
+	if strings.Contains(src, "paginate.List[models.User]") {
+		return src, nil, nil
+	}
 	return insertListCounts(src, module, "user.go", userListAnchor, userListCounts,
 		"after the users total, call paginate.Counts(c, query) and return the result as meta.counts, or the users page's This Week, This Month and Updated Recently cards show a dash")
 }

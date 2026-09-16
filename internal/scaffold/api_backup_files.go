@@ -621,7 +621,7 @@ var validFrequencies = map[string]bool{"daily": true, "weekly": true, "monthly":
 func (s *Service) GetSchedule() (models.BackupSchedule, error) {
 	var sc models.BackupSchedule
 	err := s.DB.First(&sc, 1).Error
-	if err == gorm.ErrRecordNotFound {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		sc = models.BackupSchedule{ID: 1, Frequency: "weekly", Time: "02:00", Enabled: true}
 		if cerr := s.DB.Create(&sc).Error; cerr != nil {
 			return sc, cerr
@@ -670,7 +670,7 @@ func (s *Service) DueNow(now time.Time) (bool, error) {
 	if err == nil {
 		return false, nil // already ran this period
 	}
-	if err != gorm.ErrRecordNotFound {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return false, err
 	}
 	return true, nil

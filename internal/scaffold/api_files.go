@@ -434,6 +434,7 @@ func apiMainGo(opts Options) string {
 
 import (
 	"context"
+	"errors"
 	"crypto/sha256"
 	"fmt"
 	"log"
@@ -675,7 +676,7 @@ func main() {
 		if cfg.SentinelEnabled {
 			log.Printf("Sentinel dashboard at http://localhost:%s/sentinel/ui", cfg.Port)
 		}
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Server failed: %v", err)
 		}
 	}()
@@ -2128,6 +2129,7 @@ func apiAuthHandlerGo() string {
 	return `package handlers
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -2289,18 +2291,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Check email uniqueness
-	var existingUser models.User
-	if err := h.DB.WithContext(c.Request.Context()).Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{
-			"error": gin.H{
-				"code":    "EMAIL_EXISTS",
-				"message": "A user with this email already exists",
-			},
-		})
-		return
-	}
-
 	user := models.User{
 		FirstName:  req.FirstName,
 		LastName:   req.LastName,
@@ -2312,7 +2302,21 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		MACAddress: req.MACAddress,
 	}
 
-	if err := h.DB.WithContext(c.Request.Context()).Create(&user).Error; err != nil {
+	// Same insert as the admin's Create User, through the same helper. The
+	// check-then-insert this replaces was written out twice, and both copies
+	// had the same gap between the SELECT and the INSERT: two signups for one
+	// address in the same instant both passed the check, and the loser was
+	// told "Failed to create user" with a 500.
+	if err := services.CreateUser(c.Request.Context(), h.DB, &user); err != nil {
+		if errors.Is(err, services.ErrEmailExists) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": gin.H{
+					"code":    "EMAIL_EXISTS",
+					"message": "A user with this email already exists",
+				},
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"code":    "INTERNAL_ERROR",
@@ -2733,10 +2737,9 @@ func apiUserHandlerGo() string {
 	return `package handlers
 
 import (
+	"errors"
 	"log"
-	"math"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -2796,18 +2799,6 @@ func (h *UserHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Check email uniqueness
-	var existing models.User
-	if err := h.DB.WithContext(c.Request.Context()).Where("email = ?", req.Email).First(&existing).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{
-			"error": gin.H{
-				"code":    "EMAIL_EXISTS",
-				"message": "A user with this email already exists",
-			},
-		})
-		return
-	}
-
 	user := models.User{
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
@@ -2826,7 +2817,20 @@ func (h *UserHandler) Create(c *gin.Context) {
 		user.Role = models.RoleUser
 	}
 
-	if err := h.DB.WithContext(c.Request.Context()).Create(&user).Error; err != nil {
+	// The unique index on users.email decides, not a SELECT before the INSERT.
+	// Two requests for the same address arriving together both found nothing
+	// and both inserted; one then failed on the constraint and was answered
+	// with a 500 that said "Failed to create user".
+	if err := services.CreateUser(c.Request.Context(), h.DB, &user); err != nil {
+		if errors.Is(err, services.ErrEmailExists) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": gin.H{
+					"code":    "EMAIL_EXISTS",
+					"message": "A user with this email already exists",
+				},
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"code":    "INTERNAL_ERROR",
@@ -2842,51 +2846,39 @@ func (h *UserHandler) Create(c *gin.Context) {
 	})
 }
 
+// userListConfig is the one description of what the users list may be
+// searched, sorted and filtered by.
+//
+// The filters are the point. The admin's users page ships a Role dropdown, a
+// Status toggle and a Provider dropdown, and its "Active Users" stat card asks
+// for /api/users?active=true&page_size=1. The hand-rolled list read none of
+// them: every filter returned the whole table and the Active Users card
+// reported the total user count.
+var userListConfig = paginate.Config{
+	Searchable: []string{"first_name", "last_name", "email"},
+	Sortable: map[string]bool{
+		"id": true, "first_name": true, "last_name": true,
+		"email": true, "role": true, "created_at": true,
+	},
+	Filterable:   map[string]bool{"role": true, "active": true, "provider": true},
+	DefaultSort:  "created_at",
+	DefaultOrder: "desc",
+}
+
 // List returns a paginated list of users.
+//
+// Sixty-five lines of page clamping, sort whitelisting, search building and
+// page arithmetic used to live here, with the Count error dropped on the
+// floor: a count that failed left total at 0 and the table reported "0 of 0"
+// over a full page of rows. paginate.List is the same logic every generated
+// resource already uses, so a fix to it now reaches this endpoint too.
 func (h *UserHandler) List(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-	search := c.Query("search")
-	sortBy := c.DefaultQuery("sort_by", "created_at")
-	sortOrder := c.DefaultQuery("sort_order", "desc")
-
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
-
-	// Validate sort order
-	if sortOrder != "asc" && sortOrder != "desc" {
-		sortOrder = "desc"
-	}
-
-	// Validate sort column
-	allowedSorts := map[string]bool{
-		"id": true, "first_name": true, "last_name": true, "email": true, "role": true, "created_at": true,
-	}
-	if !allowedSorts[sortBy] {
-		sortBy = "created_at"
-	}
-
-	query := h.DB.WithContext(c.Request.Context()).Model(&models.User{})
-
-	// Search
-	if search != "" {
-		// LOWER(...) LIKE LOWER(...) rather than ILIKE: ILIKE is Postgres-only
-		// and this API also runs on SQLite.
-		query = query.Where("LOWER(first_name) LIKE LOWER(?) OR LOWER(last_name) LIKE LOWER(?) OR LOWER(email) LIKE LOWER(?)", "%"+search+"%", "%"+search+"%", "%"+search+"%")
-	}
-
-	// Count total
-	var total int64
-	query.Count(&total)
-` + userListCounts + `
-	// Fetch paginated results
-	var users []models.User
-	offset := (page - 1) * pageSize
-	if err := query.Order(sortBy + " " + sortOrder).Offset(offset).Limit(pageSize).Find(&users).Error; err != nil {
+	res, err := paginate.List[models.User](
+		h.DB.WithContext(c.Request.Context()).Model(&models.User{}),
+		paginate.Bind(c),
+		userListConfig,
+	)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"code":    "INTERNAL_ERROR",
@@ -2896,17 +2888,7 @@ func (h *UserHandler) List(c *gin.Context) {
 		return
 	}
 
-	pages := int(math.Ceil(float64(total) / float64(pageSize)))
-
-	c.JSON(http.StatusOK, gin.H{
-		"data": users,
-		"meta": gin.H{
-			"total":     total,
-			"page":      page,
-			"page_size": pageSize,
-			"pages":     pages,
-` + listCountsMeta + `		},
-	})
+	c.JSON(http.StatusOK, res)
 }
 
 // GetByID returns a single user by ID.
@@ -2942,28 +2924,38 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 // assignments and lets grant resolution fall back to users.role, rather than
 // failing the update.
 func syncUserRoleAssignment(db *gorm.DB, userID, roleName string) error {
-	var role models.Role
-	err := db.Where("name = ?", roleName).First(&role).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		return writeUserRoleAssignment(tx, userID, roleName)
+	}); err != nil {
 		return err
 	}
 
-	txErr := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("user_id = ?", userID).Delete(&models.UserRole{}).Error; err != nil {
-			return err
-		}
-		if role.ID == "" {
-			return nil // unknown name — fall back to the legacy string
-		}
-		return tx.Create(&models.UserRole{UserID: userID, RoleID: role.ID}).Error
-	})
-	if txErr != nil {
-		return txErr
-	}
-
-	// Permissions just changed for this user; drop the cached grants.
+	// Permissions just changed for this user; drop the cached grants. After the
+	// commit, never inside it: a request that resolved grants while the
+	// transaction was still open would cache rows that had yet to exist.
 	authz.Invalidate()
 	return nil
+}
+
+// writeUserRoleAssignment is the same work with no transaction of its own, for
+// a caller that already has one. Update needs it: the assignment and the row
+// are one change and have to succeed or fail together.
+//
+// It does not invalidate the grant cache. Only the caller knows when its
+// transaction commits, and that is the moment the cache is stale.
+func writeUserRoleAssignment(tx *gorm.DB, userID, roleName string) error {
+	var role models.Role
+	err := tx.Where("name = ?", roleName).First(&role).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	if err := tx.Where("user_id = ?", userID).Delete(&models.UserRole{}).Error; err != nil {
+		return err
+	}
+	if role.ID == "" {
+		return nil // unknown name — fall back to the legacy string
+	}
+	return tx.Create(&models.UserRole{UserID: userID, RoleID: role.ID}).Error
 }
 
 // Changes to a user.
@@ -3062,26 +3054,32 @@ func (h *UserHandler) Update(c *gin.Context) {
 		updates["active"] = *req.Active
 	}
 
-	// Keep role ASSIGNMENTS in step with the role string.
+	// Both writes, or neither.
 	//
 	// Grant resolution prefers the user_roles table and only falls back to
-	// users.role. Without this, changing the Role dropdown for a user who
-	// already has an assignment would update the string and change nothing
-	// about what they can actually do — a silent no-op, and a nasty one to
-	// debug.
-	if req.Role != "" {
-		if err := syncUserRoleAssignment(h.DB, user.ID, req.Role); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
+	// users.role, so changing the Role dropdown has to change the assignment
+	// as well or it is a silent no-op. They used to be two separate writes,
+	// the assignment first: when the Updates that followed failed, the user
+	// kept the permissions of the new role while users.role still read as the
+	// old one, and nothing anywhere said so. One transaction now, so a failure
+	// leaves the account exactly as it was.
+	if err := h.DB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		if req.Role != "" {
+			if err := writeUserRoleAssignment(tx, user.ID, req.Role); err != nil {
+				return err
+			}
+		}
+		return tx.Model(&user).Updates(updates).Error
+	}); err != nil {
+		if errors.Is(err, services.ErrEmailExists) || services.IsDuplicateKey(err) {
+			c.JSON(http.StatusConflict, gin.H{
 				"error": gin.H{
-					"code":    "INTERNAL_ERROR",
-					"message": "Failed to update role assignment",
+					"code":    "EMAIL_EXISTS",
+					"message": "A user with this email already exists",
 				},
 			})
 			return
 		}
-	}
-
-	if err := h.DB.WithContext(c.Request.Context()).Model(&user).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"code":    "INTERNAL_ERROR",
@@ -3090,9 +3088,22 @@ func (h *UserHandler) Update(c *gin.Context) {
 		})
 		return
 	}
+	if req.Role != "" {
+		authz.Invalidate()
+	}
 
-	// Reload to get updated values
-	h.DB.WithContext(c.Request.Context()).Where("id = ?", id).First(&user)
+	// Reload to get updated values. A failure here is reported rather than
+	// ignored: the response used to carry whatever the struct happened to hold
+	// when the read failed, which is the row as it was before the update.
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", id).First(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to reload the updated user",
+			},
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":    user,
@@ -3242,7 +3253,15 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	h.DB.WithContext(c.Request.Context()).Where("id = ?", userID).First(&user)
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", userID).First(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to reload your profile",
+			},
+		})
+		return
+	}
 
 	// Changing a password must invalidate every logged-in device — that is the
 	// whole point of changing it after a suspected compromise.
@@ -3524,7 +3543,7 @@ func RequireRole(rolesOrPerms ...string) gin.HandlerFunc {
 // group, so one that forgets fails closed.
 func RequireStaff() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if role, _ := c.Get("user_role"); role == "ADMIN" {
+		if role, _ := c.Get("user_role"); role == models.RoleAdmin {
 			c.Next()
 			return
 		}
@@ -3549,7 +3568,7 @@ func RequireStaff() gin.HandlerFunc {
 // need is that resource's, which a route written once cannot name in advance.
 func RequirePermissionFor(param, action string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if role, _ := c.Get("user_role"); role == "ADMIN" {
+		if role, _ := c.Get("user_role"); role == models.RoleAdmin {
 			c.Next()
 			return
 		}
@@ -4898,6 +4917,7 @@ func apiSyncHandlerGo() string {
 	return `package handlers
 
 import (
+	"errors"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -5100,7 +5120,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange, rows currentRow
 		// Versioned update: load current row, compare versions, update if match.
 		current, err := h.current(c, rows, ch, proto)
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return PushResult{OK: false, Code: "NOT_FOUND", Message: "row was deleted on the server"}
 			}
 			return PushResult{OK: false, Code: "INTERNAL_ERROR", Message: syncFault(c, ch, err, "the server could not read the row")}
@@ -5175,7 +5195,7 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange, rows currentRow
 	case "delete":
 		current, err := h.current(c, rows, ch, proto)
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// Already gone — treat as success so the outbox can clear.
 				return PushResult{OK: true}
 			}

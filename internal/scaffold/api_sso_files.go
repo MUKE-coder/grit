@@ -517,6 +517,7 @@ func apiSSOHandlerGo() string {
 	src := `package handlers
 
 import (
+	"errors"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
@@ -821,7 +822,7 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 		}
 		return &user, nil
 	}
-	if err != gorm.ErrRecordNotFound {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("Could not complete sign-in.")
 	}
 
@@ -840,7 +841,7 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 		if !user.Active {
 			return nil, fmt.Errorf("Your account has been disabled.")
 		}
-	case err == gorm.ErrRecordNotFound:
+	case errors.Is(err, gorm.ErrRecordNotFound):
 		if !conn.JITProvisioning {
 			return nil, fmt.Errorf("No account exists for %s. Ask your administrator to create one.", email)
 		}

@@ -971,12 +971,26 @@ export const errorCodeAreas: ErrorCodeArea[] = [
         meaning: 'Pulse is not enabled in this deployment.',
         client: 'Hide the metrics dashboard unless the API says it is on.',
       },
+      {
+        code: 'SENTINEL_UNAVAILABLE',
+        status: 502,
+        category: 'server',
+        meaning: 'Sentinel is enabled but answered none of the security dashboard\'s calls. The dashboard used to render zeros here, which reads as "nothing is attacking you".',
+        client: 'Show the dashboard as unavailable rather than empty. details.degraded names the calls that failed.',
+      },
+      {
+        code: 'PULSE_UNAVAILABLE',
+        status: 502,
+        category: 'server',
+        meaning: 'Pulse is enabled but answered none of the performance dashboard\'s calls. The dashboard used to render zeros here, which reads as "no traffic and no errors".',
+        client: 'Show the dashboard as unavailable rather than empty. details.degraded names the calls that failed.',
+      },
     ],
   },
 ]
 
 /** How many codes the API documents. Shown on the page, so it cannot be stale. */
-export const errorCodeCount = 113
+export const errorCodeCount = 115
 
 /** Every row, flattened, for searching and for a test that checks coverage. */
 export const errorCodes: ErrorCodeRow[] = errorCodeAreas.flatMap((area) => area.codes)

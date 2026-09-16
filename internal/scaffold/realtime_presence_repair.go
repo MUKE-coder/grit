@@ -52,7 +52,7 @@ func repairRealtimePresence(root string, opts Options) error {
 	if err != nil {
 		return err
 	}
-	if strings.Contains(hubSrc, hubLocalSendsNew) {
+	if strings.Contains(hubSrc, hubLocalSendsNew) || strings.Contains(hubSrc, hubLocalSendsCounted) {
 		if err := addFile(filepath.Join(realtimeDir, "hub_send_test.go"), apiRealtimeHubSendTestGo()); err != nil {
 			return err
 		}
@@ -120,7 +120,14 @@ func repairRealtimeHubSendsSource(src string) (string, []string, []string) {
 	if !strings.Contains(src, "func (h *Hub) deliverLocal(") {
 		return src, nil, nil
 	}
-	return applyRealtimeHunks(src, realtimeHubSendsHunks,
+	hunks := realtimeHubSendsHunks
+	if strings.Contains(src, hubLocalSendsCounted) {
+		// v3.281.0 counts these sends, so the fixed text is no longer there
+		// verbatim. The counted form still sends under the read lock: only the
+		// backstop is left to check.
+		hunks = [][2]string{{hubBackstopOld, hubBackstopNew}}
+	}
+	return applyRealtimeHunks(src, hunks,
 		"a message sent while a connection closes no longer panics the API",
 		"does not send the way Grit wrote it: in deliverLocal and broadcastLocal, send while holding h.mu.RLock (with a non-blocking select), or a send racing a closing connection panics with \"send on closed channel\" and stops the API")
 }
