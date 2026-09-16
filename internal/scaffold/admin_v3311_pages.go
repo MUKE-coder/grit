@@ -28,16 +28,12 @@ import { ResourceWidgetsRow } from "@/components/dashboard/ResourceWidgetsRow";
 import { apiClient } from "@/lib/api-client";
 import {
   Activity as ActivityIcon, ArrowUpRight,
-  Users, Bell, TrendingUp, Database, Shield, getIcon,
+  Users, Bell, Database, Shield, getIcon,
 } from "@/lib/icons";
 
-// Recharts is about 400 KB. The two charts load after the page renders, so the
+// Recharts is about 400 KB. The chart loads after the page renders, so the
 // greeting, stat tiles and activity feed do not wait for it. Suspense shows the
 // placeholder in the Vite admin, where dynamic() is React.lazy.
-const ActivityAreaChart = dynamic(
-  () => import("@/components/dashboard/DashboardCharts").then((m) => m.ActivityAreaChart),
-  { ssr: false, loading: ChartPlaceholder },
-);
 const SeverityPieChart = dynamic(
   () => import("@/components/dashboard/DashboardCharts").then((m) => m.SeverityPieChart),
   { ssr: false, loading: ChartPlaceholder },
@@ -141,21 +137,6 @@ export default function DashboardPage() {
     refetchInterval: 60_000,
   });
 
-  // 7-day mock series — real implementation would call an /api/dashboard
-  // endpoint. We pre-build the shape so swapping in real data later is
-  // a one-line change.
-  const weekSeries = useMemo(() => {
-    const today = new Date();
-    return Array.from({ length: 7 }).map((_, i) => {
-      const d = new Date(today);
-      d.setDate(today.getDate() - (6 - i));
-      return {
-        day: d.toLocaleDateString(undefined, { weekday: "short" }),
-        events: Math.round(20 + Math.random() * 80),
-      };
-    });
-  }, []);
-
   const severitySeries = useMemo(() => {
     const s = activityStats.data;
     if (!s || s.total === 0) {
@@ -234,21 +215,51 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Charts row */}
+      {/* Activity row. There is no per-day event count endpoint, so the
+          "past 7 days" chart that used to sit here plotted random numbers.
+          It is gone rather than faked: the feed and the 24 hour severity mix
+          below are both read from /api/user-activity. */}
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-border bg-bg-elevated p-5 lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
+        <div className="rounded-xl border border-border bg-bg-elevated lg:col-span-2">
+          <header className="flex items-center justify-between border-b border-border px-5 py-3.5">
             <div>
-              <p className="text-sm font-semibold text-foreground">Activity, past 7 days</p>
-              <p className="text-xs text-text-muted">Events recorded per day across the platform</p>
+              <p className="text-sm font-semibold text-foreground">Recent activity</p>
+              <p className="text-xs text-text-muted">Latest 8 events across the platform</p>
             </div>
-            <TrendingUp className="h-4 w-4 text-text-muted" />
-          </div>
-          <div className="h-56 w-full">
-            <Suspense fallback={<ChartPlaceholder />}>
-              <ActivityAreaChart data={weekSeries} />
-            </Suspense>
-          </div>
+            <Link href="/system/activity" className="text-xs font-medium text-accent hover:text-accent-hover">
+              View all
+            </Link>
+          </header>
+          {recentActivity.isLoading ? (
+            <div className="px-5 py-12 text-center text-sm text-text-muted">Loading...</div>
+          ) : (recentActivity.data ?? []).length === 0 ? (
+            <div className="px-5 py-12 text-center text-sm text-text-muted">No activity yet.</div>
+          ) : (
+            <ul className="divide-y divide-border">
+              {(recentActivity.data ?? []).map((row) => (
+                <li key={row.id} className="flex items-start gap-3 px-5 py-3 text-sm">
+                  <SeverityDot severity={row.severity} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-foreground">{row.summary}</p>
+                    <p className="text-xs text-text-muted">
+                      <code className="font-mono">{row.action}</code>
+                      {row.ip_address && (
+                        <span title={row.ip_address}>
+                          {" · "}
+                          {row.ip_address === "::1" || row.ip_address === "127.0.0.1"
+                            ? "localhost"
+                            : row.ip_address}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs text-text-muted">
+                    {timeAgo(row.created_at)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="rounded-xl border border-border bg-bg-elevated p-5">
@@ -273,49 +284,6 @@ export default function DashboardPage() {
             ))}
           </ul>
         </div>
-      </div>
-
-      {/* Recent activity feed */}
-      <div className="mt-6 rounded-xl border border-border bg-bg-elevated">
-        <header className="flex items-center justify-between border-b border-border px-5 py-3.5">
-          <div>
-            <p className="text-sm font-semibold text-foreground">Recent activity</p>
-            <p className="text-xs text-text-muted">Latest 8 events across the platform</p>
-          </div>
-          <Link href="/system/activity" className="text-xs font-medium text-accent hover:text-accent-hover">
-            View all
-          </Link>
-        </header>
-        {recentActivity.isLoading ? (
-          <div className="px-5 py-12 text-center text-sm text-text-muted">Loading...</div>
-        ) : (recentActivity.data ?? []).length === 0 ? (
-          <div className="px-5 py-12 text-center text-sm text-text-muted">No activity yet.</div>
-        ) : (
-          <ul className="divide-y divide-border">
-            {(recentActivity.data ?? []).map((row) => (
-              <li key={row.id} className="flex items-start gap-3 px-5 py-3 text-sm">
-                <SeverityDot severity={row.severity} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-foreground">{row.summary}</p>
-                  <p className="text-xs text-text-muted">
-                    <code className="font-mono">{row.action}</code>
-                    {row.ip_address && (
-                      <span title={row.ip_address}>
-                        {" · "}
-                        {row.ip_address === "::1" || row.ip_address === "127.0.0.1"
-                          ? "localhost"
-                          : row.ip_address}
-                      </span>
-                    )}
-                  </p>
-                </div>
-                <span className="shrink-0 text-xs text-text-muted">
-                  {timeAgo(row.created_at)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
 
       {/* Quick Access tiles — bottom section */}
