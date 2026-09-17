@@ -70,6 +70,7 @@ import (
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/config"
+	"{{MODULE}}/internal/crypto"
 	"{{MODULE}}/internal/database"
 	"{{MODULE}}/internal/migrate"
 	"{{MODULE}}/internal/models"
@@ -157,7 +158,7 @@ func main() {
 	if err := models.Migrate(db); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
-` + migrateSearchIndexHook + migrateSyncBackfillHook + `
+` + migrateSearchIndexHook + migrateSyncBackfillHook + migrateEncryptExistingHook + `
 	after, err := migrate.Snapshot(db)
 	if err != nil {
 		// The migration itself worked. Only the record of it did not, and

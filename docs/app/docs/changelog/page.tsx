@@ -66,6 +66,67 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.287.0 */}
+            <div className="mb-12" id="v3.287.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.287.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 17, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Sign-in that reveals nothing, encrypted two-factor secrets, and a field encryption key in every new project</h3>
+                <p>
+                  <strong>Sign-in no longer tells anyone what state an account is in.</strong> A wrong password for a
+                  locked account got 429 <code>ACCOUNT_LOCKED</code>, a disabled one 403 <code>ACCOUNT_DISABLED</code>,
+                  and a social-login account 400 <code>SOCIAL_AUTH_ONLY</code> naming its provider, so anyone could learn
+                  which addresses held accounts and what state they were in. An unknown address also answered in under a
+                  millisecond, against about 56 ms for a real one. All of them now get the same 401
+                  <code>INVALID_CREDENTIALS</code> after the same bcrypt work. A disabled or unverified account is told why
+                  only once its password is right.
+                </p>
+                <p>
+                  <strong>Two-factor secrets are encrypted at rest.</strong> Anyone who could read the two-factor table or
+                  a backup of it could generate every user&apos;s codes. Secrets are now encrypted with
+                  <code>FIELD_ENCRYPTION_KEY</code>. Secrets stored before the upgrade keep working: <code>grit migrate</code>
+                  encrypts them in place, and any that remain are encrypted the first time their code verifies.
+                </p>
+                <p>
+                  <strong>A field encryption key in every new project.</strong> <code>grit new</code> writes 32 random bytes
+                  to <code>FIELD_ENCRYPTION_KEY</code> in <code>.env</code>, so two-factor secrets and encrypted columns are
+                  encrypted from the first sign-up instead of only when someone remembered to set a key.
+                  <code>.env.example</code> carries <code>CHANGE_ME</code>, and an API started with that placeholder
+                  refuses to boot and names the variable. <code>grit upgrade</code> never writes a key into an existing
+                  project, because a key nobody knows they have is a key nobody backs up; it prints one line saying how to
+                  generate one, back it up and run <code>grit migrate</code>. The go-live checklist has a new section on
+                  backing the key up: losing it locks out every two-factor user, and changing the value is not a rotation.
+                </p>
+                <p>
+                  <strong>A stricter trusted-device cookie.</strong> The cookie that lets a browser skip the two-factor code
+                  is now <code>Secure</code> on HTTPS and <code>SameSite=Lax</code>, like the sign-in cookies. It was
+                  neither.
+                </p>
+                <p>
+                  <strong>A refused socket token is not explained to the caller.</strong> A bad token on the realtime
+                  socket got the token parser&apos;s own error back. It now gets &quot;Invalid or expired token&quot;, and
+                  the reason goes to the server log.
+                </p>
+                <p>
+                  <strong>Import jobs belong to whoever started them.</strong> An import job now records its starter, and
+                  <code>GET /imports/:id</code> answers only that user or an admin. Before, any signed-in user with a job
+                  id could read another user&apos;s import counts and row errors, which quote the file&apos;s contents.
+                </p>
+                <p>
+                  <code>grit upgrade</code> applies the sign-in, socket and import fixes whether a project has the handler
+                  shapes from before v3.285.0 or after, adds the import job&apos;s owner column, and updates generated
+                  importers. The sign-in fix also reaches projects created before v3.283.0, which never received the release
+                  that split Login into smaller functions: upgrade recognises Login as any earlier release wrote it and
+                  replaces it. A Login someone has changed is left alone, with a message saying what to change.
+                </p>
+              </div>
+            </div>
+
             {/* v3.286.0 */}
             <div className="mb-12" id="v3.286.0">
               <div className="flex items-center gap-3 mb-4">

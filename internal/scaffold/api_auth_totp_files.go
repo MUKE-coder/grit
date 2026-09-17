@@ -229,14 +229,15 @@ import (
 
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/crypto"
 )
 
 // TwoFactorConfig stores TOTP settings for a user.
 type TwoFactorConfig struct {
-	ID          uint                       ` + "`" + `gorm:"primarykey" json:"id"` + "`" + `
-	UserID      string                     ` + "`" + `gorm:"size:36;uniqueIndex;not null" json:"user_id"` + "`" + `
-	Secret      string                     ` + "`" + `gorm:"size:255;not null" json:"-"` + "`" + `
-	Enabled     bool                       ` + "`" + `gorm:"default:false" json:"enabled"` + "`" + `
+	ID     uint   ` + "`" + `gorm:"primarykey" json:"id"` + "`" + `
+	UserID string ` + "`" + `gorm:"size:36;uniqueIndex;not null" json:"user_id"` + "`" + `
+` + twoFactorSecretField + `	Enabled     bool                       ` + "`" + `gorm:"default:false" json:"enabled"` + "`" + `
 	BackupCodes datatypes.JSONSlice[string] ` + "`" + `gorm:"type:text" json:"-"` + "`" + `
 	// LastUsedStep is the time step of the last code accepted. Only a later one
 	// is accepted next, so a code cannot be used twice.
@@ -294,6 +295,7 @@ import (
 	"image/png"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/boombuler/barcode/qr"
@@ -301,6 +303,7 @@ import (
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/crypto"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
 	"{{MODULE}}/internal/totp"
@@ -427,7 +430,8 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 		return
 	}
 
-	config.Secret = req.Secret
+	// Encrypted at rest when FIELD_ENCRYPTION_KEY is set: see models.TwoFactorConfig.
+	config.Secret = crypto.EncryptedString(req.Secret)
 	config.Enabled = true
 	config.BackupCodes = hashes
 	// The code that enabled 2FA is spent; it cannot also sign in.
@@ -461,7 +465,7 @@ func (h *TOTPHandler) Verify(c *gin.Context) {
 		return
 	}
 
-	step, valid, err := totp.ValidateCodeStep(config.Secret, req.Code)
+	step, valid, err := totp.ValidateCodeStep(string(config.Secret), req.Code)
 	if err == nil && valid {
 		// A code is good for its window, so without this the same code signs in
 		// again for as long as it lasts. The step only moves forward, and the
@@ -477,9 +481,11 @@ func (h *TOTPHandler) Verify(c *gin.Context) {
 		return
 	}
 
+	h.sealSecret(c, config)
 	h.completeSecondFactor(c, pending, user, req.TrustDevice, nil, "Logged in successfully")
 }
 
+` + totpSealSecretFunc + `
 // VerifyBackupCode validates a backup code during login (alternative to TOTP).
 func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 	var req VerifyBackupCodeRequest
@@ -526,6 +532,7 @@ func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 		return
 	}
 	config.BackupCodes = remaining
+	h.sealSecret(c, config)
 
 	h.completeSecondFactor(c, pending, user, req.TrustDevice, gin.H{"backup_codes_remaining": len(remaining)},
 		"Logged in successfully with backup code")
@@ -841,16 +848,7 @@ func (h *TOTPHandler) createTrustedDevice(c *gin.Context, userID string) {
 		return // Non-critical
 	}
 
-	c.SetCookie(
-		"totp_trusted",
-		deviceToken,
-		int(totp.TrustedDeviceDuration.Seconds()),
-		"/",
-		"",    // domain
-		false, // secure (set true in production)
-		true,  // httpOnly
-	)
-}
+` + trustedDeviceCookieNew + `}
 
 // IsTrustedDevice checks if the current request has a valid trusted device cookie.
 func IsTrustedDevice(c *gin.Context, db *gorm.DB, userID string) bool {

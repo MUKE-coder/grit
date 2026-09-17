@@ -23,6 +23,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"database/sql"
 	"database/sql/driver"
 	"encoding/base64"
 	"encoding/json"
@@ -34,6 +35,7 @@ import (
 	"sync"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // cipherPrefix tags an encrypted value and versions the scheme, so the algorithm
@@ -57,6 +59,11 @@ func InitFieldKey(b64 string) error {
 	if b64 == "" {
 		fieldKey = nil
 		return nil
+	}
+	// .env.example carries this placeholder. Copied unchanged, it would otherwise
+	// fail as "not base64", which does not say what to do.
+	if strings.EqualFold(b64, "CHANGE_ME") {
+		return errors.New("FIELD_ENCRYPTION_KEY is still the placeholder from .env.example: generate a key with openssl rand -base64 32, or use the one grit new wrote to .env")
 	}
 	raw, err := base64.StdEncoding.DecodeString(b64)
 	if err != nil {
@@ -218,6 +225,102 @@ func Install(db *gorm.DB) error {
 }
 
 var encryptedStringType = reflect.TypeOf(EncryptedString(""))
+
+// EncryptExisting encrypts the values of every EncryptedString column, in the
+// models given, that are still stored in the clear, and reports how many it
+// wrote. grit migrate calls it with models.Models().
+//
+// A column is readable either way: Scan hands back a value without the enc:v1:
+// prefix as it is. That is what lets a key be set on a project with data, and
+// it is also why setting one encrypted nothing that was already there. Rows
+// written before the key, two-factor secrets among them, stayed plaintext until
+// something happened to save them again. Without a key this does nothing.
+//
+// Each row is rewritten only while it still holds the value that was read, so a
+// row changed in the meantime is left to the write that changed it. Soft-deleted
+// rows are included: deleted is not the same as gone.
+func EncryptExisting(db *gorm.DB, models ...interface{}) (int64, error) {
+	if !EncryptionEnabled() {
+		return 0, nil
+	}
+	var total int64
+	for _, model := range models {
+		stmt := &gorm.Statement{DB: db}
+		if err := stmt.Parse(model); err != nil {
+			return total, fmt.Errorf("reading the schema of %T: %w", model, err)
+		}
+		pk := stmt.Schema.PrioritizedPrimaryField
+		if pk == nil || !db.Migrator().HasTable(model) {
+			continue
+		}
+		for _, field := range stmt.Schema.Fields {
+			if field.FieldType != encryptedStringType || field.DBName == "" {
+				continue
+			}
+			n, err := encryptColumn(db, model, pk.DBName, field.DBName)
+			total += n
+			if err != nil {
+				return total, fmt.Errorf("encrypting %s.%s: %w", stmt.Schema.Table, field.DBName, err)
+			}
+		}
+	}
+	return total, nil
+}
+
+// encryptColumn encrypts one column's plaintext values, a batch at a time.
+func encryptColumn(db *gorm.DB, model interface{}, pk, column string) (int64, error) {
+	const batch = 500
+	type pending struct {
+		id    interface{}
+		value string
+	}
+	col := clause.Column{Name: column}
+	var written int64
+	for {
+		rows, err := db.Unscoped().Model(model).
+			Select([]string{pk, column}).
+			Where("? <> '' AND ? NOT LIKE ?", col, col, cipherPrefix+"%").
+			Order(clause.OrderByColumn{Column: clause.Column{Name: pk}}).
+			Limit(batch).Rows()
+		if err != nil {
+			return written, err
+		}
+		var found []pending
+		for rows.Next() {
+			var id interface{}
+			var value sql.NullString
+			if err := rows.Scan(&id, &value); err != nil {
+				_ = rows.Close()
+				return written, err
+			}
+			if b, ok := id.([]byte); ok {
+				id = string(b)
+			}
+			found = append(found, pending{id: id, value: value.String})
+		}
+		if err := rows.Close(); err != nil {
+			return written, err
+		}
+
+		var round int64
+		for _, row := range found {
+			res := db.Unscoped().Model(model).
+				Where(clause.Eq{Column: clause.Column{Name: pk}, Value: row.id}).
+				Where(clause.Eq{Column: col, Value: row.value}).
+				UpdateColumn(column, EncryptedString(row.value))
+			if res.Error != nil {
+				return written, res.Error
+			}
+			round += res.RowsAffected
+		}
+		written += round
+		// A short batch was the last one. A batch that wrote nothing was
+		// changed under us, and reading it again would find the same rows.
+		if len(found) < batch || round == 0 {
+			return written, nil
+		}
+	}
+}
 
 func encryptMapValues(tx *gorm.DB) {
 	stmt := tx.Statement

@@ -2,6 +2,7 @@ package scaffold
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"path/filepath"
@@ -24,6 +25,26 @@ func randomHex(n int) string {
 	}
 	return hex.EncodeToString(b)
 }
+
+// randomBase64Key returns 32 random bytes in standard base64: the shape
+// FIELD_ENCRYPTION_KEY takes, 44 characters.
+func randomBase64Key() string {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		// Not base64, so the API refuses to start and names the variable, rather
+		// than running with a key nobody generated.
+		return "REPLACE_ME_crypto_rand_failed"
+	}
+	return base64.StdEncoding.EncodeToString(b)
+}
+
+// fieldEncryptionKeyComment introduces FIELD_ENCRYPTION_KEY in .env.
+const fieldEncryptionKeyComment = `# Encrypts two-factor secrets and every crypto.EncryptedString column
+# (AES-256-GCM, 32 bytes in base64). Back it up with the database, but not in the
+# same place: losing it locks every two-factor user out and leaves encrypted
+# columns unreadable, and changing it does the same. Generate a new one for each
+# environment: openssl rand -base64 32
+`
 
 // envExampleFile is .env with every generated secret replaced by a placeholder.
 //
@@ -217,10 +238,7 @@ MINIO_CONSOLE_PORT=9003
 `+envPoolNew+`
 # JWT — generated at scaffold time. Rotate with: openssl rand -hex 32
 JWT_SECRET=%s
-# Field-level encryption (optional). Set a base64 32-byte key to enable AES-256-GCM
-# on crypto.EncryptedString columns. Generate one: openssl rand -base64 32
-# Keep it safe and backed up — losing it makes encrypted columns unreadable.
-# FIELD_ENCRYPTION_KEY=
+`+fieldEncryptionKeyComment+`FIELD_ENCRYPTION_KEY={{FIELD_ENCRYPTION_KEY}}
 JWT_ACCESS_EXPIRY=15m
 JWT_REFRESH_EXPIRY=168h
 
@@ -435,6 +453,10 @@ SOCIAL_AUTH_ENABLED=false
 		opts.Theme, // THEME — picked by --theme at scaffold time, defaults to atlas
 	)
 
+	// Every project encrypts its two-factor secrets and encrypted columns from the
+	// start. .env.example gets a placeholder instead: see encryptionKeyLine.
+	out = strings.Replace(out, "{{FIELD_ENCRYPTION_KEY}}", randomBase64Key(), 1)
+
 	// MinIO's root credentials, generated like the rest. They were
 	// minioadmin/minioadmin, which is the whole bucket to anyone who can reach it.
 	out = strings.Replace(out, "{{MINIO_ACCESS_KEY}}", "grit"+randomHex(8), 1)
@@ -467,10 +489,7 @@ DATABASE_URL=postgres://user:password@ep-xxx-xxx-123456.us-east-2.aws.neon.tech/
 
 # ─── JWT ───────────────────────────────────────────────
 JWT_SECRET=change-me-to-a-random-string-at-least-32-chars
-# Field-level encryption (optional). Set a base64 32-byte key to enable AES-256-GCM
-# on crypto.EncryptedString columns. Generate one: openssl rand -base64 32
-# Keep it safe and backed up — losing it makes encrypted columns unreadable.
-# FIELD_ENCRYPTION_KEY=
+`+fieldEncryptionKeyComment+`FIELD_ENCRYPTION_KEY=CHANGE_ME
 JWT_ACCESS_EXPIRY=15m
 JWT_REFRESH_EXPIRY=168h
 
