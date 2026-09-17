@@ -514,6 +514,18 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairThinServices(root, opts); err != nil {
 			fmt.Printf("  ⚠ moving the ticket rules into a service: %v\n", err)
 		}
+		// After repairThinServices: that one writes auth.go through the manifest
+		// guard, which refuses a file this upgrade has already changed.
+		// Sign-in says nothing about an account until its password matches, a
+		// refused socket token is not explained to the caller, and an import job
+		// is read only by whoever started it.
+		if err := repairAuthDisclosure(root, opts); err != nil {
+			fmt.Printf("  ⚠ closing account and import disclosures: %v\n", err)
+		}
+		// Advice only: an upgrade never writes a key into an existing .env.
+		if advice := fieldKeyAdviceFor(root, opts); advice != "" {
+			fmt.Println(advice)
+		}
 		// The admin's React Query client is created per mount, and the blog
 		// editor loads Tiptap on demand.
 		if err := repairAdminBundles(root, opts); err != nil {

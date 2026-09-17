@@ -10,6 +10,7 @@ export const metadata = getDocMetadata('/docs/deployment/environment')
 const REQUIRED = [
   { name: 'DATABASE_URL', note: 'Postgres connection string. Also accepts sqlite:./app.db for small single-binary deploys.' },
   { name: 'JWT_SECRET', note: 'Signs access tokens. 32+ random bytes. Changing it logs everyone out.' },
+  { name: 'FIELD_ENCRYPTION_KEY', note: 'Encrypts two-factor secrets and encrypted columns. 32 bytes in base64, written to .env by grit new. Keep it in the secret store and back it up separately from the database: losing or changing it locks out every two-factor user. See the go-live checklist.' },
   { name: 'APP_ENV', note: 'Set to production. Controls error verbosity, cookie flags and whether debug routes mount.' },
   { name: 'APP_PORT', note: 'Defaults to 8080. Platforms that assign a port (Railway, Render, Heroku) inject their own — map it.' },
   { name: 'CORS_ORIGINS', note: 'Comma-separated exact origins. Never a wildcard in production with credentials on.' },

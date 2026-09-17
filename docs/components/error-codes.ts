@@ -186,8 +186,8 @@ export const errorCodeAreas: ErrorCodeArea[] = [
         code: 'INVALID_CREDENTIALS',
         status: 401,
         category: 'auth',
-        meaning: 'The email and password do not match an account.',
-        client: 'Say only that the details are wrong: which of the two it was is deliberately not reported.',
+        meaning: 'The email and password do not match an account. A locked account, and one that signs in only with a social provider, get this too until the password is right.',
+        client: 'Say only that the details are wrong, and offer password reset: which of the two it was, and whether the account exists or is locked, is deliberately not reported.',
       },
       {
         code: 'INVALID_PASSWORD',
@@ -221,7 +221,7 @@ export const errorCodeAreas: ErrorCodeArea[] = [
         code: 'ACCOUNT_LOCKED',
         status: 429,
         category: 'limit',
-        meaning: 'Too many failed attempts, so the account is locked for a while.',
+        meaning: 'Too many wrong two-factor codes, so the account is locked for a while. Password sign-in reports a lock as INVALID_CREDENTIALS.',
         client: 'Show the wait, and offer password reset. Retrying sooner extends nothing but the lock.',
       },
       {
@@ -235,7 +235,7 @@ export const errorCodeAreas: ErrorCodeArea[] = [
         code: 'SOCIAL_AUTH_ONLY',
         status: 400,
         category: 'request',
-        meaning: 'The account signs in with a social provider and has no password.',
+        meaning: 'The account signs in with a social provider and has no password. Only projects from before sign-in stopped reporting it return this; they now get INVALID_CREDENTIALS.',
         client: 'Offer the provider button instead of the password form.',
       },
       {

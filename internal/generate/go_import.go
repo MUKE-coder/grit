@@ -250,7 +250,8 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 		gormImport = "\"gorm.io/gorm\"\n\t"
 	}
 
-	ownerSetup, authzImport := "", ""
+	// Every importer records who started its job, so authz is always imported.
+	ownerSetup, authzImport := "", "\""+g.Module+"/internal/authz\"\n\t"
 	if owned {
 		// From the caller on the context rather than from parameters: the
 		// handler puts it there, and a job importing for somebody says who.
@@ -258,7 +259,6 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 			"\t// name another owner in the CSV.\n" +
 			"\tactor, _ := authz.ActorFrom(ctx)\n" +
 			"\townerID, canAssignOwner := actor.UserID, actor.Admin\n"
-		authzImport = "\"" + g.Module + "/internal/authz\"\n\t"
 	}
 
 	rep := strings.NewReplacer(
@@ -415,7 +415,9 @@ import (
 // StartImport records a CSV import of {{Plural}} about to run: the job a client
 // polls for progress.
 func (s *{{Pascal}}Service) StartImport(ctx context.Context, total int) (*models.ImportJob, error) {
-	job := models.ImportJob{Resource: "{{Plural}}", Status: "processing", Total: total}
+	// CreatedBy is who may follow the job: GET /imports/:id answers only them,
+	// or an admin.
+	job := models.ImportJob{Resource: "{{Plural}}", Status: "processing", Total: total, CreatedBy: authz.UserIDFrom(ctx)}
 	if err := s.db(ctx).Create(&job).Error; err != nil {
 		return nil, fmt.Errorf("starting the {{Plural}} import: %w", err)
 	}

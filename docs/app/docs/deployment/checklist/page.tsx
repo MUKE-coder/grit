@@ -23,6 +23,11 @@ const GROUPS: { title: string; note?: string; items: Item[] }[] = [
           'Not the value from .env.example — that string is identical in every Grit project ever generated. Staging and production must differ, or a token minted in staging is valid in production.',
       },
       {
+        label: 'FIELD_ENCRYPTION_KEY is in the secret store and backed up separately',
+        detail:
+          'It encrypts two-factor secrets and encrypted columns. Lose it and every two-factor user is locked out. See the section on backing it up below.',
+      },
+      {
         label: 'No secret is a build argument',
         detail:
           'Build logs are retained, often readable by more people than the container environment, and frequently shipped to a third-party CI provider.',
@@ -174,6 +179,52 @@ export default function ChecklistPage() {
                 </div>
               </div>
             ))}
+
+            <div id="field-encryption-key" className="mb-12 scroll-mt-24">
+              <h2 className="text-2xl font-bold tracking-tight mb-4">Back up FIELD_ENCRYPTION_KEY</h2>
+              <div className="space-y-4 text-muted-foreground leading-relaxed">
+                <p>
+                  <code className="text-xs">grit new</code> writes a random key to{' '}
+                  <code className="text-xs">.env</code>. It encrypts every user&rsquo;s two-factor
+                  secret and every <code className="text-xs">crypto.EncryptedString</code> column, so
+                  the database on its own is not enough to read them. That is the point, and it
+                  is also why the key needs as much care as the database.
+                </p>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li>
+                    <strong className="text-foreground">Where it lives.</strong> Put it in the
+                    deployment&rsquo;s secret store, not in the image, the repository or a build
+                    argument. Every instance of the API needs the same value.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Where the backup lives.</strong> Keep a copy
+                    somewhere separate from the database backups, such as a password manager or a
+                    secrets vault that a second person can reach. A backup stored next to the key
+                    it protects is one leak away from being readable.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">If it is lost.</strong> Nobody with two-factor
+                    sign-in can finish signing in, and each of them has to have two-factor reset by
+                    an administrator. Encrypted columns cannot be read at all. Restoring a database
+                    backup does not help, because the backup is encrypted with the same key.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Rotating it.</strong> Changing the value is
+                    not a rotation. Everything already encrypted stays encrypted under the old key,
+                    so a new value has exactly the same effect as losing the old one. Treat the key
+                    as permanent for the life of the data.
+                  </li>
+                </ul>
+                <p>
+                  A project created before keys were generated has none. Generate one, store it
+                  as above, then run <code className="text-xs">grit migrate</code>, which encrypts the
+                  two-factor secrets and other values that are already stored:
+                </p>
+              </div>
+              <div className="mt-4">
+                <CodeBlock language="bash" code={'openssl rand -base64 32\ngrit migrate'} />
+              </div>
+            </div>
 
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.05] p-6">
               <div className="flex gap-3">

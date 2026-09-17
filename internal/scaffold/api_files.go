@@ -207,7 +207,7 @@ type ImportJob struct {
 	Failed    int       ` + "`json:\"failed\"`" + `
 	Errors    string    ` + "`gorm:\"type:text\" json:\"-\"`" + `
 	Message   string    ` + "`gorm:\"size:500\" json:\"message\"`" + `
-	CreatedAt time.Time ` + "`json:\"created_at\"`" + `
+` + importJobCreatedByField + `	CreatedAt time.Time ` + "`json:\"created_at\"`" + `
 	UpdatedAt time.Time ` + "`json:\"updated_at\"`" + `
 }
 
@@ -237,6 +237,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/authz"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/respond"
 )
@@ -249,10 +250,7 @@ type ImportJobHandler struct {
 // GetByID returns a single import job. Poll this while Status is "processing"
 // to drive a progress bar (processed/total), then read created/skipped/failed
 // and the per-row errors once Status is "completed".
-func (h *ImportJobHandler) GetByID(c *gin.Context) {
-	var job models.ImportJob
-	if err := h.DB.WithContext(c.Request.Context()).First(&job, "id = ?", c.Param("id")).Error; err != nil {
-		respond.Fail(c, respond.CodeNotFound, "Import job not found")
+` + importJobGetNew + `		respond.Fail(c, respond.CodeNotFound, "Import job not found")
 		return
 	}
 
@@ -2135,12 +2133,13 @@ func apiAuthHandlerGo() string {
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/config"
@@ -2364,216 +2363,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	})
 }
 
-// loginRefusalReason is a decision not to let an account sign in, taken before
-// its password is read.
-//
-// Each of these used to be an if-block in the middle of Login, with its own
-// c.JSON and its own activity row, which is most of why that handler was 182
-// lines. Answering them here means the order is visible in one place: disabled,
-// then locked, then unverified, then social-only.
-type loginRefusalReason struct {
-	Status  int
-	Code    string
-	Message string
-	// Action is the activity action to record, or "" when the refusal is not
-	// worth an audit row. Only the two that suggest an attack are.
-	Action  string
-	Summary string
-}
-
-// loginRefusal reports why user may not sign in, or nil when it may.
-//
-// Nothing here compares the password. A disabled or locked account answers the
-// same way whether or not the password was right, so neither can be probed by
-// timing the comparison.
-func (h *AuthHandler) loginRefusal(user *models.User) *loginRefusalReason {
-	if !user.Active {
-		return &loginRefusalReason{
-			Status:  http.StatusForbidden,
-			Code:    "ACCOUNT_DISABLED",
-			Message: "Your account has been disabled",
-			Action:  "auth.login_blocked",
-			Summary: "Sign-in blocked for disabled account " + user.Email,
-		}
-	}
-
-	if user.LockedUntil != nil && time.Now().Before(*user.LockedUntil) {
-		remaining := time.Until(*user.LockedUntil).Round(time.Minute)
-		if remaining < time.Minute {
-			remaining = time.Minute
-		}
-		return &loginRefusalReason{
-			Status:  http.StatusTooManyRequests,
-			Code:    "ACCOUNT_LOCKED",
-			Message: fmt.Sprintf("Too many failed attempts. Try again in about %d minute(s), or reset your password.", int(remaining.Minutes())),
-			Action:  "auth.login_locked",
-			Summary: "Sign-in refused: account is temporarily locked",
-		}
-	}
-
-	// Opt-in gate. Social and SSO sign-ins are unaffected — the IdP already
-	// proved the address, and those paths set EmailVerifiedAt on first login.
-	if h.Config.RequireEmailVerification && user.EmailVerifiedAt == nil && user.Password != "" {
-		return &loginRefusalReason{
-			Status:  http.StatusForbidden,
-			Code:    "EMAIL_NOT_VERIFIED",
-			Message: "Confirm your email address before signing in. Check your inbox for the link.",
-		}
-	}
-
-	if user.Password == "" {
-		provider := user.Provider
-		if provider == "" || provider == "local" {
-			provider = "social login"
-		}
-		return &loginRefusalReason{
-			Status:  http.StatusBadRequest,
-			Code:    "SOCIAL_AUTH_ONLY",
-			Message: fmt.Sprintf("This account uses %s. Please sign in with your social account.", provider),
-		}
-	}
-
-	return nil
-}
-
-// startTOTPChallenge issues the second-factor challenge, and reports whether it
-// answered the request.
-//
-// true means Login is finished: the response carries a short-lived pending
-// token the client exchanges at /auth/totp/verify. false means there is no
-// second factor to ask for, either because the account has none or because this
-// device is already trusted, and Login should carry on and issue tokens.
-func (h *AuthHandler) startTOTPChallenge(c *gin.Context, user *models.User) bool {
-	var totpConfig models.TwoFactorConfig
-	if err := h.DB.WithContext(c.Request.Context()).
-		Where("user_id = ? AND enabled = ?", user.ID, true).First(&totpConfig).Error; err != nil {
-		return false
-	}
-	if IsTrustedDevice(c, h.DB, user.ID) {
-		return false
-	}
-
-	pendingToken, err := totp.GeneratePendingToken()
-	if err != nil {
-		respond.Fail(c, respond.CodeTokenError, "Failed to create verification session")
-		return true
-	}
-
-	// The token is stored hashed, so somebody who can read the table cannot
-	// finish another account's half-completed sign-in with what they find.
-	if err := h.DB.WithContext(c.Request.Context()).Create(&models.TOTPPendingToken{
-		UserID:    user.ID,
-		TokenHash: totp.HashToken(pendingToken),
-		ExpiresAt: time.Now().Add(totp.PendingTokenExpiry),
-	}).Error; err != nil {
-		respond.Fail(c, respond.CodeTokenError, "Failed to create verification session")
-		return true
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
-			"totp_required": true,
-			"pending_token": pendingToken,
-		},
-		"message": "Two-factor authentication required",
-	})
-	return true
-}
-
-// Login authenticates a user and returns tokens.
-func (h *AuthHandler) Login(c *gin.Context) {
-	var req LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respond.Fail(c, respond.CodeValidationError, err.Error())
-		return
-	}
-
-	var user models.User
-	if err := h.DB.WithContext(c.Request.Context()).Where("email = ?", req.Email).First(&user).Error; err != nil {
-		// v3.30.1: unknown email is the most common brute-force fingerprint;
-		// surface it in /system/activity as "warn" severity so operators
-		// can spot credential-stuffing spikes.
-		services.LogLoginFailed(h.DB, c, req.Email)
-		respond.Fail(c, respond.CodeInvalidCredentials, "Invalid email or password")
-		return
-	}
-
-	// Everything that refuses this account before its password is read. Kept out
-	// of Login so the handler reads as the sequence it is, and so the rules can
-	// be answered as one question rather than four scattered ifs.
-	if refusal := h.loginRefusal(&user); refusal != nil {
-		if refusal.Action != "" {
-			services.LogActivity(h.DB, c, services.ActivityArgs{
-				Action:       refusal.Action,
-				Severity:     "warn",
-				Summary:      refusal.Summary,
-				ResourceType: "user",
-				ResourceID:   user.ID,
-			})
-		}
-		c.JSON(refusal.Status, gin.H{
-			"error": gin.H{"code": refusal.Code, "message": refusal.Message},
-		})
-		return
-	}
-
-	if !user.CheckPassword(req.Password) {
-		// Wrong password on a real account — distinct from "unknown email"
-		// because Sentinel's brute-force heuristics weight these higher.
-		services.LogLoginFailed(h.DB, c, req.Email)
-		h.registerFailedLogin(&user)
-		respond.Fail(c, respond.CodeInvalidCredentials, "Invalid email or password")
-		return
-	}
-
-	// The second factor, when this account has one and this device is not
-	// already trusted. It answers the request itself when it does.
-	if h.startTOTPChallenge(c, &user) {
-		return
-	}
-
-	// The failure count is cleared when the sign-in completes. Cleared at the
-	// password, with 2FA still ahead, it handed a fresh set of guesses at the
-	// code to anyone who knew the password and simply signed in again.
-	if user.FailedLoginCount > 0 || user.LockedUntil != nil {
-		if err := h.DB.WithContext(c.Request.Context()).Model(&models.User{}).Where("id = ?", user.ID).
-			Updates(map[string]interface{}{"failed_login_count": 0, "locked_until": nil}).Error; err != nil {
-			log.Printf("lockout: clearing the failure count for %s: %v", user.ID, err)
-		}
-	}
-
-	tokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
-	if err != nil {
-		respond.Fail(c, respond.CodeTokenError, "Failed to generate tokens")
-		return
-	}
-
-	// Set HttpOnly auth cookies for browser clients. Native mobile/desktop
-	// clients ignore them and continue to use the Bearer header from the
-	// tokens object below — both flows work.
-	//
-	// Record the refresh token as a server-side session so this device can be
-	// listed and revoked later.
-	if _, err := services.CreateSession(h.DB, c, user.ID, tokens.RefreshToken); err != nil {
-		log.Printf("auth: failed to record session for %s: %v", user.ID, err)
-	}
-	h.AuthService.SetAuthCookies(c, tokens)
-
-	// v3.30.1: successful sign-in lands in /system/activity at info
-	// severity. IP + user-agent come from the request context inside
-	// LogLogin so brute-force investigation has the full pair.
-	services.LogLogin(h.DB, c, user.ID, user.Email)
-
-	c.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
-			"user":   user,
-			"tokens": tokens,
-		},
-		"message": "Logged in successfully",
-	})
-}
-
-// Refresh generates a new access token from a refresh token. The token is
+` + loginBlockNew + `// Refresh generates a new access token from a refresh token. The token is
 // read from the grit_refresh cookie first (web client) and falls back to
 // the JSON body (mobile/desktop bearer clients) — so a single endpoint
 // supports both flows.
@@ -9031,6 +8821,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	"` + "{{MODULE}}" + `/internal/realtime"
+	"` + "{{MODULE}}" + `/internal/respond"
 	"` + "{{MODULE}}" + `/internal/services"
 )
 
@@ -9072,12 +8863,7 @@ func (h *RealtimeHandler) Connect(c *gin.Context) {
 	}
 	claims, err := h.Auth.ValidateAccessToken(tokenStr)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": gin.H{"code": "INVALID_TOKEN", "message": err.Error()},
-		})
-		return
-	}
-
+` + realtimeInvalidTokenNew + `
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Printf("[ws] upgrade error: %v", err)
