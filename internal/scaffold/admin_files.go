@@ -324,6 +324,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "lib", "tiptap-extensions.ts"): adminTiptapExtensions(),
 		filepath.Join(adminRoot, "lib", "query-client.ts"):      adminQueryClient(),
 		filepath.Join(adminRoot, "lib", "utils.ts"):             adminUtils(),
+		filepath.Join(adminRoot, "lib", "safe-href.ts"):         adminSafeHrefTS(),
 		filepath.Join(adminRoot, "components.json"):             nextComponentsJSON(),
 		filepath.Join(adminRoot, "lib", "resource.ts"):          adminResourceTypes(),
 		filepath.Join(adminRoot, "lib", "form-values.ts"):       adminFormValues(),

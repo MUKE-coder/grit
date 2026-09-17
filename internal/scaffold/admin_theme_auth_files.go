@@ -69,9 +69,9 @@ func adminAuthSocialButtons() string {
 
 import { useState } from "react";
 import { isSocialAuthEnabled } from "@repo/shared/themes";
-import { apiUrl } from "@/lib/api-core";
+` + ssoImportNew + `
 
-// SSOSignIn is the enterprise entry point. Rather than listing every customer's
+` + ssoRedirect + ssoAnchor + ` Rather than listing every customer's
 // identity provider on a public page (which leaks your customer list), the user
 // types their work address and the server decides where it belongs. An address
 // with no connection falls back to the password form, which is what happens for
@@ -98,11 +98,7 @@ export function SSOSignIn() {
       // protocol this connection uses. Building the URL client-side is how a
       // SAML user ends up at the OIDC endpoint and is told their sign-in method
       // doesn't exist.
-      if (res.ok && body?.data?.sso && body.data.redirect_url) {
-        window.location.href = apiUrl(body.data.redirect_url);
-        return;
-      }
-      setError("No single sign-on is set up for that address. Use your password below.");
+` + ssoFollowNew + `      setError("No single sign-on is set up for that address. Use your password below.");
     } catch {
       setError("Could not check that address. Please try again.");
     } finally {

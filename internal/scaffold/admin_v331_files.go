@@ -333,6 +333,7 @@ import { SkeletonTable } from "@/components/ui/Skeleton";
 import { useToastedMutation } from "@/hooks/use-toasted-mutation";
 import { notificationKeys, useNotificationList, type Notification } from "@/hooks/use-notifications";
 import { Check, AlertCircle, AlertTriangle, Activity as ActivityIcon, Bell } from "@/lib/icons";
+import { safeHref } from "@/lib/safe-href";
 import { apiClient } from "@/lib/api-client";
 
 const severityClass: Record<Notification["severity"], string> = {
@@ -414,7 +415,7 @@ export default function NotificationsPage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <Link
-                      href={n.link || "#"}
+                      href={safeHref(n.link)}
                       onClick={() => { if (unreadRow) markRead.mutate(n.id); }}
                       className="block"
                     >

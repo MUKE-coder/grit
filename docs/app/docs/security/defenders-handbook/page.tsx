@@ -65,7 +65,7 @@ const CHAPTERS: Chapter[] = [
               language="dotenv"
               code={`APP_ENV=production            # release-mode Gin, no debug banners
 SENTINEL_ENABLED=true
-SENTINEL_TRUSTED_PROXIES=10.0.0.0/8   # trust the LB, no one else`}
+TRUSTED_PROXIES=10.0.0.0/8            # forwarded headers from the LB only (Gin and Sentinel)`}
             />
           </>
         ),

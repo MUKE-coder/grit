@@ -63,13 +63,12 @@ const API_ORIGIN = toOrigin(process.env.NEXT_PUBLIC_API_URL || "http://localhost
 // NEXT_PUBLIC_STORAGE_URL to your S3/R2/B2 public origin
 // (e.g. https://cdn.example.com or https://<bucket>.s3.<region>.amazonaws.com).
 const STORAGE_ORIGIN = toOrigin(process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:9002");
-const isDev = process.env.NODE_ENV !== "production";
-
+` + nextIsDevLine + nextImageOrigins + `
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'" + (isDev ? " 'unsafe-eval'" : ""),
   "style-src 'self' 'unsafe-inline'",
-  ` + cspImgSrcNew + `
+  ` + cspImgSrcTight + `
   "font-src 'self' data:",
   // ws:/wss: keep the dev overlay + HMR socket working. api.ipify.org is the
   // public-IP hint the API client fetches so local audit records show a real
@@ -193,13 +192,12 @@ const API_ORIGIN = toOrigin(viteEnv.VITE_API_URL || 'http://localhost:8080')
 // stored images load from it. Defaults to local MinIO; set VITE_STORAGE_URL
 // to your S3/R2/B2 public origin in production.
 const STORAGE_ORIGIN = toOrigin(viteEnv.VITE_STORAGE_URL || 'http://localhost:9002')
-const isDev = viteMode !== 'production'
-
+` + viteIsDevLine + viteImageOrigins + `
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  ` + cspImgSrcNew + `
+  ` + cspImgSrcTight + `
   "font-src 'self' data: https://fonts.gstatic.com",
   // api.ipify.org is the dev-only public-IP hint the API client fetches so
   // local audit records show a real address instead of ::1.

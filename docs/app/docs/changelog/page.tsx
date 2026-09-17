@@ -66,6 +66,63 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.288.0 */}
+            <div className="mb-12" id="v3.288.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.288.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 17, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Forwarded headers only from trusted proxies, a tighter image policy, safe stored links, and a checked SSO redirect</h3>
+                <p>
+                  <strong>Forwarded headers are trusted only from your proxies.</strong> The API believed
+                  <code>X-Forwarded-For</code>, <code>X-Real-IP</code> and <code>X-Forwarded-Proto</code> from any client,
+                  so a request could choose the IP address its sessions, audit rows and rate limits were recorded under,
+                  and claim HTTPS over plain HTTP. Those headers are now honoured only from the proxies in the new
+                  <code>TRUSTED_PROXIES</code> setting and removed from every other request. The default trusts loopback
+                  and the private ranges (10/8, 172.16/12, 192.168/16, fc00::/7), which covers Caddy on the same host and a
+                  proxy on the Docker network, so both documented deploys keep real client addresses. Sentinel follows the
+                  same list unless <code>SENTINEL_TRUSTED_PROXIES</code> is set; before, it saw only the proxy&apos;s
+                  address.
+                </p>
+                <p>
+                  <strong>Images load only from hosts the app uses.</strong> The frontends&apos; Content Security Policy
+                  let images load from any https host. <code>img-src</code> now names only the API, the storage origin and
+                  the Google and GitHub sign-in avatar hosts, with <code>NEXT_PUBLIC_IMAGE_ORIGINS</code> (or
+                  <code>VITE_IMAGE_ORIGINS</code>) for anything else. Inline scripts are still allowed: removing them in
+                  Next.js needs a nonce on every request, which would make every page render dynamically, and that trade
+                  is not one to make silently.
+                </p>
+                <p>
+                  <strong>Stored links cannot run code.</strong> Links built from stored data, such as a URL column filled
+                  in by a public form or a notification link, were rendered as given. React stops <code>javascript:</code>
+                  links, but <code>data:</code>, <code>vbscript:</code> and <code>//other-host</code> links still worked.
+                  A new <code>safeHref</code> helper allows only http, https, mailto, tel and paths on the site; table link
+                  cells show anything else as plain text, and notification links fall back to nothing clickable.
+                </p>
+                <p>
+                  <strong>The SSO redirect goes only to the API.</strong> SSO sign-in followed the server&apos;s
+                  <code>redirect_url</code> by appending it to the API address, so a value such as
+                  <code>@evil.example</code> turned into a link to evil.example. The address is now resolved as a URL and
+                  followed only when it is a path on the API&apos;s own origin.
+                </p>
+                <p>
+                  <strong>A locked account gives nothing away, even to the right password.</strong> Since v3.287.0 a
+                  temporarily locked account answers 401 <code>INVALID_CREDENTIALS</code> whether the password is right or
+                  wrong. Answering <code>ACCOUNT_LOCKED</code> only to the right password would let someone guessing keep
+                  going through the lockout and learn which guess was correct. The lock still holds: the right password is
+                  refused until it lifts.
+                </p>
+                <p>
+                  <code>grit upgrade</code> adds the proxy middleware and setting, tightens the image policy, and applies
+                  the link and redirect checks in the admin, the web app and the embedded admin panel.
+                </p>
+              </div>
+            </div>
+
             {/* v3.287.0 */}
             <div className="mb-12" id="v3.287.0">
               <div className="flex items-center gap-3 mb-4">

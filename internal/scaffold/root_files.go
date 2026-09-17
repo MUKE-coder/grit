@@ -420,7 +420,7 @@ SENTINEL_SECRET_KEY=%s
 # database access but not this key fails verification. Keep it: entries
 # written under one key verify only with that key.
 SENTINEL_AUDIT_KEY=%s
-
+{{TRUSTED_PROXIES}}
 # ─── Theme (v3.28+) ────────────────────────────────────────────────────
 # Picks the visual identity for auth pages and the dashboard. Options:
 #   atlas  — split-screen, team/organisation, Inter (default)
@@ -463,6 +463,7 @@ SOCIAL_AUTH_ENABLED=false
 	out = strings.Replace(out, "{{MINIO_SECRET_KEY}}", randomHex(24), 1)
 	out = strings.Replace(out, "{{REDIS_PASSWORD}}", randomHex(24), 1)
 	out = strings.Replace(out, "{{MINIO_BIND_ADDRESS}}", minioBindEnv(opts), 1)
+	out = strings.Replace(out, "{{TRUSTED_PROXIES}}", envTrustedProxies, 1)
 
 	// The admin panel's URL is not a URL in every shape: see adminURLEnv.
 	return strings.Replace(out, "{{ADMIN_URL_ENV}}", adminURLEnv(opts), 1)

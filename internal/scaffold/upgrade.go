@@ -460,6 +460,16 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairBackgroundWork(root, opts); err != nil {
 			fmt.Printf("  ⚠ bounding background work: %v\n", err)
 		}
+		// Forwarded headers are believed only from TRUSTED_PROXIES, so a client
+		// cannot choose the IP its sessions, audit rows and rate limits carry.
+		if err := repairTrustedProxies(root, opts); err != nil {
+			fmt.Printf("  ⚠ trusting forwarded headers only from TRUSTED_PROXIES: %v\n", err)
+		}
+		// The frontends: a tighter CSP, stored links limited to safe schemes, and
+		// the SSO redirect kept on the API's origin.
+		if err := repairFrontendLinkSafety(root, opts); err != nil {
+			fmt.Printf("  ⚠ tightening the CSP and stored links: %v\n", err)
+		}
 		// A GDPR erasure is refused without a compliance reason, and a failure to
 		// write its audit row is reported rather than swallowed.
 		if err := repairGDPRErase(root, opts); err != nil {
