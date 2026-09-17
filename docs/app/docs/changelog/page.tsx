@@ -66,6 +66,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.289.0 */}
+            <div className="mb-12" id="v3.289.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.289.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 17, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>One Redis connection for the jobs screen, a streaming GDPR export, fewer queries per write, and a faster notification bell</h3>
+                <p>
+                  <strong>The jobs screen stops opening Redis connections.</strong> The admin jobs screen built a new Redis
+                  connection pool for every request and closed it again, so fifty refreshes of the queue stats opened fifty
+                  connections. The handler now builds one inspector the first time it is needed and keeps it: the same fifty
+                  refreshes use one connection.
+                </p>
+                <p>
+                  <strong>The GDPR export streams.</strong> An export read a person&apos;s entire activity log into memory
+                  before writing a byte, ignored the error from every query, and kept running after the client went away.
+                  It now follows the request&apos;s context, returns every database error, and writes the activity log 500
+                  rows at a time. If a page fails partway, the file will not parse, so it cannot pass for a complete export.
+                  The two-factor flag in the export now says whether two-factor is actually on, not merely set up.
+                </p>
+                <p>
+                  <strong>Generated writes stop reading their row back.</strong> A generated service wrote a row and then read
+                  it back with its relations: a create took 5 statements and an update or patch 6. Resources whose relations
+                  are all belongs-to now write in one statement with <code>RETURNING</code> and read only the related rows,
+                  so a create takes 2 statements and an update or patch 3. A patch on a resource with no relations drops from
+                  5 to 2. MySQL, which has no <code>RETURNING</code>, still reads the row back.
+                </p>
+                <p>
+                  <strong>A faster notification bell.</strong> Notifications had only single-column indexes, so the unread
+                  count for a user with 20,000 notifications read all 20,000 and threw half away. New
+                  <code>(user_id, created_at)</code> and <code>(user_id, read_at)</code> indexes let the count read only the
+                  unread entries, and a light user&apos;s list reads 50 rows from the index instead of reading all of them
+                  and sorting.
+                </p>
+                <p>
+                  <strong>The admin root redirects on the server.</strong> Opening the admin&apos;s root returned a page with
+                  20 scripts that then asked the API who was signed in before redirecting. The server now answers with a
+                  redirect to the dashboard before any JavaScript loads.
+                </p>
+                <p>
+                  <code>grit upgrade</code> patches the jobs and GDPR handlers, updates the GDPR service and the notification
+                  model (<code>grit migrate</code> builds the indexes, and <code>grit migrate down</code> removes them), and
+                  rewrites generated services that are still in the shape the generator wrote.
+                </p>
+              </div>
+            </div>
+
             {/* v3.288.0 */}
             <div className="mb-12" id="v3.288.0">
               <div className="flex items-center gap-3 mb-4">

@@ -1615,36 +1615,20 @@ export function cn(...inputs: ClassValue[]) {
 `
 }
 
-// adminRedirectPage returns the root page that redirects to /dashboard or /login.
+// adminRedirectPage returns the panel's root page: a redirect to /dashboard,
+// answered by the server.
 func adminRedirectPage() string {
-	return `"use client";
+	return `import { redirect } from "next/navigation";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useMe } from "@/hooks/use-auth";
-
-// The auth cookies are HttpOnly so JS can't peek at them to decide
-// where to send the user. Instead we ask the API: /api/auth/me returns
-// the User on success and 401 (which useMe converts to null) when the
-// session is gone or expired. One short request before the redirect.
+// The root of the panel only ever sends a visitor on, so the server does it: a
+// 307 before any JavaScript loads. This used to be a client page that
+// downloaded the app, asked /api/auth/me who was signed in, and only then
+// navigated, so every visit to the root paid for a page it never showed.
+//
+// Nothing is lost by not asking: the dashboard's layout sends a signed-out
+// visitor to the login, and a USER with no grants to their profile.
 export default function RootPage() {
-  const router = useRouter();
-  const { data: user, isLoading } = useMe();
-
-  useEffect(() => {
-    if (isLoading) return;
-    if (user) {
-      router.replace(user.role === "USER" ? "/profile" : "/dashboard");
-    } else {
-      router.replace("/login");
-    }
-  }, [router, user, isLoading]);
-
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-    </div>
-  );
+  redirect("/dashboard");
 }
 `
 }
