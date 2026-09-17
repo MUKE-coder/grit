@@ -42,6 +42,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "limits_test.go"):           middlewareLimitsTestGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "gzip.go"):                  middlewareGzipGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "gzip_test.go"):             middlewareGzipTestGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "proxies.go"):               middlewareProxiesGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "proxies_test.go"):          middlewareProxiesTestGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "maintenance.go"):           apiMaintenanceMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "idempotency.go"):           apiIdempotencyMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "realtime", "hub.go"):                     apiRealtimeHubGo(),
@@ -903,7 +905,7 @@ type Config struct {
 	// the app speaks to the public internet directly; populate when
 	// you're behind a known reverse proxy (Caddy/Traefik/Cloudflare).
 	SentinelTrustedProxies []string
-
+` + configTrustedProxiesField + `
 	// Observability (Pulse v1.0)
 	PulseEnabled    bool
 	PulseUsername    string
@@ -992,7 +994,7 @@ func Load() (*Config, error) {
 		SentinelPassword:       getEnv("SENTINEL_PASSWORD", "sentinel"),
 		SentinelSecretKey:      getEnv("SENTINEL_SECRET_KEY", "sentinel-secret-change-me"),
 		SentinelAuditKey:       getEnv("SENTINEL_AUDIT_KEY", ""),
-		SentinelTrustedProxies: splitCSV(getEnv("SENTINEL_TRUSTED_PROXIES", "")),
+		` + configSentinelProxiesNew + `
 
 		PulseEnabled:    getEnv("PULSE_ENABLED", "true") == "true",
 		PulseUsername:    getEnv("PULSE_USERNAME", "admin"),
@@ -1318,7 +1320,7 @@ func getEnvDuration(key string, fallback int, unit time.Duration) time.Duration 
 	return time.Duration(getEnvInt(key, fallback)) * unit
 }
 
-// splitCSV trims and splits a comma-separated env var. Empty strings
+` + configTrustedProxiesFunc + `// splitCSV trims and splits a comma-separated env var. Empty strings
 // after trimming are dropped so "a, ,b" yields ["a","b"].
 func splitCSV(s string) []string {
 	if s == "" {
@@ -9391,10 +9393,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	r := gin.New()
-
-	// Global middleware
-	corsOrigins := mountGlobalMiddleware(r, cfg, svc)
+` + routesTrustProxiesBlock + `	corsOrigins := mountGlobalMiddleware(r, cfg, svc)
 
 	mountSentinel(r, db, cfg, svc)
 

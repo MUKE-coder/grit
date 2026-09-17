@@ -29,6 +29,7 @@ func writeFrontendTestFiles(root string, opts Options) error {
 		}
 		files[filepath.Join(adminRoot, "__tests__", "form-values.test.ts")] = adminFormValuesTest(libImport)
 		files[filepath.Join(adminRoot, "__tests__", "tiptap-extensions.test.ts")] = adminTiptapExtensionsTest(libImport)
+		files[filepath.Join(adminRoot, "__tests__", "safe-href.test.ts")] = adminSafeHrefTest(libImport)
 	}
 
 	if opts.ShouldIncludeWeb() || opts.ShouldIncludeAdmin() {

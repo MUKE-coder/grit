@@ -97,7 +97,7 @@ func TestStorageWiringTemplates(t *testing.T) {
 	if !strings.Contains(apiGitignore(), "/storage/") {
 		t.Error("the API .gitignore does not ignore the local root")
 	}
-	if strings.Count(nextSecurityHeaders(), cspImgSrcNew) != 1 || strings.Count(viteSecurityHeaders(), cspImgSrcNew) != 1 {
+	if strings.Count(nextSecurityHeaders(), cspImgSrcTight) != 1 || strings.Count(viteSecurityHeaders(), cspImgSrcTight) != 1 {
 		t.Error("the frontend CSP does not allow images from the API origin")
 	}
 	handler := uploadHandlerGo()

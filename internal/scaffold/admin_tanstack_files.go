@@ -385,6 +385,7 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "lib", "tiptap-extensions.ts"): adminTiptapExtensions(),
 		filepath.Join(adminRoot, "src", "lib", "query-client.ts"):      adminQueryClient(),
 		filepath.Join(adminRoot, "src", "lib", "utils.ts"):             adminUtils(),
+		filepath.Join(adminRoot, "src", "lib", "safe-href.ts"):         adminSafeHrefTS(),
 		filepath.Join(adminRoot, "components.json"):                    viteComponentsJSON(),
 		filepath.Join(adminRoot, "src", "lib", "resource.ts"):          adminResourceTypes(),
 		filepath.Join(adminRoot, "src", "lib", "form-values.ts"):       adminFormValues(),

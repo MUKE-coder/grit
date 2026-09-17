@@ -467,6 +467,7 @@ export function StackedCell({
 func adminCellRenderers() string {
 	return `import type { ColumnDefinition } from "@/lib/resource";
 import { Check, X, Play, ExternalLink } from "@/lib/icons";
+import { safeHref } from "@/lib/safe-href";
 import { formatDate, formatRelative, formatCurrency } from "@/lib/formatters";
 import { formatMoney, type Money } from "@repo/shared/types";
 
@@ -706,8 +707,7 @@ function FileRefCell({ value }: { value: FileRefLike | null }) {
   }
   return (
     <a
-      href={value.url}
-      target="_blank"
+` + fileRefHrefNew + `      target="_blank"
       rel="noopener noreferrer"
       title={value.name}
       className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline"
@@ -759,17 +759,7 @@ function FileRefsCell({ value }: { value: FileRefLike[] }) {
   );
 }
 
-function LinkCell({ value }: { value: string }) {
-  let hostname = value;
-  try {
-    hostname = new URL(value).hostname;
-  } catch {
-    // use raw value if not a valid URL
-  }
-  return (
-    <a
-      href={value}
-      target="_blank"
+` + linkCellNew + `      target="_blank"
       rel="noopener noreferrer"
       className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
     >

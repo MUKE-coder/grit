@@ -119,9 +119,15 @@ pending = (body.get('data') or {}).get('pending_token')
 check('the password still works after the pending token is spent', status == 200 and pending, (status, body))
 for _ in range(5):
     call('POST', '/api/v1/auth/totp/verify', {'pending_token': pending, 'code': '222222'})
+# Locked, the account refuses even the right password, and with the same answer
+# as a wrong one. Saying ACCOUNT_LOCKED only to the right password would let a
+# guesser keep going through the lockout and learn which guess was correct.
 status, body = login()
-check('ten wrong codes across sign-ins lock the account (429)', status == 429 and code_of(body) == 'ACCOUNT_LOCKED',
-      (status, code_of(body)))
+check('ten wrong codes across sign-ins lock the account: the right password is refused',
+      status == 401 and code_of(body) == 'INVALID_CREDENTIALS', (status, code_of(body)))
+status, body = call('POST', '/api/v1/auth/login', {'email': email, 'password': PASSWORD + '-wrong'})
+check('a locked account answers a wrong password the same way',
+      status == 401 and code_of(body) == 'INVALID_CREDENTIALS', (status, code_of(body)))
 
 # Backup codes: two sign-ins race to spend one code. Exactly one may win; the
 # spend used to be a plain save, so both could.

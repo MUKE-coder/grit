@@ -274,6 +274,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bell, Check, AlertCircle, AlertTriangle, Activity } from "@/lib/icons";
+import { safeHref } from "@/lib/safe-href";
 import { apiClient } from "@/lib/api-client";
 import { notificationKeys, useNotificationList, type Notification } from "@/hooks/use-notifications";
 
@@ -374,7 +375,7 @@ export function NotificationBell() {
                         <Icon className={"mt-0.5 h-4 w-4 shrink-0 " + severityColor[n.severity]} />
                         <div className="min-w-0 flex-1">
                           <Link
-                            href={n.link || "#"}
+                            href={safeHref(n.link)}
                             onClick={() => { setOpen(false); if (unreadRow) markRead.mutate(n.id); }}
                             className="block"
                           >
