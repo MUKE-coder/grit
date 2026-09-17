@@ -550,20 +550,9 @@ func handleBackupScheduled(deps WorkerDeps) func(ctx context.Context, task *asyn
 `
 }
 
-func jobsHandlerGo() string {
-	return `package handlers
-
-import (
-	"net/http"
-	"strconv"
-
-	"github.com/gin-gonic/gin"
-	"github.com/hibiken/asynq"
-
-	"{{MODULE}}/internal/respond"
-)
-
-// JobsHandler handles admin job queue endpoints.
+// jobsInspectorOld is the JobsHandler Grit wrote before L15: an inspector, and
+// with it a Redis connection pool, built and closed on every request.
+const jobsInspectorOld = `// JobsHandler handles admin job queue endpoints.
 type JobsHandler struct {
 	RedisURL string
 }
@@ -575,7 +564,50 @@ func (h *JobsHandler) getInspector() (*asynq.Inspector, error) {
 	}
 	return asynq.NewInspector(redisOpt), nil
 }
+`
 
+// jobsInspectorShared is one inspector for the life of the handler.
+const jobsInspectorShared = `// JobsHandler handles admin job queue endpoints.
+type JobsHandler struct {
+	RedisURL string
+
+	// One inspector for the life of the process, built on first use. Each
+	// request used to build its own, and with it a Redis connection pool that
+	// dialled and closed again, so every refresh of the jobs screen opened a
+	// new connection to Redis.
+	inspectorOnce sync.Once
+	inspector     *asynq.Inspector
+	inspectorErr  error
+}
+
+func (h *JobsHandler) getInspector() (*asynq.Inspector, error) {
+	h.inspectorOnce.Do(func() {
+		redisOpt, err := asynq.ParseRedisURI(h.RedisURL)
+		if err != nil {
+			h.inspectorErr = err
+			return
+		}
+		h.inspector = asynq.NewInspector(redisOpt)
+	})
+	return h.inspector, h.inspectorErr
+}
+`
+
+func jobsHandlerGo() string {
+	return `package handlers
+
+import (
+	"net/http"
+	"strconv"
+	"sync"
+
+	"github.com/gin-gonic/gin"
+	"github.com/hibiken/asynq"
+
+	"{{MODULE}}/internal/respond"
+)
+
+` + jobsInspectorShared + `
 // Stats returns queue statistics.
 func (h *JobsHandler) Stats(c *gin.Context) {
 	inspector, err := h.getInspector()
@@ -583,7 +615,6 @@ func (h *JobsHandler) Stats(c *gin.Context) {
 		respond.Fail(c, respond.CodeRedisUnavailable, "Job queue not available")
 		return
 	}
-	defer inspector.Close()
 
 	queues, err := inspector.Queues()
 	if err != nil {
@@ -634,7 +665,6 @@ func (h *JobsHandler) ListByStatus(c *gin.Context) {
 		respond.Fail(c, respond.CodeRedisUnavailable, "Job queue not available")
 		return
 	}
-	defer inspector.Close()
 
 	type jobInfo struct {
 		ID        string ` + "`" + `json:"id"` + "`" + `
@@ -709,7 +739,6 @@ func (h *JobsHandler) Retry(c *gin.Context) {
 		respond.Fail(c, respond.CodeRedisUnavailable, "Job queue not available")
 		return
 	}
-	defer inspector.Close()
 
 	if err := inspector.RunTask(queue, id); err != nil {
 		respond.ServerError(c, "RETRY_FAILED", err, "Failed to retry job")
@@ -730,7 +759,6 @@ func (h *JobsHandler) ClearQueue(c *gin.Context) {
 		respond.Fail(c, respond.CodeRedisUnavailable, "Job queue not available")
 		return
 	}
-	defer inspector.Close()
 
 	if _, err := inspector.DeleteAllCompletedTasks(queue); err != nil {
 		respond.Fail(c, respond.CodeClearFailed, "Failed to clear queue")

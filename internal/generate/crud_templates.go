@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // The generated handler and service, built from one description of the
@@ -59,6 +61,10 @@ type crudParts struct {
 	ownerCol     string
 	ownerField   string
 	ownerName    string
+
+	// relations are the belongs_to rows a write reads after RETURNING, when
+	// they are all the resource has. Empty otherwise.
+	relations []scaffold.ServiceRelation
 }
 
 // crud works out a resource's parts.
@@ -66,6 +72,7 @@ func (g *Generator) crud(names Names) crudParts {
 	var p crudParts
 	patchAllowed := ""
 	var preloads []string
+	var relations []scaffold.ServiceRelation
 
 	ownerName := ""
 	if owner := g.Definition.OwnerField(); owner != nil {
@@ -89,6 +96,12 @@ func (g *Generator) crud(names Names) crudParts {
 			fkGoName := toPascalCase(baseName) + "ID"
 			fkJson := toSnakeCase(baseName) + "_id"
 			preloads = append(preloads, toPascalCase(baseName))
+			relations = append(relations, scaffold.ServiceRelation{
+				Field:    toPascalCase(baseName),
+				Model:    f.RelatedModelName(),
+				FK:       fkGoName,
+				Nullable: f.RelatedModelName() == toPascalCase(g.Definition.Name),
+			})
 
 			// The owner is stamped from the signed-in caller, in the service.
 			// Accepting it from the body would let a caller create rows that
@@ -277,6 +290,12 @@ type %sLinks struct {
 		}
 	}
 	p.single = p.preloads == "" && !hasLinks && g.Definition.Items == nil && !hasAuto
+	// The same, with belongs_to relations: the write is still one statement,
+	// and the rows it points at are read on their own rather than reading the
+	// row back to preload them. Not a tree, whose hooks move a subtree.
+	if p.preloads != "" && !hasLinks && g.Definition.Items == nil && !hasAuto && !g.Definition.Tree {
+		p.relations = relations
+	}
 
 	// Sortable: never a relation, and a money field sorts by its amount
 	// column, the one that exists.
@@ -506,34 +525,9 @@ type %sLinks struct {
 }
 
 // serviceWriteHelper is the single-statement write, as two methods on the
-// service. They do what database.Write and database.SupportsReturning do, and
-// they are here rather than there because the database package imports
-// services for its seeders: a service that imported database back would be an
-// import cycle, and the project would not build. Methods, so that two
-// resources in one package cannot collide.
-const serviceWriteHelper = `
-// write is a session for a single-statement write: no wrapping transaction,
-// and RETURNING where the dialect has it. Safe only because every write it is
-// used for is exactly one statement, which the generator knew.
-func (s *{{Pascal}}Service) write(db *gorm.DB) *gorm.DB {
-	tx := db.Session(&gorm.Session{SkipDefaultTransaction: true})
-	if s.returning(db) {
-		tx = tx.Clauses(clause.Returning{})
-	}
-	return tx
-}
-
-// returning reports whether the dialect hands back the written row. MySQL
-// does not, and does not say so: the clause is dropped and the defaults come
-// back empty, so there the row is read again.
-func (s *{{Pascal}}Service) returning(db *gorm.DB) bool {
-	switch db.Dialector.Name() {
-	case "postgres", "sqlite":
-		return true
-	}
-	return false
-}
-`
+// service. It lives in scaffold because grit upgrade adds it to services the
+// generator wrote before.
+const serviceWriteHelper = scaffold.ServiceWriteHelper
 
 // writeGoService writes services/<resource>.go: every query the resource has.
 func (g *Generator) writeGoService(names Names) error {
@@ -586,19 +580,30 @@ func (g *Generator) serviceSource(names Names) string {
 	reload := "\tif err := db" + p.preloads + ".First(item, \"id = ?\", item.ID).Error; err != nil {\n\t\treturn %s\n\t}\n"
 	createReload := fmt.Sprintf(reload, "err")
 	updateReload := fmt.Sprintf(reload, "nil, err")
-	createCall, updateCall := "db.Create(item)", "db.Model(item).Scopes(pre.Scope).Updates(updates)"
+	patchReload := fmt.Sprintf(reload, "nil, nil, err")
+	createCall, updateCall, patchDB := "db.Create(item)", "db.Model(item).Scopes(pre.Scope).Updates(updates)", "db"
 	gormClause, writeHelper := "", ""
-	if p.single {
+	if p.single || len(p.relations) > 0 {
 		// RETURNING where the dialect has it; the reload stays for the ones
 		// that do not.
 		createCall = "s.write(db).Create(item)"
 		updateCall = "s.write(db).Model(item).Scopes(pre.Scope).Updates(updates)"
-		createReload = "\tif !s.returning(db) {\n\t" + strings.ReplaceAll(createReload, "\n\t", "\n\t\t") + "}\n"
-		updateReload = "\tif !s.returning(db) {\n\t" + strings.ReplaceAll(updateReload, "\n\t", "\n\t\t") + "}\n"
+		patchDB = "s.write(db)"
 		gormClause = "\n\t\"gorm.io/gorm/clause\""
 		// Not replaced by the template's own pass: a Replacer does not rescan
 		// what it has just put in.
 		writeHelper = strings.ReplaceAll(serviceWriteHelper, "{{Pascal}}", names.Pascal)
+	}
+	if p.single {
+		createReload = scaffold.ServiceSingleReload("err")
+		updateReload = scaffold.ServiceSingleReload("nil, err")
+		patchReload = scaffold.ServiceSingleReload("nil, nil, err")
+	}
+	if len(p.relations) > 0 {
+		createReload = scaffold.ServiceRelationsReload(p.preloads, "err")
+		updateReload = scaffold.ServiceRelationsReload(p.preloads, "nil, err")
+		patchReload = scaffold.ServiceRelationsReload(p.preloads, "nil, nil, err")
+		writeHelper += scaffold.ServiceRelationsMethod(names.Pascal, p.relations)
 	}
 
 	createClaim, updateSnapshot, updateCleanup := "", "", ""
@@ -680,6 +685,8 @@ func (g *Generator) serviceSource(names Names) string {
 		"{{UPDATE_SNAPSHOT}}", updateSnapshot,
 		"{{UPDATE_BODY}}", updateBody,
 		"{{UPDATE_CLEANUP}}", updateCleanup,
+		"{{PATCH_DB}}", patchDB,
+		"{{PATCH_RELOAD}}", patchReload,
 		// Final text: a Replacer does not rescan what it puts in.
 		"{{PUBLIC_METHODS}}", g.publicServiceMethods(names),
 		"{{PATCH_M2M}}", p.patchM2M,
@@ -858,7 +865,7 @@ func (s *{{Pascal}}Service) Patch(ctx context.Context, id string, body map[strin
 	}
 
 	if len(updates) > 0 {
-		written := db.Model(item).Scopes(pre.Scope).Updates(updates)
+		written := {{PATCH_DB}}.Model(item).Scopes(pre.Scope).Updates(updates)
 		if err := written.Error; err != nil {
 			return nil, nil, err
 		}
@@ -866,10 +873,7 @@ func (s *{{Pascal}}Service) Patch(ctx context.Context, id string, body map[strin
 			return nil, nil, s.conflict(ctx, item.ID)
 		}
 	}
-	if err := db{{PRELOADS}}.First(item, "id = ?", item.ID).Error; err != nil {
-		return nil, nil, err
-	}
-	return item, updates, nil
+{{PATCH_RELOAD}}	return item, updates, nil
 }
 
 // Delete soft-deletes one {{lower}} and returns it as it was.

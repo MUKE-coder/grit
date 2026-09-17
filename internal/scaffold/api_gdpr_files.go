@@ -68,11 +68,13 @@ func apiGDPRServiceGo() string {
 	src := `package services
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"sort"
 	"time"
 
@@ -93,16 +95,27 @@ type UserExport struct {
 	Profile     models.User            ~json:"profile"~
 	Uploads     []models.Upload        ~json:"uploads"~
 	Sessions    []models.Session       ~json:"sessions"~
-	Activity    []models.UserActivity  ~json:"activity"~
 	Layout      *models.DashboardLayout ~json:"dashboard_layout,omitempty"~
 	TwoFactor   struct {
 		Enabled bool ~json:"enabled"~
 	} ~json:"two_factor"~
+
+	// The activity log is not held here. A long-lived account has tens of
+	// thousands of rows, and the export used to read every one of them into
+	// memory before writing the first byte. WriteJSON reads them a page at a
+	// time as it writes, with the database handle the export was made with.
+	db     *gorm.DB
+	userID string
 }
 
 // ExportUserData collects a full copy of a user's data. The User's Password and
 // OAuth ids are hidden by their json:"-" tags, so the bundle carries the
-// person's data without leaking secrets.
+// person's data without leaking secrets. Bind db to the request's context, so
+// an export the client abandoned stops reading.
+//
+// Every read's error is returned: an export that quietly left out a table would
+// be handed to the person as complete, and a right-of-access answer that is
+// missing data is the failure GDPR Art. 15 exists to prevent.
 func ExportUserData(db *gorm.DB, userID string) (*UserExport, error) {
 	var user models.User
 	if err := db.First(&user, "id = ?", userID).Error; err != nil {
@@ -119,20 +132,102 @@ func ExportUserData(db *gorm.DB, userID string) (*UserExport, error) {
 	user.GoogleID = ""
 	user.GithubID = ""
 
-	out := &UserExport{GeneratedAt: time.Now().UTC(), Profile: user}
-	db.Where("user_id = ?", userID).Find(&out.Uploads)
-	db.Where("user_id = ?", userID).Find(&out.Sessions)
-	db.Where("user_id = ?", userID).Order("created_at desc").Find(&out.Activity)
+	out := &UserExport{GeneratedAt: time.Now().UTC(), Profile: user, db: db, userID: userID}
+	if err := db.Where("user_id = ?", userID).Find(&out.Uploads).Error; err != nil {
+		return nil, fmt.Errorf("export uploads: %w", err)
+	}
+	if err := db.Where("user_id = ?", userID).Find(&out.Sessions).Error; err != nil {
+		return nil, fmt.Errorf("export sessions: %w", err)
+	}
 
-	var layout models.DashboardLayout
-	if err := db.First(&layout, "user_id = ?", userID).Error; err == nil {
-		out.Layout = &layout
+	var layouts []models.DashboardLayout
+	if err := db.Where("user_id = ?", userID).Limit(1).Find(&layouts).Error; err != nil {
+		return nil, fmt.Errorf("export dashboard layout: %w", err)
 	}
-	var tf models.TwoFactorConfig
-	if err := db.First(&tf, "user_id = ?", userID).Error; err == nil {
-		out.TwoFactor.Enabled = true
+	if len(layouts) == 1 {
+		out.Layout = &layouts[0]
 	}
+	// Only whether two-factor is on: the secret and the backup codes never leave
+	// the table, not even into this process's memory.
+	var enabled []bool
+	if err := db.Model(&models.TwoFactorConfig{}).Where("user_id = ?", userID).Limit(1).Pluck("enabled", &enabled).Error; err != nil {
+		return nil, fmt.Errorf("export two-factor: %w", err)
+	}
+	out.TwoFactor.Enabled = len(enabled) == 1 && enabled[0]
 	return out, nil
+}
+
+// exportActivityPage is how many activity rows an export holds at once.
+const exportActivityPage = 500
+
+// exportHead is UserExport without its methods, for the part of the bundle
+// that is marshalled in one piece.
+type exportHead UserExport
+
+// WriteJSON writes the bundle to w, the activity log last and a page at a time,
+// newest first. Its output is the bundle as one JSON object.
+//
+// Once the first byte is written a failure cannot change the response status,
+// so a failed page leaves the JSON unterminated: the file does not parse, rather
+// than parsing as a complete export with rows missing.
+func (e *UserExport) WriteJSON(w io.Writer) error {
+	head, err := json.Marshal((*exportHead)(e))
+	if err != nil {
+		return err
+	}
+	// head is an object; the activity array goes in before its closing brace.
+	if _, err := w.Write(head[:len(head)-1]); err != nil {
+		return err
+	}
+	if _, err := io.WriteString(w, ~,"activity":[~); err != nil {
+		return err
+	}
+
+	// Pages by id, newest first. Ids are time-ordered, so this is creation
+	// order. A keyset cursor rather than OFFSET, which would have the database
+	// count past every row already written before returning the next page.
+	first, after := true, ""
+	for {
+		var page []models.UserActivity
+		q := e.db.Where("user_id = ?", e.userID)
+		if after != "" {
+			q = q.Where("id < ?", after)
+		}
+		if err := q.Order("id desc").Limit(exportActivityPage).Find(&page).Error; err != nil {
+			return fmt.Errorf("export activity: %w", err)
+		}
+		for i := range page {
+			row, err := json.Marshal(&page[i])
+			if err != nil {
+				return err
+			}
+			if !first {
+				if _, err := io.WriteString(w, ","); err != nil {
+					return err
+				}
+			}
+			first = false
+			if _, err := w.Write(row); err != nil {
+				return err
+			}
+		}
+		if len(page) < exportActivityPage {
+			break
+		}
+		after = page[len(page)-1].ID
+	}
+	_, err = io.WriteString(w, "]}")
+	return err
+}
+
+// MarshalJSON is WriteJSON into memory, for a caller that hands the bundle to
+// json.Marshal or gin's c.JSON. The rows are still read a page at a time.
+func (e *UserExport) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	if err := e.WriteJSON(&buf); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 // The tables erasure deletes from are registered with internal/erasure:
@@ -261,6 +356,7 @@ func apiGDPRHandlerGo() string {
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -291,8 +387,7 @@ func (h *GDPRHandler) Export(c *gin.Context) {
 		return
 	}
 
-	bundle, err := services.ExportUserData(h.DB, targetID)
-	if err != nil {
+` + gdprExportCallNew + `	if err != nil {
 		if errors.Is(err, services.ErrUserNotFound) {
 			respond.Fail(c, respond.CodeNotFound, "user not found")
 			return
@@ -302,9 +397,7 @@ func (h *GDPRHandler) Export(c *gin.Context) {
 	}
 
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"user-%s-export.json\"", targetID))
-	c.JSON(http.StatusOK, bundle)
-}
-
+` + gdprExportWriteNew + `
 type EraseRequest struct {
 	// Required, not optional. An erasure is irreversible and its journal row is
 	// what an auditor reads a year later; an empty reason tells them nothing
@@ -398,6 +491,8 @@ func apiGDPRTestGo() string {
 	src := `package services
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -454,11 +549,71 @@ func TestExportGathersEverything(t *testing.T) {
 	if len(bundle.Sessions) != 1 {
 		t.Errorf("sessions = %d, want 1", len(bundle.Sessions))
 	}
-	if len(bundle.Activity) != 1 {
-		t.Errorf("activity = %d, want 1", len(bundle.Activity))
+	var written struct {
+		Activity []models.UserActivity ~json:"activity"~
+	}
+	raw, err := json.Marshal(bundle)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if err := json.Unmarshal(raw, &written); err != nil {
+		t.Fatalf("export is not JSON: %v", err)
+	}
+	if len(written.Activity) != 1 {
+		t.Errorf("activity = %d, want 1", len(written.Activity))
 	}
 	if bundle.Profile.Password != "" {
 		t.Errorf("export leaked the password hash")
+	}
+}
+
+// A long activity log is written whole, newest first, while no read holds more
+// than one page of it.
+func TestExportStreamsActivityInPages(t *testing.T) {
+	db := gdprDB(t)
+	u := seedUserWithData(t, db, "pages@test.dev")
+	rows := make([]models.UserActivity, 2*exportActivityPage+2)
+	for i := range rows {
+		rows[i] = models.UserActivity{UserID: u.ID, Action: "view", Summary: "row"}
+	}
+	if err := db.CreateInBatches(&rows, 200).Error; err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	largest := int64(0)
+	if err := db.Callback().Query().After("gorm:query").Register("test:rows", func(tx *gorm.DB) {
+		if tx.RowsAffected > largest {
+			largest = tx.RowsAffected
+		}
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	bundle, err := ExportUserData(db, u.ID)
+	if err != nil {
+		t.Fatalf("export: %v", err)
+	}
+	var buf bytes.Buffer
+	if err := bundle.WriteJSON(&buf); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	var written struct {
+		Activity []models.UserActivity ~json:"activity"~
+	}
+	if err := json.Unmarshal(buf.Bytes(), &written); err != nil {
+		t.Fatalf("export is not JSON: %v", err)
+	}
+	want := len(rows) + 1 // and the one seedUserWithData wrote
+	if len(written.Activity) != want {
+		t.Fatalf("activity = %d, want %d", len(written.Activity), want)
+	}
+	for i := 1; i < len(written.Activity); i++ {
+		if written.Activity[i-1].ID <= written.Activity[i].ID {
+			t.Fatalf("activity not newest first, or repeated, at %d", i)
+		}
+	}
+	if largest > exportActivityPage {
+		t.Errorf("one read held %d rows, want at most %d", largest, exportActivityPage)
 	}
 }
 

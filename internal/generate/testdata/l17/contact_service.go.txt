@@ -1,0 +1,289 @@
+package services
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"gorm.io/gorm"
+
+	"l19x-old/apps/api/internal/concurrency"
+	"l19x-old/apps/api/internal/models"
+	"l19x-old/apps/api/internal/paginate"
+	"l19x-old/apps/api/internal/respond"
+)
+
+// ContactService owns every database read and write for contacts.
+//
+// The handler reads the request, calls one of these and writes the answer. A
+// job, a command or a test calls the same methods with no request at all, so a
+// rule enforced here is enforced everywhere, not only on the HTTP route.
+//
+// Each method takes the context it runs in. It carries the organization the
+// multitenant plugin resolved, the actor ownership is scoped by (see
+// authz.WithActor, and authz.AsSystem for a job), and the cancellation that
+// fires when a client goes away.
+type ContactService struct {
+	DB *gorm.DB
+}
+
+// contactListConfig is what a client may search, sort and filter contacts
+// by. Whitelisted, because each name ends up in SQL.
+var contactListConfig = paginate.Config{
+	Searchable: []string{"name", "phone"},
+	Sortable:   map[string]bool{"id": true, "created_at": true, "name": true, "phone": true},
+	Filterable: map[string]bool{"id": true, "name": true, "phone": true, "group_id": true},
+}
+
+// writableContact is every column Patch and Bulk may write. id, the
+// timestamps and the version are the framework's, and are dropped.
+var writableContact = map[string]bool{
+	"name":     true,
+	"phone":    true,
+	"group_id": true,
+}
+
+// db binds the database to ctx, so whatever a middleware put there reaches
+// GORM's callbacks: the multitenant plugin scopes by it.
+func (s *ContactService) db(ctx context.Context) *gorm.DB {
+	return s.DB.WithContext(ctx)
+}
+
+// List returns one page of contacts.
+//
+//	archived "true" or "1"   only archived rows
+//	archived "all"           both
+//	anything else            only live rows
+func (s *ContactService) List(ctx context.Context, p paginate.Params, archived string) (paginate.Result[models.Contact], error) {
+	query := s.db(ctx).Model(&models.Contact{}).Preload("Group")
+
+	// Archived rows are excluded by default. Anything else means an operator
+	// archives twelve rows, sees the count go down, and finds them again the
+	// next time somebody sorts by a different column.
+	switch archived {
+	case "true", "1":
+		query = query.Where("archived_at IS NOT NULL")
+	case "all":
+		// no filter
+	default:
+		query = query.Where("archived_at IS NULL")
+	}
+
+	return paginate.List[models.Contact](query, p, contactListConfig)
+}
+
+// Export hands every matching contact to each, a batch at a time, so a large
+// table is never in memory at once. search matches the columns List searches.
+//
+// No ORDER BY of its own: FindInBatches pages by primary key, which is
+// creation order for the time-ordered ids Grit issues, and a sort in front of
+// that key repeated rows from the second batch on.
+func (s *ContactService) Export(ctx context.Context, search string, each func(rows []models.Contact) error) error {
+	query := s.db(ctx).Model(&models.Contact{}).Preload("Group")
+	if search != "" {
+		clause := ""
+		args := []any{}
+		wild := "%" + search + "%"
+		for i, col := range contactListConfig.Searchable {
+			if i > 0 {
+				clause += " OR "
+			}
+			clause += "LOWER(" + col + ") LIKE LOWER(?)"
+			args = append(args, wild)
+		}
+		if clause != "" {
+			query = query.Where(clause, args...)
+		}
+	}
+
+	// FindInBatches fills rows and pages by primary key. The tx it hands the
+	// callback is a fresh session with no query on it, so each batch is read
+	// from rows: re-reading it through tx.Scan found nothing, and every export
+	// was an empty file with a 200.
+	var rows []models.Contact
+	return query.FindInBatches(&rows, 1000, func(tx *gorm.DB, batch int) error {
+		return each(rows)
+	}).Error
+}
+
+// GetByID returns one contact with the relations shown beside it.
+func (s *ContactService) GetByID(ctx context.Context, id string) (*models.Contact, error) {
+	var item models.Contact
+	if err := s.db(ctx).Preload("Group").First(&item, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
+// load reads the row a write is about to change, without its relations.
+func (s *ContactService) load(ctx context.Context, id string) (*models.Contact, error) {
+	var item models.Contact
+	if err := s.db(ctx).First(&item, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
+// conflict is the answer to a write whose precondition failed: the version
+// the row is at now.
+func (s *ContactService) conflict(ctx context.Context, id string) error {
+	var current models.Contact
+	if err := s.db(ctx).Select("version").First(&current, "id = ?", id).Error; err != nil {
+		return err
+	}
+	return &concurrency.ErrConflict{Current: current.Version}
+}
+
+// Create saves a new contact and fills item in as it was stored.
+func (s *ContactService) Create(ctx context.Context, item *models.Contact) error {
+	db := s.db(ctx)
+	if err := db.Create(item).Error; err != nil {
+		return err
+	}
+	if err := db.Preload("Group").First(item, "id = ?", item.ID).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// Update writes updates to one contact. With a precondition it lands only
+// if the row is still at that version, and otherwise returns an
+// *concurrency.ErrConflict naming the version it is at.
+func (s *ContactService) Update(ctx context.Context, id string, updates map[string]interface{}, pre *concurrency.Precondition) (*models.Contact, error) {
+	item, err := s.load(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	db := s.db(ctx)
+	written := db.Model(item).Scopes(pre.Scope).Updates(updates)
+	if err := written.Error; err != nil {
+		return nil, err
+	}
+	// pre named a version this record has moved past: someone else saved
+	// first. A conflict rather than overwriting their change.
+	if pre.Missed(written) {
+		return nil, s.conflict(ctx, item.ID)
+	}
+	if err := db.Preload("Group").First(item, "id = ?", item.ID).Error; err != nil {
+		return nil, err
+	}
+	return item, nil
+}
+
+// Patch writes only the columns body names, leaving every other one as it
+// is. Keys that are not writable columns are dropped. It returns the row and
+// the columns it wrote.
+func (s *ContactService) Patch(ctx context.Context, id string, body map[string]interface{}, pre *concurrency.Precondition) (*models.Contact, map[string]interface{}, error) {
+	item, err := s.load(ctx, id)
+	if err != nil {
+		return nil, nil, err
+	}
+	db := s.db(ctx)
+
+	updates := map[string]interface{}{}
+	for k, v := range body {
+		if writableContact[k] {
+			updates[k] = v
+		}
+	}
+	touchedRelations := false
+	if len(updates) == 0 && !touchedRelations {
+		return nil, nil, respond.Rule("No writable fields in request body")
+	}
+
+	if len(updates) > 0 {
+		written := db.Model(item).Scopes(pre.Scope).Updates(updates)
+		if err := written.Error; err != nil {
+			return nil, nil, err
+		}
+		if pre.Missed(written) {
+			return nil, nil, s.conflict(ctx, item.ID)
+		}
+	}
+	if err := db.Preload("Group").First(item, "id = ?", item.ID).Error; err != nil {
+		return nil, nil, err
+	}
+	return item, updates, nil
+}
+
+// Delete soft-deletes one contact and returns it as it was.
+func (s *ContactService) Delete(ctx context.Context, id string) (*models.Contact, error) {
+	item, err := s.load(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.db(ctx).Delete(item).Error; err != nil {
+		return nil, err
+	}
+	return item, nil
+}
+
+// ContactBulkResult is what a bulk action did.
+type ContactBulkResult struct {
+	// IDs are the rows acted on: those requested that exist, that the caller
+	// may touch, and that the action applies to.
+	IDs []string
+	// Updates are the columns a patch wrote, after the whitelist.
+	Updates map[string]interface{}
+}
+
+// Bulk applies one action to many contacts in a single transaction: all of
+// it lands or none of it does. action is delete, archive, restore or patch.
+func (s *ContactService) Bulk(ctx context.Context, action string, ids []string, patch map[string]interface{}) (ContactBulkResult, error) {
+	db := s.db(ctx)
+	var result ContactBulkResult
+
+	// Unarchived rows for archive, archived for restore: without it a mixed
+	// selection reports "12 archived" having changed three.
+	scope := db.Model(&models.Contact{}).Where("id IN ?", ids)
+	if action == "restore" {
+		scope = scope.Where("archived_at IS NOT NULL")
+	} else if action == "archive" {
+		scope = scope.Where("archived_at IS NULL")
+	}
+	var items []models.Contact
+	if err := scope.Find(&items).Error; err != nil {
+		return result, fmt.Errorf("loading contacts: %w", err)
+	}
+	for _, item := range items {
+		result.IDs = append(result.IDs, item.ID)
+	}
+	if len(result.IDs) == 0 {
+		return result, nil
+	}
+
+	if action == "patch" {
+		// The same whitelist as Patch. Framework-owned columns are dropped
+		// rather than refused, so a client sending the whole row is not wrong.
+		result.Updates = map[string]interface{}{}
+		for k, v := range patch {
+			if writableContact[k] {
+				result.Updates[k] = v
+			}
+		}
+		if len(result.Updates) == 0 {
+			return ContactBulkResult{}, respond.Rule("No writable fields in patch")
+		}
+	}
+
+	err := db.Transaction(func(tx *gorm.DB) error {
+		switch action {
+		case "delete":
+			return tx.Where("id IN ?", result.IDs).Delete(&models.Contact{}).Error
+		case "archive":
+			return tx.Model(&models.Contact{}).Where("id IN ?", result.IDs).
+				Update("archived_at", time.Now()).Error
+		case "restore":
+			return tx.Model(&models.Contact{}).Where("id IN ?", result.IDs).
+				Update("archived_at", nil).Error
+		case "patch":
+			return tx.Model(&models.Contact{}).Where("id IN ?", result.IDs).
+				Updates(result.Updates).Error
+		}
+		return respond.Rule("unknown bulk action %q", action)
+	})
+	if err != nil {
+		return ContactBulkResult{}, err
+	}
+	return result, nil
+}

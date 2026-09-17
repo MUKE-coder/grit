@@ -470,6 +470,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairFrontendLinkSafety(root, opts); err != nil {
 			fmt.Printf("  ⚠ tightening the CSP and stored links: %v\n", err)
 		}
+		// One Redis inspector for the jobs screen, a GDPR export that streams its
+		// activity log, indexes for the notification bell, and generated writes
+		// that do not read their row back.
+		if err := repairPerfLows(root, opts); err != nil {
+			fmt.Printf("  ⚠ trimming Redis connections and queries: %v\n", err)
+		}
 		// A GDPR erasure is refused without a compliance reason, and a failure to
 		// write its audit row is reported rather than swallowed.
 		if err := repairGDPRErase(root, opts); err != nil {
