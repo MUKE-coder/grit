@@ -606,8 +606,13 @@ func ensureHandlerInit(filePath, camel, pascal string, wantStorage bool) (string
 	at := strings.Index(content, decl)
 	if at < 0 {
 		extra := ""
+		// The PDF export is branded with the app's name, from config rather
+		// than read from the environment on every request.
+		if strings.Contains(content, "cfg *config.Config") {
+			extra += "\n\t\tAppName: cfg.AppName,"
+		}
 		if wantStorage {
-			extra = "\n\t\tStorage: svc.Storage,"
+			extra += "\n\t\tStorage: svc.Storage,"
 		}
 		block := fmt.Sprintf("\t%sHandler := &handlers.%sHandler{\n\t\tDB: db,%s\n\t}", camel, pascal, extra)
 		if err := injectBefore(filePath, "// grit:handlers", block); err != nil {

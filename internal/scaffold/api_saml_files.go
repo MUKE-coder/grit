@@ -550,7 +550,7 @@ func (h *SSOHandler) SAMLACS(c *gin.Context) {
 
 	user, err := h.resolveUser(c, &conn, ident)
 	if err != nil {
-		h.failLogin(c, err.Error())
+		h.refuseSignIn(c, slug, err, ident.Email)
 		return
 	}
 	if err := h.applyGroupRoles(&conn, user, ident); err != nil {

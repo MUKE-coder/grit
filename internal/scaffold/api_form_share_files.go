@@ -373,6 +373,10 @@ type FormShareHandler struct {
 	DB *gorm.DB
 }
 
+// maxSubmissionUserAgent is the width of form_submissions.user_agent. A longer
+// header is cut to fit rather than failing the insert.
+const maxSubmissionUserAgent = 500
+
 // ── Admin endpoints ────────────────────────────────────────────────────
 
 // Resources returns the list of resource names the form-share
@@ -647,10 +651,10 @@ func (h *FormShareHandler) PublicSubmit(c *gin.Context) {
 
 	// v3.31.25 — write the audit row. Best-effort; failure here means
 	// the visitor still gets their record, the admin just misses one
-	// line in the trail. We truncate UA at 500 chars (column width).
+	// line in the trail.
 	ua := c.GetHeader("User-Agent")
-	if len(ua) > 500 {
-		ua = ua[:500]
+	if len(ua) > maxSubmissionUserAgent {
+		ua = ua[:maxSubmissionUserAgent]
 	}
 	if err := h.DB.WithContext(c.Request.Context()).Create(&models.FormSubmission{
 		ShareID:      share.ID,

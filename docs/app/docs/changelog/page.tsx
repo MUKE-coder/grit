@@ -66,6 +66,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.291.0 */}
+            <div className="mb-12" id="v3.291.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.291.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 18, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>No panics on a missing user, no leftovers, an allowlist read once, named ticket values, and SSO errors that keep their cause</h3>
+                <p>
+                  <strong>A missing signed-in user is a 401, not a crash.</strong> Four handlers took the signed-in user out
+                  of the request with an assertion that panics when it is absent: two in the dashboard layout, one in
+                  uploads and one in two-factor setup. Mounted without the auth middleware, 4 of 6 test routes panicked, and
+                  the upload one did so after the file was already stored. All six now answer 401, and a fresh project has
+                  no unchecked assertion on a request value, down from 4.
+                </p>
+                <p>
+                  <strong>Leftovers removed.</strong> Blank variables that only kept imports alive, a value set and never
+                  read, an unused reflection helper, three unused types, two dead initialisers and 13 doc comments written
+                  twice are gone. On a fresh project golangci-lint&apos;s unused count drops from 10 to 2, and ineffassign
+                  and wastedassign from 1 each to 0.
+                </p>
+                <p>
+                  <strong>The upload allowlist is read once.</strong> It was an exported map that an <code>init()</code>
+                  changed from the environment. <code>UPLOAD_ALLOWED_MIME</code> is now read by <code>config.Load</code>
+                  into <code>Config.UploadAllowedMIME</code>, and the upload handler gets a list built from it at startup.
+                  Generated resource handlers take the app name for their PDF export from config instead of reading the
+                  environment on every request. <code>grit upgrade</code> adds the config field and the wiring, so a project
+                  that set <code>UPLOAD_ALLOWED_MIME</code> keeps its extra types.
+                </p>
+                <p>
+                  <strong>Ticket values have names.</strong> Ticket statuses and priorities are constants in the model
+                  (<code>TicketStatusOpen</code>, <code>TicketPriorityCritical</code> and the rest), and the label cap of 8,
+                  the notification list limit of 50 and the 500-character user agent cap on form submissions are named too.
+                </p>
+                <p>
+                  <strong>SSO refusals keep their cause.</strong> SSO sign-in returned user-facing sentences as errors. Its 9
+                  refusals are now named errors, 3 of them wrap the database failure that caused them, and each refusal is
+                  logged with its cause. The login page shows the same wording as before, chosen in one place for both OIDC
+                  and SAML.
+                </p>
+                <p>
+                  <code>grit upgrade</code> repairs the dashboard layout handler, adds the ticket constants and the upload
+                  allowlist wiring; the upload, two-factor and SSO handlers arrive whole.
+                </p>
+              </div>
+            </div>
+
             {/* v3.290.0 */}
             <div className="mb-12" id="v3.290.0">
               <div className="flex items-center gap-3 mb-4">

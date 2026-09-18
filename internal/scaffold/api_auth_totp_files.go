@@ -353,7 +353,13 @@ type VerifyBackupCodeRequest struct {
 func (h *TOTPHandler) Setup(c *gin.Context) {
 	userID := c.GetString("user_id")
 	user, _ := c.Get("user")
-	u := user.(models.User)
+	// Set by the auth middleware. Checked rather than asserted, so the route
+	// mounted without it answers 401 instead of panicking.
+	u, ok := user.(models.User)
+	if !ok {
+		respond.Fail(c, respond.CodeUnauthorized, "Not signed in")
+		return
+	}
 
 	// Check if TOTP is already enabled
 	var existing models.TwoFactorConfig

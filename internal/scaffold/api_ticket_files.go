@@ -21,7 +21,7 @@ import (
 	"{{MODULE}}/internal/ids"
 	"gorm.io/gorm"
 )
-
+` + ticketConstantsBlock + `
 // Ticket — single support request. Anyone authenticated can open one;
 // ADMIN/EDITOR roles see the full queue, regular USER role sees their
 // own. Status is open by default; closing stamps ClosedAt.
@@ -32,7 +32,7 @@ type Ticket struct {
 	Description string         ` + "`" + `gorm:"type:text;not null" json:"description"` + "`" + `
 	Status      string         ` + "`" + `gorm:"size:16;index;default:'open'" json:"status"` + "`" + `   // open | closed
 	Priority    string         ` + "`" + `gorm:"size:16;index;default:'medium'" json:"priority"` + "`" + ` // low | medium | high | critical
-	Labels      string         ` + "`" + `gorm:"size:255" json:"labels"` + "`" + `                           // comma-separated up to 8
+	Labels      string         ` + "`" + `gorm:"size:255" json:"labels"` + "`" + `                           // comma-separated, capped by the ticket service
 	AssigneeID  string         ` + "`" + `gorm:"size:36;index" json:"assignee_id"` + "`" + `                // optional, must be ADMIN role
 	LastReplyAt *time.Time     ` + "`" + `json:"last_reply_at"` + "`" + `                                    // touched by every reply
 	ClosedAt    *time.Time     ` + "`" + `json:"closed_at"` + "`" + `
@@ -50,13 +50,7 @@ func (t *Ticket) BeforeCreate(tx *gorm.DB) error {
 	if t.ID == "" {
 		t.ID = ids.New()
 	}
-	if t.Status == "" {
-		t.Status = "open"
-	}
-	if t.Priority == "" {
-		t.Priority = "medium"
-	}
-	return nil
+` + ticketDefaultsNew + `	return nil
 }
 
 // TicketReply — chronological thread under a ticket. IsAdminReply lets
@@ -295,14 +289,14 @@ func (h *TicketHandler) Reply(c *gin.Context) {
 //
 //	PATCH /api/tickets/:id/close
 func (h *TicketHandler) Close(c *gin.Context) {
-	h.transitionStatus(c, "closed")
+	h.transitionStatus(c, models.TicketStatusClosed)
 }
 
 // Reopen flips status back to open + clears ClosedAt.
 //
 //	PATCH /api/tickets/:id/reopen
 func (h *TicketHandler) Reopen(c *gin.Context) {
-	h.transitionStatus(c, "open")
+	h.transitionStatus(c, models.TicketStatusOpen)
 }
 
 // Assign points the ticket at an admin. Admins only.
@@ -436,8 +430,7 @@ func (s *TicketService) Open(ctx context.Context, actor TicketActor, in NewTicke
 		Subject:     in.Subject,
 		Description: in.Description,
 		Priority:    in.Priority,
-		// Capped at 8, which stops a paste into the field becoming 400 labels.
-		Labels: NormalizeTicketLabels(in.Labels, 8),
+		Labels: NormalizeTicketLabels(in.Labels, MaxTicketLabels),
 	}
 	if err := s.DB.WithContext(ctx).Create(&ticket).Error; err != nil {
 		return nil, fmt.Errorf("creating the ticket: %w", err)
@@ -564,7 +557,7 @@ func (s *TicketService) SetStatus(ctx context.Context, actor TicketActor, id, st
 	}
 
 	updates := map[string]interface{}{"status": status}
-	if status == "closed" {
+	if status == models.TicketStatusClosed {
 		now := time.Now()
 		updates["closed_at"] = &now
 	} else {
@@ -595,19 +588,23 @@ func (s *TicketService) Assign(ctx context.Context, actor TicketActor, id, assig
 // TicketSeverity maps a ticket priority onto a notification severity.
 func TicketSeverity(priority string) string {
 	switch priority {
-	case "critical":
+	case models.TicketPriorityCritical:
 		return "critical"
-	case "high":
+	case models.TicketPriorityHigh:
 		return "high"
-	case "low":
+	case models.TicketPriorityLow:
 		return "low"
 	default:
 		return "medium"
 	}
 }
 
-// NormalizeTicketLabels trims each label and caps how many a ticket carries.
-func NormalizeTicketLabels(raw string, max int) string {
+// MaxTicketLabels is how many labels a ticket keeps. It stops a paste into the
+// field becoming 400 labels.
+const MaxTicketLabels = 8
+
+// NormalizeTicketLabels trims each label and keeps at most limit of them.
+func NormalizeTicketLabels(raw string, limit int) string {
 	if raw == "" {
 		return ""
 	}
@@ -619,7 +616,7 @@ func NormalizeTicketLabels(raw string, max int) string {
 			continue
 		}
 		out = append(out, p)
-		if len(out) >= max {
+		if len(out) >= limit {
 			break
 		}
 	}

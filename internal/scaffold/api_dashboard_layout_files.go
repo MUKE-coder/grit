@@ -85,6 +85,7 @@ import (
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/authz"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/respond"
 )
@@ -102,9 +103,7 @@ type DashboardLayoutHandler struct {
 // "show defaults" so the dashboard works out of the box without us
 // having to seed a row at registration time.
 func (h *DashboardLayoutHandler) Get(c *gin.Context) {
-	userID, ok := c.Get("user_id")
-	if !ok {
-		respond.Fail(c, respond.CodeUnauthorized, "Not signed in")
+` + dashboardUserIDNew + `		respond.Fail(c, respond.CodeUnauthorized, "Not signed in")
 		return
 	}
 
@@ -114,7 +113,7 @@ func (h *DashboardLayoutHandler) Get(c *gin.Context) {
 		// Empty layout = show every widget by default.
 		c.JSON(http.StatusOK, gin.H{
 			"data": models.DashboardLayout{
-				UserID:          userID.(string),
+				UserID:          userID,
 				Cards:           datatypes.JSONSlice[string]{},
 				Charts:          datatypes.JSONSlice[string]{},
 				Tables:          datatypes.JSONSlice[string]{},
@@ -165,9 +164,7 @@ type DashboardLayoutRequest struct {
 // under a few KB even with hundreds of widgets) and the semantics are
 // easier to reason about -- whatever you send is what you get.
 func (h *DashboardLayoutHandler) Put(c *gin.Context) {
-	userID, ok := c.Get("user_id")
-	if !ok {
-		respond.Fail(c, respond.CodeUnauthorized, "Not signed in")
+` + dashboardUserIDNew + `		respond.Fail(c, respond.CodeUnauthorized, "Not signed in")
 		return
 	}
 
@@ -248,7 +245,7 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 	var layout models.DashboardLayout
 	err := h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).First(&layout).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		layout = models.DashboardLayout{UserID: userID.(string)}
+		layout = models.DashboardLayout{UserID: userID}
 	} else if err != nil {
 		respond.Fail(c, respond.CodeInternalError, "Failed to load layout")
 		return

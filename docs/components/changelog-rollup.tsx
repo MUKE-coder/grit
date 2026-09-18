@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 14 to 20, 2026",
-    count: 36,
+    count: 37,
     entries: [
+      { version: "3.291.0", title: "No panics on a missing user, no leftovers, an allowlist read once, named ticket values, and SSO errors that keep their cause" },
       { version: "3.290.0", title: "A refresh that reloads only the page, lazy table images, a quiet idle timer, and sidebar groups that open themselves" },
       { version: "3.289.0", title: "One Redis connection for the jobs screen, a streaming GDPR export, fewer queries per write, and a faster notification bell" },
       { version: "3.288.0", title: "Forwarded headers only from trusted proxies, a tighter image policy, safe stored links, and a checked SSO redirect" },

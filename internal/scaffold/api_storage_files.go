@@ -714,7 +714,6 @@ import (
 	"math"
 	"net/http"
 	"path/filepath"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -732,8 +731,10 @@ import (
 	"{{MODULE}}/internal/storage"
 )
 
-// AllowedMimeTypes defines which file types can be uploaded.
-var AllowedMimeTypes = map[string]bool{
+// defaultAllowedMIME is the upload allowlist every project starts from. A field
+// with accepts narrows it; UPLOAD_ALLOWED_MIME adds to it, through
+// UploadMIMEAllowlist. Nothing writes to this map after startup.
+var defaultAllowedMIME = map[string]bool{
 	"image/jpeg":      true,
 	"image/png":       true,
 	"image/gif":       true,
@@ -775,7 +776,9 @@ var AllowedMimeTypes = map[string]bool{
 	"application/x-7z-compressed":  true,
 }
 
-// UPLOAD_ALLOWED_MIME adds types to AllowedMimeTypes, comma separated:
+// UploadMIMEAllowlist is the allowlist an UploadHandler checks: the baseline
+// above plus extra, which is config.UploadAllowedMIME, from UPLOAD_ALLOWED_MIME
+// (comma separated):
 //
 //	UPLOAD_ALLOWED_MIME=audio/flac,image/avif,model/gltf+json
 //
@@ -785,13 +788,28 @@ var AllowedMimeTypes = map[string]bool{
 //
 // It exists so a type nobody anticipated does not require editing framework
 // code inside a scaffolded project, which is an edit the manifest guard may
-// hold back the next time you upgrade.
-func init() {
-	for _, m := range strings.Split(os.Getenv("UPLOAD_ALLOWED_MIME"), ",") {
+// hold back the next time you upgrade. It is built once, at startup, into a new
+// map: the environment is read by config.Load, not when this package loads.
+func UploadMIMEAllowlist(extra []string) map[string]bool {
+	allowed := make(map[string]bool, len(defaultAllowedMIME)+len(extra))
+	for m := range defaultAllowedMIME {
+		allowed[m] = true
+	}
+	for _, m := range extra {
 		if m = strings.ToLower(strings.TrimSpace(m)); m != "" {
-			AllowedMimeTypes[m] = true
+			allowed[m] = true
 		}
 	}
+	return allowed
+}
+
+// mimeAllowed reports whether the allowlist takes contentType. A handler built
+// without AllowedMIME checks the baseline.
+func (h *UploadHandler) mimeAllowed(contentType string) bool {
+	if h.AllowedMIME == nil {
+		return defaultAllowedMIME[contentType]
+	}
+	return h.AllowedMIME[contentType]
 }
 
 // uploadScope is the uploads a caller may see or change.
@@ -822,6 +840,9 @@ type UploadHandler struct {
 	DB      *gorm.DB
 	Storage *storage.Storage
 	Jobs    *jobs.Client
+	// AllowedMIME is the allowlist for an upload whose field sent no accepts.
+	// routes.go builds it with UploadMIMEAllowlist(cfg.UploadAllowedMIME).
+	AllowedMIME map[string]bool
 }
 
 // Create handles file upload via multipart form.
@@ -836,12 +857,7 @@ type UploadHandler struct {
 //
 // Response: a files.FileRef directly under data so the frontend can
 // store it verbatim in form state, no shape massaging needed.
-func (h *UploadHandler) Create(c *gin.Context) {
-	if h.Storage == nil {
-		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured")
-		return
-	}
-
+` + uploadCreateGuardNew + `
 	// Cap the request body before multipart parsing so a malicious huge upload
 	// isn't fully spooled to temp disk before the per-field size check rejects
 	// it. 512MB comfortably clears the largest legitimate accept (video).
@@ -931,7 +947,7 @@ func (h *UploadHandler) Create(c *gin.Context) {
 		if len(acceptsList) > 0 {
 			return files.AllowsMIME(acceptsList, contentType)
 		}
-		return AllowedMimeTypes[contentType]
+		return h.mimeAllowed(contentType)
 	}
 	if !allowed(mimeType) {
 		respond.Fail(c, respond.CodeInvalidFileType, "File type not allowed")
@@ -1070,8 +1086,6 @@ func (h *UploadHandler) Create(c *gin.Context) {
 	}
 	ref.Optimised = optimised
 
-	userID, _ := c.Get("user_id")
-
 	upload := models.Upload{
 		Filename:     filepath.Base(key),
 		OriginalName: header.Filename,
@@ -1083,7 +1097,7 @@ func (h *UploadHandler) Create(c *gin.Context) {
 		Path:         key,
 		URL:          h.Storage.GetURL(key),
 		ThumbnailURL: ref.ThumbnailURL,
-		UserID:       userID.(string),
+		UserID:       userID,
 	}
 
 	if err := h.DB.WithContext(c.Request.Context()).Create(&upload).Error; err != nil {
@@ -1298,7 +1312,7 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 
 	// Mirror the multipart path: when the caller names the field's accept
 	// aliases, honour them; otherwise fall back to the global allow-list.
-	allowed := AllowedMimeTypes[req.ContentType]
+	allowed := h.mimeAllowed(req.ContentType)
 	if len(req.Accepts) > 0 {
 		allowed = files.AllowsMIME(req.Accepts, req.ContentType)
 	}
@@ -1388,7 +1402,7 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 	// The presign gated the PUT; this call decides what gets recorded. Check
 	// the type again so a client cannot presign a PDF and then file the row as
 	// something else.
-	allowed := AllowedMimeTypes[req.ContentType]
+	allowed := h.mimeAllowed(req.ContentType)
 	if len(req.Accepts) > 0 {
 		allowed = files.AllowsMIME(req.Accepts, req.ContentType)
 	}

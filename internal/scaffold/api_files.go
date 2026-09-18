@@ -862,6 +862,7 @@ type Config struct {
 ` + configMailFieldsNew + `
 	CORSOrigins []string
 
+` + configUploadMIMEField + `
 	// Modules turns optional batteries off.
 	//
 	// Grit ships everything on purpose — the batteries are the point. But not
@@ -954,6 +955,7 @@ func Load() (*Config, error) {
 		// here — its dev origin includes a configurable port.
 		CORSOrigins: strings.Split(getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"), ","),
 
+` + configUploadMIMELoad + `
 		// Optional batteries. Default on, so nothing changes for an existing
 		// app; set MODULE_<NAME>=false to switch one off.
 		Modules: ModuleFlags{
@@ -2173,12 +2175,6 @@ type AuthHandler struct {
 // The handlers emit gin.H rather than this struct, so nothing enforces the two
 // agree — if you change what an auth handler writes, change this with it. It
 // exists because a reference that says "No Body" is worse than no reference.
-
-// AuthResponse documents the body returned by register, login and refresh.
-//
-// The handlers emit gin.H rather than this struct, so nothing enforces the two
-// agree — if you change what an auth handler writes, change this with it. It
-// exists because a reference that says "No Body" is worse than no reference.
 type AuthResponse struct {
 	Data struct {
 		Tokens struct {
@@ -2198,13 +2194,9 @@ type AuthResponse struct {
 // prose nobody updates.
 
 // MessageResponse is the plain acknowledgement shape.
-
-// MessageResponse is the plain acknowledgement shape.
 type MessageResponse struct {
 	Message string ` + "`" + `json:"message"` + "`" + `
 }
-
-// IssuedKeyResponse is returned once, when an API key is created.
 
 // IssuedKeyResponse is returned once, when an API key is created.
 type IssuedKeyResponse struct {
@@ -2214,8 +2206,6 @@ type IssuedKeyResponse struct {
 	} ` + "`" + `json:"data"` + "`" + `
 	Message string ` + "`" + `json:"message"` + "`" + `
 }
-
-// TOTPStatusResponse describes the caller's two-factor state.
 
 // TOTPStatusResponse describes the caller's two-factor state.
 type TOTPStatusResponse struct {
@@ -2228,17 +2218,12 @@ type TOTPStatusResponse struct {
 
 // PresignResponse carries the URL a browser PUTs to, and the key to send back
 // to /uploads/complete afterwards.
-
-// PresignResponse carries the URL a browser PUTs to, and the key to send back
-// to /uploads/complete afterwards.
 type PresignResponse struct {
 	Data struct {
 		PresignedURL string ` + "`" + `json:"presigned_url"` + "`" + `
 		Key          string ` + "`" + `json:"key"` + "`" + `
 	} ` + "`" + `json:"data"` + "`" + `
 }
-
-// ChainStatusResponse is the activity-log integrity verdict.
 
 // ChainStatusResponse is the activity-log integrity verdict.
 type ChainStatusResponse struct {
@@ -2250,8 +2235,6 @@ type ChainStatusResponse struct {
 	Got          string ` + "`" + `json:"got,omitempty"` + "`" + `
 	Message      string ` + "`" + `json:"message,omitempty"` + "`" + `
 }
-
-// ErrorResponse is the error envelope every endpoint uses.
 
 // ErrorResponse is the error envelope every endpoint uses.
 type ErrorResponse struct {
@@ -2287,8 +2270,6 @@ type ResetPasswordRequest struct {
 	Token    string ` + "`" + `json:"token" binding:"required"` + "`" + `
 	Password string ` + "`" + `json:"password" binding:"required,min=8"` + "`" + `
 }
-
-// Register creates a new user account.
 
 // Register creates a new user account.
 func (h *AuthHandler) Register(c *gin.Context) {
@@ -2369,13 +2350,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // read from the grit_refresh cookie first (web client) and falls back to
 // the JSON body (mobile/desktop bearer clients) — so a single endpoint
 // supports both flows.
-
-// Refresh generates a new access token from a refresh token. The token is
-// read from the grit_refresh cookie first (web client) and falls back to
-// the JSON body (mobile/desktop bearer clients) — so a single endpoint
-// supports both flows.
 func (h *AuthHandler) Refresh(c *gin.Context) {
-	refreshToken := ""
+	var refreshToken string
 	if cookieValue, err := c.Cookie("grit_refresh"); err == nil && cookieValue != "" {
 		refreshToken = cookieValue
 	} else {
@@ -2445,9 +2421,6 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 // Logout invalidates the user's session. Cookies are cleared immediately;
 // native bearer clients should also drop their stored tokens client-side.
-
-// Logout invalidates the user's session. Cookies are cleared immediately;
-// native bearer clients should also drop their stored tokens client-side.
 func (h *AuthHandler) Logout(c *gin.Context) {
 	// v3.30.1: read the user out of context BEFORE clearing cookies so
 	// the activity row carries the right email. The auth middleware set
@@ -2479,8 +2452,6 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		"message": "Logged out successfully",
 	})
 }
-
-// Me returns the current authenticated user.
 
 // Me returns the current authenticated user.
 func (h *AuthHandler) Me(c *gin.Context) {
@@ -5102,19 +5073,6 @@ func setIntField(obj interface{}, name string, value int) {
 		f.SetInt(int64(value))
 	}
 }
-
-func getTimeField(obj interface{}, name string) (time.Time, bool) {
-	v := reflect.ValueOf(obj)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-	f := v.FieldByName(name)
-	if !f.IsValid() {
-		return time.Time{}, false
-	}
-	t, ok := f.Interface().(time.Time)
-	return t, ok
-}
 `
 }
 
@@ -6165,9 +6123,7 @@ func apiWebhooksHandlerGo() string {
 	return `package handlers
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -6372,10 +6328,6 @@ func flattenHeaders(h http.Header) map[string]string {
 	}
 	return out
 }
-
-// Dispatch is exposed so app code can fire a synthetic event in tests.
-var _ = context.Background
-var _ = fmt.Sprint
 `
 }
 
@@ -9434,12 +9386,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		DB:          db,
 		AuthService: authService,
 	}
-	uploadHandler := &handlers.UploadHandler{
-		DB:      db,
-		Storage: svc.Storage,
-		Jobs:    svc.Jobs,
-	}
-	aiHandler := &handlers.AIHandler{
+` + routesUploadHandlerNew + `	aiHandler := &handlers.AIHandler{
 		AI: svc.AI,
 	}
 	jobsHandler := &handlers.JobsHandler{
@@ -9490,8 +9437,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	settingsHandler := &handlers.SettingsHandler{DB: db}
 	flagsEngine := flags.New(db, realtimeHub)
 	featureFlagHandler := handlers.NewFeatureFlagHandler(db, flagsEngine)
-` + routesRealtimeHandlerNew + `	_ = realtimeHub // available to handlers/services that want to push events
-
+` + routesRealtimeHandlerNew + `
 	// In-app Security + Observability dashboards — read from Sentinel/Pulse APIs
 	// over loopback. notificationHandler powers the admin bell.
 	notificationHandler := &handlers.NotificationHandler{DB: db}

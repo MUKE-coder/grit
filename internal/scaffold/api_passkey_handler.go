@@ -72,11 +72,6 @@ func (h *PasskeyHandler) BeginRegistration(c *gin.Context) {
 	}})
 }
 
-type finishRegistrationRequest struct {
-	SessionID string ` + "`" + `json:"session_id" binding:"required"` + "`" + `
-	Name      string ` + "`" + `json:"name"` + "`" + `
-}
-
 // FinishRegistration verifies the attestation and stores the credential.
 //
 // The body carries both the envelope and the raw credential the browser
