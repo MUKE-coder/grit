@@ -1,0 +1,4 @@
+# Called vulnerabilities the generated-app scan accepts, one per line:
+#   <OSV id> | <why it is accepted> | <issue tracking the real fix>
+# Remove a line as soon as a fix ships. Anything not listed fails the scan.
+GO-2026-6452 | excelize has no fixed release; reached only through GORM Studio's Excel import, behind the Studio login, and a panic is contained to that request | https://github.com/MUKE-coder/gorm-studio/issues/8
