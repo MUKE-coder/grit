@@ -778,6 +778,14 @@ func Upgrade(uOpts UpgradeOptions) error {
 		fmt.Printf("  ⚠ updating the admin's shared types, blog pages and editor: %v\n", err)
 	}
 
+	// Admin files nothing imports any more: the old sidebar and view modal, the
+	// widgets only three dashboard styles use, and an embedded panel's second
+	// realtime client. After the panel is written, so an import the new files
+	// make is seen before anything is removed.
+	if err := pruneDeadFrontendFiles(root); err != nil {
+		fmt.Printf("  ⚠ removing admin files nothing imports: %v\n", err)
+	}
+
 	// --- shadcn config for every frontend ---
 	//
 	// Created when missing, never overwritten. Without it,

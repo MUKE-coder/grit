@@ -276,8 +276,10 @@ export default function ProjectStructurePage() {
                 <Folder name="components" defaultOpen>
                   <Folder name="layout" defaultOpen>
                     <File name="admin-layout.tsx" comment="Admin shell" />
-                    <File name="sidebar.tsx" comment="Collapsible sidebar" />
-                    <File name="navbar.tsx" comment="Top navigation bar" />
+                  </Folder>
+                  <Folder name="chrome" defaultOpen>
+                    <File name="CollapsibleSidebar.tsx" comment="Collapsible sidebar" />
+                    <File name="PageHeader.tsx" comment="Page title and actions" />
                   </Folder>
                   <Folder name="tables" defaultOpen>
                     <File name="data-table.tsx" comment="Server-side paginated table" />
@@ -289,10 +291,10 @@ export default function ProjectStructurePage() {
                     <Folder name="fields" comment="Field type components" />
                     <File name="form-modal.tsx" comment="Modal form wrapper" />
                   </Folder>
-                  <Folder name="widgets" defaultOpen>
-                    <File name="stats-card.tsx" comment="Stat number + trend" />
-                    <File name="chart-widget.tsx" comment="Recharts wrapper" />
-                    <File name="recent-activity.tsx" comment="Activity feed" />
+                  <Folder name="dashboard" defaultOpen>
+                    <File name="ResourceStatCard.tsx" comment="Stat number + trend" />
+                    <File name="DashboardCharts.tsx" comment="Recharts wrapper" />
+                    <File name="ResourceWidgetsRow.tsx" comment="Per-resource widgets" />
                   </Folder>
                 </Folder>
                 <Folder name="hooks" defaultOpen>
@@ -390,7 +392,7 @@ export default function ProjectStructurePage() {
                     { what: 'Admin resource definition', where: 'apps/admin/resources/<names>.ts' },
                     { what: 'Reusable UI component', where: 'apps/web/components/shared/' },
                     { what: 'shadcn/ui component', where: 'apps/web/components/ui/' },
-                    { what: 'Dashboard widget', where: 'apps/admin/components/widgets/' },
+                    { what: 'Dashboard widget', where: 'apps/admin/components/dashboard/' },
                   ].map((row) => (
                     <tr key={row.what} className="border-b border-border/50">
                       <td className="text-sm text-foreground py-2.5 pr-4">{row.what}</td>

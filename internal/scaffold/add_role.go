@@ -121,7 +121,7 @@ func AddRole(roleName string) error {
 	gray := color.New(color.FgHiBlack)
 	gray.Println("  Next steps:")
 	gray.Printf("    1. Run `grit migrate` to update the database\n")
-	gray.Printf("    2. Update sidebar visibility in components/layout/sidebar.tsx if needed\n")
+	gray.Printf("    2. Update sidebar visibility in components/chrome/CollapsibleSidebar.tsx if needed\n")
 	fmt.Println()
 
 	return nil

@@ -104,6 +104,7 @@ import {
 import { Database, Download, RefreshCw, Loader2, AlertCircle, Clock, Save } from "@/lib/icons";
 import { buttonClasses } from "@/components/ui/button";
 import { inputClasses } from "@/components/ui/input";
+import { getApiErrorMessage } from "@/lib/api-core";
 
 const FREQUENCIES: { key: BackupFrequency; label: string; hint: string }[] = [
   { key: "daily", label: "Daily", hint: "every day" },
@@ -243,7 +244,7 @@ export default function BackupsPage() {
       {generate.isError ? (
         <div className="flex items-center gap-2 rounded-lg border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-danger">
           <AlertCircle className="h-4 w-4 shrink-0" />
-          {(generate.error as any)?.response?.data?.error?.message ?? "Failed to start the backup"}
+          {getApiErrorMessage(generate.error, "Failed to start the backup")}
         </div>
       ) : null}
 

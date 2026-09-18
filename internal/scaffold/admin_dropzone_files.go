@@ -1,11 +1,13 @@
 package scaffold
 
-// adminDropzone returns the reusable Dropzone component with multiple variants.
+// adminDropzone returns the admin's upload component: one upload engine
+// (Dropzone.Root and its parts) and five named looks built from it, plus
+// the variant-driven Dropzone the file fields and older code use.
 func adminDropzone() string {
 	return `"use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useDropzone, type Accept } from "react-dropzone";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { useDropzone, type Accept, type DropzoneState as DropTargetState } from "react-dropzone";
 import {
   Upload,
   X,
@@ -21,6 +23,26 @@ import {
 } from "@/lib/icons";
 import { uploadFile } from "@/lib/api-client";
 
+// One upload engine and five looks. Pick the look by name:
+//
+//   <AvatarDropzone />    a round picture, for a profile photo
+//   <InlineDropzone />    a row with a Browse button, and file cards below
+//   <CompactDropzone />   a one-line strip, and file chips below
+//   <MinimalDropzone />   an "Upload file" button
+//   <BoxDropzone />       the large dashed box, and file cards below
+//
+// or build your own from the parts every one of them is made of:
+//
+//   <Dropzone.Root maxFiles={3} onFilesChange={save}>
+//     <Dropzone.Target className="...">Drop receipts here</Dropzone.Target>
+//     <Dropzone.Progress />
+//     <Dropzone.FileList reorderable />
+//   </Dropzone.Root>
+//
+// <Dropzone variant="..."> still works, for a look chosen at runtime (the
+// file fields read it from the resource definition) and for code written
+// before the named components existed.
+
 // ── Types ────────────────────────────────────────────────────────
 
 export type DropzoneVariant = "default" | "compact" | "minimal" | "avatar" | "inline";
@@ -30,7 +52,7 @@ export type DropzoneProvider = "cloudflare" | "aws" | "minio" | "local";
 export interface UploadedFile {
   id?: number;
   url: string;
-  /** S3 key — needed by FileField/FilesField to round-trip a FileRef
+  /** S3 key, needed by FileField/FilesField to round-trip a FileRef
    * without re-deriving the key from the URL. v3.31.31. */
   key?: string;
   name: string;
@@ -47,15 +69,8 @@ export interface UploadedFile {
   optimised?: boolean;
 }
 
-export interface DropzoneProps {
-  /** Storage provider hint (for display only) */
-  provider?: DropzoneProvider;
-  /** Visual variant */
-  variant?: DropzoneVariant;
-  /** Progress indicator variant (v3.31.31). Default "bar". */
-  progress?: ProgressVariant;
-  /** Allow up/down reordering of files in the preview list (multi only). v3.31.31. */
-  reorderable?: boolean;
+/** What files are allowed, and what happens to them. Shared by every look. */
+export interface DropzoneOptions {
   /** Maximum number of files */
   maxFiles?: number;
   /** Maximum file size in bytes (default 10MB) */
@@ -74,6 +89,10 @@ export interface DropzoneProps {
   disabled?: boolean;
   /** Existing files to display */
   value?: UploadedFile[];
+}
+
+/** The frame around every look: a label above, a hint or an error below. */
+export interface DropzoneFrameProps {
   /** Label text */
   label?: string;
   /** Helper text */
@@ -84,12 +103,50 @@ export interface DropzoneProps {
   className?: string;
 }
 
-// ── Main Component ───────────────────────────────────────────────
+export type DropzoneBaseProps = DropzoneOptions & DropzoneFrameProps;
 
-export function Dropzone({
-  variant = "default",
-  progress = "bar",
-  reorderable = false,
+export interface BoxDropzoneProps extends DropzoneBaseProps {
+  /** Progress indicator shown while uploading. Default "bar". */
+  progress?: ProgressVariant;
+  /** Up/down buttons on each file card (multi-file only). */
+  reorderable?: boolean;
+}
+
+export interface CompactDropzoneProps extends DropzoneBaseProps {
+  /** Progress indicator shown while uploading. Default "bar". */
+  progress?: ProgressVariant;
+}
+
+/** An avatar holds one picture, so it takes no maxFiles. */
+export type AvatarDropzoneProps = Omit<DropzoneBaseProps, "maxFiles">;
+
+export interface DropzoneProps extends DropzoneBaseProps {
+  /** Storage provider hint. Nothing reads it; kept so existing call sites compile. */
+  provider?: DropzoneProvider;
+  /** Visual variant. Prefer the named component when the look is fixed. */
+  variant?: DropzoneVariant;
+  /** Progress indicator variant (v3.31.31). Default "bar". Box and compact only. */
+  progress?: ProgressVariant;
+  /** Allow up/down reordering of files in the preview list (box, multi only). */
+  reorderable?: boolean;
+}
+
+// ── State ────────────────────────────────────────────────────────
+
+export interface DropzoneState
+  extends Pick<DropTargetState, "getRootProps" | "getInputProps" | "isDragActive"> {
+  files: UploadedFile[];
+  uploading: boolean;
+  /** 0 to 100, across every file in the current drop. */
+  uploadProgress: number;
+  uploadError: string | null;
+  maxFiles: number;
+  maxSize: number;
+  removeFile: (index: number) => void;
+  moveFile: (index: number, direction: -1 | 1) => void;
+}
+
+function useDropzoneState({
   maxFiles = 1,
   maxSize = 10 * 1024 * 1024,
   accept,
@@ -99,11 +156,7 @@ export function Dropzone({
   uploadEndpoint = "/api/uploads",
   disabled = false,
   value = [],
-  label,
-  description,
-  error,
-  className = "",
-}: DropzoneProps) {
+}: DropzoneOptions): DropzoneState {
   const [files, setFiles] = useState<UploadedFile[]>(value);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -233,117 +286,127 @@ export function Dropzone({
     },
   });
 
-  // ── Render by variant ─────────────────────────────────────────
+  return {
+    getRootProps,
+    getInputProps,
+    isDragActive,
+    files,
+    uploading,
+    uploadProgress,
+    uploadError,
+    maxFiles,
+    maxSize,
+    removeFile,
+    moveFile,
+  };
+}
 
-  const VariantComponent = {
-    default: DefaultVariant,
-    compact: CompactVariant,
-    minimal: MinimalVariant,
-    avatar: AvatarVariant,
-    inline: InlineVariant,
-  }[variant];
+const DropzoneContext = createContext<DropzoneState | null>(null);
 
+/** The state of the enclosing Dropzone.Root, for a part you write yourself. */
+export function useDropzoneContext(): DropzoneState {
+  const state = useContext(DropzoneContext);
+  if (!state) throw new Error("Dropzone parts must be rendered inside <Dropzone.Root>");
+  return state;
+}
+
+// ── Parts ────────────────────────────────────────────────────────
+
+/** Holds the files and the upload, and draws the label, hint and error. */
+function DropzoneRoot({
+  label,
+  description,
+  error,
+  className = "",
+  children,
+  ...options
+}: DropzoneBaseProps & { children: ReactNode }) {
+  const state = useDropzoneState(options);
   return (
-    <div className={` + "`" + `space-y-1.5 ${className}` + "`" + `}>
-      {label && (
-        <label className="block text-sm font-medium text-foreground">{label}</label>
-      )}
+    <DropzoneContext.Provider value={state}>
+      <div className={` + "`" + `space-y-1.5 ${className}` + "`" + `}>
+        {label && (
+          <label className="block text-sm font-medium text-foreground">{label}</label>
+        )}
 
-      <VariantComponent
-        getRootProps={getRootProps}
-        getInputProps={getInputProps}
-        isDragActive={isDragActive}
-        uploading={uploading}
-        uploadProgress={uploadProgress}
-        progress={progress}
-        files={files}
-        removeFile={removeFile}
-        moveFile={moveFile}
-        reorderable={reorderable}
-        maxFiles={maxFiles}
-        maxSize={maxSize}
-        disabled={disabled}
-      />
+        {children}
 
-      {description && !error && !uploadError && (
-        <p className="text-xs text-text-muted">{description}</p>
-      )}
-      {(error || uploadError) && (
-        <p className="text-xs text-danger">{error || uploadError}</p>
-      )}
+        {description && !error && !state.uploadError && (
+          <p className="text-xs text-text-muted">{description}</p>
+        )}
+        {(error || state.uploadError) && (
+          <p className="text-xs text-danger">{error || state.uploadError}</p>
+        )}
+      </div>
+    </DropzoneContext.Provider>
+  );
+}
+
+/** The element that opens the file picker and takes a drop. */
+function DropzoneTarget({ className, children }: { className?: string; children?: ReactNode }) {
+  const { getRootProps, getInputProps } = useDropzoneContext();
+  return (
+    <div {...getRootProps()} className={className}>
+      <input {...getInputProps()} />
+      {children}
     </div>
   );
 }
 
-// ── Shared Types ─────────────────────────────────────────────────
-
-interface VariantProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getRootProps: () => any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getInputProps: () => any;
-  isDragActive: boolean;
-  uploading: boolean;
-  uploadProgress: number;
-  progress: ProgressVariant;
-  files: UploadedFile[];
-  removeFile: (index: number) => void;
-  moveFile: (index: number, direction: -1 | 1) => void;
-  reorderable: boolean;
-  maxFiles: number;
-  maxSize: number;
-  disabled: boolean;
+/** The files so far, one card each. Renders nothing while the list is empty. */
+function DropzoneFileList({ reorderable = false }: { reorderable?: boolean }) {
+  const { files, removeFile, moveFile, maxFiles } = useDropzoneContext();
+  if (files.length === 0) return null;
+  return (
+    <div className="space-y-2">
+      {files.map((file, i) => (
+        <FilePreview
+          key={i}
+          file={file}
+          onRemove={() => removeFile(i)}
+          index={i}
+          total={files.length}
+          reorderable={reorderable && maxFiles > 1}
+          onMove={moveFile}
+        />
+      ))}
+    </div>
+  );
 }
 
-function formatSize(bytes: number) {
-  if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+/** How far the upload has got. Renders nothing while nothing is uploading. */
+function DropzoneProgress({ variant = "bar" }: { variant?: ProgressVariant }) {
+  const { uploading, uploadProgress } = useDropzoneContext();
+  if (!uploading) return null;
+  if (variant === "circular") return <UploadProgressCircular percent={uploadProgress} />;
+  if (variant === "pulse") return <UploadProgressPulse percent={uploadProgress} />;
+  return <UploadProgressBar percent={uploadProgress} />;
 }
 
-function isImage(type: string) {
-  return type.startsWith("image/");
+// ── The five looks ───────────────────────────────────────────────
+
+function targetState(isDragActive: boolean, uploading: boolean, idle: string, active: string) {
+  return ` + "`" + `${isDragActive ? active : idle} ${uploading ? "opacity-60 cursor-not-allowed" : ""}` + "`" + `;
 }
 
-// ── Variant: Default ─────────────────────────────────────────────
-
-function DefaultVariant({
-  getRootProps,
-  getInputProps,
-  isDragActive,
-  uploading,
-  uploadProgress,
-  progress,
-  files,
-  removeFile,
-  moveFile,
-  reorderable,
-  maxFiles,
-  maxSize,
-}: VariantProps) {
+function BoxBody({ progress, reorderable }: { progress: ProgressVariant; reorderable: boolean }) {
+  const { isDragActive, uploading, maxSize } = useDropzoneContext();
   return (
     <div className="space-y-3">
-      <div
-        {...getRootProps()}
-        className={` + "`" + `flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 cursor-pointer transition-all ${
-          isDragActive
-            ? "border-accent bg-accent/5 scale-[1.01]"
-            : "border-border hover:border-accent/50 hover:bg-bg-hover/30"
-        } ${uploading ? "opacity-60 cursor-not-allowed" : ""}` + "`" + `}
+      <DropzoneTarget
+        className={` + "`" + `flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 cursor-pointer transition-all ${targetState(
+          isDragActive,
+          uploading,
+          "border-border hover:border-accent/50 hover:bg-bg-hover/30",
+          "border-accent bg-accent/5 scale-[1.01]"
+        )}` + "`" + `}
       >
-        <input {...getInputProps()} />
         {uploading ? (
-          <UploadProgress variant={progress} percent={uploadProgress} />
+          <DropzoneProgress variant={progress} />
         ) : (
           <>
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-bg-tertiary">
-              {isDragActive ? (
-                <Upload className="h-6 w-6 text-accent" />
-              ) : (
-                <Upload className="h-6 w-6 text-text-muted" />
-              )}
+              <Upload className={` + "`" + `h-6 w-6 ${isDragActive ? "text-accent" : "text-text-muted"}` + "`" + `} />
             </div>
             <div className="text-center">
               <p className="text-sm font-medium text-foreground">
@@ -355,62 +418,36 @@ function DefaultVariant({
             </div>
           </>
         )}
-      </div>
+      </DropzoneTarget>
 
-      {files.length > 0 && (
-        <div className="space-y-2">
-          {files.map((file, i) => (
-            <FilePreview
-              key={i}
-              file={file}
-              onRemove={() => removeFile(i)}
-              index={i}
-              total={files.length}
-              reorderable={reorderable && maxFiles > 1}
-              onMove={moveFile}
-            />
-          ))}
-        </div>
-      )}
+      <DropzoneFileList reorderable={reorderable} />
     </div>
   );
 }
 
-// ── Variant: Compact ─────────────────────────────────────────────
-
-function CompactVariant({
-  getRootProps,
-  getInputProps,
-  isDragActive,
-  uploading,
-  uploadProgress,
-  progress,
-  files,
-  removeFile,
-  maxSize,
-}: VariantProps) {
+function CompactBody({ progress }: { progress: ProgressVariant }) {
+  const { isDragActive, uploading, maxSize, files, removeFile } = useDropzoneContext();
   return (
     <div className="space-y-2">
-      <div
-        {...getRootProps()}
-        className={` + "`" + `flex items-center gap-3 rounded-lg border-2 border-dashed px-4 py-3 cursor-pointer transition-all ${
-          isDragActive
-            ? "border-accent bg-accent/5"
-            : "border-border hover:border-accent/50 hover:bg-bg-hover/30"
-        } ${uploading ? "opacity-60 cursor-not-allowed" : ""}` + "`" + `}
+      <DropzoneTarget
+        className={` + "`" + `flex items-center gap-3 rounded-lg border-2 border-dashed px-4 py-3 cursor-pointer transition-all ${targetState(
+          isDragActive,
+          uploading,
+          "border-border hover:border-accent/50 hover:bg-bg-hover/30",
+          "border-accent bg-accent/5"
+        )}` + "`" + `}
       >
-        <input {...getInputProps()} />
         {!uploading && <Upload className="h-5 w-5 text-text-muted shrink-0" />}
         <div className="flex-1 min-w-0">
           {uploading ? (
-            <UploadProgress variant={progress} percent={uploadProgress} />
+            <DropzoneProgress variant={progress} />
           ) : (
             <p className="text-sm text-text-secondary">
               {isDragActive ? "Drop here..." : ` + "`" + `Drop files or click to browse (max ${formatSize(maxSize)})` + "`" + `}
             </p>
           )}
         </div>
-      </div>
+      </DropzoneTarget>
 
       {files.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -433,27 +470,18 @@ function CompactVariant({
   );
 }
 
-// ── Variant: Minimal ─────────────────────────────────────────────
-
-function MinimalVariant({
-  getRootProps,
-  getInputProps,
-  isDragActive,
-  uploading,
-  files,
-  removeFile,
-}: VariantProps) {
+function MinimalBody() {
+  const { isDragActive, uploading, files, removeFile } = useDropzoneContext();
   return (
     <div className="space-y-2">
-      <div
-        {...getRootProps()}
-        className={` + "`" + `inline-flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer transition-all ${
-          isDragActive
-            ? "border-accent bg-accent/5 text-accent"
-            : "border-border hover:border-accent/50 text-text-secondary hover:text-foreground"
-        } ${uploading ? "opacity-60 cursor-not-allowed" : ""}` + "`" + `}
+      <DropzoneTarget
+        className={` + "`" + `inline-flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer transition-all ${targetState(
+          isDragActive,
+          uploading,
+          "border-border hover:border-accent/50 text-text-secondary hover:text-foreground",
+          "border-accent bg-accent/5 text-accent"
+        )}` + "`" + `}
       >
-        <input {...getInputProps()} />
         {uploading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
@@ -462,7 +490,7 @@ function MinimalVariant({
         <span className="text-sm font-medium">
           {uploading ? "Uploading..." : isDragActive ? "Drop here" : "Upload file"}
         </span>
-      </div>
+      </DropzoneTarget>
 
       {files.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -485,16 +513,8 @@ function MinimalVariant({
   );
 }
 
-// ── Variant: Avatar ──────────────────────────────────────────────
-
-function AvatarVariant({
-  getRootProps,
-  getInputProps,
-  isDragActive,
-  uploading,
-  files,
-  removeFile,
-}: VariantProps) {
+function AvatarBody() {
+  const { isDragActive, uploading, files, removeFile } = useDropzoneContext();
   const preview = files[0];
 
   return (
@@ -524,23 +544,17 @@ function AvatarVariant({
               <Loader2 className="h-6 w-6 animate-spin text-white" />
             </div>
           )}
-          <div
-            {...getRootProps()}
-            className="absolute inset-0 rounded-full cursor-pointer"
-          >
-            <input {...getInputProps()} />
-          </div>
+          <DropzoneTarget className="absolute inset-0 rounded-full cursor-pointer" />
         </div>
       ) : (
-        <div
-          {...getRootProps()}
-          className={` + "`" + `flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-full border-2 border-dashed cursor-pointer transition-all ${
-            isDragActive
-              ? "border-accent bg-accent/5"
-              : "border-border hover:border-accent/50 hover:bg-bg-hover/30"
-          } ${uploading ? "opacity-60 cursor-not-allowed" : ""}` + "`" + `}
+        <DropzoneTarget
+          className={` + "`" + `flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-full border-2 border-dashed cursor-pointer transition-all ${targetState(
+            isDragActive,
+            uploading,
+            "border-border hover:border-accent/50 hover:bg-bg-hover/30",
+            "border-accent bg-accent/5"
+          )}` + "`" + `}
         >
-          <input {...getInputProps()} />
           {uploading ? (
             <Loader2 className="h-6 w-6 animate-spin text-accent" />
           ) : (
@@ -549,34 +563,24 @@ function AvatarVariant({
               <span className="text-[10px] text-text-muted">Upload</span>
             </>
           )}
-        </div>
+        </DropzoneTarget>
       )}
     </div>
   );
 }
 
-// ── Variant: Inline ──────────────────────────────────────────────
-
-function InlineVariant({
-  getRootProps,
-  getInputProps,
-  isDragActive,
-  uploading,
-  files,
-  removeFile,
-  maxSize,
-}: VariantProps) {
+function InlineBody() {
+  const { isDragActive, uploading, maxSize } = useDropzoneContext();
   return (
     <div className="space-y-3">
-      <div
-        {...getRootProps()}
-        className={` + "`" + `flex items-center justify-between rounded-lg border px-4 py-3 cursor-pointer transition-all ${
-          isDragActive
-            ? "border-accent bg-accent/5"
-            : "border-border hover:border-accent/50"
-        } ${uploading ? "opacity-60 cursor-not-allowed" : ""}` + "`" + `}
+      <DropzoneTarget
+        className={` + "`" + `flex items-center justify-between rounded-lg border px-4 py-3 cursor-pointer transition-all ${targetState(
+          isDragActive,
+          uploading,
+          "border-border hover:border-accent/50",
+          "border-accent bg-accent/5"
+        )}` + "`" + `}
       >
-        <input {...getInputProps()} />
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-bg-tertiary">
             {uploading ? (
@@ -597,22 +601,104 @@ function InlineVariant({
         <span className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white">
           Browse
         </span>
-      </div>
+      </DropzoneTarget>
 
-      {files.length > 0 && (
-        <div className="space-y-2">
-          {files.map((file, i) => (
-            <FilePreview key={i} file={file} onRemove={() => removeFile(i)} />
-          ))}
-        </div>
-      )}
+      <DropzoneFileList />
     </div>
   );
 }
 
-// ── File Preview Card ────────────────────────────────────────────
+// ── Named components ─────────────────────────────────────────────
 
-// v3.31.31 — type-aware preview thumbnail. Images render the actual
+/** The large dashed box, with a card per file below it. */
+export function BoxDropzone({ progress = "bar", reorderable = false, ...props }: BoxDropzoneProps) {
+  return (
+    <DropzoneRoot {...props}>
+      <BoxBody progress={progress} reorderable={reorderable} />
+    </DropzoneRoot>
+  );
+}
+
+/** A one-line strip, with a chip per file below it. */
+export function CompactDropzone({ progress = "bar", ...props }: CompactDropzoneProps) {
+  return (
+    <DropzoneRoot {...props}>
+      <CompactBody progress={progress} />
+    </DropzoneRoot>
+  );
+}
+
+/** An "Upload file" button, with the file names below it. */
+export function MinimalDropzone(props: DropzoneBaseProps) {
+  return (
+    <DropzoneRoot {...props}>
+      <MinimalBody />
+    </DropzoneRoot>
+  );
+}
+
+/** A round picture that is its own drop target. One file. */
+export function AvatarDropzone(props: AvatarDropzoneProps) {
+  return (
+    <DropzoneRoot {...props} maxFiles={1}>
+      <AvatarBody />
+    </DropzoneRoot>
+  );
+}
+
+/** A row with a Browse button, with a card per file below it. */
+export function InlineDropzone(props: DropzoneBaseProps) {
+  return (
+    <DropzoneRoot {...props}>
+      <InlineBody />
+    </DropzoneRoot>
+  );
+}
+
+// ── Dropzone: the look chosen by a prop ──────────────────────────
+
+// props still carries provider, a display hint nothing ever displayed. The
+// root takes what it knows from props and ignores the rest.
+function VariantDropzone({ variant = "default", progress = "bar", reorderable = false, ...props }: DropzoneProps) {
+  return (
+    <DropzoneRoot {...props}>
+      {variant === "compact" ? (
+        <CompactBody progress={progress} />
+      ) : variant === "minimal" ? (
+        <MinimalBody />
+      ) : variant === "avatar" ? (
+        <AvatarBody />
+      ) : variant === "inline" ? (
+        <InlineBody />
+      ) : (
+        <BoxBody progress={progress} reorderable={reorderable} />
+      )}
+    </DropzoneRoot>
+  );
+}
+
+export const Dropzone = Object.assign(VariantDropzone, {
+  Root: DropzoneRoot,
+  Target: DropzoneTarget,
+  FileList: DropzoneFileList,
+  Progress: DropzoneProgress,
+});
+
+// ── File preview ─────────────────────────────────────────────────
+
+function formatSize(bytes: number) {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+}
+
+function isImage(type: string) {
+  return type.startsWith("image/");
+}
+
+// v3.31.31: type-aware preview thumbnail. Images render the actual
 // image, video shows a play badge over a dark thumb, audio gets a
 // music icon, PDF / doc / excel get format-specific glyphs, anything
 // else falls back to a generic file icon.
@@ -653,17 +739,17 @@ interface FilePreviewProps {
   file: UploadedFile;
   onRemove: () => void;
   /** Multi-file list position (0-based). v3.31.31. */
-  index?: number;
+  index: number;
   /** Total count in the list. */
-  total?: number;
+  total: number;
   /** Whether to show up/down arrow buttons. */
-  reorderable?: boolean;
+  reorderable: boolean;
   /** Reorder callback (delta = -1 for up, 1 for down). */
-  onMove?: (index: number, direction: -1 | 1) => void;
+  onMove: (index: number, direction: -1 | 1) => void;
 }
 
 function FilePreview({ file, onRemove, index, total, reorderable, onMove }: FilePreviewProps) {
-  const canReorder = reorderable && typeof index === "number" && typeof total === "number" && total > 1 && onMove;
+  const canReorder = reorderable && total > 1;
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border bg-bg-secondary px-3 py-2.5">
       <PreviewThumb file={file} />
@@ -687,7 +773,7 @@ function FilePreview({ file, onRemove, index, total, reorderable, onMove }: File
           <button
             type="button"
             disabled={index === 0}
-            onClick={(e) => { e.stopPropagation(); onMove!(index!, -1); }}
+            onClick={(e) => { e.stopPropagation(); onMove(index, -1); }}
             className="rounded p-0.5 text-text-muted hover:text-foreground hover:bg-bg-hover transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
             title="Move up"
           >
@@ -695,8 +781,8 @@ function FilePreview({ file, onRemove, index, total, reorderable, onMove }: File
           </button>
           <button
             type="button"
-            disabled={index === total! - 1}
-            onClick={(e) => { e.stopPropagation(); onMove!(index!, 1); }}
+            disabled={index === total - 1}
+            onClick={(e) => { e.stopPropagation(); onMove(index, 1); }}
             className="rounded p-0.5 text-text-muted hover:text-foreground hover:bg-bg-hover transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
             title="Move down"
           >
@@ -715,20 +801,8 @@ function FilePreview({ file, onRemove, index, total, reorderable, onMove }: File
   );
 }
 
-// v3.31.31 — UploadProgress. Three variants, all driven by a 0..100
-// percent. Variants: "bar" (linear horizontal), "circular" (donut),
-// "pulse" (minimal spinner-pulse). Picks up dropzone.progress prop.
-
-interface UploadProgressProps {
-  variant: ProgressVariant;
-  percent: number;
-}
-
-function UploadProgress({ variant, percent }: UploadProgressProps) {
-  if (variant === "circular") return <UploadProgressCircular percent={percent} />;
-  if (variant === "pulse") return <UploadProgressPulse percent={percent} />;
-  return <UploadProgressBar percent={percent} />;
-}
+// v3.31.31: three progress looks, all driven by a 0..100 percent:
+// "bar" (linear horizontal), "circular" (donut), "pulse" (dots and a number).
 
 function UploadProgressBar({ percent }: { percent: number }) {
   return (
@@ -799,5 +873,180 @@ function UploadProgressPulse({ percent }: { percent: number }) {
     </div>
   );
 }
+`
+}
+
+// adminDropzoneTest is the Vitest file for the dropzone: one test per named
+// look, the variant prop, and a look composed from the parts.
+func adminDropzoneTest() string {
+	return `import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+// The upload goes to the API; here it answers the way /api/uploads does.
+vi.mock("@/lib/api-client", () => ({
+  uploadFile: vi.fn(async (file: File) => ({
+    data: { url: "https://cdn.test/" + file.name, key: "uploads/" + file.name, name: file.name, size: file.size, mime: file.type },
+  })),
+}));
+
+import {
+  AvatarDropzone,
+  BoxDropzone,
+  CompactDropzone,
+  Dropzone,
+  InlineDropzone,
+  MinimalDropzone,
+  type UploadedFile,
+} from "@/components/ui/dropzone";
+
+beforeAll(() => {
+  // jsdom has no object URLs, and a dropzone that does not upload makes one
+  // per local preview.
+  URL.createObjectURL = vi.fn(() => "blob:preview");
+  URL.revokeObjectURL = vi.fn();
+});
+
+let onFilesChange: ReturnType<typeof vi.fn>;
+beforeEach(() => {
+  onFilesChange = vi.fn();
+});
+
+function picker(container: HTMLElement): HTMLInputElement {
+  const input = container.querySelector('input[type="file"]');
+  if (!(input instanceof HTMLInputElement)) throw new Error("no file input");
+  return input;
+}
+
+const png = (name: string) => new File(["x"], name, { type: "image/png" });
+const stored = (name: string, type = "image/png"): UploadedFile => ({
+  url: "https://cdn.test/" + name,
+  name,
+  size: 2048,
+  type,
+});
+
+describe("AvatarDropzone", () => {
+  it("uploads one picture and shows it in the circle", async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <AvatarDropzone label="Photo" accept={{ "image/*": [".png"] }} onFilesChange={onFilesChange} />
+    );
+    expect(screen.getByText("Photo")).toBeInTheDocument();
+    expect(screen.getByText("Upload")).toBeInTheDocument();
+
+    await user.upload(picker(container), png("me.png"));
+
+    await waitFor(() =>
+      expect(onFilesChange).toHaveBeenCalledWith([
+        expect.objectContaining({ url: "https://cdn.test/me.png", key: "uploads/me.png" }),
+      ])
+    );
+    expect(screen.getByAltText("me.png")).toHaveAttribute("src", "https://cdn.test/me.png");
+  });
+
+  it("removes the current picture", async () => {
+    const user = userEvent.setup();
+    render(<AvatarDropzone value={[stored("current.png")]} onFilesChange={onFilesChange} />);
+    expect(screen.getByAltText("current.png")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button"));
+
+    expect(onFilesChange).toHaveBeenCalledWith([]);
+    expect(screen.queryByAltText("current.png")).not.toBeInTheDocument();
+  });
+});
+
+describe("InlineDropzone", () => {
+  it("lists the files it holds and keeps a local pick without uploading", async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <InlineDropzone autoUpload={false} maxFiles={3} value={[stored("a.pdf", "application/pdf")]} onFilesChange={onFilesChange} />
+    );
+    expect(screen.getByText("Choose files")).toBeInTheDocument();
+    expect(screen.getByText("a.pdf")).toBeInTheDocument();
+    expect(screen.getByText("2 KB")).toBeInTheDocument();
+
+    await user.upload(picker(container), png("b.png"));
+
+    await waitFor(() =>
+      expect(onFilesChange).toHaveBeenCalledWith([
+        expect.objectContaining({ name: "a.pdf" }),
+        expect.objectContaining({ name: "b.png", url: "blob:preview" }),
+      ])
+    );
+    // Inline cards have no reorder buttons.
+    expect(screen.queryByTitle("Move up")).not.toBeInTheDocument();
+  });
+});
+
+describe("BoxDropzone", () => {
+  it("reorders its files when reorderable", async () => {
+    const user = userEvent.setup();
+    render(
+      <BoxDropzone maxFiles={5} reorderable value={[stored("one.png"), stored("two.png")]} onFilesChange={onFilesChange} />
+    );
+    expect(screen.getByText("Click to upload or drag and drop")).toBeInTheDocument();
+
+    await user.click(screen.getAllByTitle("Move down")[0]);
+
+    expect(onFilesChange).toHaveBeenCalledWith([
+      expect.objectContaining({ name: "two.png" }),
+      expect.objectContaining({ name: "one.png" }),
+    ]);
+  });
+
+  it("shows the error in place of the description", () => {
+    render(<BoxDropzone description="PNG only" error="An image is required" />);
+    expect(screen.getByText("An image is required")).toBeInTheDocument();
+    expect(screen.queryByText("PNG only")).not.toBeInTheDocument();
+  });
+});
+
+describe("CompactDropzone", () => {
+  it("shows a chip per file and removes one", async () => {
+    const user = userEvent.setup();
+    render(<CompactDropzone maxFiles={2} value={[stored("clip.mp4", "video/mp4")]} onFilesChange={onFilesChange} />);
+    expect(screen.getByText(/Drop files or click to browse/)).toBeInTheDocument();
+    expect(screen.getByText("clip.mp4")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button"));
+
+    expect(onFilesChange).toHaveBeenCalledWith([]);
+  });
+});
+
+describe("MinimalDropzone", () => {
+  it("is an upload button that lists file names", () => {
+    render(<MinimalDropzone value={[stored("notes.txt", "text/plain")]} />);
+    expect(screen.getByText("Upload file")).toBeInTheDocument();
+    expect(screen.getByText("notes.txt")).toBeInTheDocument();
+  });
+});
+
+describe("Dropzone", () => {
+  it("still picks the look from the variant prop", () => {
+    const { unmount } = render(<Dropzone variant="avatar" value={[stored("face.png")]} />);
+    expect(screen.getByAltText("face.png")).toBeInTheDocument();
+    unmount();
+
+    render(<Dropzone variant="inline" provider="minio" />);
+    expect(screen.getByText("Choose files")).toBeInTheDocument();
+  });
+
+  it("builds a custom look from its parts", () => {
+    render(
+      <Dropzone.Root label="Receipts" maxFiles={4} value={[stored("receipt.png")]}>
+        <Dropzone.Target className="receipts">Drop receipts here</Dropzone.Target>
+        <Dropzone.Progress />
+        <Dropzone.FileList />
+      </Dropzone.Root>
+    );
+    expect(screen.getByText("Receipts")).toBeInTheDocument();
+    expect(screen.getByText("Drop receipts here")).toHaveClass("receipts");
+    expect(screen.getByText("receipt.png")).toBeInTheDocument();
+    expect(screen.queryByText(/Uploading/)).not.toBeInTheDocument();
+  });
+});
 `
 }
