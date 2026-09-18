@@ -227,7 +227,7 @@ export function UserCell({ user, name, fallback, compact }: UserCellProps) {
     <div className="flex items-center gap-2.5 min-w-0">
       <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-1 ring-border bg-bg-elevated text-xs font-semibold text-foreground overflow-hidden">
         {user.avatar ? (
-          <img src={user.avatar} alt={fullName} className="h-full w-full object-cover" />
+          <img src={user.avatar} alt={fullName} width={32} height={32} loading="lazy" decoding="async" className="h-full w-full object-cover" />
         ) : initials}
       </span>
       {!compact && (
