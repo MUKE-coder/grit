@@ -9,7 +9,7 @@ func adminFormBuilder() string {
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useT } from "@/lib/i18n";
-import { useForm, Controller, useWatch } from "react-hook-form";
+import { useForm, Controller, useWatch, type FieldErrors } from "react-hook-form";
 import type { FieldDefinition, FormDefinition } from "@/lib/resource";
 import { displayFormat, displayValue, isDisplayOnly, writableValues } from "@/lib/form-values";
 import { renderCell } from "@/components/tables/cell-renderers";
@@ -147,8 +147,7 @@ export function FieldRenderer({
 }: {
   field: FieldDefinition;
   control: ReturnType<typeof useForm>["control"];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  errors: Record<string, any>;
+  errors: FieldErrors;
   getValues?: ReturnType<typeof useForm>["getValues"];
 }) {
   // Display-only fields are not inputs: shown the way the table shows them,
@@ -429,8 +428,9 @@ export function buildDefaults(
     // multi-relationship-select: extract IDs from the nested array of objects
     if (field.type === "multi-relationship-select" && field.relationshipKey) {
       const related = existing[field.relationshipKey];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      defaults[field.key] = Array.isArray(related) ? related.map((r: any) => r.id) : [];
+      defaults[field.key] = Array.isArray(related)
+        ? (related as Array<{ id?: unknown }>).map((r) => r.id)
+        : [];
       continue;
     }
     if (field.key in existing) {
@@ -761,7 +761,7 @@ func adminFormStepper() string {
 	return `"use client";
 
 import { useMemo, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, type UseFormTrigger, type FieldValues } from "react-hook-form";
 import type { FieldDefinition, FormDefinition } from "@/lib/resource";
 import { writableValues } from "@/lib/form-values";
 import { FieldRenderer, buildDefaults } from "./form-builder";
@@ -1069,8 +1069,7 @@ function HorizontalIndicator({
   steps: ComputedStep[];
   current: number;
   onStepClick: (i: number) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  trigger: any;
+  trigger: UseFormTrigger<FieldValues>;
 }) {
   const handleClick = async (idx: number) => {
     if (idx < current) {
@@ -1140,8 +1139,7 @@ function VerticalIndicator({
   steps: ComputedStep[];
   current: number;
   onStepClick: (i: number) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  trigger: any;
+  trigger: UseFormTrigger<FieldValues>;
 }) {
   const handleClick = async (idx: number) => {
     if (idx < current) {
@@ -3031,12 +3029,12 @@ function LineItemNumberCell({
 `
 }
 
-// adminImageField returns the image upload field component wrapping the Dropzone.
+// adminImageField returns the image upload field: an AvatarDropzone.
 func adminImageField() string {
 	return `"use client";
 
 import type { FieldDefinition } from "@/lib/resource";
-import { Dropzone, type UploadedFile } from "@/components/ui/dropzone";
+import { AvatarDropzone, type UploadedFile } from "@/components/ui/dropzone";
 
 interface ImageFieldProps {
   field: FieldDefinition;
@@ -3051,9 +3049,7 @@ export function ImageField({ field, value, onChange, error }: ImageFieldProps) {
     : [];
 
   return (
-    <Dropzone
-      variant="avatar"
-      maxFiles={1}
+    <AvatarDropzone
       maxSize={field.maxSize ?? 5 * 1024 * 1024}
       accept={{ "image/*": [".jpeg", ".jpg", ".png", ".gif", ".webp"] }}
       value={existingFiles}
@@ -3074,7 +3070,7 @@ func adminImagesField() string {
 	return `"use client";
 
 import type { FieldDefinition } from "@/lib/resource";
-import { Dropzone, type UploadedFile } from "@/components/ui/dropzone";
+import { BoxDropzone, type UploadedFile } from "@/components/ui/dropzone";
 
 interface ImagesFieldProps {
   field: FieldDefinition;
@@ -3095,8 +3091,7 @@ export function ImagesField({ field, value, onChange, error }: ImagesFieldProps)
   }));
 
   return (
-    <Dropzone
-      variant="default"
+    <BoxDropzone
       maxFiles={field.max ?? 10}
       maxSize={field.maxSize ?? 5 * 1024 * 1024}
       accept={{ "image/*": [".jpeg", ".jpg", ".png", ".gif", ".webp"] }}
@@ -3118,7 +3113,7 @@ func adminVideoField() string {
 	return `"use client";
 
 import type { FieldDefinition } from "@/lib/resource";
-import { Dropzone, type UploadedFile } from "@/components/ui/dropzone";
+import { CompactDropzone, type UploadedFile } from "@/components/ui/dropzone";
 
 interface VideoFieldProps {
   field: FieldDefinition;
@@ -3133,8 +3128,7 @@ export function VideoField({ field, value, onChange, error }: VideoFieldProps) {
     : [];
 
   return (
-    <Dropzone
-      variant="compact"
+    <CompactDropzone
       maxFiles={1}
       maxSize={field.maxSize ?? 100 * 1024 * 1024}
       accept={{ "video/*": [".mp4", ".webm", ".mov"] }}
@@ -3156,7 +3150,7 @@ func adminVideosField() string {
 	return `"use client";
 
 import type { FieldDefinition } from "@/lib/resource";
-import { Dropzone, type UploadedFile } from "@/components/ui/dropzone";
+import { BoxDropzone, type UploadedFile } from "@/components/ui/dropzone";
 
 interface VideosFieldProps {
   field: FieldDefinition;
@@ -3175,8 +3169,7 @@ export function VideosField({ field, value, onChange, error }: VideosFieldProps)
   }));
 
   return (
-    <Dropzone
-      variant="default"
+    <BoxDropzone
       maxFiles={field.max ?? 5}
       maxSize={field.maxSize ?? 100 * 1024 * 1024}
       accept={{ "video/*": [".mp4", ".webm", ".mov"] }}

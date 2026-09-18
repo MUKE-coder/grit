@@ -166,7 +166,7 @@ export default function ProductsPage() {
               </p>
               <CodeBlock
                 language="tsx"
-                filename="components/layout/sidebar.tsx"
+                filename="components/chrome/CollapsibleSidebar.tsx"
                 code={`{ href: "/system/roles", label: "Roles & permissions",
   iconKey: "ShieldCheck", adminOnly: true, requires: "roles.view" },`}
               />

@@ -79,7 +79,7 @@ var nextPublicEnvPattern = regexp.MustCompile(`process\.env\.NEXT_PUBLIC_([A-Z0-
 func adminTanStackAPICore() string {
 	return strings.ReplaceAll(apiCoreTS(),
 		`process.env.NEXT_PUBLIC_API_URL`,
-		`(import.meta as any).env?.VITE_API_URL`)
+		`import.meta.env.VITE_API_URL`)
 }
 
 // adminTanStackAPIClient adapts the shared Next.js admin api-client for Vite:
@@ -91,7 +91,7 @@ func adminTanStackAPIClient() string {
 	code := adminAPIClient()
 	code = strings.ReplaceAll(code,
 		`process.env.NEXT_PUBLIC_API_URL`,
-		`(import.meta as any).env?.VITE_API_URL`)
+		`import.meta.env.VITE_API_URL`)
 	// Same reason the converter rewrites this: Vite does not polyfill process, so
 	// the dev-only IP hint below threw "process is not defined" in every Vite
 	// admin. This function bypasses nextToTanStack, so it repeats the rewrite.
@@ -173,7 +173,9 @@ import {
 
 // RouterLink is heavily generic over the typed route tree; the shared components
 // pass dynamic string hrefs, so we present a loosely-typed Link.
-const AnyLink = RouterLink as unknown as React.ComponentType<any>;
+const AnyLink = RouterLink as unknown as React.ComponentType<
+  { to: string; children?: React.ReactNode } & Record<string, unknown>
+>;
 
 // next/link: <Link href="..."> -> TanStack <Link to="...">.
 export function Link({
@@ -187,6 +189,16 @@ export function Link({
     </AnyLink>
   );
 }
+
+type ImageProps = Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src"> & {
+  src?: string | { src: string };
+  priority?: boolean;
+  fill?: boolean;
+  quality?: number | string;
+  placeholder?: string;
+  loader?: unknown;
+  unoptimized?: boolean;
+};
 
 // next/image: <Image src alt width height .../> -> a plain <img>. Next-only
 // props (width/height/priority/fill/quality/placeholder/loader/sizes) are
@@ -204,7 +216,7 @@ export function Image({
   sizes,
   unoptimized,
   ...rest
-}: any) {
+}: ImageProps) {
   const resolved = typeof src === "string" ? src : src?.src;
   return <img src={resolved} alt={alt ?? ""} {...rest} />;
 }
@@ -230,7 +242,7 @@ export function useRouter() {
 
 // next/navigation: usePathname().
 export function usePathname(): string {
-  return useRouterState({ select: (s: any) => s.location.pathname as string });
+  return useRouterState({ select: (s) => s.location.pathname });
 }
 
 // next/navigation: useParams(). Non-strict so it resolves against whatever
@@ -238,9 +250,8 @@ export function usePathname(): string {
 // pages read params.id — TanStack names the segment $id, which yields the
 // same { id } shape.
 export function useParams<T = Record<string, string>>(): T {
-  // Cast through any: useParams is generic over the generated route tree, so a
-  // route-agnostic helper cannot satisfy its option type.
-  return (useRouterParams as any)({ strict: false }) as T;
+  // Non-strict params are a union over every route; the caller names the shape.
+  return useRouterParams({ strict: false }) as unknown as T;
 }
 
 export type ReadonlyURLSearchParams = URLSearchParams;
@@ -248,7 +259,7 @@ export type ReadonlyURLSearchParams = URLSearchParams;
 // next/navigation: useSearchParams() -> a URLSearchParams over the current query
 // string. Read-only usage (.get/.has/.getAll) works exactly as on the web.
 export function useSearchParams(): ReadonlyURLSearchParams {
-  const searchStr = useRouterState({ select: (s: any) => (s.location.searchStr as string) ?? "" });
+  const searchStr = useRouterState({ select: (s) => s.location.searchStr ?? "" });
   return new URLSearchParams(searchStr);
 }
 
@@ -259,8 +270,9 @@ export function dynamic<T extends React.ComponentType<any>>(
   _options?: { ssr?: boolean; loading?: React.ComponentType },
 ): React.LazyExoticComponent<T> {
   return React.lazy(async () => {
-    const mod = (await loader()) as any;
-    return mod && mod.default ? { default: mod.default as T } : { default: mod as T };
+    const mod = await loader();
+    const lazyDefault = (mod as { default?: T }).default;
+    return { default: lazyDefault ?? (mod as T) };
   });
 }
 `
@@ -461,7 +473,6 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 
 		// Layout components (reuse with stripped "use client")
 		filepath.Join(adminRoot, "src", "components", "layout", "admin-layout.tsx"): nextToTanStack(adminLayoutComponent()),
-		filepath.Join(adminRoot, "src", "components", "layout", "sidebar.tsx"):      nextToTanStack(adminSidebar()),
 		filepath.Join(adminRoot, "src", "components", "chrome", "StatCards.tsx"):    nextToTanStack(adminStatCards()),
 
 		// Chrome components imported by the admin layout (collapsible sidebar,
@@ -532,18 +543,11 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "components", "ui", "dropzone.tsx"):      nextToTanStack(adminDropzone()),
 		filepath.Join(adminRoot, "src", "components", "ui", "confirm-modal.tsx"): nextToTanStack(adminConfirmModal()),
 
-		// Widget components
-		filepath.Join(adminRoot, "src", "components", "widgets", "stats-card.tsx"):      nextToTanStack(adminStatsCard()),
-		filepath.Join(adminRoot, "src", "components", "widgets", "chart-widget.tsx"):    nextToTanStack(adminChartWidget()),
-		filepath.Join(adminRoot, "src", "components", "widgets", "activity-widget.tsx"): nextToTanStack(adminActivityWidget()),
-		filepath.Join(adminRoot, "src", "components", "widgets", "widget-grid.tsx"):     nextToTanStack(adminWidgetGrid()),
-
 		// Resource components
 		filepath.Join(adminRoot, "src", "components", "resource", "resource-page.tsx"):        nextToTanStack(adminResourcePage()),
 		filepath.Join(adminRoot, "src", "components", "resource", "resource-detail-page.tsx"): nextToTanStack(adminResourceDetailPage()),
 		filepath.Join(adminRoot, "src", "components", "resource", "resource-tree.tsx"):        nextToTanStack(adminResourceTree()),
 		filepath.Join(adminRoot, "src", "components", "resource", "tree-breadcrumbs.tsx"):     nextToTanStack(adminTreeBreadcrumbs()),
-		filepath.Join(adminRoot, "src", "components", "resource", "view-modal.tsx"):           nextToTanStack(adminViewModal()),
 
 		// Resource definitions (same as Next.js)
 		filepath.Join(adminRoot, "src", "resources", "index.ts"):                  adminResourceRegistry(),
@@ -559,6 +563,12 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "components", "chrome", "EmailVerifiedBanner.tsx"):    nextToTanStack(adminEmailVerifiedBanner()),
 
 		filepath.Join(adminRoot, "public", ".gitkeep"): "",
+	}
+
+	if adminStyleUsesWidgets(opts.Style) {
+		for rel, body := range adminWidgetFiles() {
+			files[filepath.Join(adminRoot, "src", rel)] = nextToTanStack(body)
+		}
 	}
 
 	return files
@@ -746,7 +756,7 @@ import './globals.css'
 // Mirrors the Next.js admin's NEXT_PUBLIC_THEME: index.html bakes in the theme
 // picked at scaffold time, and VITE_THEME overrides it at runtime, so changing
 // the theme in .env repaints the dashboard without re-scaffolding.
-const envTheme = (import.meta as any).env?.VITE_THEME
+const envTheme = import.meta.env.VITE_THEME
 if (envTheme) {
   document.documentElement.setAttribute('data-theme', envTheme)
 }

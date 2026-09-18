@@ -1,5 +1,29 @@
 package scaffold
 
+import "path/filepath"
+
+// adminStyleUsesWidgets reports whether a style's dashboard page renders
+// components/widgets/. Only the modern, minimal and glass dashboards do. The
+// default one draws its own tiles, and writing the widgets for it anyway
+// left four files, 335 lines, that nothing imported (contact-app review L34).
+func adminStyleUsesWidgets(style string) bool {
+	switch style {
+	case "modern", "minimal", "glass":
+		return true
+	}
+	return false
+}
+
+// adminWidgetFiles is components/widgets/, relative to the admin's code root.
+func adminWidgetFiles() map[string]string {
+	return map[string]string{
+		filepath.Join("components", "widgets", "stats-card.tsx"):      adminStatsCard(),
+		filepath.Join("components", "widgets", "chart-widget.tsx"):    adminChartWidget(),
+		filepath.Join("components", "widgets", "activity-widget.tsx"): adminActivityWidget(),
+		filepath.Join("components", "widgets", "widget-grid.tsx"):     adminWidgetGrid(),
+	}
+}
+
 // adminStatsCard returns the enhanced stats card component.
 func adminStatsCard() string {
 	return `"use client";

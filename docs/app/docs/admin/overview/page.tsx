@@ -149,10 +149,11 @@ export const postsResource = defineResource({
 \u2502       \u251c\u2500\u2500 users/page.tsx     # User management page
 \u2502       \u2514\u2500\u2500 posts/page.tsx     # Post management page
 \u251c\u2500\u2500 components/
-\u2502   \u251c\u2500\u2500 layout/               # Shell, sidebar, navbar
-\u2502   \u2502   \u251c\u2500\u2500 admin-layout.tsx
-\u2502   \u2502   \u251c\u2500\u2500 sidebar.tsx
-\u2502   \u2502   \u2514\u2500\u2500 navbar.tsx
+\u2502   \u251c\u2500\u2500 layout/               # The admin shell
+\u2502   \u2502   \u2514\u2500\u2500 admin-layout.tsx
+\u2502   \u251c\u2500\u2500 chrome/               # Sidebar, user menu, page header
+\u2502   \u2502   \u251c\u2500\u2500 CollapsibleSidebar.tsx
+\u2502   \u2502   \u2514\u2500\u2500 PageHeader.tsx
 \u2502   \u251c\u2500\u2500 tables/               # DataTable system
 \u2502   \u2502   \u251c\u2500\u2500 data-table.tsx
 \u2502   \u2502   \u251c\u2500\u2500 columns.tsx
@@ -165,10 +166,10 @@ export const postsResource = defineResource({
 \u2502   \u2502       \u251c\u2500\u2500 select-field.tsx
 \u2502   \u2502       \u251c\u2500\u2500 date-field.tsx
 \u2502   \u2502       \u2514\u2500\u2500 file-field.tsx
-\u2502   \u2514\u2500\u2500 widgets/              # Dashboard widgets
-\u2502       \u251c\u2500\u2500 stats-card.tsx
-\u2502       \u251c\u2500\u2500 chart-widget.tsx
-\u2502       \u2514\u2500\u2500 recent-activity.tsx
+\u2502   \u2514\u2500\u2500 dashboard/            # Dashboard widgets
+\u2502       \u251c\u2500\u2500 ResourceStatCard.tsx
+\u2502       \u251c\u2500\u2500 DashboardCharts.tsx
+\u2502       \u2514\u2500\u2500 ResourceWidgetsRow.tsx
 \u251c\u2500\u2500 hooks/                    # React Query data hooks
 \u2502   \u251c\u2500\u2500 use-auth.ts
 \u2502   \u251c\u2500\u2500 use-users.ts

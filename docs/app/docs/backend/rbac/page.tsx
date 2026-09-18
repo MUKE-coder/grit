@@ -485,7 +485,7 @@ moderators.Use(middleware.RequireRole("ADMIN", "MODERATOR"))
                 />
                 <p className="text-sm text-muted-foreground/60 mt-4">
                   You may also want to update the sidebar visibility logic in{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">components/layout/sidebar.tsx</code>{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">components/chrome/CollapsibleSidebar.tsx</code>{' '}
                   if the new role should have admin-level navigation access.
                 </p>
               </div>

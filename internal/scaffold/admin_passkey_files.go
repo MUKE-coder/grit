@@ -76,13 +76,34 @@ export async function passkeysSupported(): Promise<boolean> {
   }
 }
 
+/** A credential as the server sends it: the id is base64url, not bytes. */
+interface CredentialJSON {
+  id: string;
+  [key: string]: unknown;
+}
+
+/** The server's creation options, as JSON. */
+export interface CreationOptionsJSON {
+  challenge: string;
+  user: { id: string; [key: string]: unknown };
+  excludeCredentials?: CredentialJSON[];
+  [key: string]: unknown;
+}
+
+/** The server's request options, as JSON. */
+export interface RequestOptionsJSON {
+  challenge: string;
+  allowCredentials?: CredentialJSON[];
+  [key: string]: unknown;
+}
+
 /** Turn the server's creation options into what navigator.credentials wants. */
-export function toCreationOptions(o: Record<string, any>): PublicKeyCredentialCreationOptions {
+export function toCreationOptions(o: CreationOptionsJSON): PublicKeyCredentialCreationOptions {
   return {
     ...o,
     challenge: fromBase64url(o.challenge),
     user: { ...o.user, id: fromBase64url(o.user.id) },
-    excludeCredentials: (o.excludeCredentials ?? []).map((c: any) => ({
+    excludeCredentials: (o.excludeCredentials ?? []).map((c) => ({
       ...c,
       id: fromBase64url(c.id),
     })),
@@ -90,11 +111,11 @@ export function toCreationOptions(o: Record<string, any>): PublicKeyCredentialCr
 }
 
 /** And the request options, for signing in. */
-export function toRequestOptions(o: Record<string, any>): PublicKeyCredentialRequestOptions {
+export function toRequestOptions(o: RequestOptionsJSON): PublicKeyCredentialRequestOptions {
   return {
     ...o,
     challenge: fromBase64url(o.challenge),
-    allowCredentials: (o.allowCredentials ?? []).map((c: any) => ({
+    allowCredentials: (o.allowCredentials ?? []).map((c) => ({
       ...c,
       id: fromBase64url(c.id),
     })),

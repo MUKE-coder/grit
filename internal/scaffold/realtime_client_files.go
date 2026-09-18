@@ -34,7 +34,10 @@ func writeRealtimeClientFiles(root string, opts Options) error {
 		files[filepath.Join(webRoot, "lib", "realtime.ts")] = realtimeClientTS(false)
 		files[filepath.Join(webRoot, "hooks", "use-realtime.ts")] = useRealtimeTS(!opts.UseTanStack())
 	}
-	if opts.HasAdminPanel() {
+	// A panel inside the web app shares the web app's copy. A second one there
+	// was 476 lines nothing imported, and a second socket for whoever did
+	// (contact-app review L34).
+	if opts.HasAdminPanel() && !realtimeSharedWithWeb(opts) {
 		// adminPath knows where the panel's own code lives in each of the four
 		// shapes, including the src/ a standalone Vite admin keeps it under.
 		// Appending "src" here as well wrote admin-panel/src/hooks into an
@@ -55,6 +58,12 @@ func writeRealtimeClientFiles(root string, opts Options) error {
 		}
 	}
 	return nil
+}
+
+// realtimeSharedWithWeb reports whether the admin panel lives inside the web
+// app, where the web app's lib/realtime.ts and hooks/use-realtime.ts serve it.
+func realtimeSharedWithWeb(opts Options) bool {
+	return opts.ShouldEmbedAdmin() && opts.ShouldIncludeWeb()
 }
 
 // realtimeClientTS is the connection itself: one socket for the whole app,
@@ -110,6 +119,11 @@ async function authQuery(): Promise<string> {
  */
 
 export type RealtimeEvent = { type: string; channel?: string; payload: unknown };
+// The payload is whatever JSON the server sent, so a handler annotates it:
+// (payload: Invoice) => ... It stays any rather than unknown because
+// unknown would reject every annotated handler and every documented
+// example that reads payload.field, in code that already compiles.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Handler = (payload: any, event: RealtimeEvent) => void;
 export type Status = "connecting" | "open" | "closed";
 
@@ -211,7 +225,7 @@ function dispatchChannel(channel: string, evt: RealtimeEvent) {
     if (!fn) return;
     handled = true;
     try {
-      fn(evt.payload as any, evt);
+      fn(evt.payload, evt);
     } catch (err) {
       console.error("[realtime] handler for " + evt.type + " on " + channel + " threw", err);
     }
@@ -299,14 +313,14 @@ export async function connect(): Promise<void> {
     }
     handlers.get(evt.type)?.forEach((fn) => {
       try {
-        fn(evt.payload as any, evt);
+        fn(evt.payload, evt);
       } catch (err) {
         // One bad subscriber must not stop the others, or a render error in
         // an unrelated component silently kills every live update on the page.
         console.error("[realtime] handler for " + evt.type + " threw", err);
       }
     });
-    handlers.get("*")?.forEach((fn) => fn(evt.payload as any, evt));
+    handlers.get("*")?.forEach((fn) => fn(evt.payload, evt));
   };
 
   ws.onclose = () => {

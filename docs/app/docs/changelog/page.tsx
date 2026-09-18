@@ -66,6 +66,46 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.292.0 */}
+            <div className="mb-12" id="v3.292.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.292.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 18, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Less dead admin code, real types instead of any, and named upload components</h3>
+                <p>
+                  <strong>New projects stop carrying code nothing renders.</strong> The old sidebar, the old view modal, and
+                  the four dashboard widgets that only the modern, minimal and glass styles use were written into every
+                  admin, and a panel inside the web app got its own second realtime client instead of using the web
+                  app&apos;s. That is 6 fewer files and 583 fewer lines in a standalone admin, and 8 files and 1,059 lines in
+                  a web app with the panel inside it. <code>grit upgrade</code> deletes an existing project&apos;s copies
+                  only when Grit wrote them, nobody edited them and nothing imports them; an edited copy is kept and named in
+                  the upgrade output.
+                </p>
+                <p>
+                  <strong>Real types instead of any.</strong> Form errors, the stepper trigger, the toast hook&apos;s
+                  callbacks, the passkey options, the observability cards, the backups page and the Vite compatibility shim
+                  now have real types. A standalone Next.js admin goes from 22 explicit <code>any</code>s to 1, a web app
+                  with the panel inside it from 26 to 1, and a single app from 27 to 1. The ones that remain, the realtime
+                  payload and React&apos;s own lazy-component bound, are explained where they stand.
+                </p>
+                <p>
+                  <strong>Upload components with names.</strong> The dropzone took 17 props, including a five-way
+                  <code>variant</code> and a <code>provider</code> hint. It now comes as five named looks,
+                  <code>AvatarDropzone</code>, <code>InlineDropzone</code>, <code>CompactDropzone</code>,
+                  <code>MinimalDropzone</code> and <code>BoxDropzone</code>, each built from <code>Dropzone.Root</code>,
+                  <code>Dropzone.Target</code>, <code>Dropzone.FileList</code> and <code>Dropzone.Progress</code>, which you
+                  can also compose yourself. The image, images, video and videos form fields use them directly.
+                  <code>&lt;Dropzone variant=&quot;...&quot;&gt;</code> still works with all 17 props, so existing code
+                  keeps working. The Next.js admin ships 9 tests covering every look.
+                </p>
+              </div>
+            </div>
+
             {/* v3.291.0 */}
             <div className="mb-12" id="v3.291.0">
               <div className="flex items-center gap-3 mb-4">

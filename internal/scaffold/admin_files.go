@@ -341,7 +341,6 @@ func adminFileMap(root string, opts Options) map[string]string {
 
 		// Layout components
 		filepath.Join(adminRoot, "components", "layout", "admin-layout.tsx"): adminLayoutComponent(),
-		filepath.Join(adminRoot, "components", "layout", "sidebar.tsx"):      adminSidebar(),
 		filepath.Join(adminRoot, "components", "chrome", "StatCards.tsx"):    adminStatCards(),
 
 		// Table components
@@ -400,18 +399,11 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "components", "ui", "dropzone.tsx"):      adminDropzone(),
 		filepath.Join(adminRoot, "components", "ui", "confirm-modal.tsx"): adminConfirmModal(),
 
-		// Widget components
-		filepath.Join(adminRoot, "components", "widgets", "stats-card.tsx"):      adminStatsCard(),
-		filepath.Join(adminRoot, "components", "widgets", "chart-widget.tsx"):    adminChartWidget(),
-		filepath.Join(adminRoot, "components", "widgets", "activity-widget.tsx"): adminActivityWidget(),
-		filepath.Join(adminRoot, "components", "widgets", "widget-grid.tsx"):     adminWidgetGrid(),
-
 		// Resource components
 		filepath.Join(adminRoot, "components", "resource", "resource-page.tsx"):        adminResourcePage(),
 		filepath.Join(adminRoot, "components", "resource", "resource-detail-page.tsx"): adminResourceDetailPage(),
 		filepath.Join(adminRoot, "components", "resource", "resource-tree.tsx"):        adminResourceTree(),
 		filepath.Join(adminRoot, "components", "resource", "tree-breadcrumbs.tsx"):     adminTreeBreadcrumbs(),
-		filepath.Join(adminRoot, "components", "resource", "view-modal.tsx"):           adminViewModal(),
 
 		// Resource definitions
 		filepath.Join(adminRoot, "resources", "index.ts"):                  adminResourceRegistry(),
@@ -476,6 +468,12 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "activity", "page.tsx"):        adminWalkieActivityPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "support", "page.tsx"):         adminSupportListPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "support", "[id]", "page.tsx"): adminTicketThreadPage(),
+	}
+
+	if adminStyleUsesWidgets(opts.Style) {
+		for rel, body := range adminWidgetFiles() {
+			files[filepath.Join(adminRoot, rel)] = body
+		}
 	}
 
 	return files

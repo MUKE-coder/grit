@@ -1005,6 +1005,8 @@ function SeverityChip({ severity, cvss }: { severity?: string; cvss?: number }) 
 func adminObservabilityPage() string {
 	return `"use client";
 
+import type { ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 import { Activity, ExternalLink, AlertTriangle, Zap } from "@/lib/icons";
 import { useObservabilitySummary } from "@/hooks/use-system";
 import { getApiErrorMessage } from "@/lib/api-core";
@@ -1189,7 +1191,7 @@ export default function ObservabilityPage() {
   );
 }
 
-function Kpi({ label, value, tone, icon: Icon }: { label: string; value: any; tone: "default" | "success" | "warning" | "info" | "danger"; icon: any }) {
+function Kpi({ label, value, tone, icon: Icon }: { label: string; value: ReactNode; tone: "default" | "success" | "warning" | "info" | "danger"; icon: LucideIcon }) {
   const toneCls = { default: "text-foreground", success: "text-success", warning: "text-warning", info: "text-info", danger: "text-danger" }[tone];
   return (
     <div className="rounded-xl border border-border bg-bg-secondary p-4">
@@ -1202,7 +1204,7 @@ function Kpi({ label, value, tone, icon: Icon }: { label: string; value: any; to
   );
 }
 
-function Panel({ title, children }: { title: string; children: any }) {
+function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="rounded-xl border border-border bg-bg-secondary overflow-hidden">
       <div className="px-4 py-3 border-b border-border"><h2 className="text-sm font-semibold text-foreground">{title}</h2></div>
@@ -1211,7 +1213,7 @@ function Panel({ title, children }: { title: string; children: any }) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: any }) {
+function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="rounded-lg border border-border bg-bg-elevated px-3 py-2">
       <p className="text-[10px] uppercase tracking-wider text-text-muted">{label}</p>

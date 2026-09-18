@@ -177,11 +177,21 @@ func TestRealtimeClientFollowsTheAppLayout(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(root, "apps", "web", "hooks")); err == nil {
 		t.Error("apps/web/hooks was created in a Vite app")
 	}
-	// The panel's copy goes inside the panel, not into a src/ of its own.
-	if _, err := os.Stat(filepath.Join(root, "apps", "web", "src", "admin-panel", "hooks", "use-realtime.ts")); err != nil {
+	// The panel inside the web app uses the web app's copy (contact-app review L34).
+	if _, err := os.Stat(filepath.Join(root, "apps", "web", "src", "admin-panel", "hooks", "use-realtime.ts")); err == nil {
+		t.Error("the panel has a second copy of the web app's realtime client")
+	}
+
+	// A single's panel is the only frontend code there is, so it keeps its copy,
+	// inside the panel and not in a src/ of its own.
+	single := t.TempDir()
+	if err := writeRealtimeClientFiles(single, singleOptions()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(single, "frontend", "src", "admin-panel", "hooks", "use-realtime.ts")); err != nil {
 		t.Errorf("the panel's copy is missing: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(root, "apps", "web", "src", "admin-panel", "src")); err == nil {
+	if _, err := os.Stat(filepath.Join(single, "frontend", "src", "admin-panel", "src")); err == nil {
 		t.Error("the panel grew a second src/ directory")
 	}
 }

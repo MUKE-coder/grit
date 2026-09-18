@@ -30,6 +30,12 @@ func writeFrontendTestFiles(root string, opts Options) error {
 		files[filepath.Join(adminRoot, "__tests__", "form-values.test.ts")] = adminFormValuesTest(libImport)
 		files[filepath.Join(adminRoot, "__tests__", "tiptap-extensions.test.ts")] = adminTiptapExtensionsTest(libImport)
 		files[filepath.Join(adminRoot, "__tests__", "safe-href.test.ts")] = adminSafeHrefTest(libImport)
+		// A component test needs the component's own "@/" imports to resolve,
+		// and the Vite admin's vitest config points "@" at the app root, not
+		// src/. The Next.js admin runs it.
+		if opts.Frontend != FrontendTanStack {
+			files[filepath.Join(adminRoot, "__tests__", "dropzone.test.tsx")] = adminDropzoneTest()
+		}
 	}
 
 	if opts.ShouldIncludeWeb() || opts.ShouldIncludeAdmin() {

@@ -52,8 +52,7 @@ export function useToastedMutation<TData = unknown, TError = unknown, TVariables
         const msg = typeof successMessage === "function" ? successMessage(data) : (successMessage || "Done");
         toast.success(msg + (elapsed != null ? " — " + elapsed + "ms" : ""));
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (onSuccess as any)?.(...args);
+      passThrough(onSuccess, args);
     }) as never,
     onError: ((...args: unknown[]) => {
       const [err, , ctx] = args as [TError, TVariables, TContext];
@@ -61,12 +60,10 @@ export function useToastedMutation<TData = unknown, TError = unknown, TVariables
       const fallback = pickErrorMessage(err);
       const msg = typeof errorMessage === "function" ? errorMessage(err) : (errorMessage || fallback);
       toast.error(msg + (elapsed != null ? " — " + elapsed + "ms" : ""));
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (onError as any)?.(...args);
+      passThrough(onError, args);
     }) as never,
     onMutate: ((...args: unknown[]) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const userCtxPromise = rest.onMutate ? (rest.onMutate as any)(...args) : undefined;
+      const userCtxPromise = passThrough(rest.onMutate, args);
       return Promise.resolve(userCtxPromise).then((userCtx) =>
         ({ ...(userCtx as object), __startedAt: performance.now() } as TContext)
       );
@@ -75,6 +72,12 @@ export function useToastedMutation<TData = unknown, TError = unknown, TVariables
 }
 
 type MutationContext = { __startedAt?: number } | undefined;
+
+// Calls the caller's own callback with every argument react-query passed,
+// however many that is in the installed version.
+function passThrough(callback: unknown, args: unknown[]): unknown {
+  return typeof callback === "function" ? (callback as (...a: unknown[]) => unknown)(...args) : undefined;
+}
 
 function readElapsed(ctx: MutationContext): number | null {
   const t = ctx?.__startedAt;

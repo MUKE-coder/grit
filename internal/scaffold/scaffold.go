@@ -68,7 +68,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.291.0"
+const DefaultVersion = "3.292.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -917,7 +917,6 @@ func createDirectories(root string, opts Options) error {
 				filepath.Join(root, "apps", "admin", "src", "components", "layout"),
 				filepath.Join(root, "apps", "admin", "src", "components", "tables"),
 				filepath.Join(root, "apps", "admin", "src", "components", "forms", "fields"),
-				filepath.Join(root, "apps", "admin", "src", "components", "widgets"),
 				filepath.Join(root, "apps", "admin", "src", "components", "resource"),
 				filepath.Join(root, "apps", "admin", "src", "components", "shared"),
 				filepath.Join(root, "apps", "admin", "src", "components", "ui"),
@@ -945,7 +944,6 @@ func createDirectories(root string, opts Options) error {
 				filepath.Join(root, "apps", "admin", "components", "layout"),
 				filepath.Join(root, "apps", "admin", "components", "tables"),
 				filepath.Join(root, "apps", "admin", "components", "forms", "fields"),
-				filepath.Join(root, "apps", "admin", "components", "widgets"),
 				filepath.Join(root, "apps", "admin", "components", "resource"),
 				filepath.Join(root, "apps", "admin", "components", "shared"),
 				filepath.Join(root, "apps", "admin", "components", "ui"),

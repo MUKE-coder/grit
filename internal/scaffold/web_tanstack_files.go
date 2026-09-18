@@ -370,7 +370,7 @@ function BlogListPage() {
         <p className="text-muted-foreground">No posts yet. Check back soon!</p>
       ) : (
         <div className="space-y-6">
-          {blogs.map((blog: any) => (
+          {blogs.map((blog) => (
             <Link
               key={blog.id}
               to="/blog/$slug"
