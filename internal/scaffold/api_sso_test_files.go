@@ -129,7 +129,9 @@ func TestSSO_JITDisabledRefusesUnknownUser(t *testing.T) {
 
 	h := ssoHandler(db)
 	_, err := h.resolveUser(ssoCtx(), &conn, extUser("sub-x", "stranger@acme.com", "Stranger"))
-	require.Error(t, err)
+	require.ErrorIs(t, err, errSSONoAccount)
+	assert.Equal(t, "No account exists for stranger@acme.com. Ask your administrator to create one.",
+		ssoRefusalMessage(err, "Stranger@Acme.com"))
 
 	var count int64
 	db.Model(&models.User{}).Count(&count)
@@ -150,7 +152,8 @@ func TestSSO_DisabledUserRefused(t *testing.T) {
 
 	h := ssoHandler(db)
 	_, err := h.resolveUser(ssoCtx(), &conn, extUser("sub-g", "gone@acme.com", "Gone"))
-	require.Error(t, err)
+	require.ErrorIs(t, err, errSSOAccountDisabled)
+	assert.Equal(t, "Your account has been disabled.", ssoRefusalMessage(err, "gone@acme.com"))
 }
 
 // Group mapping must write BOTH the user_roles join and the legacy users.role
@@ -253,9 +256,9 @@ func TestSSO_RefusesAnAddressOutsideTheDomains(t *testing.T) {
 	h := ssoHandler(db)
 
 	_, err := h.resolveUser(ssoCtx(), &conn, extUser("attacker", "ada@yourapp.com", "Mallory"))
-	require.Error(t, err, "the IdP signed in as an account outside its domains")
+	require.ErrorIs(t, err, errSSOOutsideDomains, "the IdP signed in as an account outside its domains")
 	_, err = h.resolveUser(ssoCtx(), &conn, extUser("stranger", "someone@elsewhere.com", "S"))
-	require.Error(t, err, "the IdP provisioned an account outside its domains")
+	require.ErrorIs(t, err, errSSOOutsideDomains, "the IdP provisioned an account outside its domains")
 
 	var identities, users int64
 	db.Model(&models.UserIdentity{}).Count(&identities)
@@ -275,7 +278,7 @@ func TestSSO_RefusesAnOldLinkOutsideTheDomains(t *testing.T) {
 	require.NoError(t, db.Create(&models.UserIdentity{UserID: admin.ID, Provider: "acme", Subject: "attacker"}).Error)
 
 	_, err := ssoHandler(db).resolveUser(ssoCtx(), &conn, extUser("attacker", "ada@yourapp.com", "Mallory"))
-	require.Error(t, err)
+	require.ErrorIs(t, err, errSSOLinkedOutsideDomains)
 }
 
 // Leaving every mapped group drops the role, rather than keeping what it

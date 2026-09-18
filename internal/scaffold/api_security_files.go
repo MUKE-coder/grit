@@ -481,13 +481,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type fakeUserScoped struct {
-	ID      string
-	OwnerID string
-}
-
-func (f *fakeUserScoped) GetOwnerID() string { return f.OwnerID }
-
 func TestRequireRolesAllowsListed(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

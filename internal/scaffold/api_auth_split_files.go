@@ -322,8 +322,6 @@ func (h *AuthHandler) OAuthBegin(c *gin.Context) {
 }
 
 // OAuthCallback completes the OAuth flow, finds or creates the user, and redirects with JWT tokens.
-
-// OAuthCallback completes the OAuth flow, finds or creates the user, and redirects with JWT tokens.
 func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 	provider := c.Param("provider")
 
@@ -490,16 +488,6 @@ func (h *UserHandler) Unlock(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Account unlocked"})
 }
-
-// registerFailedLogin counts a wrong password against the account and locks it
-// once the threshold is reached.
-//
-// Only wrong-password-on-a-real-account is counted. Counting unknown emails
-// would let anyone lock an address they can guess, which turns a defence into
-// a denial-of-service tool.
-//
-// The increment is a single UPDATE rather than read-modify-write, so parallel
-// attempts cannot each read the same count and overwrite one another.
 
 // registerFailedLogin counts a wrong password against the account and locks it
 // once the threshold is reached.

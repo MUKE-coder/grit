@@ -109,6 +109,10 @@ type NotificationHandler struct {
 	DB *gorm.DB
 }
 
+// notificationListLimit is how many rows the bell's dropdown shows. The unread
+// count beside it is exact; the list is only the most recent.
+const notificationListLimit = 50
+
 // scopeNotifications limits a query to the rows one viewer may see: their own,
 // plus the broadcast rows (user_id "") when they are an ADMIN.
 //
@@ -128,7 +132,7 @@ func scopeNotifications(q *gorm.DB, c *gin.Context) *gorm.DB {
 func (h *NotificationHandler) List(c *gin.Context) {
 	var items []models.Notification
 	q := scopeNotifications(h.DB.WithContext(c.Request.Context()), c).
-		Order("created_at DESC").Limit(50)
+		Order("created_at DESC").Limit(notificationListLimit)
 	if err := q.Find(&items).Error; err != nil {
 		respond.ServerError(c, "DB_ERROR", err, "Internal server error")
 		return

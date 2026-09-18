@@ -249,14 +249,12 @@ func (h *OCSFHandler) Export(c *gin.Context) {
 	// since is a wall-clock floor (a collector's first poll); after is the exact
 	// cursor for every poll thereafter. Both may be present — after wins ties
 	// within the same millisecond as since.
-	var since time.Time
 	if v := c.Query("since"); v != "" {
 		t, err := time.Parse(time.RFC3339, v)
 		if err != nil {
 			respond.Fail(c, respond.CodeValidationError, "since must be RFC3339, e.g. 2026-07-01T00:00:00Z")
 			return
 		}
-		since = t
 		q = q.Where("created_at >= ?", t)
 	}
 	if afterID := c.Query("after"); afterID != "" {
@@ -267,7 +265,6 @@ func (h *OCSFHandler) Export(c *gin.Context) {
 		// An unknown after id falls through to since/start rather than erroring:
 		// a collector that lost its place still makes progress instead of
 		// wedging.
-		_ = since
 	}
 
 	var rows []models.UserActivity

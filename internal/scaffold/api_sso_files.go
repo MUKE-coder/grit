@@ -258,7 +258,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/markbates/goth"
 	"github.com/markbates/goth/providers/openidConnect"
 	"gorm.io/gorm"
 
@@ -502,11 +501,6 @@ func TouchConnection(db *gorm.DB, id string) {
 		log.Printf("sso: recording use of connection %s: %v", id, err)
 	}
 }
-
-// providerSession is the goth session marshalled between the redirect to the
-// IdP and the callback. Kept as its own type so the handler can be explicit
-// about what it stores in the cookie.
-type providerSession = goth.Session
 `
 	return strings.ReplaceAll(src, "~", "`")
 }
@@ -758,7 +752,7 @@ func (h *SSOHandler) Callback(c *gin.Context) {
 
 	user, err := h.resolveUser(c, &conn, ident)
 	if err != nil {
-		h.failLogin(c, err.Error())
+		h.refuseSignIn(c, slug, err, ident.Email)
 		return
 	}
 
@@ -806,16 +800,16 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 	if err == nil {
 		var user models.User
 		if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", identity.UserID).First(&user).Error; err != nil {
-			return nil, fmt.Errorf("Your account could not be found.")
+			return nil, fmt.Errorf("%w: %w", errSSOLinkedAccountMissing, err)
 		}
 		// The account must still be one this connection can vouch for. A link
 		// made before v3.217.0 could point anywhere, your own administrator
 		// included, and this is what stops such a link from working.
 		if !conn.OwnsEmail(user.Email) {
-			return nil, fmt.Errorf("This account is not at a domain this sign-in method can vouch for.")
+			return nil, errSSOLinkedOutsideDomains
 		}
 		if !user.Active {
-			return nil, fmt.Errorf("Your account has been disabled.")
+			return nil, errSSOAccountDisabled
 		}
 		if err := h.DB.WithContext(c.Request.Context()).Model(&identity).Updates(map[string]interface{}{"last_login_at": now, "email": email}).Error; err != nil {
 			log.Printf("sso: recording sign-in for identity %s: %v", identity.ID, err)
@@ -823,7 +817,7 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 		return &user, nil
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("Could not complete sign-in.")
+		return nil, fmt.Errorf("%w: %w", errSSOLookupFailed, err)
 	}
 
 	// The customer's identity provider is trusted for the customer's domains
@@ -831,7 +825,7 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 	// word for any address: one customer's IdP admin could assert
 	// admin@yourapp.com and be signed in as your administrator.
 	if !conn.OwnsEmail(email) {
-		return nil, fmt.Errorf("%s is not at a domain this sign-in method can vouch for.", email)
+		return nil, errSSOOutsideDomains
 	}
 
 	var user models.User
@@ -839,11 +833,11 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 	switch {
 	case err == nil:
 		if !user.Active {
-			return nil, fmt.Errorf("Your account has been disabled.")
+			return nil, errSSOAccountDisabled
 		}
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		if !conn.JITProvisioning {
-			return nil, fmt.Errorf("No account exists for %s. Ask your administrator to create one.", email)
+			return nil, errSSONoAccount
 		}
 		user = models.User{
 			FirstName:       firstNonBlank(external.FirstName, "User"),
@@ -857,10 +851,10 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 			IPAddress:       c.ClientIP(),
 		}
 		if err := h.DB.WithContext(c.Request.Context()).Create(&user).Error; err != nil {
-			return nil, fmt.Errorf("Could not create your account.")
+			return nil, fmt.Errorf("%w: %w", errSSOProvisionFailed, err)
 		}
 	default:
-		return nil, fmt.Errorf("Could not complete sign-in.")
+		return nil, fmt.Errorf("%w: %w", errSSOLookupFailed, err)
 	}
 
 	// Link the external identity so subsequent logins match on subject.
@@ -875,6 +869,49 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 		log.Printf("sso %s: linking identity for %s: %v", conn.Slug, user.ID, err)
 	}
 	return &user, nil
+}
+
+// Why resolveUser refuses a sign-in. They are errors rather than sentences, and
+// a failure underneath one is wrapped beside it: refuseSignIn logs the cause
+// and ssoRefusalMessage chooses what the login page says, so neither the
+// wording nor a database error travels up as the other.
+var (
+	errSSOLinkedAccountMissing = errors.New("sso: the linked account does not exist")
+	errSSOLinkedOutsideDomains = errors.New("sso: the linked account is outside the connection's domains")
+	errSSOOutsideDomains       = errors.New("sso: the asserted email is outside the connection's domains")
+	errSSOAccountDisabled      = errors.New("sso: the account is disabled")
+	errSSONoAccount            = errors.New("sso: no account for the email, and the connection does not provision")
+	errSSOProvisionFailed      = errors.New("sso: creating the account")
+	errSSOLookupFailed         = errors.New("sso: looking up the account")
+)
+
+// ssoRefusalMessage is the sentence the login page shows for a refusal. email
+// is the address the identity provider asserted.
+func ssoRefusalMessage(err error, email string) string {
+	email = strings.ToLower(strings.TrimSpace(email))
+	switch {
+	case errors.Is(err, errSSOLinkedAccountMissing):
+		return "Your account could not be found."
+	case errors.Is(err, errSSOLinkedOutsideDomains):
+		return "This account is not at a domain this sign-in method can vouch for."
+	case errors.Is(err, errSSOOutsideDomains):
+		return email + " is not at a domain this sign-in method can vouch for."
+	case errors.Is(err, errSSOAccountDisabled):
+		return "Your account has been disabled."
+	case errors.Is(err, errSSONoAccount):
+		return "No account exists for " + email + ". Ask your administrator to create one."
+	case errors.Is(err, errSSOProvisionFailed):
+		return "Could not create your account."
+	default:
+		return "Could not complete sign-in."
+	}
+}
+
+// refuseSignIn sends the browser back to the login page, saying why, and logs
+// the refusal with whatever caused it.
+func (h *SSOHandler) refuseSignIn(c *gin.Context, slug string, err error, email string) {
+	log.Printf("sso %s: sign-in refused: %v", slug, err)
+	h.failLogin(c, ssoRefusalMessage(err, email))
 }
 
 // applyGroupRoles grants the roles the IdP's groups map to.

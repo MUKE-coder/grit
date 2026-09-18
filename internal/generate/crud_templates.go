@@ -1023,7 +1023,6 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -1046,6 +1045,8 @@ import (
 // own, so everything a route does is also available to a job or a test.
 type {{Pascal}}Handler struct {
 	DB *gorm.DB{{STORAGE_FIELD}}
+	// AppName brands the PDF export. The route file sets it from config.
+	AppName string
 }
 
 // service is the {{lower}} service over this handler's database.
@@ -1193,7 +1194,7 @@ func (h *{{Pascal}}Handler) PDF(c *gin.Context) {
 		return
 	}
 {{AUDIT_READ_ONE}}
-	appName := os.Getenv("APP_NAME")
+	appName := h.AppName
 	if appName == "" {
 		appName = "{{Pascal}}"
 	}

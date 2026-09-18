@@ -2326,7 +2326,7 @@ func (s *smtpSink) serve(ln net.Listener) {
 			continue
 		}
 		cmd := strings.ToUpper(strings.TrimSpace(line))
-		ok := true
+		var ok bool
 		switch {
 		case strings.HasPrefix(cmd, "EHLO"):
 			ok = reply("250 sink")

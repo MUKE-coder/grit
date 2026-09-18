@@ -100,7 +100,7 @@ func (g *Generator) resourceRoutesSource(names Names) (string, error) {
 	fmt.Fprintf(&b, "\tRegisterRoutes(func(m *Mount) {\n")
 
 	// Handler construction.
-	fmt.Fprintf(&b, "\t\th := &handlers.%sHandler{\n\t\t\tDB: m.DB,\n", names.Pascal)
+	fmt.Fprintf(&b, "\t\th := &handlers.%sHandler{\n\t\t\tDB:      m.DB,\n\t\t\tAppName: m.Cfg.AppName,\n", names.Pascal)
 	if hasFileFields {
 		// Without Storage the Create and Update flows skip the S3 cleanup on
 		// replace and never mark uploads claimed, both silently.

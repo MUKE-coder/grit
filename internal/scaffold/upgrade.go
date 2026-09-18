@@ -476,6 +476,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairPerfLows(root, opts); err != nil {
 			fmt.Printf("  ⚠ trimming Redis connections and queries: %v\n", err)
 		}
+		// The dashboard layout and upload handlers check for a signed-in user
+		// instead of asserting one, and the ticket statuses and priorities the
+		// new ticket service uses are declared in models.
+		if err := repairCodeQualityLows(root, opts); err != nil {
+			fmt.Printf("  ⚠ checking the signed-in user and naming ticket values: %v\n", err)
+		}
 		// A GDPR erasure is refused without a compliance reason, and a failure to
 		// write its audit row is reported rather than swallowed.
 		if err := repairGDPRErase(root, opts); err != nil {
