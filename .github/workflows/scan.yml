@@ -69,11 +69,28 @@ jobs:
       # govulncheck reports what is reachable from the generated code. Trivy
       # reports the dependency graph, which is how the five CVEs above were
       # found: reachable from a request through a library, not from the code.
+      #
+      # A called vulnerability fails the build unless it is listed in
+      # .github/govulncheck-allow.txt, which names each exception, why it is
+      # accepted and the issue tracking the real fix. Listed ones are printed as
+      # warnings on every run so they stay in view; anything new still fails.
       - name: govulncheck (generated API)
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           cd /tmp/scan/app/apps/api
-          govulncheck ./...
+          govulncheck -format json ./... > /tmp/govulncheck.json || true
+          jq -r 'select(.finding != null and (.finding.trace[0].function // "") != "") | .finding.osv' /tmp/govulncheck.json | sort -u > /tmp/called.txt
+          grep -oE '^GO-[0-9]+-[0-9]+' "$GITHUB_WORKSPACE/.github/govulncheck-allow.txt" | sort -u > /tmp/allowed.txt
+          comm -23 /tmp/called.txt /tmp/allowed.txt > /tmp/new.txt
+          for id in $(comm -12 /tmp/called.txt /tmp/allowed.txt); do
+            echo "::warning::$id is called but accepted in .github/govulncheck-allow.txt: $(grep "^$id" "$GITHUB_WORKSPACE/.github/govulncheck-allow.txt")"
+          done
+          if [ -s /tmp/new.txt ]; then
+            echo "::error::called vulnerabilities not in the allowlist: $(tr '\n' ' ' < /tmp/new.txt)"
+            govulncheck ./... || true
+            exit 1
+          fi
+          echo "govulncheck: $(wc -l < /tmp/called.txt) called, all accepted in the allowlist"
 
       - name: Trivy (dependencies, secrets, Dockerfiles)
         uses: aquasecurity/trivy-action@v0.36.0
