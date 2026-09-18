@@ -564,7 +564,7 @@ function UserCellInline({ row }: { row: Record<string, unknown> }) {
   return (
     <div className="flex items-center gap-2.5 min-w-0">
       <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-1 ring-border bg-bg-elevated text-xs font-semibold text-foreground overflow-hidden">
-        {avatar ? <img src={avatar} alt={fullName} className="h-full w-full object-cover" /> : initials}
+        {avatar ? <img src={avatar} alt={fullName} width={32} height={32} loading="lazy" decoding="async" className="h-full w-full object-cover" /> : initials}
       </span>
       <div className="min-w-0">
         <p className="truncate text-sm font-medium text-foreground">{fullName}</p>
@@ -659,6 +659,10 @@ function ImageCell({ value }: { value: string }) {
     <img
       src={value}
       alt=""
+      width={32}
+      height={32}
+      loading="lazy"
+      decoding="async"
       className="h-8 w-8 rounded-full object-cover border border-border"
     />
   );
@@ -701,6 +705,10 @@ function FileRefCell({ value }: { value: FileRefLike | null }) {
         src={value.thumbnail_url || value.url}
         alt={value.name}
         title={value.name}
+        width={32}
+        height={32}
+        loading="lazy"
+        decoding="async"
         className="h-8 w-8 rounded object-cover border border-border"
       />
     );
@@ -736,6 +744,10 @@ function FileRefsCell({ value }: { value: FileRefLike[] }) {
               src={f.thumbnail_url || f.url}
               alt={f.name}
               title={f.name}
+              width={32}
+              height={32}
+              loading="lazy"
+              decoding="async"
               className="h-8 w-8 rounded object-cover border border-border"
             />
           );

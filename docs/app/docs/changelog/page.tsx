@@ -66,6 +66,48 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.290.0 */}
+            <div className="mb-12" id="v3.290.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.290.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 18, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A refresh that reloads only the page, lazy table images, a quiet idle timer, and sidebar groups that open themselves</h3>
+                <p>
+                  <strong>The refresh button reloads only what the page shows.</strong> With no keys passed, the admin page
+                  header&apos;s refresh called <code>invalidateQueries()</code> with no filter, so one click refetched every
+                  query in the app, including the signed-in user, their permissions and the notification list. On a page
+                  with two data queries, one click made 5 requests; it now makes 2.
+                </p>
+                <p>
+                  <strong>Table images load when they come into view.</strong> Table thumbnails and avatars now load
+                  lazily, decode off the main thread and carry a fixed size, so a table&apos;s images are no longer fetched
+                  before they scroll into view and the layout no longer shifts when they arrive. On the public site, blog
+                  covers get a size and the cards decode asynchronously, while a post&apos;s main cover still loads first.
+                  Covers stay a plain image, so a cover pasted from any website keeps working.
+                </p>
+                <p>
+                  <strong>The idle timer stops churning.</strong> The session timeout warning cleared and set a timer on
+                  every mouse move and scroll: 2,000 events cost 4,000 timer calls. Activity now only records the time, and
+                  one check every 5 seconds decides whether to warn. The warning appears after the same idle time.
+                </p>
+                <p>
+                  <strong>Sidebar groups open on their own pages.</strong> A group was meant to open when you were on one of
+                  its resource pages, but the check compared the wrong path and it never did. It now opens, and the open
+                  group is worked out while the sidebar draws instead of in a second pass, so a navigation renders the
+                  sidebar once instead of twice. A group you open or close by hand stays that way.
+                </p>
+                <p>
+                  <code>grit upgrade</code> delivers all of this with the admin and web app files it already refreshes. An
+                  existing Vite admin keeps its current files, as before; new ones get the fixes.
+                </p>
+              </div>
+            </div>
+
             {/* v3.289.0 */}
             <div className="mb-12" id="v3.289.0">
               <div className="flex items-center gap-3 mb-4">

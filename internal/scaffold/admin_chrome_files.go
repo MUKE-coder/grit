@@ -152,7 +152,7 @@ export function UserMenu() {
         className="h-9 w-9 overflow-hidden rounded-full ring-2 ring-accent/40 hover:ring-accent transition-colors bg-bg-elevated"
       >
         {user.avatar ? (
-          <img src={user.avatar} alt={fullName} className="h-full w-full object-cover" />
+          <img src={user.avatar} alt={fullName} width={36} height={36} decoding="async" className="h-full w-full object-cover" />
         ) : (
           <span className="flex h-full w-full items-center justify-center text-sm font-semibold text-foreground">
             {initials}
@@ -446,6 +446,11 @@ import { NotificationBell } from "./NotificationBell";
 import { StatCards, type StatCard } from "./StatCards";
 import { inputClasses } from "@/components/ui/input";
 
+// Queries that belong to the layout rather than to any page: the signed-in
+// user, their permissions and the notification bell. The refresh button leaves
+// them alone; they have their own lifetimes.
+const CHROME_QUERY_ROOTS = ["me", "my-permissions", "notifications"];
+
 interface PageHeaderProps {
   /** Page title. Required. */
   title: string;
@@ -511,13 +516,18 @@ export function PageHeader({
           ? { href: "/system", label: backLabel ?? "Back to System Hub" }
           : null;
 
-  // Refresh defaults to invalidating every query on the page. Pages with
-  // hot keys (jobs, files, sentinel) can scope by passing refreshKeys.
+  // Refresh reloads what the page shows, not the chrome around it. With no
+  // filter it also refetched the signed-in user, their permissions and the
+  // notification list, three requests on every click that the page never
+  // asked for, and a permissions refetch briefly re-gates the sidebar.
+  // Pages with hot keys (jobs, files, sentinel) can scope by passing refreshKeys.
   const onRefresh = () => {
     if (refreshKeys && refreshKeys.length > 0) {
       refreshKeys.forEach((k) => queryClient.invalidateQueries({ queryKey: [k] }));
     } else {
-      queryClient.invalidateQueries();
+      queryClient.invalidateQueries({
+        predicate: (query) => !CHROME_QUERY_ROOTS.includes(String(query.queryKey[0])),
+      });
     }
   };
 
@@ -710,18 +720,18 @@ export function CollapsibleSidebar({
   onMobileClose,
 }: SidebarProps) {
   const pathname = usePathname();
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  // A group is open when the reader said so, and otherwise when it holds the
+  // page being shown. Worked out during render: copying it into state from an
+  // effect rendered the sidebar twice per navigation, and compared the path
+  // with "/" + slug, which no resource page matches, so a group never opened.
+  const [manualGroups, setManualGroups] = useState<Record<string, boolean>>({});
+  const activeGroup = resources.find(
+    (r) => r.group && pathname.startsWith("/resources/" + r.slug)
+  )?.group;
+  const isGroupOpen = (key: string) => manualGroups[key] ?? key === activeGroup;
 
   const isAdmin = user.role === "ADMIN" || user.role === "EDITOR";
-  const toggle = (key: string) => setExpandedGroups((p) => ({ ...p, [key]: !p[key] }));
-
-  useEffect(() => {
-    resources.forEach((r) => {
-      if (r.group && pathname.startsWith("/" + r.slug)) {
-        setExpandedGroups((p) => ({ ...p, [r.group as string]: true }));
-      }
-    });
-  }, [pathname]);
+  const toggle = (key: string) => setManualGroups((p) => ({ ...p, [key]: !isGroupOpen(key) }));
 
   const { can, isLoading: permsLoading } = usePermissions();
   const t = useT();
@@ -835,12 +845,12 @@ export function CollapsibleSidebar({
                     <ChevronDown
                       className={
                         "h-3.5 w-3.5 transition-transform " +
-                        (expandedGroups[groupName] ? "rotate-0" : "-rotate-90")
+                        (isGroupOpen(groupName) ? "rotate-0" : "-rotate-90")
                       }
                     />
                   </button>
                 )}
-                {(collapsed || expandedGroups[groupName]) && items.map((r) => {
+                {(collapsed || isGroupOpen(groupName)) && items.map((r) => {
                   const Icon = getIcon(r.icon);
                   return (
                     <SidebarLink
@@ -921,7 +931,7 @@ function SidebarUserMenu({ user, collapsed }: { user: User; collapsed: boolean }
           }
         >
           {user.avatar ? (
-            <img src={user.avatar} alt={fullName} className="h-full w-full object-cover" />
+            <img src={user.avatar} alt={fullName} width={36} height={36} decoding="async" className="h-full w-full object-cover" />
           ) : initials}
         </span>
         {!collapsed && (
@@ -986,6 +996,8 @@ function BrandMark({ collapsed }: { collapsed: boolean }) {
       <img
         src={src}
         alt={brand.name}
+        height={32}
+        decoding="async"
         className={collapsed ? "h-8 w-8 object-contain" : "h-8 w-auto object-contain"}
       />
     );
@@ -1043,8 +1055,9 @@ function SidebarLink({ href, icon, label, active, collapsed, onClick }: LinkProp
 //     access cookie via Set-Cookie) and resets the timer.
 //   - "Sign out" (or countdown → 0) calls useLogout() which clears
 //     cookies server-side and routes to /login.
-//   - Active typing/clicking inside the IDLE_WARN_MS window silently
-//     resets the timer — the modal only opens for genuinely idle tabs.
+//   - Activity only records a timestamp; one 5-second interval compares it
+//     with IDLE_WARN_MS, so the modal only opens for genuinely idle tabs and
+//     a moving mouse costs no timer calls at all.
 //
 // Configurable via two env vars exposed at build time:
 //
@@ -1065,11 +1078,15 @@ const COUNTDOWN_MS = Number(process.env.NEXT_PUBLIC_SESSION_COUNTDOWN_MS ?? 30 *
 
 const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "touchstart", "wheel"] as const;
 
+// How often the idle check runs. Activity only records a timestamp; this one
+// interval compares it, so the modal opens at most this late.
+const IDLE_CHECK_EVERY_MS = 5 * 1000;
+
 export function SessionWatchdog() {
   const [open, setOpen] = useState(false);
   const [remaining, setRemaining] = useState(COUNTDOWN_MS);
   const lastActivityRef = useRef<number>(Date.now());
-  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openRef = useRef(false);
   const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { mutate: logout } = useLogout();
 
@@ -1080,34 +1097,34 @@ export function SessionWatchdog() {
     }
   }, []);
 
-  const scheduleIdleCheck = useCallback(() => {
-    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    idleTimerRef.current = setTimeout(() => {
-      setRemaining(COUNTDOWN_MS);
-      setOpen(true);
-    }, IDLE_WARN_MS);
-  }, []);
-
-  // Reset on user activity, but only while the modal is closed — once
-  // it's open we want the countdown to play out so users can&apos;t
-  // accidentally dismiss it by wiggling the mouse.
-  const onActivity = useCallback(() => {
-    if (open) return;
-    lastActivityRef.current = Date.now();
-    scheduleIdleCheck();
-  }, [open, scheduleIdleCheck]);
-
   useEffect(() => {
-    scheduleIdleCheck();
+    openRef.current = open;
+  }, [open]);
+
+  // Activity writes a number and nothing else. mousemove and wheel fire 60 to
+  // 120 times a second, and clearing and re-arming a timeout on each one was
+  // that many timer calls for a check that only has to happen every few seconds.
+  // While the modal is open activity is ignored, so the countdown plays out and
+  // nobody dismisses it by wiggling the mouse.
+  useEffect(() => {
+    const onActivity = () => {
+      if (!openRef.current) lastActivityRef.current = Date.now();
+    };
     for (const ev of ACTIVITY_EVENTS) {
       window.addEventListener(ev, onActivity, { passive: true });
     }
+    const idleCheck = setInterval(() => {
+      if (openRef.current || Date.now() - lastActivityRef.current < IDLE_WARN_MS) return;
+      openRef.current = true;
+      setRemaining(COUNTDOWN_MS);
+      setOpen(true);
+    }, IDLE_CHECK_EVERY_MS);
     return () => {
       for (const ev of ACTIVITY_EVENTS) window.removeEventListener(ev, onActivity);
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      clearInterval(idleCheck);
       stopCountdown();
     };
-  }, [onActivity, scheduleIdleCheck, stopCountdown]);
+  }, [stopCountdown]);
 
   // Countdown ticker — runs only while the modal is open.
   useEffect(() => {
@@ -1129,6 +1146,9 @@ export function SessionWatchdog() {
 
   const stay = async () => {
     stopCountdown();
+    // Count the click as activity before the modal closes, so the idle check
+    // cannot reopen it while the refresh is still in flight.
+    lastActivityRef.current = Date.now();
     setOpen(false);
     try {
       await apiClient.post("/api/auth/refresh");
@@ -1138,7 +1158,6 @@ export function SessionWatchdog() {
       return;
     }
     lastActivityRef.current = Date.now();
-    scheduleIdleCheck();
   };
 
   const signOut = () => {

@@ -177,7 +177,10 @@ export default async function HomePage() {
                       <img
                         src={blog.image}
                         alt={blog.title}
+                        width={640}
+                        height={384}
                         loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
@@ -275,7 +278,10 @@ export default async function BlogListPage({
                     <img
                       src={blog.image}
                       alt={blog.title}
+                      width={640}
+                      height={416}
                       loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
@@ -446,6 +452,8 @@ export default async function BlogDetailPage({ params }: Props) {
           <img
             src={blog.image}
             alt={blog.title}
+            width={1200}
+            height={630}
             fetchPriority="high"
             className="w-full h-auto object-cover"
           />
