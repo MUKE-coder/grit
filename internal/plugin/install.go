@@ -129,11 +129,69 @@ func Install(ctx Context, p Plugin) (*InstalledPlugin, error) {
 		}
 	}
 
+	// --- npm dependencies ---
+	//
+	// Declared per workspace ("apps/expo"). A workspace the project does not
+	// have is skipped: a plugin written for every client installs into the ones
+	// that exist. These were recorded in the lockfile and never written, which
+	// nobody noticed until the first plugin (push) needed one.
+	for _, d := range p.NodeDeps {
+		if d.Workspace == "" {
+			continue
+		}
+		pkg := filepath.Join(ctx.Root, d.Workspace, "package.json")
+		if !fileExists(pkg) {
+			continue
+		}
+		added, err := addNodeDependency(pkg, d.Name, d.Version)
+		if err != nil {
+			return nil, fmt.Errorf("adding %s to %s: %w", d.Name, d.Workspace, err)
+		}
+		if added {
+			fmt.Printf("  ✓ %s depends on %s %s (run pnpm install)\n", d.Workspace, d.Name, d.Version)
+		}
+	}
+
 	lock.Add(record)
 	if err := lock.Save(ctx.Root); err != nil {
 		return nil, err
 	}
 	return &record, nil
+}
+
+// addNodeDependency adds "name": "version" to a package.json's dependencies,
+// as text, so the file keeps its formatting and key order. A package already
+// listed there, or in devDependencies, is left as it is.
+func addNodeDependency(path, name, version string) (bool, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return false, err
+	}
+	src := string(raw)
+	if strings.Contains(src, "\""+name+"\":") {
+		return false, nil
+	}
+	const anchor = "\"dependencies\": {"
+	i := strings.Index(src, anchor)
+	if i < 0 {
+		return false, fmt.Errorf("no \"dependencies\" object")
+	}
+	nl := "\n"
+	if strings.Contains(src, "\r\n") {
+		nl = "\r\n"
+	}
+	after := i + len(anchor)
+	// Indent like the first existing entry, or four spaces for an empty object.
+	indent := "    "
+	rest := strings.TrimLeft(src[after:], "\r\n")
+	if j := strings.IndexFunc(rest, func(r rune) bool { return r != ' ' && r != '\t' }); j > 0 {
+		indent = rest[:j]
+	}
+	entry := nl + indent + "\"" + name + "\": \"" + version + "\""
+	if !strings.HasPrefix(strings.TrimSpace(src[after:]), "}") {
+		entry += ","
+	}
+	return true, os.WriteFile(path, []byte(src[:after]+entry+src[after:]), 0o644)
 }
 
 // Remove undoes an install using the lockfile record.

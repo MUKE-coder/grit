@@ -311,6 +311,7 @@ export default function HomePage() {
               { icon: Database, label: 'Services own every query', href: '/docs/backend/services' },
               { icon: FileCheck, label: 'grit doctor project audit', href: '/docs/security/doctor' },
               { icon: Lock, label: 'Clone and run: grit env writes the secrets', href: '/docs/cli' },
+              { icon: Radio, label: 'Push notifications to the Expo app', href: '/docs/plugins/push' },
               { icon: TestTube2, label: 'Live checks on 3 Postgres versions', href: '/docs/testing#live-checks' },
               { icon: Shield, label: 'Stability matrix, per subsystem', href: '/docs/stability' },
               { icon: Database, label: 'Roll back a migration', href: '/docs/backend/migrations#rolling-back' },

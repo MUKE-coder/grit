@@ -1,0 +1,36 @@
+package models
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/ids"
+)
+
+// PushToken is one device that can receive push notifications for a user.
+//
+// The token is Expo's (ExponentPushToken[...]), which covers both APNs and FCM,
+// so the API talks to one service instead of two. A token is unique: a phone
+// that signs in as someone else moves to them, and stops getting the previous
+// person's notifications.
+type PushToken struct {
+	ID       string `gorm:"primarykey;size:36" json:"id"`
+	UserID   string `gorm:"size:36;index;not null" json:"user_id"`
+	Token    string `gorm:"size:255;uniqueIndex;not null" json:"token"`
+	Platform string `gorm:"size:20" json:"platform"`
+	// LastSeenAt moves each time the app registers the token again, which it
+	// does on every launch, so a token that stops moving belongs to an app that
+	// was deleted or a phone that was wiped.
+	LastSeenAt time.Time `json:"last_seen_at"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+// BeforeCreate assigns the ID.
+func (t *PushToken) BeforeCreate(tx *gorm.DB) error {
+	if t.ID == "" {
+		t.ID = ids.New()
+	}
+	return nil
+}

@@ -1,0 +1,183 @@
+package services
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"sync"
+	"testing"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	"{{MODULE}}/internal/models"
+)
+
+func pushTestDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	// One connection: every new connection to :memory: is its own empty database.
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatalf("db: %v", err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+	if err := db.AutoMigrate(&models.PushToken{}); err != nil {
+		t.Fatalf("migrate: %v", err)
+	}
+	return db
+}
+
+// fakeExpo answers like Expo's push service and records what it was sent.
+// Tokens listed in gone come back as DeviceNotRegistered.
+type fakeExpo struct {
+	mu       sync.Mutex
+	requests [][]expoMessage
+	gone     map[string]bool
+}
+
+func (f *fakeExpo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var batch []expoMessage
+	if err := json.NewDecoder(r.Body).Decode(&batch); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	f.mu.Lock()
+	f.requests = append(f.requests, batch)
+	f.mu.Unlock()
+	data := make([]map[string]any, len(batch))
+	for i, m := range batch {
+		if f.gone[m.To] {
+			data[i] = map[string]any{"status": "error", "message": "not registered", "details": map[string]string{"error": "DeviceNotRegistered"}}
+		} else {
+			data[i] = map[string]any{"status": "ok", "id": fmt.Sprintf("ticket-%d", i)}
+		}
+	}
+	_ = json.NewEncoder(w).Encode(map[string]any{"data": data})
+}
+
+func pushWith(t *testing.T, db *gorm.DB, expo *fakeExpo) *Push {
+	t.Helper()
+	srv := httptest.NewServer(expo)
+	t.Cleanup(srv.Close)
+	return &Push{DB: db, Endpoint: srv.URL, Client: srv.Client()}
+}
+
+func token(n int) string { return fmt.Sprintf("ExponentPushToken[device-%06d]", n) }
+
+func TestPushReachesEveryDeviceOfEveryRecipient(t *testing.T) {
+	db := pushTestDB(t)
+	for _, reg := range []struct{ user, tok string }{{"ada", token(1)}, {"ada", token(2)}, {"ben", token(3)}, {"cy", token(4)}} {
+		if _, err := RegisterPushToken(db, reg.user, reg.tok, "ios"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	expo := &fakeExpo{}
+	n, err := pushWith(t, db, expo).Send(context.Background(), []string{"ada", "ben"}, PushMessage{Title: "Hi", Body: "there", Data: map[string]string{"chat": "42"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 3 || len(expo.requests) != 1 || len(expo.requests[0]) != 3 {
+		t.Fatalf("accepted %d in %d requests; want 3 in 1 (cy was not a recipient)", n, len(expo.requests))
+	}
+	if expo.requests[0][0].Data["chat"] != "42" {
+		t.Error("the notification's data did not reach the push service")
+	}
+}
+
+func TestPushSendsInBatchesOfAHundred(t *testing.T) {
+	db := pushTestDB(t)
+	users := make([]string, 0, 150)
+	for i := 0; i < 150; i++ {
+		user := fmt.Sprintf("user-%d", i)
+		users = append(users, user)
+		if _, err := RegisterPushToken(db, user, token(i), "android"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	expo := &fakeExpo{}
+	n, err := pushWith(t, db, expo).Send(context.Background(), users, PushMessage{Body: "x"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 150 || len(expo.requests) != 2 || len(expo.requests[0]) != 100 || len(expo.requests[1]) != 50 {
+		t.Fatalf("accepted %d in %d requests; want 150 in 100 + 50", n, len(expo.requests))
+	}
+}
+
+// A device Expo no longer knows (the app was deleted) is removed, so it is not
+// tried on every message from now on.
+func TestUnregisteredDevicesAreForgotten(t *testing.T) {
+	db := pushTestDB(t)
+	for i := 1; i <= 2; i++ {
+		if _, err := RegisterPushToken(db, "ada", token(i), "ios"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	expo := &fakeExpo{gone: map[string]bool{token(1): true}}
+	n, err := pushWith(t, db, expo).Send(context.Background(), []string{"ada"}, PushMessage{Body: "x"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var left []string
+	db.Model(&models.PushToken{}).Pluck("token", &left)
+	if n != 1 || len(left) != 1 || left[0] != token(2) {
+		t.Fatalf("accepted %d, tokens left %v; want 1 accepted and only %s left", n, left, token(2))
+	}
+}
+
+// A phone that signs in as someone else moves to them.
+func TestATokenBelongsToWhoeverRegisteredItLast(t *testing.T) {
+	db := pushTestDB(t)
+	if _, err := RegisterPushToken(db, "ada", token(1), "ios"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := RegisterPushToken(db, "ben", token(1), "ios"); err != nil {
+		t.Fatal(err)
+	}
+	var rows []models.PushToken
+	db.Find(&rows)
+	if len(rows) != 1 || rows[0].UserID != "ben" {
+		t.Fatalf("rows %+v; want one, owned by ben", rows)
+	}
+}
+
+func TestAUserKeepsTheirNewestDevices(t *testing.T) {
+	db := pushTestDB(t)
+	for i := 0; i < MaxPushTokensPerUser+3; i++ {
+		if _, err := RegisterPushToken(db, "ada", token(i), "ios"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var count int64
+	db.Model(&models.PushToken{}).Where("user_id = ?", "ada").Count(&count)
+	if count != MaxPushTokensPerUser {
+		t.Fatalf("%d tokens kept, want %d", count, MaxPushTokensPerUser)
+	}
+	var newest models.PushToken
+	if err := db.Where("token = ?", token(MaxPushTokensPerUser+2)).First(&newest).Error; err != nil {
+		t.Error("the newest device was dropped instead of the oldest")
+	}
+}
+
+func TestARefusedRequestIsAnError(t *testing.T) {
+	db := pushTestDB(t)
+	if _, err := RegisterPushToken(db, "ada", token(1), "ios"); err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(map[string]any{"errors": []map[string]string{{"code": "UNAUTHORIZED", "message": "bad access token"}}})
+	}))
+	t.Cleanup(srv.Close)
+	p := &Push{DB: db, Endpoint: srv.URL, Client: srv.Client()}
+	if _, err := p.Send(context.Background(), []string{"ada"}, PushMessage{Body: "x"}); err == nil {
+		t.Fatal("a refused request was reported as sent")
+	}
+}

@@ -66,6 +66,41 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.300.0 */}
+            <div className="mb-12" id="v3.300.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.300.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Push notifications: grit plugin add push</h3>
+                <p>
+                  Grit had realtime, email and background jobs, and no way to reach a phone that was not open. The
+                  push plugin adds it, through Expo&apos;s push service, which relays to Apple and Google, so the API
+                  holds no APNs certificate or Firebase key. From Go it is one line,
+                  <code>services.NewPush(db).Go(userIDs, msg)</code>, sent in the background so no request waits on
+                  it. The Expo app gets <code>lib/push.ts</code>, which asks permission, registers the device, tells
+                  you which notification was tapped, and unregisters on sign-out.
+                </p>
+                <p>
+                  A token Expo reports as no longer registered is deleted on the spot, a phone that signs in as
+                  someone else stops getting the previous user&apos;s notifications, sends go 100 to a request, and
+                  each user keeps their ten newest devices. Checked against Expo&apos;s live service: a message went
+                  out through it, and a token no device owned came back as not registered and was removed.
+                </p>
+                <p>
+                  <strong>Plugins can add npm packages.</strong> A plugin could declare npm dependencies, but the
+                  installer only wrote them to the lockfile. It now adds each to the <code>package.json</code> of the
+                  app it names, as text so the file keeps its formatting, and skips an app the project does not have.
+                  Push is the first plugin to need it, for <code>expo-notifications</code>. Found building the
+                  WhatsApp blueprint, whose plan listed push as already shipped.
+                </p>
+              </div>
+            </div>
+
             {/* v3.299.0 */}
             <div className="mb-12" id="v3.299.0">
               <div className="flex items-center gap-3 mb-4">

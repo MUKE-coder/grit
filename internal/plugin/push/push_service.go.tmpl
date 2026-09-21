@@ -1,0 +1,226 @@
+package services
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/models"
+)
+
+// ExpoPushEndpoint is Expo's push service. One request reaches both APNs and
+// FCM, for every token an Expo app registered.
+const ExpoPushEndpoint = "https://exp.host/--/api/v2/push/send"
+
+// expoBatch is the most messages Expo takes in one request.
+const expoBatch = 100
+
+// PushMessage is one notification, sent to every device of every recipient.
+type PushMessage struct {
+	Title string
+	Body  string
+	// Data reaches the app with the notification, for deciding what to open
+	// when it is tapped. Values are strings so no client has to guess types.
+	Data map[string]string
+	// Sound is "default" or empty for silent.
+	Sound string
+	// ChannelID is the Android notification channel. Empty uses the default.
+	ChannelID string
+}
+
+// Push sends notifications through Expo.
+type Push struct {
+	DB       *gorm.DB
+	Endpoint string
+	Client   *http.Client
+	// AccessToken is EXPO_ACCESS_TOKEN: needed only when the Expo project has
+	// "enhanced push security" turned on.
+	AccessToken string
+}
+
+// NewPush reads EXPO_PUSH_URL (for tests and self-hosted relays) and
+// EXPO_ACCESS_TOKEN from the environment.
+func NewPush(db *gorm.DB) *Push {
+	endpoint := os.Getenv("EXPO_PUSH_URL")
+	if endpoint == "" {
+		endpoint = ExpoPushEndpoint
+	}
+	return &Push{
+		DB:          db,
+		Endpoint:    endpoint,
+		Client:      &http.Client{Timeout: 15 * time.Second},
+		AccessToken: os.Getenv("EXPO_ACCESS_TOKEN"),
+	}
+}
+
+type expoMessage struct {
+	To        string            `json:"to"`
+	Title     string            `json:"title,omitempty"`
+	Body      string            `json:"body,omitempty"`
+	Data      map[string]string `json:"data,omitempty"`
+	Sound     string            `json:"sound,omitempty"`
+	ChannelID string            `json:"channelId,omitempty"`
+}
+
+type expoTicket struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	Details struct {
+		Error string `json:"error"`
+	} `json:"details"`
+}
+
+type expoResponse struct {
+	Data   []expoTicket `json:"data"`
+	Errors []struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	} `json:"errors"`
+}
+
+// Send delivers msg to every device the users registered and returns how many
+// Expo accepted. A token Expo reports as DeviceNotRegistered (the app was
+// deleted, or the user turned notifications off) is removed, so it is not
+// tried again.
+func (p *Push) Send(ctx context.Context, userIDs []string, msg PushMessage) (int, error) {
+	if len(userIDs) == 0 {
+		return 0, nil
+	}
+	var tokens []models.PushToken
+	if err := p.DB.WithContext(ctx).Where("user_id IN ?", userIDs).Find(&tokens).Error; err != nil {
+		return 0, fmt.Errorf("loading push tokens: %w", err)
+	}
+	accepted := 0
+	for start := 0; start < len(tokens); start += expoBatch {
+		end := min(start+expoBatch, len(tokens))
+		n, err := p.sendBatch(ctx, tokens[start:end], msg)
+		accepted += n
+		if err != nil {
+			return accepted, err
+		}
+	}
+	return accepted, nil
+}
+
+func (p *Push) sendBatch(ctx context.Context, batch []models.PushToken, msg PushMessage) (int, error) {
+	payload := make([]expoMessage, len(batch))
+	for i, t := range batch {
+		payload[i] = expoMessage{To: t.Token, Title: msg.Title, Body: msg.Body, Data: msg.Data, Sound: msg.Sound, ChannelID: msg.ChannelID}
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return 0, fmt.Errorf("encoding push messages: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.Endpoint, bytes.NewReader(body))
+	if err != nil {
+		return 0, fmt.Errorf("building push request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	if p.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+p.AccessToken)
+	}
+	resp, err := p.Client.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("sending push: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var out expoResponse
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		return 0, fmt.Errorf("reading push response (HTTP %d): %w", resp.StatusCode, err)
+	}
+	if len(out.Errors) > 0 {
+		return 0, fmt.Errorf("push service refused the request: %s: %s", out.Errors[0].Code, out.Errors[0].Message)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("push service answered HTTP %d", resp.StatusCode)
+	}
+
+	accepted := 0
+	var gone []string
+	for i, ticket := range out.Data {
+		if i >= len(batch) {
+			break
+		}
+		switch {
+		case ticket.Status == "ok":
+			accepted++
+		case ticket.Details.Error == "DeviceNotRegistered":
+			gone = append(gone, batch[i].Token)
+		default:
+			log.Printf("push: not delivered to one device of user %s: %s", batch[i].UserID, ticket.Message)
+		}
+	}
+	if len(gone) > 0 {
+		if err := p.DB.WithContext(ctx).Where("token IN ?", gone).Delete(&models.PushToken{}).Error; err != nil {
+			log.Printf("push: removing %d unregistered tokens: %v", len(gone), err)
+		}
+	}
+	return accepted, nil
+}
+
+// Go sends in the background, so the request that caused the notification
+// never waits on Expo. Errors are logged.
+func (p *Push) Go(userIDs []string, msg PushMessage) {
+	if len(userIDs) == 0 {
+		return
+	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if _, err := p.Send(ctx, userIDs, msg); err != nil {
+			log.Printf("push: %v", err)
+		}
+	}()
+}
+
+// MaxPushTokensPerUser bounds how many devices one user can register. Older
+// ones are dropped first: the phone a user replaced stops registering, so its
+// token is the stalest.
+const MaxPushTokensPerUser = 10
+
+// RegisterPushToken attaches token to userID, taking it from whoever had it
+// before: a phone that signs in as someone else must stop getting the previous
+// user's notifications.
+func RegisterPushToken(db *gorm.DB, userID, token, platform string) (models.PushToken, error) {
+	now := time.Now()
+	// Find, not First: a token seen for the first time is the normal case, and
+	// First logs every one of them as a "record not found" error.
+	var existing []models.PushToken
+	if err := db.Where("token = ?", token).Limit(1).Find(&existing).Error; err != nil {
+		return models.PushToken{}, fmt.Errorf("finding push token: %w", err)
+	}
+	var row models.PushToken
+	if len(existing) == 1 {
+		row = existing[0]
+		if err := db.Model(&row).Updates(map[string]any{"user_id": userID, "platform": platform, "last_seen_at": now}).Error; err != nil {
+			return row, fmt.Errorf("updating push token: %w", err)
+		}
+		row.UserID, row.Platform, row.LastSeenAt = userID, platform, now
+	} else {
+		row = models.PushToken{UserID: userID, Token: token, Platform: platform, LastSeenAt: now}
+		if err := db.Create(&row).Error; err != nil {
+			return row, fmt.Errorf("saving push token: %w", err)
+		}
+	}
+
+	var ids []string
+	if err := db.Model(&models.PushToken{}).Where("user_id = ?", userID).
+		Order("last_seen_at DESC, id DESC").Offset(MaxPushTokensPerUser).Pluck("id", &ids).Error; err != nil {
+		return row, fmt.Errorf("counting push tokens: %w", err)
+	}
+	if len(ids) > 0 {
+		if err := db.Where("id IN ?", ids).Delete(&models.PushToken{}).Error; err != nil {
+			return row, fmt.Errorf("pruning push tokens: %w", err)
+		}
+	}
+	return row, nil
+}

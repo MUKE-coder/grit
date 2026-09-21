@@ -1,0 +1,87 @@
+package handlers
+
+import (
+	"net/http"
+	"regexp"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
+	"{{MODULE}}/internal/services"
+)
+
+// PushHandler lets a signed-in device register for push notifications and
+// stop getting them.
+type PushHandler struct {
+	DB   *gorm.DB
+	Push *services.Push
+}
+
+// NewPushHandler builds the handler and its sender.
+func NewPushHandler(db *gorm.DB) *PushHandler {
+	return &PushHandler{DB: db, Push: services.NewPush(db)}
+}
+
+// expoToken is the shape of an Expo push token. Anything else is refused
+// before it reaches the table, so the push service is never sent junk.
+var expoToken = regexp.MustCompile(`^Expo(nent)?PushToken\[[A-Za-z0-9_\-]{10,200}\]$`)
+
+type pushTokenRequest struct {
+	Token    string `json:"token" binding:"required"`
+	Platform string `json:"platform"`
+}
+
+func validPlatform(p string) bool {
+	return p == "" || p == "ios" || p == "android" || p == "web"
+}
+
+// Register attaches this device's token to the signed-in user.
+// POST /api/v1/push/tokens {"token": "ExponentPushToken[...]", "platform": "ios"}
+func (h *PushHandler) Register(c *gin.Context) {
+	var req pushTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil || !expoToken.MatchString(req.Token) || !validPlatform(req.Platform) {
+		respond.Validation(c, "Send the device's Expo push token", map[string]string{"token": "must be an Expo push token"})
+		return
+	}
+	row, err := services.RegisterPushToken(h.DB, c.GetString("user_id"), req.Token, req.Platform)
+	if err != nil {
+		respond.Internal(c, err)
+		return
+	}
+	respond.OK(c, row, "Push notifications on for this device")
+}
+
+// Unregister stops notifications to one of the signed-in user's devices, as
+// on sign-out. Someone else's token is left alone, and the answer is the same
+// either way, so the endpoint cannot be used to learn whose a token is.
+// POST /api/v1/push/tokens/remove {"token": "ExponentPushToken[...]"}
+func (h *PushHandler) Unregister(c *gin.Context) {
+	var req pushTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.BadRequest(c, "Send the token to remove")
+		return
+	}
+	if err := h.DB.Where("token = ? AND user_id = ?", req.Token, c.GetString("user_id")).
+		Delete(&models.PushToken{}).Error; err != nil {
+		respond.Internal(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Push notifications off for this device"})
+}
+
+// Test sends a notification to the signed-in user's own devices, to check the
+// set-up end to end. POST /api/v1/push/test
+func (h *PushHandler) Test(c *gin.Context) {
+	n, err := h.Push.Send(c.Request.Context(), []string{c.GetString("user_id")}, services.PushMessage{
+		Title: "Push notifications work",
+		Body:  "This came from your API through Expo.",
+		Sound: "default",
+	})
+	if err != nil {
+		respond.WriteError(c, err, "Could not reach the push service")
+		return
+	}
+	respond.OK(c, gin.H{"accepted": n})
+}
