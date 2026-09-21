@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // desktopClientRoot returns apps/desktop (the monorepo Wails client). The
@@ -39,6 +41,19 @@ func (g *Generator) writeDesktopClientResourceFiles(names Names) error {
 	for path, content := range files {
 		if err := writeFileWithDirs(path, content); err != nil {
 			return fmt.Errorf("writing %s: %w", path, err)
+		}
+	}
+	// A relation to the built-in users imports use-users, which no resource
+	// generates. The form failed tsc without it.
+	for _, f := range g.Definition.Fields {
+		if f.IsBelongsTo() && f.RelatedModelName() == "User" {
+			path := filepath.Join(root, "frontend", "src", "hooks", "use-users.ts")
+			if !fileExists(path) {
+				if err := writeFileWithDirs(path, scaffold.DesktopUsersHook()); err != nil {
+					return fmt.Errorf("writing %s: %w", path, err)
+				}
+			}
+			break
 		}
 	}
 	return g.injectDesktopClientNav(names)
@@ -164,7 +179,9 @@ func (g *Generator) buildDesktopClientForm(names Names) desktopClientFieldParts 
 				pf.WriteString("      " + setter + "((record." + json + " as FileRef | null) ?? null);\n")
 				jsx.WriteString("        <FileDropzone label=\"" + label + "\" value={" + camel + "} onChange={(v) => " + setter + "((v as FileRef) ?? null)}" + acceptAttr + " />\n")
 			}
-			pay.WriteString("      " + json + ": " + camel + ",\n")
+			// The desktop FileRef has optional fields the shared one requires; an
+			// uploaded file has them all, so assert to the resource's own type.
+			pay.WriteString("      " + json + ": " + camel + " as " + names.Pascal + "Input[\"" + json + "\"],\n")
 
 		case f.IsBelongsTo():
 			rel := MakeNames(f.RelatedModelName())
@@ -187,7 +204,7 @@ func (g *Generator) buildDesktopClientForm(names Names) desktopClientFieldParts 
 			jsx.WriteString("        <div>\n")
 			jsx.WriteString("          <label className=\"block text-[13px] font-medium text-foreground mb-1.5\">" + label + "</label>\n")
 			jsx.WriteString("          <SearchableSelect value={" + fkCamel + "} onChange={(v) => " + fkSetter + "(v ?? \"\")} placeholder=\"Select " + strings.ToLower(label) + "…\"\n")
-			jsx.WriteString("            options={" + optsVar + ".map((o: any) => ({ value: String(o.id), label: String(o.name ?? o.title ?? o.id) }))} />\n")
+			jsx.WriteString("            options={" + optsVar + ".map((o: any) => ({ value: String(o.id), label: String(o.name ?? o.title ?? ([o.first_name, o.last_name].filter(Boolean).join(\" \") || o.email || o.id)) }))} />\n")
 			jsx.WriteString("        </div>\n")
 			pay.WriteString("      " + fk + ": " + fkCamel + ",\n")
 
@@ -268,14 +285,20 @@ func (g *Generator) buildDesktopClientForm(names Names) desktopClientFieldParts 
 			jsx.WriteString("        </div>\n")
 			pay.WriteString("      " + json + ": " + camel + ",\n")
 
-		default: // string
+		default: // string, and select or radio as free text
 			st.WriteString("  const [" + camel + ", " + setter + "] = useState<string>(\"\");\n")
 			pf.WriteString("      " + setter + "(String(record." + json + " ?? \"\"));\n")
 			jsx.WriteString("        <div>\n")
 			jsx.WriteString("          <label className=\"block text-[13px] font-medium text-foreground mb-1.5\">" + label + "</label>\n")
 			jsx.WriteString("          <input type=\"text\" value={" + camel + "} onChange={(e) => " + setter + "(e.target.value)} className={inputCls} />\n")
 			jsx.WriteString("        </div>\n")
-			pay.WriteString("      " + json + ": " + camel + ",\n")
+			if f.IsSelect() || f.IsRadio() {
+				// The model types a select as its options, not string. The API
+				// refuses a value outside them.
+				pay.WriteString("      " + json + ": (" + camel + " || undefined) as " + names.Pascal + "Input[\"" + json + "\"],\n")
+			} else {
+				pay.WriteString("      " + json + ": " + camel + ",\n")
+			}
 		}
 	}
 
@@ -416,15 +439,17 @@ func (g *Generator) desktopClientListRoute(names Names) string {
 			rel := MakeNames(f.RelatedModelName())
 			hook := "use" + rel.PluralPascal
 			mapVar := lowerCamel(base) + "Map"
-			key = base
+			// Its own key: the model's <base> field is the related record, and a
+			// string there made the rows fail to type as the model.
+			key = base + "_label"
 			label = humanizeLabel(strings.TrimSuffix(f.Name, "_id"))
 			format = "text"
 			if !seenRelHook[hook] {
 				relImports = append(relImports, "import { "+hook+" } from \"@/hooks/use-"+rel.PluralKebab+"\";")
 				seenRelHook[hook] = true
 			}
-			relMaps = append(relMaps, "  const "+mapVar+" = new Map(("+hook+"().data ?? []).map((o: any) => [String(o.id), String(o.name ?? o.title ?? o.id)]));")
-			relRowFields = append(relRowFields, base+": "+mapVar+".get(String((r as any)."+fk+")) ?? \"\"")
+			relMaps = append(relMaps, "  const "+mapVar+" = new Map(("+hook+"().data ?? []).map((o: any) => [String(o.id), String(o.name ?? o.title ?? ([o.first_name, o.last_name].filter(Boolean).join(\" \") || o.email || o.id))]));")
+			relRowFields = append(relRowFields, key+": "+mapVar+".get(String((r as any)."+fk+")) ?? \"\"")
 		case f.IsFile() || f.IsFiles():
 			key = toSnakeCase(f.Name)
 			label = humanizeLabel(f.Name)

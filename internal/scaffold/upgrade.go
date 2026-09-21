@@ -495,6 +495,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairExpoRelations(root); err != nil {
 			fmt.Printf("  ⚠ naming related records in the Expo screens: %v\n", err)
 		}
+		if err := repairDesktopForms(root); err != nil {
+			fmt.Printf("  ⚠ typing the desktop forms' payloads: %v\n", err)
+		}
+		if err := repairDesktopTSConfigNode(root); err != nil {
+			fmt.Printf("  ⚠ giving the desktop tsconfig.node.json an outDir: %v\n", err)
+		}
 		// One Redis inspector for the jobs screen, a GDPR export that streams its
 		// activity log, indexes for the notification bell, and generated writes
 		// that do not read their row back.

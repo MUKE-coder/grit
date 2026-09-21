@@ -82,3 +82,55 @@ func TestExpoRouteRepair(t *testing.T) {
 		t.Error("the roles screen template still concatenates its route")
 	}
 }
+
+func TestDesktopFormRepair(t *testing.T) {
+	before := "import type { Message, MessageInput } from \"@/hooks/use-messages\";\n" +
+		"  const handleSubmit = async (e: React.FormEvent) => {\n" +
+		"    e.preventDefault();\n" +
+		"    await onSubmit({\n" +
+		"      kind: kind,\n" +
+		"      attachment: attachment,\n" +
+		"    });\n" +
+		"  };\n"
+	got, fixed, _ := repairDesktopFormSource(before)
+	if len(fixed) != 1 || !strings.Contains(got, "      attachment: attachment,\n    } as MessageInput);") {
+		t.Fatalf("not repaired (fixed %v):\n%s", fixed, got)
+	}
+	if again, fixed, _ := repairDesktopFormSource(got); again != got || len(fixed) != 0 {
+		t.Error("the repair is not idempotent")
+	}
+}
+
+func TestDesktopListRepair(t *testing.T) {
+	before := "const COLUMNS: DataColumn[] = [\n" +
+		"  { key: \"conversation\", label: \"Conversation\", format: \"text\" },\n" +
+		"  { key: \"body\", label: \"Body\", format: \"text\" },\n];\n" +
+		"  const rows = items.map((r) => ({ ...r, conversation: conversationMap.get(String((r as any).conversation_id)) ?? \"\" }));\n"
+	got, fixed, _ := repairDesktopListSource(before)
+	for _, want := range []string{`{ key: "conversation_label", label: "Conversation"`, `conversation_label: conversationMap.get(`, `{ key: "body", label: "Body"`} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in:\n%s", want, got)
+		}
+	}
+	if len(fixed) != 1 {
+		t.Errorf("fixed %v", fixed)
+	}
+	if again, fixed, _ := repairDesktopListSource(got); again != got || len(fixed) != 0 {
+		t.Error("the repair is not idempotent")
+	}
+}
+
+func TestDesktopTSConfigNodeHasAnOutDir(t *testing.T) {
+	now := desktopClientTSConfigNode()
+	if !strings.Contains(now, desktopTSConfigNodeOutDir) {
+		t.Fatal("a new desktop app's tsconfig.node.json has no outDir")
+	}
+	before := strings.Replace(now, desktopTSConfigNodeOutDir, "", 1)
+	got, fixed, _ := repairDesktopTSConfigNodeSource(before)
+	if got != now || len(fixed) != 1 {
+		t.Fatalf("repair did not produce the current config:\n%s", got)
+	}
+	if again, fixed, _ := repairDesktopTSConfigNodeSource(got); again != got || len(fixed) != 0 {
+		t.Error("the repair is not idempotent")
+	}
+}

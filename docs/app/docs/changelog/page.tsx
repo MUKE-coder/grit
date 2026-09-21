@@ -66,6 +66,47 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.301.0 */}
+            <div className="mb-12" id="v3.301.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.301.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The desktop app catches up: realtime channels, and generated screens that type-check</h3>
+                <p>
+                  <strong>The desktop app gets the realtime client every other app has.</strong> It shipped its own
+                  older client with no channels, presence or client events, and nothing in the app used it. It now
+                  gets the same client and hooks as the web, admin and Expo apps (<code>useChannel</code>,
+                  <code>usePresence</code>, <code>useWhisper</code>, <code>useRealtime</code>), signing the socket
+                  in with the token from the OS keychain.
+                </p>
+                <p>
+                  <strong>Generated desktop screens failed tsc.</strong> A form for a resource with a relation to a
+                  user imported a <code>use-users</code> hook that did not exist; a select field was held as a string
+                  where the model types it as its options; a file field used the desktop&apos;s looser file type; and
+                  the list screen wrote each related record&apos;s name over the relation itself, so its rows no
+                  longer typed as the model. The generator now writes the users hook, types the form&apos;s payload,
+                  and gives related names their own column key. Relation pickers and columns also show a
+                  person&apos;s name instead of their id.
+                </p>
+                <p>
+                  <strong>No more stray <code>vite.config.js</code>.</strong> The desktop&apos;s
+                  <code>tsconfig.node.json</code> had no output directory, so every <code>pnpm build</code> wrote
+                  <code>vite.config.js</code> and <code>vite.config.d.ts</code> beside the source. They go to
+                  <code>node_modules</code> now; delete any that were written before.
+                </p>
+                <p>
+                  <code>grit upgrade</code> repairs all of it in an existing project. Found putting the WhatsApp
+                  blueprint on the desktop, where its chat now runs live with typing, online status and read
+                  receipts.
+                </p>
+              </div>
+            </div>
+
             {/* v3.300.0 */}
             <div className="mb-12" id="v3.300.0">
               <div className="flex items-center gap-3 mb-4">

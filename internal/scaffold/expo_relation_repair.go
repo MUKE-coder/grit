@@ -191,3 +191,149 @@ func repairExpoRouteSource(src string) (string, []string, []string) {
 	}
 	return out, []string{"navigates with a template literal, which Expo Router's typed routes accept"}, nil
 }
+
+// DesktopUsersHook is apps/desktop/frontend/src/hooks/use-users.ts: the users a
+// relationship picker offers. Users are not in the desktop's offline mirror, so
+// this one reads the API, and is empty while offline.
+func DesktopUsersHook() string {
+	return `import { useQuery } from "@tanstack/react-query";
+import type { User } from "@repo/shared/types";
+import { apiClient } from "@/lib/api-client";
+
+export type { User };
+
+// Users for a relationship picker. Not in the offline mirror, so read from the
+// API: while offline the picker is empty and the form keeps what it had.
+export function useUsers() {
+  return useQuery<User[]>({
+    queryKey: ["users", "options"],
+    queryFn: async () => (await apiClient.get("/users?page_size=500")).data.data ?? [],
+    staleTime: 60_000,
+  });
+}
+`
+}
+
+// desktopFormInputImport finds the resource's input type in a generated
+// desktop form: import type { Message, MessageInput } from "@/hooks/use-messages".
+var desktopFormInputImport = regexp.MustCompile(`import type \{ \w+, (\w+Input) \} from "@/hooks/use-`)
+
+// desktopFormPayload is the object a generated desktop form submits.
+var desktopFormPayload = regexp.MustCompile(`(?s)\n    await onSubmit\(\{\n(.*?)\n    \}\);`)
+
+// repairDesktopFormSource asserts a generated desktop form's payload to the
+// resource's input type. The form held a select as a string where the model
+// types it as its options, and a file as the desktop's looser FileRef, so a
+// resource with either failed tsc.
+func repairDesktopFormSource(src string) (string, []string, []string) {
+	m := desktopFormInputImport.FindStringSubmatch(src)
+	if m == nil || !desktopFormPayload.MatchString(src) || strings.Contains(src, "} as "+m[1]+");") {
+		return src, nil, nil
+	}
+	out := desktopFormPayload.ReplaceAllString(src, "\n    await onSubmit({\n$1\n    } as "+m[1]+");")
+	return out, []string{"the form's payload is typed as the resource's input, so a select or file field type-checks"}, nil
+}
+
+// repairDesktopForms fixes the generated forms of an existing desktop app and
+// adds the users hook a relation to User imports.
+func repairDesktopForms(root string) error {
+	src := filepath.Join(root, "apps", "desktop", "frontend", "src")
+	forms := filepath.Join(src, "components", "resource-forms")
+	if !dirExists(forms) {
+		return nil
+	}
+	m, err := manifest.Load(root)
+	if err != nil {
+		return err
+	}
+	entries, err := os.ReadDir(forms)
+	if err != nil {
+		return err
+	}
+	needsUsers := false
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".tsx") {
+			continue
+		}
+		path := filepath.Join(forms, e.Name())
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		if strings.Contains(string(raw), `from "@/hooks/use-users"`) {
+			needsUsers = true
+		}
+		if err := repairTextFile(root, m, path, repairDesktopFormSource); err != nil {
+			return err
+		}
+	}
+	lists := filepath.Join(src, "routes", "app")
+	if listEntries, err := os.ReadDir(lists); err == nil {
+		for _, e := range listEntries {
+			if e.IsDir() || !strings.HasSuffix(e.Name(), ".index.tsx") {
+				continue
+			}
+			if err := repairTextFile(root, m, filepath.Join(lists, e.Name()), repairDesktopListSource); err != nil {
+				return err
+			}
+		}
+	}
+	if needsUsers {
+		return writeIfMissing(filepath.Join(src, "hooks", "use-users.ts"), DesktopUsersHook())
+	}
+	return nil
+}
+
+// desktopListRelationField is a generated desktop list's display name for a
+// relation, written over the relation's own field: conversation: conversationMap.get(...
+var desktopListRelationField = regexp.MustCompile(`([a-z_][a-z0-9_]*): (\w+)Map\.get\(String\(\(r as any\)\.`)
+
+// repairDesktopListSource moves a relation's display name to <field>_label. The
+// model types <field> as the related record, so rows carrying a string there
+// did not type as the model and the list failed tsc.
+func repairDesktopListSource(src string) (string, []string, []string) {
+	renamed := map[string]bool{}
+	out := desktopListRelationField.ReplaceAllStringFunc(src, func(m string) string {
+		g := desktopListRelationField.FindStringSubmatch(m)
+		if strings.HasSuffix(g[1], "_label") {
+			return m
+		}
+		renamed[g[1]] = true
+		return g[1] + "_label: " + g[2] + "Map.get(String((r as any)."
+	})
+	if len(renamed) == 0 {
+		return src, nil, nil
+	}
+	for field := range renamed {
+		out = strings.ReplaceAll(out, `{ key: "`+field+`", `, `{ key: "`+field+`_label", `)
+	}
+	return out, []string{"related records' names go in their own column key, so the rows type-check"}, nil
+}
+
+// desktopTSConfigNodeOutDir sends what tsc -b emits for vite.config.ts into
+// node_modules. A composite project with no outDir wrote vite.config.js and
+// vite.config.d.ts beside the source on every pnpm build, and they ended up in
+// commits. Found building the WhatsApp blueprint's desktop app.
+const desktopTSConfigNodeOutDir = "    \"outDir\": \"node_modules/.tmp/tsconfig-node\",\n"
+
+func repairDesktopTSConfigNodeSource(src string) (string, []string, []string) {
+	const anchor = "    \"composite\": true,\n"
+	if strings.Contains(src, "\"outDir\"") || strings.Count(src, anchor) != 1 {
+		return src, nil, nil
+	}
+	return strings.Replace(src, anchor, anchor+desktopTSConfigNodeOutDir, 1),
+		[]string{"tsc -b writes vite.config's output to node_modules, not beside the source (delete a stray vite.config.js and .d.ts)"}, nil
+}
+
+// repairDesktopTSConfigNode applies it to an existing desktop app.
+func repairDesktopTSConfigNode(root string) error {
+	path := filepath.Join(root, "apps", "desktop", "frontend", "tsconfig.node.json")
+	if !fileExists(path) {
+		return nil
+	}
+	m, err := manifest.Load(root)
+	if err != nil {
+		return err
+	}
+	return repairTextFile(root, m, path, repairDesktopTSConfigNodeSource)
+}

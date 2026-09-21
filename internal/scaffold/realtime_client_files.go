@@ -73,6 +73,49 @@ func realtimeSharedWithWeb(opts Options) bool {
 // cookie with the handshake and cannot read it; React Native has no cookie jar
 // to send, so it passes the token it already holds.
 func realtimeClientTS(native bool) string {
+	if native {
+		return realtimeClientFor(realtimeTarget{
+			native: true, imports: expoSecureStoreImport, tokenGetter: expoTokenGetterNew, wsURL: wsURLExpr(true),
+			tokenHelp: "React Native has no cookie jar",
+		})
+	}
+	return realtimeClientFor(realtimeTarget{wsURL: wsURLExpr(false)})
+}
+
+// desktopRealtimeTS is the desktop app's client: the one every other app has,
+// with the token from the OS keychain through the Wails bridge. The desktop app
+// shipped a separate client with no channels, presence or client events, which
+// nothing in the app used; found building the WhatsApp blueprint's desktop app.
+func desktopRealtimeTS() string {
+	return realtimeClientFor(realtimeTarget{
+		native:  true,
+		imports: "import { getToken } from \"./wails-bridge\";\n\n",
+		tokenGetter: `// The access token the desktop app keeps in the OS keychain, read on every
+// connect so a refreshed token is used, not the one from sign-in.
+let tokenGetter: () => string | null | Promise<string | null> = () => getToken("access_token");
+`,
+		wsURL: `(() => {
+  const api = (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:8080/api";
+  if (/^https?:\/\//.test(api)) return api.replace(/^http/, "ws") + "/ws";
+  return (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + api + "/ws";
+})()`,
+		tokenHelp: "A desktop webview's cookies do not reach the API",
+	})
+}
+
+// realtimeTarget is what differs between the clients: how the socket
+// authenticates and where it connects.
+type realtimeTarget struct {
+	// native passes a token in the handshake instead of relying on the cookie.
+	native      bool
+	imports     string
+	tokenGetter string
+	wsURL       string
+	tokenHelp   string
+}
+
+func realtimeClientFor(t realtimeTarget) string {
+	native := t.native
 	tokenBlock := `
 /**
  * The browser cannot supply a token: login stores the JWT in the HttpOnly
@@ -84,13 +127,13 @@ function authQuery(): string {
 }`
 	if native {
 		tokenBlock = `
-` + expoTokenGetterNew + `
+` + t.tokenGetter + `
 /**
  * Tell the realtime client where else to find the access token.
  *
- * React Native has no cookie jar, so the socket passes the token itself. By
- * default it reads the one lib/api.ts stores; call this only if your app keeps
- * the token somewhere else:
+ * ` + t.tokenHelp + `, so the socket passes the token itself. By
+ * default it reads the one the API client stores; call this only if your app
+ * keeps the token somewhere else:
  *
  *   setRealtimeToken(() => myTokenStore.get());
  */
@@ -108,10 +151,7 @@ async function authQuery(): Promise<string> {
 	if native {
 		awaitKw = "await "
 	}
-	imports := ""
-	if native {
-		imports = expoSecureStoreImport
-	}
+	imports := t.imports
 
 	return imports + `/**
  * The realtime connection: one socket per app, shared by every subscriber.
@@ -131,7 +171,7 @@ export type RealtimeEvent = { type: string; channel?: string; payload: unknown }
 export type Handler = (payload: any, event: RealtimeEvent) => void;
 export type Status = "connecting" | "open" | "closed";
 
-const WS_URL = ` + wsURLExpr(native) + `;
+const WS_URL = ` + t.wsURL + `;
 ` + tokenBlock + `
 
 let socket: WebSocket | null = null;
