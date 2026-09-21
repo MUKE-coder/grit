@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 21 to 27, 2026",
-    count: 12,
+    count: 13,
     entries: [
+      { version: "3.305.0", title: "One React in a project with the Expo app" },
       { version: "3.304.0", title: "An upgraded project’s lint is green too" },
       { version: "3.303.0", title: "A duplicate value answers 409, and a new project’s CI passes on its first push" },
       { version: "3.302.0", title: "Tidier generated code, and date windows that are right on SQLite" },

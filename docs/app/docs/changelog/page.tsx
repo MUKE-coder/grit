@@ -66,6 +66,36 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.305.0 */}
+            <div className="mb-12" id="v3.305.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.305.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>One React in a project with the Expo app</h3>
+                <p>
+                  <strong>Web and admin tests pass in a project with the Expo app.</strong> Expo SDK 54 needs
+                  React 19.1.0 exactly, because React 19 checks that <code>react</code> and React
+                  Native&apos;s renderer are the same version, while the web apps pinned 19.2.7. With both
+                  in one hoisted <code>node_modules</code>, Expo&apos;s copy sat at the root and every other
+                  app got its own, so a test loaded React more than once. Testing Library&apos;s
+                  <code>act()</code> flushed a different React from the one rendering, and every component
+                  test in a new <code>--expo</code> project failed with &quot;Invalid hook call&quot; or an
+                  empty render.
+                </p>
+                <p>
+                  With the Expo app in the project, the web app, the admin, the desktop app and the docs
+                  site now pin Expo&apos;s React, and the monorepo holds one copy. Nothing Grit generates
+                  uses an API added in 19.2. Projects without Expo keep 19.2.7. <code>grit upgrade</code>
+                  aligns an existing project; run <code>pnpm install</code> afterwards.
+                </p>
+              </div>
+            </div>
+
             {/* v3.304.0 */}
             <div className="mb-12" id="v3.304.0">
               <div className="flex items-center gap-3 mb-4">

@@ -84,6 +84,10 @@ func Upgrade(uOpts UpgradeOptions) error {
 	hasExpo := dirExists(filepath.Join(root, "apps", "expo"))
 	hasDocs := dirExists(filepath.Join(root, "apps", "docs"))
 	hasShared := dirExists(filepath.Join(root, "packages", "shared"))
+	// Known from the start, not only at the Expo step: the web and admin
+	// package.json pin Expo's React when the project has the Expo app, and
+	// they are written before it.
+	opts.IncludeExpo = opts.IncludeExpo || hasExpo
 	// Before anything is rewritten: whether i18n was set up, since the files
 	// that say so (package.json, the layouts) are among those replaced below.
 	hadI18n := i18nInstalled(root)
@@ -105,14 +109,6 @@ func Upgrade(uOpts UpgradeOptions) error {
 		return fmt.Errorf("updating root files: %w", err)
 	}
 	updated += n
-
-	// --- React version pin ---
-	// react and react-dom must be the exact same version (React 19 hard-errors
-	// otherwise). Older scaffolds left them at "^19.0.0" and relied on a pnpm
-	// override that pnpm 10 doesn't apply to react-dom — so they drift onto
-	// different 19.x lines and the app white-screens. Surgically pin both in
-	// every frontend package.json without clobbering the user's other deps.
-	pinReactVersions(root, spinner)
 
 	// --- Docker files ---
 	spinner.Printf("  → Updating Docker configuration...\n")
@@ -879,6 +875,15 @@ func Upgrade(uOpts UpgradeOptions) error {
 		updated += 10
 	}
 
+	// --- React version pin ---
+	// After every package.json has been rewritten: react and react-dom must be
+	// the same exact version (React 19 hard-errors otherwise), and with the
+	// Expo app in the project every frontend takes Expo's, so the monorepo
+	// holds one React. Run earlier, the web and admin package.json written
+	// afterwards put 19.2.7 back; run after the manifest is saved, the pin
+	// read as the user's edit and the next upgrade left those files alone.
+	pinReactVersions(root, spinner)
+
 	written, skipped := stopGuard()
 	if saveErr := release(); saveErr != nil {
 		spinner.Printf("  Could not write .grit/manifest.json: %v\n", saveErr)
@@ -1461,36 +1466,13 @@ func writeUpgradeFiles(files map[string]string, force bool) (int, error) {
 	return count, nil
 }
 
-// pinReactVersions surgically pins react + react-dom to one exact version in
-// every frontend package.json, leaving the rest of the file untouched. Older
-// scaffolds used "^19.0.0" (which drifts) or a "19.1.0" pin (which pnpm 10
-// applies to react only), producing a react/react-dom mismatch that
-// white-screens the app.
+// pinReactVersions pins react and react-dom to one exact version in every web
+// frontend: 19.2.7, or Expo's version when the project has the Expo app (see
+// alignReactVersions). Run pnpm install afterwards.
 func pinReactVersions(root string, spinner *color.Color) {
-	const target = "19.2.7"
-	replacer := strings.NewReplacer(
-		`"react": "^19.0.0"`, `"react": "`+target+`"`,
-		`"react-dom": "^19.0.0"`, `"react-dom": "`+target+`"`,
-		`"react": "19.1.0"`, `"react": "`+target+`"`,
-		`"react-dom": "19.1.0"`, `"react-dom": "`+target+`"`,
-	)
-	paths := []string{
-		filepath.Join(root, "package.json"), // single-app scaffold
-		filepath.Join(root, "apps", "admin", "package.json"),
-		filepath.Join(root, "apps", "web", "package.json"),
-		filepath.Join(root, "apps", "desktop", "frontend", "package.json"),
-	}
-	for _, p := range paths {
-		data, err := os.ReadFile(p)
-		if err != nil {
-			continue
-		}
-		out := replacer.Replace(string(data))
-		if out != string(data) {
-			if err := os.WriteFile(p, []byte(out), 0o644); err == nil {
-				spinner.Printf("  ✓ pinned react/react-dom to %s in %s\n", target, filepath.Base(filepath.Dir(p)))
-			}
-		}
+	target := monorepoReactVersion(root)
+	for _, p := range alignReactVersions(root) {
+		spinner.Printf("  ✓ pinned react/react-dom to %s in %s (run pnpm install)\n", target, filepath.Base(filepath.Dir(p)))
 	}
 }
 
