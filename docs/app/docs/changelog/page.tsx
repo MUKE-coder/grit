@@ -66,6 +66,26 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.304.0 */}
+            <div className="mb-12" id="v3.304.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.304.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An upgraded project&apos;s lint is green too</h3>
+                <p>
+                  v3.303.0 took golangci-lint to no findings on a new project. A project upgraded to it kept
+                  one: the realtime presence heartbeat, which <code>grit upgrade</code> does not rewrite once a
+                  project has it. The upgrade now adds the same note a new project gets, saying why each
+                  presence write makes its own bounded context, and golangci-lint reports nothing on either.
+                </p>
+              </div>
+            </div>
+
             {/* v3.303.0 */}
             <div className="mb-12" id="v3.303.0">
               <div className="flex items-center gap-3 mb-4">

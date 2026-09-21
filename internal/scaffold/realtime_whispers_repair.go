@@ -159,3 +159,36 @@ func repairRealtimeHealthStatsSource(src string) (string, []string, []string) {
 	return strings.Replace(src, healthRealtimeOld, healthRealtimeNew, 1),
 		[]string{"/api/health reports this replica's sockets, and what the hub delivered, dropped and failed to publish"}, nil
 }
+
+// presenceBeatCall is the heartbeat call before v3.304.0, and presenceBeatNote
+// what replaces it: golangci-lint's contextcheck reported the call on every
+// project, and the fresh context each presence write makes is deliberate.
+const (
+	presenceBeatCall = "\t\tcase <-ticker.C:\n\t\t\th.presenceBeat()\n"
+	presenceBeatNote = "\t\tcase <-ticker.C:\n" +
+		"\t\t\t// Each presence write carries its own presenceTimeout, because\n" +
+		"\t\t\t// join and leave also run from a connection closing, where there\n" +
+		"\t\t\t// is no request to inherit from. The loop's ctx only stops it.\n" +
+		"\t\t\th.presenceBeat() //nolint:contextcheck // bounded per call, see above\n"
+)
+
+func repairPresenceBeatContextSource(src string) (string, []string, []string) {
+	if strings.Count(src, presenceBeatCall) != 1 {
+		return src, nil, nil
+	}
+	return strings.Replace(src, presenceBeatCall, presenceBeatNote, 1),
+		[]string{"presence.go says why the heartbeat makes its own contexts, so golangci-lint passes"}, nil
+}
+
+// repairPresenceBeatContext applies it to an existing project.
+func repairPresenceBeatContext(root string, opts Options) error {
+	path := filepath.Join(opts.APIRoot(root), "internal", "realtime", "presence.go")
+	if !fileExists(path) {
+		return nil
+	}
+	m, err := manifest.Load(root)
+	if err != nil {
+		return err
+	}
+	return repairSourceFile(root, m, path, repairPresenceBeatContextSource)
+}

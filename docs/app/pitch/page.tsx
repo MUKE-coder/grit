@@ -415,16 +415,16 @@ export default function PitchPage() {
             </div>
             <div className="grid md:grid-cols-3 gap-4">
               {COMPARISON.map((c) => {
-                const grit = c.name === 'Grit'
+                const isGrit = c.name === 'Grit'
                 return (
                   <div
                     key={c.name}
                     data-gsap-reveal
                     className={`rounded-2xl border p-6 flex flex-col ${
-                      grit ? 'border-primary/30 bg-card/60 glow-primary-sm' : 'border-border/40 bg-card/30'
+                      isGrit ? 'border-primary/30 bg-card/60 glow-primary-sm' : 'border-border/40 bg-card/30'
                     }`}
                   >
-                    <h3 className={`font-semibold text-[17px] ${grit ? 'text-primary' : 'text-foreground'}`}>
+                    <h3 className={`font-semibold text-[17px] ${isGrit ? 'text-primary' : 'text-foreground'}`}>
                       {c.name}
                     </h3>
                     <p className="text-xs font-mono text-muted-foreground mb-4">{c.examples}</p>
@@ -433,7 +433,7 @@ export default function PitchPage() {
                       {c.gets}
                     </p>
                     <p className="text-sm text-muted-foreground leading-relaxed flex items-start gap-2">
-                      {grit ? (
+                      {isGrit ? (
                         <Check className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" strokeWidth={2.5} />
                       ) : (
                         <X className="h-4 w-4 text-rose-400/80 mt-0.5 shrink-0" strokeWidth={2.5} />

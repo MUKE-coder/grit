@@ -562,6 +562,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairRealtimeWhispers(root, opts); err != nil {
 			fmt.Printf("  ⚠ adding realtime client events and stats: %v\n", err)
 		}
+		if err := repairPresenceBeatContext(root, opts); err != nil {
+			fmt.Printf("  ⚠ presence heartbeat: %v\n", err)
+		}
 		// Tickets get a service instead of 350 lines of queries in a handler,
 		// and the auth emails go on the job queue instead of into goroutines.
 		if err := repairThinServices(root, opts); err != nil {
