@@ -55,8 +55,7 @@ function toOrigin(value: string): string {
   }
 }
 
-const API_ORIGIN = toOrigin(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080");
-// Browser-facing origin of stored files. Uploads are presigned PUTs made
+` + nextAPIOriginLine + nextAPIWSOrigin + `// Browser-facing origin of stored files. Uploads are presigned PUTs made
 // directly from the browser to object storage, and stored images are served
 // from the same host — both are blocked unless this origin is in connect-src
 // and img-src. Defaults to the local MinIO endpoint; in production set
@@ -74,7 +73,7 @@ const csp = [
   // public-IP hint the API client fetches so local audit records show a real
   // address instead of ::1 — dev only, and it must be allowed here or the
   // browser logs a CSP violation on every page load.
-  "connect-src 'self' " + API_ORIGIN + " " + STORAGE_ORIGIN + (isDev ? " ws: wss: https://api.ipify.org" : ""),
+  ` + nextConnectSrcNew + ` ? " ws: wss: https://api.ipify.org" : ""),
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -316,7 +315,7 @@ server {
     add_header Permissions-Policy            "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
     add_header Strict-Transport-Security     "max-age=63072000; includeSubDomains; preload" always;
     add_header Cross-Origin-Opener-Policy    "same-origin" always;
-    add_header Content-Security-Policy       "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: http:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
+    add_header Content-Security-Policy       "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; ` + nginxConnectSrcNew + ` frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
 
     gzip              on;
     gzip_vary         on;

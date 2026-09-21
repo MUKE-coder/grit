@@ -605,6 +605,9 @@ out/
 dist/
 build/
 tmp/
+# TypeScript and Next.js write these on every build or dev run.
+*.tsbuildinfo
+next-env.d.ts
 
 # Go
 *.exe

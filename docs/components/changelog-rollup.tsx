@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 21 to 27, 2026",
-    count: 4,
+    count: 5,
     entries: [
+      { version: "3.297.0", title: "Realtime works in production Next.js apps" },
       { version: "3.296.0", title: "First names seed as first names, and a CRM built end to end" },
       { version: "3.295.0", title: "Seed a million rows in under a minute: batched, resumable seeding with grit seed --count" },
       { version: "3.294.0", title: "Ten new field types: email, url, domain, tel, country, color, percent, rating, time and json" },

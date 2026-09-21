@@ -66,6 +66,37 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.297.0 */}
+            <div className="mb-12" id="v3.297.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.297.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Realtime works in production Next.js apps</h3>
+                <p>
+                  <strong>The browser blocked the realtime socket.</strong> The Content-Security-Policy a Next.js web
+                  app or admin panel sends named the API as <code>http://</code> or <code>https://</code> in
+                  <code>connect-src</code>, and a CSP source matches its scheme exactly, so the socket at
+                  <code>ws://</code> or <code>wss://</code> on the same host was refused. Development hid it, because
+                  the development policy allows every socket for hot reload. Under <code>next start</code>, live
+                  notifications, presence, client events and every other realtime update were dead. The policy now
+                  names the API&apos;s socket origin too, and the nginx policy a Vite frontend is served with allows
+                  sockets. <code>grit upgrade</code> fixes an existing project&apos;s config, and warns instead when
+                  you have written your own policy. Found building the first Grit UI blueprint, a WhatsApp clone.
+                </p>
+                <p>
+                  <strong>Build artefacts are ignored.</strong> A new project&apos;s <code>.gitignore</code> ignores
+                  <code>*.tsbuildinfo</code> and <code>next-env.d.ts</code>, which TypeScript and Next.js write on
+                  every build, so they stop turning up in the first commit. <code>grit upgrade</code> adds the two
+                  lines to an existing project once.
+                </p>
+              </div>
+            </div>
+
             {/* v3.296.0 */}
             <div className="mb-12" id="v3.296.0">
               <div className="flex items-center gap-3 mb-4">
