@@ -486,6 +486,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := ignoreBuildArtefacts(root); err != nil {
 			fmt.Printf("  ⚠ ignoring build artefacts: %v\n", err)
 		}
+		if err := repairExpoRealtimeToken(root); err != nil {
+			fmt.Printf("  ⚠ signing the Expo realtime socket in: %v\n", err)
+		}
+		if err := repairExpoRefresh(root); err != nil {
+			fmt.Printf("  ⚠ sharing the Expo API client's token refresh: %v\n", err)
+		}
 		// One Redis inspector for the jobs screen, a GDPR export that streams its
 		// activity log, indexes for the notification bell, and generated writes
 		// that do not read their row back.

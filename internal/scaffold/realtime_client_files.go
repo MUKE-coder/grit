@@ -84,15 +84,15 @@ function authQuery(): string {
 }`
 	if native {
 		tokenBlock = `
-let tokenGetter: () => string | null | Promise<string | null> = () => null;
-
+` + expoTokenGetterNew + `
 /**
- * Tell the realtime client how to find the current access token.
+ * Tell the realtime client where else to find the access token.
  *
- * React Native has no cookie jar, so unlike the web the token has to be passed
- * explicitly. Call this once where you set up auth:
+ * React Native has no cookie jar, so the socket passes the token itself. By
+ * default it reads the one lib/api.ts stores; call this only if your app keeps
+ * the token somewhere else:
  *
- *   setRealtimeToken(() => SecureStore.getItemAsync("access_token"));
+ *   setRealtimeToken(() => myTokenStore.get());
  */
 export function setRealtimeToken(fn: typeof tokenGetter) {
   tokenGetter = fn;
@@ -108,8 +108,12 @@ async function authQuery(): Promise<string> {
 	if native {
 		awaitKw = "await "
 	}
+	imports := ""
+	if native {
+		imports = expoSecureStoreImport
+	}
 
-	return `/**
+	return imports + `/**
  * The realtime connection: one socket per app, shared by every subscriber.
  *
  * Opening a socket inside a component gives you one per mount, which is how a

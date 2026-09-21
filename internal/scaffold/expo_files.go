@@ -2410,7 +2410,7 @@ class ApiClient {
     await SecureStore.deleteItemAsync("refresh_token");
   }
 
-  private async request(endpoint: string, options: RequestOptions = {}) {
+` + expoRefreshMethod + `  private async request(endpoint: string, options: RequestOptions = {}) {
     const token = await this.getToken();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -2441,33 +2441,7 @@ class ApiClient {
       endpoint.includes("/auth/register") ||
       endpoint.includes("/auth/refresh");
 
-    // Try refresh if unauthorized
-    if (res.status === 401 && !isAuthEndpoint) {
-      const refreshToken = await this.getRefreshToken();
-      if (refreshToken) {
-        const refreshRes = await fetchWithTimeout(` + "`" + `${API_URL}/auth/refresh` + "`" + `, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refresh_token: refreshToken }),
-        });
-
-        if (refreshRes.ok) {
-          const data = await refreshRes.json();
-          await this.setTokens(data.data.tokens.access_token, data.data.tokens.refresh_token);
-
-          headers["Authorization"] = ` + "`" + `Bearer ${data.data.tokens.access_token}` + "`" + `;
-          res = await fetchWithTimeout(` + "`" + `${API_URL}${endpoint}` + "`" + `, {
-            method: options.method || "GET",
-            headers,
-            body: options.body ? JSON.stringify(options.body) : undefined,
-          });
-        } else {
-          await this.clearTokens();
-          throw new Error("Session expired");
-        }
-      }
-    }
-
+` + expoRefreshBlockNew + `
     const json = await res.json();
     if (!res.ok) {
       throw new Error(json.error?.message || "Request failed");

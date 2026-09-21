@@ -973,6 +973,32 @@ export const CLI_COMMANDS: CliCommand[] = [
     keywords: ['migration', 'schema', 'automigrate', 'database', 'tables'],
   },
   {
+    id: 'env',
+    name: 'grit env',
+    category: 'Run',
+    summary: 'Create .env from .env.example with fresh secrets, for a project you cloned.',
+    example: 'grit env',
+    output: [
+      '  ✓ .env created from .env.example',
+      '  ✓ 10 secrets generated: POSTGRES_PASSWORD, REDIS_PASSWORD, JWT_SECRET, FIELD_ENCRYPTION_KEY, MINIO_SECRET_KEY, GORM_STUDIO_PASSWORD, PULSE_PASSWORD, SENTINEL_PASSWORD, SENTINEL_SECRET_KEY, SENTINEL_AUDIT_KEY',
+      "  ⚠ FIELD_ENCRYPTION_KEY is new. That is right for a database of your own. To share a database",
+      "    that already holds encrypted data, put the team's key in .env instead: this one cannot read it.",
+    ],
+    purpose:
+      'grit new writes a .env with generated secrets and a .env.example with CHANGE_ME in their place, and only the example is committed. A teammate who clones the project has no .env, and the API refuses to start on a placeholder. grit env does what grit new did: it copies the example and generates every CHANGE_ME in the shape that variable takes. It prints the names it filled, never a value.',
+    useCases: [
+      'The first thing after git clone, before grit migrate.',
+      'After pulling a change that added a secret to .env.example: run it again and it fills only the new placeholder.',
+    ],
+    files: [{ path: '.env', status: 'created', note: 'or its remaining CHANGE_ME lines filled' }],
+    notes: [
+      'It never changes a value you have set. Running it on a finished .env does nothing.',
+      "A new FIELD_ENCRYPTION_KEY cannot read data encrypted with another one. On a database you share, use the team's key.",
+      'For production, generate secrets on the server and keep them in your secret store, not in a file on a laptop.',
+    ],
+    keywords: ['env', 'secrets', 'clone', 'onboarding', 'setup', 'dotenv', 'CHANGE_ME'],
+  },
+  {
     id: 'seed',
     name: 'grit seed',
     category: 'Data',

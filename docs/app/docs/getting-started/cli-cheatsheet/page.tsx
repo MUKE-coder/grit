@@ -166,6 +166,11 @@ export default function CLICheatsheetPage() {
                         desc: "Sync Go types → TypeScript",
                       },
                       {
+                        cmd: "grit env",
+                        alias: "",
+                        desc: "Create .env with fresh secrets after git clone",
+                      },
+                      {
                         cmd: "grit migrate",
                         alias: "",
                         desc: "Run database migrations",

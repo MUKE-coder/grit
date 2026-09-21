@@ -66,6 +66,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.298.0 */}
+            <div className="mb-12" id="v3.298.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.298.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit env: clone a project and run it</h3>
+                <p>
+                  <code>grit new</code> writes a <code>.env</code> with generated secrets and a
+                  <code>.env.example</code> with <code>CHANGE_ME</code> in their place, and only the example is
+                  committed. A teammate who cloned the project had no <code>.env</code>, and the API rightly refuses
+                  to start on a placeholder, so their first job was generating ten secrets by hand.
+                  <code>grit env</code> does what <code>grit new</code> did: it copies the example and generates every
+                  <code>CHANGE_ME</code> in the shape that variable takes, 32 bytes of base64 for
+                  <code>FIELD_ENCRYPTION_KEY</code> and hex for the rest. It prints the names it filled and never a
+                  value. Run again, it fills only placeholders still left, such as one a pull added, and leaves every
+                  value you set alone.
+                </p>
+                <p>
+                  A new <code>FIELD_ENCRYPTION_KEY</code> cannot read data encrypted with another one, so
+                  <code>grit env</code> says so when it makes one: on a database you share, use the team&apos;s key.
+                  A new project&apos;s README now has a &quot;Cloned this project?&quot; section with the three
+                  commands. Found cloning the WhatsApp blueprint to check its own instructions.
+                </p>
+                <h3>Two Expo fixes: realtime connects, and users stay signed in</h3>
+                <p>
+                  <strong>Realtime never connected in an Expo app.</strong> React Native has no cookie jar, so the
+                  socket passes the access token itself, through a getter that <code>setRealtimeToken</code> was
+                  meant to replace. Nothing called it: the getter returned null and the server refused every mobile
+                  socket. It now reads the token the API client already keeps, through the app&apos;s web-safe
+                  SecureStore wrapper, and <code>setRealtimeToken</code> stays for an app that stores it elsewhere.
+                </p>
+                <p>
+                  <strong>Expo apps signed users out after 15 minutes.</strong> The API client refreshed once per
+                  failed request. A screen that loads two things after the access token expires sent the same
+                  refresh token twice, and the server, which rotates refresh tokens and treats a spent one as
+                  stolen, revoked the session. Requests that fail together now wait on one refresh, as the admin and
+                  desktop clients already did. <code>grit upgrade</code> applies both to an existing Expo app and
+                  warns instead where you have rewritten the file. Both found building the WhatsApp blueprint&apos;s
+                  mobile app.
+                </p>
+              </div>
+            </div>
+
             {/* v3.297.0 */}
             <div className="mb-12" id="v3.297.0">
               <div className="flex items-center gap-3 mb-4">

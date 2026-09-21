@@ -913,6 +913,20 @@ pnpm install
 pnpm dev
 `+"```"+`
 
+## Cloned this project?
+
+`+"`.env`"+` holds this machine's secrets and is not committed; `+"`.env.example`"+` is, with
+`+"`CHANGE_ME`"+` in their place. Create yours before anything else:
+
+`+"```bash"+`
+grit env        # .env from .env.example, every secret freshly generated
+grit migrate
+grit seed
+`+"```"+`
+
+To share a database that already holds encrypted data, put the team's
+`+"`FIELD_ENCRYPTION_KEY`"+` in `+"`.env`"+` instead of the new one.
+
 ## Project Structure
 
 `+"```"+`
