@@ -4,9 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // ResourceDefinition describes a resource to generate.
@@ -169,6 +172,15 @@ func LoadFromYAML(path string) (*ResourceDefinition, error) {
 		}
 		if !isValidType(f.Type) {
 			return nil, fmt.Errorf("field %q: invalid type %q (valid: %s)", f.Name, f.Type, strings.Join(ValidFieldTypes(), ", "))
+		}
+		if f.DefaultCountry != "" {
+			if !scaffold.IsCountryCode(f.DefaultCountry) {
+				return nil, fmt.Errorf("field %q: default_country %q is not an ISO 3166-1 country code", f.Name, f.DefaultCountry)
+			}
+			def.Fields[i].DefaultCountry = strings.ToUpper(f.DefaultCountry)
+		}
+		if f.Max != 0 && (f.Max < 2 || f.Max > 10) {
+			return nil, fmt.Errorf("field %q: a rating has 2 to 10 stars (got %d)", f.Name, f.Max)
 		}
 	}
 
@@ -473,6 +485,34 @@ func parseFieldInput(input string) (Field, error) {
 	// can consume an optional prefix that follows it (name:string:auto:INV).
 	encrypted := false
 	mods := parts[2:]
+
+	// tel, country and rating take an option in the third position, the same
+	// place a slug names its source and a select its choices. Modifiers follow
+	// it: phone:tel:UG:unique. The option is optional, so a modifier may sit
+	// there instead (phone:tel:unique), and only a value of the option's shape
+	// is taken as one.
+	defaultCountry, ratingMax := "", 0
+	if len(mods) > 0 {
+		opt := strings.TrimSpace(mods[0])
+		switch typ {
+		case "tel", "country":
+			if len(opt) == 2 && !isFieldModifier(opt) {
+				if !scaffold.IsCountryCode(opt) {
+					return Field{}, fmt.Errorf("field %q: %q is not an ISO 3166-1 country code (use two letters, e.g. %s:%s:UG)", name, opt, name, typ)
+				}
+				defaultCountry = strings.ToUpper(opt)
+				mods = mods[1:]
+			}
+		case "rating":
+			if n, err := strconv.Atoi(opt); err == nil {
+				if n < 2 || n > 10 {
+					return Field{}, fmt.Errorf("field %q: a rating has 2 to 10 stars (got %d)", name, n)
+				}
+				ratingMax = n
+				mods = mods[1:]
+			}
+		}
+	}
 	for i := 0; i < len(mods); i++ {
 		mod := strings.TrimSpace(mods[i])
 		switch strings.ToLower(mod) {
@@ -515,15 +555,30 @@ func parseFieldInput(input string) (Field, error) {
 		return Field{}, fmt.Errorf("field %q: auto is only valid on string fields (got %q)", name, typ)
 	}
 
+	if unique && typ == "json" {
+		return Field{}, fmt.Errorf("field %q: a json column cannot be unique", name)
+	}
+
 	return Field{
-		Name:       name,
-		Type:       typ,
-		Required:   required,
-		Unique:     unique,
-		Auto:       auto,
-		AutoPrefix: autoPrefix,
-		Encrypted:  encrypted,
+		Name:           name,
+		Type:           typ,
+		Required:       required,
+		Unique:         unique,
+		Auto:           auto,
+		AutoPrefix:     autoPrefix,
+		Encrypted:      encrypted,
+		DefaultCountry: defaultCountry,
+		Max:            ratingMax,
 	}, nil
+}
+
+// isFieldModifier reports a word parseFieldInput reads as a modifier.
+func isFieldModifier(s string) bool {
+	switch strings.ToLower(s) {
+	case "unique", "required", "optional", "auto", "encrypted":
+		return true
+	}
+	return false
 }
 
 // parseFieldOptions turns "draft=Draft|sent=Sent|paid=Paid" into options. A bare

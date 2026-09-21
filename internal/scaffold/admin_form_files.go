@@ -33,6 +33,36 @@ import { Button } from "@/components/ui/button";
 import { RelationshipSelectField } from "./fields/relationship-select-field";
 import { MultiRelationshipSelectField } from "./fields/multi-relationship-select-field";
 import { LineItemsField } from "./fields/line-items-field";
+import { FormatTextField } from "./fields/format-text-field";
+import { PercentField } from "./fields/percent-field";
+import { ColorField } from "./fields/color-field";
+import { RatingField } from "./fields/rating-field";
+import { JSONField } from "./fields/json-field";
+import { validateFormat } from "@/lib/field-formats";
+
+// The phone input and the country picker bring Base UI and libphonenumber's
+// metadata with them, so they load when a form has one, the same way the
+// rich text editor does.
+const PhoneField = dynamic(
+  () => import("./fields/phone-field").then((m) => m.PhoneField),
+  { ssr: false, loading: FieldPlaceholder },
+);
+const CountryField = dynamic(
+  () => import("./fields/country-field").then((m) => m.CountryField),
+  { ssr: false, loading: FieldPlaceholder },
+);
+
+function FieldPlaceholder() {
+  return <div className="h-[62px] w-full animate-pulse rounded-lg bg-bg-hover/40" />;
+}
+
+/** The rules a formatted field is held to before the form is sent. */
+function formatRules(field: FieldDefinition) {
+  return {
+    required: field.required ? field.label + " is required" : undefined,
+    validate: (value: unknown) => validateFormat(field.type, value, field.max ?? 5),
+  };
+}
 
 // Tiptap and ProseMirror load when a rich text field renders. Every form in the
 // panel is built here, so a static import put the editor in the first load of
@@ -395,6 +425,90 @@ export function FieldRenderer({
           )}
         />
       );
+    case "email":
+    case "url":
+    case "domain":
+    case "time":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          rules={formatRules(field)}
+          render={({ field: formField }) => (
+            <FormatTextField field={field} kind={field.type as "email" | "url" | "domain" | "time"}value={(formField.value as string) ?? ""} onChange={formField.onChange} error={error} />
+          )}
+        />
+      );
+    case "tel":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          rules={formatRules(field)}
+          render={({ field: formField }) => (
+            <Suspense fallback={<FieldPlaceholder />}>
+              <PhoneField field={field} value={(formField.value as string) ?? ""} onChange={formField.onChange} error={error} />
+            </Suspense>
+          )}
+        />
+      );
+    case "country":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          rules={formatRules(field)}
+          render={({ field: formField }) => (
+            <Suspense fallback={<FieldPlaceholder />}>
+              <CountryField field={field} value={(formField.value as string) ?? ""} onChange={formField.onChange} error={error} />
+            </Suspense>
+          )}
+        />
+      );
+    case "color":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          rules={formatRules(field)}
+          render={({ field: formField }) => (
+            <ColorField field={field} value={(formField.value as string) ?? ""} onChange={formField.onChange} error={error} />
+          )}
+        />
+      );
+    case "percent":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          rules={formatRules(field)}
+          render={({ field: formField }) => (
+            <PercentField field={field} value={(formField.value as number | null) ?? null} onChange={formField.onChange} error={error} />
+          )}
+        />
+      );
+    case "rating":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          rules={formatRules(field)}
+          render={({ field: formField }) => (
+            <RatingField field={field} value={(formField.value as number | null) || null} onChange={formField.onChange} error={error} />
+          )}
+        />
+      );
+    case "json":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          rules={formatRules(field)}
+          render={({ field: formField }) => (
+            <JSONField field={field} value={formField.value} onChange={formField.onChange} error={error} />
+          )}
+        />
+      );
     default:
       return null;
   }
@@ -417,6 +531,11 @@ const NULLABLE_OBJECT_FIELD_TYPES = new Set([
   "file",
   "image",
   "video",
+  // Numbers and JSON start empty, not as "", which the API would refuse as a
+  // number and store as a JSON string.
+  "percent",
+  "rating",
+  "json",
 ]);
 
 export function buildDefaults(

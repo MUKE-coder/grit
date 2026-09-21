@@ -242,6 +242,8 @@ func ensureSPAAdminWiring(feRoot string, opts Options) ([]string, error) {
 	// the exports, and the rest for the form builder.
 	pkg := filepath.Join(feRoot, "package.json")
 	deps := [][2]string{
+		{"@base-ui/react", baseUIVersion},
+		{"libphonenumber-js", libphonenumberVersion},
 		{"@hookform/resolvers", "^3.3.0"},
 		{"@react-pdf/renderer", "^4.1.5"},
 		{"react-dropzone", "^14.2.0"},

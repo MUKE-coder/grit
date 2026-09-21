@@ -744,7 +744,7 @@ func (g *DesktopGenerator) buildFormHelpers(names Names) (stateDecls, inputField
 		pascalField := toPascalCase(f.Name)
 
 		switch f.FormFieldType() {
-		case "number":
+		case "number", "percent", "rating":
 			stateDecls += "  const [" + camel + ", " + setter + "] = useState(0);\n"
 		case "toggle":
 			stateDecls += "  const [" + camel + ", " + setter + "] = useState(false);\n"
@@ -780,7 +780,7 @@ func (g *DesktopGenerator) buildFormHelpers(names Names) (stateDecls, inputField
 		jsonName := toSnakeCase(f.Name)
 
 		switch f.FormFieldType() {
-		case "number":
+		case "number", "percent", "rating":
 			inputFields += "        " + jsonName + ": Number(" + camel + "),\n"
 		default:
 			inputFields += "        " + jsonName + ": " + camel + ",\n"
@@ -825,7 +825,7 @@ func (g *DesktopGenerator) buildFormHelpers(names Names) (stateDecls, inputField
 			formFields += "            />\n"
 			formFields += "          </div>\n\n"
 
-		case "number":
+		case "number", "percent", "rating":
 			formFields += "          <div>\n"
 			formFields += "            <label className=\"block text-sm font-medium text-foreground mb-1.5\">" + label + "</label>\n"
 			formFields += "            <input\n"
@@ -949,6 +949,34 @@ func (g *DesktopGenerator) buildFormHelpers(names Names) (stateDecls, inputField
 			formFields += "            />\n"
 			formFields += "          </div>\n\n"
 
+		case "email", "url", "tel", "time", "color", "domain", "country":
+			// The browser's own input for the type: the right keyboard, the
+			// colour and time pickers, and a check before the form submits.
+			inputType := map[string]string{"email": "email", "url": "url", "tel": "tel", "time": "time", "color": "color", "domain": "text", "country": "text"}[formFieldType]
+			formFields += "          <div>\n"
+			formFields += "            <label className=\"block text-sm font-medium text-foreground mb-1.5\">" + label + "</label>\n"
+			formFields += "            <input\n"
+			formFields += "              type=\"" + inputType + "\"\n"
+			formFields += "              value={" + camel + "}\n"
+			formFields += "              onChange={(e) => " + setter + "(e.target.value)}\n"
+			switch formFieldType {
+			case "tel":
+				formFields += "              pattern=\"\\+[1-9][0-9]{6,14}\"\n"
+				formFields += "              placeholder=\"+256772123456\"\n"
+			case "country":
+				formFields += "              pattern=\"[A-Za-z]{2}\"\n"
+				formFields += "              maxLength={2}\n"
+				formFields += "              placeholder=\"UG\"\n"
+			case "domain":
+				formFields += "              placeholder=\"example.com\"\n"
+			}
+			if f.Required {
+				formFields += "              required\n"
+			}
+			formFields += "              className=\"w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors\"\n"
+			formFields += "            />\n"
+			formFields += "          </div>\n\n"
+
 		default:
 			formFields += "          <div>\n"
 			formFields += "            <label className=\"block text-sm font-medium text-foreground mb-1.5\">" + label + "</label>\n"
@@ -977,7 +1005,7 @@ func (g *DesktopGenerator) buildFetchAssignments() string {
 		jsonName := toSnakeCase(f.Name)
 
 		switch f.FormFieldType() {
-		case "number":
+		case "number", "percent", "rating":
 			fetchAssignments += "        " + setter + "(data." + jsonName + " || 0);\n"
 		case "toggle":
 			fetchAssignments += "        " + setter + "(data." + jsonName + " || false);\n"

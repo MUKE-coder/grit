@@ -130,6 +130,15 @@ func (g *Generator) writeGoModel(names Names) error {
 	if needsMoney {
 		projImports = append(projImports, fmt.Sprintf("\"%s/internal/money\"", g.Module))
 	}
+	// A tel column is checked by internal/phone, which registers itself with
+	// internal/fieldtypes when it is imported. Without the import the format
+	// tag names a check nothing provides, and fieldtypes refuses the write.
+	for _, f := range fields {
+		if f.IsTel() {
+			projImports = append(projImports, fmt.Sprintf("_ \"%s/internal/phone\"", g.Module))
+			break
+		}
+	}
 	if hasAuto {
 		projImports = append(projImports, fmt.Sprintf("\"%s/internal/sequence\"", g.Module))
 	}
@@ -289,6 +298,14 @@ func (g *Generator) writeGoModel(names Names) error {
 			// Rendered as HTML wherever it is shown, so internal/sanitize cleans
 			// it on every write.
 			tags += ` sanitize:"html"`
+		}
+		// internal/fieldtypes checks and normalises the column on every write
+		// that has a model, and the OpenAPI reference reads the docs tag.
+		if format := f.FormatTag(); format != "" {
+			tags += fmt.Sprintf(` format:"%s"`, format)
+			if docs := f.DocsTag(); docs != "" {
+				tags += fmt.Sprintf(` docs:"%s"`, docs)
+			}
 		}
 		if f.IsSearchable() && !f.IsRelationship() {
 			// The same columns List searches. grit migrate gives them a trigram
@@ -692,6 +709,30 @@ func (g *Generator) writeZodSchema(names Names) error {
 	if needsMoney {
 		imports = append(imports, `import { MoneySchema } from "./money";`)
 	}
+	// The formatted types, one import line per module, names sorted so a
+	// regenerate does not reorder them.
+	formatNames := map[string]map[string]bool{}
+	for _, f := range g.Definition.Fields {
+		module, name := f.SharedSchema()
+		if module == "" {
+			continue
+		}
+		if formatNames[module] == nil {
+			formatNames[module] = map[string]bool{}
+		}
+		formatNames[module][name] = true
+	}
+	for _, module := range []string{"./field-formats", "./phone"} {
+		if len(formatNames[module]) == 0 {
+			continue
+		}
+		var list []string
+		for name := range formatNames[module] {
+			list = append(list, name)
+		}
+		sort.Strings(list)
+		imports = append(imports, fmt.Sprintf(`import { %s } from "%s";`, strings.Join(list, ", "), module))
+	}
 	importLines := strings.Join(imports, "\n")
 
 	content := fmt.Sprintf(`%s
@@ -1035,6 +1076,9 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 		if format != "text" {
 			parts = append(parts, fmt.Sprintf(`format: "%s"`, format))
 		}
+		if FieldType(f.Type) == FieldRating {
+			parts = append(parts, fmt.Sprintf(`ratingMax: %d`, f.RatingMax()))
+		}
 		if !linkedFirstColumn {
 			parts = append(parts, `onClick: "link"`)
 			linkedFirstColumn = true
@@ -1138,6 +1182,17 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 			parts = append(parts, `numberKind: "uint"`)
 		case FieldFloat:
 			parts = append(parts, `numberKind: "float"`)
+		case FieldTel:
+			// The country the picker starts on and local numbers are read in.
+			if f.DefaultCountry != "" {
+				parts = append(parts, fmt.Sprintf(`defaultCountry: %q`, f.DefaultCountry))
+			}
+		case FieldCountry:
+			if f.DefaultCountry != "" {
+				parts = append(parts, fmt.Sprintf(`defaultValue: %q`, f.DefaultCountry))
+			}
+		case FieldRating:
+			parts = append(parts, fmt.Sprintf(`max: %d`, f.RatingMax()))
 		}
 		// select / check carry their value=label choices so the SelectField /
 		// CheckboxGroupField can render the dropdown or checkboxes.

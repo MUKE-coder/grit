@@ -194,6 +194,18 @@ func buildAutoColumnLine(f GoField, key string) string {
 		fmt.Sprintf(`label: "%s"`, label),
 	}
 
+	// A formatted field says what it is; nothing to guess.
+	if ff, ok := fieldFromFormatTag(f.JSONName, f.Format); ok {
+		parts = append(parts, fmt.Sprintf(`format: "%s"`, ff.ColumnFormat()))
+		if FieldType(ff.Type) == FieldRating {
+			parts = append(parts, fmt.Sprintf(`ratingMax: %d`, ff.RatingMax()))
+		}
+		if ff.IsSortable() {
+			parts = append(parts, `sortable: true`)
+		}
+		return "{ " + strings.Join(parts, ", ") + " },"
+	}
+
 	switch guessFormat(f) {
 	case "boolean":
 		parts = append(parts, `format: "boolean"`)
@@ -224,10 +236,25 @@ func buildAutoColumnLine(f GoField, key string) string {
 func buildAutoFormFieldLine(f GoField, key string) string {
 	label := humanLabel(f.Name)
 	formType := guessFormFieldType(f)
+	ff, formatted := fieldFromFormatTag(f.JSONName, f.Format)
+	if formatted {
+		formType = ff.FormFieldType()
+	}
 	parts := []string{
 		fmt.Sprintf(`key: "%s"`, key),
 		fmt.Sprintf(`label: "%s"`, label),
 		fmt.Sprintf(`type: "%s"`, formType),
+	}
+	if formatted {
+		switch FieldType(ff.Type) {
+		case FieldTel:
+			if ff.DefaultCountry != "" {
+				parts = append(parts, fmt.Sprintf(`defaultCountry: %q`, ff.DefaultCountry))
+			}
+		case FieldRating:
+			parts = append(parts, fmt.Sprintf(`max: %d`, ff.RatingMax()))
+		}
+		return "{ " + strings.Join(parts, ", ") + " },"
 	}
 	// v3.31.38: numberKind hints the comma-formatting NumberField at
 	// the Go-side domain. Only set when the Go type is numeric.

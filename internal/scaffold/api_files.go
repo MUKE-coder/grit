@@ -153,6 +153,10 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "user_test.go"):               apiUserTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "bench_test.go"):              apiBenchTestGo(),
 	}
+	// The checks behind the formatted field types (email, tel, json, ...).
+	for path, content := range fieldTypesFiles(apiRoot) {
+		files[path] = content
+	}
 
 	// The packages generated code imports. Their own function because
 	// upgrade calls it too; see writeCodegenRuntimeFiles.
@@ -1440,6 +1444,7 @@ import (
 
 	"{{MODULE}}/internal/appendonly"
 	"{{MODULE}}/internal/crypto"
+	"{{MODULE}}/internal/fieldtypes"
 	"{{MODULE}}/internal/paginate"
 	"{{MODULE}}/internal/sanitize"
 	"{{MODULE}}/internal/sync"
@@ -1559,7 +1564,7 @@ func Connect(dsn string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("installing append-only guard: %w", err)
 	}
 
-` + paginateConnectHook + syncConnectHook + `	sqlDB, err := db.DB()
+` + paginateConnectHook + syncConnectHook + fieldTypesConnectHook + `	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
@@ -7837,6 +7842,14 @@ type Coded interface {
 	ErrorCode() Code
 }
 
+// FieldErrors is an error about particular fields, such as a value refused by
+// its column's format in internal/fieldtypes. It is answered with 422 and the
+// per-field messages in details, so a form can put each one under its input.
+type FieldErrors interface {
+	error
+	FieldErrors() map[string]string
+}
+
 // WriteError picks the right response for an error returned by a write.
 //
 // An error that carries its own code is answered with that code's status. A rule
@@ -7844,6 +7857,11 @@ type Coded interface {
 // Everything else is logged and comes back as an opaque 500, which is what it was
 // before, minus the part where the error vanished entirely.
 func WriteError(c *gin.Context, err error, fallback string) {
+	var fields FieldErrors
+	if errors.As(err, &fields) {
+		Validation(c, fields.Error(), fields.FieldErrors())
+		return
+	}
 	var coded Coded
 	if errors.As(err, &coded) {
 		Fail(c, coded.ErrorCode(), coded.Error())

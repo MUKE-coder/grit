@@ -7,6 +7,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
@@ -141,6 +142,9 @@ type GoField struct {
 	GoType   string
 	JSONName string
 	GORMTag  string
+	// Format is the formatted field type the column was generated as (email,
+	// tel:UG, rating:10, ...), read from its format tag. Empty for the rest.
+	Format string
 }
 
 // parseGoStructs parses all struct declarations from a Go file.
@@ -195,6 +199,7 @@ func parseGoStructs(filePath string) ([]GoStruct, error) {
 
 					goField.JSONName = extractTag(tag, "json")
 					goField.GORMTag = extractTag(tag, "gorm")
+					goField.Format = extractTag(tag, "format")
 				}
 
 				// Skip fields with json:"-"
@@ -273,7 +278,7 @@ func buildZodSchema(s GoStruct) string {
 			continue
 		}
 
-		zodType := goTypeToZod(f.GoType, f.GORMTag)
+		zodType := fieldZod(f)
 		camelName := toCamelCase(f.JSONName)
 
 		createFields.WriteString(fmt.Sprintf("  %s: %s,\n", camelName, zodType))
@@ -300,7 +305,7 @@ func buildZodSchema(s GoStruct) string {
 	// what you validate an API response against.
 	var entityFields strings.Builder
 	for _, f := range s.Fields {
-		zodType := goTypeToZod(f.GoType, f.GORMTag)
+		zodType := fieldZod(f)
 		entityFields.WriteString(fmt.Sprintf("  %s: %s,\n", toCamelCase(f.JSONName), zodType))
 	}
 
@@ -352,6 +357,40 @@ func goTypeToTS(goType string) string {
 		}
 		return "unknown"
 	}
+}
+
+// fieldZod is a parsed field's Zod validator: its format's rule when it has a
+// format tag, its Go type's otherwise. Self-contained, because sync writes
+// schema files that import nothing but zod.
+func fieldZod(f GoField) string {
+	kind, param, _ := strings.Cut(f.Format, ":")
+	switch FieldType(kind) {
+	case FieldEmail:
+		return `z.string().email().or(z.literal(""))`
+	case FieldURL:
+		return `z.string().url().regex(/^https?:\/\//i).or(z.literal(""))`
+	case FieldDomain:
+		return `z.string().regex(/^([a-z0-9-]+\.)+[a-z0-9-]{2,63}$/i).or(z.literal(""))`
+	case FieldTel:
+		return `z.string().regex(/^\+[1-9][0-9]{6,14}$/).or(z.literal(""))`
+	case FieldCountry:
+		return `z.string().regex(/^[A-Z]{2}$/).or(z.literal(""))`
+	case FieldColor:
+		return `z.string().regex(/^#[0-9a-f]{6}$/).or(z.literal(""))`
+	case FieldTime:
+		return `z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/).or(z.literal(""))`
+	case FieldPercent:
+		return "z.number().min(0).max(100)"
+	case FieldRating:
+		max := DefaultRatingMax
+		if n, err := strconv.Atoi(param); err == nil && n > 0 {
+			max = n
+		}
+		return fmt.Sprintf("z.number().int().min(0).max(%d)", max)
+	case FieldJSON:
+		return "z.unknown()"
+	}
+	return goTypeToZod(f.GoType, f.GORMTag)
 }
 
 func goTypeToZod(goType, gormTag string) string {

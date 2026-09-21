@@ -363,6 +363,12 @@ Creates model, service, handler, schema, types, hooks, and injects into existing
 | %[1]srichtext%[1]s | %[1]sstring%[1]s | %[1]sstring%[1]s | Tiptap editor |
 | %[1]sslug%[1]s | %[1]sstring%[1]s | %[1]sstring%[1]s | Auto-generated |
 | %[1]sstring_array%[1]s | %[1]sJSONSlice[string]%[1]s | %[1]sstring[]%[1]s | Tag input |
+| %[1]semail%[1]s / %[1]surl%[1]s / %[1]sdomain%[1]s | %[1]sstring%[1]s | %[1]sstring%[1]s | Email, web address, bare domain |
+| %[1]stel%[1]s (%[1]sphone:tel:UG%[1]s) | %[1]sstring%[1]s (E.164) | %[1]sstring%[1]s | Country picker + as-you-type number |
+| %[1]scountry%[1]s | %[1]sstring%[1]s (ISO alpha-2) | %[1]sstring%[1]s | Searchable country picker |
+| %[1]scolor%[1]s / %[1]stime%[1]s | %[1]sstring%[1]s | %[1]sstring%[1]s | Colour picker, time input |
+| %[1]spercent%[1]s / %[1]srating%[1]s (%[1]sscore:rating:10%[1]s) | %[1]sfloat64%[1]s / %[1]sint%[1]s | %[1]snumber%[1]s | Number with %%, stars |
+| %[1]sjson%[1]s | %[1]sdatatypes.JSON%[1]s | %[1]sunknown%[1]s | JSON editor |
 | %[1]sbelongs_to:X%[1]s | %[1]suint%[1]s (FK) | %[1]snumber%[1]s | Relationship select |
 | %[1]smany_to_many:X%[1]s | Junction table | %[1]snumber[]%[1]s | Multi-select |
 

@@ -225,7 +225,8 @@ func (g *DesktopGenerator) buildExportFieldsInfo() (string, string) {
 		case FieldType(f.Type) == FieldDatetime || FieldType(f.Type) == FieldDate:
 			// *time.Time may be nil — guard so export never panics.
 			accessors = append(accessors, fmt.Sprintf("fmtDesktopDate(item.%s)", pascalField))
-		case FieldType(f.Type) == FieldInt || FieldType(f.Type) == FieldUint || FieldType(f.Type) == FieldFloat || FieldType(f.Type) == FieldBelongsTo:
+		case FieldType(f.Type) == FieldInt || FieldType(f.Type) == FieldUint || FieldType(f.Type) == FieldFloat || FieldType(f.Type) == FieldBelongsTo ||
+			FieldType(f.Type) == FieldPercent || FieldType(f.Type) == FieldRating:
 			accessors = append(accessors, fmt.Sprintf("fmt.Sprintf(\"%%v\", item.%s)", pascalField))
 		default:
 			// string, text, richtext

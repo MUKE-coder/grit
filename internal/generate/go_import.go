@@ -184,13 +184,18 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 		jsonName := toSnakeCase(f.Name)
 		headers = append(headers, jsonName)
 		switch t {
-		case FieldInt:
+		case FieldJSON:
+			// The cell holds JSON text. internal/fieldtypes refuses the row if
+			// it does not parse, so a bad cell is a failed row, not a 500.
+			needDatatypes = true
+			assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok && v != \"\" {\n\t\t\titem.%s = datatypes.JSON(v)\n\t\t}\n", jsonName, goName))
+		case FieldInt, FieldRating:
 			needStrconv = true
 			assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\tn, _ := strconv.Atoi(v)\n\t\t\titem.%s = n\n\t\t}\n", jsonName, goName))
 		case FieldUint:
 			needStrconv = true
 			assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\tn, _ := strconv.Atoi(v)\n\t\t\titem.%s = uint(n)\n\t\t}\n", jsonName, goName))
-		case FieldFloat:
+		case FieldFloat, FieldPercent:
 			needStrconv = true
 			assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\tn, _ := strconv.ParseFloat(v, 64)\n\t\t\titem.%s = n\n\t\t}\n", jsonName, goName))
 		case FieldMoney:

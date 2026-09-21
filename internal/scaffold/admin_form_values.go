@@ -74,6 +74,19 @@ export function displayFormat(field: Pick<FieldDefinition, "type">): ColumnForma
       return "boolean";
     case "richtext":
       return "richtext";
+    case "email":
+      return "email";
+    case "url":
+      return "link";
+    case "domain":
+    case "tel":
+    case "country":
+    case "color":
+    case "percent":
+    case "rating":
+    case "time":
+    case "json":
+      return field.type;
     default:
       return undefined;
   }

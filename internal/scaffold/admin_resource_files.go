@@ -11,7 +11,7 @@ import type { ComponentType, ReactNode } from "react";
 
 // ─── Column Definitions ─────────────────────────────────────────────
 
-export type ColumnFormat = "text" | "badge" | "currency" | "money" | "date" | "relative" | "boolean" | "image" | "video" | "file" | "files" | "link" | "email" | "color" | "richtext" | "user";
+export type ColumnFormat = "text" | "badge" | "currency" | "money" | "date" | "relative" | "boolean" | "image" | "video" | "file" | "files" | "link" | "email" | "color" | "richtext" | "user" | "domain" | "tel" | "country" | "percent" | "rating" | "time" | "json";
 
 export interface BadgeConfig {
   [value: string]: { color: string; label: string };
@@ -27,6 +27,8 @@ export interface ColumnDefinition<T = Record<string, unknown>> {
   format?: ColumnFormat;
   badge?: BadgeConfig;
   currencyPrefix?: string;
+  /** How many stars a "rating" column is out of. Defaults to 5. */
+  ratingMax?: number;
   className?: string;
   // v3.31.15: optional custom cell renderer. Lets you pack multiple
   // fields into one column (Name + email stacked, price + currency
@@ -239,7 +241,7 @@ export interface TableDefinition {
 
 // ─── Form Field Definitions ─────────────────────────────────────────
 
-export type FieldType = "text" | "textarea" | "number" | "money" | "select" | "date" | "datetime" | "toggle" | "checkbox" | "checkbox-group" | "radio" | "richtext" | "image" | "images" | "video" | "videos" | "file" | "files" | "relationship-select" | "multi-relationship-select" | "line-items";
+export type FieldType = "text" | "textarea" | "number" | "money" | "select" | "date" | "datetime" | "toggle" | "checkbox" | "checkbox-group" | "radio" | "richtext" | "image" | "images" | "video" | "videos" | "file" | "files" | "relationship-select" | "multi-relationship-select" | "line-items" | "email" | "url" | "domain" | "tel" | "country" | "color" | "percent" | "rating" | "time" | "json";
 
 export interface FieldDefinition {
   key: string;
@@ -322,6 +324,11 @@ export interface FieldDefinition {
   currencies?: string[];
   /** Which of them a new record starts on. Unset uses the first. */
   defaultCurrency?: string;
+
+  /** tel only: the ISO 3166-1 country the picker starts on and a local number
+   *  is read in, e.g. "UG". Set by the generator from phone:tel:UG. Unset uses
+   *  the browser's locale. A rating field's stars come from max (default 5). */
+  defaultCountry?: string;
 
   // v3.103.0 — a visible field with a small "Generate" button in its label
   // row. Unlike an auto field (which is server-filled and hidden from the

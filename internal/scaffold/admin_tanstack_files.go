@@ -572,6 +572,11 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		}
 	}
 
+	// The inputs, cells and rules for the formatted field types.
+	for path, body := range adminFieldTypeFiles(filepath.Join(adminRoot, "src")) {
+		files[path] = nextToTanStack(body)
+	}
+
 	return files
 }
 
@@ -592,7 +597,7 @@ func adminTanStackPackageJSON(opts Options) string {
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@hookform/resolvers": "^3.9.1",
+`+fieldInputDependencyLines("    ")+`    "@hookform/resolvers": "^3.9.1",
     "@react-pdf/renderer": "^4.1.5",
     "@tanstack/react-query": "^5.62.0",
     "@tanstack/react-router": "^1.93.0",

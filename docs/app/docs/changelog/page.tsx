@@ -66,6 +66,58 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.294.0 */}
+            <div className="mb-12" id="v3.294.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.294.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Ten new field types: email, url, domain, tel, country, color, percent, rating, time and json</h3>
+                <p>
+                  <strong>Fields that know what they hold.</strong> <code>grit generate resource</code> accepts
+                  <code>email</code>, <code>url</code>, <code>domain</code>, <code>tel</code>, <code>country</code>,
+                  <code>color</code>, <code>percent</code>, <code>rating</code>, <code>time</code> and
+                  <code>json</code>. Before, email, url and phone were only guesses from a field&apos;s name, and
+                  <code>tel</code> was refused outright.
+                </p>
+                <p>
+                  <strong>Checked and normalised on every write.</strong> A new <code>internal/fieldtypes</code> package
+                  checks each value on create, update, patch, bulk edit, CSV import and sync, and stores it in one form:
+                  lowercase email addresses, bare punycode domains, <code>#rrggbb</code> colours, <code>HH:MM</code> times
+                  and E.164 phone numbers. A local Ugandan number such as <code>0772 123456</code> is stored as
+                  <code>+256772123456</code>. A value the column cannot hold is a 422 that names the field, for example
+                  &quot;Phone is not a valid phone number for UG&quot;.
+                </p>
+                <p>
+                  <strong>Inputs built for each type.</strong> The admin gets a searchable country picker covering 245
+                  calling countries with flags and dial codes, shared by <code>tel</code> and <code>country</code>; a phone
+                  input that formats as you type; a colour picker; keyboard-accessible stars; and a JSON editor that checks as
+                  you type. The phone and country inputs load only on forms that use them. Tables and detail pages show
+                  phone numbers as <code>tel:</code> links, emails as <code>mailto:</code> links and colours as swatches.
+                </p>
+                <p>
+                  <strong>Options in the third position.</strong> <code>phone:tel:UG</code> sets a field&apos;s default
+                  country, <code>country:country:UG</code> its default value, and <code>score:rating:10</code> its number of
+                  stars. Phone numbers are checked against libphonenumber&apos;s metadata in the API
+                  (<code>github.com/nyaruka/phonenumbers</code>, added only to projects with a tel field) and in the admin
+                  (<code>libphonenumber-js</code>), so both sides agree.
+                </p>
+                <p>
+                  <strong>Realistic seed data.</strong> <code>--faker</code> seeds values every rule accepts: in a
+                  1,200-row test every email, domain, URL, colour and phone number was distinct, and the phone numbers were
+                  valid mobiles from 20 countries. <code>grit upgrade</code> adds the checks and the inputs to existing
+                  projects. In a project with the admin panel inside the web app, upgrade now also adds any dependency the
+                  panel needs to <code>apps/web/package.json</code> when that file has been edited, matched by package name
+                  and leaving your own versions alone; before, an edited file never received the new inputs&apos; libraries
+                  and the build failed on an unresolved import.
+                </p>
+              </div>
+            </div>
+
             {/* v3.293.0 */}
             <div className="mb-12" id="v3.293.0">
               <div className="flex items-center gap-3 mb-4">

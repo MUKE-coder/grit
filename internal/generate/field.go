@@ -9,25 +9,25 @@ import (
 type FieldType string
 
 const (
-	FieldString      FieldType = "string"
-	FieldText        FieldType = "text"
-	FieldInt         FieldType = "int"
-	FieldUint        FieldType = "uint"
-	FieldFloat       FieldType = "float"
-	FieldBool        FieldType = "bool"
-	FieldDatetime    FieldType = "datetime"
-	FieldDate        FieldType = "date"
-	FieldSlug        FieldType = "slug"
-	FieldRichtext    FieldType = "richtext"
-	FieldBelongsTo   FieldType = "belongs_to"
-	FieldManyToMany  FieldType = "many_to_many"
+	FieldString     FieldType = "string"
+	FieldText       FieldType = "text"
+	FieldInt        FieldType = "int"
+	FieldUint       FieldType = "uint"
+	FieldFloat      FieldType = "float"
+	FieldBool       FieldType = "bool"
+	FieldDatetime   FieldType = "datetime"
+	FieldDate       FieldType = "date"
+	FieldSlug       FieldType = "slug"
+	FieldRichtext   FieldType = "richtext"
+	FieldBelongsTo  FieldType = "belongs_to"
+	FieldManyToMany FieldType = "many_to_many"
 	// One-to-one: a belongs_to whose foreign key is unique.
 	//
 	// Declared on the side that holds the key, so a Profile declares its
 	// User rather than the other way round. That is the side the constraint
 	// can actually live on, and a unique index is the entire difference
 	// between "many profiles per user" and "one".
-	FieldOneToOne    FieldType = "one_to_one"
+	FieldOneToOne FieldType = "one_to_one"
 	// Money: an integer count of minor units plus its currency.
 	//
 	// Not float. 0.1 + 0.2 is not 0.3 in binary floating point, and after
@@ -46,7 +46,27 @@ const (
 	FieldRadio  FieldType = "radio"
 	FieldCheck  FieldType = "check"
 	FieldToggle FieldType = "toggle"
+
+	// Formatted types: a value with a shape the API checks and normalises on
+	// every write (internal/fieldtypes), a matching Zod schema, and an admin
+	// input built for it. Declared as name:type, with an option in the third
+	// position for the two that take one: phone:tel:UG sets the default
+	// country, score:rating:10 the number of stars.
+	FieldEmail   FieldType = "email"
+	FieldURL     FieldType = "url"
+	FieldDomain  FieldType = "domain"
+	FieldTel     FieldType = "tel"
+	FieldCountry FieldType = "country"
+	FieldColor   FieldType = "color"
+	FieldPercent FieldType = "percent"
+	FieldRating  FieldType = "rating"
+	FieldTime    FieldType = "time"
+	FieldJSON    FieldType = "json"
 )
+
+// DefaultRatingMax is the number of stars a rating field has when the
+// declaration does not say.
+const DefaultRatingMax = 5
 
 // Field describes a single field in a resource.
 type Field struct {
@@ -86,6 +106,111 @@ type Field struct {
 	// prefix (defaults to the first three letters of the resource, uppercased).
 	Auto       bool   `yaml:"auto,omitempty"`
 	AutoPrefix string `yaml:"auto_prefix,omitempty"`
+
+	// DefaultCountry is the ISO 3166-1 alpha-2 code a tel field parses local
+	// numbers against and its picker starts on, or the value a country field
+	// starts on. From phone:tel:UG. Empty means no default.
+	DefaultCountry string `yaml:"default_country,omitempty"`
+
+	// Max is the number of stars on a rating field (score:rating:10). Zero
+	// means DefaultRatingMax.
+	Max int `yaml:"max,omitempty"`
+}
+
+// IsFormatted reports one of the formatted types: email, url, domain, tel,
+// country, color, percent, rating, time and json.
+func (f Field) IsFormatted() bool {
+	switch FieldType(f.Type) {
+	case FieldEmail, FieldURL, FieldDomain, FieldTel, FieldCountry,
+		FieldColor, FieldPercent, FieldRating, FieldTime, FieldJSON:
+		return true
+	}
+	return false
+}
+
+// IsTel reports a phone number field.
+func (f Field) IsTel() bool { return FieldType(f.Type) == FieldTel }
+
+// RatingMax is the number of stars a rating field offers.
+func (f Field) RatingMax() int {
+	if f.Max > 0 {
+		return f.Max
+	}
+	return DefaultRatingMax
+}
+
+// FormatTag is the value of the model's format:"..." struct tag, which is what
+// internal/fieldtypes reads to check and normalise the column on every write.
+// Empty for a field that is not a formatted type.
+func (f Field) FormatTag() string {
+	if !f.IsFormatted() {
+		return ""
+	}
+	switch FieldType(f.Type) {
+	case FieldTel:
+		if f.DefaultCountry != "" {
+			return "tel:" + f.DefaultCountry
+		}
+	case FieldRating:
+		return fmt.Sprintf("rating:%d", f.RatingMax())
+	}
+	return f.Type
+}
+
+// DocsTag is the gin-docs struct tag for a formatted field, so the OpenAPI
+// reference names the format and shows a value that would be accepted.
+func (f Field) DocsTag() string {
+	switch FieldType(f.Type) {
+	case FieldEmail:
+		return "format:email,example:ada@example.com"
+	case FieldURL:
+		return "format:uri,example:https://example.com/pricing"
+	case FieldDomain:
+		return "format:hostname,example:example.co.ug"
+	case FieldTel:
+		return "format:e164,example:+256772123456"
+	case FieldCountry:
+		return "format:iso-3166-alpha-2,example:UG"
+	case FieldColor:
+		return "format:hex-color,example:#6c5ce7"
+	case FieldPercent:
+		return "description:A percentage from 0 to 100,example:12.5"
+	case FieldRating:
+		return fmt.Sprintf("description:Stars from 1 to %d (0 is unrated),example:4", f.RatingMax())
+	case FieldTime:
+		return "format:time,example:14:30"
+	case FieldJSON:
+		return "description:Any JSON value"
+	}
+	return ""
+}
+
+// SharedSchema names the shared Zod schema a formatted field validates with,
+// and the module in packages/shared/schemas it comes from. Empty for the rest.
+func (f Field) SharedSchema() (module, name string) {
+	switch FieldType(f.Type) {
+	case FieldEmail:
+		return "./field-formats", "EmailSchema"
+	case FieldURL:
+		return "./field-formats", "UrlSchema"
+	case FieldDomain:
+		return "./field-formats", "DomainSchema"
+	case FieldTel:
+		return "./phone", "PhoneSchema"
+	case FieldCountry:
+		return "./field-formats", "CountrySchema"
+	case FieldColor:
+		return "./field-formats", "ColorSchema"
+	case FieldPercent:
+		return "./field-formats", "PercentSchema"
+	case FieldRating:
+		return "./field-formats", "ratingSchema"
+	case FieldTime:
+		return "./field-formats", "TimeSchema"
+	case FieldJSON:
+		return "./field-formats", "JsonValueSchema"
+	}
+	return "", ""
 }
 
 // IsAuto reports a string field that is auto-generated from a sequence.
@@ -206,7 +331,7 @@ func (f Field) IsFileField() bool {
 
 // NeedsDatatypesImport returns true if this field requires "gorm.io/datatypes" import.
 func (f Field) NeedsDatatypesImport() bool {
-	return FieldType(f.Type) == FieldStringArray || FieldType(f.Type) == FieldCheck
+	return FieldType(f.Type) == FieldStringArray || FieldType(f.Type) == FieldCheck || FieldType(f.Type) == FieldJSON
 }
 
 // NeedsFilesImport returns true if this field requires the models/files
@@ -261,6 +386,15 @@ func (f Field) GoType() string {
 		return "*files.FileRef"
 	case FieldFiles:
 		return "files.FileRefs"
+	case FieldEmail, FieldURL, FieldDomain, FieldTel, FieldCountry, FieldColor, FieldTime:
+		return "string"
+	case FieldPercent:
+		return "float64"
+	case FieldRating:
+		return "int"
+	case FieldJSON:
+		// jsonb on Postgres, JSON on MySQL and SQLite, which stores it as text.
+		return "datatypes.JSON"
 	default:
 		return "string"
 	}
@@ -324,6 +458,26 @@ func (f Field) GORMTag() string {
 		// so GORM stores them as JSON. type:json signals jsonb on Postgres
 		// (otherwise we'd get text and lose efficient querying).
 		parts = append(parts, "type:json")
+	case FieldEmail:
+		// The longest address SMTP allows.
+		parts = append(parts, "size:254")
+	case FieldURL:
+		parts = append(parts, "size:2048")
+	case FieldDomain:
+		// The longest name DNS allows.
+		parts = append(parts, "size:253")
+	case FieldTel:
+		// E.164 is at most 16 characters with the plus.
+		parts = append(parts, "size:32")
+	case FieldCountry:
+		parts = append(parts, "size:2")
+	case FieldColor:
+		parts = append(parts, "size:7")
+	case FieldTime:
+		parts = append(parts, "size:5")
+	case FieldPercent:
+		// 0.00 to 100.00 exactly, which a float column would not promise.
+		parts = append(parts, "type:decimal(5,2)")
 	case FieldFloat:
 		// Heuristic: money-shaped fields need fixed-precision storage
 		// to avoid float rounding (1.99 + 0.01 = 1.9999999...).
@@ -397,13 +551,21 @@ func (f Field) TSType() string {
 		return "FileRef | null"
 	case FieldFiles:
 		return "FileRef[]"
+	case FieldPercent, FieldRating:
+		return "number"
+	case FieldJSON:
+		return "unknown"
 	default:
+		// email, url, domain, tel, country, color and time are strings.
 		return "string"
 	}
 }
 
 // ZodType returns the Zod validator for this field.
 func (f Field) ZodType() string {
+	if f.IsFormatted() {
+		return f.formattedZodType()
+	}
 	base := ""
 	switch FieldType(f.Type) {
 	case FieldString:
@@ -467,6 +629,32 @@ func (f Field) ZodType() string {
 	return base
 }
 
+// formattedZodType is the Zod validator for a formatted field: the shared
+// schema, and for an optional one the empty value a form sends when the field
+// is left blank.
+func (f Field) formattedZodType() string {
+	_, name := f.SharedSchema()
+	switch FieldType(f.Type) {
+	case FieldRating, FieldPercent:
+		if FieldType(f.Type) == FieldRating {
+			name = fmt.Sprintf("ratingSchema(%d)", f.RatingMax())
+		}
+		if !f.Required {
+			return name + ".nullable().optional()"
+		}
+		return name
+	case FieldJSON:
+		if !f.Required {
+			return name + ".optional()"
+		}
+		return name
+	}
+	if !f.Required {
+		return name + `.or(z.literal("")).optional()`
+	}
+	return name
+}
+
 // NeedsTimeImport returns true if this field requires "time" import in Go.
 func (f Field) NeedsTimeImport() bool {
 	return FieldType(f.Type) == FieldDatetime || FieldType(f.Type) == FieldDate
@@ -493,6 +681,12 @@ func (f Field) ColumnFormat() string {
 		return "file"
 	case FieldFiles:
 		return "files"
+	case FieldEmail:
+		return "email"
+	case FieldURL:
+		return "link"
+	case FieldDomain, FieldTel, FieldCountry, FieldColor, FieldPercent, FieldRating, FieldTime, FieldJSON:
+		return f.Type
 	default:
 		return "text"
 	}
@@ -536,6 +730,10 @@ func (f Field) FormFieldType() string {
 		return "file"
 	case FieldFiles:
 		return "files"
+	case FieldEmail, FieldURL, FieldDomain, FieldTel, FieldCountry, FieldColor,
+		FieldPercent, FieldRating, FieldTime, FieldJSON:
+		// Each has an input of its own, named after the type.
+		return f.Type
 	default:
 		return "text"
 	}
@@ -545,6 +743,9 @@ func (f Field) FormFieldType() string {
 func (f Field) IsSortable() bool {
 	switch FieldType(f.Type) {
 	case FieldString, FieldInt, FieldUint, FieldFloat, FieldDatetime, FieldDate, FieldSlug:
+		return true
+	case FieldEmail, FieldURL, FieldDomain, FieldTel, FieldCountry, FieldColor,
+		FieldPercent, FieldRating, FieldTime:
 		return true
 	case FieldMoney:
 		// Sorts on <field>_amount, which the handler whitelists under that
@@ -561,12 +762,18 @@ func (f Field) IsSearchable() bool {
 	if f.Encrypted {
 		return false
 	}
-	return FieldType(f.Type) == FieldString || FieldType(f.Type) == FieldText || FieldType(f.Type) == FieldSlug || FieldType(f.Type) == FieldRichtext
+	switch FieldType(f.Type) {
+	case FieldString, FieldText, FieldSlug, FieldRichtext,
+		FieldEmail, FieldURL, FieldDomain, FieldTel:
+		return true
+	}
+	return false
 }
 
 // ValidFieldTypes returns all valid field type names.
 func ValidFieldTypes() []string {
-	return []string{"string", "text", "richtext", "int", "uint", "float", "bool", "toggle", "select", "radio", "check", "datetime", "date", "money", "slug", "belongs_to", "one_to_one", "many_to_many", "string_array", "file", "files"}
+	return []string{"string", "text", "richtext", "int", "uint", "float", "bool", "toggle", "select", "radio", "check", "datetime", "date", "money", "slug", "belongs_to", "one_to_one", "many_to_many", "string_array", "file", "files",
+		"email", "url", "domain", "tel", "country", "color", "percent", "rating", "time", "json"}
 }
 
 // FKColumnName returns the foreign key column name for a belongs_to field.

@@ -191,9 +191,9 @@ func (g *Generator) buildDesktopClientForm(names Names) desktopClientFieldParts 
 			jsx.WriteString("        </div>\n")
 			pay.WriteString("      " + fk + ": " + fkCamel + ",\n")
 
-		case ft == FieldInt || ft == FieldUint || ft == FieldFloat:
+		case ft == FieldInt || ft == FieldUint || ft == FieldFloat || ft == FieldPercent || ft == FieldRating:
 			kind := "float"
-			if ft == FieldInt {
+			if ft == FieldInt || ft == FieldRating {
 				kind = "int"
 			} else if ft == FieldUint {
 				kind = "uint"
@@ -228,6 +228,31 @@ func (g *Generator) buildDesktopClientForm(names Names) desktopClientFieldParts 
 			}
 			st.WriteString("  const [" + camel + ", " + setter + "] = useState<string>(\"\");\n")
 			pf.WriteString("      " + setter + "(record." + json + " ? String(record." + json + ").slice(0, " + slice + ") : \"\");\n")
+			jsx.WriteString("        <div>\n")
+			jsx.WriteString("          <label className=\"block text-[13px] font-medium text-foreground mb-1.5\">" + label + "</label>\n")
+			jsx.WriteString("          <input type=\"" + inputType + "\" value={" + camel + "} onChange={(e) => " + setter + "(e.target.value)} className={inputCls} />\n")
+			jsx.WriteString("        </div>\n")
+			pay.WriteString("      " + json + ": " + camel + ",\n")
+
+		case ft == FieldJSON:
+			// Edited as text and sent parsed; the API refuses what does not parse.
+			st.WriteString("  const [" + camel + ", " + setter + "] = useState<string>(\"\");\n")
+			pf.WriteString("      " + setter + "(record." + json + " != null ? JSON.stringify(record." + json + ", null, 2) : \"\");\n")
+			jsx.WriteString("        <div>\n")
+			jsx.WriteString("          <label className=\"block text-[13px] font-medium text-foreground mb-1.5\">" + label + "</label>\n")
+			jsx.WriteString("          <textarea value={" + camel + "} onChange={(e) => " + setter + "(e.target.value)} rows={6} spellCheck={false} className={inputCls + \" font-mono\"} />\n")
+			jsx.WriteString("        </div>\n")
+			pay.WriteString("      " + json + ": (() => { try { return " + camel + ".trim() ? JSON.parse(" + camel + ") : null; } catch { return " + camel + "; } })(),\n")
+
+		case f.IsFormatted():
+			// The browser's own input for the type: the right keyboard, the
+			// colour and time pickers. The API applies the full rule.
+			inputType := map[FieldType]string{FieldEmail: "email", FieldURL: "url", FieldTel: "tel", FieldTime: "time", FieldColor: "color"}[ft]
+			if inputType == "" {
+				inputType = "text"
+			}
+			st.WriteString("  const [" + camel + ", " + setter + "] = useState<string>(\"\");\n")
+			pf.WriteString("      " + setter + "(String(record." + json + " ?? \"\"));\n")
 			jsx.WriteString("        <div>\n")
 			jsx.WriteString("          <label className=\"block text-[13px] font-medium text-foreground mb-1.5\">" + label + "</label>\n")
 			jsx.WriteString("          <input type=\"" + inputType + "\" value={" + camel + "} onChange={(e) => " + setter + "(e.target.value)} className={inputCls} />\n")

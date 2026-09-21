@@ -365,6 +365,26 @@ function placeholderFor(field: FieldDefinition): string | number | boolean {
   switch (field.type) {
     case "number":
       return 0;
+    case "percent":
+      return 12.5;
+    case "rating":
+      return 4;
+    case "email":
+      return "ada@example.com";
+    case "url":
+      return "https://example.com";
+    case "domain":
+      return "example.com";
+    case "tel":
+      return "+256772123456";
+    case "country":
+      return "UG";
+    case "color":
+      return "#6c5ce7";
+    case "time":
+      return "09:30";
+    case "json":
+      return "{}";
     case "toggle":
     case "checkbox":
       return true;
@@ -421,6 +441,19 @@ function coerce(
         return { error: "not in allowed options" };
       }
       return { value: s };
+    }
+    case "percent":
+    case "rating": {
+      const n = typeof raw === "number" ? raw : Number(String(raw).replace("%", "").trim());
+      if (Number.isNaN(n)) return { error: "expected a number" };
+      return { value: n };
+    }
+    case "json": {
+      try {
+        return { value: typeof raw === "string" ? JSON.parse(raw) : raw };
+      } catch {
+        return { error: "expected JSON" };
+      }
     }
     default:
       return { value: String(raw) };

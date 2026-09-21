@@ -82,11 +82,11 @@ func importAssign(f Field) (code string, needStrconv, ok bool) {
 	switch FieldType(f.Type) {
 	case FieldDate, FieldDatetime:
 		return "", false, false
-	case FieldInt:
+	case FieldInt, FieldRating:
 		return fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\tn, _ := strconv.Atoi(v)\n\t\t\titem.%s = n\n\t\t}", jsonName, goName), true, true
 	case FieldUint:
 		return fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\tn, _ := strconv.Atoi(v)\n\t\t\titem.%s = uint(n)\n\t\t}", jsonName, goName), true, true
-	case FieldFloat:
+	case FieldFloat, FieldPercent:
 		return fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\tn, _ := strconv.ParseFloat(v, 64)\n\t\t\titem.%s = n\n\t\t}", jsonName, goName), true, true
 	case FieldBool, FieldToggle:
 		return fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\titem.%s = v == \"true\" || v == \"1\" || v == \"yes\"\n\t\t}", jsonName, goName), false, true
@@ -442,6 +442,10 @@ func (g *Generator) ensureModelImport(names Names, f Field) error {
 	if f.Encrypted {
 		needed = append(needed, "crypto")
 	}
+	if f.IsTel() {
+		// Blank: the import is what registers the tel check with fieldtypes.
+		needed = append(needed, "_ phone")
+	}
 	if len(needed) == 0 {
 		return nil
 	}
@@ -452,10 +456,14 @@ func (g *Generator) ensureModelImport(names Names, f Field) error {
 	}
 	changed := false
 	for _, pkg := range needed {
+		alias := ""
+		if name, ok := strings.CutPrefix(pkg, "_ "); ok {
+			pkg, alias = name, "_ "
+		}
 		if l.contains("/internal/" + pkg + "\"") {
 			continue
 		}
-		imp := fmt.Sprintf("\t%q", g.Module+"/internal/"+pkg)
+		imp := fmt.Sprintf("\t%s%q", alias, g.Module+"/internal/"+pkg)
 		switch ids, open := l.findPrefix(0, fmt.Sprintf("%q", g.Module+"/internal/ids")), l.find(0, "import ("); {
 		case ids >= 0:
 			l.insert(ids+1, imp)

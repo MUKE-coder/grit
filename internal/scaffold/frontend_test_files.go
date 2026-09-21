@@ -35,6 +35,7 @@ func writeFrontendTestFiles(root string, opts Options) error {
 		// src/. The Next.js admin runs it.
 		if opts.Frontend != FrontendTanStack {
 			files[filepath.Join(adminRoot, "__tests__", "dropzone.test.tsx")] = adminDropzoneTest()
+			files[filepath.Join(adminRoot, "__tests__", "field-inputs.test.tsx")] = adminFieldInputsTest()
 		}
 	}
 

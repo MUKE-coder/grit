@@ -215,6 +215,12 @@ func (g *Generator) Run() error {
 		fmt.Println("  ✓ Added internal/authz/actor.go")
 	}
 
+	// Formatted fields (email, tel, json, ...) are checked by packages a
+	// project from before them does not have.
+	if err := g.ensureFieldTypeSupport(g.Definition.Fields); err != nil {
+		return err
+	}
+
 	fmt.Printf("\n  Generating resource: %s\n\n", names.Pascal)
 
 	// Everything this resource writes is attributed to the resource, not to the

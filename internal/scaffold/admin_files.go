@@ -476,6 +476,11 @@ func adminFileMap(root string, opts Options) map[string]string {
 		}
 	}
 
+	// The inputs, cells and rules for the formatted field types.
+	for path, body := range adminFieldTypeFiles(adminRoot) {
+		files[path] = body
+	}
+
 	return files
 }
 
@@ -535,7 +540,7 @@ func adminPackageJSON(opts Options) string {
     "test:ui": "vitest --ui"
   },
   "dependencies": {
-    "@hookform/resolvers": "^3.3.0",
+`+fieldInputDependencyLines("    ")+`    "@hookform/resolvers": "^3.3.0",
     "@tanstack/react-query": "^5.17.0",
     "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",

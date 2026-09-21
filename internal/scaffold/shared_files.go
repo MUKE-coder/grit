@@ -45,6 +45,10 @@ func writeSharedFiles(root string, opts Options) error {
 	for path, content := range sharedModelTypeFiles(sharedRoot) {
 		files[path] = content
 	}
+	// The Zod schemas generated resources use for their formatted fields.
+	for path, content := range sharedFieldFormatFiles(sharedRoot) {
+		files[path] = content
+	}
 
 	for path, content := range files {
 		if err := writeFile(path, content); err != nil {
@@ -71,6 +75,7 @@ func sharedPackageJSON(opts Options) string {
     "./themes": "./themes.ts"
   },
   "dependencies": {
+    "libphonenumber-js": "` + libphonenumberVersion + `",
     "zod": "^3.22.0"
   },
   "devDependencies": {

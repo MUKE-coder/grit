@@ -74,12 +74,33 @@ func (g *Generator) seederContent(names Names, opts SeederOptions) string {
 		imports.WriteString("\t\"time\"\n")
 	}
 	imports.WriteString("\n")
+	// The formatted fields' samples, and datatypes for a static json example.
+	needsFieldTypes, needsPhone, needsDatatypes := false, false, false
+	for _, f := range g.Definition.Fields {
+		switch {
+		case f.IsTel():
+			needsPhone = needsPhone || opts.Faker
+		case FieldType(f.Type) == FieldJSON && !opts.Faker:
+			needsDatatypes = true
+		case f.IsFormatted():
+			needsFieldTypes = needsFieldTypes || opts.Faker
+		}
+	}
 	if opts.Faker {
 		imports.WriteString("\t\"github.com/brianvoe/gofakeit/v7\"\n")
+	}
+	if needsFieldTypes {
+		imports.WriteString("\t\"" + g.Module + "/internal/fieldtypes\"\n")
 	}
 	imports.WriteString("\t\"" + g.Module + "/internal/models\"\n")
 	if needsFiles {
 		imports.WriteString("\t\"" + g.Module + "/internal/files\"\n")
+	}
+	if needsPhone {
+		imports.WriteString("\t\"" + g.Module + "/internal/phone\"\n")
+	}
+	if needsDatatypes {
+		imports.WriteString("\t\"gorm.io/datatypes\"\n")
 	}
 	imports.WriteString("\t\"gorm.io/gorm\"\n")
 
@@ -228,6 +249,13 @@ func definitionFromModelFile(apiRoot, name string) (*ResourceDefinition, error) 
 		if jn == "" || skip[jn] || strings.HasSuffix(jn, "_id") {
 			continue // base column, slug (auto), or a FK we can't safely seed
 		}
+		// A formatted field says what it is in its format tag, and has to be
+		// seeded with values its rule accepts: a tel column filled with
+		// gofakeit.Phone() is a seeder whose every insert is refused.
+		if f, ok := fieldFromFormatTag(jn, gf.Format); ok {
+			def.Fields = append(def.Fields, f)
+			continue
+		}
 		ft := goTypeToFieldType(gf.GoType)
 		if ft == "" {
 			continue // relation / unknown type — user wires it up
@@ -245,6 +273,29 @@ func definitionFromModelFile(apiRoot, name string) (*ResourceDefinition, error) 
 		def.Fields = append(def.Fields, Field{Name: jn, Type: ft})
 	}
 	return def, nil
+}
+
+// fieldFromFormatTag rebuilds a formatted field from its model's format tag:
+// "tel:UG" is a tel field reading local numbers in Uganda, "rating:10" ten
+// stars.
+func fieldFromFormatTag(name, format string) (Field, bool) {
+	if format == "" {
+		return Field{}, false
+	}
+	kind, param, _ := strings.Cut(format, ":")
+	f := Field{Name: name, Type: kind}
+	if !f.IsFormatted() {
+		return Field{}, false
+	}
+	switch FieldType(kind) {
+	case FieldTel:
+		f.DefaultCountry = param
+	case FieldRating:
+		if n, err := strconv.Atoi(param); err == nil {
+			f.Max = n
+		}
+	}
+	return f, true
 }
 
 func goTypeToFieldType(t string) string {
@@ -393,6 +444,8 @@ func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needs
 			} else {
 				val = values[0]
 			}
+		case f.IsFormatted():
+			val = seederFormattedValue(f, faker)
 		case ft == FieldText || ft == FieldRichtext:
 			if faker {
 				val = "gofakeit.Sentence(12)"
@@ -447,6 +500,73 @@ func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needs
 		b.WriteString("\t\t\t" + goField + ": " + val + ",\n")
 	}
 	return b.String(), pre.String(), needsTime, needsFiles, needsStrings
+}
+
+// seederFormattedValue is the Go expression a seeder assigns to a formatted
+// field. Faker mode mixes the row number i into every value, so a unique
+// column seeds a thousand rows without a collision, and every value is one its
+// own rule in internal/fieldtypes (or internal/phone) accepts: the samples are
+// tested against the rules in the scaffolded project. Static mode writes one
+// realistic example.
+func seederFormattedValue(f Field, faker bool) string {
+	switch FieldType(f.Type) {
+	case FieldEmail:
+		if faker {
+			return "fieldtypes.SampleEmail(gofakeit.FirstName(), gofakeit.LastName(), gofakeit.DomainName(), i)"
+		}
+		return `"ada@example.com"`
+	case FieldURL:
+		if faker {
+			return "fieldtypes.SampleURL(gofakeit.DomainName(), i)"
+		}
+		return `"https://example.com/pricing"`
+	case FieldDomain:
+		if faker {
+			return "fieldtypes.SampleDomain(gofakeit.Word(), i)"
+		}
+		return `"example.co.ug"`
+	case FieldTel:
+		if faker {
+			// Valid mobile numbers from twenty countries, built from each
+			// country's own numbering metadata.
+			return "phone.Sample(i)"
+		}
+		return `"+256772123456"`
+	case FieldCountry:
+		if faker {
+			return "fieldtypes.SampleCountry(i)"
+		}
+		if f.DefaultCountry != "" {
+			return strconv.Quote(f.DefaultCountry)
+		}
+		return `"UG"`
+	case FieldColor:
+		if faker {
+			return "fieldtypes.SampleColor(i)"
+		}
+		return `"#6c5ce7"`
+	case FieldPercent:
+		if faker {
+			return "fieldtypes.SamplePercent(i)"
+		}
+		return "12.5"
+	case FieldRating:
+		if faker {
+			return fmt.Sprintf("fieldtypes.SampleRating(i, %d)", f.RatingMax())
+		}
+		return strconv.Itoa(f.RatingMax() - 1)
+	case FieldTime:
+		if faker {
+			return "fieldtypes.SampleTime(i)"
+		}
+		return `"09:30"`
+	case FieldJSON:
+		if faker {
+			return "fieldtypes.SampleJSON(i)"
+		}
+		return "datatypes.JSON(" + strconv.Quote(`{"plan":"pro","seats":5}`) + ")"
+	}
+	return `""`
 }
 
 // skuPrefix builds a short readable prefix from a field name, so a faked

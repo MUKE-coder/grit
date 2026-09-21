@@ -56,7 +56,9 @@ func TestStoredLinksPassThroughSafeHref(t *testing.T) {
 }
 
 func TestSafeHrefRepair(t *testing.T) {
-	cells := adminCellRenderers()
+	// A file from before the formatted field types, whose DomainCell also goes
+	// through safeHref.
+	cells := strings.Replace(adminCellRenderers(), fieldTypeCells, "", 1)
 	oldCells := strings.Replace(cells, linkCellNew, linkCellOld, 1)
 	oldCells = strings.Replace(oldCells, fileRefHrefNew, fileRefHrefOld, 1)
 	oldCells = strings.Replace(oldCells, safeHrefImport, "", 1)

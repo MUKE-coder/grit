@@ -72,6 +72,9 @@ func (g *DesktopGenerator) Run() error {
 		if f.IsStringArray() {
 			return fmt.Errorf("field %q: string_array isn't supported for desktop apps yet: use a text field, or a related resource", f.Name)
 		}
+		if FieldType(f.Type) == FieldJSON {
+			return fmt.Errorf("field %q: json isn't supported for desktop apps yet: use a text field", f.Name)
+		}
 	}
 
 	fmt.Printf("\n  Generating desktop resource: %s\n\n", names.Pascal)

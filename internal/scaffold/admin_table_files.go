@@ -470,6 +470,13 @@ import { Check, X, Play, ExternalLink } from "@/lib/icons";
 import { safeHref } from "@/lib/safe-href";
 import { formatDate, formatRelative, formatCurrency } from "@/lib/formatters";
 import { formatMoney, type Money } from "@repo/shared/types";
+import { lazy, Suspense } from "react";
+import { countryFlag, countryName } from "@/lib/countries";
+import { formatTimeOfDay } from "@/lib/field-formats";
+
+// libphonenumber's metadata loads with the first phone cell, not with every
+// table.
+const PhoneCell = lazy(() => import("./phone-cell"));
 
 export function renderCell(
   column: ColumnDefinition,
@@ -537,6 +544,31 @@ export function renderCell(
       break;
     case "richtext":
       content = <RichTextCell value={String(value)} />;
+      break;
+    case "domain":
+      content = <DomainCell value={String(value)} />;
+      break;
+    case "tel":
+      content = (
+        <Suspense fallback={<span className="font-mono text-sm tabular-nums">{String(value)}</span>}>
+          <PhoneCell value={String(value)} />
+        </Suspense>
+      );
+      break;
+    case "country":
+      content = <CountryCell value={String(value)} />;
+      break;
+    case "percent":
+      content = <PercentCell value={Number(value)} />;
+      break;
+    case "rating":
+      content = <RatingCell value={Number(value)} max={column.ratingMax ?? 5} />;
+      break;
+    case "time":
+      content = <span className="text-sm tabular-nums">{formatTimeOfDay(String(value))}</span>;
+      break;
+    case "json":
+      content = <JSONCell value={value} />;
       break;
     case "user":
       // v3.31.5: packed avatar + name + email cell. Pulls the related
@@ -792,7 +824,7 @@ function EmailCell({ value }: { value: string }) {
   );
 }
 
-function ColorCell({ value }: { value: string }) {
+` + fieldTypeCells + `function ColorCell({ value }: { value: string }) {
   return (
     <div className="inline-flex items-center gap-2">
       <span
@@ -1338,3 +1370,69 @@ export function formatCurrency(value: number, prefix = "$"): string {
 }
 `
 }
+
+// fieldTypeCells are the table cells of the formatted field types, spliced into
+// cell-renderers.tsx.
+const fieldTypeCells = `function DomainCell({ value }: { value: string }) {
+  // Stored bare (example.co.ug), so the scheme is the cell's to add.
+  return (
+    <a
+      href={safeHref("https://" + value)}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
+    >
+      {value}
+      <ExternalLink className="h-3 w-3" />
+    </a>
+  );
+}
+
+function CountryCell({ value }: { value: string }) {
+  return (
+    <span className="inline-flex items-center gap-2 text-sm">
+      <span aria-hidden="true">{countryFlag(value)}</span>
+      {countryName(value)}
+    </span>
+  );
+}
+
+function PercentCell({ value }: { value: number }) {
+  if (!Number.isFinite(value)) return <span className="text-text-muted">{String(value)}</span>;
+  return (
+    <span className="block text-right font-mono text-sm tabular-nums">
+      {new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(value)}%
+    </span>
+  );
+}
+
+function RatingCell({ value, max }: { value: number; max: number }) {
+  if (!value) return <span className="text-xs text-text-muted">Not rated</span>;
+  return (
+    <span role="img" aria-label={value + " out of " + max + " stars"} className="inline-flex items-center gap-0.5">
+      {Array.from({ length: max }, (_, i) => (
+        <svg key={i} aria-hidden="true" viewBox="0 0 24 24" className={"h-3.5 w-3.5 " + (i < value ? "text-warning" : "text-text-muted")} fill={i < value ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+          <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" />
+        </svg>
+      ))}
+    </span>
+  );
+}
+
+function JSONCell({ value }: { value: unknown }) {
+  // Collapsed to one line in a table; open it to read the whole value.
+  const full = JSON.stringify(value, null, 2) ?? "";
+  const line = JSON.stringify(value) ?? "";
+  return (
+    <details className="max-w-xs text-xs">
+      <summary className="cursor-pointer truncate font-mono text-text-secondary">
+        {line.length > 60 ? line.slice(0, 60) + "…" : line}
+      </summary>
+      <pre className="mt-1 max-h-64 overflow-auto rounded-md border border-border bg-bg-secondary p-2 font-mono text-text-secondary">
+        {full}
+      </pre>
+    </details>
+  );
+}
+
+`

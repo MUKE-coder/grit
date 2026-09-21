@@ -463,6 +463,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairBackgroundWork(root, opts); err != nil {
 			fmt.Printf("  ⚠ bounding background work: %v\n", err)
 		}
+		// The formatted field types: internal/fieldtypes and the call that
+		// installs it, so a resource generated with email, url, domain, tel,
+		// country, color, percent, rating, time or json fields is checked on
+		// every write. internal/phone is refreshed where a tel field put it.
+		if err := repairFieldTypes(root, opts); err != nil {
+			fmt.Printf("  ⚠ adding the field type checks: %v\n", err)
+		}
 		// Forwarded headers are believed only from TRUSTED_PROXIES, so a client
 		// cannot choose the IP its sessions, audit rows and rate limits carry.
 		if err := repairTrustedProxies(root, opts); err != nil {
@@ -591,6 +598,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairInfraHygiene(root, opts); err != nil {
 			fmt.Printf("  ⚠ updating images, pnpm, seeds and MinIO: %v\n", err)
 		}
+		if err := repairFieldTypes(root, opts); err != nil {
+			fmt.Printf("  ⚠ adding the field type checks: %v\n", err)
+		}
 	}
 
 	// --- Shared package ---
@@ -608,6 +618,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 			return fmt.Errorf("updating shared files: %w", err)
 		}
 		updated += n
+		// The Zod schemas a resource with formatted fields imports. New files,
+		// so nothing a project has is touched.
+		if err := ensureSharedFieldFormats(filepath.Join(root, "packages", "shared")); err != nil {
+			return fmt.Errorf("adding the field format schemas: %w", err)
+		}
 	}
 
 	// --- The web app's section layouts (v3.237.0) ---
@@ -675,6 +690,17 @@ func Upgrade(uOpts UpgradeOptions) error {
 			green.Printf("  ✓ Admin panel available at /admin/dashboard (%d files)\n", n)
 		}
 		updated += n
+
+		// A web package.json the developer has edited is left alone above, so it
+		// never receives a dependency a newer panel imports: the phone and country
+		// inputs brought two, and the build then fails on an unresolved import.
+		// Add only the entries that are missing, matched by package name, and
+		// leave every version the developer chose exactly as it is.
+		if ok, err := insertMissingAfter(filepath.Join(webHost, "package.json"), `"dependencies": {`, embeddedWebDependencyLines(opts)); err != nil {
+			return fmt.Errorf("adding the admin panel's dependencies to apps/web/package.json: %w", err)
+		} else if ok {
+			green.Printf("  ✓ apps/web/package.json: added the admin panel's missing dependencies (run pnpm install)\n")
+		}
 	}
 
 	// --- The admin panel inside the SPA (a single) ---

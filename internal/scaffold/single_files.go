@@ -113,6 +113,9 @@ func singleSharedMirrorFiles(root string, opts Options) map[string]string {
 	for path, body := range sharedModelTypeFiles(shared) {
 		files[path] = body
 	}
+	for path, body := range sharedFieldFormatFiles(shared) {
+		files[path] = body
+	}
 	return files
 }
 
@@ -527,7 +530,7 @@ func singleFrontendPackageJSON(opts Options) string {
     "format": "`+biomeFormatScript+`"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.62.0",
+`+fieldInputDependencyLines("    ")+`    "@tanstack/react-query": "^5.62.0",
     "@tanstack/react-router": "^1.93.0",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",

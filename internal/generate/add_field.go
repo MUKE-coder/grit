@@ -16,6 +16,12 @@ var addFieldSupported = map[FieldType]bool{
 	FieldInt: true, FieldUint: true, FieldFloat: true,
 	FieldBool: true, FieldToggle: true, FieldSelect: true,
 	FieldDate: true, FieldDatetime: true,
+	// The formatted types are a column plus a struct tag, so they add in place
+	// like the plain ones. json is the exception: it needs gorm.io/datatypes
+	// imported into the model and the handler.
+	FieldEmail: true, FieldURL: true, FieldDomain: true, FieldTel: true,
+	FieldCountry: true, FieldColor: true, FieldPercent: true, FieldRating: true,
+	FieldTime: true,
 }
 
 // AddField adds a single field to an already-generated resource, in place: it
@@ -49,6 +55,12 @@ func AddField(resourceName, spec string) error {
 		return err
 	}
 	names := BuildNames(existing)
+
+	// The checks the new column's format tag names, before the model refers
+	// to them.
+	if err := g.ensureFieldTypeSupport([]Field{f}); err != nil {
+		return err
+	}
 
 	if err := g.injectModelField(names, f); err != nil {
 		return err
@@ -159,6 +171,12 @@ func (g *Generator) injectModelField(names Names, f Field) error {
 	if FieldType(f.Type) == FieldRichtext && !f.Encrypted {
 		tags += ` sanitize:"html"`
 	}
+	if format := f.FormatTag(); format != "" {
+		tags += fmt.Sprintf(` format:"%s"`, format)
+		if docs := f.DocsTag(); docs != "" {
+			tags += fmt.Sprintf(` docs:"%s"`, docs)
+		}
+	}
 	line := fmt.Sprintf("\t%s %s `%s`", goName, f.GoType(), tags)
 	return injectModelLine(path, names.Pascal, line)
 }
@@ -166,6 +184,11 @@ func (g *Generator) injectModelField(names Names, f Field) error {
 func (g *Generator) injectZodField(names Names, f Field) error {
 	path := filepath.Join(g.SharedRoot(), "schemas", names.Kebab+".ts")
 	snake := toSnakeCase(f.Name)
+	if module, name := f.SharedSchema(); module != "" {
+		if err := ensureTSNamedImport(path, module, name); err != nil {
+			return err
+		}
+	}
 	if err := injectAfterAnchor(path,
 		fmt.Sprintf("export const Create%sSchema = z.object({", names.Pascal),
 		fmt.Sprintf("  %s: %s,", snake, f.ZodType())); err != nil {
@@ -207,8 +230,26 @@ func (g *Generator) injectAdminField(names Names, f Field) error {
 	if f.HasOptions() {
 		formParts = append(formParts, "options: "+f.OptionsLiteral())
 	}
+	colParts := []string{fmt.Sprintf(`key: "%s"`, snake), fmt.Sprintf(`label: "%s"`, label)}
+	switch FieldType(f.Type) {
+	case FieldTel:
+		if f.DefaultCountry != "" {
+			formParts = append(formParts, fmt.Sprintf(`defaultCountry: %q`, f.DefaultCountry))
+		}
+	case FieldCountry:
+		if f.DefaultCountry != "" {
+			formParts = append(formParts, fmt.Sprintf(`defaultValue: %q`, f.DefaultCountry))
+		}
+	case FieldRating:
+		formParts = append(formParts, fmt.Sprintf(`max: %d`, f.RatingMax()))
+		colParts = append(colParts, fmt.Sprintf(`ratingMax: %d`, f.RatingMax()))
+	}
+	// A formatted column renders as its type: a mailto link, stars, a swatch.
+	if f.IsFormatted() {
+		colParts = append(colParts, fmt.Sprintf(`format: "%s"`, f.ColumnFormat()))
+	}
 	formLine := "      { " + strings.Join(formParts, ", ") + " },"
-	colLine := fmt.Sprintf(`      { key: "%s", label: "%s" },`, snake, label)
+	colLine := "      { " + strings.Join(colParts, ", ") + " },"
 
 	injected := false
 	for _, path := range candidates {

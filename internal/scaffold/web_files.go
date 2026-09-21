@@ -142,11 +142,27 @@ func webAdminDependencies(opts Options) string {
 	}
 	return `,
     "@react-pdf/renderer": "^4.1.5",
-` + tiptapDependencyLines("    ") + `    "react-dropzone": "^14.2.0",
+` + fieldInputDependencyLines("    ") + tiptapDependencyLines("    ") + `    "react-dropzone": "^14.2.0",
     "recharts": "^2.12.0",
     "sonner": "^1.3.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^3.22.0"`
+}
+
+// embeddedWebDependencyLines are webAdminDependencies as package.json lines, each
+// ending in a comma, for inserting into an existing web app's dependencies.
+// Built from the template's own list so the upgrade cannot drift from what a new
+// project gets.
+func embeddedWebDependencyLines(opts Options) []string {
+	var out []string
+	for _, line := range strings.Split(webAdminDependencies(opts), "\n") {
+		line = strings.TrimRight(strings.TrimSpace(line), ",")
+		if line == "" {
+			continue
+		}
+		out = append(out, "    "+line+",")
+	}
+	return out
 }
 
 func webNextConfig() string {

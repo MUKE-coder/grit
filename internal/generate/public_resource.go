@@ -85,6 +85,12 @@ func publishableByDefault(f Field) bool {
 		// A relation would publish the whole related record, including columns
 		// nobody vetted. Expose a name or a slug from it deliberately instead.
 		return false
+	case FieldURL, FieldDomain, FieldCountry, FieldColor, FieldPercent, FieldRating, FieldTime:
+		return true
+	case FieldEmail, FieldTel, FieldJSON:
+		// An email address and a phone number are personal data, and a JSON
+		// column holds whatever was put in it. Publish one deliberately.
+		return false
 	}
 	return false
 }
@@ -194,7 +200,7 @@ func (g *Generator) publicHandlerSource(names Names, included []Field) string {
 		case FieldString, FieldText, FieldSlug:
 			searchable = append(searchable, strconvQuote(jsonName))
 			sortable = append(sortable, strconvQuote(jsonName)+": true")
-		case FieldFloat, FieldInt, FieldDate, FieldDatetime:
+		case FieldFloat, FieldInt, FieldDate, FieldDatetime, FieldPercent, FieldRating, FieldTime, FieldCountry:
 			sortable = append(sortable, strconvQuote(jsonName)+": true")
 		}
 	}
@@ -211,9 +217,9 @@ func (g *Generator) publicHandlerSource(names Names, included []Field) string {
 	for _, f := range included {
 		col := strconvQuote(toSnakeCase(f.Name)) + ": true"
 		switch FieldType(f.Type) {
-		case FieldString, FieldSlug, FieldBool, FieldToggle, FieldSelect, FieldRadio:
+		case FieldString, FieldSlug, FieldBool, FieldToggle, FieldSelect, FieldRadio, FieldCountry, FieldColor:
 			filterable = append(filterable, col)
-		case FieldInt, FieldFloat:
+		case FieldInt, FieldFloat, FieldPercent, FieldRating:
 			// Both: ?year=2024 is an equality question, ?price_min=50 a window.
 			filterable = append(filterable, col)
 			rangeFilterable = append(rangeFilterable, col)
@@ -533,9 +539,9 @@ func (s *` + p + `Service) RelatedPublic(ctx context.Context, item *models.` + p
 // resources anyone would want public.
 func publicGoType(f Field) string {
 	switch FieldType(f.Type) {
-	case FieldInt:
+	case FieldInt, FieldRating:
 		return "int"
-	case FieldFloat:
+	case FieldFloat, FieldPercent:
 		return "float64"
 	case FieldBool:
 		return "bool"

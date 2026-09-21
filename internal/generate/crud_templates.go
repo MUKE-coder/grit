@@ -465,7 +465,7 @@ type %sLinks struct {
 			continue
 		}
 		switch f.FormFieldType() {
-		case "image", "images", "video", "videos", "file", "files", "richtext":
+		case "image", "images", "video", "videos", "file", "files", "richtext", "json":
 			continue
 		}
 		label := strings.Join(splitPascal(toPascalCase(f.Name)), " ")
@@ -485,12 +485,12 @@ type %sLinks struct {
 				continue
 			}
 			switch cf.FormFieldType() {
-			case "image", "images", "video", "videos", "file", "files", "richtext":
+			case "image", "images", "video", "videos", "file", "files", "richtext", "json":
 				continue
 			}
 			headers += fmt.Sprintf("%q, ", strings.Join(splitPascal(toPascalCase(cf.Name)), " "))
 			cells += fmt.Sprintf("pdf.Value(row.%s), ", toPascalCase(cf.Name))
-			if cf.FormFieldType() == "number" {
+			if t := cf.FormFieldType(); t == "number" || t == "percent" || t == "rating" {
 				aligns += `"R", `
 			} else {
 				aligns += `"L", `

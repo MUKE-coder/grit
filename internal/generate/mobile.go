@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -237,6 +238,16 @@ func (g *Generator) mobileDetailRows() string {
 		case FieldType(f.Type) == FieldDatetime || FieldType(f.Type) == FieldDate:
 			label = humanizeLabel(f.Name)
 			valueExpr = "item." + n + " ? new Date(item." + n + ").toLocaleString() : \"—\""
+		case FieldType(f.Type) == FieldJSON:
+			// An object is not something a Text can hold.
+			label = humanizeLabel(f.Name)
+			valueExpr = "item." + n + " != null ? JSON.stringify(item." + n + ") : \"\""
+		case FieldType(f.Type) == FieldPercent:
+			label = humanizeLabel(f.Name)
+			valueExpr = "item." + n + " != null ? item." + n + " + \"%\" : \"\""
+		case FieldType(f.Type) == FieldRating:
+			label = humanizeLabel(f.Name)
+			valueExpr = fmt.Sprintf("item.%s ? item.%s + \" / %d\" : \"Not rated\"", n, n, f.RatingMax())
 		default:
 			label = humanizeLabel(f.Name)
 			valueExpr = "item." + n
@@ -360,8 +371,11 @@ func mobileColumnFor(f Field) (cellExpr string, width int, sortKey string) {
 		return "(item." + base + " && (item." + base + ".name || item." + base + ".title)) || item." + f.FKColumnName() + " || \"\"", 150, ""
 	case FieldType(f.Type) == FieldBool:
 		return "item." + n + " ? \"Yes\" : \"No\"", 90, ""
-	case FieldType(f.Type) == FieldInt || FieldType(f.Type) == FieldUint || FieldType(f.Type) == FieldFloat:
+	case FieldType(f.Type) == FieldInt || FieldType(f.Type) == FieldUint || FieldType(f.Type) == FieldFloat ||
+		FieldType(f.Type) == FieldPercent || FieldType(f.Type) == FieldRating:
 		return "String(item." + n + " ?? \"\")", 110, n
+	case FieldType(f.Type) == FieldJSON:
+		return "item." + n + " != null ? JSON.stringify(item." + n + ") : \"\"", 180, ""
 	case FieldType(f.Type) == FieldDatetime || FieldType(f.Type) == FieldDate:
 		return "item." + n + " ? new Date(item." + n + ").toLocaleDateString() : \"\"", 140, n
 	default: // string, slug, text, richtext
@@ -888,6 +902,11 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
 			fieldsJSX.WriteString("        )}\n")
 			fieldsJSX.WriteString("      </Pressable>\n")
 
+		case f.IsFormatted():
+			if mobileFormattedField(f, n, camel, pascal, label, &stateLines, &payload, &fieldsJSX, &validations) {
+				hasNumber = true
+			}
+
 		case t == FieldBool:
 			stateLines.WriteString("  const [" + camel + ", set" + pascal + "] = useState(i." + n + " ?? false);\n")
 			payload.WriteString("        " + n + ": " + camel + ",\n")
@@ -1136,6 +1155,66 @@ func mobileNumberInput(label, valueVar, setter string, allowDecimal bool) string
 	return "        <Text className={labelClass}>" + label + "</Text>\n" +
 		"        <TextInput className={inputClass} placeholder=\"" + label + "\" placeholderTextColor=\"#9CA3AF\" value={" + valueVar +
 		"} onChangeText={(t) => " + setter + "(formatNumberInput(t" + decArg + "))} keyboardType=\"" + keyboard + "\" />\n"
+}
+
+// mobileFormattedField writes the state, payload, input and check for a
+// formatted field in the Expo form. The phone gets the phone keyboard and an
+// E.164 check, the web fields the URL or email keyboard with no
+// autocapitalisation; the API applies the full rules either way. Reports
+// whether it used the number helpers.
+func mobileFormattedField(f Field, n, camel, pascal, label string, state, payload, jsx, checks *strings.Builder) bool {
+	setter := "set" + pascal
+	check := func(cond, msg string) {
+		checks.WriteString("    if (" + camel + ".trim() && " + cond + ") return setError(" + strconv.Quote(msg) + ");\n")
+	}
+	text := func(keyboard, value string) {
+		state.WriteString("  const [" + camel + ", " + setter + "] = useState<string>(i." + n + " ?? \"\");\n")
+		payload.WriteString("        " + n + ": " + value + ",\n")
+		jsx.WriteString("        <Text className={labelClass}>" + label + "</Text>\n" +
+			"        <TextInput className={inputClass} placeholder=\"" + label + "\" placeholderTextColor=\"#9CA3AF\" value={" + camel +
+			"} onChangeText={" + setter + "} keyboardType=\"" + keyboard + "\" autoCapitalize=\"none\" autoCorrect={false} />\n")
+	}
+	switch FieldType(f.Type) {
+	case FieldEmail:
+		text("email-address", camel+".trim().toLowerCase()")
+		check("!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test("+camel+".trim())", label+" is not a valid email address")
+	case FieldURL:
+		text("url", camel+".trim()")
+		check("!/^https?:\\/\\/\\S+\\.\\S+/i.test("+camel+".trim())", label+" must start with http:// or https://")
+	case FieldDomain:
+		text("url", camel+".trim().toLowerCase().replace(/^[a-z]+:\\/\\//, \"\").split(\"/\")[0]")
+	case FieldTel:
+		text("phone-pad", camel+".replace(/[\\s()-]/g, \"\")")
+		check("!/^\\+[1-9][0-9]{6,14}$/.test("+camel+".replace(/[\\s()-]/g, \"\"))", label+" must start with + and the country code, such as +256772123456")
+	case FieldCountry:
+		text("default", camel+".trim().toUpperCase()")
+		check("!/^[A-Za-z]{2}$/.test("+camel+".trim())", label+" must be a two-letter country code, such as UG")
+	case FieldColor:
+		text("default", camel+".trim().toLowerCase()")
+		check("!/^#[0-9a-f]{6}$/i.test("+camel+".trim())", label+" must be a hex colour, such as #6c5ce7")
+	case FieldTime:
+		text("numbers-and-punctuation", camel+".trim()")
+		check("!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test("+camel+".trim())", label+" must be a time such as 14:30")
+	case FieldPercent:
+		state.WriteString("  const [" + camel + ", " + setter + "] = useState(i." + n + " != null ? formatNumberInput(String(i." + n + "), true) : \"\");\n")
+		payload.WriteString("        " + n + ": parseNumberInput(" + camel + "),\n")
+		jsx.WriteString(mobileNumberInput(label+" (%)", camel, setter, true))
+		check("!(parseNumberInput("+camel+") >= 0 && parseNumberInput("+camel+") <= 100)", label+" must be between 0 and 100")
+		return true
+	case FieldRating:
+		state.WriteString("  const [" + camel + ", " + setter + "] = useState(i." + n + " != null ? formatNumberInput(String(i." + n + ")) : \"\");\n")
+		payload.WriteString("        " + n + ": parseNumberInput(" + camel + "),\n")
+		jsx.WriteString(mobileNumberInput(fmt.Sprintf("%s (1 to %d)", label, f.RatingMax()), camel, setter, false))
+		check(fmt.Sprintf("!(parseNumberInput(%s) >= 0 && parseNumberInput(%s) <= %d)", camel, camel, f.RatingMax()),
+			fmt.Sprintf("%s must be from 1 to %d", label, f.RatingMax()))
+		return true
+	case FieldJSON:
+		state.WriteString("  const [" + camel + ", " + setter + "] = useState<string>(i." + n + " != null ? JSON.stringify(i." + n + ", null, 2) : \"\");\n")
+		payload.WriteString("        " + n + ": " + camel + ".trim() ? JSON.parse(" + camel + ") : null,\n")
+		jsx.WriteString(mobileTextInput(label, camel, setter, "default", true))
+		checks.WriteString("    try {\n      if (" + camel + ".trim()) JSON.parse(" + camel + ");\n    } catch {\n      return setError(" + strconv.Quote(label+" is not valid JSON") + ");\n    }\n")
+	}
+	return false
 }
 
 func mobileTextInput(label, valueVar, setter, keyboard string, multiline bool) string {
