@@ -79,6 +79,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "activity_read_test.go"):    apiActivityReadTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "activity.go"):                apiActivityHandlerGo(),
 		filepath.Join(apiRoot, "internal", "respond", "respond.go"):                  apiRespondGo(),
+		filepath.Join(apiRoot, "internal", "respond", "respond_test.go"):             apiRespondTestGo(),
 		// The error catalogue, generated: the typed codes and the status each one
 		// always carries. Here as well as in writeRespondFiles, because that one
 		// runs on upgrade and this map is what a new project gets: generated
@@ -7726,6 +7727,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -7855,8 +7858,9 @@ type FieldErrors interface {
 // WriteError picks the right response for an error returned by a write.
 //
 // An error that carries its own code is answered with that code's status. A rule
-// the caller broke becomes 422 with its message. A missing row becomes 404.
-// Everything else is logged and comes back as an opaque 500, which is what it was
+// the caller broke becomes 422 with its message. A missing row becomes 404. A
+// value a unique column already holds becomes 409, naming the field when the
+// database says which. Everything else is logged and comes back as an opaque 500, which is what it was
 // before, minus the part where the error vanished entirely.
 func WriteError(c *gin.Context, err error, fallback string) {
 	var fields FieldErrors
@@ -7877,7 +7881,107 @@ func WriteError(c *gin.Context, err error, fallback string) {
 		NotFound(c, "")
 		return
 	}
+	if field, ok := DuplicateKey(c, err); ok {
+		duplicate(c, field)
+		return
+	}
 	ServerError(c, "INTERNAL_ERROR", err, fallback)
+}
+
+// DuplicateKey reports whether err is a unique-constraint violation, and the
+// column it was on when the driver's message says so.
+//
+// GORM has gorm.ErrDuplicatedKey, but it only translates the driver's error
+// into it when the connection was opened with TranslateError, so the four
+// drivers Grit runs on are also matched by message. Without this a second
+// contact with the same code came back as a 500 "Failed to create contact",
+// which tells the person filling the form nothing they can fix.
+func DuplicateKey(c *gin.Context, err error) (string, bool) {
+	if err == nil {
+		return "", false
+	}
+	msg := err.Error()
+	lower := strings.ToLower(msg)
+	found := errors.Is(err, gorm.ErrDuplicatedKey)
+	for _, marker := range []string{
+		"duplicate key value",      // Postgres
+		"unique constraint failed", // SQLite
+		"duplicate entry",          // MySQL
+		"violation of unique key",  // SQL Server
+	} {
+		if strings.Contains(lower, marker) {
+			found = true
+		}
+	}
+	if !found {
+		return "", false
+	}
+	return duplicateColumn(c, msg), true
+}
+
+// sqliteUnique is "UNIQUE constraint failed: contacts.code"; constraintName
+// is the quoted index name Postgres, MySQL and SQL Server report.
+var (
+	sqliteUnique   = regexp.MustCompile(` + "`" + `(?i)unique constraint failed: ([\w.]+)` + "`" + `)
+	constraintName = regexp.MustCompile(` + "`" + `(?i)(?:constraint|key|index) ['"]([\w.]+)['"]` + "`" + `)
+)
+
+// duplicateColumn names the column when it can be told, and "" when not.
+//
+// SQLite names it outright. The others name the index, which GORM calls
+// idx_<table>_<column> or uni_<table>_<column>; the table is taken from the
+// route (/api/contacts/:id is contacts), so the column is what is left. When
+// that does not line up the column is not guessed: the 409 still stands, just
+// without saying which field.
+func duplicateColumn(c *gin.Context, msg string) string {
+	if m := sqliteUnique.FindStringSubmatch(msg); m != nil {
+		col := m[1]
+		if i := strings.LastIndex(col, "."); i >= 0 {
+			col = col[i+1:]
+		}
+		return col
+	}
+	m := constraintName.FindStringSubmatch(msg)
+	if m == nil {
+		return ""
+	}
+	name := m[1]
+	if i := strings.LastIndex(name, "."); i >= 0 {
+		name = name[i+1:] // MySQL 8: 'contacts.idx_contacts_code'
+	}
+	table := routeTable(c)
+	for _, prefix := range []string{"idx_", "uni_"} {
+		if table != "" && strings.HasPrefix(name, prefix+table+"_") {
+			return strings.TrimPrefix(name, prefix+table+"_")
+		}
+	}
+	return ""
+}
+
+// routeTable is the resource segment of the matched route: the last segment
+// that is not a parameter, with dashes as underscores.
+func routeTable(c *gin.Context) string {
+	if c == nil {
+		return ""
+	}
+	parts := strings.Split(strings.Trim(c.FullPath(), "/"), "/")
+	for i := len(parts) - 1; i >= 0; i-- {
+		if parts[i] != "" && !strings.HasPrefix(parts[i], ":") && !strings.HasPrefix(parts[i], "*") {
+			return strings.ReplaceAll(parts[i], "-", "_")
+		}
+	}
+	return ""
+}
+
+// duplicate answers 409, naming the field when it is known so a form can put
+// the message under that input.
+func duplicate(c *gin.Context, field string) {
+	if field == "" {
+		Fail(c, CodeConflict, "A record with that value already exists")
+		return
+	}
+	label := strings.ReplaceAll(field, "_", " ")
+	Fail(c, CodeConflict, "That "+label+" is already taken", map[string]string{field: "This " + label + " is already taken"})
 }
 
 // Internal answers 500 with a generic message. The error is logged with the

@@ -267,38 +267,50 @@ func EncryptExisting(db *gorm.DB, models ...interface{}) (int64, error) {
 	return total, nil
 }
 
+// pendingValue is one plaintext value waiting to be encrypted.
+type pendingValue struct {
+	id    interface{}
+	value string
+}
+
+// plaintextBatch reads up to batch rows whose column is not encrypted yet.
+//
+// rows.Err is checked after the loop: a read that failed partway otherwise
+// looks like a short batch, which the caller takes for the last one, and the
+// backfill stopped with plaintext left behind and nothing said.
+func plaintextBatch(db *gorm.DB, model interface{}, pk string, col clause.Column, batch int) ([]pendingValue, error) {
+	rows, err := db.Unscoped().Model(model).
+		Select([]string{pk, col.Name}).
+		Where("? <> '' AND ? NOT LIKE ?", col, col, cipherPrefix+"%").
+		Order(clause.OrderByColumn{Column: clause.Column{Name: pk}}).
+		Limit(batch).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var found []pendingValue
+	for rows.Next() {
+		var id interface{}
+		var value sql.NullString
+		if err := rows.Scan(&id, &value); err != nil {
+			return nil, err
+		}
+		if b, ok := id.([]byte); ok {
+			id = string(b)
+		}
+		found = append(found, pendingValue{id: id, value: value.String})
+	}
+	return found, rows.Err()
+}
+
 // encryptColumn encrypts one column's plaintext values, a batch at a time.
 func encryptColumn(db *gorm.DB, model interface{}, pk, column string) (int64, error) {
 	const batch = 500
-	type pending struct {
-		id    interface{}
-		value string
-	}
 	col := clause.Column{Name: column}
 	var written int64
 	for {
-		rows, err := db.Unscoped().Model(model).
-			Select([]string{pk, column}).
-			Where("? <> '' AND ? NOT LIKE ?", col, col, cipherPrefix+"%").
-			Order(clause.OrderByColumn{Column: clause.Column{Name: pk}}).
-			Limit(batch).Rows()
+		found, err := plaintextBatch(db, model, pk, col, batch)
 		if err != nil {
-			return written, err
-		}
-		var found []pending
-		for rows.Next() {
-			var id interface{}
-			var value sql.NullString
-			if err := rows.Scan(&id, &value); err != nil {
-				_ = rows.Close()
-				return written, err
-			}
-			if b, ok := id.([]byte); ok {
-				id = string(b)
-			}
-			found = append(found, pending{id: id, value: value.String})
-		}
-		if err := rows.Close(); err != nil {
 			return written, err
 		}
 

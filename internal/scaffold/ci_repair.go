@@ -39,8 +39,14 @@ func repairCIWorkflows(root string, opts Options) error {
 	if path := filepath.Join(workflows, "ci.yml"); !fileExists(path) || gritWroteFile(root, path) {
 		files[path] = ciYAML(ci)
 	}
+	// The allowlist security.yml reads. New, like ci.yml, and kept when the
+	// project has one of its own.
+	allow := filepath.Join(root, ".github", "govulncheck-allow.txt")
+	if fileExists(filepath.Join(workflows, "security.yml")) && (!fileExists(allow) || gritWroteFile(root, allow)) {
+		files[allow] = govulncheckAllowTXT()
+	}
 	for path, content := range files {
-		if !fileExists(path) && !strings.HasSuffix(path, "ci.yml") {
+		if !fileExists(path) && !strings.HasSuffix(path, "ci.yml") && path != allow {
 			// A workflow the project deleted stays deleted.
 			continue
 		}

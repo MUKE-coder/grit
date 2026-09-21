@@ -303,6 +303,11 @@ func TestGzipStreamsServerSentEvents(t *testing.T) {
 
 // Compressors are pooled: a thousand compressed responses must not each build
 // one.
+//
+// An unpooled compressor costs about 1.2 MB. The limit sits at half that, not
+// near zero, because go test -race makes sync.Pool drop a quarter of what is
+// put back, on purpose: pooled responses then average about 300 KB, and a
+// tighter limit failed every project's CI, which runs with -race.
 func TestGzipReusesCompressors(t *testing.T) {
 	r := gzipRouter()
 	get(r, "/json", "gzip")
@@ -314,7 +319,7 @@ func TestGzipReusesCompressors(t *testing.T) {
 		get(r, "/json", "gzip")
 	}
 	runtime.ReadMemStats(&after)
-	if perRequest := (after.TotalAlloc - before.TotalAlloc) / n; perRequest > 256<<10 {
+	if perRequest := (after.TotalAlloc - before.TotalAlloc) / n; perRequest > 640<<10 {
 		t.Errorf("%d KB allocated per compressed response; the compressor is not being reused", perRequest>>10)
 	}
 }

@@ -825,6 +825,11 @@ func (i *Image) Store(ctx context.Context, disk Disk, dir string, visibility Vis
 	if disk == nil {
 		return "", errors.New("media: Store needs a disk")
 	}
+	if ctx == nil {
+		// Refused rather than replaced with context.Background(): a stand-in
+		// context outlives the request it was meant to belong to.
+		return "", errors.New("media: Store needs a context: the request's, or context.Background() outside one")
+	}
 	var prefix string
 	switch visibility {
 	case PublicFile:
@@ -897,9 +902,6 @@ func putFile(ctx context.Context, disk Disk, key string, data []byte, contentTyp
 	}
 	if field := opts.FieldByName("Visibility"); field.IsValid() && field.CanSet() && field.Kind() == reflect.String {
 		field.SetString(string(visibility))
-	}
-	if ctx == nil {
-		ctx = context.Background()
 	}
 	out := method.Call([]reflect.Value{
 		reflect.ValueOf(&ctx).Elem(),

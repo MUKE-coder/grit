@@ -390,7 +390,10 @@ func (h *Hub) presenceLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			h.presenceBeat()
+			// Each presence write carries its own presenceTimeout, because
+			// join and leave also run from a connection closing, where there
+			// is no request to inherit from. The loop's ctx only stops it.
+			h.presenceBeat() //nolint:contextcheck // bounded per call, see above
 		}
 	}
 }

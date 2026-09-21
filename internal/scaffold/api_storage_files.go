@@ -1033,7 +1033,6 @@ type UploadHandler struct {
 				uploadSlots  = make(chan struct{}, 4)
 			)
 			for _, r := range res.Extra {
-				r := r
 				renditionsWG.Add(1)
 				uploadSlots <- struct{}{}
 				go func() {

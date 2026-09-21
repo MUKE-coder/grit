@@ -460,7 +460,9 @@ func (s *TicketService) announce(ctx context.Context, t *models.Ticket, creator 
 			log.Printf("tickets: queueing the email for %s: %v", t.ID, err)
 		}
 	case s.Mail != nil:
-		if err := SendTicketCreatedEmail(s.Mail, t, creator); err != nil {
+		// Not the request's context: the email carries its own timeout, so a
+		// client that hangs up does not cancel the mail support is owed.
+		if err := SendTicketCreatedEmail(s.Mail, t, creator); err != nil { //nolint:contextcheck // see above
 			log.Printf("tickets: emailing support about %s: %v", t.ID, err)
 		}
 	}

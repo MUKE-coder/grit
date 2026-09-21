@@ -148,11 +148,14 @@ func (r *Relay) Tick(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	for i, m := range batch {
-		if ctx.Err() != nil {
-			// Stopping. Hand back what this relay claimed and has not tried, so
-			// another replica delivers it now rather than after ClaimTimeout.
+		select {
+		case <-ctx.Done():
+			// Stopping, which is not a failure. Hand back what this relay
+			// claimed and has not tried, so another replica delivers it now
+			// rather than after ClaimTimeout.
 			r.release(batch[i:])
 			return i, nil
+		default:
 		}
 		r.attempt(ctx, m)
 	}

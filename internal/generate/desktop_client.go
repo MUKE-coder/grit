@@ -550,9 +550,9 @@ function ` + Plural + `Page() {
             if (await confirm({ title: "Delete ` + lower + `", message: "This will delete this ` + lower + `. This action cannot be undone.", danger: true, confirmLabel: "Delete" })) del.mutate(String(row.id));
           }}
           onBulkDelete={async (rows) => {
-            if (await confirm({ title: "Delete ` + lower + `s", message: "Delete " + rows.length + " ` + lower + `(s)? This cannot be undone.", danger: true, confirmLabel: "Delete" })) rows.forEach((r) => del.mutate(String(r.id)));
+            if (await confirm({ title: "Delete ` + lower + `s", message: "Delete " + rows.length + " ` + lower + `(s)? This cannot be undone.", danger: true, confirmLabel: "Delete" })) rows.forEach((r) => { del.mutate(String(r.id)); });
           }}
-          onImport={(records) => records.forEach((rec) => create.mutate(rec))}
+          onImport={(records) => records.forEach((rec) => { create.mutate(rec); })}
         />
       </div>
 

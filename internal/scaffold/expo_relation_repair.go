@@ -301,13 +301,27 @@ func repairDesktopListSource(src string) (string, []string, []string) {
 		renamed[g[1]] = true
 		return g[1] + "_label: " + g[2] + "Map.get(String((r as any)."
 	})
-	if len(renamed) == 0 {
+	var changes []string
+	if len(renamed) > 0 {
+		for field := range renamed {
+			out = strings.ReplaceAll(out, `{ key: "`+field+`", `, `{ key: "`+field+`_label", `)
+		}
+		changes = append(changes, "related records' names go in their own column key, so the rows type-check")
+	}
+	// Biome's useIterableCallbackReturn is an error, and these two failed the
+	// lint job of every project with a generated desktop list.
+	callbacks := strings.NewReplacer(
+		"rows.forEach((r) => del.mutate(String(r.id)));", "rows.forEach((r) => { del.mutate(String(r.id)); });",
+		"records.forEach((rec) => create.mutate(rec))}", "records.forEach((rec) => { create.mutate(rec); })}",
+	)
+	if next := callbacks.Replace(out); next != out {
+		out = next
+		changes = append(changes, "bulk delete and import callbacks return nothing, so Biome's lint passes")
+	}
+	if len(changes) == 0 {
 		return src, nil, nil
 	}
-	for field := range renamed {
-		out = strings.ReplaceAll(out, `{ key: "`+field+`", `, `{ key: "`+field+`_label", `)
-	}
-	return out, []string{"related records' names go in their own column key, so the rows type-check"}, nil
+	return out, changes, nil
 }
 
 // desktopTSConfigNodeOutDir sends what tsc -b emits for vite.config.ts into

@@ -66,6 +66,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.303.0 */}
+            <div className="mb-12" id="v3.303.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.303.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A duplicate value answers 409, and a new project&apos;s CI passes on its first push</h3>
+                <p>
+                  <strong>A value a unique field already holds is a conflict, not a server error.</strong> Saving
+                  a second contact with the same code came back as a 500 &quot;Failed to create contact&quot;,
+                  which tells the person filling in the form nothing they can fix. <code>respond.WriteError</code>
+                  recognises a unique violation on SQLite, Postgres, MySQL and SQL Server and answers 409
+                  <code>CONFLICT</code>, with the field in <code>details</code> when the database says which:
+                  SQLite names the column, and the others name GORM&apos;s <code>idx_</code> or <code>uni_</code>
+                  index, read against the route&apos;s table. Every generated handler already routes through it,
+                  so this reaches existing resources on <code>grit upgrade</code>. A soft-deleted row still holds
+                  its value, so re-creating one is a 409 too. <code>internal/respond</code> has tests now.
+                </p>
+                <p>
+                  <strong>The security scan accepts the one advisory with no fix.</strong> GO-2026-6452 is in
+                  excelize, reached only through GORM Studio&apos;s Excel import, and no release fixes it, so
+                  every new project&apos;s security workflow failed. It now reads
+                  <code>.github/govulncheck-allow.txt</code>, the same list Grit&apos;s own scan keeps: each entry
+                  names why it is accepted and the issue tracking the fix, prints as a warning on every run, and
+                  anything not listed still fails.
+                </p>
+                <p>
+                  <strong>golangci-lint starts green again.</strong> The shipped config promises no findings on a
+                  new project, and there were nine, which a first push reports because there is nothing to diff
+                  against. The real one: the encrypted-column backfill never checked <code>rows.Err</code>, so a
+                  read that failed partway looked like the last batch and left plaintext behind. The rest are
+                  fixed or, where a fresh context is deliberate, say why at the call.
+                </p>
+                <p>
+                  <strong>The gzip test passes under <code>-race</code>.</strong> The race detector makes
+                  <code>sync.Pool</code> drop a quarter of what is returned to it, so the pooled-compressor check
+                  failed every project&apos;s CI. The limit is now half of an unpooled compressor&apos;s cost,
+                  measured, rather than near zero.
+                </p>
+                <p>
+                  <strong>Generated desktop lists pass Biome.</strong> The bulk delete and import callbacks
+                  returned a value from <code>forEach</code>, which Biome reports as an error.
+                  <code>grit upgrade</code> fixes existing lists.
+                </p>
+              </div>
+            </div>
+
             {/* v3.302.0 */}
             <div className="mb-12" id="v3.302.0">
               <div className="flex items-center gap-3 mb-4">

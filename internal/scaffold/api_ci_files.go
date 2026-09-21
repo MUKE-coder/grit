@@ -152,6 +152,19 @@ updates:
 `)
 }
 
+// govulncheckAllowTXT is .github/govulncheck-allow.txt, the called
+// vulnerabilities security.yml accepts. The same list Grit's own scan keeps:
+// remove an entry here when the fix ships, and never add one without a reason
+// and an issue.
+func govulncheckAllowTXT() string {
+	return `# Called vulnerabilities the govulncheck job in security.yml accepts, one per line:
+#   <OSV id> | <why it is accepted> | <issue tracking the real fix>
+# Each prints as a warning on every run. Remove a line as soon as a fix ships;
+# anything not listed fails the scan.
+GO-2026-6452 | excelize has no fixed release; reached only through GORM Studio's Excel import, behind the Studio login, and a panic is contained to that request | https://github.com/MUKE-coder/gorm-studio/issues/8
+`
+}
+
 // securityCIYAML is .github/workflows/security.yml.
 func securityCIYAML(opts Options) string {
 	l := ciLayoutFor(opts)
@@ -211,8 +224,27 @@ jobs:
           # standard library issues the build does not have.
           go-version-file: {{API_DIR}}/go.mod
           cache-dependency-path: {{API_DIR}}/go.sum
-`+placeholder+`      - name: Run govulncheck
-        run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
+`+placeholder+`      # A called vulnerability fails the scan unless .github/govulncheck-allow.txt
+      # lists it with a reason and the issue tracking the real fix. Listed ones
+      # print as warnings on every run so they stay in view; anything new fails.
+      # Without the list, one advisory with no fixed release (excelize, reached
+      # through GORM Studio) turned every new project's first push red.
+      - name: Run govulncheck
+        run: |
+          allow="$GITHUB_WORKSPACE/.github/govulncheck-allow.txt"
+          go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 -format json ./... > /tmp/govulncheck.json
+          jq -r 'select(.finding != null and (.finding.trace[0].function // "") != "") | .finding.osv' /tmp/govulncheck.json | sort -u > /tmp/called.txt
+          { grep -oE '^GO-[0-9]+-[0-9]+' "$allow" 2>/dev/null || true; } | sort -u > /tmp/allowed.txt
+          for id in $(comm -12 /tmp/called.txt /tmp/allowed.txt); do
+            echo "::warning::$id is called but accepted in .github/govulncheck-allow.txt: $(grep "^$id" "$allow")"
+          done
+          comm -23 /tmp/called.txt /tmp/allowed.txt > /tmp/new.txt
+          if [ -s /tmp/new.txt ]; then
+            echo "::error::called vulnerabilities not in .github/govulncheck-allow.txt: $(tr '\n' ' ' < /tmp/new.txt)"
+            go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./... || true
+            exit 1
+          fi
+          echo "govulncheck: $(wc -l < /tmp/called.txt) called, all accepted in the allowlist"
 `+audit+`
   codeql:
     name: CodeQL static analysis

@@ -50,7 +50,6 @@ func newCountsDB(t *testing.T) *gorm.DB {
 		{Title: "edited", CreatedAt: now.Add(-10 * day), UpdatedAt: now.Add(-1 * day)},
 		{Title: "old", CreatedAt: now.Add(-40 * day), UpdatedAt: now.Add(-40 * day)},
 	} {
-		n := n
 		if err := db.Create(&n).Error; err != nil {
 			t.Fatalf("seed %s: %v", n.Title, err)
 		}

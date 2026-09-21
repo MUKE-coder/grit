@@ -341,7 +341,7 @@ func CacheResponse(cacheService *cache.Cache, ttl time.Duration) gin.HandlerFunc
 				return cached, nil
 			}
 			ran = true
-			return captureAndStore(c, cacheService, key, ttl), nil
+			return captureAndStore(ctx, c, cacheService, key, ttl), nil
 		})
 		if ran {
 			return
@@ -359,7 +359,7 @@ func CacheResponse(cacheService *cache.Cache, ttl time.Duration) gin.HandlerFunc
 // captureAndStore runs the rest of the chain, writing to the client as usual,
 // and stores a 200 response. It returns the response, or nil when it was not
 // one to cache.
-func captureAndStore(c *gin.Context, cacheService *cache.Cache, key string, ttl time.Duration) *cachedResponse {
+func captureAndStore(ctx context.Context, c *gin.Context, cacheService *cache.Cache, key string, ttl time.Duration) *cachedResponse {
 	// bytes.Buffer grows in chunks, so a 100 KB response takes a few
 	// allocations instead of one per Write.
 	writer := &responseCapture{ResponseWriter: c.Writer, body: bytes.NewBuffer(nil)}
@@ -377,7 +377,7 @@ func captureAndStore(c *gin.Context, cacheService *cache.Cache, key string, ttl 
 		Body:        writer.body.Bytes(),
 	}
 	// A failed write only costs the next request a miss.
-	_ = cacheService.Client().Set(c.Request.Context(), key, resp.encode(), ttl).Err()
+	_ = cacheService.Client().Set(ctx, key, resp.encode(), ttl).Err()
 	return resp
 }
 
@@ -569,7 +569,21 @@ func repairEnvPoolSource(src string) (string, []string, []string) {
 
 func repairCacheMiddlewareSource(src string) (string, []string, []string) {
 	if strings.Contains(src, "singleflight") {
-		return src, nil, nil
+		// The first singleflight version took the context from c inside
+		// captureAndStore, which golangci-lint's contextcheck reports on
+		// every new project. The same context, passed in.
+		out := src
+		for old, updated := range map[string]string{
+			"return captureAndStore(c, cacheService, key, ttl), nil":                            "return captureAndStore(ctx, c, cacheService, key, ttl), nil",
+			"func captureAndStore(c *gin.Context, cacheService":                                 "func captureAndStore(ctx context.Context, c *gin.Context, cacheService",
+			"_ = cacheService.Client().Set(c.Request.Context(), key, resp.encode(), ttl).Err()": "_ = cacheService.Client().Set(ctx, key, resp.encode(), ttl).Err()",
+		} {
+			if strings.Count(out, old) != 1 {
+				return src, nil, nil
+			}
+			out = strings.Replace(out, old, updated, 1)
+		}
+		return out, []string{"cache.go passes the request context to captureAndStore"}, nil
 	}
 	mod := cacheImportModule.FindStringSubmatch(src)
 	if mod == nil || src != strings.ReplaceAll(cacheMiddlewareOld, "{{MODULE}}", mod[1]) {
