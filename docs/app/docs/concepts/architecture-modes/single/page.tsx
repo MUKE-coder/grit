@@ -179,8 +179,6 @@ export default function SingleArchitecturePage() {
                 <File name=".env" />
                 <File name=".env.example" />
                 <File name=".gitignore" />
-                <File name=".prettierrc" />
-                <File name=".prettierignore" />
                 <File name="docker-compose.yml" comment="PostgreSQL, Redis, MinIO, Mailhog" />
                 <File name="docker-compose.prod.yml" />
                 <File name="grit.json" comment={'architecture: "single", frontend: "tanstack"'} />
@@ -205,7 +203,8 @@ export default function SingleArchitecturePage() {
                   <File name="auth/totp.go" />
                 </Folder>
                 <Folder name="frontend" comment="React + Vite + TanStack Router" defaultOpen>
-                  <File name="package.json" />
+                  <File name="package.json" comment="pnpm lint and pnpm format run Biome" />
+                  <File name="biome.jsonc" comment="Lint and format rules" />
                   <File name="vite.config.ts" comment="Proxy /api → localhost:8080" />
                   <File name="tailwind.config.ts" />
                   <File name="tsconfig.json" />

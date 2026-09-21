@@ -127,7 +127,7 @@ func (i *Invoice) GetOwnerID() string { return i.UserID }`} />
         <p>
           These run on every push and pull-request, plus weekly so newly-disclosed CVEs
           surface even when nothing in your code changed. <code>.github/workflows/ci.yml</code>{' '}
-          runs the API&apos;s tests and the frontend&apos;s type-check, tests and build on every
+          runs the API&apos;s tests and the frontend&apos;s lint (Biome), type-check, tests and build on every
           pull request too. Go modules are pinned in <code> go.sum</code> with checksum
           verification; once <code>pnpm-lock.yaml</code> is committed, CI installs with{' '}
           <code>--frozen-lockfile</code>.
@@ -221,8 +221,9 @@ db.Raw("SELECT * FROM users WHERE email = '" + email + "'")`} />
         <p>
           <strong>XSS</strong> — the React SPA escapes by default. The CSP header (A02)
           adds a second layer: even if something slips through, the browser refuses to
-          execute inline script. <code>dangerouslySetInnerHTML</code> is intentionally
-          banned by ESLint in scaffolded projects.
+          execute inline script. In a scaffolded project, <code>pnpm lint</code> (Biome)
+          flags every <code>dangerouslySetInnerHTML</code>. The few places Grit uses it
+          carry a <code>biome-ignore</code> comment that says why the HTML is safe.
         </p>
         <p>
           <strong>SSRF</strong> (folded into A01 in 2025) — use the

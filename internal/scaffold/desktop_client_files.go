@@ -761,7 +761,8 @@ func desktopClientPackageJSON(opts Options) string {
     "build": "vite build && tsc -b",
     "typecheck": "tsc -b",
     "preview": "vite preview",
-    "format": "prettier --write ."
+    "lint": "` + biomeLintScript + `",
+    "format": "` + biomeFormatScript + `"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
@@ -791,8 +792,6 @@ func desktopClientPackageJSON(opts Options) string {
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
-    "prettier": "^3.3.0",
-    "prettier-plugin-tailwindcss": "^0.6.0",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.7.0",
     "vite": "^6.0.0"
@@ -2655,6 +2654,7 @@ function ConnectionIndicator() {
   const checked = lastCheckedAt ? lastCheckedAt.toLocaleTimeString() : "...";
   return (
     <div
+      role="group"
       className="flex h-titlebar items-center px-3"
       title={` + "`" + `${label} (last check: ${checked})` + "`" + `}
       aria-label={label}
@@ -4254,7 +4254,7 @@ export const API_VERSION = "v1";
 
 const API_ROOT =
   import.meta.env.VITE_API_URL ||
-  (typeof window !== "undefined" && !!window.go?.main?.App
+  (typeof window !== "undefined" && window.go?.main?.App
     ? "http://localhost:8080/api"
     : "/api");
 
@@ -4329,7 +4329,7 @@ apiClient.interceptors.response.use(
         await setToken("access_token", tokens.access_token);
         await setToken("refresh_token", tokens.refresh_token);
 
-        refreshQueue.forEach((cb) => cb(tokens.access_token));
+        for (const cb of refreshQueue) cb(tokens.access_token);
         refreshQueue = [];
 
         if (original.headers) original.headers.Authorization = ` + "`" + `Bearer ${tokens.access_token}` + "`" + `;
@@ -5246,7 +5246,6 @@ export function useRealtimeEvent<T = unknown>(
     };
     realtimeBus.addEventListener(type, handler);
     return () => realtimeBus.removeEventListener(type, handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, callback]);
 }
 
@@ -5260,7 +5259,6 @@ export function useRealtimeAny(callback: (event: RealtimeEvent) => void) {
     };
     realtimeBus.addEventListener("*", handler);
     return () => realtimeBus.removeEventListener("*", handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [callback]);
 }
 `

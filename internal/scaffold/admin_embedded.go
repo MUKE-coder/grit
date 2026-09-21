@@ -246,6 +246,7 @@ export default function AdminSectionLayout({
         root layout owns <head>, so the script rides at the top of this layout
         instead; it still runs ahead of everything under /admin.
       */}
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: a constant script of Grit's, no user input. */}
       <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       <Providers>{children}</Providers>
     </>

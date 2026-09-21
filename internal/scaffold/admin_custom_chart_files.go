@@ -319,6 +319,7 @@ export function ChartBuilderForm({ resources, initial, onSubmit, onCancel }: Pro
   const resource = resources.find((r) => r.slug === resourceSlug);
   const { categorical, numeric } = useMemo(() => classifyFields(resource), [resource]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-picks the field when the preset or resource changes, not as the field itself is edited.
   useEffect(() => {
     if (preset === "count_over_time") {
       setField("");
@@ -328,14 +329,15 @@ export function ChartBuilderForm({ resources, initial, onSubmit, onCancel }: Pro
     if (!valid.find((c) => c.key === field)) {
       setField(valid[0]?.key ?? "");
     }
-  }, [preset, resourceSlug]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [preset, resourceSlug]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: resets the chart type only when the preset changes.
   useEffect(() => {
     const allowed = vizesForPreset(preset);
     if (!allowed.includes(viz)) {
       setViz(allowed[0]);
     }
-  }, [preset]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [preset]);
 
   const fieldRequired = preset !== "count_over_time";
   const fieldList = preset === "group_by" ? categorical : numeric;

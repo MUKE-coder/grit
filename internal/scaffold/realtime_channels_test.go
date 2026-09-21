@@ -225,7 +225,7 @@ func TestRealtimeClientSubscribesToChannels(t *testing.T) {
 		}
 		for _, want := range []string{
 			"export function subscribe(channel: string, handlers: ChannelHandlers): () => void;",
-			"channels.forEach((_, channel) => send({ type: \"subscribe\", channel }));",
+			"channels.forEach((_, channel) => {\n      send({ type: \"subscribe\", channel });",
 			"send({ type: \"unsubscribe\", channel });",
 			"dispatchChannel(evt.channel, evt);",
 		} {

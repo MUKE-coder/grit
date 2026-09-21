@@ -508,6 +508,7 @@ function SystemDashboardSettingsPage() {
 
   const allWidgets = [...SECTIONS.flatMap((s) => s.items), ...resourceWidgets()];
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reads the saved layout once, on mount.
   useEffect(() => {
     let stored: Record<string, boolean> = {};
     try { stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { /* ignore */ }
@@ -516,7 +517,6 @@ function SystemDashboardSettingsPage() {
     setEnabled(init);
     // Best-effort server load (ignored offline).
     apiClient.get("/dashboard-layout").catch(() => undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggle = (w: string) => setEnabled((e) => ({ ...e, [w]: !e[w] }));

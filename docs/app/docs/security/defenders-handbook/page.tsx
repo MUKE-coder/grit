@@ -628,7 +628,7 @@ networks:
               </li>
               <li>
                 <code>.github/workflows/ci.yml</code>, which runs the API&apos;s tests and the
-                frontend&apos;s type-check, tests and build on every pull request.
+                frontend&apos;s lint (Biome), type-check, tests and build on every pull request.
               </li>
               <li>
                 <code>go.sum</code> checksum verification on every <code>go mod</code>{' '}

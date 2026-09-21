@@ -366,7 +366,10 @@ function RoleEditor({
 	function toggle(keys: string[], on: boolean) {
 		setSelected((prev) => {
 			const next = new Set(prev);
-			keys.forEach((k) => (on ? next.add(k) : next.delete(k)));
+			for (const k of keys) {
+				if (on) next.add(k);
+				else next.delete(k);
+			}
 			return next;
 		});
 	}

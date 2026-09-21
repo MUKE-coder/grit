@@ -465,6 +465,7 @@ export default async function BlogDetailPage({ params }: Props) {
           did included, so what arrives here is safe to render. */}
       <div
         className="prose-blog"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: the API sanitises post HTML, see above.
         dangerouslySetInnerHTML={{ __html: blog.content }}
       />
 

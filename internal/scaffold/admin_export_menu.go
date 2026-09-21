@@ -57,6 +57,19 @@ export function ExportMenu({
   const rootRef = useRef<HTMLDivElement>(null);
   const t = useT();
 
+  // Before the early returns below: a hook that runs on some renders and not
+  // others breaks React's hook order.
+  useEffect(() => {
+    if (!open) return;
+    function handle(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [open]);
+
   const cfg = resource.table.export;
   if (cfg === false) return null;
 
@@ -75,17 +88,6 @@ export function ExportMenu({
   // allPages defaults true -- a user clicking "Export" almost always
   // means "everything I'm filtering for", not "the 20 rows showing".
   const allPages = cfg === undefined ? true : (cfg.allPages ?? true);
-
-  useEffect(() => {
-    if (!open) return;
-    function handle(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handle);
-    return () => document.removeEventListener("mousedown", handle);
-  }, [open]);
 
   const run = async (format: ExportFormat) => {
     setOpen(false);

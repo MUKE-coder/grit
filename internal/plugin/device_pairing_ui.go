@@ -105,10 +105,10 @@ export default function LinkDevicePage() {
   const router = useRouter();
   const { state, start, restart } = usePairing();
 
+  // Once, on mount. Restarting is explicit, via the button.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: starts pairing once, on mount.
   useEffect(() => {
     void start();
-    // Once, on mount. Restarting is explicit, via the button.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

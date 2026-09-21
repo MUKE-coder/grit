@@ -247,6 +247,12 @@ jobs:
 `)
 }
 
+// ciLintStep runs Biome's lint rules, the same `pnpm lint` a developer runs.
+// Formatting is not checked: see biomeLintScript.
+const ciLintStep = `      - name: Lint (Biome)
+        run: pnpm lint
+`
+
 // ciYAML is .github/workflows/ci.yml: the tests, on every push and pull request.
 func ciYAML(opts Options) string {
 	l := ciLayoutFor(opts)
@@ -256,21 +262,21 @@ func ciYAML(opts Options) string {
 	}
 	web := ""
 	if l.hasFrontend {
-		steps := `      - name: Type-check
+		steps := ciLintStep + `      - name: Type-check
         run: pnpm type-check
       - name: Test
         run: pnpm test
       - name: Build
         run: pnpm build
 `
-		name := "Frontend (type-check, test, build)"
+		name := "Frontend (lint, type-check, test, build)"
 		if l.single {
 			// The single app's build is tsr generate, tsc and vite: it
 			// type-checks as it builds, and the app has no test suite of its own.
-			steps = `      - name: Type-check and build
+			steps = ciLintStep + `      - name: Type-check and build
         run: pnpm build
 `
-			name = "Frontend (type-check, build)"
+			name = "Frontend (lint, type-check, build)"
 		}
 		web = `
   web:

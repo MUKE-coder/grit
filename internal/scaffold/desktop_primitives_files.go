@@ -60,7 +60,7 @@ const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "Ju
 export function formatDate(value: Date | string | number | null | undefined, fmt = "MMM d, yyyy"): string {
   if (value === null || value === undefined || value === "") return "";
   const d = value instanceof Date ? value : new Date(value);
-  if (isNaN(d.getTime())) return "";
+  if (Number.isNaN(d.getTime())) return "";
   // Minimal token formatter — enough for the standard cases. Uses a
   // single-pass replace so "MMMM" (long month) wins over "MMM" (short).
   return fmt
@@ -80,7 +80,7 @@ export function formatDate(value: Date | string | number | null | undefined, fmt
 export function formatDateTime(value: Date | string | number | null | undefined): string {
   if (value === null || value === undefined || value === "") return "";
   const d = value instanceof Date ? value : new Date(value);
-  if (isNaN(d.getTime())) return "";
+  if (Number.isNaN(d.getTime())) return "";
   const date = formatDate(d, "MMM d, yyyy");
   const time = new Intl.DateTimeFormat(config.locale, {
     hour: "numeric",
@@ -136,7 +136,7 @@ interface CurrencyInputProps {
 }
 
 function formatDisplay(n: number | null | undefined, allowDecimals: boolean): string {
-  if (n === null || n === undefined || isNaN(n as number)) return "";
+  if (n === null || n === undefined || Number.isNaN(n)) return "";
   if (!allowDecimals) {
     return Math.round(n).toLocaleString();
   }
@@ -152,7 +152,7 @@ function parseRaw(raw: string): number | null {
   const cleaned = raw.replace(/[^0-9.\\-]/g, "");
   if (!cleaned || cleaned === "-" || cleaned === ".") return null;
   const n = parseFloat(cleaned);
-  return isNaN(n) ? null : n;
+  return Number.isNaN(n) ? null : n;
 }
 
 export function CurrencyInput({

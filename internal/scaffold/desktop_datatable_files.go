@@ -369,8 +369,10 @@ export function DataTable<T extends { id: string | number }>({
   const toggleAll = () =>
     setSelected((s) => {
       const next = new Set(s);
-      if (allOnPage) pageIds.forEach((id) => next.delete(id));
-      else pageIds.forEach((id) => next.add(id));
+      for (const id of pageIds) {
+        if (allOnPage) next.delete(id);
+        else next.add(id);
+      }
       return next;
     });
   const toggleRow = (id: string) =>
@@ -392,9 +394,9 @@ export function DataTable<T extends { id: string | number }>({
     URL.revokeObjectURL(url);
   };
   const exportCsv = () => {
-    const escape = (v: string) => (/[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v);
-    const lines = [visibleCols.map((c) => escape(c.label)).join(",")];
-    for (const r of filtered) lines.push(visibleCols.map((c) => escape(cellText(field(r, c.key), c.format))).join(","));
+    const csvCell = (v: string) => (/[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v);
+    const lines = [visibleCols.map((c) => csvCell(c.label)).join(",")];
+    for (const r of filtered) lines.push(visibleCols.map((c) => csvCell(cellText(field(r, c.key), c.format))).join(","));
     download(lines.join("\n"), "text/csv;charset=utf-8", "csv");
     setExportOpen(false);
   };

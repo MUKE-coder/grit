@@ -66,6 +66,50 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.293.0 */}
+            <div className="mb-12" id="v3.293.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.293.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Biome replaces ESLint and Prettier, and pnpm lint finally passes</h3>
+                <p>
+                  <strong>Linting works on a new project.</strong> Before this release <code>pnpm lint</code> failed on every
+                  new project: the Next.js apps called <code>next lint</code>, which Next.js 16 removed, and the Vite apps
+                  called ESLint, which was never installed. Generated projects now lint and format with Biome 2.5.14, and
+                  <code>pnpm lint</code> passes with 0 errors on triple, double and single projects with either frontend.
+                  CI runs it on every pull request.
+                </p>
+                <p>
+                  <strong>One tool instead of three.</strong> A single <code>biome.jsonc</code> and one pinned
+                  devDependency replace <code>.prettierrc</code>, <code>.prettierignore</code> and two Prettier packages, so
+                  a new triple project has 30 devDependencies instead of 33. Every rule that is switched off carries its
+                  reason next to it in the config.
+                </p>
+                <p>
+                  <strong>Seven template bugs it found are fixed.</strong> Among them: the export menu called a hook after
+                  an early return, which breaks React&apos;s hook order, and the two error pages were named
+                  <code>Error</code>, shadowing the global. Unused imports, <code>isNaN</code>, and callbacks that returned
+                  values from <code>forEach</code> are cleaned up too.
+                </p>
+                <p>
+                  <strong>Formatting is on demand for now.</strong> <code>pnpm format</code> formats in the style the
+                  templates already use: double quotes, semicolons, 100 columns. <code>pnpm lint</code> checks rules only,
+                  because the templates are not yet Biome-formatted and a format check would fail every new project. Run
+                  <code>pnpm format</code> once in your project if you want to turn formatting checks on.
+                </p>
+                <p>
+                  <code>grit upgrade</code> adds Biome to existing projects. It removes the Prettier files only if they are
+                  exactly what Grit wrote, and it keeps any ESLint or Prettier setup you customised, printing one line to
+                  say so.
+                </p>
+              </div>
+            </div>
+
             {/* v3.292.0 */}
             <div className="mb-12" id="v3.292.0">
               <div className="flex items-center gap-3 mb-4">

@@ -311,6 +311,7 @@ function CreateShareModal({ onClose }: { onClose: () => void }) {
   const { data: resources, isLoading: resourcesLoading } = useFormShareResources();
   const { data: fields, isLoading: fieldsLoading } = useFormShareFields(resourceName);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: clears the hidden fields whenever the resource changes.
   useEffect(() => { setHiddenFields(new Set()); }, [resourceName]);
 
   const toggleHidden = (key: string, hide: boolean) => {

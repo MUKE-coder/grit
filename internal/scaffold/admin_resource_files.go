@@ -1288,6 +1288,7 @@ function ResourceListView({ resource }: ResourcePageProps) {
 
         {/* The tabs control this region, so it is their panel. Without the
             pairing a reader hears a tablist and never learns what it filters. */}
+        {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-labelledby is set only while the role is tabpanel. */}
         <div
           id="table-panel"
           role={c.tabs.length > 0 ? "tabpanel" : undefined}

@@ -523,7 +523,7 @@ export function PageHeader({
   // Pages with hot keys (jobs, files, sentinel) can scope by passing refreshKeys.
   const onRefresh = () => {
     if (refreshKeys && refreshKeys.length > 0) {
-      refreshKeys.forEach((k) => queryClient.invalidateQueries({ queryKey: [k] }));
+      for (const k of refreshKeys) queryClient.invalidateQueries({ queryKey: [k] });
     } else {
       queryClient.invalidateQueries({
         predicate: (query) => !CHROME_QUERY_ROOTS.includes(String(query.queryKey[0])),

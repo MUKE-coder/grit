@@ -411,7 +411,7 @@ function coerce(
     case "datetime": {
       if (raw instanceof Date) return { value: raw.toISOString() };
       const d = new Date(String(raw));
-      if (isNaN(d.getTime())) return { error: "expected a date" };
+      if (Number.isNaN(d.getTime())) return { error: "expected a date" };
       return { value: d.toISOString() };
     }
     case "select":

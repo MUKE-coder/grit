@@ -277,6 +277,7 @@ export function ResourceTree({ resource, onEdit, onAddChild }: ResourceTreeProps
     [nodes]
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: invalidate is a fresh closure over the same query client on every render.
   const handleDrop = useCallback(
     async (draggedID: string, drop: DropTarget) => {
       setTarget(null);
@@ -326,7 +327,7 @@ export function ResourceTree({ resource, onEdit, onAddChild }: ResourceTreeProps
       await reorder.mutateAsync({ parentID: newParent, ids: ordered });
       invalidate();
     },
-    [nodes, move, reorder, resource.name] // eslint-disable-line react-hooks/exhaustive-deps
+    [nodes, move, reorder, resource.name]
   );
 
   if (isLoading) {
@@ -628,7 +629,6 @@ function TreeRow({
         {/* The picture if there is one, initials if not. Either way the row has
             a fixed leading block, so labels line up down the whole tree. */}
         {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={image}
             alt=""

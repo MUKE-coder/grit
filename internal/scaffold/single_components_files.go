@@ -348,7 +348,7 @@ export async function logout(): Promise<void> {
 // response interceptor that tries one transparent refresh on 401, and the
 // idempotency-key behaviour preserved from the original.
 func viteAPIClientWithAuth() string {
-	return `import axios, { AxiosError, type AxiosRequestConfig } from "axios"
+	return `import axios, { type AxiosError, type AxiosRequestConfig } from "axios"
 
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? ""
 
@@ -702,6 +702,7 @@ export function Combobox({
     return () => document.removeEventListener("mousedown", onClick)
   }, [open])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new query puts the highlight back on the first match.
   useEffect(() => {
     if (open) setActiveIndex(0)
   }, [open, query])

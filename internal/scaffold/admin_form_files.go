@@ -866,12 +866,12 @@ export function FormStepper({
   const isTwoColumn = formDef.layout === "two-column";
   const isLastStep = currentStep === steps.length - 1;
 
+  // defaultValues is a fresh object on every render of the parent; keying off
+  // its identity would rebuild the baseline constantly and every step would
+  // read as clean forever.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the serialised defaults, see above.
   const initialValues = useMemo(
     () => buildDefaults(formDef.fields, defaultValues),
-    // defaultValues is a fresh object on every render of the parent; keying off
-    // its identity would rebuild the baseline constantly and every step would
-    // read as clean forever.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [formDef.fields, JSON.stringify(defaultValues ?? {})]
   );
 
@@ -1805,6 +1805,7 @@ export function NumberField({ field, value, onChange, error, onGenerate }: Numbe
   // Sync display when external value changes (form reset, edit-mode
   // hydration). Skip when the parsed display already matches -- avoids
   // stomping on mid-edit state like "3000." that parses to 3000.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs on an outside change of value only, never on typing.
   useEffect(() => {
     const parsed = parseFormattedNumber(display);
     if (parsed === value) return;
@@ -1813,7 +1814,6 @@ export function NumberField({ field, value, onChange, error, onGenerate }: Numbe
         ? ""
         : formatNumberDisplay(String(value), { allowDecimal, allowNegative })
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2141,6 +2141,7 @@ export function DateField({ field, value, onChange, error }: DateFieldProps) {
   // through a native date input means holding an arrow key, which is the whole
   // reason this component exists. minDate/maxDate narrow it when the field
   // knows better.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only the selected year changes the list, not the rest of the selection.
   const years = useMemo(() => {
     const min = field.minDate ? parseValue(field.minDate)!.year : today.year - 100;
     const max = field.maxDate ? parseValue(field.maxDate)!.year : today.year + 10;
@@ -2209,10 +2210,10 @@ export function DateField({ field, value, onChange, error }: DateFieldProps) {
 
   // Re-centre on the selection each time it opens, so browsing to 1990 and
   // closing without picking does not strand the next visit there.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the picker opens, not as the selection changes.
   useEffect(() => {
     if (!open) return;
     setView({ year: selected?.year ?? today.year, month: selected?.month ?? today.month });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   function commit(day: number, from = view) {
@@ -2796,9 +2797,9 @@ export function LineItemsField({ field, value, onChange, error }: LineItemsField
     if (!qtyKey || !rateKey) return 0;
     return (Number(row[qtyKey]) || 0) * (Number(row[rateKey]) || 0);
   };
+  // biome-ignore lint/correctness/useExhaustiveDependencies: rowTotal is a fresh closure over the column keys on every render.
   const grandTotal = useMemo(
     () => rows.reduce((sum, r) => sum + rowTotal(r), 0),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [rows]
   );
 
@@ -2983,11 +2984,11 @@ function LineItemNumberCell({
     formatNumberDisplay(value === null || value === undefined ? "" : String(value), opts)
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs on an outside change of value only, never on typing.
   useEffect(() => {
     const parsed = parseFormattedNumber(display);
     if (parsed === value) return;
     setDisplay(value === "" || value == null ? "" : formatNumberDisplay(String(value), opts));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -3797,6 +3798,7 @@ export function MultiRelationshipSelectField({
   }, [open]);
 
   // Keep the active option in view when the arrows walk past the fold.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: active is read from the DOM, so the effect has to rerun when it moves.
   useEffect(() => {
     if (!open) return;
     const el = listRef.current?.querySelector('[data-active="true"]');
@@ -4226,12 +4228,12 @@ export function MoneyField({ field, value, onChange, error }: MoneyFieldProps) {
     value ? toMajor(value).toFixed(digits) : ""
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs on an outside change of value only, never on typing.
   useEffect(() => {
     const shown = Number.parseFloat(draft);
     const held = value ? toMajor(value) : NaN;
     if (!Number.isNaN(shown) && shown === held) return;
     setDraft(value ? toMajor(value).toFixed(digits) : "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const handleAmount = (raw: string) => {

@@ -265,6 +265,7 @@ export function useSearchParams(): ReadonlyURLSearchParams {
 
 // next/dynamic(loader, { ssr:false }) -> React.lazy (Vite has no SSR, so the
 // ssr flag is a no-op). Supports both { default: C } and bare-component loaders.
+// biome-ignore lint/suspicious/noExplicitAny: React.lazy constrains its component the same way.
 export function dynamic<T extends React.ComponentType<any>>(
   loader: () => Promise<{ default: T } | T>,
   _options?: { ssr?: boolean; loading?: React.ComponentType },
@@ -585,7 +586,8 @@ func adminTanStackPackageJSON(opts Options) string {
     "build": "vite build",
     "typecheck": "tsc -b",
     "preview": "vite preview",
-    "lint": "eslint .",
+    "lint": "`+biomeLintScript+`",
+    "format": "`+biomeFormatScript+`",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -636,7 +638,7 @@ func adminTanStackViteConfig() string {
 import react from '@vitejs/plugin-react'
 import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
-import path from 'path'
+import path from 'node:path'
 ` + viteSecurityHeaders() + `
 export default defineConfig({
   plugins: [

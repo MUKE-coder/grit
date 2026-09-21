@@ -55,7 +55,7 @@ func writeFrontendTestFiles(root string, opts Options) error {
 func webVitestConfig() string {
 	return `import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
-import { resolve } from "path";
+import { resolve } from "node:path";
 
 export default defineConfig({
   plugins: [react()],
@@ -82,7 +82,7 @@ export default defineConfig({
 func adminVitestConfig() string {
 	return `import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
-import { resolve } from "path";
+import { resolve } from "node:path";
 
 export default defineConfig({
   plugins: [react()],
@@ -184,7 +184,7 @@ describe("Footer", () => {
 
 func adminLoginTest() string {
 	return `import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 // Mock Next.js navigation and the API client so tests run without a server.
@@ -381,13 +381,6 @@ func e2eAuthSpec() string {
 
 const BASE = "http://localhost:3000";
 const ADMIN = "http://localhost:3001";
-
-const testUser = {
-  firstName: "E2E",
-  lastName: "Tester",
-  email: ` + "`" + `e2e_${Date.now()}@example.com` + "`" + `,
-  password: "testpassword123",
-};
 
 test.describe("Web — Auth flow", () => {
   test("home page loads", async ({ page }) => {

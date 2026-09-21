@@ -82,8 +82,8 @@ func webPackageJSON(opts Options) string {
     "dev": "rm -rf .next && next dev --webpack --port 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "format": "prettier --write .",
+    "lint": "`+biomeLintScript+`",
+    "format": "`+biomeFormatScript+`",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"
@@ -118,8 +118,6 @@ func webPackageJSON(opts Options) string {
     "@tailwindcss/postcss": "^4.1.13",
     "jsdom": "^25.0.0",
     "postcss": "^8.4.0",
-    "prettier": "^3.3.0",
-    "prettier-plugin-tailwindcss": "^0.6.0",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.3.0",
     "vitest": "^2.0.0"
@@ -515,7 +513,6 @@ body {
 
 .prose-blog blockquote {
   border-left: 3px solid var(--accent);
-  padding-left: 1rem;
   margin: 1.5rem 0;
   font-style: italic;
   color: var(--text-secondary);
@@ -1042,7 +1039,7 @@ import {
   FileText,
   ExternalLink,
 } from "lucide-react";
-import { API_URL, apiUrl } from "@/lib/api-core";
+import { API_URL } from "@/lib/api-core";
 
 // Where the admin panel is.
 //
@@ -1341,7 +1338,7 @@ func webErrorPage() string {
 
 import { useEffect } from "react";
 
-export default function Error({
+export default function ErrorPage({
   error,
   reset,
 }: {

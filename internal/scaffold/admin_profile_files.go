@@ -99,6 +99,7 @@ export default function ProfilePage() {
   });
 
   // Reset form defaults when user data loads
+  // biome-ignore lint/correctness/useExhaustiveDependencies: form.reset is stable; the forms refill when the user loads.
   useEffect(() => {
     if (user) {
       personalForm.reset({

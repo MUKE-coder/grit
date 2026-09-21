@@ -361,7 +361,7 @@ export default function FilesPage() {
 
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
-    Array.from(files).forEach((file) => uploadFile.mutate(file));
+    for (const file of Array.from(files)) uploadFile.mutate(file);
   };
 
   const handleDrop = (e: React.DragEvent) => {

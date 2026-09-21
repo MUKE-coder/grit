@@ -231,7 +231,7 @@ function SystemUsersPage() {
           onNew={() => setDrawer({ open: true, record: null })}
           onEdit={(row) => setDrawer({ open: true, record: row })}
           onDelete={async (row) => { if (await confirm({ title: "Delete user", message: "This will permanently delete this account.", danger: true, confirmLabel: "Delete" })) del.mutate(String(row.id)); }}
-          onBulkDelete={async (rows) => { if (await confirm({ title: "Delete users", message: "Delete " + rows.length + " user(s)? This cannot be undone.", danger: true, confirmLabel: "Delete" })) rows.forEach((r) => del.mutate(String(r.id))); }}
+          onBulkDelete={async (rows) => { if (await confirm({ title: "Delete users", message: "Delete " + rows.length + " user(s)? This cannot be undone.", danger: true, confirmLabel: "Delete" })) for (const r of rows) del.mutate(String(r.id)); }}
         />
       </div>
 

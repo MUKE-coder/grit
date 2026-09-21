@@ -87,6 +87,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 	// Before anything is rewritten: whether i18n was set up, since the files
 	// that say so (package.json, the layouts) are among those replaced below.
 	hadI18n := i18nInstalled(root)
+	// And each app's lint and format scripts, which the rewritten package.json
+	// would otherwise decide for a project with its own ESLint or Prettier.
+	lintBefore := lintToolingSnapshot(root, opts)
 
 	var updated int
 
@@ -784,6 +787,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 	// make is seen before anything is removed.
 	if err := pruneDeadFrontendFiles(root); err != nil {
 		fmt.Printf("  ⚠ removing admin files nothing imports: %v\n", err)
+	}
+
+	// Biome in place of ESLint and Prettier. After the apps are written, and
+	// outside the API block, because a single has no apps/api and its frontend
+	// is the one to change.
+	if err := repairLintTooling(root, opts, lintBefore); err != nil {
+		fmt.Printf("  ⚠ moving lint and format to Biome: %v\n", err)
 	}
 
 	// --- shadcn config for every frontend ---

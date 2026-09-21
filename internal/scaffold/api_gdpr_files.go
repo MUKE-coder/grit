@@ -857,13 +857,13 @@ export default function GDPRPage() {
   // so the request arrives with the subject already chosen.
   const searchParams = useSearchParams();
   const deepLinked = searchParams?.get("user");
+  // biome-ignore lint/correctness/useExhaustiveDependencies: loads the deep-linked user once; picking another must not re-fetch it.
   useEffect(() => {
     if (!deepLinked || picked) return;
     apiClient
       .get("/api/users/" + deepLinked)
       .then(({ data }) => setPicked(data.data as PickedUser))
       .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deepLinked]);
 
   const journalQ = useQuery({

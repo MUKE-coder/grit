@@ -104,7 +104,8 @@ export default function ProjectStructurePage() {
                 { file: 'grit.config.ts', desc: 'Grit framework configuration -- project name, API URL, and other framework-level settings.' },
                 { file: 'turbo.json', desc: 'Turborepo configuration defining build, dev, and lint tasks with dependency relationships and caching.' },
                 { file: 'pnpm-workspace.yaml', desc: 'Defines the pnpm workspace: apps/* and packages/* directories are included.' },
-                { file: 'package.json', desc: 'Root package.json with workspace-level scripts like dev, build, and lint.' },
+                { file: 'package.json', desc: 'Root package.json with workspace-level scripts like dev, build, lint and format.' },
+                { file: 'biome.jsonc', desc: 'Biome, the linter and formatter. pnpm lint checks the lint rules in every app; pnpm format rewrites files in the project style (double quotes, semicolons, 100 columns). Each rule switched off in the file says why. Reformatting a file Grit wrote counts as editing it, so grit upgrade leaves that file alone afterwards.' },
               ].map((item) => (
                 <div key={item.file} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                   <code className="text-sm font-mono text-primary/70 font-medium">{item.file}</code>

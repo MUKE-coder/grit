@@ -1258,6 +1258,7 @@ export function usePendingChanges() {
     }
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: loads once, on mount.
   useEffect(() => {
     refresh();
   }, []);
@@ -1575,11 +1576,10 @@ export function ConflictDialog({
     "deleted_at",
   ]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: HIDE_FIELDS is a fixed list, rebuilt each render.
   const allFields = useMemo(() => {
-    const set = new Set<string>();
-    Object.keys(local).forEach((k) => set.add(k));
-    Object.keys(server).forEach((k) => set.add(k));
-    HIDE_FIELDS.forEach((k) => set.delete(k));
+    const set = new Set<string>([...Object.keys(local), ...Object.keys(server)]);
+    for (const k of HIDE_FIELDS) set.delete(k);
     return Array.from(set).sort();
   }, [local, server]);
 

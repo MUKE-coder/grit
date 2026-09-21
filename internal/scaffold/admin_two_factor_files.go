@@ -216,7 +216,6 @@ export function TwoFactorCard() {
           <div className="grid gap-6 sm:grid-cols-[auto_1fr]">
             <div className="rounded-lg border border-border bg-white p-3">
               {/* Rendered by the API, so no QR library ships in the client. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={qr} alt="Two-factor setup QR code" width={176} height={176} />
             </div>
 

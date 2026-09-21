@@ -479,6 +479,7 @@ export default function ProfilePage() {
     defaultValues: { password: "", confirm_password: "" },
   });
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: form.reset is stable; the forms refill when the user loads.
   useEffect(() => {
     if (user) {
       personalForm.reset({

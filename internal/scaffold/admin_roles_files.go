@@ -156,7 +156,7 @@ export function collapseGrants(selected: Set<string>, modules: PermModule[]): st
 				const keys = featureKeys(f);
 				if (keys.length > 0 && keys.every((k) => selected.has(k))) {
 					out.push(f.key + ".*");
-					keys.forEach((k) => covered.add(k));
+					for (const k of keys) covered.add(k);
 				}
 			}
 		}

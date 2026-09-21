@@ -123,7 +123,7 @@ export type RealtimeEvent = { type: string; channel?: string; payload: unknown }
 // (payload: Invoice) => ... It stays any rather than unknown because
 // unknown would reject every annotated handler and every documented
 // example that reads payload.field, in code that already compiles.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: handlers annotate the payload, see above.
 export type Handler = (payload: any, event: RealtimeEvent) => void;
 export type Status = "connecting" | "open" | "closed";
 
@@ -240,7 +240,9 @@ let status: Status = "closed";
 
 function setStatus(next: Status) {
   status = next;
-  statusWatchers.forEach((fn) => fn(next));
+  statusWatchers.forEach((fn) => {
+    fn(next);
+  });
 }
 
 export function realtimeStatus(): Status {
@@ -292,7 +294,9 @@ export async function connect(): Promise<void> {
     // A new socket holds no subscriptions: the old one's ended with it. Ask
     // again for every channel something still listens to, so a component that
     // subscribed once keeps receiving across reconnects without doing anything.
-    channels.forEach((_, channel) => send({ type: "subscribe", channel }));
+    channels.forEach((_, channel) => {
+      send({ type: "subscribe", channel });
+    });
   };
 
   ws.onmessage = (e) => {
@@ -320,7 +324,9 @@ export async function connect(): Promise<void> {
         console.error("[realtime] handler for " + evt.type + " threw", err);
       }
     });
-    handlers.get("*")?.forEach((fn) => fn(evt.payload, evt));
+    handlers.get("*")?.forEach((fn) => {
+      fn(evt.payload, evt);
+    });
   };
 
   ws.onclose = () => {
@@ -478,7 +484,9 @@ export function useRealtime(handlers: Record<string, Handler>) {
       .map((type) =>
         subscribe(type, (payload, event) => latest.current[type]?.(payload, event)),
       );
-    return () => offs.forEach((off) => off());
+    return () => {
+      for (const off of offs) off();
+    };
   }, [types]);
 }
 
@@ -591,7 +599,9 @@ export function useLiveResource(resource: string, queryKey: unknown[]) {
     const offs = ["created", "updated", "deleted"].map((verb) =>
       subscribe(resource + "." + verb, invalidate),
     );
-    return () => offs.forEach((off) => off());
+    return () => {
+      for (const off of offs) off();
+    };
   }, [resource, key, queryClient]);
 }
 

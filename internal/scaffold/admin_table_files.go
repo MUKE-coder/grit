@@ -841,7 +841,9 @@ export function TableFilters({ filters, values, onChange }: TableFiltersProps) {
 
       {hasActiveFilters && (
         <button
-          onClick={() => filters.forEach((f) => onChange(f.key, ""))}
+          onClick={() => {
+            for (const f of filters) onChange(f.key, "");
+          }}
           className="text-xs text-text-secondary hover:text-foreground transition-colors"
         >
           Clear all

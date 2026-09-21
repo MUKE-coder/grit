@@ -527,8 +527,8 @@ func adminPackageJSON(opts Options) string {
     "dev": "rm -rf .next && next dev --webpack --port 3001",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "format": "prettier --write .",
+    "lint": "`+biomeLintScript+`",
+    "format": "`+biomeFormatScript+`",
     "analyze": "ANALYZE=true next build",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -567,8 +567,6 @@ func adminPackageJSON(opts Options) string {
     "@tailwindcss/postcss": "^4.1.13",
     "jsdom": "^25.0.0",
     "postcss": "^8.4.0",
-    "prettier": "^3.3.0",
-    "prettier-plugin-tailwindcss": "^0.6.0",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.3.0",
     "vitest": "^2.0.0"
@@ -1037,6 +1035,7 @@ export default function RootLayout({
           script into the document: next/script defers it, and a deferred script
           is the flash again.
         */}
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: a constant script of Grit's, no user input. */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={`+"`%s "+`%s`+"`"+`}>
@@ -2118,7 +2117,7 @@ func adminErrorPage() string {
 import { useEffect } from "react";
 import { buttonClasses } from "@/components/ui/button";
 
-export default function Error({
+export default function ErrorPage({
   error,
   reset,
 }: {

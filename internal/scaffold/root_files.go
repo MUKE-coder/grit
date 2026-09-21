@@ -76,10 +76,12 @@ func writeRootFiles(root string, opts Options) error {
 		filepath.Join(root, ".claude", "skills", "grit", "reference.md"): gritSkillReference(opts),
 	}
 
-	// Prettier config (all architectures with frontend)
-	if opts.Architecture != ArchAPI {
-		files[filepath.Join(root, ".prettierrc")] = prettierConfig()
-		files[filepath.Join(root, ".prettierignore")] = prettierIgnore()
+	// Biome, the linter and formatter, sits where pnpm runs: the workspace
+	// root, or a single app's frontend/.
+	if opts.ShouldUseTurborepo() {
+		files[filepath.Join(root, biomeConfigFile)] = biomeConfig(false)
+	} else if opts.Architecture == ArchSingle {
+		files[filepath.Join(root, "frontend", biomeConfigFile)] = biomeConfig(true)
 	}
 
 	if opts.ShouldUseTurborepo() {
@@ -658,6 +660,9 @@ pnpm-debug.log*
 `
 }
 
+// prettierConfig and prettierIgnore are what Grit wrote before Biome replaced
+// Prettier. New projects do not get them; upgrade compares against them to
+// recognise a copy nobody has edited, which is the only kind it removes.
 func prettierConfig() string {
 	return `{
   "semi": false,
@@ -752,9 +757,7 @@ func turboJSON() string {
       "cache": false,
       "persistent": true
     },
-    "lint": {
-      "dependsOn": ["^build"]
-    },
+    "lint": {},
     "type-check": {
       "dependsOn": ["^build"]
     },
@@ -776,6 +779,7 @@ func rootPackageJSON(opts Options) string {
 	scripts := fmt.Sprintf(`    "dev": "pnpm --parallel --filter \"./apps/*\" --if-present run dev",
     "build": "turbo build",
     "lint": "turbo lint",
+    "format": "` + biomeFormatScript + `",
     "type-check": "turbo type-check",
     "dev:api": "cd apps/api && air",`)
 
@@ -824,6 +828,7 @@ func rootPackageJSON(opts Options) string {
 %s
   },
   "devDependencies": {
+    `+biomeDevDependency+`,
     "@playwright/test": "^1.48.0",
     "turbo": "^2.0.0"
   },

@@ -37,6 +37,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     setState(null);
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: close is recreated every render and reads state, which is listed.
   useEffect(() => {
     if (!state) return;
     const onKey = (e: KeyboardEvent) => {
@@ -45,7 +46,6 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
   const o = state?.opts;

@@ -522,7 +522,9 @@ func singleFrontendPackageJSON(opts Options) string {
     "build": "tsr generate && tsc -b && vite build",
     "preview": "vite preview",
     "routes:generate": "tsr generate",
-    "postinstall": "tsr generate || true"
+    "postinstall": "tsr generate || true",
+    "lint": "`+biomeLintScript+`",
+    "format": "`+biomeFormatScript+`"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.0",
@@ -545,6 +547,7 @@ func singleFrontendPackageJSON(opts Options) string {
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
+    `+biomeDevDependency+`,
     "@tanstack/react-router-devtools": "^1.93.0",
     "@tanstack/router-cli": "^1.93.0",
     "@tanstack/router-vite-plugin": "^1.93.0",
@@ -565,7 +568,7 @@ func singleFrontendViteConfig() string {
 	return `import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
-import path from 'path'
+import path from 'node:path'
 
 export default defineConfig({
   plugins: [

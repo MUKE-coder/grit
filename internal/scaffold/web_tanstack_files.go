@@ -61,7 +61,8 @@ func webTanStackPackageJSON(opts Options) string {
     "build": "vite build",
     "typecheck": "tsc -b",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "`+biomeLintScript+`",
+    "format": "`+biomeFormatScript+`"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.0",
@@ -102,7 +103,7 @@ func webTanStackViteConfig(opts Options) string {
 	return `import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
-import path from 'path'
+import path from 'node:path'
 ` + viteSecurityHeaders() + `
 export default defineConfig({
   plugins: [
@@ -441,6 +442,7 @@ function BlogDetailPage() {
       <span className="text-sm text-muted-foreground/50 block mb-8">
         {new Date(blog.created_at).toLocaleDateString()}
       </span>
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: sanitised by DOMPurify on this line. */}
       <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(blog.content, { USE_PROFILES: { html: true }, ADD_ATTR: ['target'] }) }} />
     </div>
   )
@@ -450,7 +452,7 @@ function BlogDetailPage() {
 
 func webTanStackProviders() string {
 	return `import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ReactNode, useState } from 'react'
+import { type ReactNode, useState } from 'react'
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
