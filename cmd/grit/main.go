@@ -31,7 +31,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.294.0"
+var version = "3.295.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -1345,10 +1345,15 @@ func packageCmd() *cobra.Command {
 }
 
 func seedCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "seed",
+	var count int64
+	cmd := &cobra.Command{
+		Use:   "seed [Resource]",
 		Short: "Run database seeders",
-		Long:  "Populate the database with initial data (admin user, demo users).",
+		Long: "Populate the database with initial data (admin user, demo users).\n\n" +
+			"With a resource and --count, top that resource's table up to that many rows:\n" +
+			"  grit seed Contact --count 1000000\n" +
+			"Rows are inserted in batches, and a run that stopped partway resumes where it stopped.",
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
 
@@ -1357,7 +1362,27 @@ func seedCmd() *cobra.Command {
 				return err
 			}
 
-			c := exec.Command("go", "run", "cmd/seed/main.go")
+			runArgs := []string{"run", "cmd/seed/main.go"}
+			if len(args) == 1 || count > 0 {
+				if len(args) == 0 {
+					return fmt.Errorf("--count needs a resource: grit seed <Resource> --count %d", count)
+				}
+				if count <= 0 {
+					return fmt.Errorf("give the number of rows: grit seed %s --count 1000", args[0])
+				}
+				// A seed entry point from before --count existed ignores the flags
+				// and would run every seeder instead. Say so rather than do that.
+				entry, err := os.ReadFile(filepath.Join(apiDir, "cmd", "seed", "main.go"))
+				if err != nil {
+					return fmt.Errorf("reading cmd/seed/main.go: %w", err)
+				}
+				if !strings.Contains(string(entry), "SeedOne(") {
+					return fmt.Errorf("this project's cmd/seed/main.go predates grit seed --count: run grit upgrade first")
+				}
+				runArgs = append(runArgs, "-resource", args[0], "-count", strconv.FormatInt(count, 10))
+			}
+
+			c := exec.Command("go", runArgs...)
 			c.Dir = apiDir
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
@@ -1369,6 +1394,8 @@ func seedCmd() *cobra.Command {
 			return c.Run()
 		},
 	}
+	cmd.Flags().Int64Var(&count, "count", 0, "With a resource: the number of rows its table should hold (tops up, resumes)")
+	return cmd
 }
 
 // findAPIDir locates the apps/api directory from the project root.

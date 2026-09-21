@@ -66,6 +66,51 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.295.0 */}
+            <div className="mb-12" id="v3.295.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.295.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Seed a million rows in under a minute: batched, resumable seeding with grit seed --count</h3>
+                <p>
+                  <strong>Batched inserts.</strong> A <code>--faker</code> seeder inserted one row per statement, each in
+                  its own transaction. It now inserts in batches, one transaction per batch, sized to what the database
+                  accepts for the table&apos;s column count. Ten thousand rows went from 96.6 seconds to 3.7 on SQLite,
+                  and from 31.9 seconds to 2.4 on Postgres. A million rows took 3 minutes 14 seconds on SQLite and about
+                  50 seconds on Postgres, where the old seeder would have taken nearly three hours and about 53 minutes.
+                </p>
+                <p>
+                  <strong>grit seed Contact --count 1000000.</strong> Give <code>grit seed</code> a resource and a count
+                  and it tops that table up to exactly that many rows. It counts what is there and inserts only the rest,
+                  so a second run does nothing and a run that was stopped partway carries on from where it stopped. With
+                  no arguments <code>grit seed</code> runs every seeder, as before.
+                </p>
+                <p>
+                  <strong>Flat memory, clear failures.</strong> Rows are built in chunks by a few goroutines and written
+                  as they are ready, so a million rows used about 15 MB of heap. Progress prints every two seconds with
+                  rows per second and time left. The first batch that fails stops the run with an error; before, a
+                  failed row was logged and skipped, and the run reported success over a half-empty table. The count
+                  query&apos;s error, which was ignored, is checked.
+                </p>
+                <p>
+                  <strong>Unique columns stay unique.</strong> A column marked unique seeds from the row&apos;s number
+                  (<code>SKU-0000001</code>) instead of four random letters and four random digits, which collided
+                  about a hundred times in a million rows.
+                </p>
+                <p>
+                  <code>grit upgrade</code> adds the shared seeding helper, <code>internal/database/seedbatch.go</code>,
+                  and the new seed entry point. Seeders generated before this release keep working with
+                  <code>grit seed</code>; regenerate one with <code>grit generate seeder Contact --faker</code> to use
+                  <code>--count</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.294.0 */}
             <div className="mb-12" id="v3.294.0">
               <div className="flex items-center gap-3 mb-4">

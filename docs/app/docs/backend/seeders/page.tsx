@@ -156,9 +156,9 @@ grit generate resource Tag --fields "name:string" --seed`}
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Without a flag you get <strong>one editable example row</strong>. Add{' '}
                   <code>--faker</code> (and <code>--count N</code>, default 10) to instead
-                  generate a loop that fills many rows with{' '}
-                  <a href="https://github.com/brianvoe/gofakeit" className="text-primary hover:underline">gofakeit</a>.
-                  It ships inside the API, so this works offline.
+                  generate a seeder that fills many rows with{' '}
+                  <a href="https://github.com/brianvoe/gofakeit" className="text-primary hover:underline">gofakeit</a>,
+                  inserted in batches. It ships inside the API, so this works offline.
                 </p>
 
                 <CodeBlock terminal code="grit generate seeder Product --faker --count 60" />
@@ -189,9 +189,87 @@ grit generate resource Tag --fields "name:string" --seed`}
                 </div>
                 <p className="text-muted-foreground leading-relaxed">
                   Anything the guesser doesn&apos;t recognise falls back to{' '}
-                  <code>gofakeit.Word()</code>. It&apos;s just Go &mdash; open the file
-                  and swap in your own calls.
+                  <code>gofakeit.Word()</code>. A column marked unique seeds from the
+                  row&apos;s number instead (<code>SKU-0000001</code>, <code>SKU-0000002</code>),
+                  so it never collides however many rows you ask for. It&apos;s just Go:
+                  open the file and swap in your own calls.
                 </p>
+              </div>
+
+              {/* At scale */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Seeding a million rows
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Give <code>grit seed</code> a resource and a count to top that table up to
+                  exactly that many rows:
+                </p>
+
+                <CodeBlock terminal code="grit seed Contact --count 1000000" />
+
+                <ul className="list-disc pl-6 space-y-2 text-muted-foreground mb-4">
+                  <li>
+                    <strong className="text-foreground">It tops up.</strong> The seeder counts
+                    what is in the table and inserts only the rest. Run it twice and the
+                    second run does nothing. Stop it halfway and the next run carries on from
+                    where it stopped, to exactly the count you asked for.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">It inserts in batches.</strong> Rows go
+                    in with multi-row inserts, one transaction per batch, sized to what the
+                    database accepts for the table&apos;s column count (up to 1,000 rows). Model
+                    hooks still run for every row, so IDs, slugs and auto-numbers work as usual.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Memory stays flat.</strong> Rows are built
+                    in chunks by a few goroutines and written as they are ready, never held all
+                    at once. A million rows used about 15 MB of heap.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">It fails loudly.</strong> Progress prints
+                    every two seconds with rows per second and time left, and the first batch
+                    that fails stops the run with an error, instead of logging and reporting
+                    success over a half-empty table.
+                  </li>
+                </ul>
+
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Measured on one development machine, same resource (name, email, phone and a
+                  unique code), before and after this change:
+                </p>
+                <div className="overflow-x-auto mb-4">
+                  <table className="w-full text-sm border border-border rounded-lg">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/30 text-left">
+                        <th className="px-4 py-2 font-medium">Rows</th>
+                        <th className="px-4 py-2 font-medium">SQLite, before</th>
+                        <th className="px-4 py-2 font-medium">SQLite, now</th>
+                        <th className="px-4 py-2 font-medium">Postgres, before</th>
+                        <th className="px-4 py-2 font-medium">Postgres, now</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-border/50"><td className="px-4 py-2">10,000</td><td className="px-4 py-2">96.6 s</td><td className="px-4 py-2">3.7 s</td><td className="px-4 py-2">31.9 s</td><td className="px-4 py-2">2.4 s</td></tr>
+                      <tr><td className="px-4 py-2">1,000,000</td><td className="px-4 py-2">about 2 h 45 min</td><td className="px-4 py-2">3 min 14 s</td><td className="px-4 py-2">about 53 min</td><td className="px-4 py-2">about 50 s</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The before figures for a million rows are estimated from the measured rate;
+                  the after figures are measured. SQLite takes one writer at a time, so it is
+                  slower than Postgres, which writes three batches at once.
+                </p>
+
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    <strong className="text-foreground">A seeder from before --count.</strong>{' '}
+                    Seeders generated by an older Grit still run with <code>grit seed</code>,
+                    but not with <code>--count</code>. Run <code>grit upgrade</code>, then
+                    regenerate the seeder with <code>grit generate seeder Contact --faker</code>{' '}
+                    to switch it over.
+                  </p>
+                </div>
               </div>
 
               {/* Relationships */}
@@ -211,23 +289,21 @@ grit generate resource Tag --fields "name:string" --seed`}
                 <CodeBlock
                   language="go"
                   filename="products_seeder.go (faker)"
-                  code={`func SeedProducts(db *gorm.DB) error {
-    // ... skip if already seeded ...
-
+                  code={`func SeedProductsTo(db *gorm.DB, target int64) error {
     // Link each row to an existing parent (loaded once).
     var categoryIDs []string
     db.Model(&models.Category{}).Pluck("id", &categoryIDs)
 
-    const n = 60
-    for i := 0; i < n; i++ {
-        r := models.Product{
-            Name:       gofakeit.Name(),
-            Price:      gofakeit.Price(1, 1000),
-            CategoryID: pickID(categoryIDs), // ← a real, existing category
-        }
-        db.Create(&r)
-    }
-    return nil
+    return SeedTopUp(db, "products", SeedPlan[models.Product]{
+        Target: target,
+        Make: func(n int64) models.Product {
+            return models.Product{
+                Name:       gofakeit.Name(),
+                Price:      gofakeit.Price(1, 1000),
+                CategoryID: pickID(categoryIDs), // a real, existing category
+            }
+        },
+    })
 }`}
                 />
 
@@ -292,6 +368,7 @@ grit generate resource Tag --fields "name:string" --seed`}
                     </thead>
                     <tbody>
                       <tr className="border-b border-border/50"><td className="px-4 py-2 font-mono text-[13px]">grit seed</td><td className="px-4 py-2 text-muted-foreground">Run every seeder</td></tr>
+                      <tr className="border-b border-border/50"><td className="px-4 py-2 font-mono text-[13px]">grit seed X --count N</td><td className="px-4 py-2 text-muted-foreground">Top X up to N rows, in batches; resumes if stopped</td></tr>
                       <tr className="border-b border-border/50"><td className="px-4 py-2 font-mono text-[13px]">grit generate seeder X [Y…]</td><td className="px-4 py-2 text-muted-foreground">Add a seeder to existing resource(s)</td></tr>
                       <tr className="border-b border-border/50"><td className="px-4 py-2 font-mono text-[13px]">grit generate resource X … --seed</td><td className="px-4 py-2 text-muted-foreground">Emit the seeder while scaffolding</td></tr>
                       <tr><td className="px-4 py-2 font-mono text-[13px]">… --faker --count N</td><td className="px-4 py-2 text-muted-foreground">Fill N rows with gofakeit instead of one example</td></tr>

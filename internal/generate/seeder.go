@@ -3,6 +3,7 @@ package generate
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -63,10 +64,13 @@ func (g *Generator) seederContent(names Names, opts SeederOptions) string {
 	// when the resource has a belongs_to. Keyed off the preamble rather than a
 	// separate flag, because that guard is the only thing in a seeder that uses
 	// it and an unused import will not compile.
-	if relPreamble != "" {
+	if relPreamble != "" || strings.Contains(fieldLines, "fmt.") {
 		imports.WriteString("\t\"fmt\"\n")
 	}
-	imports.WriteString("\t\"log\"\n")
+	// The faker seeder logs through SeedTopUp; only the static one logs itself.
+	if !opts.Faker {
+		imports.WriteString("\t\"log\"\n")
+	}
 	if needsStrings {
 		imports.WriteString("\t\"strings\"\n")
 	}
@@ -108,28 +112,39 @@ func (g *Generator) seederContent(names Names, opts SeederOptions) string {
 	header := "package database\n\nimport (\n" + imports.String() + ")\n\n"
 
 	if opts.Faker {
+		// The row function builds row i. It converts i to int once, and only when a
+		// field uses it: an unused variable does not compile.
+		rowIndex := ""
+		if seederUsesRowIndex.MatchString(fieldLines) {
+			rowIndex = "\t\t\ti := int(n)\n"
+		}
+		target := fmt.Sprintf("%d", count)
 		return header +
-			"// Seed" + names.PluralPascal + " inserts fake " + names.Plural + " using gofakeit.\n" +
-			"// Change the count (n) or swap the gofakeit calls for your own values.\n" +
+			"// Seed" + names.PluralPascal + " tops " + names.Plural + " up to " + target + " fake rows. It is what\n" +
+			"// \"grit seed\" runs; \"grit seed " + names.Pascal + " --count N\" runs Seed" + names.PluralPascal + "To with any\n" +
+			"// other target.\n" +
 			"func Seed" + names.PluralPascal + "(db *gorm.DB) error {\n" +
-			"\tvar count int64\n" +
-			"\tdb.Model(&models." + names.Pascal + "{}).Count(&count)\n" +
-			"\tif count > 0 {\n" +
-			"\t\tlog.Println(\"" + names.PluralPascal + " already seeded, skipping...\")\n" +
-			"\t\treturn nil\n" +
-			"\t}\n\n" +
+			"\treturn Seed" + names.PluralPascal + "To(db, " + target + ")\n" +
+			"}\n\n" +
+			"func init() {\n" +
+			"\tRegisterSeeder(\"" + names.Pascal + "\", Seed" + names.PluralPascal + "To, \"" + names.Plural + "\", \"" + names.PluralSnake + "\")\n" +
+			"}\n\n" +
+			"// Seed" + names.PluralPascal + "To tops " + names.Plural + " up to target rows. It counts what is there and\n" +
+			"// inserts only the rest, in batches, so running it twice does nothing the second\n" +
+			"// time and a run that stopped partway resumes where it stopped. Row i is the\n" +
+			"// row's number in the table, which keeps a unique column unique however many\n" +
+			"// rows are asked for. Swap the gofakeit calls for your own values.\n" +
+			"func Seed" + names.PluralPascal + "To(db *gorm.DB, target int64) error {\n" +
 			relPreamble +
-			"\tconst n = " + fmt.Sprintf("%d", count) + "\n" +
-			"\tfor i := 0; i < n; i++ {\n" +
-			"\t\tr := models." + names.Pascal + "{\n" +
-			fieldLines +
-			"\t\t}\n" +
-			"\t\tif err := db.Create(&r).Error; err != nil {\n" +
-			"\t\t\tlog.Printf(\"Warning: failed to seed " + lower + ": %v\", err)\n" +
-			"\t\t}\n" +
-			"\t}\n" +
-			"\tlog.Printf(\"Seeded %d " + lower + "\", n)\n" +
-			"\treturn nil\n" +
+			"\treturn SeedTopUp(db, \"" + names.Plural + "\", SeedPlan[models." + names.Pascal + "]{\n" +
+			"\t\tTarget: target,\n" +
+			"\t\tMake: func(n int64) models." + names.Pascal + " {\n" +
+			rowIndex +
+			"\t\t\treturn models." + names.Pascal + "{\n" +
+			indentSeederLines(fieldLines) +
+			"\t\t\t}\n" +
+			"\t\t},\n" +
+			"\t})\n" +
 			"}\n"
 	}
 
@@ -465,9 +480,10 @@ func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needs
 				// it is the one where a readable prefix plus entropy is more
 				// useful than a plausible word anyway.
 				case f.Unique:
-					val = "strings.ToUpper(" + strconv.Quote(skuPrefix(f.Name)+"-") +
-						" + gofakeit.LetterN(4) + gofakeit.DigitN(4))"
-					needsStrings = true
+					// The row number, not random characters: four letters and four
+					// digits collide about a hundred times in a million rows, and
+					// each collision fails its whole batch.
+					val = "fmt.Sprintf(" + strconv.Quote(strings.ToUpper(skuPrefix(f.Name)+"-")+"%07d") + ", i+1)"
 				case strings.Contains(lower, "email"):
 					val = "gofakeit.Email()"
 				case strings.Contains(lower, "name"):
@@ -581,4 +597,21 @@ func skuPrefix(fieldName string) string {
 		name = "REF"
 	}
 	return name
+}
+
+// seederUsesRowIndex matches a field line that reads the row index i.
+var seederUsesRowIndex = regexp.MustCompile(`\bi\b`)
+
+// indentSeederLines moves the struct field lines one tab in, for the struct
+// literal inside the row function.
+func indentSeederLines(lines string) string {
+	var b strings.Builder
+	for _, line := range strings.SplitAfter(lines, "\n") {
+		if strings.TrimSpace(line) == "" {
+			b.WriteString(line)
+			continue
+		}
+		b.WriteString("\t" + line)
+	}
+	return b.String()
 }

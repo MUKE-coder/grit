@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 21 to 27, 2026",
-    count: 2,
+    count: 3,
     entries: [
+      { version: "3.295.0", title: "Seed a million rows in under a minute: batched, resumable seeding with grit seed --count" },
       { version: "3.294.0", title: "Ten new field types: email, url, domain, tel, country, color, percent, rating, time and json" },
       { version: "3.293.0", title: "Biome replaces ESLint and Prettier, and pnpm lint finally passes" },
     ],

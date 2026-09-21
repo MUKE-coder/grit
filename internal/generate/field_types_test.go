@@ -138,8 +138,14 @@ func TestFormattedSeederValues(t *testing.T) {
 		"phone.Sample(i)",
 		"fieldtypes.SampleRating(i, 10)",
 		"fieldtypes.SampleJSON(i)",
-		"const n = 1000",
+		"return SeedCompaniesTo(db, 1000)",
+		`RegisterSeeder("Company", SeedCompaniesTo, "companies", "companies")`,
+		"return SeedTopUp(db, \"companies\", SeedPlan[models.Company]{",
+		"i := int(n)",
 	)
+	if strings.Contains(faker, "db.Create(&r)") {
+		t.Error("the faker seeder still inserts one row per statement")
+	}
 	if strings.Contains(faker, "gofakeit.Phone()") {
 		t.Error("the faker seeder fills a tel column with gofakeit.Phone(), which the API refuses")
 	}
