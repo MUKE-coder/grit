@@ -48,3 +48,18 @@ func TestSeederDeclaresTheRowIndexOnlyWhenUsed(t *testing.T) {
 		}
 	}
 }
+
+// first_name and last_name get a first and a last name, not a full name each.
+func TestSeederNamesTheRightPartOfAName(t *testing.T) {
+	def, err := ParseInlineFields("Person", "first_name:string,last_name:string,surname:string,name:string")
+	if err != nil {
+		t.Fatalf("ParseInlineFields: %v", err)
+	}
+	g := &Generator{Module: "acme/apps/api", Definition: def}
+	out := g.seederContent(MakeNames("Person"), SeederOptions{Faker: true, Count: 10})
+	for _, want := range []string{"FirstName: gofakeit.FirstName()", "LastName:  gofakeit.LastName()", "Surname:   gofakeit.LastName()", "Name:      gofakeit.Name()"} {
+		if !strings.Contains(strings.Join(strings.Fields(out), " "), strings.Join(strings.Fields(want), " ")) {
+			t.Errorf("missing %q in:\n%s", want, out)
+		}
+	}
+}

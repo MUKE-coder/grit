@@ -66,6 +66,35 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.296.0 */}
+            <div className="mb-12" id="v3.296.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.296.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>First names seed as first names, and a CRM built end to end</h3>
+                <p>
+                  <strong>Name fields seed the right part of a name.</strong> A <code>--faker</code> seeder filled
+                  <code>first_name</code> and <code>last_name</code> with a full name each, so a contact came out as
+                  &quot;Ada Nakato Brian Okello&quot;. A field named for a first name now seeds
+                  <code>gofakeit.FirstName()</code>, and one named for a last name or surname seeds
+                  <code>gofakeit.LastName()</code>. A plain <code>name</code> field still gets a full name. Regenerate a
+                  seeder with <code>grit generate seeder Contact --faker</code> to pick this up.
+                </p>
+                <p>
+                  <strong>New on the blog: build a CRM with Grit.</strong> One project that uses this month&apos;s
+                  features together: phone numbers from any country with the <code>tel</code> type, nine other field
+                  types, a million seeded contacts with <code>grit seed Contact --count 1000000</code>, and a live
+                  &quot;who else has this contact open&quot; banner built on presence and client events. Every command
+                  in it was run while writing it, and every number is the one it printed.
+                </p>
+              </div>
+            </div>
+
             {/* v3.295.0 */}
             <div className="mb-12" id="v3.295.0">
               <div className="flex items-center gap-3 mb-4">

@@ -486,6 +486,12 @@ func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needs
 					val = "fmt.Sprintf(" + strconv.Quote(strings.ToUpper(skuPrefix(f.Name)+"-")+"%07d") + ", i+1)"
 				case strings.Contains(lower, "email"):
 					val = "gofakeit.Email()"
+				// Before the plain "name" rule, which put a full name such as
+				// "Owen Riley" in a first_name column.
+				case strings.Contains(lower, "first") && strings.Contains(lower, "name"):
+					val = "gofakeit.FirstName()"
+				case (strings.Contains(lower, "last") || strings.Contains(lower, "sur")) && strings.Contains(lower, "name"):
+					val = "gofakeit.LastName()"
 				case strings.Contains(lower, "name"):
 					val = "gofakeit.Name()"
 				case strings.Contains(lower, "phone"):
