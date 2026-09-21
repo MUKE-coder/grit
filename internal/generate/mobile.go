@@ -54,6 +54,9 @@ func (g *Generator) writeMobileFiles(names Names) error {
 	if err := g.ensureMobileNumberFormat(); err != nil {
 		return err
 	}
+	if err := g.ensureMobileRelationSupport(); err != nil {
+		return err
+	}
 	if err := g.ensureMobileImportHelper(); err != nil {
 		return err
 	}
@@ -219,7 +222,7 @@ func (g *Generator) mobileDetailRows() string {
 			label = f.RelatedModelName()
 			// Prefer the related record's name/title (preloaded by the API),
 			// fall back to the raw foreign key.
-			valueExpr = "(item." + base + " && (item." + base + ".name || item." + base + ".title)) || item." + f.FKColumnName()
+			valueExpr = "relationLabel(item." + base + ") || item." + f.FKColumnName()
 		case f.IsManyToMany():
 			label = humanizeLabel(f.Name)
 			valueExpr = "item." + n + "?.length ? item." + n + ".length + \" linked\" : \"—\""
@@ -267,6 +270,14 @@ func (g *Generator) writeMobileHook(names Names) error {
 	if g.mobileHasFileField() {
 		fileRef = "import type { FileRef } from \"@repo/shared/schemas\";\n"
 	}
+	path := filepath.Join(g.mobileRoot(), "hooks", "use-"+names.PluralKebab+".ts")
+	return writeFileWithDirs(path, g.mobileHookContent(names, fileRef))
+}
+
+// mobileHookContent is the list, get, create, update and delete hooks for one
+// model. names is usually the resource's own, and is "User" when a relation
+// points at the built-in users, which have no generated hook of their own.
+func (g *Generator) mobileHookContent(names Names, fileRef string) string {
 
 	tmpl := `import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { __PASCAL__ } from "@repo/shared/types";
@@ -347,10 +358,43 @@ export function useDelete__PASCAL__() {
 `
 	content := g.applyMobileTokens(tmpl, names)
 	content = strings.ReplaceAll(content, "__FILEREF__", fileRef)
-	content = strings.ReplaceAll(content, "__FIELDS__", g.buildTSInterfaceFields())
+	return strings.ReplaceAll(content, "__FIELDS__", g.buildTSInterfaceFields())
+}
 
-	path := filepath.Join(g.mobileRoot(), "hooks", "use-"+names.PluralKebab+".ts")
-	return writeFileWithDirs(path, content)
+// mobileHasBelongsTo reports whether the resource has a belongs_to field.
+func (g *Generator) mobileHasBelongsTo() bool {
+	for _, f := range g.Definition.Fields {
+		if f.IsBelongsTo() {
+			return true
+		}
+	}
+	return false
+}
+
+// ensureMobileRelationSupport writes what a belongs_to field's screens import:
+// lib/relation-label.ts, and hooks/use-users.ts when a relation points at the
+// built-in users. The screens imported a use-users hook that did not exist and
+// read .name and .title off records that have neither, so an Expo app with a
+// relation to User failed tsc. Found building the WhatsApp blueprint.
+func (g *Generator) ensureMobileRelationSupport() error {
+	if !g.mobileHasBelongsTo() {
+		return nil
+	}
+	if err := writeFileWithDirs(filepath.Join(g.mobileRoot(), "lib", "relation-label.ts"), scaffold.ExpoRelationLabel()); err != nil {
+		return err
+	}
+	for _, f := range g.Definition.Fields {
+		if !f.IsBelongsTo() || f.RelatedModelName() != "User" {
+			continue
+		}
+		users := MakeNames("User")
+		path := filepath.Join(g.mobileRoot(), "hooks", "use-"+users.PluralKebab+".ts")
+		if fileExists(path) {
+			return nil
+		}
+		return writeFileWithDirs(path, scaffold.ExpoUsersHook())
+	}
+	return nil
 }
 
 // mobileColumn describes one column of the resource table.
@@ -368,7 +412,7 @@ func mobileColumnFor(f Field) (cellExpr string, width int, sortKey string) {
 	switch {
 	case f.IsBelongsTo():
 		base := strings.TrimSuffix(n, "_id")
-		return "(item." + base + " && (item." + base + ".name || item." + base + ".title)) || item." + f.FKColumnName() + " || \"\"", 150, ""
+		return "relationLabel(item." + base + ") || item." + f.FKColumnName() + " || \"\"", 150, ""
 	case FieldType(f.Type) == FieldBool:
 		return "item." + n + " ? \"Yes\" : \"No\"", 90, ""
 	case FieldType(f.Type) == FieldInt || FieldType(f.Type) == FieldUint || FieldType(f.Type) == FieldFloat ||
@@ -480,6 +524,9 @@ func (g *Generator) writeMobileListScreen(names Names) error {
 		if !f.IsBelongsTo() {
 			continue
 		}
+		if !hasFilters {
+			filterImports.WriteString("import { relationLabel } from \"@/lib/relation-label\";\n")
+		}
 		hasFilters = true
 		relNames := MakeNames(f.RelatedModelName())
 		hook := "use" + relNames.PluralPascal
@@ -503,7 +550,7 @@ func (g *Generator) writeMobileListScreen(names Names) error {
 		filterJSX.WriteString("          </Pressable>\n")
 		filterJSX.WriteString("          {" + optsVar + ".map((opt: any) => (\n")
 		filterJSX.WriteString("            <Pressable key={opt.id} onPress={() => setFilters((f) => ({ ...f, " + fk + ": opt.id }))} className={filters." + fk + " === opt.id ? " + sel + " : " + unsel + "}>\n")
-		filterJSX.WriteString("              <Text className={filters." + fk + " === opt.id ? \"text-white font-medium\" : \"text-[#0F1018] dark:text-white\"}>{opt.name || opt.title || opt.id}</Text>\n")
+		filterJSX.WriteString("              <Text className={filters." + fk + " === opt.id ? \"text-white font-medium\" : \"text-[#0F1018] dark:text-white\"}>{relationLabel(opt) || opt.id}</Text>\n")
 		filterJSX.WriteString("            </Pressable>\n")
 		filterJSX.WriteString("          ))}\n")
 		filterJSX.WriteString("        </ScrollView>\n")
@@ -576,7 +623,7 @@ __FILTER_QUERIES__  const query = use__PLURAL_PASCAL__(search, __FILTERS_ARG__, 
 
   const renderItem = ({ item }: { item: __PASCAL__ }) => (
     <Pressable
-      onPress={() => router.push("/__KEBAB__/" + item.id)}
+      onPress={() => router.push(` + "`/__KEBAB__/${item.id}`" + `)}
       className="flex-row items-center border-b border-[#E5E7EB] dark:border-[#1f1f2b] bg-white dark:bg-[#111118]"
       style={{ width: TABLE_WIDTH }}
     >
@@ -695,6 +742,10 @@ func (g *Generator) writeMobileDetailScreen(names Names) error {
 		heroImage = "{" + imageExpr + " ? (\n" +
 			`            <Image source={{ uri: resolveImageUrl(` + imageExpr + `) }} style={{ width: "100%", height: 200, borderRadius: 20, marginBottom: 16 }} contentFit="cover" />` +
 			"\n          ) : null}"
+	}
+
+	if g.mobileHasBelongsTo() {
+		imageImport += "import { relationLabel } from \"@/lib/relation-label\";\n"
 	}
 
 	tmpl := `import { View, Text, ScrollView, ActivityIndicator, Pressable, Alert } from "react-native";

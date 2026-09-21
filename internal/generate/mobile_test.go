@@ -112,7 +112,7 @@ func TestMobile_ScreensContent(t *testing.T) {
 		"const TABLE_WIDTH =",                 // scrollable table
 		`onSort("name")`,                      // sortable title column
 		"item.description",                    // a field column cell
-		`router.push("/products/" + item.id)`, // row navigates to detail
+		"router.push(`/products/${item.id}`)", // row navigates to detail (a template literal, which typed routes accept)
 		"FormSheet",                           // quick-create sheet
 		"funnel-outline",                      // belongs_to filter sheet
 		"exportResourceCsv",                   // CSV export action
@@ -126,9 +126,9 @@ func TestMobile_ScreensContent(t *testing.T) {
 	detail := read(t, filepath.Join(expo, "app", "products", "[id].tsx"))
 	for _, w := range []string{
 		"useProduct(id)",
-		`<Row label="Category" value={(item.category`, // belongs_to renders related name w/ FK fallback
-		"item.thumbnail?.url",                         // hero image
-		`title="Product"`,                             // singular header
+		`<Row label="Category" value={relationLabel(item.category) || item.category_id}`, // belongs_to renders the related record's name, FK fallback
+		"item.thumbnail?.url", // hero image
+		`title="Product"`,     // singular header
 	} {
 		if !strings.Contains(detail, w) {
 			t.Errorf("detail screen missing %q", w)

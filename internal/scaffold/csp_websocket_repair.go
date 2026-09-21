@@ -75,12 +75,16 @@ func repairCSPWebSocketNginxSource(src string) (string, []string, []string) {
 		[]string{"connect-src admits the API's realtime socket"}, nil
 }
 
-// buildArtefactIgnores are written by tsc and next on every build or dev run.
-// Unignored, they turned up in the first commit of every project that built
-// before committing.
-const buildArtefactIgnores = "# TypeScript and Next.js write these on every build or dev run.\n*.tsbuildinfo\nnext-env.d.ts\n"
+// buildArtefactIgnores are written by tsc, next and expo on every build or dev
+// run. Unignored, they turned up in the first commit of every project that
+// built before committing.
+var buildArtefactIgnores = []string{"*.tsbuildinfo", "next-env.d.ts", ".expo/"}
 
-// ignoreBuildArtefacts adds buildArtefactIgnores to .gitignore once.
+const buildArtefactComment = "# TypeScript, Next.js and Expo write these on every build or dev run."
+
+// ignoreBuildArtefacts adds whichever buildArtefactIgnores .gitignore lacks,
+// line by line, so a project that already has the first two (v3.297.0) still
+// gets .expo/.
 func ignoreBuildArtefacts(root string) error {
 	path := filepath.Join(root, ".gitignore")
 	raw, err := os.ReadFile(path)
@@ -91,15 +95,26 @@ func ignoreBuildArtefacts(root string) error {
 		return fmt.Errorf("reading .gitignore: %w", err)
 	}
 	src := string(raw)
+	have := map[string]bool{}
 	for _, line := range strings.Split(strings.ReplaceAll(src, "\r\n", "\n"), "\n") {
-		if strings.TrimSpace(line) == "*.tsbuildinfo" {
-			return nil
+		have[strings.TrimSpace(line)] = true
+	}
+	var missing []string
+	for _, line := range buildArtefactIgnores {
+		if !have[line] {
+			missing = append(missing, line)
 		}
 	}
-	block, nl := buildArtefactIgnores, "\n"
+	if len(missing) == 0 {
+		return nil
+	}
+	nl := "\n"
 	if strings.Contains(src, "\r\n") {
 		nl = "\r\n"
-		block = strings.ReplaceAll(block, "\n", nl)
+	}
+	block := strings.Join(missing, nl) + nl
+	if !have[buildArtefactComment] {
+		block = buildArtefactComment + nl + block
 	}
 	if src != "" && !strings.HasSuffix(src, "\n") {
 		src += nl
@@ -107,7 +122,7 @@ func ignoreBuildArtefacts(root string) error {
 	if err := os.WriteFile(path, []byte(src+nl+block), 0o644); err != nil {
 		return fmt.Errorf("writing .gitignore: %w", err)
 	}
-	fmt.Println("  ✓ .gitignore: *.tsbuildinfo and next-env.d.ts are ignored")
+	fmt.Printf("  ✓ .gitignore: %s ignored\n", strings.Join(missing, ", "))
 	fmt.Println("    One already committed stays tracked until you git rm --cached it.")
 	return nil
 }

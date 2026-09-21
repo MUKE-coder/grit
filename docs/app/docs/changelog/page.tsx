@@ -66,6 +66,42 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.299.0 */}
+            <div className="mb-12" id="v3.299.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.299.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Generated Expo screens type-check</h3>
+                <p>
+                  <strong>Relations to a user broke the build.</strong> A resource with a belongs_to field got Expo
+                  screens that imported a <code>use&lt;Plural&gt;</code> hook for the related model and named it as
+                  <code>record.name || record.title</code>. For a relation to the built-in User there was no
+                  <code>use-users</code> hook, and most models have neither field, so <code>tsc</code> failed as soon
+                  as such a resource was generated. The screens now call <code>relationLabel()</code>, which uses
+                  whichever of name, title, first and last name, label or email a record has, and the generator
+                  writes a <code>use-users</code> hook when a relation needs one.
+                </p>
+                <p>
+                  <strong>Typed routes rejected every list screen.</strong> Expo Router&apos;s typed routes are on in
+                  every Grit Expo app, and they accept a template literal shaped like a route but not a plain string.
+                  The generated list screens and the roles screen navigated with <code>&quot;/items/&quot; + id</code>,
+                  so <code>tsc</code> failed the first time <code>expo start</code> wrote the route types. They use
+                  template literals now.
+                </p>
+                <p>
+                  <code>grit upgrade</code> fixes screens it generated before, adds the missing hook, and adds
+                  <code>.expo/</code> to <code>.gitignore</code>, where Expo&apos;s cache was being committed. Found
+                  running the WhatsApp blueprint&apos;s mobile app, which now type-checks cleanly with its route
+                  types in place.
+                </p>
+              </div>
+            </div>
+
             {/* v3.298.0 */}
             <div className="mb-12" id="v3.298.0">
               <div className="flex items-center gap-3 mb-4">

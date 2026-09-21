@@ -52,8 +52,8 @@ func TestCSPWebSocketRepair(t *testing.T) {
 }
 
 func TestBuildArtefactsAreIgnoredOnce(t *testing.T) {
-	if !strings.Contains(rootGitignore(), "*.tsbuildinfo\nnext-env.d.ts\n") {
-		t.Error("a new project's .gitignore does not ignore *.tsbuildinfo and next-env.d.ts")
+	if !strings.Contains(rootGitignore(), buildArtefactComment+"\n*.tsbuildinfo\nnext-env.d.ts\n.expo/\n") {
+		t.Error("a new project's .gitignore does not ignore *.tsbuildinfo, next-env.d.ts and .expo/")
 	}
 	root := t.TempDir()
 	path := filepath.Join(root, ".gitignore")
@@ -74,5 +74,28 @@ func TestBuildArtefactsAreIgnoredOnce(t *testing.T) {
 	}
 	if strings.Contains(strings.ReplaceAll(string(got), "\r\n", ""), "\n") {
 		t.Error("a CRLF .gitignore got LF lines")
+	}
+}
+
+// A project upgraded to v3.297.0 has the first two lines; it gets .expo/ and
+// nothing twice.
+func TestBuildArtefactsAddsOnlyWhatIsMissing(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, ".gitignore")
+	v297 := "node_modules/\n\n# TypeScript and Next.js write these on every build or dev run.\n*.tsbuildinfo\nnext-env.d.ts\n"
+	if err := os.WriteFile(path, []byte(v297), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := ignoreBuildArtefacts(root); err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for line, want := range map[string]int{"*.tsbuildinfo": 1, "next-env.d.ts": 1, ".expo/": 1} {
+		if n := strings.Count(string(got), "\n"+line+"\n"); n != want {
+			t.Errorf("%s appears %d times, want %d:\n%s", line, n, want, got)
+		}
 	}
 }

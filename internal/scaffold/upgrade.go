@@ -492,6 +492,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairExpoRefresh(root); err != nil {
 			fmt.Printf("  ⚠ sharing the Expo API client's token refresh: %v\n", err)
 		}
+		if err := repairExpoRelations(root); err != nil {
+			fmt.Printf("  ⚠ naming related records in the Expo screens: %v\n", err)
+		}
 		// One Redis inspector for the jobs screen, a GDPR export that streams its
 		// activity log, indexes for the notification bell, and generated writes
 		// that do not read their row back.

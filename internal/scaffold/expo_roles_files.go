@@ -100,7 +100,7 @@ export default function RolesScreen() {
         {roles?.map((role) => (
           <Pressable
             key={role.id}
-            onPress={() => router.push("/roles/" + role.id)}
+            onPress={() => router.push(` + "`/roles/${role.id}`" + `)}
             className="bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-2xl p-4 mb-3"
           >
             <View className="flex-row items-center mb-1">
