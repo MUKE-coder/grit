@@ -85,7 +85,7 @@ func writeRootFiles(root string, opts Options) error {
 	}
 
 	if opts.ShouldUseTurborepo() {
-		files[filepath.Join(root, "pnpm-workspace.yaml")] = pnpmWorkspace(opts.ShouldIncludeDesktop())
+		files[filepath.Join(root, "pnpm-workspace.yaml")] = pnpmWorkspace(opts.ShouldIncludeDesktop(), opts.ShouldIncludeExpo())
 		files[filepath.Join(root, "turbo.json")] = turboJSON()
 		files[filepath.Join(root, "package.json")] = rootPackageJSON(opts)
 		files[filepath.Join(root, "grit.config.ts")] = gritConfig(opts)
@@ -696,7 +696,7 @@ pnpm-lock.yaml
 `
 }
 
-func pnpmWorkspace(includeDesktop bool) string {
+func pnpmWorkspace(includeDesktop, includeExpo bool) string {
 	ws := `packages:
   - "apps/*"
   - "packages/*"
@@ -714,8 +714,34 @@ func pnpmWorkspace(includeDesktop bool) string {
 	// match — React 19 hard-errors on a version mismatch. Exact direct pins are
 	// more reliable than a pnpm override (pnpm 10 didn't consistently apply the
 	// react-dom override, leaving react and react-dom on different 19.x lines).
-	return ws + "\n" + pnpmAllowBuilds()
+	ws += "\n" + pnpmAllowBuilds()
+	if includeExpo {
+		ws += pnpmExpoAudit
+	}
+	return ws
 }
+
+// pnpmExpoAudit keeps the security workflow's pnpm audit passing on a project
+// with the Expo app. Every high advisory it reported was in Expo's bundler,
+// which is a production dependency of the Expo app, so the audit counts it.
+//
+// PostCSS is moved to a fixed release: 8.4 to 8.5 is compatible, and the app
+// bundles with it. image-size has no fixed 1.x release, only 2.x, which metro
+// cannot take, and metro only reads the sizes of the project's own image
+// assets at bundle time, never a file a user uploads, so those two are
+// accepted here. Remove them when metro moves to image-size 2.
+const pnpmExpoAudit = `
+# Expo's bundler: see pnpmExpoAudit in Grit's scaffold for the reasoning.
+overrides:
+  "@expo/metro-config>postcss": "^8.5.28"
+
+auditConfig:
+  ignoreGhsas:
+    # image-size 1.x in metro: denial of service parsing ICNS, JXL and HEIF.
+    # Only the project's own image assets are read, at bundle time.
+    - GHSA-w3rx-r6r6-pgpr
+    - GHSA-5p2g-fcmc-qvqq
+`
 
 // pnpmAllowBuilds allows the dependency install scripts this stack needs.
 // pnpm 11 turned an ignored build script into a hard ERR_PNPM_IGNORED_BUILDS

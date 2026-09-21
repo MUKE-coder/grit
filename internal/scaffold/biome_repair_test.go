@@ -185,7 +185,7 @@ func oldTripleProject(t *testing.T) (string, Options) {
 	admin := strings.Replace(adminPackageJSON(opts), scripts, oldNextScripts, 1)
 	admin = strings.Replace(admin, "    \"postcss\": \"^8.4.0\",\n", "    \"postcss\": \"^8.4.0\",\n"+oldPrettierDeps, 1)
 
-	writeTestFile(t, filepath.Join(root, "pnpm-workspace.yaml"), pnpmWorkspace(false))
+	writeTestFile(t, filepath.Join(root, "pnpm-workspace.yaml"), pnpmWorkspace(false, false))
 	writeTestFile(t, filepath.Join(root, "package.json"), rootOld)
 	writeTestFile(t, filepath.Join(root, "apps", "web", "package.json"), web)
 	writeTestFile(t, filepath.Join(root, "apps", "admin", "package.json"), admin)

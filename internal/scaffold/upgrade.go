@@ -101,7 +101,7 @@ func Upgrade(uOpts UpgradeOptions) error {
 	spinner.Printf("  → Updating root configuration...\n")
 	rootFiles := map[string]string{
 		filepath.Join(root, "turbo.json"):          turboJSON(),
-		filepath.Join(root, "pnpm-workspace.yaml"): pnpmWorkspace(dirExists(filepath.Join(root, "apps", "desktop", "frontend"))),
+		filepath.Join(root, "pnpm-workspace.yaml"): pnpmWorkspace(dirExists(filepath.Join(root, "apps", "desktop", "frontend")), hasExpo),
 		filepath.Join(root, ".npmrc"):              rootNpmrc(),
 	}
 	n, err := writeUpgradeFiles(rootFiles, uOpts.Force)
@@ -1468,11 +1468,16 @@ func writeUpgradeFiles(files map[string]string, force bool) (int, error) {
 
 // pinReactVersions pins react and react-dom to one exact version in every web
 // frontend: 19.2.7, or Expo's version when the project has the Expo app (see
-// alignReactVersions). Run pnpm install afterwards.
+// alignReactVersions).
+//
+// The advice is pnpm dedupe, not pnpm install: install keeps a version the
+// lockfile already holds when it still satisfies the range, so a package that
+// asks for "react": ">=18" kept its own 19.2.7 and the project still had two
+// Reacts. dedupe re-resolves, and installs.
 func pinReactVersions(root string, spinner *color.Color) {
 	target := monorepoReactVersion(root)
 	for _, p := range alignReactVersions(root) {
-		spinner.Printf("  ✓ pinned react/react-dom to %s in %s (run pnpm install)\n", target, filepath.Base(filepath.Dir(p)))
+		spinner.Printf("  ✓ pinned react/react-dom to %s in %s (run pnpm dedupe, which also installs)\n", target, filepath.Base(filepath.Dir(p)))
 	}
 }
 

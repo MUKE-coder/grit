@@ -66,6 +66,37 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.306.0 */}
+            <div className="mb-12" id="v3.306.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.306.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The security scan passes on a project with the Expo app</h3>
+                <p>
+                  <strong>pnpm audit.</strong> A project with the Expo app failed its security workflow on four
+                  high advisories, all in Expo&apos;s bundler, which the audit counts because Expo is a
+                  production dependency of the app. <code>pnpm-workspace.yaml</code> now moves the
+                  bundler&apos;s PostCSS to 8.5.28, which fixes the four PostCSS advisories and still bundles
+                  the app. The two image-size advisories have no fixed 1.x release, only 2.x, which metro
+                  cannot take, and metro only reads the sizes of the project&apos;s own image assets at
+                  bundle time, never a file a user uploads, so they are listed under
+                  <code>auditConfig.ignoreGhsas</code> with that reason, to remove when metro moves on.
+                </p>
+                <p>
+                  <strong>Run <code>pnpm dedupe</code> after the React pin, not <code>pnpm install</code>.</strong>{' '}
+                  v3.305.0 said install. It keeps a version the lockfile already holds when it still
+                  satisfies the range, so the upload package, which asks for <code>&quot;react&quot;:
+                  &quot;&gt;=18&quot;</code>, kept its own 19.2.7 in an upgraded project and there were
+                  still two Reacts. <code>pnpm dedupe</code> re-resolves, and installs.
+                </p>
+              </div>
+            </div>
+
             {/* v3.305.0 */}
             <div className="mb-12" id="v3.305.0">
               <div className="flex items-center gap-3 mb-4">
