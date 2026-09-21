@@ -571,7 +571,7 @@ func TestGenerator_Run_BasicResource(t *testing.T) {
 	}
 
 	// Studio model injected (inline)
-	if !strings.Contains(routes, "&models.Post{},") {
+	if !strings.Contains(routes, "&models.Post{} /* grit:studio */") {
 		t.Errorf("routes.go: &models.Post{} not injected into studio:\n%s", routes)
 	}
 

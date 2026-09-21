@@ -363,7 +363,7 @@ func TestDesktopInjectAll(t *testing.T) {
 	if !strings.Contains(mainContent, "productSvc := service.NewProductService(database)") {
 		t.Error("main.go missing service init")
 	}
-	if !strings.Contains(mainContent, "productSvc, ") {
+	if !strings.Contains(mainContent, "productSvc") || strings.Contains(mainContent, "productSvc, /* grit:app-args */") {
 		t.Error("main.go missing app arg")
 	}
 

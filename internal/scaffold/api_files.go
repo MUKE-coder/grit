@@ -4073,7 +4073,9 @@ func countWindow(name string) (string, time.Duration, bool) {
 // filters, search and date window but no order or page.
 func countWindows(query *gorm.DB, names []string) (map[string]int64, error) {
 	// To the minute, so the same request moments later builds the same SQL and
-	// the count cache can answer it.
+	// the count cache can answer it. Compared in local time, as GORM writes
+	// created_at: SQLite compares times as text, and a UTC bound against local
+	// timestamps put the window off by the machine's UTC offset.
 	now := time.Now().UTC().Truncate(time.Minute)
 	out := make(map[string]int64, len(names))
 	for _, name := range names {
@@ -4082,7 +4084,7 @@ func countWindows(query *gorm.DB, names []string) (map[string]int64, error) {
 			continue
 		}
 		var n int64
-		if err := countTotal(query.Session(&gorm.Session{}).Where(column+" >= ?", now.Add(-window)), &n); err != nil {
+		if err := countTotal(query.Session(&gorm.Session{}).Where(column+" >= ?", now.Add(-window).In(time.Local)), &n); err != nil {
 			return nil, fmt.Errorf("counting %s: %w", name, err)
 		}
 		out[name] = n

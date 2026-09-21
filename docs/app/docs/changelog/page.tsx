@@ -66,6 +66,38 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.302.0 */}
+            <div className="mb-12" id="v3.302.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.302.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Tidier generated code, and date windows that are right on SQLite</h3>
+                <p>
+                  <strong>A project stays gofmt-clean after grit generate.</strong> Registering a model with the
+                  API reference or GORM Studio left a comma before the marker comment, which gofmt removes, so
+                  <code>gofmt -l</code> listed <code>apidocs.go</code> after the first generated resource. The
+                  file is formatted after each change now, and a second run of the same resource still finds it
+                  already registered.
+                </p>
+                <p>
+                  <strong>Count windows and daily charts on SQLite.</strong> GORM writes <code>created_at</code>
+                  in local time, and SQLite compares times as text, so a &quot;last 24 hours&quot; count or a
+                  30-day chart bounded by a UTC time was off by the machine&apos;s UTC offset. The bounds are now
+                  the same instant written in local time. Postgres compares instants and was never affected.
+                </p>
+                <p>
+                  <strong>No empty sign-in folders in the web app.</strong> A new web app got five empty
+                  <code>(auth)</code> folders for pages that only <code>grit add web-auth</code> writes. They are
+                  created with the pages now.
+                </p>
+              </div>
+            </div>
+
             {/* v3.301.0 */}
             <div className="mb-12" id="v3.301.0">
               <div className="flex items-center gap-3 mb-4">

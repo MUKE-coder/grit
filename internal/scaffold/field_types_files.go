@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/MUKE-coder/grit/v3/internal/codefmt"
 	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
@@ -62,7 +63,10 @@ func writeMissing(files map[string]string, module string) (bool, error) {
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			return wrote, err
 		}
-		if err := os.WriteFile(path, []byte(strings.ReplaceAll(body, "{{MODULE}}", module)), 0o644); err != nil {
+		// Formatted, as the scaffold's own writes are: internal/phone's test
+		// arrived misaligned, so a project was not gofmt-clean after its first
+		// tel field.
+		if err := os.WriteFile(path, []byte(codefmt.File(path, strings.ReplaceAll(body, "{{MODULE}}", module))), 0o644); err != nil {
 			return wrote, fmt.Errorf("writing %s: %w", path, err)
 		}
 		manifest.Refresh(path)

@@ -68,7 +68,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.301.0"
+const DefaultVersion = "3.302.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -896,12 +896,10 @@ func createDirectories(root string, opts Options) error {
 			)
 		} else {
 			dirs = append(dirs,
+				// No (auth) folders: the web app's sign-in pages come from
+				// grit add web-auth, which creates them with the pages. Created
+				// here they were five empty folders in every new project.
 				filepath.Join(root, "apps", "web", "app"),
-				filepath.Join(root, "apps", "web", "app", "(auth)", "login"),
-				filepath.Join(root, "apps", "web", "app", "(auth)", "register"),
-				filepath.Join(root, "apps", "web", "app", "(auth)", "forgot-password"),
-				filepath.Join(root, "apps", "web", "app", "(auth)", "reset-password"),
-				filepath.Join(root, "apps", "web", "app", "(auth)", "callback"),
 				filepath.Join(root, "apps", "web", "lib"),
 				filepath.Join(root, "apps", "web", "__tests__"),
 			)

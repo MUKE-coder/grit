@@ -221,6 +221,14 @@ func lastThirtyDays() time.Time {
 	now := time.Now().UTC()
 	return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -29)
 }
+
+// asStored is t written the way GORM writes created_at: the same instant, in
+// local time. SQLite compares times as text, so a UTC cutoff against local
+// timestamps was off by the machine's UTC offset. Postgres compares instants
+// and is unaffected.
+func asStored(t time.Time) time.Time {
+	return t.In(time.Local)
+}
 `
 
 const dailySeriesFunc = `// buildDailySeries returns 30 buckets, one per UTC calendar day for the last 30
@@ -237,7 +245,7 @@ func buildDailySeries(db *gorm.DB, model interface{}) ([]ResourceStatsBucket, er
 	var rows []row
 	if err := db.Model(model).
 		Select(day+" AS day, COUNT(*) AS n").
-		Where("created_at >= ?", cutoff).
+		Where("created_at >= ?", asStored(cutoff)).
 		Group(day).
 		Scan(&rows).Error; err != nil {
 		return nil, err
@@ -269,7 +277,7 @@ func countOverTime(db *gorm.DB, model interface{}, params ChartParams) (*ChartRe
 	var rows []row
 	if err := db.Model(model).
 		Select(day+" AS day, COUNT(*) AS n").
-		Where("created_at >= ?", cutoff).
+		Where("created_at >= ?", asStored(cutoff)).
 		Group(day).
 		Scan(&rows).Error; err != nil {
 		return nil, fmt.Errorf("count_over_time: %w", err)
@@ -306,7 +314,7 @@ func aggOverTime(db *gorm.DB, model interface{}, params ChartParams, agg string)
 	var rows []row
 	if err := db.Model(model).
 		Select(day+" AS day, COALESCE(SUM("+params.Field+"), 0) AS total, COUNT(*) AS n").
-		Where("created_at >= ?", cutoff).
+		Where("created_at >= ?", asStored(cutoff)).
 		Group(day).
 		Scan(&rows).Error; err != nil {
 		return nil, fmt.Errorf("%s_over_time: %w", strings.ToLower(agg), err)

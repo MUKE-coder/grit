@@ -139,6 +139,11 @@ func (d *Date) Scan(v any) error {
 //
 // Marshals as RFC3339, because unlike a date this genuinely is an instant and
 // the zone is part of the value.
+//
+// Whole seconds, on purpose: it is for datetimes people enter, where more
+// digits are noise. For a time the system records and compares, such as when
+// a message was read, use time.Time, which keeps the fraction: here, a message
+// and a read receipt a few milliseconds apart marshal as the same second.
 type DateTime struct{ time.Time }
 
 func (d *DateTime) UnmarshalJSON(b []byte) error {

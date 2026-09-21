@@ -183,7 +183,7 @@ func TestInjectInline(t *testing.T) {
 			t.Fatalf("injectInline error: %v", err)
 		}
 		got := readFile(t, f)
-		if !strings.Contains(got, "&models.Post{}, /* grit:studio */") {
+		if !strings.Contains(got, "&models.User{}, &models.Post{} /* grit:studio */") {
 			t.Errorf("inline code not found in expected position:\n%s", got)
 		}
 	})
@@ -200,7 +200,7 @@ func TestInjectInline(t *testing.T) {
 			t.Fatalf("injectInline error: %v", err)
 		}
 		got := readFile(t, f)
-		if !strings.Contains(got, "&models.User{}, &models.Post{}, /* grit:studio */") {
+		if !strings.Contains(got, "&models.User{}, &models.Post{} /* grit:studio */") {
 			t.Errorf("missing separator between elements:\n%s", got)
 		}
 		// The result has to be valid Go, not merely look right.
@@ -220,7 +220,7 @@ func TestInjectInline(t *testing.T) {
 		if strings.Contains(got, "(, ") {
 			t.Errorf("leading comma inserted into an empty list:\n%s", got)
 		}
-		if !strings.Contains(got, "NewApp(postSvc *service.PostService, /* grit:constructor-params */)") {
+		if !strings.Contains(got, "NewApp(postSvc *service.PostService /* grit:constructor-params */)") {
 			t.Errorf("unexpected result:\n%s", got)
 		}
 	})
@@ -290,4 +290,26 @@ func readFile(t *testing.T, path string) string {
 		t.Fatalf("readFile: %v", err)
 	}
 	return string(data)
+}
+
+// A generate leaves the file gofmt-clean, and a second run of the same resource
+// does not inject it again even though gofmt removed the comma after it.
+func TestInjectInlineIsGofmtCleanAndIdempotent(t *testing.T) {
+	f := writeTempFile(t, "apidocs.go", "package routes\n\nvar Models = []interface{}{&models.User{} /* grit:docs:models */}\n")
+	for i := 0; i < 2; i++ {
+		if err := injectInline(f, "/* grit:docs:models */", "&models.Post{}, "); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got := readFile(t, f)
+	if n := strings.Count(got, "&models.Post{}"); n != 1 {
+		t.Fatalf("&models.Post{} appears %d times, want 1:\n%s", n, got)
+	}
+	formatted, err := format.Source([]byte(got))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(formatted) != got {
+		t.Errorf("not gofmt-clean:\n%s", got)
+	}
 }

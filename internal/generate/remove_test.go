@@ -234,7 +234,7 @@ func TestRemoveResource_Injections(t *testing.T) {
 
 	// Reverse: remove studio injection
 	routesPath := filepath.Join(root, "apps", "api", "internal", "routes", "routes.go")
-	if err := removeInlineText(routesPath, "&models.Post{}, "); err != nil {
+	if err := removeInlineText(routesPath, ", &models.Post{}"); err != nil {
 		t.Fatalf("removeInlineText: %v", err)
 	}
 	routesContent := readFile(t, routesPath)

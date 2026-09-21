@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/MUKE-coder/grit/v3/internal/scaffold"
-
+	"github.com/MUKE-coder/grit/v3/internal/codefmt"
 	"github.com/MUKE-coder/grit/v3/internal/manifest"
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // injectAll injects code into all existing files that have markers.
@@ -542,6 +542,14 @@ func injectInline(filePath, marker, code string) error {
 	if idx == -1 {
 		return fmt.Errorf("marker %q not found in %s", marker, filePath)
 	}
+	// The file is gofmt'd after the splice (below), and gofmt drops the comma
+	// after the last element of a one-line list, so an element injected last
+	// reads "&models.Post{} /* grit:studio */" with no comma for the check above
+	// to find. Look for the bare element on the marker's own line too.
+	lineStart := strings.LastIndex(content[:idx], "\n") + 1
+	if elem := strings.TrimRight(code, ", "); elem != "" && strings.Contains(content[lineStart:idx], elem) {
+		return nil
+	}
 
 	// Everything injected inline is one element of a comma-separated list —
 	// studio models, Wails constructor params/args/assignments — so the element
@@ -570,6 +578,10 @@ func injectInline(filePath, marker, code string) error {
 		}
 		break
 	}
+	// gofmt it, as the scaffold does everything it writes: the splice leaves a
+	// comma before the marker comment, which gofmt removes on a one-line list,
+	// so a project was not gofmt-clean after its first grit generate.
+	newContent = codefmt.File(filePath, newContent)
 
 	if err := os.WriteFile(filePath, []byte(newContent), 0644); err != nil {
 		return err
