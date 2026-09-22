@@ -493,6 +493,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairExpoRefresh(root); err != nil {
 			fmt.Printf("  ⚠ sharing the Expo API client's token refresh: %v\n", err)
 		}
+		if err := repairPushWeb(root); err != nil {
+			fmt.Printf("  ⚠ keeping the push tap listener off the web: %v\n", err)
+		}
 		if err := repairExpoRelations(root); err != nil {
 			fmt.Printf("  ⚠ naming related records in the Expo screens: %v\n", err)
 		}

@@ -66,6 +66,28 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.310.0 */}
+            <div className="mb-12" id="v3.310.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.310.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An Expo app with push notifications opens in a browser</h3>
+                <p>
+                  <code>grit plugin add push</code> wrote an <code>onNotificationTap</code> that asked
+                  expo-notifications for the notification that opened the app. On the web there is none, and the
+                  library throws rather than saying so, so an Expo app with the push plugin crashed on its first
+                  screen when opened in a browser, which is where Expo web previews and screenshots are made. It now
+                  does nothing on the web, and <code>grit upgrade</code> puts the fix into an existing
+                  <code>apps/expo/lib/push.ts</code>. Found making mockups of the WhatsApp blueprint.
+                </p>
+              </div>
+            </div>
+
             {/* v3.309.0 */}
             <div className="mb-12" id="v3.309.0">
               <div className="flex items-center gap-3 mb-4">

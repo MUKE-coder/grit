@@ -72,11 +72,15 @@ export async function unregisterPush(): Promise<void> {
  * tap that launched the app. Returns the unsubscribe function.
  */
 export function onNotificationTap(onOpen: (data: Record<string, string>) => void): () => void {
+  // The web has no push notifications, and expo-notifications throws there
+  // rather than answering "none": the app crashed on its first screen when
+  // opened in a browser.
+  if (Platform.OS === "web") return () => {};
   const open = (response: Notifications.NotificationResponse | null) => {
     const data = response?.notification.request.content.data;
     if (data) onOpen(data as Record<string, string>);
   };
-  void Notifications.getLastNotificationResponseAsync().then(open);
+  Notifications.getLastNotificationResponseAsync().then(open, () => undefined);
   const sub = Notifications.addNotificationResponseReceivedListener(open);
   return () => sub.remove();
 }
