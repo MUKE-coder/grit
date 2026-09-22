@@ -404,8 +404,13 @@ def check_tree(alice):
         payload = {'name': name + '-' + uuid.uuid4().hex[:4]}
         if parent:
             payload['parent_id'] = parent
-        _, _, body = call('POST', categories, alice, payload)
-        return (data(body) or {}).get('id', 'missing')
+        status, _, body = call('POST', categories, alice, payload)
+        node_id = (data(body) or {}).get('id')
+        # A create that fails used to return 'missing', and the next three
+        # checks then failed with "category missing not found", which says
+        # nothing about what actually went wrong.
+        check('Tree: ' + name + ' was created', status in (200, 201) and bool(node_id), (status, body[:200]))
+        return node_id or 'missing'
 
     top, other = node('Top'), node('Other')
     middle = node('Middle', top)
