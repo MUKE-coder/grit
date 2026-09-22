@@ -1,0 +1,90 @@
+package handlers
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/paginate"
+	"{{MODULE}}/internal/payments"
+	"{{MODULE}}/internal/respond"
+)
+
+// PaymentHandler reads payments and refunds them. There is no route to start
+// one: the app's own checkout handler works out the amount and calls
+// payments.Service.Create, so a price never comes from the browser.
+type PaymentHandler struct {
+	DB       *gorm.DB
+	Payments *payments.Service
+}
+
+// NewPaymentHandler returns the handler.
+func NewPaymentHandler(db *gorm.DB, service *payments.Service) *PaymentHandler {
+	return &PaymentHandler{DB: db, Payments: service}
+}
+
+// Get returns one of the caller's payments, as the database has it.
+func (h *PaymentHandler) Get(c *gin.Context) {
+	p, err := h.Payments.Get(c.Request.Context(), c.GetString("user_id"), c.Param("id"))
+	if err != nil {
+		respond.WriteError(c, err, "Could not load the payment")
+		return
+	}
+	respond.OK(c, p)
+}
+
+// Refresh asks Stripe how one of the caller's payments stands and records
+// it. The checkout's return page calls it once, so the order is settled
+// even where no webhook reaches the API, such as on a laptop.
+func (h *PaymentHandler) Refresh(c *gin.Context) {
+	p, err := h.Payments.Refresh(c.Request.Context(), c.GetString("user_id"), c.Param("id"))
+	if err != nil {
+		respond.WriteError(c, err, "Could not check the payment")
+		return
+	}
+	respond.OK(c, p)
+}
+
+// List is every payment, newest first, for the admin.
+//
+//	GET /api/admin/payments?status=succeeded&reference=order:123
+func (h *PaymentHandler) List(c *gin.Context) {
+	q := h.DB.WithContext(c.Request.Context()).Model(&models.Payment{})
+	params := paginate.Bind(c).
+		With("status", c.Query("status")).
+		With("reference", c.Query("reference")).
+		With("user_id", c.Query("user_id"))
+	res, err := paginate.List[models.Payment](q, params, paginate.Config{
+		Sortable:     map[string]bool{"created_at": true, "amount": true, "status": true},
+		DefaultSort:  "created_at",
+		DefaultOrder: "desc",
+	})
+	if err != nil {
+		respond.WriteError(c, err, "Could not list payments")
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+type refundRequest struct {
+	// Amount in the smallest unit; zero or absent refunds what is left.
+	Amount int64 `json:"amount"`
+}
+
+// Refund refunds a paid payment, all of it or part.
+func (h *PaymentHandler) Refund(c *gin.Context) {
+	var req refundRequest
+	if c.Request.ContentLength > 0 {
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond.Validation(c, "Send the amount to refund, in cents", map[string]string{"amount": "must be a whole number"})
+			return
+		}
+	}
+	if err := h.Payments.Refund(c.Request.Context(), c.Param("id"), req.Amount); err != nil {
+		respond.WriteError(c, err, "Could not refund the payment")
+		return
+	}
+	respond.OK(c, nil, "Refund requested")
+}

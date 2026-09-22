@@ -1,0 +1,390 @@
+// Package payments takes money through Stripe.
+//
+// The rules it is built on:
+//
+//   - The server decides the amount. The app's own handler works out what is
+//     owed and calls Create; the browser only ever receives a client secret for
+//     that one payment, so it cannot name a price.
+//   - Stripe's word is what marks a payment paid, never the browser's. The
+//     webhook says so, and Refresh reads the intent back with the secret key
+//     for when there is no webhook yet, as in local development.
+//   - Every change of state is a conditional update, so a webhook delivered
+//     twice, or out of order, or racing a Refresh, changes nothing the second
+//     time. OnSucceeded runs once per payment, in the transaction that marks
+//     it paid: if it fails, the payment is not marked either, and replaying the
+//     webhook from the admin runs both again.
+package payments
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"strings"
+	"time"
+
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
+	"{{MODULE}}/internal/webhooks"
+)
+
+// ErrUnavailable is returned when no Stripe key is configured.
+var ErrUnavailable = unavailableError{}
+
+type unavailableError struct{}
+
+func (unavailableError) Error() string { return "payments are not configured: set STRIPE_SECRET_KEY" }
+func (unavailableError) ErrorCode() respond.Code {
+	return respond.CodePaymentsUnavailable
+}
+
+// Hook runs inside the transaction that changes a payment. Write through tx.
+type Hook func(ctx context.Context, tx *gorm.DB, p models.Payment) error
+
+// Service creates payments and keeps them in step with Stripe.
+type Service struct {
+	DB *gorm.DB
+	// Stripe is nil when STRIPE_SECRET_KEY is not set, and every call then
+	// answers ErrUnavailable.
+	Stripe *Client
+
+	// OnSucceeded marks whatever the payment was for as paid. It is given the
+	// payment with its final amount; check it against what is owed.
+	OnSucceeded Hook
+	// OnRefunded runs each time more of a payment is refunded, with
+	// AmountRefunded the total so far.
+	OnRefunded Hook
+}
+
+// NewService reads STRIPE_SECRET_KEY. Without it the service is still made,
+// so the routes exist and answer PAYMENTS_UNAVAILABLE instead of 404.
+func NewService(db *gorm.DB) *Service {
+	s := &Service{DB: db}
+	if key := os.Getenv("STRIPE_SECRET_KEY"); key != "" {
+		s.Stripe = NewClient(key)
+	}
+	return s
+}
+
+// Checkout is a request to be paid. The caller has already worked out Amount.
+type Checkout struct {
+	UserID    string
+	Reference string
+	Amount    int64
+	Currency  string
+	// Description shows on the customer's receipt and in the dashboard.
+	Description string
+}
+
+// Started is a payment the customer can now confirm in the browser.
+type Started struct {
+	Payment      models.Payment `json:"payment"`
+	ClientSecret string         `json:"client_secret"`
+}
+
+// Create starts a payment, or hands back the one already open for the same
+// reference and amount, so a customer who reloads the checkout page is not
+// asked to pay twice. An open one for a different amount (the basket changed)
+// is canceled first, so its old secret cannot be used to pay the old price.
+func (s *Service) Create(ctx context.Context, in Checkout) (Started, error) {
+	if s.Stripe == nil {
+		return Started{}, ErrUnavailable
+	}
+	in.Currency = strings.ToLower(strings.TrimSpace(in.Currency))
+	switch {
+	case in.UserID == "" || in.Reference == "":
+		return Started{}, errors.New("payments: a checkout needs a user and a reference")
+	case in.Amount <= 0:
+		return Started{}, respond.Rule("there is nothing to pay")
+	case len(in.Currency) != 3:
+		return Started{}, respond.Rule("%q is not a currency code", in.Currency)
+	}
+
+	var existing []models.Payment
+	if err := s.DB.WithContext(ctx).
+		Where("user_id = ? AND reference = ?", in.UserID, in.Reference).
+		Order("created_at DESC").Find(&existing).Error; err != nil {
+		return Started{}, fmt.Errorf("looking for an open payment: %w", err)
+	}
+	for _, p := range existing {
+		if p.Status == models.PaymentSucceeded || p.Status == models.PaymentProcessing {
+			return Started{}, respond.Rule("this has been paid already, or its payment is being processed")
+		}
+		if !p.Open() || p.IntentID == nil {
+			continue
+		}
+		if p.Amount == in.Amount && p.Currency == in.Currency {
+			return Started{Payment: p, ClientSecret: p.ClientSecret}, nil
+		}
+		if err := s.cancel(ctx, p); err != nil {
+			return Started{}, err
+		}
+	}
+
+	p := models.Payment{
+		UserID:    in.UserID,
+		Reference: in.Reference,
+		Amount:    in.Amount,
+		Currency:  in.Currency,
+		Status:    models.PaymentRequiresPaymentMethod,
+	}
+	if err := s.DB.WithContext(ctx).Create(&p).Error; err != nil {
+		return Started{}, fmt.Errorf("recording the payment: %w", err)
+	}
+	intent, err := s.Stripe.CreateIntent(ctx, IntentParams{
+		Amount:   in.Amount,
+		Currency: in.Currency,
+		// The row's id: a retry of this one create cannot make a second intent.
+		IdempotencyKey: "payment-" + p.ID,
+		Description:    in.Description,
+		// A webhook can find the payment from these even if the process died
+		// before it stored the intent's id.
+		Metadata: map[string]string{"payment_id": p.ID, "reference": in.Reference},
+	})
+	if err != nil {
+		if delErr := s.DB.WithContext(ctx).Delete(&p).Error; delErr != nil {
+			return Started{}, errors.Join(err, fmt.Errorf("removing the unstarted payment: %w", delErr))
+		}
+		return Started{}, err
+	}
+	p.IntentID = &intent.ID
+	p.ClientSecret = intent.ClientSecret
+	p.Status = intent.Status
+	if err := s.DB.WithContext(ctx).Model(&p).Updates(map[string]any{
+		"intent_id": intent.ID, "client_secret": intent.ClientSecret, "status": intent.Status,
+	}).Error; err != nil {
+		return Started{}, fmt.Errorf("recording the payment intent: %w", err)
+	}
+	return Started{Payment: p, ClientSecret: intent.ClientSecret}, nil
+}
+
+func (s *Service) cancel(ctx context.Context, p models.Payment) error {
+	intent, err := s.Stripe.CancelIntent(ctx, *p.IntentID)
+	if err != nil {
+		return fmt.Errorf("canceling the payment for the old amount: %w", err)
+	}
+	return s.apply(ctx, p, intent)
+}
+
+// Get returns a payment of the user's.
+func (s *Service) Get(ctx context.Context, userID, id string) (models.Payment, error) {
+	var p models.Payment
+	err := s.DB.WithContext(ctx).Where("id = ? AND user_id = ?", id, userID).First(&p).Error
+	return p, err
+}
+
+// Refresh reads the payment's intent back from Stripe and applies it: the
+// customer's return from checkout is settled without waiting for a webhook.
+func (s *Service) Refresh(ctx context.Context, userID, id string) (models.Payment, error) {
+	if s.Stripe == nil {
+		return models.Payment{}, ErrUnavailable
+	}
+	p, err := s.Get(ctx, userID, id)
+	if err != nil || p.IntentID == nil {
+		return p, err
+	}
+	if p.Status == models.PaymentSucceeded || p.Status == models.PaymentCanceled || p.Status == models.PaymentRefunded {
+		return p, nil
+	}
+	intent, err := s.Stripe.GetIntent(ctx, *p.IntentID)
+	if err != nil {
+		return p, err
+	}
+	if err := s.apply(ctx, p, intent); err != nil {
+		return p, err
+	}
+	return s.Get(ctx, userID, id)
+}
+
+// Refund refunds amount of a paid payment; zero refunds what is left. A
+// refund Stripe has already completed is recorded now; one still pending is
+// recorded when the charge.refunded webhook arrives, and the webhook for a
+// completed one then finds nothing to change.
+func (s *Service) Refund(ctx context.Context, id string, amount int64) error {
+	if s.Stripe == nil {
+		return ErrUnavailable
+	}
+	var p models.Payment
+	if err := s.DB.WithContext(ctx).First(&p, "id = ?", id).Error; err != nil {
+		return err
+	}
+	if p.Status != models.PaymentSucceeded || p.IntentID == nil {
+		return respond.Rule("only a paid payment can be refunded")
+	}
+	left := p.Amount - p.AmountRefunded
+	if left <= 0 {
+		return respond.Rule("this payment has been refunded in full")
+	}
+	if amount < 0 || amount > left {
+		return respond.Rule("at most %d can be refunded", left)
+	}
+	if amount == 0 {
+		amount = left
+	}
+	// Keyed by what has been refunded so far: pressing the button twice
+	// makes one refund, and a second refund later is a different key.
+	key := fmt.Sprintf("refund-%s-%d-%d", p.ID, p.AmountRefunded, amount)
+	refund, err := s.Stripe.CreateRefund(ctx, *p.IntentID, amount, key)
+	if err != nil {
+		return err
+	}
+	if refund.Status != "succeeded" {
+		return nil
+	}
+	return s.refunded(ctx, p, p.AmountRefunded+refund.Amount)
+}
+
+// Register receives Stripe's webhooks at POST /webhooks/stripe, verified
+// with STRIPE_WEBHOOK_SECRET and deduplicated by event id.
+func (s *Service) Register() {
+	webhooks.Register("stripe", webhooks.Provider{
+		SecretEnv: "STRIPE_WEBHOOK_SECRET",
+		Verify:    webhooks.StripeVerifier,
+		Extract:   webhooks.StripeExtractor,
+	})
+	webhooks.On("stripe", "", s.HandleEvent)
+}
+
+type event struct {
+	Type string `json:"type"`
+	Data struct {
+		Object json.RawMessage `json:"object"`
+	} `json:"data"`
+}
+
+type charge struct {
+	PaymentIntent  string `json:"payment_intent"`
+	Amount         int64  `json:"amount"`
+	AmountRefunded int64  `json:"amount_refunded"`
+}
+
+// HandleEvent applies one verified webhook. Events it has no use for are
+// accepted and ignored.
+func (s *Service) HandleEvent(ctx context.Context, e *models.WebhookEvent) error {
+	var ev event
+	if err := json.Unmarshal(e.Payload, &ev); err != nil {
+		return fmt.Errorf("reading the event: %w", err)
+	}
+	switch {
+	case strings.HasPrefix(ev.Type, "payment_intent."):
+		var intent Intent
+		if err := json.Unmarshal(ev.Data.Object, &intent); err != nil {
+			return fmt.Errorf("reading the payment intent: %w", err)
+		}
+		p, found, err := s.find(ctx, intent.ID, intent.Metadata["payment_id"])
+		if err != nil || !found {
+			return err
+		}
+		return s.apply(ctx, p, intent)
+	case ev.Type == "charge.refunded":
+		var ch charge
+		if err := json.Unmarshal(ev.Data.Object, &ch); err != nil {
+			return fmt.Errorf("reading the charge: %w", err)
+		}
+		p, found, err := s.find(ctx, ch.PaymentIntent, "")
+		if err != nil || !found {
+			return err
+		}
+		return s.refunded(ctx, p, ch.AmountRefunded)
+	}
+	return nil
+}
+
+// find looks a payment up by its intent, then by the id Create put in the
+// intent's metadata. A payment made outside this app is not found, and that
+// is not an error: the dashboard can take payments too.
+func (s *Service) find(ctx context.Context, intentID, paymentID string) (models.Payment, bool, error) {
+	var p models.Payment
+	res := s.DB.WithContext(ctx).Where("intent_id = ?", intentID).Limit(1).Find(&p)
+	if res.Error != nil {
+		return p, false, res.Error
+	}
+	if res.RowsAffected == 0 && paymentID != "" {
+		res = s.DB.WithContext(ctx).Where("id = ? AND intent_id IS NULL", paymentID).Limit(1).Find(&p)
+		if res.Error != nil {
+			return p, false, res.Error
+		}
+		if res.RowsAffected == 1 {
+			if err := s.DB.WithContext(ctx).Model(&p).Update("intent_id", intentID).Error; err != nil {
+				return p, false, err
+			}
+			p.IntentID = &intentID
+		}
+	}
+	return p, res.RowsAffected == 1, nil
+}
+
+// from lists the states a payment may move to each state from. Anything else
+// is an event arriving late, such as processing after succeeded, and is
+// ignored.
+var from = map[string][]string{
+	models.PaymentRequiresPaymentMethod: {models.PaymentRequiresPaymentMethod, models.PaymentRequiresConfirmation, models.PaymentRequiresAction, models.PaymentProcessing},
+	models.PaymentRequiresConfirmation:  {models.PaymentRequiresPaymentMethod, models.PaymentRequiresConfirmation},
+	models.PaymentRequiresAction:        {models.PaymentRequiresPaymentMethod, models.PaymentRequiresConfirmation, models.PaymentRequiresAction},
+	models.PaymentProcessing:            {models.PaymentRequiresPaymentMethod, models.PaymentRequiresConfirmation, models.PaymentRequiresAction},
+	models.PaymentSucceeded:             {models.PaymentRequiresPaymentMethod, models.PaymentRequiresConfirmation, models.PaymentRequiresAction, models.PaymentProcessing},
+	models.PaymentCanceled:              {models.PaymentRequiresPaymentMethod, models.PaymentRequiresConfirmation, models.PaymentRequiresAction, models.PaymentProcessing},
+}
+
+// apply moves a payment to the intent's state, if that is a move forward.
+func (s *Service) apply(ctx context.Context, p models.Payment, intent Intent) error {
+	allowed, known := from[intent.Status]
+	if !known {
+		return nil
+	}
+	if intent.Status == models.PaymentSucceeded && (intent.Amount != p.Amount || intent.Currency != p.Currency) {
+		// Never marks it paid: someone changed the intent in the dashboard,
+		// or it is not this payment's.
+		return fmt.Errorf("payment %s: stripe says %d %s was paid, the payment is for %d %s",
+			p.ID, intent.Amount, intent.Currency, p.Amount, p.Currency)
+	}
+	updates := map[string]any{"status": intent.Status}
+	if intent.LastPaymentError != nil {
+		updates["failure_message"] = intent.LastPaymentError.Message
+	}
+	now := time.Now()
+	if intent.Status == models.PaymentSucceeded {
+		updates["paid_at"] = now
+		updates["failure_message"] = ""
+	}
+	return s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		res := tx.Model(&models.Payment{}).Where("id = ? AND status IN ?", p.ID, allowed).Updates(updates)
+		if res.Error != nil {
+			return fmt.Errorf("updating payment %s: %w", p.ID, res.Error)
+		}
+		if res.RowsAffected == 0 || intent.Status != models.PaymentSucceeded || s.OnSucceeded == nil {
+			return nil
+		}
+		p.Status = models.PaymentSucceeded
+		p.PaidAt = &now
+		p.FailureMessage = ""
+		return s.OnSucceeded(ctx, tx, p)
+	})
+}
+
+// refunded records the charge's refunded total, which only ever grows.
+func (s *Service) refunded(ctx context.Context, p models.Payment, total int64) error {
+	updates := map[string]any{"amount_refunded": total}
+	if total >= p.Amount {
+		updates["status"] = models.PaymentRefunded
+	}
+	return s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		res := tx.Model(&models.Payment{}).
+			Where("id = ? AND amount_refunded < ? AND status IN ?", p.ID, total, []string{models.PaymentSucceeded, models.PaymentRefunded}).
+			Updates(updates)
+		if res.Error != nil {
+			return fmt.Errorf("recording the refund of payment %s: %w", p.ID, res.Error)
+		}
+		if res.RowsAffected == 0 || s.OnRefunded == nil {
+			return nil
+		}
+		p.AmountRefunded = total
+		if total >= p.Amount {
+			p.Status = models.PaymentRefunded
+		}
+		return s.OnRefunded(ctx, tx, p)
+	})
+}

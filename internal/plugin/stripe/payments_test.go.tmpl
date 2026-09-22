@@ -1,0 +1,349 @@
+package payments
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
+	"strings"
+	"sync"
+	"testing"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
+)
+
+// fakeStripe answers the four calls payments makes, and remembers what it was
+// sent. Intents are kept by id; an idempotency key it has seen returns the
+// intent it made the first time, as Stripe does.
+type fakeStripe struct {
+	mu        sync.Mutex
+	intents   map[string]*Intent
+	byKey     map[string]string
+	creates   int
+	lastForm  map[string]string
+	refundFor int64
+}
+
+func newFakeStripe(t *testing.T) (*fakeStripe, *Client) {
+	t.Helper()
+	f := &fakeStripe{intents: map[string]*Intent{}, byKey: map[string]string{}}
+	srv := httptest.NewServer(http.HandlerFunc(f.serve))
+	t.Cleanup(srv.Close)
+	return f, &Client{SecretKey: "sk_test_x", BaseURL: srv.URL, HTTP: srv.Client()}
+}
+
+func (f *fakeStripe) serve(w http.ResponseWriter, r *http.Request) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if user, _, ok := r.BasicAuth(); !ok || user != "sk_test_x" || r.Header.Get("Stripe-Version") != APIVersion {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, `{"error":{"type":"invalid_request_error","message":"Invalid API Key provided"}}`)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	f.lastForm = map[string]string{}
+	for k := range r.PostForm {
+		f.lastForm[k] = r.PostForm.Get(k)
+	}
+	path := strings.TrimPrefix(r.URL.Path, "/v1/")
+	switch {
+	case r.Method == http.MethodPost && path == "payment_intents":
+		if id, seen := f.byKey[r.Header.Get("Idempotency-Key")]; seen {
+			json.NewEncoder(w).Encode(f.intents[id])
+			return
+		}
+		f.creates++
+		amount, err := strconv.ParseInt(r.PostForm.Get("amount"), 10, 64)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		id := fmt.Sprintf("pi_%d", f.creates)
+		in := &Intent{ID: id, Status: models.PaymentRequiresPaymentMethod, Amount: amount, Currency: r.PostForm.Get("currency"),
+			ClientSecret: id + "_secret", Metadata: map[string]string{"payment_id": r.PostForm.Get("metadata[payment_id]")}}
+		f.intents[id] = in
+		f.byKey[r.Header.Get("Idempotency-Key")] = id
+		json.NewEncoder(w).Encode(in)
+	case r.Method == http.MethodGet && strings.HasPrefix(path, "payment_intents/"):
+		json.NewEncoder(w).Encode(f.intents[strings.TrimPrefix(path, "payment_intents/")])
+	case r.Method == http.MethodPost && strings.HasSuffix(path, "/cancel"):
+		in := f.intents[strings.TrimSuffix(strings.TrimPrefix(path, "payment_intents/"), "/cancel")]
+		in.Status = models.PaymentCanceled
+		json.NewEncoder(w).Encode(in)
+	case r.Method == http.MethodPost && path == "refunds":
+		amount, err := strconv.ParseInt(r.PostForm.Get("amount"), 10, 64)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		f.refundFor += amount
+		json.NewEncoder(w).Encode(Refund{ID: "re_1", Amount: amount, Status: "succeeded"})
+	default:
+		w.WriteHeader(http.StatusNotFound)
+	}
+}
+
+// pay is the customer confirming in the browser: Stripe's side only.
+func (f *fakeStripe) pay(id string) Intent {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.intents[id].Status = models.PaymentSucceeded
+	f.intents[id].AmountReceived = f.intents[id].Amount
+	return *f.intents[id]
+}
+
+func newService(t *testing.T) (*Service, *fakeStripe) {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open("file:"+t.Name()+"?mode=memory&cache=shared"), &gorm.Config{Logger: logger.Discard})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AutoMigrate(&models.Payment{}); err != nil {
+		t.Fatal(err)
+	}
+	fake, client := newFakeStripe(t)
+	return &Service{DB: db, Stripe: client}, fake
+}
+
+func checkout(amount int64) Checkout {
+	return Checkout{UserID: "u1", Reference: "order:1", Amount: amount, Currency: "USD"}
+}
+
+func webhook(t *testing.T, eventType string, object any) *models.WebhookEvent {
+	t.Helper()
+	raw, err := json.Marshal(object)
+	if err != nil {
+		t.Fatal(err)
+	}
+	payload := `{"type":"` + eventType + `","data":{"object":` + string(raw) + `}}`
+	return &models.WebhookEvent{Provider: "stripe", EventType: eventType, Payload: datatypes.JSON(payload)}
+}
+
+func TestCreateStartsAnIntentForTheServersAmount(t *testing.T) {
+	s, fake := newService(t)
+	started, err := s.Create(context.Background(), checkout(2599))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if started.ClientSecret == "" || started.Payment.IntentID == nil || started.Payment.Currency != "usd" {
+		t.Fatalf("started %+v", started)
+	}
+	if fake.lastForm["amount"] != "2599" || fake.lastForm["metadata[payment_id]"] != started.Payment.ID ||
+		fake.lastForm["automatic_payment_methods[enabled]"] != "true" {
+		t.Errorf("stripe was sent %v", fake.lastForm)
+	}
+}
+
+// Reloading the checkout page hands back the same payment, not a second one.
+func TestCreateReusesTheOpenPaymentForTheSameAmount(t *testing.T) {
+	s, fake := newService(t)
+	first, err := s.Create(context.Background(), checkout(1000))
+	if err != nil {
+		t.Fatal(err)
+	}
+	again, err := s.Create(context.Background(), checkout(1000))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again.Payment.ID != first.Payment.ID || fake.creates != 1 {
+		t.Errorf("a second payment was started (%d intents)", fake.creates)
+	}
+}
+
+// The basket changed: the old intent is canceled so its secret cannot pay the
+// old price.
+func TestCreateCancelsTheOpenPaymentForAnotherAmount(t *testing.T) {
+	s, fake := newService(t)
+	first, err := s.Create(context.Background(), checkout(1000))
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := s.Create(context.Background(), checkout(1500))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if second.Payment.ID == first.Payment.ID || fake.intents[*first.Payment.IntentID].Status != models.PaymentCanceled {
+		t.Error("the payment for the old amount is still open")
+	}
+	var old models.Payment
+	if err := s.DB.First(&old, "id = ?", first.Payment.ID).Error; err != nil || old.Status != models.PaymentCanceled {
+		t.Errorf("the old payment is %q", old.Status)
+	}
+}
+
+func TestCreateRefusesWhatIsAlreadyPaid(t *testing.T) {
+	s, fake := newService(t)
+	started, err := s.Create(context.Background(), checkout(1000))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.HandleEvent(context.Background(), webhook(t, "payment_intent.succeeded", fake.pay(*started.Payment.IntentID))); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Create(context.Background(), checkout(1000)); err == nil {
+		t.Fatal("a second payment was started for something paid")
+	} else if _, isRule := respond.IsRule(err); !isRule {
+		t.Errorf("got %v, want a rule the customer can read", err)
+	}
+}
+
+// Stripe delivers at least once and in no particular order. OnSucceeded runs
+// once, and a late event cannot move a paid payment backwards.
+func TestWebhooksApplyOnceAndNeverBackwards(t *testing.T) {
+	s, fake := newService(t)
+	calls := 0
+	s.OnSucceeded = func(ctx context.Context, tx *gorm.DB, p models.Payment) error {
+		calls++
+		if p.Status != models.PaymentSucceeded || p.Amount != 1000 {
+			t.Errorf("OnSucceeded got %+v", p)
+		}
+		return nil
+	}
+	started, err := s.Create(context.Background(), checkout(1000))
+	if err != nil {
+		t.Fatal(err)
+	}
+	paid := fake.pay(*started.Payment.IntentID)
+	for i := 0; i < 2; i++ {
+		if err := s.HandleEvent(context.Background(), webhook(t, "payment_intent.succeeded", paid)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	late := paid
+	late.Status = models.PaymentProcessing
+	if err := s.HandleEvent(context.Background(), webhook(t, "payment_intent.processing", late)); err != nil {
+		t.Fatal(err)
+	}
+	p, err := s.Get(context.Background(), "u1", started.Payment.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calls != 1 || p.Status != models.PaymentSucceeded || p.PaidAt == nil {
+		t.Errorf("OnSucceeded ran %d times; payment is %q", calls, p.Status)
+	}
+}
+
+// If the app cannot mark the order paid, the payment is not marked either,
+// and the webhook is left failed for a replay to finish.
+func TestAFailingOnSucceededLeavesThePaymentUnpaid(t *testing.T) {
+	s, fake := newService(t)
+	s.OnSucceeded = func(ctx context.Context, tx *gorm.DB, p models.Payment) error {
+		return fmt.Errorf("the order is gone")
+	}
+	started, err := s.Create(context.Background(), checkout(1000))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.HandleEvent(context.Background(), webhook(t, "payment_intent.succeeded", fake.pay(*started.Payment.IntentID))); err == nil {
+		t.Fatal("the failure was swallowed")
+	}
+	p, err := s.Get(context.Background(), "u1", started.Payment.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Status == models.PaymentSucceeded {
+		t.Error("the payment was marked paid without its order")
+	}
+}
+
+func TestAnIntentForAnotherAmountIsNeverMarkedPaid(t *testing.T) {
+	s, fake := newService(t)
+	started, err := s.Create(context.Background(), checkout(1000))
+	if err != nil {
+		t.Fatal(err)
+	}
+	paid := fake.pay(*started.Payment.IntentID)
+	paid.Amount = 1
+	if err := s.HandleEvent(context.Background(), webhook(t, "payment_intent.succeeded", paid)); err == nil {
+		t.Error("a payment of 1 settled an order of 1000")
+	}
+}
+
+// Without a webhook, as on a laptop, the return page's refresh settles it.
+func TestRefreshReadsTheIntentBack(t *testing.T) {
+	s, fake := newService(t)
+	started, err := s.Create(context.Background(), checkout(1000))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fake.pay(*started.Payment.IntentID)
+	p, err := s.Refresh(context.Background(), "u1", started.Payment.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Status != models.PaymentSucceeded {
+		t.Errorf("payment is %q", p.Status)
+	}
+	if _, err := s.Refresh(context.Background(), "someone-else", started.Payment.ID); err == nil {
+		t.Error("another user read the payment")
+	}
+}
+
+func TestRefundsAddUpAndTheWebhookAddsNothing(t *testing.T) {
+	s, fake := newService(t)
+	refunds := 0
+	s.OnRefunded = func(ctx context.Context, tx *gorm.DB, p models.Payment) error {
+		refunds++
+		return nil
+	}
+	started, err := s.Create(context.Background(), checkout(1000))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.HandleEvent(context.Background(), webhook(t, "payment_intent.succeeded", fake.pay(*started.Payment.IntentID))); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Refund(context.Background(), started.Payment.ID, 400); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Refund(context.Background(), started.Payment.ID, 700); err == nil {
+		t.Error("refunded more than was left")
+	}
+	if err := s.Refund(context.Background(), started.Payment.ID, 0); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Refund(context.Background(), started.Payment.ID, 0); err == nil {
+		t.Error("refunded a payment with nothing left on it")
+	}
+	// Stripe's own webhook for the full refund arrives after.
+	refunded := webhook(t, "charge.refunded", charge{PaymentIntent: *started.Payment.IntentID, Amount: 1000, AmountRefunded: 1000})
+	if err := s.HandleEvent(context.Background(), refunded); err != nil {
+		t.Fatal(err)
+	}
+	p, err := s.Get(context.Background(), "u1", started.Payment.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Status != models.PaymentRefunded || p.AmountRefunded != 1000 || fake.refundFor != 1000 || refunds != 2 {
+		t.Errorf("payment %q refunded %d (stripe %d), OnRefunded ran %d times", p.Status, p.AmountRefunded, fake.refundFor, refunds)
+	}
+}
+
+func TestWithoutAKeyPaymentsSayTheyAreNotConfigured(t *testing.T) {
+	s := &Service{}
+	if _, err := s.Create(context.Background(), checkout(1000)); !errors.Is(err, ErrUnavailable) {
+		t.Errorf("got %v", err)
+	}
+}
+
+func TestAStripeRefusalCarriesItsMessage(t *testing.T) {
+	_, client := newFakeStripe(t)
+	client.SecretKey = "sk_test_wrong"
+	_, err := client.GetIntent(context.Background(), "pi_1")
+	var provider *ProviderError
+	if !errors.As(err, &provider) || provider.Status != http.StatusUnauthorized || !strings.Contains(provider.Error(), "Invalid API Key") {
+		t.Errorf("got %v", err)
+	}
+}

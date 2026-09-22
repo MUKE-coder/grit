@@ -1,0 +1,16 @@
+import { useQuery } from "@tanstack/react-query";
+import { isPending, refreshPayment, type Payment } from "@/lib/payments";
+
+/**
+ * A payment as Stripe has it now. Each fetch asks the API to check with
+ * Stripe, so the return page shows the outcome whether or not a webhook has
+ * arrived; it checks again every five seconds while the bank is still deciding.
+ */
+export function usePayment(id: string | undefined) {
+  return useQuery<Payment>({
+    queryKey: ["payments", id],
+    queryFn: () => refreshPayment(id as string),
+    enabled: !!id,
+    refetchInterval: (query) => (isPending(query.state.data) ? 5000 : false),
+  });
+}

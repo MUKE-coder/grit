@@ -320,27 +320,30 @@ func mountVariantRoutes(apiRoot string, names variantNameSet) error {
 		return upgradeVariantRoutes(path, content, names)
 	}
 
-	handler := fmt.Sprintf("\t\t%sVariantHandler := handlers.New%sVariantHandler(db)",
+	handler := fmt.Sprintf("\t%sVariantHandler := handlers.New%sVariantHandler(db)",
 		names.Snake, names.Pascal)
+
+	// On the staff group with the resource's own permissions, like its CRUD
+	// routes: a variant's price override is what checkout charges, so a route
+	// any signed-in user reaches is a way to buy anything for a cent.
+	route := func(method, path, action string) string {
+		return "\n" + scaffold.VariantStaffRoute(method, path, names.Plural, names.Snake, action)
+	}
 
 	// The shared library, mounted by whichever resource got variants first.
 	shared := ""
 	if !strings.Contains(content, "VariantHandler.ListOptions") {
-		shared = fmt.Sprintf(`
-		protected.GET("/options", %[1]sVariantHandler.ListOptions)
-		protected.POST("/options", %[1]sVariantHandler.CreateOption)
-		protected.DELETE("/options/:id", %[1]sVariantHandler.DeleteOption)
-		protected.POST("/options/:id/values", %[1]sVariantHandler.CreateOptionValue)
-		protected.DELETE("/option-values/:id", %[1]sVariantHandler.DeleteOptionValue)`,
-			names.Snake)
+		shared = route("GET", "/options", "ListOptions") +
+			route("POST", "/options", "CreateOption") +
+			route("DELETE", "/options/:id", "DeleteOption") +
+			route("POST", "/options/:id/values", "CreateOptionValue") +
+			route("DELETE", "/option-values/:id", "DeleteOptionValue")
 	}
 
-	perResource := fmt.Sprintf(`
-		protected.GET("/%[3]s/:id/variants", %[1]sVariantHandler.List)
-		protected.POST("/%[3]s/:id/variants/generate", %[1]sVariantHandler.GenerateMatrix)
-		protected.PUT("/%[3]s/:id/options", %[1]sVariantHandler.SetOptions)
-		protected.PATCH("/%[2]s-variants/:id", %[1]sVariantHandler.Update)`,
-		names.Snake, names.Kebab, names.Plural)
+	perResource := route("GET", "/"+names.Plural+"/:id/variants", "List") +
+		route("POST", "/"+names.Plural+"/:id/variants/generate", "GenerateMatrix") +
+		route("PUT", "/"+names.Plural+"/:id/options", "SetOptions") +
+		route("PATCH", "/"+names.Kebab+"-variants/:id", "Update")
 
 	if err := injectBefore(path, "// grit:routes:custom", handler+shared+perResource); err != nil {
 		fmt.Printf("  Could not mount the routes automatically: %v\n", err)
@@ -384,6 +387,14 @@ func upgradeVariantRoutes(path, content string, names variantNameSet) error {
 	if strings.Contains(updated, createOption) && !strings.Contains(updated, deleteOption) {
 		updated = strings.Replace(updated, createOption, createOption+"\n\t\t"+deleteOption, 1)
 		changes = append(changes, "added DELETE /options/:id")
+	}
+
+	if moved, did, warnings := scaffold.VariantRoutesOnStaff(updated); len(did) > 0 || len(warnings) > 0 {
+		updated = moved
+		changes = append(changes, did...)
+		for _, warning := range warnings {
+			fmt.Printf("  ⚠ %s\n", warning)
+		}
 	}
 
 	if len(changes) == 0 {

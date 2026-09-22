@@ -125,7 +125,10 @@ func deltaWhenPriced(option models.Option, value models.OptionValue) float64 {
 // assumed. A resource generated without a slug has no such column, and a lookup
 // on it would be a SQL error rather than a 404.
 func APIVariantPublicGo(module, pascal, snake, plural string, hasSlug, hasArchivedAt bool) string {
-	return apiVariantPublicGo(module, pascal, snake, plural, hasSlug, hasArchivedAt)
+	// Database calls follow the request's context, as grit upgrade makes
+	// them in a handler written before they did.
+	out, _ := bindRequestContext(apiVariantPublicGo(module, pascal, snake, plural, hasSlug, hasArchivedAt))
+	return out
 }
 
 func apiVariantPublicGo(module, pascal, snake, plural string, hasSlug, hasArchivedAt bool) string {
@@ -153,6 +156,7 @@ import (
 
 	"` + module + `/internal/files"
 	"` + module + `/internal/models"
+	"` + module + `/internal/respond"
 )
 
 // The public ` + lower + ` variant surface.

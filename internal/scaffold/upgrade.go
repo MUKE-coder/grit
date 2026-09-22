@@ -496,6 +496,15 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairPushWeb(root); err != nil {
 			fmt.Printf("  ⚠ keeping the push tap listener off the web: %v\n", err)
 		}
+		if err := repairCSPPluginOrigins(root); err != nil {
+			fmt.Printf("  ⚠ giving the CSP a list plugins add origins to: %v\n", err)
+		}
+		if err := repairVariantPublicImport(root); err != nil {
+			fmt.Printf("  ⚠ importing respond in the public variants handler: %v\n", err)
+		}
+		if err := repairVariantRoutes(root); err != nil {
+			fmt.Printf("  ⚠ putting the variant routes behind the resource's permissions: %v\n", err)
+		}
 		if err := repairExpoRelations(root); err != nil {
 			fmt.Printf("  ⚠ naming related records in the Expo screens: %v\n", err)
 		}

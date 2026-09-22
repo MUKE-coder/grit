@@ -63,7 +63,7 @@ function toOrigin(value: string): string {
 // (e.g. https://cdn.example.com or https://<bucket>.s3.<region>.amazonaws.com).
 const STORAGE_ORIGIN = toOrigin(process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:9002");
 ` + nextIsDevLine + nextImageOrigins + `
-const csp = [
+` + cspPluginOrigins + `const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'" + (isDev ? " 'unsafe-eval'" : ""),
   "style-src 'self' 'unsafe-inline'",
@@ -75,12 +75,12 @@ const csp = [
   // address instead of ::1 — dev only, and it must be allowed here or the
   // browser logs a CSP violation on every page load.
   ` + nextConnectSrcNew + ` ? " ws: wss: https://api.ipify.org" : ""),
+  ` + cspFrameSrc + `
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'",
-].join("; ");
-
+` + cspJoinWithPlugins + `
 // Hosts next/image is allowed to fetch from. Same source as the CSP above:
 // stored uploads come from the storage origin, and picsum.photos is where
 // "grit generate resource --faker" points its placeholder images, which is why

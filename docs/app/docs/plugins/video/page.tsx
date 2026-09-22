@@ -140,9 +140,9 @@ const video = await createVideo(ref.key);
                 Push notifications
               </Button>
             </Link>
-            <Link href="/docs/plugins/authoring">
+            <Link href="/docs/plugins/stripe">
               <Button variant="ghost" className="gap-2">
-                Writing a plugin
+                Stripe payments
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>

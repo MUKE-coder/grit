@@ -1,0 +1,70 @@
+package models
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/ids"
+)
+
+// Payment states. The first four are Stripe's own names for a PaymentIntent,
+// so a status read back from Stripe is stored as it is. Refunded is ours: the
+// intent stays succeeded at Stripe when its charge is refunded.
+const (
+	PaymentRequiresPaymentMethod = "requires_payment_method"
+	PaymentRequiresConfirmation  = "requires_confirmation"
+	PaymentRequiresAction        = "requires_action"
+	PaymentProcessing            = "processing"
+	PaymentSucceeded             = "succeeded"
+	PaymentCanceled              = "canceled"
+	PaymentRefunded              = "refunded"
+)
+
+// Payment is one attempt to take money for something in the app, backed by a
+// Stripe PaymentIntent.
+//
+// Reference says what is being paid for, such as "order:<id>". The app reads
+// it in OnSucceeded to mark that thing paid; the payments package never
+// interprets it.
+type Payment struct {
+	ID        string `gorm:"primarykey;size:36" json:"id"`
+	UserID    string `gorm:"size:36;index;not null" json:"user_id"`
+	Reference string `gorm:"size:191;index;not null" json:"reference"`
+	// Amount is in the currency's smallest unit (cents), as Stripe counts it.
+	Amount   int64  `gorm:"not null" json:"amount"`
+	Currency string `gorm:"size:3;not null" json:"currency"`
+	Status   string `gorm:"size:40;index;not null" json:"status"`
+
+	// IntentID is NULL until Stripe has answered, and unique after: a webhook
+	// finds its payment by it.
+	IntentID *string `gorm:"size:255;uniqueIndex" json:"-"`
+	// ClientSecret lets the browser confirm this one payment and nothing
+	// else. It is handed to the customer who started it, never listed.
+	ClientSecret string `gorm:"size:255" json:"-"`
+
+	AmountRefunded int64 `gorm:"not null;default:0" json:"amount_refunded"`
+	// FailureMessage is what the bank said about the last attempt, in words
+	// for the customer.
+	FailureMessage string     `gorm:"size:500" json:"failure_message,omitempty"`
+	PaidAt         *time.Time `json:"paid_at,omitempty"`
+	CreatedAt      time.Time  `gorm:"index" json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+}
+
+// BeforeCreate assigns the ID.
+func (p *Payment) BeforeCreate(tx *gorm.DB) error {
+	if p.ID == "" {
+		p.ID = ids.New()
+	}
+	return nil
+}
+
+// Open reports whether the customer can still pay it.
+func (p Payment) Open() bool {
+	switch p.Status {
+	case PaymentRequiresPaymentMethod, PaymentRequiresConfirmation, PaymentRequiresAction:
+		return true
+	}
+	return false
+}

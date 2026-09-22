@@ -118,6 +118,10 @@ func ensureOption(db *gorm.DB, option models.Option, values []models.OptionValue
 // back to a slice of the id, which is ugly and still unique, and unique is the
 // part that matters to a warehouse.
 func APIVariantSeederGo(module, pascal, snake, plural string, hasSlug bool) string {
+	return perResource(apiVariantSeederGo(module, pascal, snake, plural, hasSlug), pascal, "shortID", "skuPrefix", "valueSuffix")
+}
+
+func apiVariantSeederGo(module, pascal, snake, plural string, hasSlug bool) string {
 	lower := strings.ToLower(pascal)
 
 	prefix := "shortID(row.ID)"

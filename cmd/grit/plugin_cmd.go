@@ -175,7 +175,7 @@ var modulePlugins = []struct{ name, summary string }{
 	{"websockets", "Realtime hub with rooms, presence and typing indicators"},
 	{"notifications", "In-app and push notifications with a delivery log"},
 	{"search", "Full-text search across resources"},
-	{"stripe", "Subscriptions, checkout and the webhook plumbing"},
+	{"stripe", "Subscriptions and billing (one-off checkout is grit plugin add stripe)"},
 	{"oauth", "Sign in with Google, GitHub and friends"},
 	{"i18n", "Translated API messages and locale negotiation"},
 	{"video", "Video upload, transcode and playback"},

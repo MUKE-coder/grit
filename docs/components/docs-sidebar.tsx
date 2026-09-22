@@ -229,6 +229,7 @@ const navItems: NavItem[] = [
       { title: 'Device pairing', href: '/docs/plugins/device-pairing' },
       { title: 'Push notifications', href: '/docs/plugins/push' },
       { title: 'Video', href: '/docs/plugins/video' },
+      { title: 'Stripe payments', href: '/docs/plugins/stripe' },
       { title: 'Writing a plugin', href: '/docs/plugins/authoring' },
     ],
   },

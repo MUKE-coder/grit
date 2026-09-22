@@ -296,7 +296,11 @@ grit seed         # a Colour x Size matrix, so there is something to look at`} /
               </p>
 
               <h2 id="api">The endpoints</h2>
-              <p>Behind auth, for the admin:</p>
+              <p>
+                For the admin, behind the resource&apos;s own permissions: <code className={C}>perm:products.view</code>{' '}
+                to read and <code className={C}>perm:products.edit</code> to change, as its CRUD routes ask. A
+                variant&apos;s price is what checkout charges, so these are never open to any signed-in user.
+              </p>
             </div>
 
             <div className="mt-4 mb-8">

@@ -9,6 +9,7 @@ import "strings"
 // combinations so nobody types twelve rows by hand.
 func apiVariantServiceGo(module, pascal, snake, plural string) string {
 	lower := strings.ToLower(pascal)
+	fp := strings.ToLower(pascal[:1]) + pascal[1:] + "Fingerprint"
 	return `package services
 
 import (
@@ -229,12 +230,12 @@ func (s *` + pascal + `VariantService) Generate(` + snake + `ID string, limit in
 	}
 	seen := make(map[string]bool, len(existing))
 	for _, variant := range existing {
-		seen[fingerprint(variant.OptionValues)] = true
+		seen[` + fp + `(variant.OptionValues)] = true
 	}
 
 	err = s.DB.Transaction(func(tx *gorm.DB) error {
 		for i, combination := range combinations {
-			if seen[fingerprint(combination)] {
+			if seen[` + fp + `(combination)] {
 				continue
 			}
 			variant := models.` + pascal + `Variant{
@@ -255,8 +256,10 @@ func (s *` + pascal + `VariantService) Generate(` + snake + `ID string, limit in
 	return created, err
 }
 
-// fingerprint identifies a combination by its value ids, order-independently.
-func fingerprint(values []models.OptionValue) string {
+// ` + fp + ` identifies a combination by its value ids, order-independently.
+// Named for the resource, because a second resource with variants puts a
+// second one in the same package.
+func ` + fp + `(values []models.OptionValue) string {
 	ids := make([]string, 0, len(values))
 	for _, value := range values {
 		ids = append(ids, value.ID)

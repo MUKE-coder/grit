@@ -4,7 +4,10 @@ import "strings"
 
 // APIVariantHandlerGo emits the admin endpoints for options and variants.
 func APIVariantHandlerGo(module, pascal, snake, plural string) string {
-	return apiVariantHandlerGo(module, pascal, snake, plural)
+	// Database calls follow the request's context, as grit upgrade makes
+	// them in a handler written before they did.
+	out, _ := bindRequestContext(apiVariantHandlerGo(module, pascal, snake, plural))
+	return out
 }
 
 func apiVariantHandlerGo(module, pascal, snake, plural string) string {

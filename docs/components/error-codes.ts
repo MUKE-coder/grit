@@ -556,6 +556,26 @@ export const errorCodeAreas: ErrorCodeArea[] = [
     ],
   },
   {
+    area: 'payments',
+    label: 'Payments (the stripe plugin)',
+    codes: [
+      {
+        code: 'PAYMENTS_UNAVAILABLE',
+        status: 503,
+        category: 'disabled',
+        meaning: 'No payment provider is configured here: STRIPE_SECRET_KEY is not set.',
+        client: 'Hide checkout unless payments are configured. Nothing the client sends will fix it.',
+      },
+      {
+        code: 'PAYMENT_PROVIDER_ERROR',
+        status: 502,
+        category: 'upstream',
+        meaning: 'Stripe refused or failed the request. The message carries what Stripe said.',
+        client: 'Retry once. Nobody has been charged: a payment is only taken when the customer confirms it.',
+      },
+    ],
+  },
+  {
     area: 'jobs',
     label: 'Background jobs',
     codes: [
@@ -990,7 +1010,7 @@ export const errorCodeAreas: ErrorCodeArea[] = [
 ]
 
 /** How many codes the API documents. Shown on the page, so it cannot be stale. */
-export const errorCodeCount = 115
+export const errorCodeCount = 117
 
 /** Every row, flattened, for searching and for a test that checks coverage. */
 export const errorCodes: ErrorCodeRow[] = errorCodeAreas.flatMap((area) => area.codes)

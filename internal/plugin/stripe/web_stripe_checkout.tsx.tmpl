@@ -1,0 +1,123 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+import { loadStripe, type Stripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { usePayment } from "@/hooks/use-payment";
+import { formatMoney, type StartedPayment } from "@/lib/payments";
+
+const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
+
+// Loaded once, on the first checkout rendered, and never on pages without one.
+let stripePromise: Promise<Stripe | null> | null = null;
+function getStripe(): Promise<Stripe | null> {
+  if (!stripePromise) stripePromise = loadStripe(publishableKey);
+  return stripePromise;
+}
+
+interface StripeCheckoutProps {
+  /** What your checkout endpoint answered. */
+  started: StartedPayment;
+  /**
+   * Where Stripe sends the customer afterwards, on this site. The payment's id
+   * is added as ?payment=, for <PaymentResult> to read.
+   */
+  returnPath: string;
+}
+
+/**
+ * Stripe's payment form, in the app's colours: cards, and whatever else is
+ * switched on in the Stripe dashboard. Card details go from the browser to
+ * Stripe and never touch the API.
+ */
+export function StripeCheckout({ started, returnPath }: StripeCheckoutProps) {
+  if (!publishableKey) {
+    return (
+      <p className="rounded-xl bg-bg-secondary p-4 text-sm text-text-secondary">
+        Payments are not set up: add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to the web app&apos;s environment.
+      </p>
+    );
+  }
+  return (
+    <Elements
+      stripe={getStripe()}
+      options={{
+        clientSecret: started.client_secret,
+        appearance: {
+          theme: "night",
+          variables: {
+            colorPrimary: "#6c5ce7",
+            colorBackground: "#111118",
+            colorText: "#e8e8f0",
+            colorDanger: "#ff6b6b",
+            borderRadius: "10px",
+          },
+        },
+      }}
+    >
+      <CheckoutForm started={started} returnPath={returnPath} />
+    </Elements>
+  );
+}
+
+function CheckoutForm({ started, returnPath }: StripeCheckoutProps) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!stripe || !elements) return;
+    setBusy(true);
+    setError(null);
+    const url = new URL(returnPath, window.location.origin);
+    url.searchParams.set("payment", started.payment.id);
+    const result = await stripe.confirmPayment({ elements, confirmParams: { return_url: url.toString() } });
+    // Only reached when it did not go through: success leaves for return_url.
+    setError(result.error.message ?? "The payment did not go through. Nothing was taken.");
+    setBusy(false);
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-4">
+      <PaymentElement />
+      {error && (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      )}
+      <button
+        type="submit"
+        disabled={!stripe || busy}
+        className="w-full rounded-lg bg-accent px-4 py-3 font-semibold text-white transition hover:bg-accent-hover disabled:opacity-50"
+      >
+        {busy ? "Paying…" : "Pay " + formatMoney(started.payment.amount, started.payment.currency)}
+      </button>
+    </form>
+  );
+}
+
+/** The outcome, for the page Stripe returns the customer to. */
+export function PaymentResult({ id }: { id: string | undefined }) {
+  const { data: payment, isLoading, isError } = usePayment(id);
+  if (isLoading) return <p className="text-text-secondary">Checking your payment…</p>;
+  if (isError || !payment) return <p className="text-text-secondary">That payment could not be found.</p>;
+  const amount = formatMoney(payment.amount, payment.currency);
+  switch (payment.status) {
+    case "succeeded":
+      return <p className="text-lg font-semibold">Paid {amount}. Thank you!</p>;
+    case "refunded":
+      return <p className="text-text-secondary">{amount} was paid and has been refunded.</p>;
+    case "processing":
+      return <p className="text-text-secondary">Your bank is still processing {amount}. This page updates when it is done.</p>;
+    case "canceled":
+      return <p className="text-text-secondary">This payment was canceled. Nothing was taken.</p>;
+    default:
+      return (
+        <p role="alert" className="text-text-secondary">
+          {payment.failure_message || "The payment did not go through."} Nothing was taken; you can try again.
+        </p>
+      );
+  }
+}

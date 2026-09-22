@@ -320,7 +320,12 @@ func injectBefore(path, marker, code string) error {
 		out := append([]string{}, lines[:i]...)
 		out = append(out, code)
 		out = append(out, lines[i:]...)
-		return os.WriteFile(path, []byte(strings.Join(out, "\n")), 0644)
+		// Formatted, because two plugins injecting at the same marker leave
+		// the second one's import out of order: a project with both video and
+		// stripe installed stopped being gofmt-clean. No plugin has to know
+		// what another injected.
+		joined := strings.Join(out, "\n")
+		return os.WriteFile(path, []byte(codefmt.File(path, joined)), 0644)
 	}
 	return fmt.Errorf("marker %q not found", marker)
 }

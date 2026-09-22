@@ -290,6 +290,14 @@ var catalog = []Entry{
 		"The provider failed in a way that is not one of the above.",
 		"Retry once. The message carries what the provider said."},
 
+	// ── Payments (grit plugin add stripe) ──────────────────────────────────────
+	{"PAYMENTS_UNAVAILABLE", http.StatusServiceUnavailable, CategoryDisabled, "payments",
+		"No payment provider is configured here: STRIPE_SECRET_KEY is not set.",
+		"Hide checkout unless payments are configured. Nothing the client sends will fix it."},
+	{"PAYMENT_PROVIDER_ERROR", http.StatusBadGateway, CategoryUpstream, "payments",
+		"Stripe refused or failed the request. The message carries what Stripe said.",
+		"Retry once. Nobody has been charged: a payment is only taken when the customer confirms it."},
+
 	// ── Background jobs ────────────────────────────────────────────────────────
 	{"REDIS_UNAVAILABLE", http.StatusServiceUnavailable, CategoryDisabled, "jobs",
 		"Redis is not configured or not reachable, so the queue cannot be read.",
@@ -474,6 +482,7 @@ var areaLabels = map[string]string{
 	"apikeys":       "API keys",
 	"uploads":       "Uploads and storage",
 	"ai":            "AI gateway",
+	"payments":      "Payments (the stripe plugin)",
 	"jobs":          "Background jobs",
 	"import":        "CSV import",
 	"backups":       "Backups and restore",

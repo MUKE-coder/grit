@@ -1,0 +1,184 @@
+package payments
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
+	"{{MODULE}}/internal/respond"
+)
+
+// APIVersion pins the shape of what Stripe answers this client. Webhook events
+// are rendered in the version the endpoint was created with instead, which is
+// why the events are read for their few long-stable fields only.
+const APIVersion = "2024-06-20"
+
+// Client is the part of Stripe's REST API that payments needs: three calls,
+// form-encoded, with the secret key. stripe-go would be a large dependency for
+// that, and its webhook parser refuses any event whose API version differs
+// from the library's, which breaks every endpoint made before an upgrade.
+type Client struct {
+	SecretKey string
+	// BaseURL is https://api.stripe.com; a test points it at a fake.
+	BaseURL string
+	HTTP    *http.Client
+}
+
+// NewClient returns a client for the live API.
+func NewClient(secretKey string) *Client {
+	return &Client{
+		SecretKey: secretKey,
+		BaseURL:   "https://api.stripe.com",
+		HTTP:      &http.Client{Timeout: 30 * time.Second},
+	}
+}
+
+// Intent is a PaymentIntent, as much of it as payments reads.
+type Intent struct {
+	ID               string            `json:"id"`
+	Status           string            `json:"status"`
+	Amount           int64             `json:"amount"`
+	AmountReceived   int64             `json:"amount_received"`
+	Currency         string            `json:"currency"`
+	ClientSecret     string            `json:"client_secret"`
+	Metadata         map[string]string `json:"metadata"`
+	LastPaymentError *struct {
+		Message string `json:"message"`
+	} `json:"last_payment_error"`
+}
+
+// Refund is a refund, as much of it as payments reads.
+type Refund struct {
+	ID     string `json:"id"`
+	Amount int64  `json:"amount"`
+	Status string `json:"status"`
+}
+
+// ProviderError is Stripe refusing or failing a request.
+type ProviderError struct {
+	Status  int
+	Type    string `json:"type"`
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (e *ProviderError) Error() string {
+	if e.Message == "" {
+		return fmt.Sprintf("stripe answered %d", e.Status)
+	}
+	return "stripe: " + e.Message
+}
+
+// ErrorCode answers it as PAYMENT_PROVIDER_ERROR, with Stripe's message.
+func (e *ProviderError) ErrorCode() respond.Code { return respond.CodePaymentProviderError }
+
+// IntentParams is what a new PaymentIntent is made from.
+type IntentParams struct {
+	Amount   int64
+	Currency string
+	// IdempotencyKey makes a retried create return the first intent instead
+	// of a second one.
+	IdempotencyKey string
+	Description    string
+	Metadata       map[string]string
+}
+
+// CreateIntent makes a PaymentIntent that accepts whatever payment methods
+// are switched on in the Stripe dashboard.
+func (c *Client) CreateIntent(ctx context.Context, p IntentParams) (Intent, error) {
+	form := url.Values{}
+	form.Set("amount", strconv.FormatInt(p.Amount, 10))
+	form.Set("currency", p.Currency)
+	form.Set("automatic_payment_methods[enabled]", "true")
+	if p.Description != "" {
+		form.Set("description", p.Description)
+	}
+	keys := make([]string, 0, len(p.Metadata))
+	for k := range p.Metadata {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		form.Set("metadata["+k+"]", p.Metadata[k])
+	}
+	var out Intent
+	err := c.do(ctx, http.MethodPost, "/v1/payment_intents", form, p.IdempotencyKey, &out)
+	return out, err
+}
+
+// GetIntent reads a PaymentIntent back.
+func (c *Client) GetIntent(ctx context.Context, id string) (Intent, error) {
+	var out Intent
+	err := c.do(ctx, http.MethodGet, "/v1/payment_intents/"+url.PathEscape(id), nil, "", &out)
+	return out, err
+}
+
+// CancelIntent cancels one the customer can no longer be asked to pay.
+func (c *Client) CancelIntent(ctx context.Context, id string) (Intent, error) {
+	var out Intent
+	err := c.do(ctx, http.MethodPost, "/v1/payment_intents/"+url.PathEscape(id)+"/cancel", url.Values{}, "", &out)
+	return out, err
+}
+
+// CreateRefund refunds amount of a succeeded intent; zero refunds what is left.
+func (c *Client) CreateRefund(ctx context.Context, intentID string, amount int64, idempotencyKey string) (Refund, error) {
+	form := url.Values{}
+	form.Set("payment_intent", intentID)
+	if amount > 0 {
+		form.Set("amount", strconv.FormatInt(amount, 10))
+	}
+	var out Refund
+	err := c.do(ctx, http.MethodPost, "/v1/refunds", form, idempotencyKey, &out)
+	return out, err
+}
+
+func (c *Client) do(ctx context.Context, method, path string, form url.Values, idempotencyKey string, out any) error {
+	var body io.Reader
+	if form != nil {
+		body = strings.NewReader(form.Encode())
+	}
+	req, err := http.NewRequestWithContext(ctx, method, c.BaseURL+path, body)
+	if err != nil {
+		return fmt.Errorf("stripe request: %w", err)
+	}
+	req.SetBasicAuth(c.SecretKey, "")
+	req.Header.Set("Stripe-Version", APIVersion)
+	if form != nil {
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	}
+	if idempotencyKey != "" {
+		req.Header.Set("Idempotency-Key", idempotencyKey)
+	}
+	res, err := c.HTTP.Do(req)
+	if err != nil {
+		return fmt.Errorf("stripe %s %s: %w", method, path, err)
+	}
+	defer res.Body.Close()
+	raw, err := io.ReadAll(io.LimitReader(res.Body, 1<<20))
+	if err != nil {
+		return fmt.Errorf("reading stripe's answer: %w", err)
+	}
+	if res.StatusCode >= 300 {
+		var envelope struct {
+			Error ProviderError `json:"error"`
+		}
+		if err := json.Unmarshal(raw, &envelope); err != nil {
+			// Not Stripe's error shape, such as a proxy's page: the status
+			// is all there is to go on.
+			envelope.Error = ProviderError{}
+		}
+		envelope.Error.Status = res.StatusCode
+		return &envelope.Error
+	}
+	if err := json.Unmarshal(raw, out); err != nil {
+		return fmt.Errorf("reading stripe's answer: %w", err)
+	}
+	return nil
+}

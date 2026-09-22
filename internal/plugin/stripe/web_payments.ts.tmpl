@@ -1,0 +1,61 @@
+// Payments: what the API says about a Stripe payment.
+//
+// A payment is started by your own checkout endpoint, which works out the
+// amount on the server and answers with StartedPayment. The browser confirms it
+// with <StripeCheckout>, and the return page reads the outcome with
+// usePayment. Nothing here can set a price.
+import { api } from "@/lib/api";
+
+export type PaymentStatus =
+  | "requires_payment_method"
+  | "requires_confirmation"
+  | "requires_action"
+  | "processing"
+  | "succeeded"
+  | "canceled"
+  | "refunded";
+
+export interface Payment {
+  id: string;
+  user_id: string;
+  /** What is being paid for, such as "order:<id>". */
+  reference: string;
+  /** In the currency's smallest unit, as Stripe counts it. */
+  amount: number;
+  currency: string;
+  status: PaymentStatus;
+  amount_refunded: number;
+  /** What the bank said about the last attempt, for the customer. */
+  failure_message?: string;
+  paid_at?: string;
+  created_at: string;
+}
+
+/** What a checkout endpoint answers: the payment and the secret to confirm it. */
+export interface StartedPayment {
+  payment: Payment;
+  client_secret: string;
+}
+
+/** Waiting on the bank, as some payment methods do for days. */
+export function isPending(payment: Pick<Payment, "status"> | undefined): boolean {
+  return payment?.status === "processing";
+}
+
+export async function getPayment(id: string): Promise<Payment> {
+  const { data } = await api.get<{ data: Payment }>("/api/payments/" + id);
+  return data.data;
+}
+
+/** Asks the API to check with Stripe, so the outcome does not wait on a webhook. */
+export async function refreshPayment(id: string): Promise<Payment> {
+  const { data } = await api.post<{ data: Payment }>("/api/payments/" + id + "/refresh");
+  return data.data;
+}
+
+/** "$25.99" from 2599 and "usd"; "¥2,599" from 2599 and "jpy", which has no cents. */
+export function formatMoney(amount: number, currency: string): string {
+  const format = new Intl.NumberFormat(undefined, { style: "currency", currency: currency.toUpperCase() });
+  const digits = format.resolvedOptions().maximumFractionDigits ?? 2;
+  return format.format(amount / 10 ** digits);
+}

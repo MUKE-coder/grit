@@ -7,7 +7,7 @@ import "strings"
 // Price resolution is the thing worth testing, because every failure mode is
 // silent: a wrong price does not crash, it renders, and the customer pays it.
 func APIVariantServiceTestGo(module, pascal, snake string) string {
-	return apiVariantServiceTestGo(module, pascal, snake)
+	return perResource(apiVariantServiceTestGo(module, pascal, snake), pascal, "buildShirt", "loadOptionsByID", "variantTestDB")
 }
 
 func apiVariantServiceTestGo(module, pascal, snake string) string {

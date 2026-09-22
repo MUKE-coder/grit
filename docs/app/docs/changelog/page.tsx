@@ -66,6 +66,77 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.311.0 */}
+            <div className="mb-12" id="v3.311.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.311.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Stripe payments: grit plugin add stripe</h3>
+                <p>
+                  Take money for an order without trusting the browser with the price. There is no route that starts a
+                  payment: your checkout handler works out the total and calls{' '}
+                  <code>payments.Service.Create</code>, and the browser receives a client secret for that one payment.
+                  Reloading the checkout reuses it; a changed basket cancels the old one at Stripe, so its secret
+                  cannot pay the old price.
+                </p>
+                <p>
+                  Stripe&apos;s word marks a payment paid, never a redirect: the signed webhook at{' '}
+                  <code>POST /webhooks/stripe</code>, deduplicated by event id, or{' '}
+                  <code>POST /payments/:id/refresh</code> reading the intent back with the secret key, so the return
+                  page works on a laptop with no webhook. Every change is a conditional update, so a redelivered or
+                  late event changes nothing, and <code>OnSucceeded</code> marks your order paid once, inside the
+                  transaction that marks the payment. An intent for another amount is never marked paid. Refunds come
+                  from the admin, keyed so a double click makes one. The web app gets{' '}
+                  <code>&lt;StripeCheckout&gt;</code> and <code>&lt;PaymentResult&gt;</code> in its own colours.
+                </p>
+                <p>
+                  No stripe-go: four REST calls with the API version pinned, because its webhook parser refuses any
+                  event whose API version differs from the library&apos;s. See{' '}
+                  <Link href="/docs/plugins/stripe" className="text-primary hover:underline">the plugin&apos;s page</Link>.
+                  Found missing building the storefront blueprint.
+                </p>
+                <h3>The CSP has a list plugins add origins to</h3>
+                <p>
+                  Every directive of the Next.js Content-Security-Policy was one fixed string, so a plugin that loads a
+                  third party&apos;s script had nowhere to say so, and the browser refused Stripe.js with nothing but a
+                  console message. <code>next.config.ts</code> now has <code>pluginOrigins</code>, written at a{' '}
+                  <code>grit:csp-origins</code> marker and taken out again on removal, and an explicit{' '}
+                  <code>frame-src &apos;self&apos;</code>, which is what <code>default-src</code> already allowed.{' '}
+                  <code>grit upgrade</code> adds both to an existing web app and admin, along with the two new error
+                  codes, <code>PAYMENTS_UNAVAILABLE</code> and <code>PAYMENT_PROVIDER_ERROR</code>.
+                </p>
+                <h3>Two plugins in one project stay gofmt-clean</h3>
+                <p>
+                  Plugins inject their imports at the same marker, so the second one landed wherever the first left
+                  off: a project with both <code>video</code> and <code>stripe</code> installed was no longer
+                  gofmt-clean, which fails the formatting check in its own CI. Every Go file a plugin edits is now
+                  formatted on the way out, so no plugin has to know what another injected.
+                </p>
+                <h3>Variants: a customer could reprice a variant</h3>
+                <p>
+                  <code>grit add variants</code> mounted its routes on the group every signed-in user reaches, while the
+                  resource&apos;s own routes ask for ADMIN or a permission. So any customer could set a variant&apos;s
+                  price override to a cent and check out at that price, or create and delete the shop&apos;s options.
+                  They now ask for the resource&apos;s view permission to read and its edit permission to change, and{' '}
+                  <code>grit upgrade</code> moves them in an existing project. If you added variants before this
+                  release, upgrade now.
+                </p>
+                <p>
+                  Three more from the same command, which no check caught because none ran it on a new project and built what it
+                  wrote: the public variants handler called <code>respond</code> without importing it, so the API
+                  stopped compiling the moment variants were added (<code>grit upgrade</code> adds the import); a
+                  second resource with variants wrote a second copy of the same helpers into the same packages; and the
+                  handlers it wrote did not follow the request&apos;s context, which upgrade then had to fix. The release
+                  checks now add variants to two resources of a new project and build, lint and test it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.310.0 */}
             <div className="mb-12" id="v3.310.0">
               <div className="flex items-center gap-3 mb-4">
