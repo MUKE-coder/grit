@@ -66,6 +66,30 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.308.0 */}
+            <div className="mb-12" id="v3.308.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.308.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Video plays in the browser</h3>
+                <p>
+                  The web and admin Content-Security-Policy had no <code>media-src</code>, so{' '}
+                  <code>&lt;video&gt;</code> and <code>&lt;audio&gt;</code> fell back to{' '}
+                  <code>default-src &apos;self&apos;</code> and the browser refused every clip the API or storage
+                  served. Nothing played video before v3.307.0&apos;s video plugin, whose <code>VideoPlayer</code> was
+                  therefore blocked in every Next.js app. <code>media-src</code> now admits the same origins as{' '}
+                  <code>img-src</code>, in the Next.js and Vite configs and in the nginx config a built Vite frontend
+                  is served with. <code>grit upgrade</code> adds it to an existing project. Found building the
+                  Instagram blueprint.
+                </p>
+              </div>
+            </div>
+
             {/* v3.307.0 */}
             <div className="mb-12" id="v3.307.0">
               <div className="flex items-center gap-3 mb-4">

@@ -479,6 +479,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairCSPWebSocket(root); err != nil {
 			fmt.Printf("  ⚠ letting the CSP admit the realtime socket: %v\n", err)
 		}
+		// After the link-safety repair, which tightens img-src to the line
+		// media-src is placed after.
+		if err := repairCSPMedia(root); err != nil {
+			fmt.Printf("  ⚠ letting the CSP play video and audio: %v\n", err)
+		}
 		if err := ignoreBuildArtefacts(root); err != nil {
 			fmt.Printf("  ⚠ ignoring build artefacts: %v\n", err)
 		}
