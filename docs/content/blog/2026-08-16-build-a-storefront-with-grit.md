@@ -17,7 +17,9 @@ You have run `grit new`, generated a resource, clicked around the admin, and tho
 
 Yes. This guide is that build, start to finish.
 
-I am going to be straight with you about one thing up front, because it changes how you read the rest. Grit gives you the boring two thirds of a shop for free: the database, the API, auth, roles, file uploads, background jobs, email, the admin panel, deployment. It does **not** give you a payments module. There is no `grit add stripe`. The Stripe part is code you write, and this guide shows you exactly where it goes and what the traps are.
+I am going to be straight with you about one thing up front, because it changes how you read the rest. Grit gives you the boring two thirds of a shop for free: the database, the API, auth, roles, file uploads, background jobs, email, the admin panel, deployment. It did **not** give you a payments module when this was written, so the Stripe part below is code you write, and this guide shows you exactly where it goes and what the traps are.
+
+> **Since Grit v3.311.0 there is `grit plugin add stripe`.** It does what the payments chapter below builds by hand: an intent for an amount only the server decides, the order settled by Stripe's signed webhook exactly once, refunds, and a payment form for the web app. Read the chapter anyway if you want to know what it is doing for you, then run the plugin. See [the plugin's page](/docs/plugins/stripe).
 
 That is the honest shape of it. Everything around the payment is generated; the payment is yours.
 
@@ -2232,6 +2234,8 @@ The whole thing is one transaction, and stock comes down inside it. If the payme
 Handlers stay thin and logic lives in services: that is the convention Grit's generated code follows and yours should too. See [Handlers](/docs/backend/handlers) and [Services](/docs/backend/services).
 
 ### The Stripe service
+
+*Everything in this chapter is what `grit plugin add stripe` now writes for you, with one difference worth knowing: the plugin talks to Stripe's REST API directly rather than through stripe-go, because stripe-go's webhook parser refuses any event whose API version differs from the library's, which breaks a working endpoint on the first upgrade.*
 
 ```go
 // apps/api/internal/services/payments.go

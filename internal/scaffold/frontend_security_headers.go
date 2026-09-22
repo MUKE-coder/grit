@@ -129,9 +129,7 @@ func nextSecurityHeadersConfig() string {
   //
   // Derived from the same STORAGE_ORIGIN the CSP uses, so moving storage to a
   // CDN is one env var rather than two places that drift.
-  images: {
-    remotePatterns: nextImageHosts,
-  },
+` + nextImagesNew + `
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

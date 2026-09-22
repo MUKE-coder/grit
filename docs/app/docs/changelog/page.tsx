@@ -66,6 +66,32 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.312.0 */}
+            <div className="mb-12" id="v3.312.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.312.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Stored images were not loading in development</h3>
+                <p>
+                  next/image refuses to fetch an image whose host resolves to a private IP, and in development every
+                  host is one: the API serves stored files from localhost, and MinIO is localhost too. The optimizer
+                  answered 400, the page showed alt text, and the reason was a line in the terminal. Every app with an
+                  upload looked broken while running locally, and nothing said why.
+                </p>
+                <p>
+                  Each Next.js app now sets <code>dangerouslyAllowLocalIP: isDev</code>, which is scoped to
+                  development: in production the guard stays on, where storage is a real origin and it is worth having.
+                  <code> grit upgrade</code> adds it to an existing web app, admin and docs site. Found building the
+                  storefront blueprint, where every product is a photograph.
+                </p>
+              </div>
+            </div>
+
             {/* v3.311.0 */}
             <div className="mb-12" id="v3.311.0">
               <div className="flex items-center gap-3 mb-4">

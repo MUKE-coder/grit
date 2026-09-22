@@ -505,6 +505,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairVariantRoutes(root); err != nil {
 			fmt.Printf("  ⚠ putting the variant routes behind the resource's permissions: %v\n", err)
 		}
+		if err := repairNextImageLocal(root); err != nil {
+			fmt.Printf("  ⚠ letting next/image load stored images in development: %v\n", err)
+		}
 		if err := repairExpoRelations(root); err != nil {
 			fmt.Printf("  ⚠ naming related records in the Expo screens: %v\n", err)
 		}
