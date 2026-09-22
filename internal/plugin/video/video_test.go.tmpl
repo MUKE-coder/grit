@@ -1,0 +1,229 @@
+package video
+
+import (
+	"bytes"
+	"context"
+	"errors"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/storage"
+)
+
+// A phone records portrait as landscape pixels plus a rotation; the probe
+// reports what is displayed.
+func TestParseProbeAppliesRotation(t *testing.T) {
+	raw := `{"format":{"format_name":"mov,mp4,m4a,3gp,3g2,mj2","duration":"12.5"},
+		"streams":[{"codec_type":"video","width":1920,"height":1080,"side_data_list":[{"rotation":-90}]},
+		{"codec_type":"audio"}]}`
+	p, err := parseProbe([]byte(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Width != 1080 || p.Height != 1920 {
+		t.Errorf("got %dx%d, want 1080x1920", p.Width, p.Height)
+	}
+	if p.Duration != 12500*time.Millisecond || !p.HasAudio {
+		t.Errorf("duration %s, audio %v", p.Duration, p.HasAudio)
+	}
+}
+
+// Only real video containers are converted. A playlist can name other files
+// for ffmpeg to open, so it is refused before ffmpeg ever reads it as input.
+func TestParseProbeRefusesOtherContainers(t *testing.T) {
+	for _, format := range []string{"hls", "concat", "image2", "mp3", "gif"} {
+		raw := `{"format":{"format_name":"` + format + `","duration":"1"},"streams":[{"codec_type":"video","width":10,"height":10}]}`
+		if _, err := parseProbe([]byte(raw)); !errors.Is(err, ErrUnsupported) {
+			t.Errorf("%s: got %v, want ErrUnsupported", format, err)
+		}
+	}
+	noVideo := `{"format":{"format_name":"mov,mp4","duration":"1"},"streams":[{"codec_type":"audio"}]}`
+	if _, err := parseProbe([]byte(noVideo)); !errors.Is(err, ErrUnsupported) {
+		t.Errorf("audio only: got %v, want ErrUnsupported", err)
+	}
+}
+
+func TestTranscodeArgsForceTheDemuxerAndStayOnLocalFiles(t *testing.T) {
+	args := strings.Join(transcodeArgs("in", "out.mp4", Probe{Container: "matroska,webm", Width: 10, Height: 10}, Options{}), " ")
+	for _, want := range []string{"-protocol_whitelist file", "-f matroska -i in", "+faststart", "libx264", "min(720,"} {
+		if !strings.Contains(args, want) {
+			t.Errorf("args lack %q: %s", want, args)
+		}
+	}
+	if strings.Contains(args, "0:a:0") {
+		t.Error("mapped an audio stream the probe did not report")
+	}
+}
+
+func TestPosterAt(t *testing.T) {
+	for d, want := range map[time.Duration]time.Duration{0: 0, time.Second: 500 * time.Millisecond, 10 * time.Second: time.Second} {
+		if got := posterAt(d); got != want {
+			t.Errorf("posterAt(%s) = %s, want %s", d, got, want)
+		}
+	}
+}
+
+// The rest needs ffmpeg, which CI images and dev machines may not have.
+func needFFmpeg(t *testing.T) {
+	t.Helper()
+	if !Available() {
+		t.Skip("ffmpeg is not installed")
+	}
+}
+
+// makeClip writes a short test clip with ffmpeg's own generators.
+func makeClip(t *testing.T, path string, size string, seconds int) {
+	t.Helper()
+	bin, _ := tool("FFMPEG_PATH", "ffmpeg")
+	d := strconv.Itoa(seconds)
+	out, err := exec.Command(bin, "-nostdin", "-y", "-hide_banner", "-loglevel", "error",
+		"-f", "lavfi", "-i", "testsrc=size="+size+":rate=25:duration="+d,
+		"-f", "lavfi", "-i", "sine=frequency=440:duration="+d,
+		"-shortest", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", path).CombinedOutput()
+	if err != nil {
+		t.Fatalf("making a test clip: %v: %s", err, out)
+	}
+}
+
+// A playlist that names a file on the server is refused, not followed.
+func TestProbeRefusesAPlaylist(t *testing.T) {
+	needFFmpeg(t)
+	dir := t.TempDir()
+	secret := filepath.Join(dir, "secret.txt")
+	if err := os.WriteFile(secret, []byte("do not leak"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	playlist := filepath.Join(dir, "source")
+	body := "#EXTM3U\n#EXT-X-TARGETDURATION:1\n#EXTINF:1,\n" + filepath.ToSlash(secret) + "\n#EXT-X-ENDLIST\n"
+	if err := os.WriteFile(playlist, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ProbeFile(context.Background(), playlist); !errors.Is(err, ErrUnsupported) {
+		t.Fatalf("a playlist probed as %v, want ErrUnsupported", err)
+	}
+}
+
+func testService(t *testing.T) (*Service, *storage.LocalDisk) {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+	if err := db.AutoMigrate(&models.User{}, &models.Upload{}, &models.Video{}); err != nil {
+		t.Fatal(err)
+	}
+	disk, err := storage.NewLocalDisk(storage.LocalConfig{Root: t.TempDir(), PublicURL: "http://localhost/files", Secret: "test-secret-test-secret-test-secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return NewService(db, disk), disk
+}
+
+func putUpload(t *testing.T, s *Service, disk *storage.LocalDisk, userID, key, mime, path string) {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := disk.Put(context.Background(), key, bytes.NewReader(data), storage.PutOptions{ContentType: mime}); err != nil {
+		t.Fatal(err)
+	}
+	up := models.Upload{ID: "up-" + userID, Filename: "clip.mp4", OriginalName: "clip.mp4", MimeType: mime, Size: int64(len(data)), Path: key, UserID: userID}
+	if err := s.DB.Create(&up).Error; err != nil {
+		t.Fatal(err)
+	}
+}
+
+// The whole path: an upload becomes a pending video, the worker claims it,
+// ffmpeg converts it, and the MP4 and its poster land in storage.
+func TestServiceConvertsAnUpload(t *testing.T) {
+	needFFmpeg(t)
+	s, disk := testService(t)
+	clip := filepath.Join(t.TempDir(), "clip.mp4")
+	makeClip(t, clip, "1280x720", 2)
+	putUpload(t, s, disk, "ada", "uploads/clip.mp4", "video/mp4", clip)
+
+	v, err := s.Create(context.Background(), "ada", "uploads/clip.mp4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v.Status != models.VideoPending {
+		t.Fatalf("status %s, want pending", v.Status)
+	}
+	var ready models.Video
+	s.OnReady = func(got models.Video) { ready = got }
+	if !s.RunOnce(context.Background()) {
+		t.Fatal("the worker found nothing to do")
+	}
+	var stored models.Video
+	if err := s.DB.First(&stored, "id = ?", v.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if stored.Status != models.VideoReady || ready.ID != v.ID {
+		t.Fatalf("status %s (%s), OnReady for %q", stored.Status, stored.Error, ready.ID)
+	}
+	// 1280x720 capped at 720 on the short side stays 1280x720.
+	if stored.Width != 1280 || stored.Height != 720 || stored.DurationMS < 1500 {
+		t.Errorf("recorded %dx%d, %dms", stored.Width, stored.Height, stored.DurationMS)
+	}
+	for _, key := range []string{stored.Key, stored.PosterKey} {
+		if ok, err := disk.Exists(context.Background(), key); err != nil || !ok {
+			t.Errorf("%s is not in storage (%v)", key, err)
+		}
+	}
+	if s.RunOnce(context.Background()) {
+		t.Error("the worker converted the same video twice")
+	}
+}
+
+// Someone else's upload answers as not found, and an image is not a video.
+func TestCreateChecksOwnershipAndType(t *testing.T) {
+	s, _ := testService(t)
+	up := models.Upload{ID: "u1", Filename: "a.png", OriginalName: "a.png", MimeType: "image/png", Size: 1, Path: "uploads/a.png", UserID: "ada"}
+	if err := s.DB.Create(&up).Error; err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Create(context.Background(), "ben", "uploads/a.png"); !errors.Is(err, gorm.ErrRecordNotFound) {
+		t.Errorf("another user's upload: got %v, want not found", err)
+	}
+	if _, err := s.Create(context.Background(), "ada", "uploads/a.png"); err == nil || !strings.Contains(err.Error(), "not a video") {
+		t.Errorf("an image: got %v", err)
+	}
+}
+
+// A clip past the limit fails at once, with a reason, and is not retried.
+func TestTooLongIsAPermanentFailure(t *testing.T) {
+	needFFmpeg(t)
+	s, disk := testService(t)
+	s.Options.MaxDuration = time.Second
+	clip := filepath.Join(t.TempDir(), "long.mp4")
+	makeClip(t, clip, "320x240", 3)
+	putUpload(t, s, disk, "ada", "uploads/long.mp4", "video/mp4", clip)
+	v, err := s.Create(context.Background(), "ada", "uploads/long.mp4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.RunOnce(context.Background())
+	var stored models.Video
+	if err := s.DB.First(&stored, "id = ?", v.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if stored.Status != models.VideoFailed || !strings.Contains(stored.Error, "limit") {
+		t.Errorf("status %s, error %q", stored.Status, stored.Error)
+	}
+}

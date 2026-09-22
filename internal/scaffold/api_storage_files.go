@@ -835,6 +835,22 @@ func (h *UploadHandler) uploadScope(c *gin.Context, action string) *gorm.DB {
 // MaxUploadSize is the maximum file size (50 MB).
 const MaxUploadSize = 50 << 20
 
+// MaxVideoUploadSize is the ceiling for a video, which a minute of phone video
+// passes long before 50 MB: the same 300 MB the multipart path allows a field
+// that accepts video.
+const MaxVideoUploadSize = 300 << 20
+
+// maxUploadFor is the size ceiling for a file of this type. The presigned path
+// used MaxUploadSize for everything, so a video that uploaded fine as a form
+// field was refused, or deleted after it landed, when it went straight to the
+// bucket.
+func maxUploadFor(mimeType string) int64 {
+	if strings.HasPrefix(strings.ToLower(mimeType), "video/") {
+		return MaxVideoUploadSize
+	}
+	return MaxUploadSize
+}
+
 // UploadHandler handles file upload endpoints.
 type UploadHandler struct {
 	DB      *gorm.DB
@@ -1320,8 +1336,8 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 		return
 	}
 
-	if req.FileSize > MaxUploadSize {
-		respond.Fail(c, respond.CodeFileTooLarge, fmt.Sprintf("File size exceeds maximum of %d MB", MaxUploadSize/(1<<20)))
+	if limit := maxUploadFor(req.ContentType); req.FileSize > limit {
+		respond.Fail(c, respond.CodeFileTooLarge, fmt.Sprintf("File size exceeds maximum of %d MB", limit/(1<<20)))
 		return
 	}
 
@@ -1373,9 +1389,10 @@ func (h *UploadHandler) Profiles(c *gin.Context) {
 			"profiles": media.AllPublic(),
 			// What the server would do with a file that reaches it, so a client
 			// can tell whether it is expected to do the work itself.
-			"backend":      media.Backend(),
-			"max_upload":   MaxUploadSize,
-			"lossy_webp":   media.SupportsLossyWebP(),
+			"backend":          media.Backend(),
+			"max_upload":       MaxUploadSize,
+			"max_video_upload": MaxVideoUploadSize,
+			"lossy_webp":       media.SupportsLossyWebP(),
 		},
 	})
 }
@@ -1445,10 +1462,10 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 		respond.Fail(c, respond.CodeUploadNotFound, "No file was uploaded to that key")
 		return
 	}
-	if storedSize > MaxUploadSize {
+	if limit := maxUploadFor(storedType); storedSize > limit {
 		// It got past the presign somehow. Do not keep it.
 		_ = h.Storage.Delete(c.Request.Context(), req.Key)
-		respond.Fail(c, respond.CodeFileTooLarge, fmt.Sprintf("File size exceeds maximum of %d MB", MaxUploadSize/(1<<20)))
+		respond.Fail(c, respond.CodeFileTooLarge, fmt.Sprintf("File size exceeds maximum of %d MB", limit/(1<<20)))
 		return
 	}
 	// The stored type is what S3 recorded from the signed presign, so prefer it

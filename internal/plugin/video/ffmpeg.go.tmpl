@@ -1,0 +1,283 @@
+// Package video turns an uploaded clip into something every client can play:
+// an H.264 MP4 with the index at the front, a poster frame, and the size and
+// length the feed needs to lay it out before it loads.
+//
+// ffmpeg does the work. It runs as a separate process with the arguments passed
+// directly, never through a shell, on a file this package wrote to a temporary
+// directory.
+package video
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// ErrNoFFmpeg is returned when the server has no ffmpeg. The Docker image the
+// plugin updates carries it; a machine running the API directly needs it
+// installed.
+var ErrNoFFmpeg = errors.New("ffmpeg is not installed on this server: install it (apt install ffmpeg, brew install ffmpeg, winget install ffmpeg) or set FFMPEG_PATH and FFPROBE_PATH")
+
+// ErrUnsupported is a file that is not a video this package accepts.
+var ErrUnsupported = errors.New("not a video this server can convert: send MP4, MOV or WebM")
+
+// Probe is what ffprobe says about a file.
+type Probe struct {
+	// Container is ffprobe's format name, such as "mov,mp4,m4a,3gp,3g2,mj2".
+	Container string
+	Duration  time.Duration
+	// Width and Height are as displayed, after the rotation a phone records.
+	Width, Height int
+	HasAudio      bool
+}
+
+// containers are the ffprobe format names this package converts, and the
+// demuxer each one is read with.
+//
+// The demuxer is forced, not left to ffmpeg's guess. ffmpeg reads whatever a
+// file says it is, and a playlist (HLS, concat) that claims to be a video can
+// name other files for it to open, which would put a file from the server into
+// the output. A forced mov or matroska demuxer never follows one.
+var containers = map[string]string{
+	"mov":      "mov",
+	"mp4":      "mov",
+	"m4a":      "mov",
+	"3gp":      "mov",
+	"3g2":      "mov",
+	"mj2":      "mov",
+	"matroska": "matroska",
+	"webm":     "matroska",
+}
+
+// demuxer is the demuxer for a probed container, or "" when it is not allowed.
+func demuxer(container string) string {
+	for _, name := range strings.Split(container, ",") {
+		if d, ok := containers[strings.TrimSpace(name)]; ok {
+			return d
+		}
+	}
+	return ""
+}
+
+// tool finds ffmpeg or ffprobe: the environment variable first, then PATH.
+func tool(env, name string) (string, error) {
+	if p := strings.TrimSpace(os.Getenv(env)); p != "" {
+		return p, nil
+	}
+	p, err := exec.LookPath(name)
+	if err != nil {
+		return "", ErrNoFFmpeg
+	}
+	return p, nil
+}
+
+// Available reports whether ffmpeg and ffprobe can be found.
+func Available() bool {
+	_, err1 := tool("FFMPEG_PATH", "ffmpeg")
+	_, err2 := tool("FFPROBE_PATH", "ffprobe")
+	return err1 == nil && err2 == nil
+}
+
+// run executes a tool and returns the tail of its error output on failure,
+// which is where ffmpeg says what went wrong.
+func run(ctx context.Context, bin string, args ...string) ([]byte, error) {
+	var stdout, stderr bytes.Buffer
+	cmd := exec.CommandContext(ctx, bin, args...)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		msg := strings.TrimSpace(stderr.String())
+		if len(msg) > 600 {
+			msg = "..." + msg[len(msg)-600:]
+		}
+		if ctx.Err() != nil {
+			return nil, fmt.Errorf("%s: %w", bin, ctx.Err())
+		}
+		return nil, fmt.Errorf("%s: %w: %s", bin, err, msg)
+	}
+	return stdout.Bytes(), nil
+}
+
+type ffprobeOutput struct {
+	Format struct {
+		FormatName string `json:"format_name"`
+		Duration   string `json:"duration"`
+	} `json:"format"`
+	Streams []struct {
+		CodecType string `json:"codec_type"`
+		Width     int    `json:"width"`
+		Height    int    `json:"height"`
+		Tags      struct {
+			Rotate string `json:"rotate"`
+		} `json:"tags"`
+		SideData []struct {
+			Rotation float64 `json:"rotation"`
+		} `json:"side_data_list"`
+	} `json:"streams"`
+}
+
+// ProbeFile describes the video at path, and refuses anything that is not a
+// container this package converts or has no video stream.
+func ProbeFile(ctx context.Context, path string) (Probe, error) {
+	bin, err := tool("FFPROBE_PATH", "ffprobe")
+	if err != nil {
+		return Probe{}, err
+	}
+	out, err := run(ctx, bin,
+		"-v", "error",
+		"-protocol_whitelist", "file",
+		"-print_format", "json",
+		"-show_format", "-show_streams",
+		path,
+	)
+	if err != nil {
+		// ffprobe fails on a file that is not media at all.
+		return Probe{}, fmt.Errorf("%w (%v)", ErrUnsupported, err)
+	}
+	return parseProbe(out)
+}
+
+func parseProbe(raw []byte) (Probe, error) {
+	var out ffprobeOutput
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return Probe{}, fmt.Errorf("reading ffprobe's report: %w", err)
+	}
+	p := Probe{Container: out.Format.FormatName}
+	if demuxer(p.Container) == "" {
+		return Probe{}, ErrUnsupported
+	}
+	if secs, err := strconv.ParseFloat(out.Format.Duration, 64); err == nil && secs > 0 {
+		p.Duration = time.Duration(secs * float64(time.Second))
+	}
+	video := false
+	for _, s := range out.Streams {
+		switch s.CodecType {
+		case "audio":
+			p.HasAudio = true
+		case "video":
+			if video {
+				continue
+			}
+			video = true
+			p.Width, p.Height = s.Width, s.Height
+			rotation := 0.0
+			if r, err := strconv.ParseFloat(s.Tags.Rotate, 64); err == nil {
+				rotation = r
+			}
+			for _, sd := range s.SideData {
+				if sd.Rotation != 0 {
+					rotation = sd.Rotation
+				}
+			}
+			// A phone records portrait as landscape pixels plus a rotation.
+			if r := int(rotation) % 180; r == 90 || r == -90 {
+				p.Width, p.Height = p.Height, p.Width
+			}
+		}
+	}
+	if !video || p.Width <= 0 || p.Height <= 0 {
+		return Probe{}, ErrUnsupported
+	}
+	return p, nil
+}
+
+// Options shapes the output.
+type Options struct {
+	// MaxEdge caps the shorter side, in pixels: 720 is sharp on a phone and a
+	// fraction of the size of 1080.
+	MaxEdge int
+	// MaxDuration refuses anything longer. Zero means no limit.
+	MaxDuration time.Duration
+	// CRF is x264's quality, lower is better: 23 is its default.
+	CRF int
+}
+
+func (o Options) withDefaults() Options {
+	if o.MaxEdge <= 0 {
+		o.MaxEdge = 720
+	}
+	if o.CRF <= 0 {
+		o.CRF = 23
+	}
+	return o
+}
+
+// transcodeArgs are ffmpeg's arguments for one conversion.
+func transcodeArgs(in, out string, p Probe, o Options) []string {
+	o = o.withDefaults()
+	edge := strconv.Itoa(o.MaxEdge)
+	// Shorter side capped at MaxEdge, the other kept in proportion and even,
+	// which H.264 needs. ffmpeg has already applied the recorded rotation by
+	// the time the filter runs, so iw and ih are as displayed.
+	scale := "scale='if(gte(iw,ih),-2,min(" + edge + ",iw))':'if(gte(iw,ih),min(" + edge + ",ih),-2)'"
+	args := []string{
+		"-nostdin", "-y", "-hide_banner", "-loglevel", "error",
+		"-protocol_whitelist", "file",
+		"-f", demuxer(p.Container),
+		"-i", in,
+		"-map", "0:v:0",
+	}
+	if p.HasAudio {
+		args = append(args, "-map", "0:a:0", "-c:a", "aac", "-b:a", "128k", "-ac", "2")
+	}
+	args = append(args,
+		"-vf", scale,
+		"-c:v", "libx264", "-preset", "veryfast", "-crf", strconv.Itoa(o.CRF),
+		"-pix_fmt", "yuv420p", "-profile:v", "high",
+		// The index at the front, so playback starts before the whole file
+		// has downloaded.
+		"-movflags", "+faststart",
+		"-f", "mp4", out,
+	)
+	return args
+}
+
+// Transcode converts in to an MP4 at out.
+func Transcode(ctx context.Context, in, out string, p Probe, o Options) error {
+	if demuxer(p.Container) == "" {
+		return ErrUnsupported
+	}
+	bin, err := tool("FFMPEG_PATH", "ffmpeg")
+	if err != nil {
+		return err
+	}
+	_, err = run(ctx, bin, transcodeArgs(in, out, p, o)...)
+	return err
+}
+
+// posterAt is where the poster frame is taken: a second in, or halfway
+// through a clip shorter than two seconds, past the fade from black most
+// clips open with.
+func posterAt(d time.Duration) time.Duration {
+	if d <= 0 {
+		return 0
+	}
+	if d < 2*time.Second {
+		return d / 2
+	}
+	return time.Second
+}
+
+// Poster writes one frame of the converted video, as a JPEG, to out.
+func Poster(ctx context.Context, in, out string, d time.Duration) error {
+	bin, err := tool("FFMPEG_PATH", "ffmpeg")
+	if err != nil {
+		return err
+	}
+	_, err = run(ctx, bin,
+		"-nostdin", "-y", "-hide_banner", "-loglevel", "error",
+		"-protocol_whitelist", "file",
+		"-ss", strconv.FormatFloat(posterAt(d).Seconds(), 'f', 3, 64),
+		"-f", "mov", "-i", in,
+		"-frames:v", "1", "-q:v", "3",
+		"-f", "image2", out,
+	)
+	return err
+}

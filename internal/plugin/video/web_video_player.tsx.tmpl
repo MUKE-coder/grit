@@ -1,0 +1,69 @@
+"use client";
+
+import { useVideo } from "@/hooks/use-video";
+import { formatDuration, isConverting, type Video } from "@/lib/video";
+
+interface VideoPlayerProps {
+  /** A video id, fetched and polled until it is ready. */
+  id?: string;
+  /** Or a video already loaded, such as one embedded in a post. */
+  video?: Video;
+  /** Plays muted and on a loop, the way a feed plays a clip. */
+  autoPlay?: boolean;
+  className?: string;
+}
+
+/**
+ * Plays a converted video, and says what is happening while it converts or
+ * why it failed. The box keeps the video's shape from the start, so a feed
+ * does not jump when it loads.
+ */
+export function VideoPlayer({ id, video: given, autoPlay = false, className = "" }: VideoPlayerProps) {
+  const { data: fetched } = useVideo(given ? undefined : id);
+  const video = given ?? fetched;
+  const ratio = video?.width && video?.height ? video.width + " / " + video.height : "9 / 16";
+
+  return (
+    <div
+      className={"relative overflow-hidden rounded-xl bg-bg-secondary " + className}
+      style={{ aspectRatio: ratio }}
+    >
+      {video?.status === "ready" && video.url ? (
+        <video
+          src={video.url}
+          poster={video.poster_url}
+          controls={!autoPlay}
+          autoPlay={autoPlay}
+          muted={autoPlay}
+          loop={autoPlay}
+          playsInline
+          preload="metadata"
+          className="h-full w-full object-cover"
+        >
+          <track kind="captions" />
+        </video>
+      ) : (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center">
+          {video?.status === "failed" ? (
+            <p className="text-sm text-text-secondary">{video.error || "This video could not be converted."}</p>
+          ) : (
+            <>
+              <span
+                className="h-6 w-6 animate-spin rounded-full border-2 border-text-secondary/30 border-t-accent"
+                aria-hidden="true"
+              />
+              <p className="text-sm text-text-secondary" role="status">
+                {isConverting(video) || !video ? "Converting the video..." : "Loading..."}
+              </p>
+            </>
+          )}
+        </div>
+      )}
+      {video?.status === "ready" && video.duration_ms ? (
+        <span className="pointer-events-none absolute right-2 top-2 rounded-md bg-black/60 px-1.5 py-0.5 text-xs text-white">
+          {formatDuration(video.duration_ms)}
+        </span>
+      ) : null}
+    </div>
+  );
+}

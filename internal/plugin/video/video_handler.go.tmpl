@@ -1,0 +1,80 @@
+package handlers
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+
+	"{{MODULE}}/internal/respond"
+	"{{MODULE}}/internal/video"
+)
+
+// VideoHandler turns uploads into playable videos. The work is in
+// video.Service; this only reads the request and writes the answer.
+type VideoHandler struct {
+	Videos *video.Service
+}
+
+// NewVideoHandler returns the handler. videos is nil when file storage is not
+// configured, and every route then says so.
+func NewVideoHandler(videos *video.Service) *VideoHandler {
+	return &VideoHandler{Videos: videos}
+}
+
+func (h *VideoHandler) ready(c *gin.Context) bool {
+	if h.Videos == nil {
+		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured")
+		return false
+	}
+	return true
+}
+
+type createVideoRequest struct {
+	// Key is the storage key the upload answered with.
+	Key string `json:"key" binding:"required"`
+}
+
+// Create queues the conversion of an uploaded clip and answers 202 with the
+// video, pending. Poll GET /videos/:id, or listen for video.ready on the
+// user's realtime channel.
+func (h *VideoHandler) Create(c *gin.Context) {
+	if !h.ready(c) {
+		return
+	}
+	var req createVideoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Validation(c, "Send the key the upload answered with", map[string]string{"key": "is required"})
+		return
+	}
+	v, err := h.Videos.Create(c.Request.Context(), c.GetString("user_id"), req.Key)
+	if err != nil {
+		respond.WriteError(c, err, "Could not queue the video")
+		return
+	}
+	c.JSON(http.StatusAccepted, gin.H{"data": v, "message": "Converting the video"})
+}
+
+// Get returns a video: any ready one, or the caller's own in any state.
+func (h *VideoHandler) Get(c *gin.Context) {
+	if !h.ready(c) {
+		return
+	}
+	v, err := h.Videos.Get(c.Request.Context(), c.GetString("user_id"), c.Param("id"))
+	if err != nil {
+		respond.WriteError(c, err, "Could not load the video")
+		return
+	}
+	respond.OK(c, v)
+}
+
+// Delete removes the caller's video and its files.
+func (h *VideoHandler) Delete(c *gin.Context) {
+	if !h.ready(c) {
+		return
+	}
+	if err := h.Videos.Delete(c.Request.Context(), c.GetString("user_id"), c.Param("id")); err != nil {
+		respond.WriteError(c, err, "Could not delete the video")
+		return
+	}
+	respond.OK(c, nil, "Video deleted")
+}

@@ -1,0 +1,55 @@
+package models
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/ids"
+)
+
+// Video states. A video is pending until a worker claims it, processing while
+// ffmpeg runs, then ready or failed.
+const (
+	VideoPending    = "pending"
+	VideoProcessing = "processing"
+	VideoReady      = "ready"
+	VideoFailed     = "failed"
+)
+
+// Video is an uploaded clip and what it was converted to.
+//
+// The table is also the queue: a worker claims a pending row by moving it to
+// processing, so the conversion survives a restart and replicas share the work
+// without Redis.
+type Video struct {
+	ID     string `gorm:"primarykey;size:36" json:"id"`
+	UserID string `gorm:"size:36;index;not null" json:"user_id"`
+	// SourceKey is the uploaded original, in storage.
+	SourceKey string `gorm:"size:500;not null" json:"-"`
+	Status    string `gorm:"size:20;index;not null;default:pending" json:"status"`
+	// Error says why a failed video failed, in words for the person who
+	// uploaded it.
+	Error string `gorm:"size:500" json:"error,omitempty"`
+
+	Key        string `gorm:"size:500" json:"-"`
+	URL        string `gorm:"size:500" json:"url,omitempty"`
+	PosterKey  string `gorm:"size:500" json:"-"`
+	PosterURL  string `gorm:"size:500" json:"poster_url,omitempty"`
+	Width      int    `json:"width,omitempty"`
+	Height     int    `json:"height,omitempty"`
+	DurationMS int64  `json:"duration_ms,omitempty"`
+
+	Attempts  int        `gorm:"not null;default:0" json:"-"`
+	ClaimedAt *time.Time `gorm:"index" json:"-"`
+	CreatedAt time.Time  `gorm:"index" json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+}
+
+// BeforeCreate assigns the ID.
+func (v *Video) BeforeCreate(tx *gorm.DB) error {
+	if v.ID == "" {
+		v.ID = ids.New()
+	}
+	return nil
+}

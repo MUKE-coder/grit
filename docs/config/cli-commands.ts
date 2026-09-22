@@ -1272,7 +1272,7 @@ export const CLI_COMMANDS: CliCommand[] = [
       '  ✅ Plugin webhooks installed.',
     ],
     purpose:
-      'Optional modules that inject into the same markers a generator uses: webhooks, multi-tenancy, impersonation, saved views. Code in your repo, not a runtime dependency.',
+      'Optional modules that inject into the same markers a generator uses: webhooks, multi-tenancy, impersonation, saved views, push notifications, video. Code in your repo, not a runtime dependency.',
     useCases: [
       'Standard Webhooks delivery without writing the retry logic.',
       'Multi-tenancy on a project that started single-tenant.',

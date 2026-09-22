@@ -1,0 +1,67 @@
+// Videos: upload a clip from the phone, let the API convert it, play the
+// result with expo-video.
+import * as SecureStore from "expo-secure-store";
+import { api, API_URL } from "@/lib/api";
+
+export type VideoStatus = "pending" | "processing" | "ready" | "failed";
+
+export interface Video {
+  id: string;
+  user_id: string;
+  status: VideoStatus;
+  /** Why it failed, in words for the person who uploaded it. */
+  error?: string;
+  url?: string;
+  poster_url?: string;
+  width?: number;
+  height?: number;
+  duration_ms?: number;
+  created_at: string;
+}
+
+export function isConverting(video: Pick<Video, "status"> | undefined): boolean {
+  return video?.status === "pending" || video?.status === "processing";
+}
+
+/**
+ * Uploads a local clip, such as one from expo-image-picker, and returns the
+ * storage key. fetch and FormData with no Content-Type of our own: on SDK 54
+ * expo-file-system's uploadAsync sends an empty body, and a hand-set
+ * Content-Type loses the multipart boundary.
+ */
+export async function uploadVideoFile(uri: string, fileName?: string | null, mimeType?: string | null): Promise<string> {
+  const name = fileName || uri.split("/").pop() || "video.mp4";
+  const type = mimeType || (name.toLowerCase().endsWith(".mov") ? "video/quicktime" : "video/mp4");
+  const token = await SecureStore.getItemAsync("access_token");
+  const form = new FormData();
+  // RN's FormData takes a { uri, name, type } descriptor, which the DOM types do not model.
+  form.append("file", { uri, name, type } as unknown as Blob);
+  const res = await fetch(API_URL + "/uploads?accepts=video", {
+    method: "POST",
+    headers: token ? { Authorization: "Bearer " + token } : undefined,
+    body: form,
+  });
+  const text = await res.text();
+  const json = text ? JSON.parse(text) : null;
+  if (!res.ok) {
+    throw new Error(json?.error?.message || "Upload failed (" + res.status + ")");
+  }
+  return json.data.key as string;
+}
+
+/** Queues the conversion of an uploaded clip. */
+export async function createVideo(key: string): Promise<Video> {
+  const res = await api.post("/videos", { key });
+  return res.data as Video;
+}
+
+export async function getVideo(id: string): Promise<Video> {
+  const res = await api.get("/videos/" + id);
+  return res.data as Video;
+}
+
+/** "1:05" from milliseconds. */
+export function formatDuration(ms: number | undefined): string {
+  const total = Math.round((ms ?? 0) / 1000);
+  return Math.floor(total / 60) + ":" + String(total % 60).padStart(2, "0");
+}

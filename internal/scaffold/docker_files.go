@@ -421,6 +421,10 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/server .
 FROM ` + runtimeAlpineImage + `
 RUN apk add --no-cache ca-certificates tzdata
 
+# Packages a plugin needs at runtime go here, such as ffmpeg for grit plugin
+# add video.
+# grit:runtime-packages
+
 # Create non-root user.
 RUN addgroup -S app && adduser -S -G app app
 
@@ -483,6 +487,10 @@ RUN apk --no-cache add ca-certificates tzdata
 # The vips build links against libvips, so the runtime image needs it too. The
 # default build is static and adds nothing.
 RUN if [ "$IMAGE_BACKEND" = "vips" ]; then apk --no-cache add vips; fi
+
+# Packages a plugin needs at runtime go here, such as ffmpeg for grit plugin
+# add video.
+# grit:runtime-packages
 
 # Non-root runtime user — Sentinel/Pulse open embedded SQLite stores under
 # /app, so chown before USER or those fail with the misleading

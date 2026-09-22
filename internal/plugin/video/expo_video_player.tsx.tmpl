@@ -1,0 +1,57 @@
+import { ActivityIndicator, Text, View } from "react-native";
+import { useVideoPlayer, VideoView } from "expo-video";
+import { useVideo } from "@/hooks/use-video";
+import { formatDuration, isConverting, type Video } from "@/lib/video";
+
+interface VideoPlayerProps {
+  /** A video id, fetched and polled until it is ready. */
+  id?: string;
+  /** Or a video already loaded, such as one embedded in a post. */
+  video?: Video;
+  /** Plays muted and on a loop, the way a feed plays a clip. */
+  autoPlay?: boolean;
+}
+
+/**
+ * Plays a converted video with expo-video, and says what is happening while it
+ * converts or why it failed. The box keeps the video's shape from the start.
+ */
+export function VideoPlayer({ id, video: given, autoPlay = false }: VideoPlayerProps) {
+  const { data: fetched } = useVideo(given ? undefined : id);
+  const video = given ?? fetched;
+  const ready = video?.status === "ready" && !!video.url;
+  const player = useVideoPlayer(ready ? { uri: video.url as string } : null, (p) => {
+    p.loop = autoPlay;
+    p.muted = autoPlay;
+    if (autoPlay) p.play();
+  });
+  const aspectRatio = video?.width && video?.height ? video.width / video.height : 9 / 16;
+
+  return (
+    <View className="overflow-hidden rounded-2xl bg-[#E5E7EB] dark:bg-[#1a1a24]" style={{ aspectRatio }}>
+      {ready ? (
+        <VideoView player={player} style={{ flex: 1 }} contentFit="cover" nativeControls={!autoPlay} allowsFullscreen />
+      ) : (
+        <View className="flex-1 items-center justify-center p-4">
+          {video?.status === "failed" ? (
+            <Text className="text-center text-sm text-[#6B7280] dark:text-[#9090a8]">
+              {video.error || "This video could not be converted."}
+            </Text>
+          ) : (
+            <>
+              <ActivityIndicator />
+              <Text className="mt-2 text-sm text-[#6B7280] dark:text-[#9090a8]">
+                {isConverting(video) || !video ? "Converting the video..." : "Loading..."}
+              </Text>
+            </>
+          )}
+        </View>
+      )}
+      {ready && video?.duration_ms ? (
+        <View className="absolute right-2 top-2 rounded-md bg-black/60 px-1.5 py-0.5">
+          <Text className="text-xs text-white">{formatDuration(video.duration_ms)}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}

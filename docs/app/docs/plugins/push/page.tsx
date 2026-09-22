@@ -139,9 +139,9 @@ await unregisterPush();`} />
                 Device pairing
               </Button>
             </Link>
-            <Link href="/docs/plugins/authoring">
+            <Link href="/docs/plugins/video">
               <Button variant="ghost" className="gap-2">
-                Writing a plugin
+                Video
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>

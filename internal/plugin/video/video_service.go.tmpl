@@ -1,0 +1,356 @@
+package video
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
+
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
+	"{{MODULE}}/internal/storage"
+)
+
+// Service creates videos from uploads and converts them in the background.
+//
+// The videos table is the queue. Start runs a worker that claims one pending
+// video at a time, so a replica converts one clip at once (ffmpeg uses every
+// core it is given), and a video claimed by a replica that died is picked up
+// again after StaleAfter.
+type Service struct {
+	DB      *gorm.DB
+	Disk    storage.Disk
+	Options Options
+
+	// PollInterval is how often the worker looks for work it was not woken
+	// for: a video created on another replica, or one whose worker died.
+	PollInterval time.Duration
+	// StaleAfter is how long a claim lasts before another worker may take
+	// the video over.
+	StaleAfter time.Duration
+	// MaxAttempts is how many times a conversion is tried before the video
+	// is marked failed.
+	MaxAttempts int
+
+	// OnReady and OnFailed are called after a video settles, to tell the
+	// person who uploaded it. Optional.
+	OnReady  func(models.Video)
+	OnFailed func(models.Video)
+
+	wake chan struct{}
+	once sync.Once
+}
+
+// NewService returns a service with the defaults: 720p, clips up to three
+// minutes, three attempts.
+func NewService(db *gorm.DB, disk storage.Disk) *Service {
+	return &Service{
+		DB:           db,
+		Disk:         disk,
+		Options:      Options{MaxEdge: 720, MaxDuration: 3 * time.Minute},
+		PollInterval: 10 * time.Second,
+		StaleAfter:   15 * time.Minute,
+		MaxAttempts:  3,
+	}
+}
+
+func (s *Service) init() {
+	s.once.Do(func() { s.wake = make(chan struct{}, 1) })
+}
+
+// now is GORM's clock, so the times this writes compare correctly with the
+// ones GORM writes (SQLite compares them as text).
+func (s *Service) now() time.Time {
+	if s.DB.Config != nil && s.DB.Config.NowFunc != nil {
+		return s.DB.Config.NowFunc()
+	}
+	return time.Now()
+}
+
+// Create queues the conversion of an upload the caller owns.
+//
+// key is the storage key the upload returned. An upload that is not the
+// caller's answers as not found, so a key never confirms that someone else's
+// file exists.
+func (s *Service) Create(ctx context.Context, userID, key string) (models.Video, error) {
+	var upload models.Upload
+	if err := s.DB.WithContext(ctx).Where("path = ? AND user_id = ?", key, userID).First(&upload).Error; err != nil {
+		return models.Video{}, err
+	}
+	if !strings.HasPrefix(upload.MimeType, "video/") {
+		return models.Video{}, respond.Rule("that file is %s, not a video", upload.MimeType)
+	}
+	v := models.Video{UserID: userID, SourceKey: key, Status: models.VideoPending}
+	err := s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&v).Error; err != nil {
+			return err
+		}
+		// Claimed, so the orphan cleanup does not delete the original while
+		// it waits to be converted.
+		now := s.now()
+		return tx.Model(&models.Upload{}).Where("id = ?", upload.ID).Update("claimed_at", &now).Error
+	})
+	if err != nil {
+		return models.Video{}, err
+	}
+	s.Wake()
+	return v, nil
+}
+
+// Get returns a video. Anyone signed in may see a ready video, which is what
+// a feed shows; one still converting, or one that failed, only its owner.
+func (s *Service) Get(ctx context.Context, userID, id string) (models.Video, error) {
+	var v models.Video
+	if err := s.DB.WithContext(ctx).Where("id = ?", id).First(&v).Error; err != nil {
+		return v, err
+	}
+	if v.UserID != userID && v.Status != models.VideoReady {
+		return models.Video{}, gorm.ErrRecordNotFound
+	}
+	return v, nil
+}
+
+// Delete removes the caller's video and the files it made.
+func (s *Service) Delete(ctx context.Context, userID, id string) error {
+	var v models.Video
+	if err := s.DB.WithContext(ctx).Where("id = ? AND user_id = ?", id, userID).First(&v).Error; err != nil {
+		return err
+	}
+	if err := s.DB.WithContext(ctx).Delete(&v).Error; err != nil {
+		return err
+	}
+	keys := []string{}
+	for _, k := range []string{v.Key, v.PosterKey} {
+		if k != "" {
+			keys = append(keys, k)
+		}
+	}
+	if len(keys) > 0 {
+		if err := s.Disk.Delete(ctx, keys...); err != nil {
+			log.Printf("[video] deleting the files of %s: %v", v.ID, err)
+		}
+	}
+	return nil
+}
+
+// Wake tells the worker there is work, instead of waiting for its next poll.
+func (s *Service) Wake() {
+	s.init()
+	select {
+	case s.wake <- struct{}{}:
+	default:
+	}
+}
+
+// Start runs the worker until ctx ends.
+func (s *Service) Start(ctx context.Context) {
+	s.init()
+	if !Available() {
+		log.Printf("[video] %v. Uploaded videos will wait until it is.", ErrNoFFmpeg)
+	}
+	go func() {
+		ticker := time.NewTicker(s.PollInterval)
+		defer ticker.Stop()
+		for {
+			for s.RunOnce(ctx) {
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+			case <-s.wake:
+			}
+		}
+	}()
+}
+
+// RunOnce claims and converts one video. It reports whether it found one, so
+// a caller can drain the queue; tests drive the worker with it.
+func (s *Service) RunOnce(ctx context.Context) bool {
+	if ctx.Err() != nil || !Available() {
+		return false
+	}
+	v, ok, err := s.claim(ctx)
+	if err != nil {
+		log.Printf("[video] claiming work: %v", err)
+		return false
+	}
+	if !ok {
+		return false
+	}
+	s.process(ctx, v)
+	return true
+}
+
+// claim moves one pending video, or one whose claim went stale, to
+// processing. The conditional update is what makes it safe across replicas:
+// two workers can pick the same candidate, and only one update matches.
+func (s *Service) claim(ctx context.Context) (models.Video, bool, error) {
+	cutoff := s.now().Add(-s.StaleAfter)
+	var candidates []models.Video
+	err := s.DB.WithContext(ctx).
+		Where("status = ? OR (status = ? AND claimed_at < ?)", models.VideoPending, models.VideoProcessing, cutoff).
+		Order("created_at").Limit(5).Find(&candidates).Error
+	if err != nil {
+		return models.Video{}, false, err
+	}
+	for _, c := range candidates {
+		now := s.now()
+		res := s.DB.WithContext(ctx).Model(&models.Video{}).
+			Where("id = ? AND (status = ? OR (status = ? AND claimed_at < ?))", c.ID, models.VideoPending, models.VideoProcessing, cutoff).
+			Updates(map[string]any{"status": models.VideoProcessing, "claimed_at": &now, "attempts": gorm.Expr("attempts + 1")})
+		if res.Error != nil {
+			return models.Video{}, false, res.Error
+		}
+		if res.RowsAffected == 1 {
+			c.Status = models.VideoProcessing
+			c.Attempts++
+			return c, true, nil
+		}
+	}
+	return models.Video{}, false, nil
+}
+
+// failure is a conversion error, and whether trying again could help.
+type failure struct {
+	message   string
+	permanent bool
+}
+
+func (s *Service) process(ctx context.Context, v models.Video) {
+	result, f := s.convert(ctx, v)
+	if f != nil {
+		s.fail(ctx, v, *f)
+		return
+	}
+	v.Status = models.VideoReady
+	v.Error = ""
+	v.Key, v.URL = result.Key, s.Disk.URL(result.Key)
+	v.PosterKey, v.PosterURL = result.PosterKey, s.Disk.URL(result.PosterKey)
+	v.Width, v.Height, v.DurationMS = result.Width, result.Height, result.Duration.Milliseconds()
+	err := s.DB.WithContext(ctx).Model(&models.Video{}).Where("id = ?", v.ID).Updates(map[string]any{
+		"status": v.Status, "error": "", "key": v.Key, "url": v.URL,
+		"poster_key": v.PosterKey, "poster_url": v.PosterURL,
+		"width": v.Width, "height": v.Height, "duration_ms": v.DurationMS,
+	}).Error
+	if err != nil {
+		log.Printf("[video] recording %s as ready: %v", v.ID, err)
+		return
+	}
+	if s.OnReady != nil {
+		s.OnReady(v)
+	}
+}
+
+func (s *Service) fail(ctx context.Context, v models.Video, f failure) {
+	status := models.VideoPending
+	if f.permanent || v.Attempts >= s.MaxAttempts {
+		status = models.VideoFailed
+	}
+	if err := s.DB.WithContext(ctx).Model(&models.Video{}).Where("id = ?", v.ID).
+		Updates(map[string]any{"status": status, "error": f.message}).Error; err != nil {
+		log.Printf("[video] recording the failure of %s: %v", v.ID, err)
+		return
+	}
+	if status == models.VideoFailed && s.OnFailed != nil {
+		v.Status, v.Error = status, f.message
+		s.OnFailed(v)
+	}
+}
+
+type converted struct {
+	Key, PosterKey string
+	Width, Height  int
+	Duration       time.Duration
+}
+
+// convert does the work in a temporary directory, which is removed after.
+func (s *Service) convert(ctx context.Context, v models.Video) (converted, *failure) {
+	dir, err := os.MkdirTemp("", "grit-video-*")
+	if err != nil {
+		return converted{}, &failure{message: "the server could not make room to convert it"}
+	}
+	defer os.RemoveAll(dir)
+
+	source := filepath.Join(dir, "source")
+	if err := s.download(ctx, v.SourceKey, source); err != nil {
+		log.Printf("[video] fetching %s: %v", v.SourceKey, err)
+		return converted{}, &failure{message: "the uploaded file could not be read"}
+	}
+	probe, err := ProbeFile(ctx, source)
+	if err != nil {
+		log.Printf("[video] probing %s: %v", v.ID, err)
+		if errors.Is(err, ErrUnsupported) {
+			return converted{}, &failure{message: ErrUnsupported.Error(), permanent: true}
+		}
+		return converted{}, &failure{message: "the video could not be read"}
+	}
+	if max := s.Options.MaxDuration; max > 0 && probe.Duration > max {
+		return converted{}, &failure{
+			message:   fmt.Sprintf("the video is %s long; the limit is %s", probe.Duration.Round(time.Second), max),
+			permanent: true,
+		}
+	}
+
+	out := filepath.Join(dir, "video.mp4")
+	if err := Transcode(ctx, source, out, probe, s.Options); err != nil {
+		log.Printf("[video] converting %s: %v", v.ID, err)
+		return converted{}, &failure{message: "the video could not be converted"}
+	}
+	result, err := ProbeFile(ctx, out)
+	if err != nil {
+		log.Printf("[video] probing the converted %s: %v", v.ID, err)
+		return converted{}, &failure{message: "the video could not be converted"}
+	}
+	poster := filepath.Join(dir, "poster.jpg")
+	if err := Poster(ctx, out, poster, result.Duration); err != nil {
+		log.Printf("[video] poster for %s: %v", v.ID, err)
+		return converted{}, &failure{message: "the video's preview could not be made"}
+	}
+
+	base := "uploads/videos/" + v.ID + "/"
+	key, posterKey := base+"video.mp4", base+"poster.jpg"
+	if err := s.upload(ctx, out, key, "video/mp4"); err != nil {
+		log.Printf("[video] storing %s: %v", key, err)
+		return converted{}, &failure{message: "the converted video could not be stored"}
+	}
+	if err := s.upload(ctx, poster, posterKey, "image/jpeg"); err != nil {
+		log.Printf("[video] storing %s: %v", posterKey, err)
+		return converted{}, &failure{message: "the converted video could not be stored"}
+	}
+	return converted{Key: key, PosterKey: posterKey, Width: result.Width, Height: result.Height, Duration: result.Duration}, nil
+}
+
+func (s *Service) download(ctx context.Context, key, path string) error {
+	rc, err := s.Disk.Get(ctx, key)
+	if err != nil {
+		return err
+	}
+	defer rc.Close()
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(f, rc); err != nil {
+		_ = f.Close()
+		return err
+	}
+	return f.Close()
+}
+
+func (s *Service) upload(ctx context.Context, path, key, contentType string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return s.Disk.Put(ctx, key, f, storage.PutOptions{ContentType: contentType})
+}

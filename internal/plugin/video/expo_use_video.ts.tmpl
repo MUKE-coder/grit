@@ -1,0 +1,29 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createVideo, getVideo, isConverting, uploadVideoFile, type Video } from "@/lib/video";
+
+/** One video, refetched every two seconds while it converts. */
+export function useVideo(id: string | undefined) {
+  return useQuery<Video>({
+    queryKey: ["videos", id],
+    queryFn: () => getVideo(id as string),
+    enabled: !!id,
+    refetchInterval: (query) => (isConverting(query.state.data) ? 2000 : false),
+  });
+}
+
+interface PickedVideo {
+  uri: string;
+  fileName?: string | null;
+  mimeType?: string | null;
+}
+
+/** Uploads a picked clip and queues it for conversion. */
+export function useUploadVideo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (picked: PickedVideo) => createVideo(await uploadVideoFile(picked.uri, picked.fileName, picked.mimeType)),
+    onSuccess: (video) => {
+      queryClient.setQueryData(["videos", video.id], video);
+    },
+  });
+}

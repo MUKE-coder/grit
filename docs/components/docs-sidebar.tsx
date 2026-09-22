@@ -228,6 +228,7 @@ const navItems: NavItem[] = [
       { title: 'Saved views', href: '/docs/plugins/saved-views' },
       { title: 'Device pairing', href: '/docs/plugins/device-pairing' },
       { title: 'Push notifications', href: '/docs/plugins/push' },
+      { title: 'Video', href: '/docs/plugins/video' },
       { title: 'Writing a plugin', href: '/docs/plugins/authoring' },
     ],
   },

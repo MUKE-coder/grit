@@ -66,6 +66,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.307.0 */}
+            <div className="mb-12" id="v3.307.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.307.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit plugin add video: clips converted for every client</h3>
+                <p>
+                  <strong>A new plugin.</strong> <code>grit plugin add video</code> turns an uploaded clip into one
+                  H.264 MP4 that starts playing before it has downloaded, capped at 720 on the short side, plus a
+                  poster frame and the size and length a feed needs. Every browser, iOS and Android plays that, so
+                  there is no HLS to serve and no player to choose per platform. <code>POST /videos</code> takes the
+                  key of an upload you own and answers <code>202</code>; <code>GET /videos/:id</code> reports
+                  pending, processing, ready or failed. <code>VideoPlayer</code> and <code>useVideo</code> come for
+                  the web app and, with <code>expo-video</code>, for the Expo app. See{' '}
+                  <Link href="/docs/plugins/video" className="text-primary hover:underline">the plugin&apos;s page</Link>.
+                </p>
+                <p>
+                  <strong>The table is the queue.</strong> A worker claims a pending video with a conditional update,
+                  so a conversion survives a restart and replicas share the work with or without Redis. One conversion
+                  at a time per replica, and a claim held by a replica that died is taken over. The owner hears{' '}
+                  <code>video.ready</code> or <code>video.failed</code> on their realtime channel.
+                </p>
+                <p>
+                  <strong>A crafted file cannot read the server.</strong> ffmpeg follows what a file says it is, and a
+                  playlist posing as a video can name other files for it to open. Only MP4, MOV and WebM are
+                  converted, each read with a forced demuxer and local files only; a playlist is refused before
+                  ffmpeg takes it as input.
+                </p>
+                <p>
+                  <strong>Presigned uploads allow a video up to 300 MB.</strong> The form-field path already did for
+                  a field that accepts video; the direct-to-bucket path capped every file at 50 MB, so a minute of
+                  phone video was refused, or deleted after it landed. <code>/uploads/profiles</code> reports the new
+                  ceiling as <code>max_video_upload</code>.
+                </p>
+                <p>
+                  <strong>A place in the Dockerfile for plugins.</strong> The API image has a{' '}
+                  <code># grit:runtime-packages</code> line where a plugin adds what it needs at runtime, which is how
+                  the video plugin gets ffmpeg into the image. <code>grit upgrade</code> adds it to an existing
+                  Dockerfile.
+                </p>
+              </div>
+            </div>
+
             {/* v3.306.0 */}
             <div className="mb-12" id="v3.306.0">
               <div className="flex items-center gap-3 mb-4">

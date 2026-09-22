@@ -1,0 +1,49 @@
+// Videos: upload a clip, let the API convert it, play the result.
+//
+// The upload goes through @repo/upload like any other file; POST /api/videos
+// then converts it in the background. Poll with useVideo until it is ready.
+import { api } from "@/lib/api";
+
+export type VideoStatus = "pending" | "processing" | "ready" | "failed";
+
+export interface Video {
+  id: string;
+  user_id: string;
+  status: VideoStatus;
+  /** Why it failed, in words for the person who uploaded it. */
+  error?: string;
+  url?: string;
+  poster_url?: string;
+  width?: number;
+  height?: number;
+  duration_ms?: number;
+  created_at: string;
+}
+
+/** Still converting: pending or processing. */
+export function isConverting(video: Pick<Video, "status"> | undefined): boolean {
+  return video?.status === "pending" || video?.status === "processing";
+}
+
+/** Queues the conversion of an uploaded clip. key is what the upload answered. */
+export async function createVideo(key: string): Promise<Video> {
+  const { data } = await api.post<{ data: Video }>("/api/videos", { key });
+  return data.data;
+}
+
+export async function getVideo(id: string): Promise<Video> {
+  const { data } = await api.get<{ data: Video }>("/api/videos/" + id);
+  return data.data;
+}
+
+export async function deleteVideo(id: string): Promise<void> {
+  await api.delete("/api/videos/" + id);
+}
+
+/** "1:05" from milliseconds. */
+export function formatDuration(ms: number | undefined): string {
+  const total = Math.round((ms ?? 0) / 1000);
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return minutes + ":" + String(seconds).padStart(2, "0");
+}
