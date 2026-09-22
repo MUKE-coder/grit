@@ -1,6 +1,7 @@
 import { ActivityIndicator, Text, View } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useVideo } from "@/hooks/use-video";
+import { resolveImageUrl } from "@/lib/images";
 import { formatDuration, isConverting, type Video } from "@/lib/video";
 
 interface VideoPlayerProps {
@@ -20,7 +21,9 @@ export function VideoPlayer({ id, video: given, autoPlay = false }: VideoPlayerP
   const { data: fetched } = useVideo(given ? undefined : id);
   const video = given ?? fetched;
   const ready = video?.status === "ready" && !!video.url;
-  const player = useVideoPlayer(ready ? { uri: video.url as string } : null, (p) => {
+  // Dev storage answers with http://localhost:..., which a phone cannot reach;
+  // resolveImageUrl points it at the machine the app already talks to.
+  const player = useVideoPlayer(ready ? { uri: resolveImageUrl(video.url) ?? (video.url as string) } : null, (p) => {
     p.loop = autoPlay;
     p.muted = autoPlay;
     if (autoPlay) p.play();

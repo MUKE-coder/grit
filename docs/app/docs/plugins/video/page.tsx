@@ -50,7 +50,7 @@ pnpm install`} />
           <CodeBlock language="tsx" code={`import { createVideo } from "@/lib/video";
 import { VideoPlayer } from "@/components/video-player";
 
-const ref = await uploader.upload(file, { accepts: ["video"] });
+const ref = await uploader.upload(file, file.name, { accepts: ["video"] });
 const video = await createVideo(ref.key);
 
 // Polls every two seconds while it converts, then plays it.

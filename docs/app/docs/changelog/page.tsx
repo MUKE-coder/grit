@@ -66,6 +66,38 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.309.0 */}
+            <div className="mb-12" id="v3.309.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.309.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A signed-in web page outlives its access token</h3>
+                <p>
+                  <strong>The web app refreshes an expired session.</strong> Its API client had no 401 retry; only the
+                  admin panel added one. So every signed-in page in the web app failed fifteen minutes after sign-in,
+                  when the access token expired, although the refresh cookie was still good for days.{' '}
+                  <code>lib/api.ts</code> now sends <code>/api/auth/refresh</code> and repeats the request. Requests
+                  that fail together share one refresh: the server rotates refresh tokens and treats a second use of
+                  the old one as theft, so ten refreshes would sign the person out everywhere. Sign-in, sign-up,
+                  refresh and sign-out are never retried. <code>grit upgrade</code> updates an unedited{' '}
+                  <code>lib/api.ts</code>.
+                </p>
+                <p>
+                  <strong>The video plugin&apos;s Expo player plays on a phone in development.</strong> It handed{' '}
+                  <code>expo-video</code> the stored URL as it was, <code>http://localhost:...</code>, which a phone
+                  cannot reach; it now goes through <code>resolveImageUrl</code> like every other stored file in the
+                  Expo app. And the upload example on the plugin&apos;s page named the arguments wrong:{' '}
+                  <code>uploader.upload(file, file.name, {'{'} accepts: [&quot;video&quot;] {'}'})</code>.
+                </p>
+                <p>Both found building the Instagram blueprint.</p>
+              </div>
+            </div>
+
             {/* v3.308.0 */}
             <div className="mb-12" id="v3.308.0">
               <div className="flex items-center gap-3 mb-4">
