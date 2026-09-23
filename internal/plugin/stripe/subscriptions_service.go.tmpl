@@ -1,0 +1,387 @@
+package payments
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"strings"
+	"time"
+
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
+	"{{MODULE}}/internal/webhooks"
+)
+
+// Subscriptions is recurring payment: a hosted Stripe checkout to start one,
+// Stripe's billing portal to manage it, and webhooks to keep our row in step.
+//
+// The rules are the ones the one-off payments follow:
+//
+//   - Stripe's word is what grants access, never a redirect. The return page
+//     may read the session back, and that runs the same apply as the webhook.
+//   - Every change is a conditional update, so a redelivered or out-of-order
+//     event changes nothing the second time. OnActive and OnEnded run in the
+//     transaction that records the change, so access and its reason are one
+//     write or neither.
+//   - Access is a question asked of the subscription's state, not a flag
+//     somebody remembers to clear. Entitled() is the whole of it.
+type Subscriptions struct {
+	DB *gorm.DB
+	// Stripe is nil when STRIPE_SECRET_KEY is not set, and every call then
+	// answers ErrUnavailable.
+	Stripe *Client
+
+	// OnActive runs when a subscription starts giving access, once per start.
+	// Grant whatever it buys here.
+	OnActive SubscriptionHook
+	// OnEnded runs when it stops: canceled at the end of its period, or given
+	// up on after the retries failed. Take the access away here.
+	OnEnded SubscriptionHook
+}
+
+// SubscriptionHook runs inside the transaction that records the change.
+type SubscriptionHook func(ctx context.Context, tx *gorm.DB, s models.Subscription) error
+
+// NewSubscriptions reads STRIPE_SECRET_KEY through the payments service, so
+// both halves of the plugin are configured by the same one variable.
+func NewSubscriptions(db *gorm.DB, payments *Service) *Subscriptions {
+	subs := &Subscriptions{DB: db}
+	if payments != nil {
+		subs.Stripe = payments.Stripe
+	}
+	return subs
+}
+
+// SiteURL is where Stripe sends a customer back to, from SITE_URL, falling
+// back to the OAuth frontend and then to the dev server. Read here rather than
+// taken from the request, because a return URL the caller chooses is an open
+// redirect with a payment attached.
+func SiteURL() string {
+	for _, key := range []string{"SITE_URL", "OAUTH_FRONTEND_URL"} {
+		if value := strings.TrimRight(os.Getenv(key), "/"); value != "" {
+			return value
+		}
+	}
+	return "http://localhost:3000"
+}
+
+// StartInput is a customer about to subscribe.
+type StartInput struct {
+	UserID string
+	// PriceID is the recurring price, from your plan table.
+	PriceID string
+	// SuccessURL and CancelURL are where Stripe returns them. Put
+	// {CHECKOUT_SESSION_ID} in SuccessURL if the return page reads the session.
+	SuccessURL string
+	CancelURL  string
+	TrialDays  int
+}
+
+// Start returns the hosted checkout URL to send the customer to.
+//
+// Somebody who already has a live subscription is sent to the portal instead,
+// which is where changing plan belongs: two subscriptions for one account is
+// two invoices a month and a refund conversation.
+func (s *Subscriptions) Start(ctx context.Context, in StartInput) (string, error) {
+	if s.Stripe == nil {
+		return "", ErrUnavailable
+	}
+	if in.UserID == "" || in.PriceID == "" {
+		return "", errors.New("payments: a checkout needs a user and a price")
+	}
+	current, err := s.Current(ctx, in.UserID)
+	if err != nil {
+		return "", err
+	}
+	if current.Entitled() {
+		return "", respond.Rule("this account already has a subscription: manage it in the billing portal")
+	}
+
+	var user models.User
+	if err := s.DB.WithContext(ctx).First(&user, "id = ?", in.UserID).Error; err != nil {
+		return "", fmt.Errorf("loading the customer: %w", err)
+	}
+	customerID, err := s.customerFor(ctx, user)
+	if err != nil {
+		return "", err
+	}
+	session, err := s.Stripe.StartCheckout(ctx, CheckoutParams{
+		CustomerID: customerID,
+		PriceID:    in.PriceID,
+		SuccessURL: in.SuccessURL,
+		CancelURL:  in.CancelURL,
+		UserID:     in.UserID,
+		TrialDays:  in.TrialDays,
+	})
+	if err != nil {
+		return "", err
+	}
+	return session.URL, nil
+}
+
+// customerFor reuses the Stripe customer this person already has, from any of
+// their subscriptions, and makes one the first time.
+func (s *Subscriptions) customerFor(ctx context.Context, user models.User) (string, error) {
+	var existing models.Subscription
+	res := s.DB.WithContext(ctx).Where("user_id = ? AND customer_id <> ''", user.ID).
+		Order("created_at DESC").Limit(1).Find(&existing)
+	if res.Error != nil {
+		return "", res.Error
+	}
+	if res.RowsAffected == 1 {
+		return existing.CustomerID, nil
+	}
+	customer, err := s.Stripe.CreateCustomer(ctx, user.Email, strings.TrimSpace(user.FirstName+" "+user.LastName), user.ID)
+	if err != nil {
+		return "", err
+	}
+	return customer.ID, nil
+}
+
+// Portal returns the billing portal URL: cards, invoices, cancelling.
+func (s *Subscriptions) Portal(ctx context.Context, userID, returnURL string) (string, error) {
+	if s.Stripe == nil {
+		return "", ErrUnavailable
+	}
+	current, err := s.Current(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+	if current.CustomerID == "" {
+		return "", respond.Rule("this account has never subscribed, so there is nothing to manage")
+	}
+	session, err := s.Stripe.PortalSession(ctx, current.CustomerID, returnURL)
+	if err != nil {
+		return "", err
+	}
+	return session.URL, nil
+}
+
+// Current is the subscription that decides what this account may do: the live
+// one, or the most recent if none is live.
+func (s *Subscriptions) Current(ctx context.Context, userID string) (models.Subscription, error) {
+	var rows []models.Subscription
+	if err := s.DB.WithContext(ctx).Where("user_id = ?", userID).
+		Order("created_at DESC").Find(&rows).Error; err != nil {
+		return models.Subscription{}, fmt.Errorf("reading the subscription: %w", err)
+	}
+	for _, row := range rows {
+		if row.Entitled() {
+			return row, nil
+		}
+	}
+	if len(rows) > 0 {
+		return rows[0], nil
+	}
+	return models.Subscription{}, nil
+}
+
+// Entitled is the question the rest of the app asks: may this account have the
+// thing it is paying for?
+func (s *Subscriptions) Entitled(ctx context.Context, userID string) (bool, error) {
+	current, err := s.Current(ctx, userID)
+	return current.Entitled(), err
+}
+
+// Cancel stops the subscription renewing, leaving the days already paid for.
+func (s *Subscriptions) Cancel(ctx context.Context, userID string) (models.Subscription, error) {
+	if s.Stripe == nil {
+		return models.Subscription{}, ErrUnavailable
+	}
+	current, err := s.Current(ctx, userID)
+	if err != nil {
+		return current, err
+	}
+	if !current.Entitled() {
+		return current, respond.Rule("there is no live subscription on this account")
+	}
+	updated, err := s.Stripe.CancelAtPeriodEnd(ctx, current.SubscriptionID)
+	if err != nil {
+		return current, err
+	}
+	if err := s.apply(ctx, updated); err != nil {
+		return current, err
+	}
+	return s.Current(ctx, userID)
+}
+
+// Resume undoes a cancellation while the period is still running.
+func (s *Subscriptions) Resume(ctx context.Context, userID string) (models.Subscription, error) {
+	if s.Stripe == nil {
+		return models.Subscription{}, ErrUnavailable
+	}
+	current, err := s.Current(ctx, userID)
+	if err != nil {
+		return current, err
+	}
+	if !current.CancelAtPeriodEnd || !current.Entitled() {
+		return current, respond.Rule("this subscription is not ending, so there is nothing to resume")
+	}
+	updated, err := s.Stripe.Resume(ctx, current.SubscriptionID)
+	if err != nil {
+		return current, err
+	}
+	if err := s.apply(ctx, updated); err != nil {
+		return current, err
+	}
+	return s.Current(ctx, userID)
+}
+
+// Refresh reads the checkout session back from Stripe and records what it
+// found, so the page the customer lands on after paying is already right
+// rather than waiting on a webhook.
+func (s *Subscriptions) Refresh(ctx context.Context, userID, sessionID string) (models.Subscription, error) {
+	if s.Stripe == nil {
+		return models.Subscription{}, ErrUnavailable
+	}
+	session, err := s.Stripe.GetCheckoutSession(ctx, sessionID)
+	if err != nil {
+		return models.Subscription{}, err
+	}
+	// The session says whose checkout it was. Anyone can put a session id in a
+	// URL, so a session belonging to somebody else is not this caller's to
+	// read, let alone to be granted from.
+	if session.ClientReferenceID != userID || session.Subscription == "" {
+		return s.Current(ctx, userID)
+	}
+	subscription, err := s.Stripe.GetSubscription(ctx, session.Subscription)
+	if err != nil {
+		return models.Subscription{}, err
+	}
+	if subscription.Metadata == nil {
+		subscription.Metadata = map[string]string{}
+	}
+	subscription.Metadata["user_id"] = userID
+	if err := s.apply(ctx, subscription); err != nil {
+		return models.Subscription{}, err
+	}
+	return s.Current(ctx, userID)
+}
+
+// Register receives the subscription events. The provider itself is registered
+// by the payments service, which both halves share.
+func (s *Subscriptions) Register() {
+	for _, name := range []string{
+		"customer.subscription.created",
+		"customer.subscription.updated",
+		"customer.subscription.deleted",
+		"customer.subscription.paused",
+		"customer.subscription.resumed",
+	} {
+		webhooks.On("stripe", name, s.HandleEvent)
+	}
+	webhooks.On("stripe", "checkout.session.completed", s.HandleCheckout)
+}
+
+// HandleCheckout records the subscription a completed checkout started. The
+// subscription events that follow keep it in step from then on.
+func (s *Subscriptions) HandleCheckout(ctx context.Context, e *models.WebhookEvent) error {
+	var ev event
+	if err := json.Unmarshal(e.Payload, &ev); err != nil {
+		return fmt.Errorf("reading the event: %w", err)
+	}
+	var session Session
+	if err := json.Unmarshal(ev.Data.Object, &session); err != nil {
+		return fmt.Errorf("reading the checkout session: %w", err)
+	}
+	if session.Mode != "subscription" || session.Subscription == "" {
+		return nil
+	}
+	if s.Stripe == nil {
+		return ErrUnavailable
+	}
+	subscription, err := s.Stripe.GetSubscription(ctx, session.Subscription)
+	if err != nil {
+		return err
+	}
+	if subscription.Metadata == nil {
+		subscription.Metadata = map[string]string{}
+	}
+	if subscription.Metadata["user_id"] == "" {
+		subscription.Metadata["user_id"] = session.ClientReferenceID
+	}
+	return s.apply(ctx, subscription)
+}
+
+// HandleEvent applies one subscription event.
+func (s *Subscriptions) HandleEvent(ctx context.Context, e *models.WebhookEvent) error {
+	var ev event
+	if err := json.Unmarshal(e.Payload, &ev); err != nil {
+		return fmt.Errorf("reading the event: %w", err)
+	}
+	var subscription Subscription
+	if err := json.Unmarshal(ev.Data.Object, &subscription); err != nil {
+		return fmt.Errorf("reading the subscription: %w", err)
+	}
+	if ev.Type == "customer.subscription.deleted" && subscription.Status == "" {
+		subscription.Status = models.SubscriptionCanceled
+	}
+	return s.apply(ctx, subscription)
+}
+
+// apply writes what Stripe says, and calls the hooks when access starts or
+// stops. Everything is in one transaction: a granted account whose row says
+// otherwise, or the reverse, is the bug this shape exists to prevent.
+func (s *Subscriptions) apply(ctx context.Context, incoming Subscription) error {
+	if incoming.ID == "" {
+		return errors.New("payments: a subscription event with no subscription")
+	}
+	return s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var row models.Subscription
+		res := tx.Where("subscription_id = ?", incoming.ID).Limit(1).Find(&row)
+		if res.Error != nil {
+			return res.Error
+		}
+		known := res.RowsAffected == 1
+
+		userID := row.UserID
+		if userID == "" {
+			userID = incoming.Metadata["user_id"]
+		}
+		if userID == "" {
+			// A subscription made in the dashboard for somebody we cannot
+			// name. Recorded nowhere rather than granted to the wrong person.
+			return nil
+		}
+
+		was := row.Entitled()
+		row.UserID = userID
+		row.CustomerID = incoming.CustomerID
+		row.SubscriptionID = incoming.ID
+		row.Status = incoming.Status
+		row.CancelAtPeriodEnd = incoming.CancelAtPeriodEnd
+		if price := incoming.PriceID(); price != "" {
+			row.PriceID = price
+		}
+		if end := incoming.PeriodEnd(); end > 0 {
+			at := time.Unix(end, 0).UTC()
+			row.CurrentPeriodEnd = &at
+		}
+		now := time.Now()
+		if !row.Entitled() && row.EndedAt == nil {
+			row.EndedAt = &now
+		}
+		if row.Entitled() {
+			row.EndedAt = nil
+		}
+		if known {
+			if err := tx.Save(&row).Error; err != nil {
+				return fmt.Errorf("updating subscription %s: %w", incoming.ID, err)
+			}
+		} else if err := tx.Create(&row).Error; err != nil {
+			return fmt.Errorf("recording subscription %s: %w", incoming.ID, err)
+		}
+
+		switch {
+		case !was && row.Entitled() && s.OnActive != nil:
+			return s.OnActive(ctx, tx, row)
+		case was && !row.Entitled() && s.OnEnded != nil:
+			return s.OnEnded(ctx, tx, row)
+		}
+		return nil
+	})
+}

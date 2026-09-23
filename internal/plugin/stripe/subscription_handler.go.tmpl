@@ -1,0 +1,148 @@
+package handlers
+
+import (
+	"net/http"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+
+	"{{MODULE}}/internal/payments"
+	"{{MODULE}}/internal/respond"
+)
+
+// SubscriptionHandler starts a hosted checkout, opens the billing portal, and
+// answers what the caller is subscribed to. The rules are in
+// payments.Subscriptions.
+type SubscriptionHandler struct {
+	Subscriptions *payments.Subscriptions
+	// SiteURL is where Stripe returns the customer. Paths come from the
+	// request; the origin never does, so a crafted body cannot turn checkout
+	// into a redirect to somebody else's site.
+	SiteURL string
+}
+
+// NewSubscriptionHandler returns the handler. siteURL is the frontend's
+// origin, such as https://example.com.
+func NewSubscriptionHandler(subscriptions *payments.Subscriptions, siteURL string) *SubscriptionHandler {
+	return &SubscriptionHandler{Subscriptions: subscriptions, SiteURL: strings.TrimRight(siteURL, "/")}
+}
+
+// url joins a caller's path to the site's own origin.
+func (h *SubscriptionHandler) url(path, fallback string) string {
+	if path == "" || !strings.HasPrefix(path, "/") || strings.HasPrefix(path, "//") {
+		path = fallback
+	}
+	return h.SiteURL + path
+}
+
+type startSubscriptionRequest struct {
+	// PriceID is the plan, as your plan table knows it.
+	PriceID string `json:"price_id" binding:"required"`
+	// SuccessPath and CancelPath are paths on this site, not URLs.
+	SuccessPath string `json:"success_path"`
+	CancelPath  string `json:"cancel_path"`
+	TrialDays   int    `json:"trial_days"`
+}
+
+// Start answers with the hosted checkout URL to send the customer to.
+//
+//	POST /subscriptions/checkout
+func (h *SubscriptionHandler) Start(c *gin.Context) {
+	var req startSubscriptionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Validation(c, "Send the price to subscribe to", map[string]string{"price_id": "is required"})
+		return
+	}
+	url, err := h.Subscriptions.Start(c.Request.Context(), payments.StartInput{
+		UserID:  c.GetString("user_id"),
+		PriceID: req.PriceID,
+		// Stripe fills the session id in, for a return page that would rather
+		// read the outcome than wait for the webhook.
+		SuccessURL: h.url(req.SuccessPath, "/billing/done") + "?session_id={CHECKOUT_SESSION_ID}",
+		CancelURL:  h.url(req.CancelPath, "/pricing"),
+		TrialDays:  req.TrialDays,
+	})
+	if err != nil {
+		respond.WriteError(c, err, "Could not start the subscription")
+		return
+	}
+	respond.OK(c, gin.H{"url": url})
+}
+
+type portalRequest struct {
+	ReturnPath string `json:"return_path"`
+}
+
+// Portal answers with the billing portal URL.
+//
+//	POST /subscriptions/portal
+func (h *SubscriptionHandler) Portal(c *gin.Context) {
+	var req portalRequest
+	if c.Request.ContentLength > 0 {
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond.Validation(c, "Send the path to return to, or nothing", nil)
+			return
+		}
+	}
+	url, err := h.Subscriptions.Portal(c.Request.Context(), c.GetString("user_id"), h.url(req.ReturnPath, "/billing"))
+	if err != nil {
+		respond.WriteError(c, err, "Could not open the billing portal")
+		return
+	}
+	respond.OK(c, gin.H{"url": url})
+}
+
+// Current is what this account is subscribed to, and whether it is live.
+//
+//	GET /subscriptions/me
+func (h *SubscriptionHandler) Current(c *gin.Context) {
+	subscription, err := h.Subscriptions.Current(c.Request.Context(), c.GetString("user_id"))
+	if err != nil {
+		respond.WriteError(c, err, "Could not read the subscription")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{
+		"subscription": subscription,
+		"entitled":     subscription.Entitled(),
+	}})
+}
+
+// Refresh reads the checkout back from Stripe, for the page the customer
+// lands on after paying.
+//
+//	POST /subscriptions/refresh?session_id=cs_...
+func (h *SubscriptionHandler) Refresh(c *gin.Context) {
+	subscription, err := h.Subscriptions.Refresh(c.Request.Context(), c.GetString("user_id"), c.Query("session_id"))
+	if err != nil {
+		respond.WriteError(c, err, "Could not check the subscription")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{
+		"subscription": subscription,
+		"entitled":     subscription.Entitled(),
+	}})
+}
+
+// Cancel stops it renewing, leaving what is already paid for.
+//
+//	POST /subscriptions/cancel
+func (h *SubscriptionHandler) Cancel(c *gin.Context) {
+	subscription, err := h.Subscriptions.Cancel(c.Request.Context(), c.GetString("user_id"))
+	if err != nil {
+		respond.WriteError(c, err, "Could not cancel the subscription")
+		return
+	}
+	respond.OK(c, subscription, "It will not renew. You keep access until the end of the period.")
+}
+
+// Resume undoes that while the period is still running.
+//
+//	POST /subscriptions/resume
+func (h *SubscriptionHandler) Resume(c *gin.Context) {
+	subscription, err := h.Subscriptions.Resume(c.Request.Context(), c.GetString("user_id"))
+	if err != nil {
+		respond.WriteError(c, err, "Could not resume the subscription")
+		return
+	}
+	respond.OK(c, subscription, "Your subscription will renew as usual")
+}

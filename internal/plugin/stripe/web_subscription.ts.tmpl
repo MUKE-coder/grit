@@ -1,0 +1,92 @@
+// Subscriptions: start one, manage it, and ask whether this account is paid up.
+//
+// The card is never here. Starting a subscription hands back a Stripe URL to
+// go to, and managing one hands back the billing portal's, so cards, invoices,
+// failed renewals and cancellation are all Stripe's pages, already localised
+// and already handling 3-D Secure.
+import { api } from "@/lib/api";
+
+export type SubscriptionStatus =
+  | "trialing"
+  | "active"
+  | "past_due"
+  | "canceled"
+  | "unpaid"
+  | "incomplete"
+  | "incomplete_expired"
+  | "paused";
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  price_id: string;
+  status: SubscriptionStatus;
+  /** It will not renew, and access stays until current_period_end. */
+  cancel_at_period_end: boolean;
+  current_period_end?: string;
+  ended_at?: string;
+  created_at: string;
+}
+
+export interface SubscriptionState {
+  subscription: Subscription;
+  /** The only question worth asking: may this account have the thing? */
+  entitled: boolean;
+}
+
+export async function getSubscription(): Promise<SubscriptionState> {
+  const { data } = await api.get<{ data: SubscriptionState }>("/api/subscriptions/me");
+  return data.data;
+}
+
+/** Sends the customer to Stripe's hosted checkout. Does not return. */
+export async function startSubscription(input: {
+  price_id: string;
+  success_path?: string;
+  cancel_path?: string;
+  trial_days?: number;
+}): Promise<void> {
+  const { data } = await api.post<{ data: { url: string } }>("/api/subscriptions/checkout", input);
+  window.location.assign(data.data.url);
+}
+
+/** Sends the customer to Stripe's billing portal. Does not return. */
+export async function openBillingPortal(returnPath?: string): Promise<void> {
+  const { data } = await api.post<{ data: { url: string } }>("/api/subscriptions/portal", {
+    return_path: returnPath,
+  });
+  window.location.assign(data.data.url);
+}
+
+/** For the page Stripe returns to: settles the subscription without waiting on the webhook. */
+export async function refreshSubscription(sessionID: string): Promise<SubscriptionState> {
+  const { data } = await api.post<{ data: SubscriptionState }>(
+    "/api/subscriptions/refresh?session_id=" + encodeURIComponent(sessionID),
+  );
+  return data.data;
+}
+
+export async function cancelSubscription(): Promise<void> {
+  await api.post("/api/subscriptions/cancel");
+}
+
+export async function resumeSubscription(): Promise<void> {
+  await api.post("/api/subscriptions/resume");
+}
+
+/** "renews on 3 October 2027", or what is happening instead. */
+export function renewalLine(state: SubscriptionState | undefined): string {
+  const subscription = state?.subscription;
+  if (!state?.entitled || !subscription) return "No active subscription";
+  const end = subscription.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : "";
+  if (subscription.status === "past_due") return "Payment failed. We are retrying your card.";
+  if (subscription.cancel_at_period_end) return end ? "Ends on " + end : "Ends at the end of this period";
+  if (subscription.status === "trialing") return end ? "Trial until " + end : "In trial";
+  return end ? "Renews on " + end : "Active";
+}

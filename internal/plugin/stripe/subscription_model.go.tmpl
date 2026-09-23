@@ -1,0 +1,71 @@
+package models
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/ids"
+)
+
+// Subscription states, as Stripe names them. Stored as they arrive rather than
+// mapped to our own words, because the words are the ones in the dashboard the
+// person looking at the row will also have open.
+const (
+	SubscriptionTrialing          = "trialing"
+	SubscriptionActive            = "active"
+	SubscriptionPastDue           = "past_due"
+	SubscriptionCanceled          = "canceled"
+	SubscriptionUnpaid            = "unpaid"
+	SubscriptionIncomplete        = "incomplete"
+	SubscriptionIncompleteExpired = "incomplete_expired"
+	SubscriptionPaused            = "paused"
+)
+
+// Subscription is what a customer pays for on a schedule.
+//
+// One row per Stripe subscription. A customer who cancels and comes back has
+// two rows, and the history is worth keeping: it is the answer to "when did
+// they leave and what were they on".
+type Subscription struct {
+	ID     string `gorm:"primarykey;size:36" json:"id"`
+	UserID string `gorm:"size:36;index;not null" json:"user_id"`
+	// CustomerID is the Stripe customer, which outlives any one subscription.
+	CustomerID string `gorm:"size:255;index;not null" json:"-"`
+	// SubscriptionID is Stripe's, and unique: a redelivered webhook finds this
+	// row rather than writing a second one.
+	SubscriptionID string `gorm:"size:255;uniqueIndex;not null" json:"-"`
+	// PriceID is which plan they are on, as the Stripe dashboard knows it.
+	PriceID string `gorm:"size:255;index" json:"price_id"`
+	Status  string `gorm:"size:32;index;not null" json:"status"`
+	// CancelAtPeriodEnd is a subscription that will not renew. It is still
+	// paid for until CurrentPeriodEnd, and access stays until then.
+	CancelAtPeriodEnd bool       `gorm:"not null;default:false" json:"cancel_at_period_end"`
+	CurrentPeriodEnd  *time.Time `gorm:"index" json:"current_period_end,omitempty"`
+	EndedAt           *time.Time `json:"ended_at,omitempty"`
+
+	CreatedAt time.Time `gorm:"index" json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// BeforeCreate assigns the ID.
+func (s *Subscription) BeforeCreate(tx *gorm.DB) error {
+	if s.ID == "" {
+		s.ID = ids.New()
+	}
+	return nil
+}
+
+// Entitled reports whether this subscription should be giving access now.
+//
+// Trialing and active obviously do. past_due does too, on purpose: the renewal
+// failed, Stripe is retrying the card over the next couple of weeks, and most
+// of those succeed. Cutting someone off on the first failed retry punishes an
+// expired card, and they are usually the ones who would have paid.
+func (s Subscription) Entitled() bool {
+	switch s.Status {
+	case SubscriptionTrialing, SubscriptionActive, SubscriptionPastDue:
+		return true
+	}
+	return false
+}

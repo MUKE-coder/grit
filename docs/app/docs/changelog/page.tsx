@@ -66,6 +66,43 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.313.0 */}
+            <div className="mb-12" id="v3.313.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.313.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Subscriptions, in the Stripe plugin</h3>
+                <p>
+                  <code>grit plugin add stripe</code> took one-off payments and nothing else, so anything that renews
+                  meant building card updates, failed renewals, dunning, proration and cancellation by hand. It now
+                  does recurring plans through Stripe&apos;s hosted checkout and billing portal, which are already
+                  localised and already handle 3-D Secure. Your app writes two functions:{' '}
+                  <code>OnActive</code> to grant what the plan buys and <code>OnEnded</code> to take it away, both
+                  inside the transaction that records the change.
+                </p>
+                <p>
+                  <code>GET /subscriptions/me</code> answers <code>entitled</code>, which is the only question the
+                  rest of an app has to ask. A failed renewal keeps access while Stripe retries the card, because
+                  <code> past_due</code> is usually an expired card and most of those retries succeed; access ends when
+                  Stripe gives up. Cancelling leaves the days already paid for. Subscription events are conditional
+                  updates like payments, so a redelivered or out-of-order event changes nothing the second time, and a
+                  checkout session belonging to somebody else grants nothing.
+                </p>
+                <p>
+                  Return URLs are built from <code>SITE_URL</code> plus a path, never from a URL the browser sends. See{' '}
+                  <Link href="/docs/plugins/stripe" className="text-primary hover:underline">the plugin&apos;s page</Link>.
+                  Ten shipped tests cover it, and it was driven against a running API: a created subscription grants
+                  access, a redelivery is skipped, past_due keeps it, canceled ends it, and a subscription for nobody is
+                  recorded against nobody.
+                </p>
+              </div>
+            </div>
+
             {/* v3.312.0 */}
             <div className="mb-12" id="v3.312.0">
               <div className="flex items-center gap-3 mb-4">

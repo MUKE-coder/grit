@@ -1,0 +1,180 @@
+package payments
+
+import (
+	"context"
+	"net/http"
+	"net/url"
+	"strconv"
+)
+
+// The Billing half of the Stripe API: customers, a hosted checkout in
+// subscription mode, the billing portal, and reading a subscription back.
+//
+// Subscriptions go through Stripe's own hosted pages rather than the Payment
+// Element. A recurring charge brings card updates, failed renewals, dunning
+// emails, proration, tax and cancellation with it, and every one of those is a
+// screen somebody has to build and keep correct. The hosted checkout and the
+// portal are Stripe's, already localised and already SCA-compliant, and the
+// only thing this app has to get right is what it does when the subscription
+// starts and stops.
+
+// Customer is a Stripe customer, which is what a subscription hangs off.
+type Customer struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+}
+
+// Session is a hosted page: a checkout or a billing portal visit. URL is where
+// to send the customer.
+type Session struct {
+	ID  string `json:"id"`
+	URL string `json:"url"`
+	// Customer and Subscription are filled in on a completed checkout.
+	Customer          string `json:"customer"`
+	Subscription      string `json:"subscription"`
+	ClientReferenceID string `json:"client_reference_id"`
+	Status            string `json:"status"`
+	Mode              string `json:"mode"`
+}
+
+// Subscription is a Stripe subscription, as much of it as this package reads.
+type Subscription struct {
+	ID                string            `json:"id"`
+	Status            string            `json:"status"`
+	CustomerID        string            `json:"customer"`
+	CancelAtPeriodEnd bool              `json:"cancel_at_period_end"`
+	Metadata          map[string]string `json:"metadata"`
+	// CurrentPeriodEnd moved onto the items in a later API version, so both
+	// places are read: this client pins its own version, but a webhook event
+	// is rendered in the account's, which is a version nobody here chose.
+	CurrentPeriodEnd int64 `json:"current_period_end"`
+	Items            struct {
+		Data []struct {
+			CurrentPeriodEnd int64 `json:"current_period_end"`
+			Price            struct {
+				ID       string `json:"id"`
+				Nickname string `json:"nickname"`
+			} `json:"price"`
+		} `json:"data"`
+	} `json:"items"`
+}
+
+// PeriodEnd is when the paid-for period runs out, from wherever this API
+// version put it.
+func (s Subscription) PeriodEnd() int64 {
+	if s.CurrentPeriodEnd > 0 {
+		return s.CurrentPeriodEnd
+	}
+	for _, item := range s.Items.Data {
+		if item.CurrentPeriodEnd > 0 {
+			return item.CurrentPeriodEnd
+		}
+	}
+	return 0
+}
+
+// PriceID is the price the subscription is on, which is how an app tells its
+// plans apart.
+func (s Subscription) PriceID() string {
+	if len(s.Items.Data) > 0 {
+		return s.Items.Data[0].Price.ID
+	}
+	return ""
+}
+
+// CreateCustomer makes the Stripe customer a subscription belongs to.
+//
+// Made once per person and remembered, rather than looked up by email each
+// time: two customers with the same address are a support ticket about an
+// invoice going to the wrong one.
+func (c *Client) CreateCustomer(ctx context.Context, email, name, userID string) (Customer, error) {
+	form := url.Values{}
+	form.Set("email", email)
+	if name != "" {
+		form.Set("name", name)
+	}
+	form.Set("metadata[user_id]", userID)
+	var out Customer
+	err := c.do(ctx, http.MethodPost, "/v1/customers", form, "customer-"+userID, &out)
+	return out, err
+}
+
+// CheckoutParams is a hosted subscription checkout.
+type CheckoutParams struct {
+	CustomerID string
+	// PriceID is a recurring price made in the Stripe dashboard. The app's own
+	// plan table says which price each plan is.
+	PriceID    string
+	SuccessURL string
+	CancelURL  string
+	UserID     string
+	// TrialDays starts the subscription in a trial, if the plan has one.
+	TrialDays int
+}
+
+// StartCheckout returns the hosted page to send the customer to.
+func (c *Client) StartCheckout(ctx context.Context, p CheckoutParams) (Session, error) {
+	form := url.Values{}
+	form.Set("mode", "subscription")
+	form.Set("customer", p.CustomerID)
+	form.Set("line_items[0][price]", p.PriceID)
+	form.Set("line_items[0][quantity]", "1")
+	form.Set("success_url", p.SuccessURL)
+	form.Set("cancel_url", p.CancelURL)
+	form.Set("client_reference_id", p.UserID)
+	// On the subscription itself, so every later event carries it: a webhook
+	// arriving months after the checkout still says whose it is.
+	form.Set("subscription_data[metadata][user_id]", p.UserID)
+	if p.TrialDays > 0 {
+		form.Set("subscription_data[trial_period_days]", strconv.Itoa(p.TrialDays))
+	}
+	var out Session
+	err := c.do(ctx, http.MethodPost, "/v1/checkout/sessions", form, "", &out)
+	return out, err
+}
+
+// GetCheckoutSession reads a session back, for a return page that would rather
+// not wait for the webhook.
+func (c *Client) GetCheckoutSession(ctx context.Context, id string) (Session, error) {
+	var out Session
+	err := c.do(ctx, http.MethodGet, "/v1/checkout/sessions/"+url.PathEscape(id), nil, "", &out)
+	return out, err
+}
+
+// PortalSession is Stripe's billing portal: the customer changes their card,
+// reads their invoices and cancels there, and none of it is a page here.
+func (c *Client) PortalSession(ctx context.Context, customerID, returnURL string) (Session, error) {
+	form := url.Values{}
+	form.Set("customer", customerID)
+	form.Set("return_url", returnURL)
+	var out Session
+	err := c.do(ctx, http.MethodPost, "/v1/billing_portal/sessions", form, "", &out)
+	return out, err
+}
+
+// GetSubscription reads a subscription back from Stripe.
+func (c *Client) GetSubscription(ctx context.Context, id string) (Subscription, error) {
+	var out Subscription
+	err := c.do(ctx, http.MethodGet, "/v1/subscriptions/"+url.PathEscape(id), nil, "", &out)
+	return out, err
+}
+
+// CancelAtPeriodEnd stops a subscription renewing while leaving the customer
+// what they have already paid for. Cancelling outright, with no refund and
+// days left on the clock, is a chargeback waiting to happen.
+func (c *Client) CancelAtPeriodEnd(ctx context.Context, id string) (Subscription, error) {
+	form := url.Values{}
+	form.Set("cancel_at_period_end", "true")
+	var out Subscription
+	err := c.do(ctx, http.MethodPost, "/v1/subscriptions/"+url.PathEscape(id), form, "", &out)
+	return out, err
+}
+
+// Resume undoes that while the period is still running.
+func (c *Client) Resume(ctx context.Context, id string) (Subscription, error) {
+	form := url.Values{}
+	form.Set("cancel_at_period_end", "false")
+	var out Subscription
+	err := c.do(ctx, http.MethodPost, "/v1/subscriptions/"+url.PathEscape(id), form, "", &out)
+	return out, err
+}

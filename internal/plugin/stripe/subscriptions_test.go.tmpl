@@ -1,0 +1,384 @@
+package payments
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/respond"
+)
+
+// fakeBilling answers the Billing calls a subscription makes, and remembers
+// the subscriptions it has made so an event can be built from one.
+type fakeBilling struct {
+	mu            sync.Mutex
+	subscriptions map[string]Subscription
+	sessions      map[string]Session
+	lastForm      map[string]string
+	customers     int
+	portals       int
+}
+
+func newFakeBilling(t *testing.T) (*fakeBilling, *Client) {
+	t.Helper()
+	f := &fakeBilling{subscriptions: map[string]Subscription{}, sessions: map[string]Session{}}
+	srv := httptest.NewServer(http.HandlerFunc(f.serve))
+	t.Cleanup(srv.Close)
+	return f, &Client{SecretKey: "sk_test_x", BaseURL: srv.URL, HTTP: srv.Client()}
+}
+
+func (f *fakeBilling) serve(w http.ResponseWriter, r *http.Request) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if err := r.ParseForm(); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	f.lastForm = map[string]string{}
+	for k := range r.PostForm {
+		f.lastForm[k] = r.PostForm.Get(k)
+	}
+	path := strings.TrimPrefix(r.URL.Path, "/v1/")
+	switch {
+	case path == "customers":
+		f.customers++
+		json.NewEncoder(w).Encode(Customer{ID: fmt.Sprintf("cus_%d", f.customers), Email: r.PostForm.Get("email")})
+	case path == "checkout/sessions" && r.Method == http.MethodPost:
+		id := fmt.Sprintf("cs_%d", len(f.sessions)+1)
+		subscription := Subscription{
+			ID: fmt.Sprintf("sub_%d", len(f.sessions)+1), Status: models.SubscriptionActive,
+			CustomerID:       r.PostForm.Get("customer"),
+			CurrentPeriodEnd: time.Now().Add(30 * 24 * time.Hour).Unix(),
+			Metadata:         map[string]string{"user_id": r.PostForm.Get("subscription_data[metadata][user_id]")},
+		}
+		subscription.Items.Data = append(subscription.Items.Data, struct {
+			CurrentPeriodEnd int64 `json:"current_period_end"`
+			Price            struct {
+				ID       string `json:"id"`
+				Nickname string `json:"nickname"`
+			} `json:"price"`
+		}{})
+		subscription.Items.Data[0].Price.ID = r.PostForm.Get("line_items[0][price]")
+		f.subscriptions[subscription.ID] = subscription
+		session := Session{ID: id, URL: "https://checkout.stripe.test/" + id, Mode: "subscription",
+			Customer: subscription.CustomerID, Subscription: subscription.ID,
+			ClientReferenceID: r.PostForm.Get("client_reference_id"), Status: "complete"}
+		f.sessions[id] = session
+		json.NewEncoder(w).Encode(session)
+	case strings.HasPrefix(path, "checkout/sessions/"):
+		json.NewEncoder(w).Encode(f.sessions[strings.TrimPrefix(path, "checkout/sessions/")])
+	case path == "billing_portal/sessions":
+		f.portals++
+		json.NewEncoder(w).Encode(Session{ID: "bps_1", URL: "https://billing.stripe.test/p"})
+	case strings.HasPrefix(path, "subscriptions/") && r.Method == http.MethodPost:
+		id := strings.TrimPrefix(path, "subscriptions/")
+		subscription := f.subscriptions[id]
+		subscription.CancelAtPeriodEnd = r.PostForm.Get("cancel_at_period_end") == "true"
+		f.subscriptions[id] = subscription
+		json.NewEncoder(w).Encode(subscription)
+	case strings.HasPrefix(path, "subscriptions/"):
+		json.NewEncoder(w).Encode(f.subscriptions[strings.TrimPrefix(path, "subscriptions/")])
+	default:
+		w.WriteHeader(http.StatusNotFound)
+	}
+}
+
+// ends moves a subscription to a state that gives no access, the way Stripe
+// would after the retries ran out or the period ended.
+func (f *fakeBilling) ends(id, status string) Subscription {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	subscription := f.subscriptions[id]
+	subscription.Status = status
+	f.subscriptions[id] = subscription
+	return subscription
+}
+
+func newSubscriptions(t *testing.T) (*Subscriptions, *fakeBilling, models.User) {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open("file:"+t.Name()+"-subs?mode=memory&cache=shared"), &gorm.Config{Logger: logger.Discard})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AutoMigrate(&models.Subscription{}, &models.User{}); err != nil {
+		t.Fatal(err)
+	}
+	fake, client := newFakeBilling(t)
+	user := models.User{FirstName: "Ada", LastName: "Okello", Email: "ada@example.com", Password: "a-long-enough-password", Role: "USER", Active: true}
+	if err := db.Create(&user).Error; err != nil {
+		t.Fatal(err)
+	}
+	return &Subscriptions{DB: db, Stripe: client}, fake, user
+}
+
+func subscriptionEvent(t *testing.T, eventType string, subscription Subscription) *models.WebhookEvent {
+	t.Helper()
+	raw, err := json.Marshal(subscription)
+	if err != nil {
+		t.Fatal(err)
+	}
+	payload := `{"type":"` + eventType + `","data":{"object":` + string(raw) + `}}`
+	return &models.WebhookEvent{Provider: "stripe", EventType: eventType, Payload: datatypes.JSON(payload)}
+}
+
+func checkoutEvent(t *testing.T, session Session) *models.WebhookEvent {
+	t.Helper()
+	raw, err := json.Marshal(session)
+	if err != nil {
+		t.Fatal(err)
+	}
+	payload := `{"type":"checkout.session.completed","data":{"object":` + string(raw) + `}}`
+	return &models.WebhookEvent{Provider: "stripe", EventType: "checkout.session.completed", Payload: datatypes.JSON(payload)}
+}
+
+func TestStartSendsThePersonToStripeWithTheirPlan(t *testing.T) {
+	s, fake, user := newSubscriptions(t)
+	url, err := s.Start(context.Background(), StartInput{
+		UserID: user.ID, PriceID: "price_yearly", SuccessURL: "https://shop.test/done", CancelURL: "https://shop.test/pricing",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(url, "https://checkout.stripe.test/") {
+		t.Fatalf("url %q", url)
+	}
+	if fake.lastForm["mode"] != "subscription" || fake.lastForm["line_items[0][price]"] != "price_yearly" {
+		t.Errorf("stripe was sent %v", fake.lastForm)
+	}
+	if fake.lastForm["client_reference_id"] != user.ID || fake.lastForm["subscription_data[metadata][user_id]"] != user.ID {
+		t.Error("the checkout does not say whose it is")
+	}
+}
+
+// The account keeps one Stripe customer, so invoices and cards stay together.
+func TestTheSecondCheckoutReusesTheStripeCustomer(t *testing.T) {
+	s, fake, user := newSubscriptions(t)
+	if _, err := s.Start(context.Background(), StartInput{UserID: user.ID, PriceID: "price_yearly"}); err != nil {
+		t.Fatal(err)
+	}
+	session := fake.sessions["cs_1"]
+	if err := s.HandleEvent(context.Background(), subscriptionEvent(t, "customer.subscription.deleted", fake.ends(session.Subscription, models.SubscriptionCanceled))); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Start(context.Background(), StartInput{UserID: user.ID, PriceID: "price_yearly"}); err != nil {
+		t.Fatal(err)
+	}
+	if fake.customers != 1 {
+		t.Errorf("%d stripe customers for one account", fake.customers)
+	}
+}
+
+func TestAnAccountWithALiveSubscriptionIsSentToThePortal(t *testing.T) {
+	s, fake, user := newSubscriptions(t)
+	if _, err := s.Start(context.Background(), StartInput{UserID: user.ID, PriceID: "price_yearly"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.HandleCheckout(context.Background(), checkoutEvent(t, fake.sessions["cs_1"])); err != nil {
+		t.Fatal(err)
+	}
+	_, err := s.Start(context.Background(), StartInput{UserID: user.ID, PriceID: "price_yearly"})
+	if err == nil {
+		t.Fatal("a second subscription was started")
+	}
+	if _, isRule := respond.IsRule(err); !isRule {
+		t.Errorf("got %v, want something the customer can read", err)
+	}
+}
+
+// The checkout webhook grants access, once, and a redelivery does not grant it
+// again.
+func TestCheckoutGrantsAccessOnce(t *testing.T) {
+	s, fake, user := newSubscriptions(t)
+	granted := 0
+	s.OnActive = func(ctx context.Context, tx *gorm.DB, sub models.Subscription) error {
+		granted++
+		if sub.UserID != user.ID || sub.PriceID != "price_yearly" {
+			t.Errorf("OnActive got %+v", sub)
+		}
+		return nil
+	}
+	if _, err := s.Start(context.Background(), StartInput{UserID: user.ID, PriceID: "price_yearly"}); err != nil {
+		t.Fatal(err)
+	}
+	event := checkoutEvent(t, fake.sessions["cs_1"])
+	for i := 0; i < 2; i++ {
+		if err := s.HandleCheckout(context.Background(), event); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// And the subscription's own events say the same thing again.
+	if err := s.HandleEvent(context.Background(), subscriptionEvent(t, "customer.subscription.updated", fake.subscriptions["sub_1"])); err != nil {
+		t.Fatal(err)
+	}
+	entitled, err := s.Entitled(context.Background(), user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if granted != 1 || !entitled {
+		t.Errorf("granted %d times, entitled %v", granted, entitled)
+	}
+	var rows int64
+	if err := s.DB.Model(&models.Subscription{}).Count(&rows).Error; err != nil {
+		t.Fatal(err)
+	}
+	if rows != 1 {
+		t.Errorf("%d subscription rows for one subscription", rows)
+	}
+}
+
+// A renewal that fails keeps access while Stripe retries the card, and takes
+// it away when Stripe gives up.
+func TestPastDueKeepsAccessAndUnpaidEndsIt(t *testing.T) {
+	s, fake, user := newSubscriptions(t)
+	ended := 0
+	s.OnEnded = func(ctx context.Context, tx *gorm.DB, sub models.Subscription) error {
+		ended++
+		return nil
+	}
+	if _, err := s.Start(context.Background(), StartInput{UserID: user.ID, PriceID: "price_yearly"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.HandleCheckout(context.Background(), checkoutEvent(t, fake.sessions["cs_1"])); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.HandleEvent(context.Background(), subscriptionEvent(t, "customer.subscription.updated", fake.ends("sub_1", models.SubscriptionPastDue))); err != nil {
+		t.Fatal(err)
+	}
+	if entitled, _ := s.Entitled(context.Background(), user.ID); !entitled {
+		t.Error("a failed renewal cut access off on the first retry")
+	}
+	if ended != 0 {
+		t.Error("OnEnded ran while Stripe was still retrying")
+	}
+
+	for i := 0; i < 2; i++ {
+		if err := s.HandleEvent(context.Background(), subscriptionEvent(t, "customer.subscription.deleted", fake.ends("sub_1", models.SubscriptionCanceled))); err != nil {
+			t.Fatal(err)
+		}
+	}
+	entitled, err := s.Entitled(context.Background(), user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if entitled || ended != 1 {
+		t.Errorf("entitled %v, OnEnded ran %d times", entitled, ended)
+	}
+	current, err := s.Current(context.Background(), user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if current.EndedAt == nil {
+		t.Error("the subscription has no ended_at")
+	}
+}
+
+// Cancelling leaves the days already paid for.
+func TestCancelKeepsAccessUntilTheEndOfThePeriod(t *testing.T) {
+	s, fake, user := newSubscriptions(t)
+	if _, err := s.Start(context.Background(), StartInput{UserID: user.ID, PriceID: "price_yearly"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.HandleCheckout(context.Background(), checkoutEvent(t, fake.sessions["cs_1"])); err != nil {
+		t.Fatal(err)
+	}
+	after, err := s.Cancel(context.Background(), user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !after.CancelAtPeriodEnd || !after.Entitled() {
+		t.Errorf("subscription %+v", after)
+	}
+	if after.CurrentPeriodEnd == nil || after.CurrentPeriodEnd.Before(time.Now()) {
+		t.Error("the period end was not recorded")
+	}
+	resumed, err := s.Resume(context.Background(), user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resumed.CancelAtPeriodEnd {
+		t.Error("resuming did not clear the cancellation")
+	}
+}
+
+// A session id in a URL is not proof: the session says whose checkout it was.
+func TestRefreshRefusesSomebodyElsesSession(t *testing.T) {
+	s, fake, user := newSubscriptions(t)
+	if _, err := s.Start(context.Background(), StartInput{UserID: user.ID, PriceID: "price_yearly"}); err != nil {
+		t.Fatal(err)
+	}
+	other := models.User{FirstName: "Ben", LastName: "Mugisha", Email: "ben@example.com", Password: "a-long-enough-password", Role: "USER", Active: true}
+	if err := s.DB.Create(&other).Error; err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Refresh(context.Background(), other.ID, "cs_1"); err != nil {
+		t.Fatal(err)
+	}
+	if entitled, _ := s.Entitled(context.Background(), other.ID); entitled {
+		t.Error("another account's checkout granted access")
+	}
+	if _, err := s.Refresh(context.Background(), user.ID, "cs_1"); err != nil {
+		t.Fatal(err)
+	}
+	if entitled, _ := s.Entitled(context.Background(), user.ID); !entitled {
+		t.Error("the return page did not settle the subscription")
+	}
+	_ = fake
+}
+
+// A subscription made in the dashboard for nobody in particular is not granted
+// to anyone.
+func TestASubscriptionWithNoUserIsIgnored(t *testing.T) {
+	s, _, _ := newSubscriptions(t)
+	orphan := Subscription{ID: "sub_orphan", Status: models.SubscriptionActive, CustomerID: "cus_x"}
+	if err := s.HandleEvent(context.Background(), subscriptionEvent(t, "customer.subscription.created", orphan)); err != nil {
+		t.Fatal(err)
+	}
+	var rows int64
+	if err := s.DB.Model(&models.Subscription{}).Count(&rows).Error; err != nil {
+		t.Fatal(err)
+	}
+	if rows != 0 {
+		t.Error("a subscription with no user was recorded against somebody")
+	}
+}
+
+func TestWithoutAKeySubscriptionsSayTheyAreNotConfigured(t *testing.T) {
+	s := &Subscriptions{}
+	if _, err := s.Start(context.Background(), StartInput{UserID: "u1", PriceID: "price_x"}); !errors.Is(err, ErrUnavailable) {
+		t.Errorf("got %v", err)
+	}
+}
+
+// The period end moved onto the items in a later API version, and a webhook is
+// rendered in the account's version, not this client's.
+func TestPeriodEndIsReadFromEitherPlace(t *testing.T) {
+	newer := Subscription{ID: "sub_new"}
+	newer.Items.Data = append(newer.Items.Data, struct {
+		CurrentPeriodEnd int64 `json:"current_period_end"`
+		Price            struct {
+			ID       string `json:"id"`
+			Nickname string `json:"nickname"`
+		} `json:"price"`
+	}{CurrentPeriodEnd: 1800000000})
+	if newer.PeriodEnd() != 1800000000 {
+		t.Errorf("item period end not read: %d", newer.PeriodEnd())
+	}
+	older := Subscription{ID: "sub_old", CurrentPeriodEnd: 1700000000}
+	if older.PeriodEnd() != 1700000000 {
+		t.Errorf("top-level period end not read: %d", older.PeriodEnd())
+	}
+}

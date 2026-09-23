@@ -1,0 +1,43 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  cancelSubscription,
+  getSubscription,
+  openBillingPortal,
+  resumeSubscription,
+  startSubscription,
+  type SubscriptionState,
+} from "@/lib/subscription";
+
+/** What this account is subscribed to, and whether it is paid up. */
+export function useSubscription() {
+  return useQuery<SubscriptionState>({
+    queryKey: ["subscription"],
+    queryFn: getSubscription,
+    staleTime: 60_000,
+  });
+}
+
+/** Leaves for Stripe's checkout, so there is no success state to render. */
+export function useStartSubscription() {
+  return useMutation({ mutationFn: startSubscription });
+}
+
+export function useBillingPortal() {
+  return useMutation({ mutationFn: (returnPath?: string) => openBillingPortal(returnPath) });
+}
+
+export function useCancelSubscription() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: cancelSubscription,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["subscription"] }),
+  });
+}
+
+export function useResumeSubscription() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: resumeSubscription,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["subscription"] }),
+  });
+}

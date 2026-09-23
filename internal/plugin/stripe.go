@@ -34,8 +34,8 @@ var stripeTemplates embed.FS
 func stripePlugin() Plugin {
 	return Plugin{
 		Name:    "stripe",
-		Version: "1.0.0",
-		Summary: "Stripe payments: server-priced checkout, webhook-settled, refunds, and a payment form for the web app",
+		Version: "1.1.0",
+		Summary: "Stripe payments and subscriptions: server-priced checkout, hosted billing, webhook-settled, refunds",
 		Description: `Takes money through Stripe without trusting the browser with the price.
 
   • payments.Service.Create(Checkout{UserID, Reference, Amount, Currency}) from
@@ -50,7 +50,13 @@ func stripePlugin() Plugin {
   • <StripeCheckout> and <PaymentResult> for the web app, in the app's
     colours; card details go from the browser to Stripe, never to the API
 
-No SDK: four REST calls, with the API version pinned.`,
+  • Subscriptions: subscriptionService.Start sends the customer to Stripe's
+    hosted checkout, the billing portal handles cards, invoices and cancelling,
+    and OnActive/OnEnded grant and take away what it buys
+  • A failed renewal keeps access while Stripe retries the card, and ends it
+    when Stripe gives up: past_due is entitled, unpaid is not
+
+No SDK: plain REST calls, with the API version pinned.`,
 
 		NextSteps: []string{
 			"On a project made before v3.311.0, run grit upgrade first: it adds the payment error codes and the CSP list the plugin writes Stripe's origins into",
@@ -61,6 +67,9 @@ No SDK: four REST calls, with the API version pinned.`,
 			"Start a payment in your checkout handler: paymentService.Create(ctx, payments.Checkout{UserID: userID, Reference: \"order:\" + order.ID, Amount: order.TotalCents, Currency: \"usd\"})",
 			"Mark the order paid in routes.go: paymentService.OnSucceeded = func(ctx context.Context, tx *gorm.DB, p models.Payment) error { ... }",
 			"Webhooks locally:    stripe listen --forward-to localhost:8080/webhooks/stripe (or rely on the return page's refresh)",
+			"Subscriptions: make a recurring price in the Stripe dashboard, then POST /subscriptions/checkout {\"price_id\": \"price_...\"} and send the customer to the url it answers",
+			"Grant what a subscription buys in routes.go: subscriptionService.OnActive = func(ctx context.Context, tx *gorm.DB, s models.Subscription) error { ... }, and OnEnded to take it away",
+			"Where Stripe returns the customer: SITE_URL=https://example.com in .env (it falls back to OAUTH_FRONTEND_URL, then localhost:3000)",
 		},
 
 		NodeDeps: []Dependency{
@@ -95,11 +104,19 @@ func stripeFiles(ctx Context) map[string]string {
 		apiPath(ctx, "internal/payments/service.go"):       stripeTemplate(ctx, "payments_service.go.tmpl"),
 		apiPath(ctx, "internal/payments/payments_test.go"): stripeTemplate(ctx, "payments_test.go.tmpl"),
 		apiPath(ctx, "internal/handlers/payment.go"):       stripeTemplate(ctx, "payment_handler.go.tmpl"),
+
+		apiPath(ctx, "internal/models/subscription.go"):         stripeTemplate(ctx, "subscription_model.go.tmpl"),
+		apiPath(ctx, "internal/payments/billing.go"):            stripeTemplate(ctx, "stripe_billing.go.tmpl"),
+		apiPath(ctx, "internal/payments/subscriptions.go"):      stripeTemplate(ctx, "subscriptions_service.go.tmpl"),
+		apiPath(ctx, "internal/payments/subscriptions_test.go"): stripeTemplate(ctx, "subscriptions_test.go.tmpl"),
+		apiPath(ctx, "internal/handlers/subscription.go"):       stripeTemplate(ctx, "subscription_handler.go.tmpl"),
 	}
 	if hasNextWeb(ctx) {
 		files["apps/web/lib/payments.ts"] = stripeTemplate(ctx, "web_payments.ts.tmpl")
 		files["apps/web/hooks/use-payment.ts"] = stripeTemplate(ctx, "web_use_payment.ts.tmpl")
 		files["apps/web/components/stripe-checkout.tsx"] = stripeTemplate(ctx, "web_stripe_checkout.tsx.tmpl")
+		files["apps/web/lib/subscription.ts"] = stripeTemplate(ctx, "web_subscription.ts.tmpl")
+		files["apps/web/hooks/use-subscription.ts"] = stripeTemplate(ctx, "web_use_subscription.ts.tmpl")
 	}
 	return files
 }
@@ -109,7 +126,7 @@ func stripeInjections(ctx Context) []Injection {
 		{
 			File:   apiPath(ctx, "internal/models/user.go"),
 			Marker: "// grit:models",
-			Code:   "\t\t&Payment{},",
+			Code:   "\t\t&Payment{},\n\t\t&Subscription{},",
 		},
 		{
 			File:   apiPath(ctx, "internal/routes/routes.go"),
@@ -124,14 +141,28 @@ func stripeInjections(ctx Context) []Injection {
 				"\t// paymentService.OnSucceeded is where the order is marked paid.\n" +
 				"\tpaymentService := payments.NewService(db)\n" +
 				"\tpaymentService.Register()\n" +
-				"\tpaymentHandler := handlers.NewPaymentHandler(db, paymentService)",
+				"\tpaymentHandler := handlers.NewPaymentHandler(db, paymentService)\n" +
+				"\t// Subscriptions: a hosted Stripe checkout starts one, Stripe's billing\n" +
+				"\t// portal manages it, and the webhooks keep our row in step. Set\n" +
+				"\t// OnActive and OnEnded to grant and take away what it buys.\n" +
+				"\tsubscriptionService := payments.NewSubscriptions(db, paymentService)\n" +
+				"\tsubscriptionService.Register()\n" +
+				"\tsubscriptionHandler := handlers.NewSubscriptionHandler(subscriptionService, payments.SiteURL())",
 		},
 		{
 			File:   apiPath(ctx, "internal/routes/routes.go"),
 			Marker: "// grit:routes:protected",
 			Code: "\t\t// Payments: the caller's own, as recorded or as Stripe has it now.\n" +
 				"\t\tprotected.GET(\"/payments/:id\", paymentHandler.Get)\n" +
-				"\t\tprotected.POST(\"/payments/:id/refresh\", paymentHandler.Refresh)",
+				"\t\tprotected.POST(\"/payments/:id/refresh\", paymentHandler.Refresh)\n" +
+				"\t\t// Subscriptions: the caller's own, and the hosted pages that start\n" +
+				"\t\t// and manage them.\n" +
+				"\t\tprotected.GET(\"/subscriptions/me\", subscriptionHandler.Current)\n" +
+				"\t\tprotected.POST(\"/subscriptions/checkout\", subscriptionHandler.Start)\n" +
+				"\t\tprotected.POST(\"/subscriptions/portal\", subscriptionHandler.Portal)\n" +
+				"\t\tprotected.POST(\"/subscriptions/refresh\", subscriptionHandler.Refresh)\n" +
+				"\t\tprotected.POST(\"/subscriptions/cancel\", subscriptionHandler.Cancel)\n" +
+				"\t\tprotected.POST(\"/subscriptions/resume\", subscriptionHandler.Resume)",
 		},
 		{
 			File:   apiPath(ctx, "internal/routes/routes.go"),

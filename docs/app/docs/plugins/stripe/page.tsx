@@ -8,7 +8,7 @@ import { CodeBlock } from '@/components/code-block'
 export const metadata = {
   title: 'Stripe plugin | Grit',
   description:
-    'Take payments through Stripe with the price decided on the server, the order settled by a verified webhook exactly once, refunds from the admin, and a payment form for the web app.',
+    'Take payments and subscriptions through Stripe: the price decided on the server, the order settled by a verified webhook exactly once, refunds from the admin, a payment form for the web app, and hosted billing for recurring plans.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/stripe' },
 }
 
@@ -95,6 +95,40 @@ paymentService.OnSucceeded = func(ctx context.Context, tx *gorm.DB, p models.Pay
             which the browser otherwise refuses with nothing but a console message.
           </p>
 
+          <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">Subscriptions</h2>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            A recurring charge brings card updates, failed renewals, dunning, proration, tax and cancellation with it,
+            and every one of those is a screen somebody has to build and keep correct. So subscriptions go through
+            Stripe&apos;s own hosted checkout and billing portal, which are already localised and already handle
+            3-D Secure. The only thing your app has to get right is what happens when access starts and stops.
+          </p>
+          <CodeBlock language="go" code={`// routes.go, after subscriptionService is made.
+subscriptionService.OnActive = func(ctx context.Context, tx *gorm.DB, s models.Subscription) error {
+    return tx.Model(&models.User{}).Where("id = ?", s.UserID).Update("plan", "pro").Error
+}
+subscriptionService.OnEnded = func(ctx context.Context, tx *gorm.DB, s models.Subscription) error {
+    return tx.Model(&models.User{}).Where("id = ?", s.UserID).Update("plan", "free").Error
+}`} />
+          <p className="mb-4 mt-4 leading-relaxed text-muted-foreground">
+            The browser asks for a checkout and goes where it is told. Your plan table holds the price ids you made in
+            the Stripe dashboard; nothing about the plan is hard-coded in the plugin.
+          </p>
+          <CodeBlock language="tsx" code={`import { startSubscription, openBillingPortal } from "@/lib/subscription";
+import { useSubscription } from "@/hooks/use-subscription";
+
+const { data } = useSubscription();   // { subscription, entitled }
+
+<button onClick={() => startSubscription({ price_id: "price_...", success_path: "/billing/done" })}>
+  Subscribe
+</button>
+
+// Already subscribed: cards, invoices and cancelling all live in Stripe's portal.
+<button onClick={() => openBillingPortal("/billing")}>Manage billing</button>`} />
+          <p className="mb-8 mt-4 leading-relaxed text-muted-foreground">
+            Return URLs are built from <code>SITE_URL</code> and a path, never from a URL the caller sends, because a
+            return URL the browser chooses is an open redirect with a payment attached.
+          </p>
+
           <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">What you get</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -127,9 +161,31 @@ paymentService.OnSucceeded = func(ctx context.Context, tx *gorm.DB, p models.Pay
                   <td className="py-2 pr-4 font-mono text-xs">GET /api/v1/admin/payments</td>
                   <td className="py-2">Every payment, filterable by status, reference and user.</td>
                 </tr>
-                <tr>
+                <tr className="border-b border-border/50">
                   <td className="py-2 pr-4 font-mono text-xs">POST /api/v1/admin/payments/:id/refund</td>
                   <td className="py-2">Refunds all of a payment, or the amount given.</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-2 pr-4 font-mono text-xs">GET /api/v1/subscriptions/me</td>
+                  <td className="py-2">
+                    What this account is subscribed to, and <code>entitled</code>: the one question the rest of the app
+                    asks.
+                  </td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-2 pr-4 font-mono text-xs">POST /api/v1/subscriptions/checkout</td>
+                  <td className="py-2">The hosted checkout URL for a price. An account that already pays is sent to the portal instead.</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="py-2 pr-4 font-mono text-xs">POST /api/v1/subscriptions/portal</td>
+                  <td className="py-2">Stripe&apos;s billing portal: cards, invoices, cancelling.</td>
+                </tr>
+                <tr>
+                  <td className="py-2 pr-4 font-mono text-xs">POST /api/v1/subscriptions/refresh</td>
+                  <td className="py-2">
+                    Settles the checkout on the page Stripe returns to, without waiting for the webhook. A session
+                    belonging to somebody else grants nothing.
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -152,6 +208,12 @@ paymentService.OnSucceeded = func(ctx context.Context, tx *gorm.DB, p models.Pay
               <strong className="text-foreground">Retries do not charge twice.</strong> Each intent is created with
               the payment&apos;s own id as its idempotency key, and each refund with a key made of what has been
               refunded so far, so a double click makes one refund.
+            </li>
+            <li>
+              <strong className="text-foreground">A failed renewal does not lock anyone out on the first retry.</strong>{' '}
+              <code>past_due</code> still counts as entitled, because Stripe spends the next couple of weeks retrying
+              the card and most of those succeed. Access ends when Stripe gives up, at <code>unpaid</code> or
+              <code> canceled</code>. Cancelling keeps the days already paid for.
             </li>
             <li>
               <strong className="text-foreground">No SDK.</strong> Four REST calls with the API version pinned.
