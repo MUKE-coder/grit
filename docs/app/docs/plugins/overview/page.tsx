@@ -85,12 +85,41 @@ export default function PluginsOverviewPage() {
           <CodeBlock language="bash" code={`grit plugin list                 # what's available
 grit plugin info impersonate     # what a plugin does before you run it
 grit plugin add impersonate      # install (refuses to run on a dirty git tree)
+grit plugin update impersonate   # take this CLI's version of the files it owns
+grit plugin update --all         # every installed plugin
 grit plugin remove impersonate   # replay the install backwards`} />
           <p className="mt-4 leading-relaxed text-muted-foreground">
             <code>grit plugin add</code> refuses to run with uncommitted changes, so the diff it
             produces is always clean and reviewable. Read the diff, commit it, and it&apos;s part of
             your app like anything else.
           </p>
+
+          <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">Keeping a plugin up to date</h2>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            A plugin gets fixes like everything else, and until <code>grit plugin update</code> those
+            fixes reached nobody: <code>add</code> refuses once a plugin is installed, and remove
+            then add loses your edits and re-inserts the patches at their markers, which moves them
+            relative to code you have written since. That is not theory. Doing it to a shop built on
+            Grit put the payment service below the code that constructs things from it, and the API
+            stopped compiling.
+          </p>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            So an update rewrites only what it can prove nobody has touched. Every file is
+            fingerprinted when the plugin writes it: one whose fingerprint still matches is replaced,
+            one that differs is left exactly as it is and named. Files the plugin has gained simply
+            arrive, which is what most plugin releases are, and a patch already in place is never
+            applied twice or moved. Nothing is ever deleted. <code>grit upgrade</code> runs this for
+            every installed plugin, because a command nobody runs fixes nobody&apos;s project.
+          </p>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            Two things it will not do quietly. A project installed before Grit recorded fingerprints
+            cannot be vouched for at all, and there half an update is worse than none: the file a
+            release adds is usually the one another file has to change to use, so the update stops,
+            changes nothing, and tells you which files it cannot judge. And a file you have edited
+            is never overwritten. Both are the same way out:
+          </p>
+          <CodeBlock language="bash" code={`grit plugin update stripe --overwrite   # take the plugin's version of everything
+git diff                                # and read exactly what that did`} />
 
           {/* Go module plugins */}
           <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">

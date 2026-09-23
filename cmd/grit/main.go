@@ -24,6 +24,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/expose"
 	"github.com/MUKE-coder/grit/v3/internal/generate"
 	"github.com/MUKE-coder/grit/v3/internal/maintenance"
+	"github.com/MUKE-coder/grit/v3/internal/plugin"
 	"github.com/MUKE-coder/grit/v3/internal/project"
 	"github.com/MUKE-coder/grit/v3/internal/prompt"
 	"github.com/MUKE-coder/grit/v3/internal/routeparser"
@@ -31,7 +32,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.315.0"
+var version = "3.316.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -1453,11 +1454,20 @@ func upgradeCmd() *cobra.Command {
 			purple := color.New(color.FgHiMagenta, color.Bold)
 			purple.Printf("\n  Upgrading project to Grit v%s\n\n", version)
 
-			return scaffold.Upgrade(scaffold.UpgradeOptions{
+			if err := scaffold.Upgrade(scaffold.UpgradeOptions{
 				Force:    force,
 				ShowDiff: showDiff,
 				Version:  version,
-			})
+			}); err != nil {
+				return err
+			}
+
+			// Plugins are part of the project too. Left to a command of its
+			// own, nobody runs it, and a plugin fix reaches nobody: that is
+			// how the Stripe plugin could learn to record what a renewal
+			// charged and no existing shop could have it.
+			upgradeInstalledPlugins()
+			return nil
 		},
 	}
 
@@ -2424,4 +2434,40 @@ func deployCmd() *cobra.Command {
 	cmd.Flags().StringVar(&appPort, "app-port", "8080", "Port the app runs on")
 
 	return cmd
+}
+
+// upgradeInstalledPlugins updates every plugin this project has installed, with
+// the same rule as the rest of an upgrade: a file you have edited is left as it
+// is and reported. Never fatal, because the scaffold upgrade has already
+// happened and a plugin that cannot be updated is not a reason to fail it.
+func upgradeInstalledPlugins() {
+	ctx, err := pluginContext()
+	if err != nil {
+		return // not a project with plugins, or no grit.json: nothing to do
+	}
+	lock, err := plugin.LoadLock(ctx.Root)
+	if err != nil || len(lock.Installed()) == 0 {
+		return
+	}
+
+	cyan := color.New(color.FgHiCyan)
+	fmt.Println()
+	cyan.Println("  Plugins:")
+	for _, name := range lock.Installed() {
+		p, err := plugin.Get(name)
+		if err != nil {
+			// A plugin of your own, installed from a directory. Grit has no
+			// copy of it to update from, which is worth saying once, in words
+			// that do not read as "you typed it wrong".
+			fmt.Printf("    %s %s is not one of Grit's own plugins, so there is nothing to update it from\n",
+				color.YellowString("⚠"), name)
+			continue
+		}
+		res, err := plugin.Update(ctx, p)
+		if err != nil {
+			fmt.Printf("    %s %s: %v\n", color.YellowString("⚠"), name, err)
+			continue
+		}
+		printUpdate(res)
+	}
 }

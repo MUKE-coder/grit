@@ -66,6 +66,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.316.0 */}
+            <div className="mb-12" id="v3.316.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.316.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3><code>grit plugin update</code>: a plugin fix that reaches installed projects</h3>
+                <p>
+                  Yesterday the Stripe plugin learned to record what a renewal charged. Nobody who had
+                  already installed it could have that. <code>grit plugin add</code> refuses once a plugin is
+                  installed, <code>grit upgrade</code> never touched plugin files, and remove then add loses
+                  every local edit and re-inserts the patches at their markers, which moves them relative to
+                  code the app has written since. Doing exactly that to a shop built on Grit put the payment
+                  service below the code that constructs things from it, and the API stopped compiling.
+                </p>
+                <CodeBlock
+                  language="bash"
+                  code={`grit plugin update stripe     # the files it owns, as this CLI writes them
+grit plugin update --all      # every installed plugin
+grit upgrade                  # does the same, for every plugin, on its way past`}
+                />
+                <p>
+                  An update rewrites only what it can prove nobody has touched. Every file is fingerprinted
+                  when the plugin writes it, so one whose fingerprint still matches is replaced and one that
+                  differs is left exactly as it is and named. Files a release has added simply arrive, a patch
+                  already in place is never applied twice or moved, and nothing is ever deleted. A line
+                  ending is not an edit, which matters on Windows where git rewrites them on checkout.
+                </p>
+                <p>
+                  Two refusals are deliberate. A file you have edited is never overwritten. And a project
+                  installed before fingerprints existed cannot be judged at all, so rather than update some
+                  files and not others, it changes nothing and says which files it cannot vouch for: the file
+                  a release adds is usually the one another file has to change to use, and half an update is a
+                  project that does not build. Both have the same way out, with git to read it afterwards:
+                </p>
+                <CodeBlock
+                  language="bash"
+                  code={`grit plugin update stripe --overwrite   # take the plugin's version of everything
+git diff                                # and see exactly what that did`}
+                />
+              </div>
+            </div>
+
             {/* v3.315.0 */}
             <div className="mb-12" id="v3.315.0">
               <div className="flex items-center gap-3 mb-4">

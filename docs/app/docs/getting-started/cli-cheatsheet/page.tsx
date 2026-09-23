@@ -862,6 +862,14 @@ export default function CLICheatsheetPage() {
                     desc="Install even with a dirty working tree"
                   />
                   <TerminalCard
+                    cmd="grit plugin update multitenant"
+                    desc="Take this CLI's version of the files the plugin owns, leaving yours alone"
+                  />
+                  <TerminalCard
+                    cmd="grit plugin update --all --overwrite"
+                    desc="Every plugin, taking its version even of files you have edited"
+                  />
+                  <TerminalCard
                     cmd="grit plugin remove multitenant"
                     desc="Reverse the install using the lockfile record"
                   />

@@ -29,6 +29,8 @@ type InstalledPlugin struct {
 	Name        string    `json:"name"`
 	Version     string    `json:"version"`
 	InstalledAt time.Time `json:"installed_at"`
+	// UpdatedAt is when grit plugin update last rewrote these files.
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 
 	// Requires is copied from the plugin at install time so removal can honour
 	// dependencies even for a plugin this CLI doesn't have in its registry.
@@ -36,6 +38,12 @@ type InstalledPlugin struct {
 
 	// Files written by the install, relative to the project root.
 	Files []string `json:"files"`
+
+	// FileHashes is the sha256 of each file as this plugin wrote it, which is
+	// the only way an update can tell "you edited this" from "the plugin
+	// changed". A lockfile written before hashes existed has none, and the
+	// update treats every file in it as possibly edited rather than guessing.
+	FileHashes map[string]string `json:"file_hashes,omitempty"`
 
 	// Injections records the exact text inserted, so removal can take out
 	// precisely that and nothing else.

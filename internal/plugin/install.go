@@ -1,6 +1,8 @@
 package plugin
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/exec"
@@ -94,10 +96,17 @@ func Install(ctx Context, p Plugin) (*InstalledPlugin, error) {
 			if err := os.MkdirAll(filepath.Dir(abs), 0755); err != nil {
 				return nil, fmt.Errorf("creating dir for %s: %w", rel, err)
 			}
-			if err := os.WriteFile(abs, []byte(codefmt.File(abs, files[rel])), 0644); err != nil {
+			written := codefmt.File(abs, files[rel])
+			if err := os.WriteFile(abs, []byte(written), 0644); err != nil {
 				return nil, fmt.Errorf("writing %s: %w", rel, err)
 			}
 			record.Files = append(record.Files, rel)
+			// What this file looked like when the plugin wrote it, so a later
+			// update knows whether anyone has touched it since.
+			if record.FileHashes == nil {
+				record.FileHashes = map[string]string{}
+			}
+			record.FileHashes[rel] = hashOf(written)
 			fmt.Printf("  ✓ %s\n", rel)
 		}
 	}
@@ -372,4 +381,13 @@ func sortStrings(s []string) {
 			s[j], s[j-1] = s[j-1], s[j]
 		}
 	}
+}
+
+// hashOf is the fingerprint stored in the lockfile for a file the plugin wrote.
+func hashOf(content string) string {
+	// Normalised, because a line ending is not a change: git rewrites them on
+	// checkout on Windows, and a fingerprint that moves when it does would
+	// report every file in the project as edited.
+	sum := sha256.Sum256([]byte(normalizeEOL(content)))
+	return hex.EncodeToString(sum[:])
 }

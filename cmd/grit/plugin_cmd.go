@@ -28,6 +28,7 @@ func pluginCmd() *cobra.Command {
 	cmd.AddCommand(pluginListCmd())
 	cmd.AddCommand(pluginInfoCmd())
 	cmd.AddCommand(pluginAddCmd())
+	cmd.AddCommand(pluginUpdateCmd())
 	cmd.AddCommand(pluginRemoveCmd())
 
 	return cmd
@@ -391,4 +392,155 @@ func isDirtyGitTree(root string) bool {
 		return false
 	}
 	return len(strings.TrimSpace(string(out))) > 0
+}
+
+// pluginUpdateCmd exists because a plugin fix used to reach nobody: add refuses
+// once a plugin is installed, and remove-then-add loses local edits and moves
+// the injections, which has broken a build.
+func pluginUpdateCmd() *cobra.Command {
+	var force bool
+	var all bool
+	var overwrite bool
+
+	cmd := &cobra.Command{
+		Use:   "update [name]",
+		Short: "Bring installed plugins up to this CLI's version of them",
+		Long: `Rewrite the files an installed plugin owns, and add the ones it has gained.
+
+  grit plugin update stripe
+  grit plugin update --all
+
+Only files nobody has touched are rewritten: each one is fingerprinted when the
+plugin writes it, so an edited file is reported and left exactly as it is.
+Patches already in place stay where they sit, and only a new one is applied.
+Nothing is ever deleted.`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+			cmd.SilenceUsage = true
+
+			if len(args) == 0 && !all {
+				return fmt.Errorf("name a plugin, or pass --all")
+			}
+
+			ctx, err := pluginContext()
+			if err != nil {
+				return err
+			}
+
+			lock, err := plugin.LoadLock(ctx.Root)
+			if err != nil {
+				return err
+			}
+			names := args
+			if all {
+				names = lock.Installed()
+			}
+			if len(names) == 0 {
+				fmt.Println("  No plugins are installed.")
+				fmt.Println()
+				return nil
+			}
+
+			// Rewriting files is the kind of change you want to read in a
+			// diff, exactly like an install.
+			if !force && isDirtyGitTree(ctx.Root) {
+				fmt.Println(color.YellowString("  ⚠ You have uncommitted changes."))
+				fmt.Println("    Updating rewrites files the plugin owns; committing first")
+				fmt.Println("    makes the change reviewable with `git diff`.")
+				fmt.Println("    Re-run with --force to update anyway.")
+				fmt.Println()
+				return fmt.Errorf("working tree is dirty")
+			}
+
+			for _, name := range names {
+				p, err := plugin.Get(name)
+				if err != nil {
+					// Almost always a plugin of your own, installed from a
+					// directory: Grit carries no copy of it, so there is
+					// nothing here to update it from. Not a reason to fail,
+					// and not worth phrasing as "you typed it wrong".
+					fmt.Printf("  %s %s is not one of Grit's own plugins, so there is nothing to update it from\n",
+						color.YellowString("⚠"), name)
+					continue
+				}
+				res, err := plugin.UpdateWith(ctx, p, plugin.UpdateOptions{Overwrite: overwrite})
+				if err != nil {
+					return err
+				}
+				printUpdate(res)
+			}
+			fmt.Println()
+			return nil
+		},
+	}
+
+	cmd.Flags().BoolVar(&force, "force", false, "Update even with uncommitted changes")
+	cmd.Flags().BoolVar(&all, "all", false, "Update every installed plugin")
+	cmd.Flags().BoolVar(&overwrite, "overwrite", false, "Take the plugin's version of every file, including ones you have edited")
+	return cmd
+}
+
+func printUpdate(res *plugin.UpdateResult) {
+	version := res.To
+	if res.From != res.To {
+		version = res.From + " → " + res.To
+	}
+	if res.Blocked {
+		fmt.Printf("  %s %s (%s): nothing was changed\n", color.YellowString("⚠"), res.Name, version)
+		fmt.Println("    This project installed the plugin before Grit recorded what it wrote,")
+		fmt.Println("    so an edit of yours and a change in the plugin look the same here. Doing")
+		fmt.Println("    half of an update would leave a project that does not build, so none of")
+		fmt.Println("    it was done. These are the files it cannot vouch for:")
+		for _, f := range res.Unverified {
+			fmt.Printf("      %s\n", f)
+		}
+		color.New(color.FgHiCyan).Printf("    grit plugin update %s --overwrite   # take the plugin's version, then read git diff\n", res.Name)
+		return
+	}
+	if !res.Changed() && len(res.Edited) == 0 && len(res.Unverified) == 0 {
+		fmt.Printf("  %s %s (%s) is already up to date\n", color.GreenString("✓"), res.Name, version)
+		return
+	}
+
+	fmt.Printf("  %s %s (%s)\n", color.CyanString("→"), res.Name, version)
+	for _, f := range res.Added {
+		fmt.Printf("    %s %s (new)\n", color.GreenString("+"), f)
+	}
+	for _, f := range res.Replaced {
+		fmt.Printf("    %s %s\n", color.GreenString("✓"), f)
+	}
+	for _, f := range res.Injected {
+		fmt.Printf("    %s patched %s\n", color.GreenString("✓"), f)
+	}
+	for _, d := range res.Deps {
+		fmt.Printf("    %s %s (run pnpm install)\n", color.GreenString("✓"), d)
+	}
+	if len(res.Edited) > 0 {
+		fmt.Println(color.YellowString("    Left alone, because you have edited them since the plugin wrote them:"))
+		for _, f := range res.Edited {
+			fmt.Printf("      %s\n", f)
+		}
+	}
+	if len(res.Unverified) > 0 {
+		fmt.Println(color.YellowString("    Left alone, because this project was set up before plugin files were fingerprinted,"))
+		fmt.Println(color.YellowString("    so an edit and an improvement look the same here. Compare with a fresh project:"))
+		for _, f := range res.Unverified {
+			fmt.Printf("      %s\n", f)
+		}
+	}
+	if len(res.Edited)+len(res.Unverified) > 0 {
+		cyan := color.New(color.FgHiCyan)
+		cyan.Printf("    grit plugin update %s --overwrite   # take the plugin's version, then read git diff\n", res.Name)
+		if len(res.Added) > 0 {
+			fmt.Println("    A file left behind is often the one the new file needs, so if the build")
+			fmt.Println("    breaks, that is what to look at first.")
+		}
+	}
+	if len(res.Orphaned) > 0 {
+		fmt.Println("    No longer part of the plugin, and kept in case you use them:")
+		for _, f := range res.Orphaned {
+			fmt.Printf("      %s\n", f)
+		}
+	}
 }
