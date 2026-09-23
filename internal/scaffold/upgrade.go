@@ -508,6 +508,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairNextImageLocal(root); err != nil {
 			fmt.Printf("  ⚠ letting next/image load stored images in development: %v\n", err)
 		}
+		if err := repairSQLiteBusy(root); err != nil {
+			fmt.Printf("  ⚠ keeping SQLite from failing with a locked database: %v\n", err)
+		}
+		if err := repairIdentify(root); err != nil {
+			fmt.Printf("  ⚠ adding the Identify middleware: %v\n", err)
+		}
 		if err := repairExpoRelations(root); err != nil {
 			fmt.Printf("  ⚠ naming related records in the Expo screens: %v\n", err)
 		}

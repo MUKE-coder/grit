@@ -66,6 +66,68 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.314.0 */}
+            <div className="mb-12" id="v3.314.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.314.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>SQLite stops saying &quot;database is locked&quot;</h3>
+                <p>
+                  A SQLite file opened with GORM&apos;s defaults has no busy timeout, so the second writer fails
+                  instantly instead of waiting its turn, and the pool handed out twenty-five connections to compete
+                  over one file lock. Two writes a few milliseconds apart was enough. Building a shop on Grit, a
+                  subscription webhook lost its write to a background worker&apos;s tick and the customer&apos;s
+                  purchase granted nothing, with only <code>SQLITE_BUSY</code> in a table to say why.
+                </p>
+                <p>
+                  Grit now opens SQLite with <code>busy_timeout</code> and WAL, and takes one connection for it, so
+                  two writers queue inside the process instead of colliding in the file. Postgres and MySQL keep the
+                  pool they were given. <code>grit upgrade</code> repairs an existing project.
+                </p>
+
+                <h3>A redelivered webhook that failed is run again</h3>
+                <p>
+                  A provider retrying a delivery is the one thing standing between a handler that failed and a
+                  customer who paid for nothing, and the receiver answered every repeat &quot;skipped: duplicate&quot;.
+                  That is right for an event already processed and wrong for the two cases that bring a provider back:
+                  a handler that failed, and an event a process died holding. Both were dropped, permanently, in a
+                  table nobody reads.
+                </p>
+                <p>
+                  A redelivery now claims the stored event with a conditional update exactly one caller wins, and runs
+                  the handler again. An event still being handled is left alone, and one abandoned by a dead process is
+                  taken over once it is too old to be in flight. Four shipped tests hold the cases apart.
+                </p>
+
+                <h3><code>middleware.Identify</code>, for the public pages that know you</h3>
+                <p>
+                  A catalogue that marks what you already own, a pricing page that knows your plan, an article with
+                  your own comment on it: each has to be readable signed out, which means no guard, which used to mean
+                  the handler could not tell who was reading even when they were signed in. Every app ended up parsing
+                  the <code>Authorization</code> header by hand, and that is how the cookie flow gets forgotten.
+                </p>
+                <p>
+                  <code>middleware.Identify</code> reads the session if there is one and lets the request through
+                  either way, setting exactly what <code>middleware.Auth</code> sets. It is not a guard: a missing,
+                  expired or revoked token is an anonymous request, not a 401, so anything that must not be served to a
+                  stranger still belongs behind <code>Auth</code>.
+                </p>
+
+                <h3><code>grit generate field</code> on User</h3>
+                <p>
+                  Adding a field to <code>User</code> failed on the admin markers the resource generator writes and
+                  the ones the scaffold writes not being the same markers, and a second run could duplicate what the
+                  first had added. It now anchors on either, warns instead of failing when a marker is missing, and
+                  checks for its own work inside the block it is editing rather than anywhere in the file.
+                </p>
+              </div>
+            </div>
+
             {/* v3.313.0 */}
             <div className="mb-12" id="v3.313.0">
               <div className="flex items-center gap-3 mb-4">

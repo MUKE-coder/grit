@@ -36,10 +36,11 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// dispatch package all read the same columns, so upgrading one without
 		// the others gives a project that does not compile: the receiver
 		// assigning a string to a *string is how this was found.
-		filepath.Join(apiRoot, "internal", "models", "webhook_event.go"): apiWebhookEventModelGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "webhooks.go"):    apiWebhooksHandlerGo(),
-		filepath.Join(apiRoot, "internal", "webhooks", "webhooks.go"):    apiWebhooksGo(),
-		filepath.Join(apiRoot, "internal", "webhooks", "dedup_test.go"):  apiWebhookDedupTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "webhook_event.go"):              apiWebhookEventModelGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "webhooks.go"):                 apiWebhooksHandlerGo(),
+		filepath.Join(apiRoot, "internal", "webhooks", "webhooks.go"):                 apiWebhooksGo(),
+		filepath.Join(apiRoot, "internal", "webhooks", "dedup_test.go"):               apiWebhookDedupTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "webhooks_redelivery_test.go"): apiWebhookRedeliveryTestGo(),
 
 		filepath.Join(apiRoot, "internal", "models", "outbox_message.go"): apiOutboxModelGo(),
 

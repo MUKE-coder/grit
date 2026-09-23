@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -91,20 +92,72 @@ func injectAfterAnchor(filePath, anchor, code string) error {
 	if err != nil {
 		return fmt.Errorf("reading %s: %w", filePath, err)
 	}
-	content := string(data)
-	if alreadyInjected(content, strings.TrimRight(code, "\n")) {
-		return nil // idempotent — re-running doesn't duplicate the field
-	}
-	lines := strings.Split(content, "\n")
+	lines := strings.Split(string(data), "\n")
 	for i, line := range lines {
-		if strings.TrimSpace(line) == anchor {
-			out := append([]string{}, lines[:i+1]...)
-			out = append(out, strings.TrimRight(code, "\n"))
-			out = append(out, lines[i+1:]...)
-			return os.WriteFile(filePath, []byte(strings.Join(out, "\n")), 0644)
+		if strings.TrimSpace(line) != anchor {
+			continue
+		}
+		// Idempotent within this block rather than within the file. An
+		// optional field emits the same line into the create schema and the
+		// update schema, and a whole-file check saw the first one and skipped
+		// the second, so the update schema silently never got the field.
+		if blockHas(lines[i+1:], strings.TrimRight(code, "\n")) {
+			return nil
+		}
+		out := append([]string{}, lines[:i+1]...)
+		out = append(out, strings.TrimRight(code, "\n"))
+		out = append(out, lines[i+1:]...)
+		return os.WriteFile(filePath, []byte(strings.Join(out, "\n")), 0644)
+	}
+	return fmt.Errorf("%w: %q not found in %s", errNoAnchor, anchor, filePath)
+}
+
+// blockHas reports whether the anchor's own block already holds this line. The
+// block ends at the line that closes it, so the search never runs on into the
+// next declaration.
+func blockHas(after []string, code string) bool {
+	norm := func(s string) string { return strings.Join(strings.Fields(s), " ") }
+	needle := norm(code)
+	if needle == "" {
+		return false
+	}
+	for _, line := range after {
+		switch strings.TrimSpace(line) {
+		case "});", "}", "})":
+			return false
+		}
+		if norm(line) == needle {
+			return true
 		}
 	}
-	return fmt.Errorf("anchor %q not found in %s", anchor, filePath)
+	return false
+}
+
+// errNoAnchor means the file has none of the shapes this injection knows. It
+// is a warning rather than a failure: the field is already in the model, and
+// the command prints what to add by hand.
+var errNoAnchor = errors.New("no anchor")
+
+// injectAfterAnyAnchor tries each anchor in turn.
+//
+// Built-in resources do not all follow the generated shape: the User schema
+// has RegisterSchema where a generated resource has CreateUserSchema, so
+// grit generate field User added the Go column and then failed on the shared
+// schema, leaving the two halves disagreeing. Found adding a field to User
+// while building the blueprints site.
+func injectAfterAnyAnchor(filePath string, anchors []string, code string) error {
+	for _, anchor := range anchors {
+		err := injectAfterAnchor(filePath, anchor, code)
+		if err == nil {
+			return nil
+		}
+		// A file that cannot be read is a failure, not a shape we do not know:
+		// only a missing anchor is worth trying the next one for.
+		if !errors.Is(err, errNoAnchor) {
+			return err
+		}
+	}
+	return fmt.Errorf("%w: tried %s in %s", errNoAnchor, strings.Join(anchors, ", "), filePath)
 }
 
 // injectFrontendField adds the field to the Zod schema, the TypeScript type and
@@ -139,11 +192,20 @@ func (g *Generator) adminResourceFile(names Names) (string, bool) {
 
 func (g *Generator) injectFrontendField(names Names, f Field) error {
 	if dirExists(g.SharedRoot()) {
+		// A file that has none of the shapes we know is reported and skipped:
+		// the column is already in the model, and stopping here would leave
+		// the resource half-generated with no way to finish it.
 		if err := g.injectZodField(names, f); err != nil {
-			return err
+			if !errors.Is(err, errNoAnchor) {
+				return err
+			}
+			fmt.Printf("  • Add this to the schema by hand: %s: %s\n", toSnakeCase(f.Name), f.ZodType())
 		}
 		if err := g.injectTSField(names, f); err != nil {
-			return err
+			if !errors.Is(err, errNoAnchor) {
+				return err
+			}
+			fmt.Printf("  • Add this to the type by hand: %s: %s\n", toSnakeCase(f.Name), f.TSType())
 		}
 	}
 	// Only when this resource actually has an admin definition. An --api project
@@ -152,7 +214,10 @@ func (g *Generator) injectFrontendField(names Names, f Field) error {
 	// nothing to inject, which is not the same as a failure.
 	if _, found := g.adminResourceFile(names); found {
 		if err := g.injectAdminField(names, f); err != nil {
-			return err
+			if !errors.Is(err, errNoAnchor) {
+				return err
+			}
+			fmt.Printf("  • the admin page for %s has no field markers, so add the form field and column there by hand\n", names.PluralKebab)
 		}
 	}
 	return nil
@@ -189,8 +254,13 @@ func (g *Generator) injectZodField(names Names, f Field) error {
 			return err
 		}
 	}
-	if err := injectAfterAnchor(path,
-		fmt.Sprintf("export const Create%sSchema = z.object({", names.Pascal),
+	// A generated resource has Create<Name>Schema. The built-in User has
+	// RegisterSchema instead, which is the same thing under another name.
+	createAnchors := []string{fmt.Sprintf("export const Create%sSchema = z.object({", names.Pascal)}
+	if names.Pascal == "User" {
+		createAnchors = append(createAnchors, "export const RegisterSchema = z.object({")
+	}
+	if err := injectAfterAnyAnchor(path, createAnchors,
 		fmt.Sprintf("  %s: %s,", snake, f.ZodType())); err != nil {
 		return err
 	}
@@ -198,15 +268,15 @@ func (g *Generator) injectZodField(names Names, f Field) error {
 	if !strings.Contains(updateZod, ".optional()") && !strings.Contains(updateZod, ".nullable()") {
 		updateZod += ".optional()"
 	}
-	return injectAfterAnchor(path,
-		fmt.Sprintf("export const Update%sSchema = z.object({", names.Pascal),
+	return injectAfterAnyAnchor(path,
+		[]string{fmt.Sprintf("export const Update%sSchema = z.object({", names.Pascal)},
 		fmt.Sprintf("  %s: %s,", snake, updateZod))
 }
 
 func (g *Generator) injectTSField(names Names, f Field) error {
 	path := filepath.Join(g.SharedRoot(), "types", names.Kebab+".ts")
-	return injectAfterAnchor(path,
-		fmt.Sprintf("export interface %s {", names.Pascal),
+	return injectAfterAnyAnchor(path,
+		[]string{fmt.Sprintf("export interface %s {", names.Pascal)},
 		fmt.Sprintf("  %s: %s;", toSnakeCase(f.Name), f.TSType()))
 }
 
@@ -255,6 +325,13 @@ func (g *Generator) injectAdminField(names Names, f Field) error {
 	for _, path := range candidates {
 		if _, err := os.Stat(path); err != nil {
 			continue
+		}
+		// A hand-written resource definition, and the built-in Users page, have
+		// no auto markers. The field is already in the model, the schema and
+		// the type by now, so this is reported and skipped rather than failing
+		// the command halfway through.
+		if !hasMarker(path, "// grit:fields:auto-end") {
+			return fmt.Errorf("%w: %s has no field markers", errNoAnchor, filepath.Base(path))
 		}
 		if err := injectBefore(path, "// grit:fields:auto-end", formLine); err != nil {
 			return err
@@ -323,4 +400,11 @@ func injectModelLine(filePath, pascal, code string) error {
 	out = append(out, strings.TrimRight(code, "\n"))
 	out = append(out, lines[at:]...)
 	return os.WriteFile(filePath, []byte(strings.Join(out, "\n")), 0644)
+}
+
+// hasMarker reports whether a file carries an injection marker, so a file
+// without one can be reported rather than failed on.
+func hasMarker(path, marker string) bool {
+	data, err := os.ReadFile(path)
+	return err == nil && strings.Contains(string(data), marker)
 }

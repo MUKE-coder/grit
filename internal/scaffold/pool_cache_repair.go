@@ -54,9 +54,8 @@ const dbPoolBlockOld = `	// Connection pool settings. SQLite ignores most of the
 
 // dbPoolBlockNew sizes the app's pool for a server shared by every replica and
 // by Sentinel's own pool in each of them.
-const dbPoolBlockNew = `	// Connection pool settings. SQLite ignores most of these: single-writer
-	// semantics mean MaxOpenConns above 1 only helps concurrent reads, and
-	// SQLite serialises writes internally. Postgres and MySQL use every knob.
+const dbPoolBlockNew = `	// Connection pool settings. Postgres and MySQL use every knob; SQLite is
+	// handled at the bottom, and not the way this comment used to claim.
 	//
 	// The number that matters is the total across processes, not this one.
 	// Every replica opens its own pool, and Sentinel opens a second one in each
@@ -93,11 +92,32 @@ const dbPoolBlockNew = `	// Connection pool settings. SQLite ignores most of the
 	if maxIdle < 1 || maxIdle > maxOpen {
 		maxIdle = maxOpen
 	}
+
+	// SQLite takes one connection, whatever the numbers above say. It was long
+	// written here that SQLite "ignores most of these", and it does not: a pool
+	// of several connections is several writers competing for one file lock, so
+	// a transaction holding the write lock on one connection and a statement
+	// wanting it on another wait for each other until busy_timeout gives up.
+	// What comes back is "database is locked" on a machine doing almost
+	// nothing: a background worker ticking while a webhook writes was enough to
+	// lose the write, and it reads as a load problem it is not.
+	//
+	// One connection makes that a queue inside the process, which is what
+	// SQLite wants. It is also the only correct setting for :memory:, where a
+	// second connection is a second, empty database.
+	if strings.HasPrefix(dsn, "sqlite:") {
+		maxOpen, maxIdle = 1, 1
+	}
+
 	sqlDB.SetMaxIdleConns(maxIdle)
 	sqlDB.SetMaxOpenConns(maxOpen)
 	sqlDB.SetConnMaxLifetime(30 * time.Minute)
 	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
-	log.Printf("Database pool: up to %d connections from this process (DB_MAX_OPEN_CONNS)", maxOpen)
+	if maxOpen == 1 && strings.HasPrefix(dsn, "sqlite:") {
+		log.Println("Database pool: one connection, because SQLite writes one at a time")
+	} else {
+		log.Printf("Database pool: up to %d connections from this process (DB_MAX_OPEN_CONNS)", maxOpen)
+	}
 `
 
 // sentinelPoolFunc is appended to database.go.

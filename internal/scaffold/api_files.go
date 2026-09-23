@@ -1516,9 +1516,9 @@ func Connect(dsn string) (*gorm.DB, error) {
 
 	switch {
 	case strings.HasPrefix(dsn, "sqlite://"):
-		db, err = gorm.Open(sqlite.Open(strings.TrimPrefix(dsn, "sqlite://")), gormCfg)
+		db, err = gorm.Open(sqlite.Open(sqliteDSN(strings.TrimPrefix(dsn, "sqlite://"))), gormCfg)
 	case strings.HasPrefix(dsn, "sqlite:"):
-		db, err = gorm.Open(sqlite.Open(strings.TrimPrefix(dsn, "sqlite:")), gormCfg)
+		db, err = gorm.Open(sqlite.Open(sqliteDSN(strings.TrimPrefix(dsn, "sqlite:"))), gormCfg)
 	case strings.HasPrefix(dsn, "mysql://"), strings.HasPrefix(dsn, "mysql:"):
 		// go-sql-driver wants "user:pass@tcp(host:port)/db", not a URL, so the
 		// scheme is stripped rather than parsed. parseTime is not optional:
@@ -1573,6 +1573,37 @@ func Connect(dsn string) (*gorm.DB, error) {
 ` + dbPoolBlockNew + `
 	log.Println("Database connected successfully")
 	return db, nil
+}
+
+// sqliteDSN adds the two pragmas a SQLite file needs to survive more than one
+// writer.
+//
+// Without them a second writer fails at once with "database is locked", which
+// is not a load problem: a background worker ticking while a webhook writes is
+// enough, and the error surfaces as a failed request nobody can reproduce by
+// hand. busy_timeout makes a writer wait its turn instead of giving up, and
+// WAL lets reads carry on while one write is in flight.
+//
+// Anything the caller set is left alone, and :memory: gets neither: there is
+// no file to journal and a memory database is one connection's own.
+func sqliteDSN(path string) string {
+	if path == "" || strings.Contains(path, ":memory:") || strings.Contains(path, "mode=memory") {
+		return path
+	}
+	if !strings.Contains(path, "busy_timeout") {
+		path += pragmaJoin(path) + "_pragma=busy_timeout(5000)"
+	}
+	if !strings.Contains(path, "journal_mode") {
+		path += pragmaJoin(path) + "_pragma=journal_mode(WAL)"
+	}
+	return path
+}
+
+func pragmaJoin(path string) string {
+	if strings.Contains(path, "?") {
+		return "&"
+	}
+	return "?"
 }
 
 // getEnvInt reads a whole-number env var. A malformed value falls back rather
@@ -3088,6 +3119,69 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 		// A failure here is not fatal: the request continues with no grants and
 		// role-name checks still apply, which fails closed rather than 500ing
 		// every route the moment the roles table has a problem.
+		if grants, err := authz.GrantsFor(db, user.ID); err == nil {
+			c.Set("user_grants", grants)
+		}
+
+		c.Next()
+	}
+}
+
+// Identify is Auth without the wall: it reads the session if there is one and
+// lets the request through either way.
+//
+// It exists for the public pages that are not the same page for everybody. A
+// catalogue that marks what the reader already owns, a pricing page that knows
+// their current plan, an article with their own comment on it: each has to be
+// readable signed out, which means no guard, which with Auth alone means the
+// handler cannot tell who is reading even when they are signed in. Every app
+// that wants this ends up parsing the Authorization header by hand in a
+// handler, and that is how the cookie flow gets forgotten.
+//
+// It sets exactly what Auth sets, so c.GetString("user_id") reads the same on
+// both kinds of route, and nothing else changes: a missing, malformed, expired
+// or revoked token is simply an anonymous request, not a 401.
+//
+// It is not a guard and cannot be used as one. A handler behind Identify must
+// treat "there is a user" as information, never as permission: anything that
+// must not be served to a stranger belongs behind Auth.
+func Identify(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Same two places Auth looks, in the same order: the HttpOnly cookie
+		// browsers use, then the bearer header native clients use.
+		token := ""
+		if cookieValue, err := c.Cookie("grit_access"); err == nil && cookieValue != "" {
+			token = cookieValue
+		} else if authHeader := c.GetHeader("Authorization"); authHeader != "" {
+			if parts := strings.SplitN(authHeader, " ", 2); len(parts) == 2 && parts[0] == "Bearer" {
+				token = parts[1]
+			}
+		}
+		if token == "" {
+			c.Next()
+			return
+		}
+
+		claims, err := authService.ValidateAccessToken(token)
+		if err != nil {
+			c.Next()
+			return
+		}
+
+		var user models.User
+		if err := db.WithContext(c.Request.Context()).Where("id = ?", claims.UserID).First(&user).Error; err != nil {
+			c.Next()
+			return
+		}
+		if !user.Active {
+			c.Next()
+			return
+		}
+
+		c.Set("user", user)
+		c.Set("user_id", user.ID)
+		c.Set("user_email", user.Email)
+		c.Set("user_role", user.Role)
 		if grants, err := authz.GrantsFor(db, user.ID); err == nil {
 			c.Set("user_grants", grants)
 		}
@@ -6165,8 +6259,9 @@ func NewWebhookHandler(db *gorm.DB) *WebhookHandler {
 //  2. Reads the raw body + collects headers.
 //  3. Calls Provider.Verify — 401 on signature mismatch.
 //  4. Calls Provider.Extract to get (event_type, external_id).
-//  5. Inserts a WebhookEvent (unique on provider+external_id — a
-//     duplicate becomes status=skipped and we 200 immediately).
+//  5. Inserts a WebhookEvent (unique on provider+external_id). A second
+//     delivery of an event already processed is skipped; one that failed, or
+//     that a dead process left pending, is claimed and run again.
 //  6. Calls webhooks.Dispatch in the request context.
 //  7. Updates status=processed or status=failed with HandlerError.
 //
@@ -6217,22 +6312,92 @@ func (h *WebhookHandler) Receive(c *gin.Context) {
 		Status:     "pending",
 	}
 	if err := h.DB.WithContext(c.Request.Context()).Create(&event).Error; err != nil {
-		// Duplicate (provider, external_id) — already processed.
-		// Return 200 so the provider doesn't retry, and skip the handler.
+		// Already stored. Whether that is the end of it depends on what
+		// happened the first time, which redelivered decides.
 		if webhooks.IsDuplicateError(err) {
-			c.JSON(http.StatusOK, gin.H{"status": "skipped", "reason": "duplicate"})
+			h.redelivered(c, providerName, externalID)
 			return
 		}
 		respond.ServerError(c, "PERSIST_FAILED", err, "Internal server error")
 		return
 	}
 
-	// Dispatch in the request context so handlers can attach DB
-	// timeouts / cancellation. Failures are recorded but never bubble
-	// up — the provider already got a 200 once we persisted.
-	if dispatchErr := webhooks.Dispatch(c.Request.Context(), &event); dispatchErr != nil {
+	h.runHandler(c, &event)
+}
+
+// webhookInFlight is how long a pending event is assumed to be somebody's
+// request still running. Past it, a redelivery may take the event over: the
+// process that stored it is gone, and nothing else will ever run it.
+const webhookInFlight = 5 * time.Minute
+
+// redelivered answers a delivery of an event already in the table.
+//
+// Calling it a duplicate and stopping is right for an event that was
+// processed, and wrong for the two cases that actually bring a provider back:
+// an event whose handler failed, and an event still marked pending because the
+// process died between storing it and running it. Both used to be answered
+// "skipped", so the retry designed to recover exactly this was thrown away,
+// and a subscription that granted nothing went on granting nothing until
+// somebody thought to read the webhook_events table.
+//
+// So a redelivery re-runs the handler, but only when nobody else is on it. The
+// row is claimed with a conditional update that exactly one caller wins, and a
+// pending row is only claimed once it is too old to be a request in flight.
+// Handlers have to be idempotent to survive a provider's retries at all, and
+// this is the case they are idempotent for.
+func (h *WebhookHandler) redelivered(c *gin.Context, provider, externalID string) {
+	ctx := c.Request.Context()
+
+	var event models.WebhookEvent
+	if err := h.DB.WithContext(ctx).
+		Where("provider = ? AND external_id = ?", provider, externalID).
+		First(&event).Error; err != nil {
+		// The unique index just said this row exists, so failing to read it is
+		// a database problem, not a duplicate. Nothing the provider can do
+		// about it, so take the delivery and say so in the log.
+		log.Printf("webhooks: %s event %s collided with a row that will not load: %v", provider, externalID, err)
+		c.JSON(http.StatusOK, gin.H{"status": "skipped", "reason": "duplicate"})
+		return
+	}
+
+	if event.Status == "processed" {
+		c.JSON(http.StatusOK, gin.H{"status": "skipped", "reason": "duplicate", "id": event.ID})
+		return
+	}
+
+	claim := h.DB.WithContext(ctx).Model(&models.WebhookEvent{}).
+		Where("id = ? AND (status = ? OR (status = ? AND created_at < ?))",
+			event.ID, "failed", "pending", time.Now().Add(-webhookInFlight)).
+		Updates(map[string]interface{}{
+			"status":      "pending",
+			"retry_count": gorm.Expr("retry_count + ?", 1),
+		})
+	if claim.Error != nil {
+		respond.ServerError(c, "PERSIST_FAILED", claim.Error, "Internal server error")
+		return
+	}
+	if claim.RowsAffected == 0 {
+		// Another request is running this one right now. Two handlers for one
+		// event is the thing worth avoiding; the provider will come back.
+		c.JSON(http.StatusOK, gin.H{"status": "skipped", "reason": "in flight", "id": event.ID})
+		return
+	}
+
+	log.Printf("webhooks: %s event %s came back as %s, running it again", provider, externalID, event.Status)
+	h.runHandler(c, &event)
+}
+
+// runHandler dispatches a stored event and records what happened.
+//
+// Dispatch runs in the request context so handlers can attach DB timeouts and
+// cancellation. A handler failure is recorded and never bubbles up: the
+// provider has a 200 the moment the event is stored, and a failure is
+// recovered from the admin replay endpoint or from the provider's own
+// redelivery.
+func (h *WebhookHandler) runHandler(c *gin.Context, event *models.WebhookEvent) {
+	if dispatchErr := webhooks.Dispatch(c.Request.Context(), event); dispatchErr != nil {
 		now := time.Now()
-		if err := h.DB.WithContext(c.Request.Context()).Model(&event).Updates(map[string]interface{}{
+		if err := h.DB.WithContext(c.Request.Context()).Model(event).Updates(map[string]interface{}{
 			"status":        "failed",
 			"handler_error": dispatchErr.Error(),
 			"processed_at":  &now,
@@ -6243,9 +6408,10 @@ func (h *WebhookHandler) Receive(c *gin.Context) {
 		return
 	}
 	now := time.Now()
-	if err := h.DB.WithContext(c.Request.Context()).Model(&event).Updates(map[string]interface{}{
-		"status":       "processed",
-		"processed_at": &now,
+	if err := h.DB.WithContext(c.Request.Context()).Model(event).Updates(map[string]interface{}{
+		"status":        "processed",
+		"handler_error": "",
+		"processed_at":  &now,
 	}).Error; err != nil {
 		log.Printf("webhooks: recording that event %s was processed: %v", event.ID, err)
 	}

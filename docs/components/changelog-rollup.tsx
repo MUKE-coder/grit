@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 21 to 27, 2026",
-    count: 21,
+    count: 22,
     entries: [
+      { version: "3.314.0", title: "SQLite stops saying \"database is locked\"" },
       { version: "3.313.0", title: "Subscriptions, in the Stripe plugin" },
       { version: "3.312.0", title: "Stored images were not loading in development" },
       { version: "3.311.0", title: "Stripe payments: grit plugin add stripe" },

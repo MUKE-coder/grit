@@ -197,6 +197,42 @@ export default function MiddlewarePage() {
     role, _ := c.Get("user_role")     // string
 }`} />
 
+              {/* Identify */}
+              <h2 id="identify-middleware">Identify Middleware</h2>
+              <p>
+                <code>Identify</code> is <code>Auth</code> without the wall. It reads the session if there is one and
+                lets the request through either way, which is what a public page that is not the same page for
+                everybody needs: a catalogue that marks what the reader already owns, a pricing page that knows their
+                current plan, an article with their own comment on it. Each has to be readable signed out, so it
+                cannot sit behind <code>Auth</code>, and without <code>Identify</code> the handler cannot tell who is
+                reading even when they are signed in.
+              </p>
+              <CodeBlock filename="apps/api/internal/routes/routes.go" code={`// Readable by anyone. Signed in, the same page says which of them you own.
+catalogue := v1.Group("/catalogue", middleware.Identify(db, authService))
+{
+    catalogue.GET("", shopHandler.List)
+    catalogue.GET("/:slug", shopHandler.Detail)
+}
+
+// In the handler: a reader, or nobody.
+func (h *ShopHandler) Detail(c *gin.Context) {
+    // "" when the request is anonymous.
+    userID := c.GetString("user_id")
+    ...
+}`} />
+              <p>
+                It sets exactly what <code>Auth</code> sets, so <code>c.GetString(&quot;user_id&quot;)</code> reads the
+                same on both kinds of route, and it looks in the same two places: the HttpOnly cookie browsers use,
+                then the <code>Authorization: Bearer</code> header native clients use. A missing, malformed, expired or
+                revoked token is simply an anonymous request rather than a 401.
+              </p>
+              <p>
+                <strong>It is not a guard.</strong> A handler behind <code>Identify</code> must treat &quot;there is a
+                user&quot; as information, never as permission. Anything that must not be served to a stranger belongs
+                behind <code>Auth</code>, with <code>RequireRole</code> after it where a role or permission is
+                required.
+              </p>
+
               {/* ── RequireRole ─────────────────────────────── */}
               <h2 id="require-role">RequireRole Middleware</h2>
               <p>
@@ -548,6 +584,11 @@ auth.Use(middleware.RateLimit(10, 1*time.Minute))
                       <td className="px-4 py-2.5 font-mono text-xs">Auth(db, svc)</td>
                       <td className="px-4 py-2.5 font-mono text-xs">middleware/auth.go</td>
                       <td className="px-4 py-2.5">Validates JWT, loads user, sets context</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-mono text-xs">Identify(db, svc)</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">middleware/auth.go</td>
+                      <td className="px-4 py-2.5">Reads the session on a public route, never refuses the request</td>
                     </tr>
                     <tr className="border-b border-border/20">
                       <td className="px-4 py-2.5 font-mono text-xs">RequireRole(roles...)</td>
