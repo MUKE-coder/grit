@@ -126,7 +126,7 @@ func AddVariants(resource string) error {
 	green.Println("  Variants installed.")
 	fmt.Println()
 	fmt.Println("  Next:")
-	fmt.Println("    grit migrate                       # create the five tables")
+	fmt.Println("    grit migrate                       # create the tables")
 	fmt.Println("    grit seed                          # a Colour x Size matrix to look at")
 	fmt.Printf("    The matrix editor is on any %s's detail page in the admin,\n", names.Pascal)
 	fmt.Println("    and the shared option library is under Options in the sidebar.")
@@ -261,7 +261,7 @@ func registerVariantModels(apiRoot string, names variantNameSet) error {
 	}
 	content := string(data)
 
-	toAdd := []string{"Option", "OptionValue", names.Pascal + "Option", names.Pascal + "Variant"}
+	toAdd := []string{"Option", "OptionValue", names.Pascal + "Option", names.Pascal + "OptionValue", names.Pascal + "Variant"}
 	var missing []string
 	for _, model := range toAdd {
 		// The registry lives inside package models, so entries are written

@@ -47,9 +47,9 @@ export default function VariantsPage() {
                 eventually.
               </p>
 
-              <h2 id="the-tables">The five tables</h2>
+              <h2 id="the-tables">The six tables</h2>
               <p>
-                Two of them are shared by the whole shop, and three belong to the resource
+                Two of them are shared by the whole shop, and four belong to the resource
                 that offers variants. That split is the first design decision and the one
                 everything else follows from.
               </p>
@@ -393,6 +393,43 @@ PATCH  /api/v1/product-variants/:id           sku, stock, price, active`} />
                 That last one matters more than it looks: a &quot;from 49&quot; that can only
                 be had by buying something unavailable is a lie the customer discovers at the
                 last step.
+              </p>
+
+              <h2 id="per-product-values">One axis, different values per product</h2>
+              <p>
+                Options are shared by the whole shop, which is what keeps one spelling of Colour
+                and lets a filter match across the catalogue. On its own that left a gap any real
+                shop hits on its second product: offering Colour offered <em>every</em> colour in
+                the shop, so a shirt in ecru and navy and a tee in black, sand and olive could not
+                share the axis. The storefront built on Grit worked around it with two Colour
+                options, one per product, which is exactly the duplication the shared library
+                exists to prevent.
+              </p>
+              <p>
+                A product now offers some of an axis&apos;s values. The picker in the admin shows
+                each ticked axis with its values under it; the same set goes to the API as{' '}
+                <code className={C}>value_ids</code>:
+              </p>
+              <CodeBlock
+                language="bash"
+                code={`PUT /api/products/:id/options
+{
+  "option_ids": ["opt_colour", "opt_size"],
+  "value_ids":  ["val_ecru", "val_navy"]      // Colour, narrowed. Size, whole.
+}`}
+              />
+              <p>
+                An axis with none of its values listed is offered whole, and an axis whose every
+                value is ticked stores nothing at all, so both mean the same thing and a colour
+                added to the shop next month appears on every product that said yes to the axis.
+                That is also what makes this additive: a catalogue that has never narrowed anything
+                behaves exactly as it did, and nothing had to be backfilled when the table arrived.
+              </p>
+              <p>
+                Narrowing an axis changes what combinations exist, so it clears the matrix the same
+                way changing the axes does, and the admin asks first. Every read goes through one
+                place, so the generator, the public payload and the picker all see the narrowed set
+                without knowing about it.
               </p>
 
               <h2 id="not-yet">What it does not do yet</h2>

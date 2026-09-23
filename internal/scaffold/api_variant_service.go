@@ -97,7 +97,148 @@ func (s *` + pascal + `VariantService) OptionsFor(` + snake + `ID string) ([]mod
 	sort.SliceStable(options, func(i, j int) bool {
 		return order[options[i].ID] < order[options[j].ID]
 	})
+
+	// And now only the values this ` + lower + ` offers. Every caller reads its
+	// options through here, so narrowing once covers the matrix generator, the
+	// public payload and the admin picker alike.
+	if err := s.narrowValues(` + snake + `ID, options); err != nil {
+		return nil, err
+	}
 	return options, nil
+}
+
+// narrowValues drops the values this ` + lower + ` does not offer.
+//
+// An option with no rows for this ` + lower + ` is offered whole, which is what
+// makes the feature additive: a catalogue that has never narrowed anything
+// behaves exactly as it did, and nothing had to be backfilled when the table
+// arrived.
+func (s *` + pascal + `VariantService) narrowValues(` + snake + `ID string, options []models.Option) error {
+	var chosen []models.` + pascal + `OptionValue
+	if err := s.DB.Where("` + snake + `_id = ?", ` + snake + `ID).Find(&chosen).Error; err != nil {
+		return fmt.Errorf("loading the values this ` + lower + ` offers: %w", err)
+	}
+	if len(chosen) == 0 {
+		return nil
+	}
+
+	picked := make(map[string]bool, len(chosen))
+	for _, row := range chosen {
+		picked[row.OptionValueID] = true
+	}
+
+	for i := range options {
+		// Which of this option's values were picked, if any. An option nobody
+		// narrowed keeps all of them.
+		kept := make([]models.OptionValue, 0, len(options[i].Values))
+		for _, value := range options[i].Values {
+			if picked[value.ID] {
+				kept = append(kept, value)
+			}
+		}
+		if len(kept) > 0 {
+			options[i].Values = kept
+		}
+	}
+	return nil
+}
+
+// SetOfferedValues records which values of its options a ` + lower + ` offers.
+//
+// Passing none for an option means all of them, so clearing the list is how a
+// ` + lower + ` goes back to the whole axis.
+func (s *` + pascal + `VariantService) SetOfferedValues(` + snake + `ID string, valueIDs []string) error {
+	return s.DB.Transaction(func(tx *gorm.DB) error {
+		keep, err := Offered` + pascal + `Values(tx, ` + snake + `ID, nil, valueIDs)
+		if err != nil {
+			return err
+		}
+		return Write` + pascal + `OfferedValues(tx, ` + snake + `ID, keep)
+	})
+}
+
+// Offered` + pascal + `Values works out what to store for a set of ticked values.
+//
+// Two rules, and both matter. Ids belonging to an option the ` + lower + ` does
+// not offer are dropped, because the picker sends what it has and an axis
+// removed in the same edit is not an error. And an option whose every value is
+// ticked stores nothing at all: "all of them" has to keep meaning all of them,
+// or a colour added to the shop next month would be quietly missing from every
+// product that had said yes to the whole axis.
+//
+// optionIDs is the set the ` + lower + ` will offer after this edit. Nil reads
+// it from what it offers now, which is what a caller outside the options
+// endpoint wants.
+func Offered` + pascal + `Values(tx *gorm.DB, ` + snake + `ID string, optionIDs []string, valueIDs []string) ([]string, error) {
+	if len(valueIDs) == 0 {
+		return nil, nil
+	}
+	if optionIDs == nil {
+		var links []models.` + pascal + `Option
+		if err := tx.Where("` + snake + `_id = ?", ` + snake + `ID).Find(&links).Error; err != nil {
+			return nil, fmt.Errorf("loading ` + lower + ` options: %w", err)
+		}
+		for _, link := range links {
+			optionIDs = append(optionIDs, link.OptionID)
+		}
+	}
+	if len(optionIDs) == 0 {
+		return nil, nil
+	}
+
+	var values []models.OptionValue
+	if err := tx.Where("id IN ? AND option_id IN ?", valueIDs, optionIDs).Find(&values).Error; err != nil {
+		return nil, fmt.Errorf("loading the chosen values: %w", err)
+	}
+
+	byOption := map[string][]string{}
+	for _, value := range values {
+		byOption[value.OptionID] = append(byOption[value.OptionID], value.ID)
+	}
+
+	keep := make([]string, 0, len(values))
+	for optionID, chosen := range byOption {
+		var total int64
+		if err := tx.Model(&models.OptionValue{}).Where("option_id = ?", optionID).Count(&total).Error; err != nil {
+			return nil, fmt.Errorf("counting the values of an option: %w", err)
+		}
+		if int64(len(chosen)) >= total {
+			continue
+		}
+		keep = append(keep, chosen...)
+	}
+	sort.Strings(keep)
+	return keep, nil
+}
+
+// Write` + pascal + `OfferedValues replaces the stored set with these ids.
+func Write` + pascal + `OfferedValues(tx *gorm.DB, ` + snake + `ID string, valueIDs []string) error {
+	if err := tx.Unscoped().Where("` + snake + `_id = ?", ` + snake + `ID).
+		Delete(&models.` + pascal + `OptionValue{}).Error; err != nil {
+		return fmt.Errorf("clearing the offered values: %w", err)
+	}
+	for _, valueID := range valueIDs {
+		row := models.` + pascal + `OptionValue{` + pascal + `ID: ` + snake + `ID, OptionValueID: valueID}
+		if err := tx.Create(&row).Error; err != nil {
+			return fmt.Errorf("recording an offered value: %w", err)
+		}
+	}
+	return nil
+}
+
+// OfferedValueIDs is what the admin picker ticks: the values this ` + lower + `
+// has been narrowed to, which is empty for every option it offers whole.
+func (s *` + pascal + `VariantService) OfferedValueIDs(` + snake + `ID string) ([]string, error) {
+	var rows []models.` + pascal + `OptionValue
+	if err := s.DB.Where("` + snake + `_id = ?", ` + snake + `ID).Find(&rows).Error; err != nil {
+		return nil, fmt.Errorf("loading the values this ` + lower + ` offers: %w", err)
+	}
+	out := make([]string, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, row.OptionValueID)
+	}
+	sort.Strings(out)
+	return out, nil
 }
 
 // VariantsFor returns every variant of a ` + lower + ` with its values attached.

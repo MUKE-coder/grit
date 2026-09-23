@@ -186,6 +186,36 @@ func (m *` + pascal + `Option) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+// ` + pascal + `OptionValue narrows an axis to the values THIS ` + lower + `
+// offers.
+//
+// Options are shop-wide on purpose: Colour is Colour everywhere, so a filter
+// can match across the catalogue. That leaves a gap any real shop hits on its
+// second product, which is that a shirt in ecru and navy and a tee in black,
+// sand and olive cannot share the Colour axis: offering the axis offered every
+// colour in the shop. Found building a storefront on Grit, which worked around
+// it with two colour options, one per product.
+//
+// No rows for an option means every value of it, so a ` + lower + ` that has
+// never been narrowed behaves exactly as before and nothing has to be
+// backfilled.
+type ` + pascal + `OptionValue struct {
+	ID            string ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
+	` + pascal + `ID   string ` + "`" + `gorm:"size:36;index:idx_` + snake + `_option_value,unique;not null" json:"` + snake + `_id" binding:"required"` + "`" + `
+	OptionValueID string ` + "`" + `gorm:"size:36;index:idx_` + snake + `_option_value,unique;not null" json:"option_value_id" binding:"required"` + "`" + `
+	OptionValue   OptionValue ` + "`" + `gorm:"foreignKey:OptionValueID" json:"option_value,omitempty"` + "`" + `
+
+	CreatedAt time.Time ` + "`" + `json:"created_at"` + "`" + `
+	UpdatedAt time.Time ` + "`" + `json:"updated_at"` + "`" + `
+}
+
+func (m *` + pascal + `OptionValue) BeforeCreate(tx *gorm.DB) error {
+	if m.ID == "" {
+		m.ID = ids.New()
+	}
+	return nil
+}
+
 // ` + pascal + `Variant is one buyable combination.
 //
 // Stock and images live here rather than on an option value, because Red/XXL

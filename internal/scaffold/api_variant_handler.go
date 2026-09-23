@@ -178,10 +178,15 @@ func (h *` + pascal + `VariantHandler) DeleteOptionValue(c *gin.Context) {
 }
 
 // SetOptions handles PUT /api/v1/` + plural + `/:id/options: which options this
-// ` + lower + ` offers, in order.
+// ` + lower + ` offers, in order, and which of their values.
+//
+// value_ids is how a shirt offers Colour in ecru and navy while a tee offers it
+// in black, sand and olive. Leaving an option out of it offers that whole axis,
+// which is what every ` + lower + ` did before the field existed.
 func (h *` + pascal + `VariantHandler) SetOptions(c *gin.Context) {
 	var req struct {
 		OptionIDs []string ` + "`" + `json:"option_ids"` + "`" + `
+		ValueIDs  []string ` + "`" + `json:"value_ids"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respond.Fail(c, respond.CodeValidationError, err.Error())
@@ -200,7 +205,21 @@ func (h *` + pascal + `VariantHandler) SetOptions(c *gin.Context) {
 		respond.Fail(c, respond.CodeInternalError, "Failed to read the current options")
 		return
 	}
-	if same` + pascal + `OptionOrder(current, req.OptionIDs) {
+	// The values it offers now, and the ones this edit asks for, both in the
+	// form they are stored in: an axis offered whole stores nothing, so the two
+	// are only comparable after the same normalisation.
+	currentValues, err := h.Variants.OfferedValueIDs(` + snake + `ID)
+	if err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to read the current values")
+		return
+	}
+	wantedValues, err := services.Offered` + pascal + `Values(h.DB, ` + snake + `ID, req.OptionIDs, req.ValueIDs)
+	if err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to read the chosen values")
+		return
+	}
+
+	if same` + pascal + `OptionOrder(current, req.OptionIDs) && same` + pascal + `ValueSet(currentValues, wantedValues) {
 		c.JSON(http.StatusOK, gin.H{
 			"data":    gin.H{"variants_cleared": 0},
 			"message": "Options unchanged",
@@ -245,7 +264,10 @@ func (h *` + pascal + `VariantHandler) SetOptions(c *gin.Context) {
 				return err
 			}
 		}
-		return nil
+		// And which of their values, in the same transaction: a ` + lower + `
+		// offering an axis whose narrowing failed to save would generate a
+		// matrix nobody asked for.
+		return services.Write` + pascal + `OfferedValues(tx, ` + snake + `ID, wantedValues)
 	})
 	if err != nil {
 		respond.Fail(c, respond.CodeInternalError, "Failed to set the options")
@@ -255,6 +277,21 @@ func (h *` + pascal + `VariantHandler) SetOptions(c *gin.Context) {
 		"data":    gin.H{"variants_cleared": cleared},
 		"message": "Options set",
 	})
+}
+
+// same` + pascal + `ValueSet compares two sorted id lists. Named after the
+// resource, because a second resource with variants declares its own copy in
+// this same package.
+func same` + pascal + `ValueSet(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // same` + pascal + `OptionOrder reports whether a ` + lower + ` already offers exactly these

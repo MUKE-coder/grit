@@ -66,6 +66,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.317.0 */}
+            <div className="mb-12" id="v3.317.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.317.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>One colour axis, different colours per product</h3>
+                <p>
+                  Options are shared by the whole shop, which is what keeps one spelling of Colour and lets a filter
+                  match across the catalogue. On its own that left a gap any real shop hits on its second product:
+                  offering Colour offered every colour in the shop, so a shirt in ecru and navy and a tee in black,
+                  sand and olive could not share the axis. The storefront blueprint worked around it with two Colour
+                  options, one per product, which is the duplication the shared library exists to prevent.
+                </p>
+                <p>
+                  A product now offers some of an axis&apos;s values. The admin&apos;s picker shows each ticked axis
+                  with its values under it, and the API takes them as <code>value_ids</code> alongside{' '}
+                  <code>option_ids</code>. An axis with none of its values listed is offered whole, and an axis with
+                  every value ticked stores nothing, so both mean the same thing: a colour added to the shop next month
+                  appears on every product that said yes to the axis rather than being quietly left out.
+                </p>
+                <p>
+                  Nothing had to be backfilled. A catalogue that has never narrowed anything behaves exactly as it did,
+                  because no rows for an option means all of its values. Narrowing changes which combinations exist, so
+                  it clears the matrix the way changing the axes does, and the admin asks first. Every read of a
+                  product&apos;s options goes through one function, so the matrix generator, the public payload and the
+                  picker all see the narrowed set without knowing about it. Four shipped tests cover the rules.
+                </p>
+                <p>
+                  On an existing project: <code>grit add variants --resource Product</code> again, then{' '}
+                  <code>grit migrate</code> for the new table.
+                </p>
+              </div>
+            </div>
+
             {/* v3.316.0 */}
             <div className="mb-12" id="v3.316.0">
               <div className="flex items-center gap-3 mb-4">

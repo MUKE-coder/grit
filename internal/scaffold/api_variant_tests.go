@@ -44,7 +44,7 @@ func variantTestDB(t *testing.T) *gorm.DB {
 	db.Exec("PRAGMA foreign_keys = ON")
 	err = db.AutoMigrate(
 		&models.` + pascal + `{}, &models.Option{}, &models.OptionValue{},
-		&models.` + pascal + `Option{}, &models.` + pascal + `Variant{},
+		&models.` + pascal + `Option{}, &models.` + pascal + `OptionValue{}, &models.` + pascal + `Variant{},
 	)
 	if err != nil {
 		t.Fatalf("migrate: %v", err)
@@ -259,6 +259,158 @@ func Test` + pascal + `VariantPriceRangeSkipsOutOfStock(t *testing.T) {
 	low, high := svc.PriceRange(40, variants, byID)
 	if low != 45 || high != 45 {
 		t.Errorf("only the XXL variants are in stock, so the range is 45 to 45, got %.2f to %.2f", low, high)
+	}
+}
+
+// A shop-wide axis, offered in different values by different ` + lower + `s.
+//
+// This is the case the option library could not express: offering Colour
+// offered every colour in the shop, so a shirt in red only and a tee in red and
+// blue had to be given two separate Colour options, and a filter could then
+// never match across them. Found building a storefront on Grit.
+func Test` + pascal + `OffersOnlySomeValuesOfAnAxis(t *testing.T) {
+	db := ` + snake + `VariantTestDB(t)
+	svc := services.New` + pascal + `VariantService(db)
+	id, colours, _ := buildShirt(t, db)
+
+	var red models.OptionValue
+	if err := db.Where("option_id = ? AND label = ?", colours.ID, "Red").First(&red).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	if err := svc.SetOfferedValues(id, []string{red.ID}); err != nil {
+		t.Fatal(err)
+	}
+
+	options, err := svc.OptionsFor(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, option := range options {
+		if option.ID != colours.ID {
+			// The axis nobody narrowed keeps every value it has.
+			if len(option.Values) != 2 {
+				t.Errorf("%s offers %d values, want both: narrowing one axis narrowed another", option.Name, len(option.Values))
+			}
+			continue
+		}
+		if len(option.Values) != 1 || option.Values[0].Label != "Red" {
+			labels := []string{}
+			for _, value := range option.Values {
+				labels = append(labels, value.Label)
+			}
+			t.Errorf("Colour offers %v, want only Red", labels)
+		}
+	}
+
+	// And the matrix follows: two rows, not four.
+	created, err := svc.Generate(id, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created != 2 {
+		t.Errorf("generated %d combinations, want 2: Red/M and Red/XXL", created)
+	}
+}
+
+// Ticking every value of an axis is the same as not narrowing it, and has to
+// be stored that way: a colour added to the shop next month must appear on a
+// ` + lower + ` that offers the whole axis, not be silently left out of it.
+func Test` + pascal + `OfferingEveryValueStoresNoNarrowing(t *testing.T) {
+	db := ` + snake + `VariantTestDB(t)
+	svc := services.New` + pascal + `VariantService(db)
+	id, colours, _ := buildShirt(t, db)
+
+	var values []models.OptionValue
+	if err := db.Where("option_id = ?", colours.ID).Find(&values).Error; err != nil {
+		t.Fatal(err)
+	}
+	all := []string{}
+	for _, value := range values {
+		all = append(all, value.ID)
+	}
+
+	if err := svc.SetOfferedValues(id, all); err != nil {
+		t.Fatal(err)
+	}
+	stored, err := svc.OfferedValueIDs(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(stored) != 0 {
+		t.Errorf("stored %d rows for an axis offered whole, want none", len(stored))
+	}
+
+	// A value added later is therefore offered too.
+	db.Create(&models.OptionValue{OptionID: colours.ID, Label: "Green", Swatch: "#0c0"})
+	options, err := svc.OptionsFor(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, option := range options {
+		if option.ID == colours.ID && len(option.Values) != 3 {
+			t.Errorf("Colour offers %d values, want 3: a value added to the shop was left out", len(option.Values))
+		}
+	}
+}
+
+// Narrowing to nothing is not a way to offer nothing: clearing the list puts
+// the whole axis back, which is the only reading that lets somebody undo it.
+func Test` + pascal + `ClearingTheNarrowingOffersTheWholeAxis(t *testing.T) {
+	db := ` + snake + `VariantTestDB(t)
+	svc := services.New` + pascal + `VariantService(db)
+	id, colours, _ := buildShirt(t, db)
+
+	var red models.OptionValue
+	if err := db.Where("option_id = ? AND label = ?", colours.ID, "Red").First(&red).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.SetOfferedValues(id, []string{red.ID}); err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.SetOfferedValues(id, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	options, err := svc.OptionsFor(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, option := range options {
+		if len(option.Values) != 2 {
+			t.Errorf("%s offers %d values after clearing the narrowing, want 2", option.Name, len(option.Values))
+		}
+	}
+}
+
+// A value of an axis this ` + lower + ` does not offer is not stored: the
+// picker sends what it has, and an axis removed in the same edit would
+// otherwise leave a row pointing at nothing.
+func Test` + pascal + `IgnoresValuesOfAnAxisItDoesNotOffer(t *testing.T) {
+	db := ` + snake + `VariantTestDB(t)
+	svc := services.New` + pascal + `VariantService(db)
+	id, colours, _ := buildShirt(t, db)
+
+	// An option the ` + lower + ` does not offer at all.
+	memory := models.Option{Name: "Memory", Kind: "select", AffectsPrice: true}
+	db.Create(&memory)
+	sixteen := models.OptionValue{OptionID: memory.ID, Label: "16GB"}
+	db.Create(&sixteen)
+
+	var red models.OptionValue
+	if err := db.Where("option_id = ? AND label = ?", colours.ID, "Red").First(&red).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	if err := svc.SetOfferedValues(id, []string{red.ID, sixteen.ID}); err != nil {
+		t.Fatal(err)
+	}
+	stored, err := svc.OfferedValueIDs(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(stored) != 1 || stored[0] != red.ID {
+		t.Errorf("stored %v, want only the value of an axis it offers", stored)
 	}
 }
 `

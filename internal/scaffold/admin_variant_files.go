@@ -214,9 +214,13 @@ export function useDeleteOptionValue() {
 export function useSetResourceOptions(slug: string, id: string) {
   const qc = useQueryClient();
   return useToastedMutation({
-    mutationFn: async (optionIDs: string[]) => {
+    mutationFn: async (input: { optionIDs: string[]; valueIDs: string[] }) => {
       const res = await apiClient.put("/api/" + slug + "/" + id + "/options", {
-        option_ids: optionIDs,
+        option_ids: input.optionIDs,
+        // Which values of those axes this record offers. An axis with none of
+        // its values listed here is offered whole, which is what every record
+        // did before it could be narrowed.
+        value_ids: input.valueIDs,
       });
       return {
         cleared: (res.data.data?.variants_cleared ?? 0) as number,
@@ -417,6 +421,9 @@ export function VariantMatrix<T>({
 
   const [picking, setPicking] = useState(false);
   const [chosen, setChosen] = useState<string[]>([]);
+  // The values of those axes this record offers. Empty for an axis means all
+  // of them, so a record nobody has narrowed stores nothing at all.
+  const [chosenValues, setChosenValues] = useState<string[]>([]);
   const [confirmSwap, setConfirmSwap] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, VariantDraft>>({});
 
@@ -574,7 +581,16 @@ export function VariantMatrix<T>({
 
   function openPicker() {
     setChosen(options.map((option) => option.id));
+    // options here are already narrowed to what this record offers, so the
+    // ticks start where the record is rather than at "everything".
+    setChosenValues(options.flatMap((option) => (option.values ?? []).map((value) => value.id)));
     setPicking(true);
+  }
+
+  function toggleValue(valueID: string) {
+    setChosenValues((prev) =>
+      prev.includes(valueID) ? prev.filter((each) => each !== valueID) : [...prev, valueID],
+    );
   }
 
   function toggleOption(optionID: string) {
@@ -583,11 +599,26 @@ export function VariantMatrix<T>({
     setChosen((prev) =>
       prev.includes(optionID) ? prev.filter((each) => each !== optionID) : [...prev, optionID],
     );
+    // Ticking an axis offers all of it until somebody says otherwise;
+    // unticking one takes its values with it.
+    const option = (library.data ?? []).find((each) => each.id === optionID);
+    const valueIDs = (option?.values ?? []).map((value) => value.id);
+    setChosenValues((prev) =>
+      chosen.includes(optionID)
+        ? prev.filter((each) => !valueIDs.includes(each))
+        : [...prev, ...valueIDs.filter((each) => !prev.includes(each))],
+    );
   }
 
   function applyOptions() {
+    const offeredNow = options.flatMap((option) => (option.values ?? []).map((value) => value.id));
+    const sameValues =
+      chosenValues.length === offeredNow.length &&
+      [...chosenValues].sort().every((each, i) => [...offeredNow].sort()[i] === each);
     const unchanged =
-      chosen.length === options.length && chosen.every((each, i) => options[i]?.id === each);
+      chosen.length === options.length &&
+      chosen.every((each, i) => options[i]?.id === each) &&
+      sameValues;
     if (unchanged) {
       setPicking(false);
       return;
@@ -603,7 +634,7 @@ export function VariantMatrix<T>({
 
   async function commitOptions() {
     setConfirmSwap(false);
-    await setOptions.mutateAsync(chosen);
+    await setOptions.mutateAsync({ optionIDs: chosen, valueIDs: chosenValues });
     setDrafts({});
     setPicking(false);
   }
@@ -679,7 +710,9 @@ export function VariantMatrix<T>({
           library={library.data ?? []}
           loading={library.isLoading}
           chosen={chosen}
+          chosenValues={chosenValues}
           onToggle={toggleOption}
+          onToggleValue={toggleValue}
           onCancel={() => setPicking(false)}
           onApply={applyOptions}
           saving={setOptions.isPending}
@@ -803,7 +836,9 @@ function OptionPicker({
   library,
   loading,
   chosen,
+  chosenValues,
   onToggle,
+  onToggleValue,
   onCancel,
   onApply,
   saving,
@@ -811,7 +846,9 @@ function OptionPicker({
   library: AdminOption[];
   loading: boolean;
   chosen: string[];
+  chosenValues: string[];
   onToggle: (id: string) => void;
+  onToggleValue: (id: string) => void;
   onCancel: () => void;
   onApply: () => void;
   saving: boolean;
@@ -874,6 +911,65 @@ function OptionPicker({
           );
         })}
       </div>
+
+      {chosen.length > 0 && (
+        <div className="mt-5 space-y-4">
+          <p className="text-xs text-text-muted">
+            And which of their values this record offers. Options are shared by every record, so
+            this is how one shirt comes in ecru and navy while another comes in black and sand.
+            Leave an axis fully ticked to offer all of it, including values added later.
+          </p>
+          {chosen.map((optionID) => {
+            const option = library.find((each) => each.id === optionID);
+            if (!option) return null;
+            const values = option.values ?? [];
+            const picked = values.filter((value) => chosenValues.includes(value.id));
+            return (
+              <div key={option.id}>
+                <div className="mb-2 flex items-center gap-2 text-xs">
+                  <span className="font-medium text-foreground">{option.name}</span>
+                  <span className="text-text-muted">
+                    {picked.length === values.length
+                      ? "all " + values.length
+                      : picked.length + " of " + values.length}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {values.map((value) => {
+                    const on = chosenValues.includes(value.id);
+                    return (
+                      <button
+                        key={value.id}
+                        type="button"
+                        onClick={() => onToggleValue(value.id)}
+                        className={
+                          "inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition-colors " +
+                          (on
+                            ? "border-accent bg-accent/10 text-foreground"
+                            : "border-border text-text-muted hover:border-accent/40 hover:text-foreground")
+                        }
+                      >
+                        {option.kind === "swatch" && value.swatch && (
+                          <span
+                            className="h-3 w-3 shrink-0 rounded-full border border-border"
+                            style={{ backgroundColor: value.swatch }}
+                          />
+                        )}
+                        {value.label}
+                      </button>
+                    );
+                  })}
+                  {values.length === 0 && (
+                    <span className="text-xs text-text-muted">
+                      This axis has no values yet, so no combination can include it.
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <div className="mt-4 flex items-center gap-2">
         <Button size="sm" disabled={saving} onClick={onApply}>
