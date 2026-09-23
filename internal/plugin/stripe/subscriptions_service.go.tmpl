@@ -41,6 +41,11 @@ type Subscriptions struct {
 	// OnEnded runs when it stops: canceled at the end of its period, or given
 	// up on after the retries failed. Take the access away here.
 	OnEnded SubscriptionHook
+
+	// Payments is the other half of the plugin. A renewal is recorded as a
+	// Payment through it, and runs the same OnSucceeded the app already wrote
+	// for one-off purchases.
+	Payments *Service
 }
 
 // SubscriptionHook runs inside the transaction that records the change.
@@ -49,7 +54,7 @@ type SubscriptionHook func(ctx context.Context, tx *gorm.DB, s models.Subscripti
 // NewSubscriptions reads STRIPE_SECRET_KEY through the payments service, so
 // both halves of the plugin are configured by the same one variable.
 func NewSubscriptions(db *gorm.DB, payments *Service) *Subscriptions {
-	subs := &Subscriptions{DB: db}
+	subs := &Subscriptions{DB: db, Payments: payments}
 	if payments != nil {
 		subs.Stripe = payments.Stripe
 	}
@@ -275,6 +280,11 @@ func (s *Subscriptions) Register() {
 		webhooks.On("stripe", name, s.HandleEvent)
 	}
 	webhooks.On("stripe", "checkout.session.completed", s.HandleCheckout)
+
+	// What each renewal actually charged. Without these two the app knows who
+	// is entitled to what and nothing about the money.
+	webhooks.On("stripe", "invoice.paid", s.HandleInvoice)
+	webhooks.On("stripe", "invoice.payment_failed", s.HandleInvoice)
 }
 
 // HandleCheckout records the subscription a completed checkout started. The

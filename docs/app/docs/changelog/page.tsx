@@ -66,6 +66,63 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.315.0 */}
+            <div className="mb-12" id="v3.315.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.315.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A subscription now records what it charged</h3>
+                <p>
+                  A subscription row says what somebody is entitled to. It says nothing about what they paid, when, or
+                  whether last month&apos;s renewal went through, and that lived in Stripe and stayed there. So an app
+                  could show a customer as a member and hold no record of a single payment from them, which is a
+                  problem the first time anybody asks for a receipt, a refund, or the month&apos;s takings. A shop
+                  built on this had a sales page reporting nothing while subscriptions were selling.
+                </p>
+                <p>
+                  <code>grit plugin add stripe</code> now records every paid invoice as a <code>Payment</code>, the
+                  same row a one-off purchase writes, with the reference{' '}
+                  <code>subscription:&lt;id&gt;</code>, and runs the app&apos;s <code>OnSucceeded</code> hook so a
+                  receipt is sent for a renewal without writing that twice. A failed renewal is recorded too, with what
+                  the bank said, because that is the one an app most needs to show. A redelivered invoice changes
+                  nothing, a late failure cannot unpay a paid invoice, and an invoice in Stripe&apos;s newer shape
+                  (where the subscription moved under <code>parent</code>) is read either way. Five shipped tests.
+                </p>
+
+                <h3><code>services.OnOAuthLogin</code>: what the provider knew</h3>
+                <p>
+                  A social login learns things only the provider knows: the GitHub login, the avatar, the locale. Grit
+                  used one field of the profile and dropped the rest, and the callback that had it is a file Grit
+                  rewrites, so an app that wanted the GitHub handle had to fork it. The shop asked people to type a
+                  GitHub username it had just been handed at sign-in, and a typed username is where a typo comes from:
+                  an invitation to somebody else, or to nobody, found out about when the repository never appears.
+                </p>
+                <p>
+                  Register a hook at boot and it runs after every social login, with the account and the profile:
+                </p>
+                <CodeBlock
+                  filename="apps/api/internal/routes/routes.go"
+                  code={`services.OnOAuthLogin(func(ctx context.Context, user *models.User, profile goth.User) error {
+    if profile.Provider != "github" || profile.NickName == "" {
+        return nil
+    }
+    // NickName is the provider's handle: the GitHub login, the Twitter @.
+    return db.WithContext(ctx).Model(user).Update("github_username", profile.NickName).Error
+})`}
+                />
+                <p>
+                  A hook that fails is logged and the rest still run, and the login still succeeds: refusing somebody a
+                  session because their avatar URL would not save is a worse failure than the one it reports.{' '}
+                  <code>grit upgrade</code> adds both the registry and the call site to an existing project.
+                </p>
+              </div>
+            </div>
+
             {/* v3.314.0 */}
             <div className="mb-12" id="v3.314.0">
               <div className="flex items-center gap-3 mb-4">

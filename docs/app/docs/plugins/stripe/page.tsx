@@ -129,6 +129,32 @@ const { data } = useSubscription();   // { subscription, entitled }
             return URL the browser chooses is an open redirect with a payment attached.
           </p>
 
+          <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">What each renewal charged</h2>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            A subscription row says what somebody is entitled to. It says nothing about the money: what they paid, when,
+            or whether this month went through. So every paid invoice is recorded as a <code>Payment</code>, the same
+            row a one-off purchase writes, referenced <code>subscription:&lt;id&gt;</code>, and your{' '}
+            <code>OnSucceeded</code> hook runs for it exactly as it does for a one-off. A receipt written once covers
+            both.
+          </p>
+          <CodeBlock language="go" code={`paymentService.OnSucceeded = func(ctx context.Context, tx *gorm.DB, p models.Payment) error {
+    if strings.HasPrefix(p.Reference, "subscription:") {
+        return sendRenewalReceipt(ctx, p)   // a renewal
+    }
+    return markOrderPaid(ctx, tx, p)        // a one-off purchase
+}`} />
+          <p className="mb-4 mt-4 leading-relaxed text-muted-foreground">
+            A renewal that failed is recorded too, with what the bank said, because that is the one somebody has to see.
+            A redelivered invoice changes nothing, and a failure event arriving late cannot unpay an invoice that was
+            paid. What this buys you is an app that can answer &quot;what did we take this month&quot; and &quot;what
+            did this customer pay&quot; out of its own database, with no trip to the Stripe dashboard.
+          </p>
+          <p className="mb-8 leading-relaxed text-muted-foreground">
+            An invoice whose subscription this app has never seen is recorded as a failed webhook rather than shrugged
+            off: Stripe retries, by then the subscription event has usually arrived, and the retry runs. Money is not
+            something to drop quietly.
+          </p>
+
           <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">What you get</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

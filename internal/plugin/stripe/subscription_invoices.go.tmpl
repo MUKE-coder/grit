@@ -1,0 +1,190 @@
+package payments
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"time"
+
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/webhooks"
+)
+
+// What a subscription actually charged.
+//
+// A subscription row says what somebody is entitled to. It does not say what
+// they paid, when, or whether last month's renewal went through: that is in
+// Stripe's invoices, and it used to stay there. So an app could show a customer
+// as a member and hold no record of a single payment from them, which is a
+// problem the first time anybody asks for a receipt, a refund, or the month's
+// takings. The shop built on this had a Sales page reporting nothing while
+// subscriptions were selling.
+//
+// A paid invoice is therefore recorded as a Payment, the same row a one-off
+// purchase writes, with Reference "subscription:<subscription id>". A failed
+// one is recorded too, because a renewal that did not go through is the thing
+// somebody needs to see.
+
+// invoice is the part of Stripe's invoice this needs.
+type invoice struct {
+	ID            string `json:"id"`
+	Customer      string `json:"customer"`
+	Subscription  string `json:"subscription"`
+	PaymentIntent string `json:"payment_intent"`
+	AmountPaid    int64  `json:"amount_paid"`
+	AmountDue     int64  `json:"amount_due"`
+	Currency      string `json:"currency"`
+	BillingReason string `json:"billing_reason"`
+	Status        string `json:"status"`
+
+	// Stripe moved the subscription off the invoice and under parent in the
+	// 2025 API versions. The plugin pins 2024-06-20, but an account whose
+	// webhook endpoint is set to a newer version sends the new shape, and
+	// reading both is three lines against an integration that silently records
+	// nothing.
+	Parent *struct {
+		SubscriptionDetails *struct {
+			Subscription string `json:"subscription"`
+		} `json:"subscription_details"`
+	} `json:"parent"`
+
+	LastFinalizationError *struct {
+		Message string `json:"message"`
+	} `json:"last_finalization_error"`
+}
+
+// subscriptionID reads it from wherever this API version put it.
+func (in invoice) subscriptionID() string {
+	if in.Subscription != "" {
+		return in.Subscription
+	}
+	if in.Parent != nil && in.Parent.SubscriptionDetails != nil {
+		return in.Parent.SubscriptionDetails.Subscription
+	}
+	return ""
+}
+
+// reference is the payment's idempotency key: the PaymentIntent when there is
+// one, and the invoice itself when there is not (a trial converting, a credit
+// balance covering the whole amount).
+func (in invoice) reference() string {
+	if in.PaymentIntent != "" {
+		return in.PaymentIntent
+	}
+	return in.ID
+}
+
+// HandleInvoice records one invoice against the subscription that raised it.
+func (s *Subscriptions) HandleInvoice(ctx context.Context, e *models.WebhookEvent) error {
+	var ev event
+	if err := json.Unmarshal(e.Payload, &ev); err != nil {
+		return fmt.Errorf("reading the event: %w", err)
+	}
+	var in invoice
+	if err := json.Unmarshal(ev.Data.Object, &in); err != nil {
+		return fmt.Errorf("reading the invoice: %w", err)
+	}
+
+	subscriptionID := in.subscriptionID()
+	if subscriptionID == "" {
+		// A one-off invoice, which is not this half of the plugin's business.
+		return nil
+	}
+
+	status := models.PaymentSucceeded
+	amount := in.AmountPaid
+	if ev.Type == "invoice.payment_failed" {
+		status = models.PaymentRequiresPaymentMethod
+		amount = in.AmountDue
+	}
+
+	return s.recordInvoice(ctx, in, subscriptionID, status, amount)
+}
+
+func (s *Subscriptions) recordInvoice(ctx context.Context, in invoice, subscriptionID, status string, amount int64) error {
+	return s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Whose invoice it is comes from the subscription, which the
+		// subscription events wrote. An invoice that arrives first is an
+		// error, not a shrug: the provider retries, and the retry now runs.
+		var subscription models.Subscription
+		if err := tx.Where("subscription_id = ?", subscriptionID).First(&subscription).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("invoice %s: no subscription %s is recorded yet", in.ID, subscriptionID)
+			}
+			return err
+		}
+
+		ref := in.reference()
+		var existing models.Payment
+		res := tx.Where("intent_id = ?", ref).Limit(1).Find(&existing)
+		if res.Error != nil {
+			return res.Error
+		}
+
+		now := time.Now()
+		if res.RowsAffected == 1 {
+			// Seen before. A payment only moves forward: a failed attempt
+			// arriving after the invoice was paid leaves it paid.
+			if existing.Status == models.PaymentSucceeded || existing.Status == status {
+				return nil
+			}
+			updates := map[string]any{"status": status}
+			if status == models.PaymentSucceeded {
+				updates["paid_at"] = now
+				updates["failure_message"] = ""
+				updates["amount"] = amount
+			} else if in.LastFinalizationError != nil {
+				updates["failure_message"] = in.LastFinalizationError.Message
+			}
+			if err := tx.Model(&models.Payment{}).Where("id = ?", existing.ID).Updates(updates).Error; err != nil {
+				return err
+			}
+			if status != models.PaymentSucceeded {
+				return nil
+			}
+			existing.Status = models.PaymentSucceeded
+			existing.PaidAt = &now
+			existing.Amount = amount
+			return s.paid(ctx, tx, existing)
+		}
+
+		payment := models.Payment{
+			UserID:    subscription.UserID,
+			Reference: "subscription:" + subscriptionID,
+			Amount:    amount,
+			Currency:  in.Currency,
+			Status:    status,
+			IntentID:  &ref,
+		}
+		if status == models.PaymentSucceeded {
+			payment.PaidAt = &now
+		} else if in.LastFinalizationError != nil {
+			payment.FailureMessage = in.LastFinalizationError.Message
+		}
+		if err := tx.Create(&payment).Error; err != nil {
+			// Two deliveries at once: the unique index on intent_id decides,
+			// and the loser has nothing to do.
+			if webhooks.IsDuplicateError(err) {
+				return nil
+			}
+			return err
+		}
+		if status != models.PaymentSucceeded {
+			return nil
+		}
+		return s.paid(ctx, tx, payment)
+	})
+}
+
+// paid runs the app's OnSucceeded hook, the same one a one-off purchase runs,
+// so an app that sends a receipt sends one for a renewal too without writing
+// that twice.
+func (s *Subscriptions) paid(ctx context.Context, tx *gorm.DB, payment models.Payment) error {
+	if s.Payments == nil || s.Payments.OnSucceeded == nil {
+		return nil
+	}
+	return s.Payments.OnSucceeded(ctx, tx, payment)
+}

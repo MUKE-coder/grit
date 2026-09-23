@@ -411,6 +411,10 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 		return
 	}
 
+	// What the provider knew, handed to whatever this app wants to do with it:
+	// the GitHub login, the avatar, the locale. See services.OnOAuthLogin.
+	services.RunOAuthLoginHooks(c.Request.Context(), &user, gothUser)
+
 	// Generate JWT tokens
 	tokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
 	if err != nil {

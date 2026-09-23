@@ -113,7 +113,7 @@ func newSubscriptions(t *testing.T) (*Subscriptions, *fakeBilling, models.User) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := db.AutoMigrate(&models.Subscription{}, &models.User{}); err != nil {
+	if err := db.AutoMigrate(&models.Subscription{}, &models.User{}, &models.Payment{}); err != nil {
 		t.Fatal(err)
 	}
 	fake, client := newFakeBilling(t)
@@ -121,7 +121,7 @@ func newSubscriptions(t *testing.T) (*Subscriptions, *fakeBilling, models.User) 
 	if err := db.Create(&user).Error; err != nil {
 		t.Fatal(err)
 	}
-	return &Subscriptions{DB: db, Stripe: client}, fake, user
+	return &Subscriptions{DB: db, Stripe: client, Payments: &Service{DB: db, Stripe: client}}, fake, user
 }
 
 func subscriptionEvent(t *testing.T, eventType string, subscription Subscription) *models.WebhookEvent {
@@ -380,5 +380,163 @@ func TestPeriodEndIsReadFromEitherPlace(t *testing.T) {
 	older := Subscription{ID: "sub_old", CurrentPeriodEnd: 1700000000}
 	if older.PeriodEnd() != 1700000000 {
 		t.Errorf("top-level period end not read: %d", older.PeriodEnd())
+	}
+}
+
+func invoiceEvent(t *testing.T, eventType, body string) *models.WebhookEvent {
+	t.Helper()
+	payload := `{"type":"` + eventType + `","data":{"object":` + body + `}}`
+	return &models.WebhookEvent{Provider: "stripe", EventType: eventType, Payload: datatypes.JSON(payload)}
+}
+
+// A subscription says what somebody may read. The money is in the invoices,
+// and an app with none of them recorded cannot answer "what did we take this
+// month" or "what did this customer pay" without opening Stripe.
+func TestAPaidInvoiceIsRecordedAsAPayment(t *testing.T) {
+	s, _, user := newSubscriptions(t)
+	receipts := 0
+	s.Payments.OnSucceeded = func(ctx context.Context, tx *gorm.DB, p models.Payment) error {
+		receipts++
+		return nil
+	}
+
+	if err := s.HandleEvent(context.Background(), subscriptionEvent(t, "customer.subscription.created", Subscription{
+		ID: "sub_1", CustomerID: "cus_1", Status: models.SubscriptionActive,
+		Metadata: map[string]string{"user_id": user.ID},
+	})); err != nil {
+		t.Fatal(err)
+	}
+
+	body := `{"id":"in_1","customer":"cus_1","subscription":"sub_1","payment_intent":"pi_1","amount_paid":3900,"currency":"usd","billing_reason":"subscription_cycle","status":"paid"}`
+	if err := s.HandleInvoice(context.Background(), invoiceEvent(t, "invoice.paid", body)); err != nil {
+		t.Fatal(err)
+	}
+
+	var payment models.Payment
+	if err := s.DB.Where("reference = ?", "subscription:sub_1").First(&payment).Error; err != nil {
+		t.Fatalf("the renewal was not recorded: %v", err)
+	}
+	if payment.UserID != user.ID || payment.Amount != 3900 || payment.Currency != "usd" || payment.Status != models.PaymentSucceeded {
+		t.Errorf("payment = %+v", payment)
+	}
+	if payment.PaidAt == nil {
+		t.Error("a paid invoice has no paid_at")
+	}
+	if receipts != 1 {
+		t.Errorf("OnSucceeded ran %d times; a renewal should run it exactly once", receipts)
+	}
+
+	// Stripe redelivers. The second time must change nothing and must not run
+	// the hook again, or the customer gets two receipts for one month.
+	if err := s.HandleInvoice(context.Background(), invoiceEvent(t, "invoice.paid", body)); err != nil {
+		t.Fatal(err)
+	}
+	var n int64
+	s.DB.Model(&models.Payment{}).Count(&n)
+	if n != 1 || receipts != 1 {
+		t.Errorf("a redelivered invoice made %d payments and %d receipts", n, receipts)
+	}
+}
+
+// A renewal that did not go through is the one an app most needs to show.
+func TestAFailedInvoiceIsRecordedAndThePaymentCanStillSucceed(t *testing.T) {
+	s, _, user := newSubscriptions(t)
+	if err := s.HandleEvent(context.Background(), subscriptionEvent(t, "customer.subscription.created", Subscription{
+		ID: "sub_2", CustomerID: "cus_2", Status: models.SubscriptionActive,
+		Metadata: map[string]string{"user_id": user.ID},
+	})); err != nil {
+		t.Fatal(err)
+	}
+
+	failed := `{"id":"in_2","customer":"cus_2","subscription":"sub_2","payment_intent":"pi_2","amount_due":3900,"currency":"usd","status":"open","last_finalization_error":{"message":"Your card was declined."}}`
+	if err := s.HandleInvoice(context.Background(), invoiceEvent(t, "invoice.payment_failed", failed)); err != nil {
+		t.Fatal(err)
+	}
+	var payment models.Payment
+	if err := s.DB.Where("intent_id = ?", "pi_2").First(&payment).Error; err != nil {
+		t.Fatal(err)
+	}
+	if payment.Status == models.PaymentSucceeded || payment.FailureMessage != "Your card was declined." {
+		t.Errorf("payment = %+v", payment)
+	}
+
+	// The retry works, which is the ordinary end of a past_due.
+	paid := `{"id":"in_2","customer":"cus_2","subscription":"sub_2","payment_intent":"pi_2","amount_paid":3900,"currency":"usd","status":"paid"}`
+	if err := s.HandleInvoice(context.Background(), invoiceEvent(t, "invoice.paid", paid)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DB.Where("intent_id = ?", "pi_2").First(&payment).Error; err != nil {
+		t.Fatal(err)
+	}
+	if payment.Status != models.PaymentSucceeded || payment.FailureMessage != "" || payment.PaidAt == nil {
+		t.Errorf("the retry did not mark it paid: %+v", payment)
+	}
+
+	// And a late failure event for an earlier attempt does not unpay it.
+	if err := s.HandleInvoice(context.Background(), invoiceEvent(t, "invoice.payment_failed", failed)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DB.Where("intent_id = ?", "pi_2").First(&payment).Error; err != nil {
+		t.Fatal(err)
+	}
+	if payment.Status != models.PaymentSucceeded {
+		t.Error("a late failure event unpaid a paid invoice")
+	}
+}
+
+// An invoice for a subscription this app has never heard of is an error, not a
+// shrug: the provider retries, and by then the subscription event has usually
+// arrived. Answering "fine" would lose the money silently.
+func TestAnInvoiceBeforeItsSubscriptionIsAnError(t *testing.T) {
+	s, _, _ := newSubscriptions(t)
+	body := `{"id":"in_3","customer":"cus_3","subscription":"sub_unknown","payment_intent":"pi_3","amount_paid":900,"currency":"usd","status":"paid"}`
+	err := s.HandleInvoice(context.Background(), invoiceEvent(t, "invoice.paid", body))
+	if err == nil {
+		t.Fatal("an invoice for an unknown subscription was accepted and dropped")
+	}
+	var n int64
+	s.DB.Model(&models.Payment{}).Count(&n)
+	if n != 0 {
+		t.Errorf("payments = %d, want none", n)
+	}
+}
+
+// A one-off invoice belongs to the payments half, which records it from the
+// PaymentIntent. This must not write a second row for it.
+func TestAnInvoiceWithNoSubscriptionIsLeftAlone(t *testing.T) {
+	s, _, _ := newSubscriptions(t)
+	body := `{"id":"in_4","customer":"cus_4","payment_intent":"pi_4","amount_paid":900,"currency":"usd","status":"paid"}`
+	if err := s.HandleInvoice(context.Background(), invoiceEvent(t, "invoice.paid", body)); err != nil {
+		t.Fatal(err)
+	}
+	var n int64
+	s.DB.Model(&models.Payment{}).Count(&n)
+	if n != 0 {
+		t.Errorf("payments = %d, want none", n)
+	}
+}
+
+// Stripe moved the subscription under parent in its 2025 versions. An account
+// whose endpoint is on a newer version than the plugin pins still has to work,
+// because the alternative is an integration that records nothing and says so
+// nowhere.
+func TestAnInvoiceFromANewerAPIVersionIsStillRecorded(t *testing.T) {
+	s, _, user := newSubscriptions(t)
+	if err := s.HandleEvent(context.Background(), subscriptionEvent(t, "customer.subscription.created", Subscription{
+		ID: "sub_5", CustomerID: "cus_5", Status: models.SubscriptionActive,
+		Metadata: map[string]string{"user_id": user.ID},
+	})); err != nil {
+		t.Fatal(err)
+	}
+	body := `{"id":"in_5","customer":"cus_5","parent":{"subscription_details":{"subscription":"sub_5"}},"payment_intent":"pi_5","amount_paid":3900,"currency":"usd","status":"paid"}`
+	if err := s.HandleInvoice(context.Background(), invoiceEvent(t, "invoice.paid", body)); err != nil {
+		t.Fatal(err)
+	}
+	var payment models.Payment
+	if err := s.DB.Where("reference = ?", "subscription:sub_5").First(&payment).Error; err != nil {
+		t.Fatalf("an invoice in the 2025 shape was not recorded: %v", err)
+	}
+	if payment.Amount != 3900 {
+		t.Errorf("payment = %+v", payment)
 	}
 }

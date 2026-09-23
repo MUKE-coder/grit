@@ -108,6 +108,7 @@ func stripeFiles(ctx Context) map[string]string {
 		apiPath(ctx, "internal/models/subscription.go"):         stripeTemplate(ctx, "subscription_model.go.tmpl"),
 		apiPath(ctx, "internal/payments/billing.go"):            stripeTemplate(ctx, "stripe_billing.go.tmpl"),
 		apiPath(ctx, "internal/payments/subscriptions.go"):      stripeTemplate(ctx, "subscriptions_service.go.tmpl"),
+		apiPath(ctx, "internal/payments/invoices.go"):           stripeTemplate(ctx, "subscription_invoices.go.tmpl"),
 		apiPath(ctx, "internal/payments/subscriptions_test.go"): stripeTemplate(ctx, "subscriptions_test.go.tmpl"),
 		apiPath(ctx, "internal/handlers/subscription.go"):       stripeTemplate(ctx, "subscription_handler.go.tmpl"),
 	}

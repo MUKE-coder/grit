@@ -300,6 +300,37 @@ OAUTH_FRONTEND_URL=http://localhost:3001`} />
             </div>
 
             <div className="prose-grit">
+              {/* Login hooks */}
+              <h2 id="login-hooks">What the provider knew</h2>
+              <p>
+                A social login learns things only the provider knows: the GitHub login, the avatar, the locale, the
+                verified email. Grit stores the ones every app needs and drops the rest, which is the wrong trade the
+                moment your app has a use for one of them. A shop that invites customers to a private repository needs
+                their GitHub username, and it was asking for it on a form, having just been handed it at sign-in.
+              </p>
+              <p>
+                Register a hook at boot. It runs after every social login, not only the first, with the account the
+                login resolved to and the profile the provider returned:
+              </p>
+              <CodeBlock filename="apps/api/internal/routes/routes.go" code={`services.OnOAuthLogin(func(ctx context.Context, user *models.User, profile goth.User) error {
+    if profile.Provider != "github" || profile.NickName == "" {
+        return nil
+    }
+    // NickName is the provider's handle: the GitHub login, the Twitter @.
+    return db.WithContext(ctx).Model(user).Update("github_username", profile.NickName).Error
+})`} />
+              <p>
+                The user row already exists and has been linked to the provider, so a hook may write to it. Because it
+                runs on every login and not only the first, it is also how you fill in something you added to the
+                schema after people had already signed up.
+              </p>
+              <p>
+                A hook that fails is logged, the rest still run, and the login still succeeds. That is deliberate:
+                these hooks decorate an account with what the provider knew, and refusing somebody a session because
+                their avatar URL would not save is a worse failure than the one it reports. A check that must be able
+                to refuse a login belongs in the callback itself.
+              </p>
+
               {/* ── Account Linking ──────────────────────── */}
               <h2 id="account-linking">Account Linking</h2>
               <p>

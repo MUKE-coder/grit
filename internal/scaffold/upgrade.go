@@ -514,6 +514,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairIdentify(root); err != nil {
 			fmt.Printf("  ⚠ adding the Identify middleware: %v\n", err)
 		}
+		if err := repairOAuthHook(root); err != nil {
+			fmt.Printf("  ⚠ running the social-login hooks: %v\n", err)
+		}
 		if err := repairExpoRelations(root); err != nil {
 			fmt.Printf("  ⚠ naming related records in the Expo screens: %v\n", err)
 		}
