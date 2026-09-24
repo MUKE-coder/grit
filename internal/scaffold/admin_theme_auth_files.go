@@ -24,6 +24,11 @@ import { getTheme } from "@repo/shared/themes";
 import { AtlasAuthShell } from "./AtlasAuthShell";
 import { AuroraAuthShell } from "./AuroraAuthShell";
 import { PulseAuthShell } from "./PulseAuthShell";
+import { CoralAuthShell } from "./CoralAuthShell";
+import { AmberAuthShell } from "./AmberAuthShell";
+import { SkyAuthShell } from "./SkyAuthShell";
+import { MonoAuthShell } from "./MonoAuthShell";
+import { EmeraldAuthShell } from "./EmeraldAuthShell";
 
 export type AuthMode = "login" | "sign-up" | "forgot" | "reset";
 
@@ -50,6 +55,16 @@ export function AuthShell(props: AuthShellProps) {
       return <AuroraAuthShell {...props} theme={theme} />;
     case "split-carousel":
       return <PulseAuthShell {...props} theme={theme} />;
+    case "modal":
+      return <CoralAuthShell {...props} theme={theme} />;
+    case "boxed":
+      return <AmberAuthShell {...props} theme={theme} />;
+    case "banner":
+      return <SkyAuthShell {...props} theme={theme} />;
+    case "showcase":
+      return <MonoAuthShell {...props} theme={theme} />;
+    case "quote":
+      return <EmeraldAuthShell {...props} theme={theme} />;
     case "split-static":
     default:
       return <AtlasAuthShell {...props} theme={theme} />;

@@ -269,6 +269,11 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "components", "auth", "AtlasAuthShell.tsx"):    adminAtlasAuthShell(),
 		filepath.Join(adminRoot, "components", "auth", "AuroraAuthShell.tsx"):   adminAuroraAuthShell(),
 		filepath.Join(adminRoot, "components", "auth", "PulseAuthShell.tsx"):    adminPulseAuthShell(),
+		filepath.Join(adminRoot, "components", "auth", "CoralAuthShell.tsx"):    adminCoralAuthShell(),
+		filepath.Join(adminRoot, "components", "auth", "AmberAuthShell.tsx"):    adminAmberAuthShell(),
+		filepath.Join(adminRoot, "components", "auth", "SkyAuthShell.tsx"):      adminSkyAuthShell(),
+		filepath.Join(adminRoot, "components", "auth", "MonoAuthShell.tsx"):     adminMonoAuthShell(),
+		filepath.Join(adminRoot, "components", "auth", "EmeraldAuthShell.tsx"):  adminEmeraldAuthShell(),
 		filepath.Join(adminRoot, "components", "auth", "SocialAuthButtons.tsx"): adminAuthSocialButtons(),
 
 		// Chrome components (v3.29) — page header, dark toggle, user menu,

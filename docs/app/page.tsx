@@ -184,7 +184,7 @@ export default function HomePage() {
                       href="/docs/getting-started/philosophy"
                       className="inline-flex items-center justify-center h-12 px-7 rounded-full border border-border bg-card/60 backdrop-blur-xl text-foreground font-medium text-sm hover:bg-accent/40 transition-all"
                     >
-                      Our philosophy
+                      Why Grit
                     </Link>
                   </MagneticButton>
                 </div>

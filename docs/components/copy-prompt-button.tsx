@@ -53,15 +53,15 @@ export function CopyPromptButton({ variant = 'inline', className, label }: CopyP
     return (
       <div
         className={cn(
-          'rounded-xl border border-primary/20 bg-primary/[0.04] p-5 sm:p-6',
+          'rounded-xl border border-violet-500/20 bg-violet-500/[0.04] p-5 sm:p-6',
           className,
         )}
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="mb-1.5 inline-flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="tag-mono text-primary/80">Build with AI</span>
+              <Sparkles className="h-4 w-4 text-violet-500" />
+              <span className="tag-mono text-violet-500/90">Build with AI</span>
             </div>
             <h3 className="text-lg font-semibold tracking-tight">
               Let your AI build it
@@ -93,15 +93,21 @@ export function CopyPromptButton({ variant = 'inline', className, label }: CopyP
   )
 }
 
+// Violet, not the site's blue.
+//
+// This sits beside "Get started", which is the primary action and owns the
+// blue. Two solid blue buttons side by side make neither one the obvious
+// thing to press, and this is a different kind of action anyway: it hands the
+// job to an agent rather than starting the tutorial.
 function buttonClass(variant: Variant): string {
   const base =
-    'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background'
+    'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background'
   if (variant === 'hero') {
-    return cn(base, 'h-12 px-6 text-[15px] bg-primary text-primary-foreground hover:bg-primary/90')
+    return cn(base, 'h-12 px-6 text-[15px] bg-violet-600 text-white hover:bg-violet-500')
   }
   return cn(
     base,
-    'h-10 px-4 text-sm border border-primary/30 bg-primary/10 text-primary hover:bg-primary/15',
+    'h-10 px-4 text-sm border border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 dark:text-violet-300 [html:not(.dark)_&]:text-violet-700',
   )
 }
 

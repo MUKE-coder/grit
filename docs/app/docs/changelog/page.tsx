@@ -66,6 +66,71 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.322.0 */}
+            <div className="mb-12" id="v3.322.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.322.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Five more sign-in layouts</h3>
+                <p>
+                  Grit shipped three themes with three sign-in screens. It now ships eight. The sign-in page is the
+                  first thing anybody changes in a generated app and close to the last thing they want to build, and
+                  three shapes was not enough to find one that fits.
+                </p>
+                <ul>
+                  <li><strong>Coral</strong> puts the form in a card floating over a blurred glimpse of the app, the shape a marketplace uses when signing in is an interruption rather than a destination.</li>
+                  <li><strong>Amber</strong> is a plain bordered box under a wordmark, with the legal line and footer links a storefront is obliged to carry. Deliberately unfashionable.</li>
+                  <li><strong>Sky</strong> is a top bar and one bold heading, with social sign-in above the password field, for products where most people arrive holding an identity already.</li>
+                  <li><strong>Mono</strong> is black and white on a fine grid with a panel of proof beside the form.</li>
+                  <li><strong>Emerald</strong> is a narrow form column with a customer quote filling the rest.</li>
+                </ul>
+                <p>
+                  Pick one with <code>grit new myapp --theme emerald</code>, or switch later with{' '}
+                  <code>THEME=emerald</code> in <code>.env</code>. A theme still carries its colours, fonts and radius:
+                  the layout is one more thing it decides.
+                </p>
+                <p>
+                  The form inside is the same component in all eight, so none of this touches validation, the second
+                  factor, or the sign-in call. A layout decides where things sit and nothing else. The eight shells are
+                  generated from one shared preamble and one token block rather than eight copies, because eight copies
+                  of a CSS-variable list is eight chances for one theme to quietly stop publishing{' '}
+                  <code>--auth-radius</code> and render inputs with no border.
+                </p>
+                <p>
+                  Emerald&apos;s quote ships attributed to &quot;Replace this with a real one&quot;, and a test keeps it
+                  that way. A scaffold that ships a plausible-sounding fake endorsement is a scaffold that puts a lie
+                  into production the first time somebody forgets to edit it.
+                </p>
+
+                <p>
+                  The desktop app keeps its three shells and maps the new layouts onto the closest of them, which is
+                  written down rather than left to a default arm: a window is not a browser tab, and a modal over a
+                  blurred page or a footer of legal links both assume a page you scrolled to. A test checks every
+                  layout is named there, because falling through silently would render Atlas for somebody who asked
+                  for Emerald.
+                </p>
+
+                <h3>Also</h3>
+                <ul>
+                  <li>
+                    The &quot;Copy prompt to build with AI&quot; button is no longer the same blue as &quot;Get
+                    started&quot; beside it. Two solid blue buttons side by side make neither one the obvious thing to
+                    press.
+                  </li>
+                  <li>The home page link that read &quot;Our philosophy&quot; now reads &quot;Why Grit&quot;.</li>
+                  <li>
+                    The &quot;Grit in action&quot; section gained a seventh step for themes, because a generated admin
+                    looks like a look people assume they are stuck with.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.321.0 */}
             <div className="mb-12" id="v3.321.0">
               <div className="flex items-center gap-3 mb-4">

@@ -458,6 +458,11 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "components", "auth", "AtlasAuthShell.tsx"):    nextToTanStack(adminAtlasAuthShell()),
 		filepath.Join(adminRoot, "src", "components", "auth", "AuroraAuthShell.tsx"):   nextToTanStack(adminAuroraAuthShell()),
 		filepath.Join(adminRoot, "src", "components", "auth", "PulseAuthShell.tsx"):    nextToTanStack(adminPulseAuthShell()),
+		filepath.Join(adminRoot, "src", "components", "auth", "CoralAuthShell.tsx"):    nextToTanStack(adminCoralAuthShell()),
+		filepath.Join(adminRoot, "src", "components", "auth", "AmberAuthShell.tsx"):    nextToTanStack(adminAmberAuthShell()),
+		filepath.Join(adminRoot, "src", "components", "auth", "SkyAuthShell.tsx"):      nextToTanStack(adminSkyAuthShell()),
+		filepath.Join(adminRoot, "src", "components", "auth", "MonoAuthShell.tsx"):     nextToTanStack(adminMonoAuthShell()),
+		filepath.Join(adminRoot, "src", "components", "auth", "EmeraldAuthShell.tsx"):  nextToTanStack(adminEmeraldAuthShell()),
 		filepath.Join(adminRoot, "src", "components", "auth", "SocialAuthButtons.tsx"): nextToTanStack(adminAuthSocialButtons()),
 
 		// UI primitives the reused pages import.

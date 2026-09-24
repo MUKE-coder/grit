@@ -16,7 +16,15 @@ import { cn } from '@/lib/utils'
 type ArchId = 'triple' | 'full' | 'double' | 'single' | 'api' | 'mobile'
 type FrontendId = 'next' | 'vite'
 type StyleId = 'default' | 'modern' | 'minimal' | 'glass'
-type ThemeId = 'atlas' | 'aurora' | 'pulse'
+type ThemeId =
+  | 'atlas'
+  | 'aurora'
+  | 'pulse'
+  | 'coral'
+  | 'amber'
+  | 'sky'
+  | 'mono'
+  | 'emerald'
 
 interface ArchOption {
   id: ArchId
@@ -49,10 +57,18 @@ const STYLES: { id: StyleId; name: string; desc: string }[] = [
   { id: 'glass', name: 'Glass', desc: 'Frosted, translucent panels.' },
 ]
 
+// A theme carries colours, fonts, radius and the sign-in layout it was
+// designed around. The descriptions here are the real tokens: the old ones
+// said Atlas was "purple on deep navy", which it has not been for a long time.
 const THEMES: { id: ThemeId; name: string; desc: string }[] = [
-  { id: 'atlas', name: 'Atlas', desc: 'The default. Purple on deep navy.' },
-  { id: 'aurora', name: 'Aurora', desc: 'Cool teal / green accents.' },
-  { id: 'pulse', name: 'Pulse', desc: 'Warm, high-energy accents.' },
+  { id: 'atlas', name: 'Atlas', desc: 'The default. Blue on white, hero panel beside the form.' },
+  { id: 'aurora', name: 'Aurora', desc: 'Near-black monochrome, a single centred card.' },
+  { id: 'pulse', name: 'Pulse', desc: 'Deep blue, form left and a rotating hero right.' },
+  { id: 'coral', name: 'Coral', desc: 'Rose. A card floating over a blurred glimpse of the app.' },
+  { id: 'amber', name: 'Amber', desc: 'Amber. A plain boxed form under a wordmark, with footer links.' },
+  { id: 'sky', name: 'Sky', desc: 'Crisp blue. One bold heading, social sign-in first.' },
+  { id: 'mono', name: 'Mono', desc: 'Black and white on a fine grid, proof panel beside the form.' },
+  { id: 'emerald', name: 'Emerald', desc: 'Green. A narrow form column, a customer quote filling the rest.' },
 ]
 
 interface BuilderState {

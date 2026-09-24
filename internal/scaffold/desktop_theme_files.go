@@ -131,13 +131,30 @@ export interface AuthShellProps {
 //   atlas  -> split-static    (hero panel left, form right)
 //   aurora -> centered        (single card on a pastel wallpaper)
 //   pulse  -> split-carousel  (form left, editorial hero right)
+//
+// The five layouts added for the web admin in v3.322.0 map onto the closest of
+// these three rather than being ported. A desktop window is not a browser tab:
+// a modal over a blurred page, a footer of legal links and a full-bleed banner
+// all assume a page you scrolled to. What carries over is the shape, so a
+// theme still looks like itself here.
+//
+// This mapping is deliberate and written down. Falling through to the default
+// would render Atlas for somebody who asked for Emerald, with nothing anywhere
+// to say why.
 export function AuthShell(props: AuthShellProps) {
   const theme = activeTheme;
   switch (theme.authLayout) {
+    // One card, standing on its own.
     case "centered":
+    case "modal":
+    case "boxed":
+    case "banner":
       return <AuroraAuthShell theme={theme} {...props} />;
     case "split-carousel":
       return <PulseAuthShell theme={theme} {...props} />;
+    // A panel of something beside the form.
+    case "showcase":
+    case "quote":
     case "split-static":
     default:
       return <AtlasAuthShell theme={theme} {...props} />;

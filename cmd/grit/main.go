@@ -32,7 +32,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.321.0"
+var version = "3.322.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -302,7 +302,7 @@ func newCmd() *cobra.Command {
 	cmd.Flags().StringVar(&frontendFlag, "frontend", "", "Frontend framework: next, vite (tanstack)")
 	cmd.Flags().StringVar(&style, "style", "", "Admin panel style variant (default, modern, minimal, glass)")
 	cmd.Flags().StringVar(&dbProvider, "db", "", "Database engine: postgres (default), mysql, sqlite, memory. Writes DB_PROVIDER in .env; sqlite and memory need no database server at all")
-	cmd.Flags().StringVar(&theme, "theme", "", "Full theme: atlas (default), aurora, pulse — controls auth pages, dashboard, fonts, and brand colors. Can also be overridden at runtime via THEME=<name> in .env.")
+	cmd.Flags().StringVar(&theme, "theme", "", "Full theme: atlas (default), aurora, pulse, coral, amber, sky, mono, emerald. Controls the sign-in layout, dashboard, fonts and brand colours. Can also be overridden at runtime via THEME=<name> in .env.")
 
 	// Shorthand architecture flags
 	cmd.Flags().BoolVar(&apiOnly, "api", false, "Shorthand for --arch=api")

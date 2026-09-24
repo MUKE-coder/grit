@@ -92,6 +92,21 @@ const STEPS: Step[] = [
     label: 'Seed',
   },
   {
+    // The theme is a flag at scaffold time and an environment variable after
+    // it, which is worth showing: people assume a generated admin is a look
+    // they are stuck with.
+    command: 'THEME=aurora grit start',
+    output: [
+      'Theme: aurora',
+      'Auth pages, dashboard, fonts and brand colours switched.',
+      'Ready.',
+    ],
+    shot: '/images/themes/aurora.png',
+    alt: 'The admin rendered in the Aurora theme, with its own colours, typography and auth layout',
+    caption: 'Themes are a flag, or one line of .env. Each brings its own auth layout.',
+    label: 'Theme',
+  },
+  {
     command: 'grit add role EDITOR',
     output: [
       'Role added and wired into every guard.',
@@ -171,7 +186,7 @@ export function GritInAction() {
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <span className="tag-mono mb-3 block text-primary/80">Grit in action</span>
           <h2 className="mb-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-            Six commands.
+            Seven commands.
             <br className="hidden sm:block" /> A working application.
           </h2>
           <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">

@@ -40,7 +40,7 @@ const PLUGINS: { id: PluginId; label: string; desc: string }[] = [
 ]
 
 const ALL_PLUGINS: PluginId[] = PLUGINS.map((p) => p.id)
-const THEMES = ['atlas', 'aurora', 'pulse']
+const THEMES = ['atlas', 'aurora', 'pulse', 'coral', 'amber', 'sky', 'mono', 'emerald']
 const STEPS = ['Clients', 'Stack', 'Plugins', 'Prompt'] as const
 
 export function AIIntegrationWizard() {

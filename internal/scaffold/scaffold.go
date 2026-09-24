@@ -68,7 +68,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.321.0"
+const DefaultVersion = "3.322.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -156,7 +156,7 @@ func (o *Options) ValidateStyle() error {
 // A theme controls auth pages, dashboard tokens, fonts, sidebar treatment,
 // card styling, and the Pulse + Sentinel widget palette — picked once at
 // scaffold time and overridable at runtime via THEME=<name> in .env.
-var ValidThemes = []string{"atlas", "aurora", "pulse"}
+var ValidThemes = []string{"atlas", "aurora", "pulse", "coral", "amber", "sky", "mono", "emerald"}
 
 // ValidateTheme checks that the Theme field is a supported value.
 // If empty, it defaults to "atlas" — the team/organisation theme,

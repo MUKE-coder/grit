@@ -59,6 +59,27 @@ export const brand = {
     intervalMs: 5000,
   },
 
+  /** Copy for the auth layouts that put proof beside the form: the mono
+   *  theme's showcase panel and the emerald theme's quote. Every value is
+   *  yours to rewrite, and the layouts fall back to these rather than
+   *  rendering an empty panel.
+   *
+   *  The quote is deliberately not attributed to a real person or company.
+   *  A scaffold that ships a fabricated testimonial with a plausible name is
+   *  a scaffold that ships a lie to production the first time somebody
+   *  forgets to edit it. */
+  proof: {
+    headline: "Built on Grit.",
+    subheadline: "Go on the back, React on the front, one command to ship.",
+    points: [
+      "Auth, RBAC and an admin panel on the first run",
+      "One API for web, mobile and desktop",
+      "Deploy with a single command",
+    ] as string[],
+    quote: "We replaced four services and a month of wiring with one command.",
+    quoteAuthor: "Replace this with a real one",
+  },
+
   /** Optional brand color overrides. Leave empty strings to inherit the
    *  active theme's palette. Useful for keeping the theme structure but
    *  swapping just the primary accent. */
@@ -142,9 +163,27 @@ func sharedThemes() string {
 // Adding a new theme: extend ThemeName, add an entry to themes, restart
 // the dev servers so the env -> token lookup picks it up.
 
-export type ThemeName = "atlas" | "aurora" | "pulse";
+export type ThemeName =
+  | "atlas"
+  | "aurora"
+  | "pulse"
+  | "coral"
+  | "amber"
+  | "sky"
+  | "mono"
+  | "emerald";
 
-export type AuthLayout = "split-static" | "split-carousel" | "centered";
+// The shape of the sign-in screen. A theme picks one; the form inside is the
+// same in every layout, so adding one of these never touches a form.
+export type AuthLayout =
+  | "split-static"
+  | "split-carousel"
+  | "centered"
+  | "modal"
+  | "boxed"
+  | "banner"
+  | "showcase"
+  | "quote";
 
 export interface ThemeFonts {
   /** Font family used for body text and form inputs. */
@@ -257,6 +296,127 @@ export const themes: Record<ThemeName, ThemeTokens> = {
     },
     radius: "0.5rem",
     authLayout: "split-carousel",
+  },
+
+  // Coral: a card floating over a blurred glimpse of the app behind it, the
+  // shape a marketplace uses when signing in is an interruption rather than a
+  // destination.
+  coral: {
+    name: "coral",
+    fonts: {
+      ui: '"Inter", system-ui, -apple-system, sans-serif',
+      display: '"Inter", system-ui, -apple-system, sans-serif',
+    },
+    colors: {
+      bg: "#f7f7f7",
+      fg: "#222222",
+      card: "#ffffff",
+      border: "#dddddd",
+      muted: "#717171",
+      primary: "#e11d48",
+      primaryFg: "#ffffff",
+      accent: "#f43f5e",
+      heroBg: "#fff1f2",
+      heroFg: "#222222",
+    },
+    radius: "0.75rem",
+    authLayout: "modal",
+  },
+
+  // Amber: a plain bordered box under a wordmark, with the legal text and the
+  // footer links a storefront is obliged to carry. Deliberately unfashionable.
+  amber: {
+    name: "amber",
+    fonts: {
+      ui: '"Inter", Arial, system-ui, sans-serif',
+      display: '"Inter", Arial, system-ui, sans-serif',
+    },
+    colors: {
+      bg: "#ffffff",
+      fg: "#0f1111",
+      card: "#ffffff",
+      border: "#d5d9d9",
+      muted: "#565959",
+      primary: "#f59e0b",
+      primaryFg: "#0f1111",
+      accent: "#b45309",
+      heroBg: "#fffbeb",
+      heroFg: "#0f1111",
+    },
+    radius: "0.375rem",
+    authLayout: "boxed",
+  },
+
+  // Sky: a top bar and one bold left-aligned heading, social sign-in first.
+  // For products where most people arrive with an existing identity.
+  sky: {
+    name: "sky",
+    fonts: {
+      ui: '"Inter", system-ui, -apple-system, sans-serif',
+      display: '"Inter Display", "Inter", system-ui, sans-serif',
+    },
+    colors: {
+      bg: "#ffffff",
+      fg: "#0b1521",
+      card: "#f8fafc",
+      border: "#dbe3ec",
+      muted: "#5b6b7f",
+      primary: "#0284c7",
+      primaryFg: "#ffffff",
+      accent: "#0ea5e9",
+      heroBg: "#e0f2fe",
+      heroFg: "#0b1521",
+    },
+    radius: "0.5rem",
+    authLayout: "banner",
+  },
+
+  // Mono: black and white on a fine grid, with a showcase panel beside the
+  // form. The look developer tools reach for when the product is the proof.
+  mono: {
+    name: "mono",
+    fonts: {
+      ui: '"Inter", system-ui, -apple-system, sans-serif',
+      display: '"Inter", system-ui, -apple-system, sans-serif',
+    },
+    colors: {
+      bg: "#ffffff",
+      fg: "#0a0a0a",
+      card: "#ffffff",
+      border: "#e5e5e5",
+      muted: "#737373",
+      primary: "#0a0a0a",
+      primaryFg: "#ffffff",
+      accent: "#404040",
+      heroBg: "#fafafa",
+      heroFg: "#0a0a0a",
+    },
+    radius: "0.5rem",
+    authLayout: "showcase",
+  },
+
+  // Emerald: a narrow form column with a customer quote filling the rest.
+  // The quote is the argument, so it gets the larger half.
+  emerald: {
+    name: "emerald",
+    fonts: {
+      ui: '"Inter", system-ui, -apple-system, sans-serif',
+      display: '"Inter", system-ui, -apple-system, sans-serif',
+    },
+    colors: {
+      bg: "#ffffff",
+      fg: "#111827",
+      card: "#ffffff",
+      border: "#e5e7eb",
+      muted: "#6b7280",
+      primary: "#059669",
+      primaryFg: "#ffffff",
+      accent: "#10b981",
+      heroBg: "#ecfdf5",
+      heroFg: "#064e3b",
+    },
+    radius: "0.5rem",
+    authLayout: "quote",
   },
 };
 

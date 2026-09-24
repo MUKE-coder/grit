@@ -53,6 +53,51 @@ const THEMES: Theme[] = [
     scaffoldFlag: true,
   },
   {
+    key: 'coral',
+    name: 'Coral',
+    tagline:
+      'Sign-in as an interruption, not a destination: a card floating over a blurred glimpse of the app behind it. The shape marketplaces use.',
+    accent: '#e11d48',
+    image: '/images/auth/coral.png',
+    scaffoldFlag: true,
+  },
+  {
+    key: 'amber',
+    name: 'Amber',
+    tagline:
+      'A plain bordered box under a wordmark, with the legal line and footer links a storefront is obliged to carry. Deliberately unfashionable.',
+    accent: '#f59e0b',
+    image: '/images/auth/amber.png',
+    scaffoldFlag: true,
+  },
+  {
+    key: 'sky',
+    name: 'Sky',
+    tagline:
+      'A top bar and one bold heading, with social sign-in above the password field. For products where most people arrive holding an identity already.',
+    accent: '#0284c7',
+    image: '/images/auth/sky.png',
+    scaffoldFlag: true,
+  },
+  {
+    key: 'mono',
+    name: 'Mono',
+    tagline:
+      'Black and white on a fine grid, with a panel of proof beside the form. The look developer tools reach for when the product is the argument.',
+    accent: '#0a0a0a',
+    image: '/images/auth/mono.png',
+    scaffoldFlag: true,
+  },
+  {
+    key: 'emerald',
+    name: 'Emerald',
+    tagline:
+      'A narrow form column with a customer quote filling the rest. The quote is the argument, so it gets the larger half.',
+    accent: '#059669',
+    image: '/images/auth/emerald.png',
+    scaffoldFlag: true,
+  },
+  {
     key: 'midnight',
     name: 'Midnight',
     tagline:
