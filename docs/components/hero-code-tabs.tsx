@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Boxes, Lock, ShieldCheck, UploadCloud, Zap } from 'lucide-react'
 import { CodeBlock } from '@/components/code-block'
+import { CopyPromptButton } from '@/components/copy-prompt-button'
 
 /**
  * The hero's right-hand panel: four tabs, each a real thing you get for free.
@@ -207,6 +208,14 @@ const INSTALLS = [
     label: 'Go',
     code: 'go install github.com/MUKE-coder/grit/v3/cmd/grit@latest',
   },
+  // A fourth way to start, and increasingly the common one: hand the whole
+  // thing to an agent. It sits beside the other three because this is where
+  // somebody decides how they are going to begin.
+  {
+    key: 'ai',
+    label: 'Build with AI',
+    code: '',
+  },
 ]
 
 export function InstallTabs() {
@@ -232,14 +241,24 @@ export function InstallTabs() {
           </button>
         ))}
       </div>
-      <div className="rounded-xl border border-border bg-card/40 backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.25)]">
-        <CodeBlock
-          key={install.key}
-          terminal
-          code={install.code}
-          className="!border-0 !rounded-xl !bg-transparent dark:!bg-transparent !m-0"
-        />
-      </div>
+      {install.key === 'ai' ? (
+        <div className="rounded-xl border border-border bg-card/40 p-4 backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.25)]">
+          <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
+            Copy one prompt into Claude Code, Cursor, Codex or any chat. It installs the
+            Grit skill, teaches the agent the framework and links every concept it needs.
+          </p>
+          <CopyPromptButton />
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-card/40 backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.25)]">
+          <CodeBlock
+            key={install.key}
+            terminal
+            code={install.code}
+            className="!border-0 !rounded-xl !bg-transparent dark:!bg-transparent !m-0"
+          />
+        </div>
+      )}
     </div>
   )
 }

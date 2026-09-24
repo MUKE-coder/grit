@@ -465,6 +465,7 @@ func modernDashboardPage() string {
 	return fmt.Sprintf(`"use client";
 
 import { useMe } from "@/hooks/use-auth";
+import { DashboardSecurityNudges } from "@/components/dashboard/security-nudges";
 import { resources } from "@/resources";
 import { StatsCard } from "@/components/widgets/stats-card";
 import { WidgetGrid } from "@/components/widgets/widget-grid";
@@ -488,6 +489,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      <DashboardSecurityNudges />
       {/* Welcome banner — full width */}
       <div className="col-span-full rounded-2xl border border-border bg-gradient-to-r from-accent/15 via-accent/5 to-bg-secondary p-8 relative overflow-hidden">
         <div className="pointer-events-none absolute -top-20 -right-20 h-60 w-60 rounded-full bg-accent/10 blur-3xl" />

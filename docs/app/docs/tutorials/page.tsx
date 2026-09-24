@@ -32,6 +32,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CopyPromptButton } from '@/components/copy-prompt-button'
 import { PageHelp } from '@/components/page-help'
 import { getDocMetadata } from '@/config/docs-metadata'
 
@@ -147,6 +148,9 @@ export default function TutorialsPage() {
                 <span className="text-foreground font-medium">focused tutorial</span> and finish
                 something concrete in about 30 minutes. All free and self-paced.
               </p>
+              <div className="mt-6">
+                <CopyPromptButton />
+              </div>
             </div>
 
             {/* Guided tracks */}

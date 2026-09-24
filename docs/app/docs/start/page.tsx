@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ArrowRight, Check, Clock } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CopyPromptButton } from '@/components/copy-prompt-button'
 import { CodeBlock } from '@/components/code-block'
 import { getDocMetadata } from '@/config/docs-metadata'
 
@@ -150,6 +151,11 @@ export default function StartPage() {
                 reference you can reach for later — this is the part to read in order.
               </p>
             </div>
+
+            {/* Offered before the path rather than at the end of it. Some
+                people reading this intend to do none of it themselves, and
+                finding that out on step seven wastes their afternoon. */}
+            <CopyPromptButton variant="panel" className="mb-12" />
 
             <section aria-labelledby="prerequisites" className="mb-12">
               <h2 id="prerequisites" className="text-2xl font-bold tracking-tight mb-2">

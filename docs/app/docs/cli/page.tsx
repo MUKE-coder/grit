@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CopyPromptButton } from '@/components/copy-prompt-button'
 import { CliExplorer } from '@/components/cli-explorer'
 import { getDocMetadata } from '@/config/docs-metadata'
 import { CLI_COMMANDS } from '@/config/cli-commands'
@@ -23,6 +24,9 @@ export default function CliExplorerPage() {
             <div className="mb-10">
               <span className="tag-mono text-primary/80 mb-3 block">Reference</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Command explorer</h1>
+              <div className="mb-6">
+                <CopyPromptButton />
+              </div>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Every Grit CLI command, with the output it prints and the files it writes.
                 Press <span className="text-foreground">run</span> on any of them to watch

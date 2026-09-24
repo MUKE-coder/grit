@@ -161,6 +161,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeAdminAccountFiles(root, opts); err != nil {
 			return fmt.Errorf("updating security page: %w", err)
 		}
+		if err := writeMagicLinkFiles(root, opts); err != nil {
+			return fmt.Errorf("updating sign-in links: %w", err)
+		}
 		if err := ensurePasskeyWiring(root, opts); err != nil {
 			return fmt.Errorf("wiring passkeys: %w", err)
 		}
@@ -522,6 +525,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		}
 		if err := repairEmailTwoFactorRoutes(root); err != nil {
 			fmt.Printf("  ⚠ adding the routes for a second factor by email: %v\n", err)
+		}
+		if err := repairMagicLinkRoutes(root); err != nil {
+			return fmt.Errorf("mounting the sign-in link routes: %w", err)
 		}
 		if err := repairEmailTwoFactorLogin(root); err != nil {
 			fmt.Printf("  ⚠ letting a sign-in ask for a code by email: %v\n", err)

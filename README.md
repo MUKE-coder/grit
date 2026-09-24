@@ -5,300 +5,364 @@
 <h1 align="center">Grit</h1>
 
 <p align="center">
-  <strong>Go + React. Built with Grit.</strong>
+  <strong>Go + React. Built with Grit.</strong><br />
+  Describe a resource. Get the Go model, the API, the migrations, the TypeScript types,
+  the React hooks and the admin screen. Auth, jobs, storage and deploy are already there.
 </p>
 
 <p align="center">
-  <a href="https://github.com/MUKE-coder/grit/releases"><img src="https://img.shields.io/github/v/release/MUKE-coder/grit?style=flat-square&color=38bdf8" alt="Release" /></a>
-  <a href="https://github.com/MUKE-coder/grit/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/MUKE-coder/grit/ci.yml?branch=main&style=flat-square&label=CI&color=38bdf8" alt="CI" /></a>
-  <a href="https://github.com/MUKE-coder/grit/actions/workflows/live.yml"><img src="https://img.shields.io/github/actions/workflow/status/MUKE-coder/grit/live.yml?branch=main&style=flat-square&label=live%20app&color=38bdf8" alt="Live app checks on Postgres 15, 16 and 17" /></a>
-  <a href="https://github.com/MUKE-coder/grit/actions/workflows/scan.yml"><img src="https://img.shields.io/github/actions/workflow/status/MUKE-coder/grit/scan.yml?branch=main&style=flat-square&label=scan&color=38bdf8" alt="Security scan of a generated app" /></a>
-  <a href="https://github.com/MUKE-coder/grit/blob/main/LICENSE"><img src="https://img.shields.io/github/license/MUKE-coder/grit?style=flat-square&color=38bdf8" alt="License" /></a>
-  <a href="https://gritframework.dev"><img src="https://img.shields.io/badge/docs-gritframework.dev-38bdf8?style=flat-square" alt="Docs" /></a>
-  <a href="https://gritframework.dev/sponsor"><img src="https://img.shields.io/badge/sponsor-%E2%99%A5-ec4899?style=flat-square" alt="Sponsor" /></a>
+  <a href="https://github.com/MUKE-coder/grit/releases"><img src="https://img.shields.io/github/v/release/MUKE-coder/grit?style=flat-square&color=6c5ce7" alt="Release" /></a>
+  <a href="https://github.com/MUKE-coder/grit/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/MUKE-coder/grit/ci.yml?branch=main&style=flat-square&label=CI&color=6c5ce7" alt="CI" /></a>
+  <a href="https://github.com/MUKE-coder/grit/actions/workflows/live.yml"><img src="https://img.shields.io/github/actions/workflow/status/MUKE-coder/grit/live.yml?branch=main&style=flat-square&label=live%20app&color=6c5ce7" alt="Live app checks on Postgres 15, 16 and 17" /></a>
+  <a href="https://github.com/MUKE-coder/grit/actions/workflows/scan.yml"><img src="https://img.shields.io/github/actions/workflow/status/MUKE-coder/grit/scan.yml?branch=main&style=flat-square&label=scan&color=6c5ce7" alt="Security scan of a generated app" /></a>
+  <a href="https://github.com/MUKE-coder/grit/blob/main/LICENSE"><img src="https://img.shields.io/github/license/MUKE-coder/grit?style=flat-square&color=6c5ce7" alt="License" /></a>
+  <a href="https://gritframework.dev"><img src="https://img.shields.io/badge/docs-gritframework.dev-6c5ce7?style=flat-square" alt="Docs" /></a>
 </p>
 
 <p align="center">
-  The full-stack Go + React framework. Choose your architecture, pick your frontend, and scaffold a production-ready application in seconds.
+  <a href="#install"><strong>Install</strong></a> ·
+  <a href="#build-something-real-in-five-minutes"><strong>5-minute tutorial</strong></a> ·
+  <a href="#let-an-ai-build-it"><strong>Build with AI</strong></a> ·
+  <a href="https://gritframework.dev/docs"><strong>Docs</strong></a>
 </p>
 
 ---
 
-## What is Grit?
-
-Grit is a full-stack meta-framework that fuses **Go** (Gin + GORM) with **Next.js** or **TanStack Router** (Vite) in a flexible architecture. One interactive CLI to scaffold a complete production-ready project with authentication, 2FA, admin panel, code generation, file storage, email, background jobs, AI integration, one-command deployment, and Docker setup.
-
 ## Install
 
-One-line install — works on macOS, Linux, and Windows (PowerShell or Git Bash). No Go toolchain required:
-
 ```bash
-curl -fsSL https://gritframework.dev/install.sh | sh
+curl -fsSL https://gritframework.dev/install.sh | sh        # macOS, Linux, Git Bash
 ```
 
-Pin a specific version:
-
-```bash
-GRIT_VERSION=v3.27.0 curl -fsSL https://gritframework.dev/install.sh | sh
+```powershell
+irm https://gritframework.dev/install.ps1 | iex             # Windows PowerShell
 ```
 
-Already have Go installed? `go install` still works as an alternative:
+No Go toolchain needed. `grit version` to check, `grit update` to self-update.
+
+<details>
+<summary>Other ways to install</summary>
 
 ```bash
-go install github.com/MUKE-coder/grit/v3/cmd/grit@latest
-# or pin: go install github.com/MUKE-coder/grit/v3/cmd/grit@v3.27.0
+go install github.com/MUKE-coder/grit/v3/cmd/grit@latest    # with a Go toolchain
+GRIT_VERSION=v3.320.0 curl -fsSL https://gritframework.dev/install.sh | sh   # pin a release
 ```
 
-Verify the install:
+You need Go 1.21+, Node 20+, pnpm, and Docker for Postgres, Redis, MinIO and Mailhog.
+[Full prerequisites](https://gritframework.dev/docs/prerequisites)
+
+</details>
+
+## Sixty seconds
 
 ```bash
-grit version
-# grit version 3.27.0
-```
-
-Update to the latest release:
-
-```bash
-grit update
-```
-
-## Quick Start
-
-```bash
-# Interactive — choose architecture + frontend
-grit new myapp
-
-# Or use flags to skip prompts
-grit new myapp --triple --next       # Web + Admin + API (Next.js)
-grit new myapp --double --vite       # Web + API (TanStack Router)
-grit new myapp --single              # Single Go binary + embedded SPA
-grit new myapp --api                 # Go API only
-grit new . --triple --vite           # Scaffold into current directory
-grit new ./ --triple --vite          # Same as above
-grit new-desktop myapp               # Native desktop app (Wails)
-```
-
-Tip: when using `grit new .`, Grit infers the project name from your current folder name. Use `--force` if the directory is non-empty.
-
-```bash
+grit new myapp --triple --next   # Web + Admin + API
 cd myapp
-docker compose up -d    # PostgreSQL, Redis, MinIO, Mailhog
-pnpm install && pnpm dev
+docker compose up -d             # Postgres, Redis, MinIO, Mailhog
+pnpm install
+grit start
 ```
 
-Open http://localhost:3000 — register, log in, see the dashboard.
+Open http://localhost:3000, register, and you are logged into an application that already
+has authentication, two-factor, an admin panel, a database browser and API docs.
 
-## Architecture Modes
+<p align="center">
+  <img src="https://gritframework.dev/images/platforms/admin.png" alt="The generated admin dashboard" width="100%" />
+</p>
 
-| Mode | Command | What You Get |
-|------|---------|-------------|
-| **Triple** | `grit new app --triple` | Web + Admin + API (monorepo, Turborepo) |
-| **Double** | `grit new app --double` | Web + API (no admin, lighter) |
-| **Single** | `grit new app --single` | Go binary with `go:embed` frontend (like Laravel/Next.js) |
-| **API** | `grit new app --api` | Go API only (no frontend) |
+---
+
+## What ships in every project
+
+<p align="center">
+  <img src="images/batteries.svg" alt="Every Grit project ships with authentication, two-factor, passkeys, RBAC, an admin panel, data tables, a form builder, file storage, email, background jobs, cron, caching, realtime, webhooks, an audit log, feature flags, backups, GDPR tools, API docs, a database browser, a WAF, tracing, AI and one-command deploy" width="100%" />
+</p>
+
+<table>
+<tr>
+<td width="50%"><img src="https://gritframework.dev/images/auth/login.png" alt="Generated sign-in page" /><br /><sub><b>Auth UI.</b> Sign in, register, reset, verify, 2FA.</sub></td>
+<td width="50%"><img src="https://gritframework.dev/images/forms/relationship.png" alt="Generated form with a relationship picker" /><br /><sub><b>Forms.</b> Built from your field definitions, pickers included.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="https://gritframework.dev/images/system/roles.png" alt="Roles and permissions screen" /><br /><sub><b>Roles and permissions.</b> Per resource, from one command.</sub></td>
+<td width="50%"><img src="https://gritframework.dev/images/forms/line-items.png" alt="Invoice form with line items" /><br /><sub><b>Line items and money.</b> Integer minor units, never floats.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="https://gritframework.dev/images/system/jobs.png" alt="Background jobs dashboard" /><br /><sub><b>Jobs, cron, mail.</b> With a dashboard, not just a queue.</sub></td>
+<td width="50%"><img src="https://gritframework.dev/images/platforms/api-scalar.png" alt="Generated API reference" /><br /><sub><b>API docs.</b> Generated from the routes, always current.</sub></td>
+</tr>
+</table>
+
+One API, every client: [web](https://gritframework.dev/docs/frontend/web-app) ·
+[admin](https://gritframework.dev/docs/admin/overview) ·
+[mobile (Expo)](https://gritframework.dev/docs/mobile/getting-started) ·
+[desktop (Wails)](https://gritframework.dev/docs/desktop/getting-started)
+
+---
+
+## Build something real in five minutes
+
+A support desk with customers, tickets, a filterable table, a form with a customer picker,
+a REST API and fifty rows of realistic data.
+
+**1. Scaffold and start the infrastructure.**
+
+```bash
+grit new helpdesk --triple --next
+cd helpdesk
+docker compose up -d
+pnpm install
+```
+
+**2. Model the domain.** One command per noun. The field types decide the database column,
+the validation, the TypeScript type and the admin input, all at once.
+
+```bash
+grit generate resource Customer --fields "name:string,email:email,company:string:optional"
+
+grit generate resource Ticket --fields "subject:string,body:richtext,priority:select:low=Low|normal=Normal|high=High,status:select:open=Open|closed=Closed,customer:belongs_to:Customer" --seed --faker --count 50
+```
+
+Each of those writes nine files and injects the wiring: a GORM model, a service, a handler,
+the routes, a Zod schema shared by every frontend, TypeScript types, React Query hooks, an
+admin page and its resource definition.
+
+**3. Migrate, seed and run.**
+
+```bash
+grit migrate
+grit seed
+grit start
+```
+
+**4. Look at what you have.** At http://localhost:3001 there is a Tickets screen with
+sorting, filtering, search, pagination and bulk selection; a create form with a rich-text
+editor, two dropdowns and a searchable customer picker; and full CRUD behind role guards.
+At http://localhost:8080/docs is the API reference for the endpoints that back it, and at
+`/studio` a browser for the rows themselves.
+
+**5. Add a column later**, without regenerating. It goes into the model, both Zod schemas,
+the TypeScript type, the admin form and the table, and GORM adds the column on the next
+`grit migrate`:
+
+```bash
+grit generate field Ticket resolved_at:datetime
+```
+
+Scalar, select and toggle columns work this way. For a relationship, file, slug or array
+field, regenerate the resource.
+
+**6. Ship it.**
+
+```bash
+grit deploy --host you@server.com --domain helpdesk.com
+```
+
+SSH, systemd and Caddy with automatic TLS.
+[Deployment guides](https://gritframework.dev/docs/deployment) for Railway, Render, Fly.io,
+Coolify, Dokploy and plain VPS.
+
+> Longer walkthroughs: [a CRM](https://gritframework.dev/blog/build-a-crm-with-grit) ·
+> [a storefront](https://gritframework.dev/blog/build-a-storefront-with-grit) ·
+> [an invoice app](https://gritframework.dev/blog/build-an-invoice-app-with-grit) ·
+> [a mobile app](https://gritframework.dev/blog/build-mobile-app-with-grit) ·
+> [a desktop app](https://gritframework.dev/blog/build-desktop-app-with-grit)
+
+---
+
+## Let an AI build it
+
+Grit is a code generator, and agents that do not know that hand-write the nine files and
+wonder why nothing is reachable. So there is a skill that teaches them:
+
+```bash
+npx skills add MUKE-coder/grit --skill grit
+```
+
+Then paste the build prompt, which sets out the whole job in nine steps, links every
+concept the agent needs, and tells it to ask you what you are building before it scaffolds
+anything:
+
+```bash
+curl -s https://gritframework.dev/prompt
+```
+
+Or copy it from [gritframework.dev/docs/ai-integration](https://gritframework.dev/docs/ai-integration),
+which also has a wizard that narrows the brief to your stack and plugins. The skill itself
+is readable at [gritframework.dev/skill.md](https://gritframework.dev/skill.md), and there
+is an [MCP server](https://gritframework.dev/docs/ai-workflows/mcp) for tools that speak it.
+
+---
+
+## Choose an architecture
+
+| Mode | Command | What you get |
+|---|---|---|
+| **Triple** | `grit new app --triple` | Web + Admin + API, Turborepo monorepo |
+| **Double** | `grit new app --double` | Web + API, no separate admin |
+| **Single** | `grit new app --single` | One Go binary, SPA embedded with `go:embed` |
+| **API** | `grit new app --api` | Go API only |
 | **Mobile** | `grit new app --mobile` | API + Expo React Native |
 | **Desktop** | `grit new-desktop app` | Wails + Go + React + SQLite |
 
-## Frontend Options
+Frontend: `--next` (App Router, default) or `--vite` (TanStack Router, SPA).
+Database: `--db postgres|mysql|sqlite|memory`.
+`grit new .` scaffolds into the current directory.
 
-| Frontend | Flag | Stack |
-|----------|------|-------|
-| **Next.js** (default) | `--next` | App Router, Server Components, SSR/ISR |
-| **TanStack Router** | `--vite` | Vite, file-based routing, SPA, faster builds |
+[Architecture guide](https://gritframework.dev/docs/concepts/architecture-modes)
 
-## What Ships With Every Project
+## Field types
 
-| Feature | Details |
-|---------|---------|
-| **JWT Authentication** | Register, login, refresh tokens, role-based access (ADMIN/EDITOR/USER) |
-| **Two-Factor Auth (TOTP)** | Authenticator app, 10 backup codes, 30-day trusted devices |
-| **OAuth2 Social Login** | Google + GitHub via `goth` |
-| **File Storage (S3)** | Presigned URL uploads to AWS S3, Cloudflare R2, or MinIO |
-| **Email (Resend)** | Transactional emails with Go HTML templates |
-| **Background Jobs** | Redis-backed queue via `asynq` with admin dashboard |
-| **Cron Scheduler** | Recurring tasks with cron expressions |
-| **AI Integration** | Vercel AI Gateway — one key, hundreds of models |
-| **Redis Caching** | Get/Set/Delete + cache middleware for responses |
-| **GORM Studio** | Visual database browser at `/studio` |
-| **API Documentation** | Auto-generated Scalar docs at `/docs` |
-| **Sentinel** | WAF, rate limiting, brute-force protection at `/sentinel/ui` |
-| **Pulse** | Request tracing, DB monitoring, metrics at `/pulse/ui` |
-| **Grit UI** | 100 pre-built shadcn-compatible components |
-| **Docker** | Dev + production Docker Compose setups |
+The field definition is the source of truth for the column, the validation, the type and
+the admin input.
 
-## Code Generator
+| Type | Go | Notes |
+|---|---|---|
+| `string` `text` `richtext` | `string` | required by default; `richtext` gets a Tiptap editor |
+| `int` `uint` `float` | `int` `uint` `float64` | `float` for weights and ratings, never money |
+| `bool` / `toggle` | `bool` | |
+| `date` `datetime` `time` | `*time.Time` | |
+| `money` | minor units + currency | **use this for money** |
+| `email` `url` `domain` `tel` `country` `color` `percent` `rating` | `string` / number | checked and normalised on write; `tel:UG` sets a default country |
+| `slug` | `string` | auto-unique from another field |
+| `select` `radio` `check` | `string` / JSON | `status:select:draft=Draft\|paid=Paid` |
+| `file` `files` | `FileRef` | S3-backed; `file:image` limits what is accepted |
+| `json` `string_array` | JSON column | |
+| `belongs_to` `one_to_one` | `string` | a UUID foreign key plus an index |
+| `many_to_many` | `[]string` | junction table and a picker |
 
-```bash
-# Generate a full-stack resource
-grit generate resource Post --fields "title:string,content:richtext,published:bool,slug:slug:title"
+**Modifiers:** `:unique` `:optional` `:encrypted` `:slug:<source>` `:belongs_to:<Model>`
+`:many_to_many:<Model>` `:select:a=A|b=B` `:file:image`
 
-# Interactive mode
-grit generate resource Product -i
+[Full reference](https://gritframework.dev/docs/concepts/field-types)
 
-# From YAML
-grit generate resource Post --from post.yaml
-
-# Remove a resource (deletes files + reverses injections)
-grit remove resource Post
-```
-
-**Generated files per resource:** Go model, service, handler, Zod schema, TypeScript types, React Query hooks, admin page, route injection — all via code markers.
-
-## CLI Commands
+<details>
+<summary><strong>CLI reference</strong></summary>
 
 ```bash
 # Scaffolding
-grit new <name>                        # Interactive (architecture + frontend)
-grit new <name> --triple --next        # Explicit flags
-grit new . --triple --vite             # Scaffold into current directory
-grit new-desktop <name>                # Desktop app (Wails)
+grit new <name>                        # interactive
+grit new <name> --triple --next        # explicit
+grit new-desktop <name>                # desktop app (Wails)
 
-# Code generation
-grit generate resource <Name> --fields "..."
-grit remove resource <Name>
-grit add role <ROLE_NAME>
-grit sync                              # Go types → TypeScript + Zod
+# Generating
+grit generate resource <Name> --fields "..."   # also: grit g
+grit generate resource <Name> --seed --faker --count 500
+grit generate field <Resource> <name:type>     # one column, in place
+grit generate seeder <Resource>
+grit generate form <Resource>                  # multi-step form
+grit generate table <Resource>
+grit remove resource <Name>                    # reverses every injection
+grit add role <ROLE>
+grit add variants --resource <Resource>
+grit sync                              # Go types -> TypeScript + Zod
 
-# Development
-grit start                             # Auto-detect project, start dev server
-grit start client                      # Start frontend apps
-grit start server                      # Start Go API
-grit studio                            # Open GORM Studio
-grit routes                            # List all registered API routes
+# Running
+grit start                             # everything
+grit start server | grit start client
+grit studio                            # GORM Studio
+grit routes                            # what is actually mounted
+grit doctor                            # audit for silent security mistakes
 
 # Database
-grit new myapp --db mysql              # postgres (default), mysql, sqlite, memory
-grit migrate                           # Run migrations
-grit migrate --fresh                   # Drop + re-migrate
-grit migrate status                    # What each run changed
-grit migrate down                      # Undo the last run (--steps, --dry-run, --yes)
-grit seed                              # Seed database
+grit migrate                           # run migrations
+grit migrate --fresh | status | down
+grit seed
+grit backup | grit restore
+
+# Plugins
+grit plugin list | add <name> | remove <name> | update
 
 # Operations
-grit down                              # Maintenance mode (503 all requests)
-grit up                                # Back online
-grit deploy --host user@server.com --domain myapp.com
+grit down                              # maintenance mode
+grit up
+grit deploy --host user@server --domain example.com
 
 # Meta
-grit version                           # v3.27.0
-grit update                            # Self-update to latest
-grit upgrade                           # Upgrade project templates
+grit version | grit update             # the CLI
+grit upgrade                           # this project's templates
 ```
 
-## Field Types
+[Full CLI docs](https://gritframework.dev/docs/cli)
 
-| Type | Go Type | TypeScript | Notes |
-|------|---------|-----------|-------|
-| `string` | `string` | `string` | Required by default |
-| `text` | `string` | `string` | GORM `type:text` |
-| `richtext` | `string` | `string` | Tiptap WYSIWYG editor |
-| `int` | `int` | `number` | |
-| `uint` | `uint` | `number` | |
-| `float` | `float64` | `number` | |
-| `bool` | `bool` | `boolean` | |
-| `datetime` | `*time.Time` | `string\|null` | |
-| `date` | `*time.Time` | `string\|null` | |
-| `slug` | `string` | `string` | Auto-unique from source |
-| `belongs_to` | `uint` | `number` | FK + index |
-| `many_to_many` | `[]uint` | `number[]` | Junction table |
-| `string_array` | `datatypes.JSONSlice[string]` | `string[]` | JSON column |
+</details>
 
-**Modifiers:** `:unique`, `:optional`, `:slug:<source>`, `:belongs_to:<Model>`, `:many_to_many:<Model>`
-
-## Tech Stack
+<details>
+<summary><strong>Tech stack</strong></summary>
 
 | Layer | Technology |
-|-------|-----------|
+|---|---|
 | Backend | Go 1.21+ · Gin · GORM |
 | Frontend | Next.js 14+ (App Router) **or** TanStack Router (Vite) |
 | Styling | Tailwind CSS · shadcn/ui |
-| Database | PostgreSQL (dev: Docker) · MySQL 8+ / MariaDB · SQLite (desktop/single) |
-| Cache / Queue | Redis · asynq |
-| File Storage | S3-compatible (MinIO / Cloudflare R2 / AWS S3) |
+| Database | PostgreSQL · MySQL 8+ / MariaDB · SQLite |
+| Cache / queue | Redis · asynq |
+| Storage | S3-compatible (MinIO, Cloudflare R2, AWS S3) |
 | Email | Resend |
-| AI | Vercel AI Gateway (Anthropic, OpenAI, Google, and more) |
-| Auth | JWT + TOTP (2FA) + OAuth2 (Google, GitHub) |
-| Validation | Zod (shared between apps) |
-| Data Fetching | TanStack Query |
+| AI | Vercel AI Gateway |
+| Auth | JWT · TOTP · passkeys · OAuth2 · SSO (OIDC, SAML) |
+| Validation | Zod, shared between apps |
+| Data fetching | TanStack Query |
 | Monorepo | Turborepo · pnpm |
-| Security | Sentinel (WAF + rate limiting) |
-| Observability | Pulse (tracing + metrics) |
-| DB Browser | GORM Studio |
-| Desktop | Wails v2 |
-| Deployment | SSH + systemd + Caddy (auto-TLS) |
+| Security | Sentinel (WAF, rate limiting) |
+| Observability | Pulse (tracing, metrics) |
+| DB browser | GORM Studio |
+| Desktop / mobile | Wails v2 · Expo |
+| Deploy | SSH + systemd + Caddy (auto-TLS) |
 
-## Plugins
+</details>
 
-Grit extends in two different ways. They're often confused, so the distinction matters:
+<details>
+<summary><strong>Plugins</strong></summary>
 
-### 1. `grit plugin add` — code generation
+Two different things, often confused.
 
-Installs a feature by **generating real code into your project** — models, routes,
-admin pages, frontend components — recorded in `.grit/plugins.lock.json` so
-`grit plugin remove` reverses every file and injection. You own and can edit the
-result. Run `grit plugin list` to see what's available:
+**`grit plugin add` generates code into your project**: models, routes, admin pages and
+components, recorded in `.grit/plugins.lock.json` so `grit plugin remove` reverses every
+file and injection. You own the result. `grit plugin update` carries a fix into projects
+that already installed it.
 
 ```bash
+grit plugin list
 grit plugin add multitenant       # organizations, per-org roles, query scoping
 grit plugin add impersonate       # sign in as another user, with an audit trail
-grit plugin add command-palette   # ⌘K navigation across the admin
+grit plugin add command-palette   # ⌘K navigation
 grit plugin add saved-views       # per-user named table views
+grit plugin add stripe            # checkout, subscriptions, webhooks
+grit plugin add push | video | webhooks | device-pairing
 ```
 
-### 2. Official Go packages — runtime libraries
+**The `grit-plugins` Go packages are ordinary modules** you import and wire yourself, and
+are *not* installed by `grit plugin add`. They are early (v0.3.0): they build, vet and
+carry contract tests, but several still store `user_id` as `uint` while a Grit `User.ID` is
+a UUID string. Check core first, since `grit-websockets` duplicates the realtime module a
+scaffolded app already ships.
 
-Ordinary Go modules you import and wire up yourself. They hold runtime logic
-(a WebSocket hub, a Stripe client, an OAuth manager) and upgrade with `go get -u`.
-**These are not installed by `grit plugin add`.**
+[Plugin docs](https://gritframework.dev/docs/plugins/overview) ·
+[repo](https://github.com/MUKE-coder/grit-plugins)
 
-```bash
-go get github.com/MUKE-coder/grit-plugins/grit-websockets@v0.1.0
-```
+</details>
 
-> **Status: v0.3.0, early.** These build and vet clean and now carry contract
-> tests (35 across the ten) plus per-module CI. Behavioural tests against live
-> services (Meilisearch, FFmpeg, Stripe) are still a TODO.
-> `grit-notifications`, `grit-video`, `grit-webhooks` and `grit-conference` still
-> store `user_id` as `uint`, while a Grit `User.ID` is a UUID string — so linking
-> them to a Grit user needs a change first. `grit-oauth` and `grit-stripe` are
-> already fixed. Treat them as a starting point, not a supported dependency.
-
-> **Check core first.** Several of these overlap with modules you already have
-> behind `MODULE_*` flags. In particular **`grit-websockets` duplicates
-> `MODULE_REALTIME`** — a scaffolded app already ships `internal/realtime` and a
-> WebSocket handler wired to your `AuthService`. `grit-export` overlaps
-> `internal/export` (it adds PDF). `grit-webhooks` does *not* overlap despite the
-> name: core verifies **incoming** webhooks, that package **sends** outgoing ones.
-> The [repo README](https://github.com/MUKE-coder/grit-plugins) has the full
-> per-package comparison.
-
-All are `github.com/MUKE-coder/grit-plugins/<module>`:
-
-| Module | Go package | Purpose |
-|--------|---------|---------|
-| [grit-websockets](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-websockets) | `ws` | Hub, rooms, broadcast, auth |
-| [grit-stripe](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-stripe) | `gritstripe` | Checkout, subscriptions, webhooks |
-| [grit-oauth](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-oauth) | `oauth` | Google, GitHub, Discord social login |
-| [grit-notifications](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-notifications) | `notify` | In-app, push (FCM), SMS (Twilio) |
-| [grit-search](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-search) | `search` | Meilisearch + GORM auto-index |
-| [grit-video](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-video) | `video` | Upload, FFmpeg, HLS streaming |
-| [grit-conference](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-conference) | `conference` | WebRTC signaling, rooms |
-| [grit-webhooks](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-webhooks) | `webhooks` | Outgoing webhooks, HMAC, retry |
-| [grit-i18n](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-i18n) | `i18n` | Translation, locale middleware |
-| [grit-export](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-export) | `export` | PDF, Excel, CSV generation |
+---
 
 ## Documentation
 
-Full docs at **[gritframework.dev](https://gritframework.dev)** — architecture guides, tutorials, the 10-course free curriculum at [/courses](https://gritframework.dev/courses), API reference, deployment, and plugin documentation.
+**[gritframework.dev](https://gritframework.dev)** has the guides, the tutorials, the API
+reference and the [free 10-part course](https://gritframework.dev/courses).
+
+Start at [/docs/start](https://gritframework.dev/docs/start), which is one ordered route
+from nothing to deployed. [What is stable and what is not](https://gritframework.dev/docs/stability).
+[Changelog](https://gritframework.dev/docs/changelog).
 
 ## Sponsors
 
-Grit is free and MIT licensed. Sponsorship pays for the features, docs and releases everyone
-else gets for free — and puts your name in front of every developer who builds with Grit.
+Grit is free and MIT licensed. Sponsorship pays for the features, docs and releases
+everyone else gets for free, and puts your name in front of every developer who builds
+with Grit.
 
 <!-- sponsors:start -->
 <p align="center">
-  <em>Grit has no sponsors yet. Be the first — your logo goes here, on the home page, and inside the CLI.</em>
+  <em>Grit has no sponsors yet. Be the first. Your logo goes here, on the home page, and inside the CLI.</em>
 </p>
 <!-- sponsors:end -->
 
@@ -306,7 +370,7 @@ else gets for free — and puts your name in front of every developer who builds
   <a href="https://gritframework.dev/sponsor"><strong>Become a sponsor →</strong></a>
 </p>
 
-Building with Grit? Add the badge to your README:
+Building with Grit? Add the badge:
 
 ```markdown
 [![Built with Grit](https://gritframework.dev/badge/built-with-grit.svg)](https://gritframework.dev)

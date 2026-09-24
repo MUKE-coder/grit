@@ -66,6 +66,134 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.320.0 */}
+            <div className="mb-12" id="v3.320.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.320.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Sign in with a link, for the accounts that never had a password</h3>
+                <p>
+                  The sign-in page now offers &quot;Email me a sign-in link instead&quot;, under the password box and
+                  using the address already typed there. It matters most for the accounts that have no password at
+                  all: anybody who signed up through Google or GitHub, and anybody whose reset email keeps landing in
+                  a spam folder they cannot reach from their phone. WCAG 2.2 asks for a way past a cognitive test at
+                  sign-in (3.3.8). Remembering a password is one, and this is that way.
+                </p>
+                <p>Three decisions, each of them the thing this feature is usually got wrong:</p>
+                <ul>
+                  <li>
+                    <strong>The form answers the same either way.</strong> &quot;If that address has an account, a
+                    sign-in link is on its way&quot;, whether or not it does, and an address with no account does no
+                    work at all. Anything else turns the sign-in page into a way to find out who is registered here.
+                    The one exception is the rate limit, which is refused out loud, because the person is sitting in
+                    front of an inbox and silence would leave them waiting for an email that is not coming.
+                  </li>
+                  <li>
+                    <strong>The token is spent by the page, not by the link.</strong> Opening the link loads a page
+                    that POSTs the token back; the server spends nothing on the GET. Corporate mail scanners follow
+                    every URL in a message before anybody reads it, and a token spent on the GET is one the scanner
+                    burns. The person then clicks their own link and is told it has already been used, with nothing in
+                    that message to suggest why.
+                  </li>
+                  <li>
+                    <strong>A link replaces the password, not the second factor.</strong> An account with two-factor
+                    on gets the same challenge it always does. A link sitting in a mailbox is exactly what a second
+                    factor exists to survive.
+                  </li>
+                </ul>
+                <p>
+                  Links live 15 minutes, work once, and are stored as a SHA-256 hash, so a database read is not a pile
+                  of working sign-ins. Spending one is a conditional update rather than a read followed by a write, so
+                  two tabs opening the same link cannot both get in. Signing in this way records a session and an
+                  activity-log entry like any other, so the device shows up under Devices and can be revoked.
+                </p>
+                <p>
+                  The Security tab gains a <strong>Sign-in links</strong> card listing when a link was requested, from
+                  what address, and whether it was used, expired or is still valid. It exists because the request form
+                  answers identically to everybody by design, which also means it can never warn anybody: this is the
+                  only place a request you did not make becomes visible. It never shows a token.
+                </p>
+
+                <h3>The dashboard asks you to finish two things</h3>
+                <p>
+                  An unverified email address means a password reset has nowhere to go, which is a bad thing to
+                  discover on the day you need it. An account with no second factor is one leaked password from gone.
+                  Both facts used to live on a settings page nobody had a reason to open, so the dashboard now says so
+                  once, with a button that does the thing: send the verification email, or open the two-factor setup.
+                </p>
+                <p>
+                  Each card can be dismissed, and both disappear on their own once the underlying job is done, so
+                  nothing becomes permanent furniture. A banner that cannot be dismissed is one people learn to look
+                  past, which costs the next one its attention too. All four dashboard styles have them, which a test
+                  now enforces.
+                </p>
+
+                <h3>One account screen, not two</h3>
+                <p>
+                  v3.319.0 put everything about your own login on <code>/system/account</code> and left the older{' '}
+                  <code>/account/security</code> showing the same cards. Two pages for one thing is the problem the
+                  Account screen was built to fix. The old address now redirects, so a bookmark still works, and the
+                  user menu points at the new one.
+                </p>
+
+                <h3>A skill and a prompt, so an agent gets Grit right the first time</h3>
+                <p>
+                  Grit is a code generator, not a runtime library, and nearly every mistake an AI makes with it comes
+                  from not knowing that: it hand-writes the nine files that <code>grit generate resource</code> would
+                  have written, produces something that compiles, and cannot work out why none of it is reachable.
+                </p>
+                <p>
+                  So there is now a proper skill, installable with{' '}
+                  <code>npx skills add MUKE-coder/grit --skill grit</code> and readable at{' '}
+                  <a href="/skill.md">/skill.md</a>. It covers the mental model, choosing an architecture, the full
+                  field-type table, which layer code belongs in, the response format, the list of things already in
+                  the box that agents keep rebuilding, the verification commands, and the nine mistakes that cost the
+                  most time.
+                </p>
+                <p>
+                  A <strong>Copy prompt to build with AI</strong> button now sits in the hero, in the install tabs
+                  beside Windows, macOS and Go, on the docs home, on Start Here, and on the Build with AI page. It
+                  copies a nine-step brief that installs the skill, links every concept the agent needs, and tells it
+                  to ask you what you are building before it scaffolds anything. It is also fetchable at{' '}
+                  <a href="/prompt">/prompt</a>. The nav item formerly called &quot;AI Integration&quot; is now
+                  &quot;Build with AI&quot;.
+                </p>
+
+                <h3>Grit in action, on the home page</h3>
+                <p>
+                  A new section directly under the hero: six commands on the left, typed in the order you actually run
+                  them, and on the right the screen each one produced. The rest of the page argues; this part
+                  demonstrates. The screenshots are real generated projects, the pairing is the point, and it pauses
+                  on hover or focus with every step reachable by keyboard.
+                </p>
+
+                <h3>Also</h3>
+                <ul>
+                  <li>
+                    The desktop sign-in knew which second factor an account used and never read it, so every account
+                    using codes by email was told to open an authenticator app it had never set up. Only a generated
+                    project&apos;s type check caught it, as an unused variable. Fixed, and pinned by a test that checks
+                    the admin and the desktop together.
+                  </li>
+                  <li>
+                    The README is rewritten for somebody with no time: install, sixty seconds, what ships, a real
+                    five-minute tutorial that ends in a deployed support desk, and everything else folded away. Its
+                    field-type table said <code>belongs_to</code> was a <code>uint</code>; it has been a UUID string
+                    for a long time.
+                  </li>
+                </ul>
+                <p>
+                  <code>grit upgrade</code> carries all of it into an existing project: the routes, the model
+                  registry, the pages and the cards.
+                </p>
+              </div>
+            </div>
+
             {/* v3.319.0 */}
             <div className="mb-12" id="v3.319.0">
               <div className="flex items-center gap-3 mb-4">

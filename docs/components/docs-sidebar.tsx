@@ -104,7 +104,7 @@ const navItems: NavItem[] = [
     icon: <Box className="h-3.5 w-3.5" />,
     items: [
       { title: 'All Tech Kits', href: '/docs/tech-kits' },
-      { title: 'AI Integration Helper', href: '/docs/ai-integration' },
+      { title: 'Build with AI', href: '/docs/ai-integration' },
       { title: 'Single (Next.js)', href: '/docs/tech-kits/single' },
       { title: 'Single + Vite', href: '/docs/tech-kits/single-vite' },
       { title: 'Double, Web + API', href: '/docs/tech-kits/double' },

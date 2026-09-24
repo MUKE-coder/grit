@@ -566,6 +566,16 @@ func docsRedirectAndStreamRoutes(docs *gindocs.GinDocs) {
 		RequestBody(handlers.DisableTOTPRequest{}).
 		Response(200, handlers.MessageResponse{}, "Disabled; trusted devices are revoked too").
 		Response(401, handlers.ErrorResponse{}, "Wrong password")
+	docs.Route("POST /api/v1/auth/magic-link").
+		Summary("Email a sign-in link").
+		RequestBody(handlers.MagicLinkRequest{}).
+		Response(200, handlers.MessageResponse{}, "The same answer whether or not the address has an account").
+		Response(429, handlers.ErrorResponse{}, "A link was sent within the last minute")
+	docs.Route("POST /api/v1/auth/magic-link/consume").
+		Summary("Spend a sign-in link").
+		RequestBody(handlers.MagicLinkConsumeRequest{}).
+		Response(200, handlers.AuthResponse{}, "Signed in, unless the account owes a second factor").
+		Response(400, handlers.ErrorResponse{}, "Used, expired or unknown link")
 	docs.Route("POST /api/v1/auth/totp/verify").
 		Summary("Answer a two-factor challenge").
 		RequestBody(handlers.VerifyTOTPRequest{}).

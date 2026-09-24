@@ -62,7 +62,7 @@ export function SiteHeader() {
           {[
             { label: 'Docs', href: '/docs' },
             { label: 'Builder', href: '/builder' },
-            { label: 'AI Integration', href: '/docs/ai-integration', highlight: true },
+            { label: 'Build with AI', href: '/docs/ai-integration', highlight: true },
             { label: 'Grit UI', href: 'https://ui.gritframework.dev', external: true },
             { label: 'Blog', href: '/blog' },
             { label: 'Showcase', href: '/showcase' },

@@ -23,6 +23,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "@/lib/icons";
 import { useLogin, useMe, useVerifyTOTP } from "@/hooks/use-auth";
+import { apiClient } from "@/lib/api-client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoginSchema, type LoginInput } from "@repo/shared/schemas";
@@ -43,13 +44,38 @@ export default function LoginPage() {
   const [code, setCode] = useState("");
   const [useBackup, setUseBackup] = useState(false);
   const [trustDevice, setTrustDevice] = useState(false);
+  // Signing in by link instead of by password.
+  const [linkState, setLinkState] = useState<"idle" | "sending" | "sent">("idle");
+  const [linkError, setLinkError] = useState("");
   const { mutate: login, isPending, error: serverError } = useLogin();
   const { mutate: verifyTOTP, isPending: verifying, error: verifyError } = useVerifyTOTP();
   const { data: existingUser, isLoading: meLoading } = useMe();
   const router = useRouter();
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginInput>({
+  const { register, handleSubmit, getValues, formState: { errors } } = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
   });
+
+  // The address already typed above is the one we send to. Asking for it a
+  // second time on a second screen is the step people abandon.
+  const sendMagicLink = async () => {
+    const email = (getValues("email") || "").trim();
+    if (!email.includes("@")) {
+      setLinkError("Type your email address above first.");
+      return;
+    }
+    setLinkError("");
+    setLinkState("sending");
+    try {
+      await apiClient.post("/api/auth/magic-link", { email });
+      setLinkState("sent");
+    } catch (err: unknown) {
+      setLinkState("idle");
+      setLinkError(
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ??
+          "Could not send the link. Try your password instead.",
+      );
+    }
+  };
 
   // v3.31.15: if the session cookie is still valid, don't show the
   // login form — bounce straight to the dashboard.
@@ -231,6 +257,29 @@ export default function LoginPage() {
         >
           {isPending ? "Signing in..." : "Sign In"}
         </button>
+
+        {/* A password is a cognitive test, and WCAG 3.3.8 asks for a way past
+            one. This is that way, and it is also the only way in for the
+            people who never set a password because they signed up with
+            Google. */}
+        <div className="space-y-2 text-center text-sm">
+          {linkState === "sent" ? (
+            <p role="status" style={{ color: "var(--auth-muted)" }}>
+              If that address has an account, a sign-in link is on its way. It works once and expires in 15 minutes.
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={sendMagicLink}
+              disabled={linkState === "sending"}
+              className="underline disabled:opacity-50"
+              style={{ color: "var(--auth-primary)" }}
+            >
+              {linkState === "sending" ? "Sending a link..." : "Email me a sign-in link instead"}
+            </button>
+          )}
+          {linkError && <p className="text-red-500">{linkError}</p>}
+        </div>
       </form>
     </AuthShell>
   );

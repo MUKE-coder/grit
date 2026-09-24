@@ -1746,6 +1746,7 @@ func Models() []interface{} {
 		&TwoFactorConfig{},
 		&TrustedDevice{},
 		&TOTPPendingToken{},
+		&MagicLinkToken{},
 		&ActivityLog{},
 		&WebhookEvent{},
 		&FeatureFlag{},
@@ -9605,6 +9606,11 @@ func mountAuthRoutes(v1 *gin.RouterGroup, authHandler *handlers.AuthHandler, sso
 		auth.POST("/forgot-password", authHandler.ForgotPassword)
 		auth.POST("/reset-password", authHandler.ResetPassword)
 		auth.POST("/verify-email", authHandler.VerifyEmail)
+		// Signing in with an emailed link. Consuming is a POST from the page
+		// the link opens, never the GET that opens it: mail scanners follow
+		// every URL in a message and would spend the token first.
+		auth.POST("/magic-link", authHandler.RequestMagicLink)
+		auth.POST("/magic-link/consume", authHandler.ConsumeMagicLink)
 	}
 
 	// OAuth2 social login
@@ -10002,6 +10008,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// The second factor by email rather than by app. Two steps, like the
 		// authenticator: send a code to prove the address works, then confirm
 		// it, so nobody turns on a factor they cannot receive.
+		// Who has been asking for sign-in links to this account. Read-only,
+		// and never the token itself.
+		protected.GET("/auth/magic-link/recent", authHandler.RecentMagicLinks)
 		protected.POST("/auth/totp/email/send", totpHandler.SendEmailSetupCode)
 		protected.POST("/auth/totp/email/enable", totpHandler.EnableEmail)
 		protected.POST("/auth/totp/disable", totpHandler.Disable)

@@ -38,6 +38,7 @@ func ensureRecoveryModelRegistered(path string) error {
 	content := string(body)
 	if strings.Contains(content, "&RecoveryContact{}") &&
 		strings.Contains(content, "&Passkey{}") &&
+		strings.Contains(content, "&MagicLinkToken{}") &&
 		strings.Contains(content, "&OutboxMessage{}") {
 		return nil
 	}
@@ -59,6 +60,7 @@ func ensureRecoveryModelRegistered(path string) error {
 		"&RecoveryContactToken{}", "&RecoveryContact{}",
 		"&Passkey{}", "&WebAuthnSession{}",
 		"&OutboxMessage{}",
+		"&MagicLinkToken{}",
 	} {
 		if !strings.Contains(content, m) {
 			add = append(add, "\t\t"+m+",")

@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { CodeBlock } from '@/components/code-block'
 import { HeroCodeTabs, InstallTabs } from '@/components/hero-code-tabs'
+import { GritInAction } from '@/components/grit-in-action'
+import { CopyPromptButton } from '@/components/copy-prompt-button'
 import { HomepageBenchmarks } from '@/components/homepage-benchmarks'
 import { HomepageCapabilities } from '@/components/homepage-capabilities'
 import { Testimonials } from '@/components/testimonials'
@@ -173,6 +175,10 @@ export default function HomePage() {
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                     </Link>
                   </MagneticButton>
+                  <CopyPromptButton
+                    variant="hero"
+                    className="[&>button]:h-12 [&>button]:rounded-full [&>button]:px-7 [&>button]:font-semibold"
+                  />
                   <MagneticButton>
                     <Link
                       href="/docs/getting-started/philosophy"
@@ -253,6 +259,14 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ═══ GRIT IN ACTION ═══
+
+          Directly under the hero, before a single number or claim. Everything
+          below this argues; this demonstrates. Somebody who arrived knowing
+          nothing should be able to watch it once and understand what the tool
+          does, which no amount of prose above the fold has ever achieved. */}
+      <GritInAction />
 
       {/* ═══ BENCHMARKS ═══
 
@@ -485,8 +499,9 @@ export default function HomePage() {
             </h2>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
               Sign-in pages, a JWT pair, revocable server-side sessions, Google and GitHub,
-              TOTP with backup codes, database-backed roles, and enterprise SSO over OIDC or
-              SAML. Working on the first run, not a tutorial to follow.
+              passkeys, emailed sign-in links, a second factor by app or by email with backup
+              codes, database-backed roles, and enterprise SSO over OIDC or SAML. Working on the
+              first run, not a tutorial to follow.
             </p>
           </div>
 
@@ -722,6 +737,10 @@ export default function HomePage() {
               thousands of decisions an AI agent does not have to make, and the code it
               writes lands in the same shape a person would have written.
             </p>
+          </div>
+
+          <div className="mx-auto mb-10 max-w-3xl">
+            <CopyPromptButton variant="panel" />
           </div>
 
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2.5 mb-10">
@@ -1243,6 +1262,7 @@ export default function HomePage() {
           <CodeBlock language="bash" className="mb-8 text-left" code={`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest
 grit new my-app`} />
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <CopyPromptButton variant="hero" className="[&>button]:rounded-full [&>button]:h-11 [&>button]:px-7 [&>button]:text-sm" />
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-7 h-11 text-sm rounded-full" asChild>
               <Link href="/docs/getting-started/quick-start">Read the docs <ArrowRight className="ml-2 h-3.5 w-3.5" /></Link>
             </Button>

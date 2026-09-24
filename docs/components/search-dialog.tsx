@@ -175,7 +175,7 @@ const searchIndex: SearchItem[] = [
 
   // Tech Kits
   { title: 'Tech Kits, All', href: '/docs/tech-kits', section: 'Tech Kits', keywords: 'tech kits starter kits starter pack scaffold templates single double triple api mobile desktop wails expo nextjs vite tanstack architecture modes' },
-  { title: 'AI Integration Helper', href: '/docs/ai-integration', section: 'Tech Kits', keywords: 'ai integration helper wizard claude code cursor lovable bolt v0 windsurf copilot aider cline prompt generator starter prompt project description phases design style guide planning files coding agent' },
+  { title: 'Build with AI', href: '/docs/ai-integration', section: 'Tech Kits', keywords: 'build with ai copy prompt skill agent integration helper wizard claude code cursor codex lovable bolt v0 windsurf copilot aider cline prompt generator starter prompt project description phases design style guide planning files coding agent' },
 
   // Learnings — engineering journal
   { title: 'Learnings, Overview', href: '/docs/learnings', section: 'Learnings', keywords: 'learnings journal engineering challenges write-ups load testing security performance tuning grit framework experiments' },

@@ -158,7 +158,7 @@ func adminRouteSegments(source map[string]string, adminRoot string) []string {
 var adminRoutePrefixes = []string{
 	"forgot-password", "reset-password", "verify-email", "sign-up",
 	"resources", "dashboard", "settings", "account", "profile", "callback",
-	"system", "login",
+	"system", "login", "magic-link",
 }
 
 // embeddedAdminContent repoints an admin file written inside the web app.

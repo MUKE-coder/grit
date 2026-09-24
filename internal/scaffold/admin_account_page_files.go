@@ -19,6 +19,7 @@ func writeAdminAccountFiles(root string, opts Options) error {
 	files := map[string]string{
 		adminComponent(root, opts, "account", "password-form.tsx"): adminAccountPasswordFormTSX(),
 		adminComponent(root, opts, "account", "profile-form.tsx"):  adminAccountProfileFormTSX(),
+		adminComponent(root, opts, "account", "sign-in-links.tsx"): adminSignInLinksCardTSX(),
 	}
 	for path, content := range files {
 		if err := writeFile(path, content); err != nil {
@@ -522,6 +523,7 @@ import { ProfileForm } from "@/components/account/profile-form";
 import { PasswordForm } from "@/components/account/password-form";
 import { TwoFactorCard } from "@/components/profile/two-factor-card";
 import { PasskeysCard } from "@/components/security/passkeys";
+import { SignInLinksCard } from "@/components/account/sign-in-links";
 import { ActiveSessions } from "@/components/profile/active-sessions";
 
 /**
@@ -597,6 +599,11 @@ function AccountTabs() {
               less. The card hides itself where the browser has no
               authenticator. */}
           <PasskeysCard />
+          {/* And what has been asked for by email. The request form answers the
+              same to every address so that it cannot enumerate accounts, which
+              also means it can never warn anybody: this is the only place a
+              request somebody did not make becomes visible. */}
+          <SignInLinksCard />
         </div>
       )}
 

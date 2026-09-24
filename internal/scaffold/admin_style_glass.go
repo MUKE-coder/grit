@@ -480,6 +480,7 @@ func glassDashboardPage() string {
 	return fmt.Sprintf(`"use client";
 
 import { useMe } from "@/hooks/use-auth";
+import { DashboardSecurityNudges } from "@/components/dashboard/security-nudges";
 import { resources } from "@/resources";
 import { StatsCard } from "@/components/widgets/stats-card";
 import { WidgetGrid } from "@/components/widgets/widget-grid";
@@ -510,6 +511,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      <DashboardSecurityNudges />
       {/* Hero banner */}
       <div className="relative rounded-2xl overflow-hidden">
         {/* Hero background layers */}

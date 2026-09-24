@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="280" viewBox="0 0 880 280" role="img" aria-label="What ships in every Grit project: authentication, two-factor, passkeys, RBAC, admin panel, data tables, form builder, file storage, email, background jobs, cron, caching, realtime, webhooks, audit log, feature flags, backups, GDPR tools, API docs, database browser, WAF, tracing, AI, Docker and one-command deploy.">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a0f"/>
+      <stop offset="100%" stop-color="#14141f"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#6c5ce7"/>
+      <stop offset="100%" stop-color="#74b9ff"/>
+    </linearGradient>
+    <style>
+      .h  { font: 700 19px ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif; fill: #e8e8f0; }
+      .s  { font: 400 12.5px ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif; fill: #9090a8; }
+      .p  { font: 500 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #c9c9dd; }
+      .g  { font: 600 10.5px ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif; fill: #6c5ce7; letter-spacing: .08em; }
+    </style>
+  </defs>
+
+  <rect width="880" height="280" rx="14" fill="url(#bg)"/>
+  <rect width="880" height="3" rx="1.5" fill="url(#accent)"/>
+
+  <text class="h" x="32" y="46">Every one of these is already wired up.</text>
+  <text class="s" x="32" y="68">Not a list of packages you could install. A list of things that work on the first run.</text>
+
+  <!-- Row 1 -->
+  <text class="g" x="32" y="104">IDENTITY</text>
+  <g class="p">
+    <text x="32" y="126">JWT auth</text>
+    <text x="110" y="126">2FA by app or email</text>
+    <text x="252" y="126">passkeys</text>
+    <text x="322" y="126">sign-in links</text>
+    <text x="424" y="126">OAuth</text>
+    <text x="478" y="126">SSO / SAML</text>
+    <text x="566" y="126">RBAC</text>
+    <text x="614" y="126">sessions</text>
+    <text x="680" y="126">audit log</text>
+    <text x="752" y="126">access reviews</text>
+  </g>
+
+  <!-- Row 2 -->
+  <text class="g" x="32" y="160">THE APP</text>
+  <g class="p">
+    <text x="32" y="182">admin panel</text>
+    <text x="126" y="182">data tables</text>
+    <text x="216" y="182">form builder</text>
+    <text x="316" y="182">relationships</text>
+    <text x="418" y="182">file uploads</text>
+    <text x="510" y="182">rich text</text>
+    <text x="580" y="182">variants</text>
+    <text x="642" y="182">invoices</text>
+    <text x="708" y="182">money type</text>
+    <text x="796" y="182">i18n</text>
+  </g>
+
+  <!-- Row 3 -->
+  <text class="g" x="32" y="216">THE MACHINERY</text>
+  <g class="p">
+    <text x="32" y="238">Redis cache</text>
+    <text x="124" y="238">jobs + cron</text>
+    <text x="212" y="238">S3 storage</text>
+    <text x="298" y="238">email</text>
+    <text x="348" y="238">realtime</text>
+    <text x="414" y="238">webhooks</text>
+    <text x="490" y="238">outbox</text>
+    <text x="544" y="238">feature flags</text>
+    <text x="640" y="238">backups</text>
+    <text x="704" y="238">GDPR</text>
+    <text x="756" y="238">offline sync</text>
+  </g>
+
+  <g class="p" fill="#606078">
+    <text x="32" y="262">Scalar API docs</text>
+    <text x="150" y="262">GORM Studio</text>
+    <text x="252" y="262">Sentinel WAF</text>
+    <text x="352" y="262">Pulse tracing</text>
+    <text x="452" y="262">AI gateway</text>
+    <text x="540" y="262">generated tests</text>
+    <text x="656" y="262">Docker</text>
+    <text x="712" y="262">one-command deploy</text>
+  </g>
+</svg>

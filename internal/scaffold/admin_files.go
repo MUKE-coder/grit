@@ -261,6 +261,8 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "components", "chrome", "EmailVerifiedBanner.tsx"): adminEmailVerifiedBanner(),
 		filepath.Join(adminRoot, "app", "(auth)", "reset-password", "page.tsx"):     adminThemedResetPasswordPage(),
 		filepath.Join(adminRoot, "app", "(auth)", "callback", "page.tsx"):           adminAuthCallbackPage(),
+		filepath.Join(adminRoot, "app", "(auth)", "magic-link", "page.tsx"):         adminMagicLinkPage(),
+		filepath.Join(adminRoot, "components", "dashboard", "security-nudges.tsx"):  adminDashboardNudgesTSX(),
 
 		// Theme-aware auth shells (v3.28)
 		filepath.Join(adminRoot, "components", "auth", "AuthShell.tsx"):         adminAuthShellDispatcher(),
@@ -547,8 +549,8 @@ func adminPackageJSON(opts Options) string {
     "clsx": "^2.1.0",
     "lucide-react": "^0.468.0",
     "next": "^16.1.6",
-    "react": "` + reactVersionFor(opts) + `",
-    "react-dom": "` + reactVersionFor(opts) + `",
+    "react": "`+reactVersionFor(opts)+`",
+    "react-dom": "`+reactVersionFor(opts)+`",
 `+tiptapDependencyLines("    ")+`    "react-dropzone": "^14.2.0",
     "react-hook-form": "^7.49.0",
     "recharts": "^2.12.0",

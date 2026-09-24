@@ -41,6 +41,7 @@ var reservedModels = map[string]string{
 	// Two-factor and SSO.
 	"TwoFactorConfig":  "two-factor auth",
 	"TOTPPendingToken": "two-factor auth",
+	"MagicLinkToken":   "signing in with an emailed link",
 	"TrustedDevice":    "two-factor auth",
 	"SSOConnection":    "SSO",
 	"SAMLKeypair":      "SSO",

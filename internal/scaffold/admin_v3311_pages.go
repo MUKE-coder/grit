@@ -19,6 +19,7 @@ import { Suspense, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useMe } from "@/hooks/use-auth";
 import { useNotificationList, type NotificationList } from "@/hooks/use-notifications";
+import { DashboardSecurityNudges } from "@/components/dashboard/security-nudges";
 import { usePermissions } from "@/hooks/use-permissions";
 import { resources } from "@/resources";
 import { PageHeader } from "@/components/chrome/PageHeader";
@@ -155,6 +156,7 @@ export default function DashboardPage() {
 
   return (
     <div>
+      <DashboardSecurityNudges />
       <PageHeader
         title={greeting + ", " + (user?.first_name || "Admin")}
         subtitle="Here's a snapshot of what's happening across your app right now."

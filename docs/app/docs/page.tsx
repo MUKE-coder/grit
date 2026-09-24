@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CopyPromptButton } from '@/components/copy-prompt-button'
 import { CodeBlock } from '@/components/code-block'
 import { PageHelp } from '@/components/page-help'
 import { getDocMetadata } from '@/config/docs-metadata'
@@ -35,6 +36,11 @@ export default function DocsIntroductionPage() {
                 integration, and a visual database browser all wired together out of the box.
               </p>
             </div>
+
+            {/* The other way to start, offered before the reading begins
+                rather than after it: a lot of people arriving here intend
+                to hand the whole thing to an agent. */}
+            <CopyPromptButton variant="panel" className="mb-10" />
 
             {/* Value proposition pills */}
             <div className="flex flex-wrap gap-2 mb-10">

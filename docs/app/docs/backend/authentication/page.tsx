@@ -1183,6 +1183,54 @@ const { data } = await api.post('/api/auth/totp/backup-codes/verify', {
               </ul>
 
               {/* ── Configuration ─────────────────────────────── */}
+              {/* ── Magic links ──────────────────────────── */}
+              <h2 id="magic-links">Signing in with a link</h2>
+              <p>
+                The sign-in page offers &quot;Email me a sign-in link instead&quot;, using the
+                address already typed in the email box. It is the only way in for an account that
+                never had a password, which is every account created through Google or GitHub, and
+                it satisfies WCAG 2.2&apos;s requirement (3.3.8) for a route past a cognitive test
+                at sign-in.
+              </p>
+              <CodeBlock language="bash" code={`POST /api/v1/auth/magic-link          { "email": "..." }   → always the same answer
+POST /api/v1/auth/magic-link/consume  { "token": "..." }   → tokens, or a 2FA challenge`} />
+
+              <h3 id="magic-link-properties">Three properties worth knowing</h3>
+              <p>
+                <strong>The request answers the same either way.</strong> &quot;If that address has
+                an account, a sign-in link is on its way&quot;, whether or not it does, and an
+                address with no account does no work at all. Anything else turns the sign-in page
+                into a way to enumerate who is registered. The one exception is the rate limit: a
+                second request inside a minute is refused out loud, because the person is sitting
+                in front of an inbox and silence would have them waiting for an email that is not
+                coming.
+              </p>
+              <p>
+                <strong>The token is spent by the page, not by the link.</strong> Opening the link
+                loads <code>/magic-link</code> in the admin, which POSTs the token
+                back; the server spends nothing on the GET. Corporate mail scanners follow every URL
+                in a message before anybody reads it, so a token spent on the GET is one the scanner
+                burns: the person clicks their own link and is told it has already been used, with
+                nothing in that message to suggest why.
+              </p>
+              <p>
+                <strong>A link replaces the password, not the second factor.</strong> An account
+                with two-factor on gets the same challenge it always does, because a link sitting
+                in a mailbox is exactly what a second factor exists to survive. Signing in this way
+                records a session and an activity-log entry like any other, so the device appears
+                under Devices and can be revoked.
+              </p>
+
+              <h3 id="magic-link-implementation">Implementation Details</h3>
+              <ul>
+                <li><strong>Token:</strong> 32 random bytes, hex-encoded, stored only as a SHA-256 hash</li>
+                <li><strong>Life:</strong> 15 minutes (<code>services.MagicLinkExpiry</code>)</li>
+                <li><strong>Rate:</strong> one link per account per minute (<code>services.MagicLinkRate</code>)</li>
+                <li><strong>Single use:</strong> spending is a conditional update on <code>used_at IS NULL</code>, so two tabs opening the same link cannot both succeed</li>
+                <li><strong>Spent rows are kept:</strong> a second click is told the link was used rather than that it was invalid, which are different mistakes</li>
+                <li><strong>No mailer, no promise:</strong> a deployment that cannot send email refuses the request instead of claiming a link is on its way</li>
+              </ul>
+
               <h2 id="configuration">Auth Configuration</h2>
               <p>
                 All authentication settings are configured via environment variables:
