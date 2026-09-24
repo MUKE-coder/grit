@@ -73,9 +73,10 @@ const STEPS: Step[] = [
       'Injecting into AutoMigrate, routes, /docs, permissions...',
       '12 files written, 13 injections applied',
     ],
-    shot: '/images/forms/relationship.png',
-    alt: 'A generated admin form showing a searchable relationship picker for selecting a related record',
-    caption: 'One command. The form, the picker and the API behind it.',
+    shot: '/images/admin/table.png',
+    alt: 'A generated admin list screen: statistic cards, search, a date filter, import and export, and a sortable table of 500 records with checkboxes and row actions',
+    caption:
+      'One command. Sorting, filtering, search, paging, import and export, and the API under all of it.',
     label: 'Generate',
   },
   {

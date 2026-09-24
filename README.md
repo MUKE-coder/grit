@@ -91,6 +91,10 @@ has authentication, two-factor, an admin panel, a database browser and API docs.
 <td width="50%"><img src="https://gritframework.dev/images/system/jobs.png" alt="Background jobs dashboard" /><br /><sub><b>Jobs, cron, mail.</b> With a dashboard, not just a queue.</sub></td>
 <td width="50%"><img src="https://gritframework.dev/images/platforms/api-scalar.png" alt="Generated API reference" /><br /><sub><b>API docs.</b> Generated from the routes, always current.</sub></td>
 </tr>
+<tr>
+<td width="50%"><img src="https://gritframework.dev/images/admin/table.png" alt="Generated list screen with statistics, search, filters and a sortable table" /><br /><sub><b>Every resource gets this.</b> Sort, filter, search, page, import, export.</sub></td>
+<td width="50%"><img src="https://gritframework.dev/images/admin/account.png" alt="The account screen with Profile, Password, Security and Devices tabs" /><br /><sub><b>One account screen.</b> Password, 2FA, passkeys, sign-in links, devices.</sub></td>
+</tr>
 </table>
 
 One API, every client: [web](https://gritframework.dev/docs/frontend/web-app) ·

@@ -1,27 +1,29 @@
 package scaffold
 
-// The two things on the dashboard that are about the reader's own account.
+// The one thing on the dashboard that is about the reader's own account.
 //
-// Both are one-time jobs that nobody does unprompted. An unverified address
-// means a password reset goes nowhere, which is discovered at the worst
-// possible moment; an account with no second factor is one leaked password from
-// gone. Neither fact is visible anywhere the person looks, because both live on
-// a settings page they have no reason to open.
+// An account with no second factor is one leaked password from gone, and that
+// fact is visible nowhere the person looks: it lives on a settings page they
+// have no reason to open. So it is put in front of them once, on the screen
+// they land on, and then it goes away. The card can be dismissed, and it
+// disappears on its own the moment two-factor is on. A banner that cannot be
+// dismissed is a banner people learn to look past, which costs the next one its
+// attention too.
 //
-// So they are put in front of them once, on the screen they land on, and then
-// they go away: each card can be dismissed, and both disappear on their own the
-// moment the underlying thing is done. A banner that cannot be dismissed is a
-// banner people learn to look past, which costs the next one its attention too.
+// Deliberately not also an "confirm your email" card. EmailVerifiedBanner has
+// done that since long before this file existed, and it does it on every page
+// rather than only this one, so a second copy here would be two prompts for one
+// job stacked on top of each other. It shipped that way in v3.320.0 and was
+// caught by looking at a screenshot of a running admin, which is the argument
+// for looking at one.
 
 func adminDashboardNudgesTSX() string {
 	return `"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Mail, X } from "@/lib/icons";
-import { apiClient } from "@/lib/api-client";
+import { AlertTriangle, X } from "@/lib/icons";
 import { useTOTPStatus } from "@/hooks/use-auth";
-import { useSecurityOverview } from "@/hooks/use-security";
 
 const DISMISSED_KEY = "grit.dashboard.dismissed-nudges";
 
@@ -83,11 +85,7 @@ function Nudge({ id, icon, title, body, action, onDismiss }: NudgeProps) {
  */
 export function DashboardSecurityNudges() {
   const { data: totp } = useTOTPStatus();
-  const { data: overview } = useSecurityOverview();
   const [dismissed, setDismissed] = useState<string[]>([]);
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [sendError, setSendError] = useState("");
 
   // Read after mount: localStorage does not exist while this renders on the
   // server, and reading it during render would mismatch the hydration.
@@ -99,87 +97,29 @@ export function DashboardSecurityNudges() {
     writeDismissed(next);
   };
 
-  const resend = async () => {
-    setSending(true);
-    setSendError("");
-    try {
-      await apiClient.post("/api/auth/verify-email/send", {});
-      setSent(true);
-    } catch (err: unknown) {
-      setSendError(
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message ?? "Could not send the email. Try again in a moment.",
-      );
-    } finally {
-      setSending(false);
-    }
-  };
-
   // Only once the server has answered. Flashing "turn on two-factor" at
   // somebody who already has it, for the half second before the query lands,
   // is worse than showing nothing.
-  const needsEmail = overview !== undefined && !overview.email_verified;
   const needsTwoFactor = totp !== undefined && !totp.enabled;
-
-  const show = [
-    needsEmail && !dismissed.includes("verify-email") ? "verify-email" : null,
-    needsTwoFactor && !dismissed.includes("two-factor") ? "two-factor" : null,
-  ].filter(Boolean) as string[];
-
-  if (show.length === 0) return null;
+  if (!needsTwoFactor || dismissed.includes("two-factor")) return null;
 
   return (
-    <div className="mb-6 space-y-3">
-      {show.includes("verify-email") && (
-        <Nudge
-          id="verify-email"
-          onDismiss={dismiss}
-          icon={<Mail className="h-5 w-5 text-warning" aria-hidden="true" />}
-          title="Confirm your email address"
-          body={
-            "We have not confirmed " +
-            (overview?.email ?? "your address") +
-            " yet. Until you do, a password reset has nowhere to go, which is a bad thing to find out on the day you need it."
-          }
-          action={
-            sent ? (
-              <p role="status" className="text-sm text-success">
-                Sent. Open the link in that email.
-              </p>
-            ) : (
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={resend}
-                  disabled={sending}
-                  className="inline-flex h-9 items-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg transition-colors hover:bg-accent-hover disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                >
-                  {sending ? "Sending..." : "Send me the link"}
-                </button>
-                {sendError && <p className="text-sm text-danger">{sendError}</p>}
-              </div>
-            )
-          }
-        />
-      )}
-
-      {show.includes("two-factor") && (
-        <Nudge
-          id="two-factor"
-          onDismiss={dismiss}
-          icon={<AlertTriangle className="h-5 w-5 text-warning" aria-hidden="true" />}
-          title="Turn on two-factor authentication"
-          body="Right now your password is the only thing between this account and anybody who has it. Two minutes with an authenticator app, or codes by email if you would rather not install one."
-          action={
-            <Link
-              href="/system/account?tab=security"
-              className="inline-flex h-9 items-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              Set it up
-            </Link>
-          }
-        />
-      )}
+    <div className="mb-6">
+      <Nudge
+        id="two-factor"
+        onDismiss={dismiss}
+        icon={<AlertTriangle className="h-5 w-5 text-warning" aria-hidden="true" />}
+        title="Turn on two-factor authentication"
+        body="Right now your password is the only thing between this account and anybody who has it. Two minutes with an authenticator app, or codes by email if you would rather not install one."
+        action={
+          <Link
+            href="/system/account?tab=security"
+            className="inline-flex h-9 items-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            Set it up
+          </Link>
+        }
+      />
     </div>
   );
 }

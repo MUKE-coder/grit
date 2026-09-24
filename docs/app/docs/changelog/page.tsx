@@ -66,6 +66,47 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.321.0 */}
+            <div className="mb-12" id="v3.321.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.321.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>One prompt to confirm your email, not two</h3>
+                <p>
+                  v3.320.0 added a &quot;confirm your email address&quot; card to the dashboard, directly underneath
+                  the banner that has asked the same thing on every page since long before it. Two prompts for one job
+                  teach people to ignore both, and the next one that matters pays for it.
+                </p>
+                <p>
+                  The banner stays, because it covers every page rather than only the dashboard. The dashboard card is
+                  gone, and the dashboard nudge now owns the one thing that had no home anywhere: turning on
+                  two-factor. A test keeps it that way.
+                </p>
+                <p>
+                  Worth saying how this was found, because it is the whole argument for the next item: not by reading
+                  the code, which looked right, but by opening a screenshot of a running admin and seeing the two of
+                  them stacked.
+                </p>
+
+                <h3>The home page shows the table</h3>
+                <p>
+                  The &quot;Grit in action&quot; section paired the <code>grit generate resource</code> command with a
+                  screenshot of a form. The list screen is what that command produces first and what people spend
+                  their day in, so it now shows that instead: statistic cards, search, a date filter, import and
+                  export, a column picker, and a sortable table of 500 seeded rows with bulk selection and row
+                  actions. It is a photograph of a real generated project, taken for this release.
+                </p>
+                <p>
+                  The README gains it too, alongside the Account screen.
+                </p>
+              </div>
+            </div>
+
             {/* v3.320.0 */}
             <div className="mb-12" id="v3.320.0">
               <div className="flex items-center gap-3 mb-4">
