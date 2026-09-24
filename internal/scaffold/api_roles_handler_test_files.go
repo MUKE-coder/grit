@@ -234,7 +234,7 @@ func TestRoleAPI_GrantCeiling(t *testing.T) {
 
 	var admin models.Role
 	require.NoError(t, db.Where("name = ?", "ADMIN").First(&admin).Error)
-	u := models.User{FirstName: "Del", LastName: "Egate", Email: "delegate@example.com", Password: "password123", Role: "USER", Active: true}
+	u := models.User{FirstName: "Del", LastName: "Egate", Email: "delegate@example.com", Password: "harbour-lamp-97", Role: "USER", Active: true}
 	require.NoError(t, db.Create(&u).Error)
 
 	w = do(t, r, "PUT", "/users/"+u.ID+"/roles", map[string]any{"role_ids": []string{admin.ID}})

@@ -158,6 +158,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeAdminSecurityFiles(root, opts); err != nil {
 			return fmt.Errorf("updating security page: %w", err)
 		}
+		if err := writeAdminAccountFiles(root, opts); err != nil {
+			return fmt.Errorf("updating security page: %w", err)
+		}
 		if err := ensurePasskeyWiring(root, opts); err != nil {
 			return fmt.Errorf("wiring passkeys: %w", err)
 		}
@@ -516,6 +519,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		}
 		if err := repairOAuthHook(root); err != nil {
 			fmt.Printf("  ⚠ running the social-login hooks: %v\n", err)
+		}
+		if err := repairEmailTwoFactorRoutes(root); err != nil {
+			fmt.Printf("  ⚠ adding the routes for a second factor by email: %v\n", err)
+		}
+		if err := repairEmailTwoFactorLogin(root); err != nil {
+			fmt.Printf("  ⚠ letting a sign-in ask for a code by email: %v\n", err)
 		}
 		if err := repairExpoRelations(root); err != nil {
 			fmt.Printf("  ⚠ naming related records in the Expo screens: %v\n", err)

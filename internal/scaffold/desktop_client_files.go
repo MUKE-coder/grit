@@ -1351,6 +1351,9 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   // Set when the password was right and the account owes a 2FA code.
   const [pendingToken, setPendingToken] = useState<string | null>(null);
+  // "app" or "email": which second factor this account uses, as the
+  // sign-in response reported it.
+  const [factorMethod, setFactorMethod] = useState("app");
   const [code, setCode] = useState("");
   const [useBackup, setUseBackup] = useState(false);
   const [trustDevice, setTrustDevice] = useState(false);
@@ -1362,9 +1365,12 @@ function LoginPage() {
   const onSubmit = (data: LoginInput) => {
     login(data, {
       onSuccess: (res) => {
-        const d = res as { totp_required?: boolean; pending_token?: string };
+        const d = res as { totp_required?: boolean; pending_token?: string; method?: string };
         if (d?.totp_required && d.pending_token) {
           setPendingToken(d.pending_token);
+          // Which factor this account uses. Empty means an authenticator: that
+          // is what every account meant before codes by email existed.
+          setFactorMethod(d.method ?? "app");
           return;
         }
         navigate({ to: "/app" });
@@ -1392,7 +1398,9 @@ function LoginPage() {
         subtitle={
           useBackup
             ? "Enter one of your backup codes"
-            : "Enter the 6-digit code from your authenticator app"
+            : factorMethod === "email"
+              ? "We emailed you a 6-digit code. It expires in a few minutes."
+              : "Enter the 6-digit code from your authenticator app"
         }
         errorMessage={
           verifyError ? ((verifyError as Error).message || "That code was not accepted") : undefined
@@ -3131,7 +3139,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-accent text-white hover:bg-accent-hover",
+        primary: "bg-accent text-accent-fg hover:bg-accent-hover",
         secondary: "border border-border bg-surface-2 text-foreground hover:bg-surface-hover",
         ghost: "text-foreground-secondary hover:bg-surface-hover hover:text-foreground",
         danger: "bg-danger text-white hover:bg-danger/90",
@@ -4607,7 +4615,7 @@ export function ListPane({
               <button
                 type="button"
                 onClick={onNew}
-                className="h-8 px-2.5 rounded-lg bg-accent text-white text-[12px] font-medium hover:bg-accent-hover transition-colors inline-flex items-center gap-1"
+                className="h-8 px-2.5 rounded-lg bg-accent text-accent-fg text-[12px] font-medium hover:bg-accent-hover transition-colors inline-flex items-center gap-1"
               >
                 <Plus className="h-3.5 w-3.5" />
                 {newLabel}
@@ -4996,7 +5004,7 @@ export function FormActions({
         <button
           type="submit"
           disabled={isPending}
-          className="h-9 px-3.5 rounded-lg bg-accent text-white text-[13px] font-medium hover:bg-accent-hover disabled:opacity-60"
+          className="h-9 px-3.5 rounded-lg bg-accent text-accent-fg text-[13px] font-medium hover:bg-accent-hover disabled:opacity-60"
         >
           {isPending ? "Saving..." : submitLabel}
         </button>

@@ -225,7 +225,7 @@ export function ResourceLatestTable({ resource, dateRange, limit = 5 }: Props) {
         </div>
         <Link
           href={"/resources/" + resource.slug}
-          className="text-xs font-medium text-accent hover:text-accent-hover"
+          className="inline-flex min-h-[24px] items-center text-xs font-medium text-accent hover:text-accent-hover"
         >
           View all
         </Link>

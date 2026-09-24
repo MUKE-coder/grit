@@ -149,7 +149,7 @@ export function QuickAccess() {
         onClick={() => setOpen(true)}
         title="Quick access"
         className={cn(
-          "fixed z-40 flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-white shadow-lg transition-transform hover:bg-accent-hover hover:scale-105",
+          "fixed z-40 flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-accent-fg shadow-lg transition-transform hover:bg-accent-hover hover:scale-105",
           corner.cls,
         )}
       >

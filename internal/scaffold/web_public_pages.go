@@ -341,7 +341,7 @@ export default async function BlogListPage({
                     aria-current={page === i + 1 ? "page" : undefined}
                     className={` + "`" + `flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
                       page === i + 1
-                        ? "bg-accent text-white"
+                        ? "bg-accent text-accent-fg"
                         : "text-text-secondary hover:bg-bg-hover hover:text-foreground"
                     }` + "`" + `}
                   >

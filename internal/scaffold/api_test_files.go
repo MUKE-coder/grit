@@ -169,7 +169,7 @@ func TestAuthHandler_Register_Success(t *testing.T) {
 		"first_name": "Jane",
 		"last_name":  "Doe",
 		"email":      "jane@example.com",
-		"password":   "password123",
+		"password":   "harbour-lamp-97",
 	})
 
 	assert.Equal(t, http.StatusCreated, w.Code)
@@ -214,7 +214,7 @@ func TestAuthHandler_Register_DuplicateEmail(t *testing.T) {
 		"first_name": "Alice",
 		"last_name":  "Smith",
 		"email":      "alice@example.com",
-		"password":   "password123",
+		"password":   "harbour-lamp-97",
 	}
 
 	// First registration — should succeed
@@ -554,7 +554,7 @@ func BenchmarkAuthRegister(b *testing.B) {
 			"first_name": "Bench",
 			"last_name":  "User",
 			"email":      email,
-			"password":   "password123",
+			"password":   "harbour-lamp-97",
 		})
 		req := httptest.NewRequest(http.MethodPost, "/api/auth/register", bytes.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")

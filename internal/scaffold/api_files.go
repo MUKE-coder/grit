@@ -79,6 +79,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "activity_read_test.go"):    apiActivityReadTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "activity.go"):                apiActivityHandlerGo(),
 		filepath.Join(apiRoot, "internal", "respond", "respond.go"):                  apiRespondGo(),
+		filepath.Join(apiRoot, "internal", "password", "password.go"):                apiPasswordRulesGo(),
+		filepath.Join(apiRoot, "internal", "password", "password_test.go"):           apiPasswordRulesTestGo(),
 		filepath.Join(apiRoot, "internal", "respond", "respond_test.go"):             apiRespondTestGo(),
 		// The error catalogue, generated: the typed codes and the status each one
 		// always carries. Here as well as in writeRespondFiles, because that one
@@ -2187,6 +2189,7 @@ import (
 	"{{MODULE}}/internal/jobs"
 	"{{MODULE}}/internal/mail"
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/password"
 	"{{MODULE}}/internal/services"
 	"{{MODULE}}/internal/totp"
 	"{{MODULE}}/internal/respond"
@@ -2313,6 +2316,15 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+
+	// The same four rules the admin shows while somebody types, checked here
+	// because a checklist the server ignores is decoration. Their own name and
+	// address are passed in: "ada@example.com" with the password "ada2026" is
+	// the commonest weak password there is, and only the server knows both.
+	if failed := password.Check(req.Password, req.Email, req.FirstName, req.LastName); len(failed) > 0 {
+		respond.Fail(c, respond.CodeValidationError, password.Message(failed))
 		return
 	}
 
@@ -2532,6 +2544,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/crypto"
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/paginate"
+	"` + "{{MODULE}}" + `/internal/password"
 	"` + "{{MODULE}}" + `/internal/services"
 	"` + "{{MODULE}}" + `/internal/respond"
 )
@@ -2945,6 +2958,12 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		updates["last_name"] = req.LastName
 	}
 ` + profileEmailNew + `	if req.Password != "" {
+		if failed := password.Check(req.Password, user.Email, user.FirstName, user.LastName); len(failed) > 0 {
+			respond.Fail(c, respond.CodeValidationError, password.Message(failed))
+			return
+		}
+	}
+	if req.Password != "" {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 		if err != nil {
 			respond.Fail(c, respond.CodeInternalError, "Failed to hash password")
@@ -9688,6 +9707,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		DB:          db,
 		AuthService: authService,
 		Issuer:      cfg.TOTPIssuer,
+		// For the email second factor: the same mailer and queue the auth
+		// handler uses, so a code goes out the way every other email does.
+		Config: cfg,
+		Mailer: svc.Mailer,
+		Jobs:   svc.Jobs,
 	}
 	// The passkey relying party, built once from the origins the frontends
 	// actually run on. A deployment with none (CORS_ORIGINS unset or '*')
@@ -9975,6 +9999,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// Two-Factor Authentication (TOTP)
 		protected.POST("/auth/totp/setup", totpHandler.Setup)
 		protected.POST("/auth/totp/enable", totpHandler.Enable)
+		// The second factor by email rather than by app. Two steps, like the
+		// authenticator: send a code to prove the address works, then confirm
+		// it, so nobody turns on a factor they cannot receive.
+		protected.POST("/auth/totp/email/send", totpHandler.SendEmailSetupCode)
+		protected.POST("/auth/totp/email/enable", totpHandler.EnableEmail)
 		protected.POST("/auth/totp/disable", totpHandler.Disable)
 		protected.GET("/auth/totp/status", totpHandler.Status)
 		protected.POST("/auth/totp/backup-codes", totpHandler.RegenerateBackupCodes)

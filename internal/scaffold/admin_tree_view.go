@@ -492,7 +492,7 @@ function RootDropBar({
       <span
         className={
           "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-2 text-[10px] font-medium transition-colors " +
-          (active ? "bg-accent text-white" : "bg-background-secondary text-text-muted")
+          (active ? "bg-accent text-accent-fg" : "bg-background-secondary text-text-muted")
         }
       >
         drop here to make it a root

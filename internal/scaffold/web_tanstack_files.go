@@ -305,7 +305,7 @@ function HomePage() {
           <div className="flex items-center justify-center gap-4">
             <Link
               to="/blog"
-              className="inline-flex items-center px-6 py-3 rounded-lg bg-accent text-white font-medium hover:bg-accent-hover transition-colors"
+              className="inline-flex items-center px-6 py-3 rounded-lg bg-accent text-accent-fg font-medium hover:bg-accent-hover transition-colors"
             >
               Read the Blog
             </Link>

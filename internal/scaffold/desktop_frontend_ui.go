@@ -44,7 +44,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<Variant, string> = {
-  default: "bg-accent text-white hover:bg-accent-hover",
+  default: "bg-accent text-accent-fg hover:bg-accent-hover",
   secondary: "bg-bg-elevated text-foreground hover:bg-bg-hover",
   outline: "border border-border bg-transparent text-foreground hover:bg-bg-elevated",
   ghost: "bg-transparent text-foreground hover:bg-bg-elevated",

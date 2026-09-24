@@ -36,11 +36,13 @@ import (
 	"crypto/rand"
 	"crypto/sha1" // #nosec G505 -- RFC 6238 TOTP is HMAC-SHA1, and every authenticator app requires it
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base32"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"math"
+	"math/big"
 	"net/url"
 	"strings"
 	"time"
@@ -203,6 +205,34 @@ func GeneratePendingToken() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
+// GenerateEmailCode returns the six digits that go in the email.
+//
+// crypto/rand, not math/rand: this is the whole second factor, and a code an
+// attacker can predict from the clock is not one. Six digits with five attempts
+// and a five-minute life is a one-in-two-hundred-thousand guess.
+func GenerateEmailCode() (string, error) {
+	max := big.NewInt(1000000)
+	n, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%06d", n.Int64()), nil
+}
+
+// EmailCodeMatches compares a typed code with the stored hash, in constant
+// time, so the comparison cannot be timed a digit at a time.
+func EmailCodeMatches(hash, code string) bool {
+	if hash == "" {
+		return false
+	}
+	want, err := hex.DecodeString(hash)
+	if err != nil {
+		return false
+	}
+	got := sha256.Sum256([]byte(strings.TrimSpace(code)))
+	return subtle.ConstantTimeCompare(want, got[:]) == 1
+}
+
 // HashToken returns the SHA-256 hash of a token (for DB storage).
 func HashToken(token string) string {
 	h := sha256.Sum256([]byte(token))
@@ -234,14 +264,44 @@ import (
 )
 
 // TwoFactorConfig stores TOTP settings for a user.
+// How a second factor is delivered.
+const (
+	// TwoFactorMethodApp is an authenticator app: the stronger of the two,
+	// because the code never leaves the device.
+	TwoFactorMethodApp = "app"
+	// TwoFactorMethodEmail sends a code to the address on the account. Only as
+	// safe as that mailbox, which is also where a password reset goes, so it
+	// adds less than an authenticator does. It is here because the alternative
+	// for somebody who will not install an app is no second factor at all.
+	TwoFactorMethodEmail = "email"
+)
+
 type TwoFactorConfig struct {
 	ID     uint   ` + "`" + `gorm:"primarykey" json:"id"` + "`" + `
 	UserID string ` + "`" + `gorm:"size:36;uniqueIndex;not null" json:"user_id"` + "`" + `
 ` + twoFactorSecretField + `	Enabled     bool                       ` + "`" + `gorm:"default:false" json:"enabled"` + "`" + `
+	// Method is how the second factor is delivered: "app" for an authenticator
+	// and "email" for a code sent to the address on the account.
+	//
+	// An authenticator is the stronger of the two, because an emailed code is
+	// only as safe as the mailbox, and for most people the mailbox is what the
+	// password reset goes to anyway. Email is here because the alternative for
+	// somebody who will not install an app is no second factor at all, and that
+	// is worse than a mailbox.
+	//
+	// Empty means "app": rows written before this column existed were all
+	// authenticators, and defaulting it keeps them working without a backfill.
+	Method      string                     ` + "`" + `gorm:"size:16;not null;default:app" json:"method"` + "`" + `
 	BackupCodes datatypes.JSONSlice[string] ` + "`" + `gorm:"type:text" json:"-"` + "`" + `
 	// LastUsedStep is the time step of the last code accepted. Only a later one
 	// is accepted next, so a code cannot be used twice.
 	LastUsedStep int64 ` + "`" + `gorm:"not null;default:0" json:"-"` + "`" + `
+	// SetupCodeHash and SetupCodeExpiresAt hold the code that proves somebody
+	// can read the mailbox before email becomes their second factor. Turning on
+	// a factor you cannot receive is how an account locks itself out, so it is
+	// deliberately two steps.
+	SetupCodeHash      string     ` + "`" + `gorm:"size:64" json:"-"` + "`" + `
+	SetupCodeExpiresAt *time.Time ` + "`" + `json:"-"` + "`" + `
 	CreatedAt   time.Time                  ` + "`" + `json:"created_at"` + "`" + `
 	UpdatedAt   time.Time                  ` + "`" + `json:"updated_at"` + "`" + `
 }
@@ -266,7 +326,15 @@ type TOTPPendingToken struct {
 	ExpiresAt time.Time ` + "`" + `gorm:"not null" json:"expires_at"` + "`" + `
 	// Attempts counts wrong codes against this token; at totp.MaxPendingAttempts
 	// it is refused.
-	Attempts  int       ` + "`" + `gorm:"not null;default:0" json:"-"` + "`" + `
+	Attempts int ` + "`" + `gorm:"not null;default:0" json:"-"` + "`" + `
+	// CodeHash is set when the second factor is a code sent by email, and holds
+	// the SHA-256 of that code. Hashed for the same reason the token is: a
+	// six-digit code sitting in a table is a six-digit code an attacker with a
+	// read of that table can type.
+	//
+	// Empty means the challenge is an authenticator, and the code is computed
+	// rather than stored.
+	CodeHash  string    ` + "`" + `gorm:"size:64" json:"-"` + "`" + `
 	CreatedAt time.Time ` + "`" + `json:"created_at"` + "`" + `
 }
 
@@ -303,7 +371,10 @@ import (
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/config"
 	"{{MODULE}}/internal/crypto"
+	"{{MODULE}}/internal/jobs"
+	"{{MODULE}}/internal/mail"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
 	"{{MODULE}}/internal/totp"
@@ -315,6 +386,11 @@ type TOTPHandler struct {
 	DB          *gorm.DB
 	AuthService *services.AuthService
 	Issuer      string // App name for authenticator display
+
+	// Set when the second factor can be a code by email.
+	Config *config.Config
+	Mailer *mail.Mailer
+	Jobs   *jobs.Client
 }
 
 type totpSetupResponse struct {
@@ -457,6 +533,126 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 	})
 }
 
+// SendEmailSetupCode emails a code to prove the address works, before email
+// becomes this account's second factor.
+//
+//	POST /api/v1/auth/totp/email/send
+func (h *TOTPHandler) SendEmailSetupCode(c *gin.Context) {
+	userID := c.GetString("user_id")
+
+	var user models.User
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", userID).First(&user).Error; err != nil {
+		respond.Fail(c, respond.CodeNotFound, "User not found")
+		return
+	}
+
+	// Nothing to send with means nothing to sign in with later. Refused here
+	// rather than discovered at the next sign-in, when the person would be
+	// holding a factor they can never satisfy.
+	if h.Mailer == nil && h.Jobs == nil {
+		respond.Fail(c, respond.CodeMailFailed, "This deployment cannot send email yet, so codes by email cannot be turned on. Set MAIL_MAILER first.")
+		return
+	}
+
+	code, err := totp.GenerateEmailCode()
+	if err != nil {
+		respond.Fail(c, respond.CodeTOTPError, "Failed to create a code")
+		return
+	}
+	expires := time.Now().Add(totp.PendingTokenExpiry)
+
+	var config models.TwoFactorConfig
+	err = h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).First(&config).Error
+	if err != nil {
+		config = models.TwoFactorConfig{UserID: userID}
+	}
+	config.Method = models.TwoFactorMethodEmail
+	config.SetupCodeHash = totp.HashToken(code)
+	config.SetupCodeExpiresAt = &expires
+	// Enabled is untouched: an account already using an authenticator keeps it
+	// working until the new method is confirmed.
+	if err := h.DB.WithContext(c.Request.Context()).Save(&config).Error; err != nil {
+		respond.Fail(c, respond.CodeTOTPError, "Failed to start email two-factor setup")
+		return
+	}
+
+	if err := dispatchMail(c.Request.Context(), h.Mailer, h.Jobs, "two-factor-setup:"+userID+":"+config.SetupCodeHash, mail.SendOptions{
+		To:       user.Email,
+		Subject:  "Your sign-in code",
+		Template: "two-factor-code",
+		Data: map[string]interface{}{
+			"AppName": h.Config.AppName,
+			"Title":   "Your sign-in code",
+			"Code":    code,
+			"Minutes": int(totp.PendingTokenExpiry.Minutes()),
+			"Year":    time.Now().Year(),
+		},
+	}); err != nil {
+		log.Printf("two-factor setup: emailing a code to %s: %v", userID, err)
+		respond.Fail(c, respond.CodeMailFailed, "We could not email your code. Check the mail settings and try again.")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":    gin.H{"sent_to": user.Email},
+		"message": "We sent a code to " + user.Email + ".",
+	})
+}
+
+// EnableEmail turns on the email second factor once its code comes back.
+//
+//	POST /api/v1/auth/totp/email/enable
+func (h *TOTPHandler) EnableEmail(c *gin.Context) {
+	var req struct {
+		Code string ` + "`" + `json:"code" binding:"required"` + "`" + `
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+
+	userID := c.GetString("user_id")
+	var config models.TwoFactorConfig
+	if err := h.DB.WithContext(c.Request.Context()).Where("user_id = ?", userID).First(&config).Error; err != nil {
+		respond.Fail(c, respond.CodeNotFound, "Ask for a code first.")
+		return
+	}
+	if config.SetupCodeHash == "" || config.SetupCodeExpiresAt == nil || time.Now().After(*config.SetupCodeExpiresAt) {
+		respond.Fail(c, respond.CodeInvalidCode, "That code has expired. Ask for a new one.")
+		return
+	}
+	if !totp.EmailCodeMatches(config.SetupCodeHash, req.Code) {
+		respond.Fail(c, respond.CodeInvalidCode, "That code is wrong. Check the email and try again.")
+		return
+	}
+
+	// Spent on use, and the method is only committed here: until this point an
+	// account with an authenticator still has one.
+	codes, hashes, err := totp.GenerateBackupCodes(0)
+	if err != nil {
+		respond.Fail(c, respond.CodeTOTPError, "Failed to create backup codes")
+		return
+	}
+	config.Enabled = true
+	config.Method = models.TwoFactorMethodEmail
+	config.SetupCodeHash = ""
+	config.SetupCodeExpiresAt = nil
+	config.BackupCodes = hashes
+	if err := h.DB.WithContext(c.Request.Context()).Save(&config).Error; err != nil {
+		respond.Fail(c, respond.CodeTOTPError, "Failed to enable two-factor authentication")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"enabled":      true,
+			"method":       models.TwoFactorMethodEmail,
+			"backup_codes": codes,
+		},
+		"message": "Codes by email are on. Save your backup codes: they are how you get in if you lose the mailbox.",
+	})
+}
+
 // Verify validates a TOTP code during the login flow (after password check).
 // Exchanges a pending token + valid TOTP code for real JWT tokens.
 func (h *TOTPHandler) Verify(c *gin.Context) {
@@ -468,6 +664,27 @@ func (h *TOTPHandler) Verify(c *gin.Context) {
 
 	pending, user, config, ok := h.beginSecondFactor(c, req.PendingToken)
 	if !ok {
+		return
+	}
+
+	// A challenge sent by email carries its own code. Nothing else about the
+	// flow changes: same pending token, same attempt counting, same trusted
+	// device, same session at the end.
+	if pending.CodeHash != "" {
+		if !totp.EmailCodeMatches(pending.CodeHash, req.Code) {
+			h.failSecondFactor(pending, user)
+			respond.Fail(c, respond.CodeInvalidCode, "That code is wrong or has expired. Check the email, or sign in again for a new code.")
+			return
+		}
+		// Spent: the row goes when the session is issued, and clearing the hash
+		// first means a replay in the same instant finds nothing to match.
+		if err := h.DB.WithContext(c.Request.Context()).Model(&models.TOTPPendingToken{}).
+			Where("id = ? AND code_hash = ?", pending.ID, pending.CodeHash).
+			Update("code_hash", "").Error; err != nil {
+			respond.Fail(c, respond.CodeTOTPError, "Failed to complete sign-in")
+			return
+		}
+		h.completeSecondFactor(c, pending, user, req.TrustDevice, nil, "Signed in")
 		return
 	}
 

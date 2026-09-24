@@ -1283,7 +1283,7 @@ function ResourceListView({ resource }: ResourcePageProps) {
                 className={
                   "rounded-md px-3 py-1 text-xs font-medium capitalize transition-colors " +
                   (view === option
-                    ? "bg-accent text-white"
+                    ? "bg-accent text-accent-fg"
                     : "text-text-muted hover:text-foreground")
                 }
               >

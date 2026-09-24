@@ -66,6 +66,67 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.319.0 */}
+            <div className="mb-12" id="v3.319.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.319.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>One Account screen, under System &rarr; Security &amp; Access</h3>
+                <p>
+                  Everything about your own login was scattered across three pages: the password sat on a page called
+                  Profile next to a job title and a bio, two-factor and passkeys were on a second page, and the list of
+                  devices on a third. Somebody trying to lock their account down had to know all three existed. There is
+                  now one screen with four tabs, Profile, Password, Security and Devices, and it composes the cards that
+                  already existed rather than copying them.
+                </p>
+                <p>
+                  The tabs are links, not an ARIA tablist: a link is keyboard-operable, shareable and survives a
+                  refresh without any roving-focus code, and the hand-rolled version is the one that fails a keyboard
+                  user.
+                </p>
+
+                <h3>Password rules the server actually enforces</h3>
+                <p>
+                  The password box now shows four rules while you type, and the reason to trust them is that the same
+                  four run on the server, in one package, on registering, changing and resetting alike. A checklist the
+                  server ignores is theatre: every item can be green and a weak password saves anyway.
+                </p>
+                <p>
+                  At least 8 characters; letters and something else; not one of the few hundred passwords attackers try
+                  first; and nothing taken from your own name or email address, which only the server can check because
+                  only the server knows both. A refused save says which rule it failed rather than &quot;invalid
+                  password&quot;.
+                </p>
+
+                <h3>A second factor by email, for people who will not install an app</h3>
+                <p>
+                  Two-factor meant an authenticator app or nothing, and for a lot of people that meant nothing. The
+                  Security tab now offers codes by email beside it. An authenticator is still the stronger of the two,
+                  because the code never leaves the device, while an emailed code is only as safe as the mailbox, which
+                  is also where a password reset goes. It is here because the alternative for those people was no
+                  second factor at all.
+                </p>
+                <p>
+                  Turning it on takes two steps on purpose: a code is sent first, and only when it comes back is the
+                  factor switched on, so nobody enables something they cannot receive. A deployment with no mailer is
+                  refused outright, and if mail stops working later the sign-in says so instead of leaving somebody at
+                  a code box waiting for a code that is never coming. Codes are six digits from crypto/rand, stored
+                  hashed, compared in constant time, spent on use, and counted against the same five attempts as an
+                  authenticator code. The email carries the digits and no link, because an email asking you to click to
+                  sign in is the shape of every phishing message ever written.
+                </p>
+                <p>
+                  <code>grit upgrade</code> carries all of it into an existing project, including the two routes and the
+                  sign-in branch, which live in files a project owns and would otherwise arrive half-wired.
+                </p>
+              </div>
+            </div>
+
             {/* v3.318.0 */}
             <div className="mb-12" id="v3.318.0">
               <div className="flex items-center gap-3 mb-4">

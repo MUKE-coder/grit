@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"{{MODULE}}/internal/mail"
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/password"
 	"{{MODULE}}/internal/respond"
 	"{{MODULE}}/internal/services"
 	"strings"
@@ -137,6 +138,20 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	userID, err := services.ConsumePasswordResetToken(h.DB, req.Token)
 	if err != nil {
 		respond.Fail(c, respond.CodeInvalidLink, "This reset link is invalid or has expired. Request a new one.")
+		return
+	}
+
+	// The same rules as registering and changing. A reset is where a weak
+	// password most often gets in: the person is locked out, in a hurry, and
+	// picks something they will remember.
+	var owner models.User
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", userID).First(&owner).Error; err == nil {
+		if failed := password.Check(req.Password, owner.Email, owner.FirstName, owner.LastName); len(failed) > 0 {
+			respond.Fail(c, respond.CodeValidationError, password.Message(failed))
+			return
+		}
+	} else if failed := password.Check(req.Password); len(failed) > 0 {
+		respond.Fail(c, respond.CodeValidationError, password.Message(failed))
 		return
 	}
 

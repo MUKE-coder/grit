@@ -178,7 +178,7 @@ export default function ActivityPage() {
             className={
               "rounded-full border px-3 py-1 text-xs font-medium capitalize transition-colors " +
               (severity === s
-                ? "border-accent bg-accent text-white"
+                ? "border-accent bg-accent text-accent-fg"
                 : "border-border bg-bg-elevated text-text-secondary hover:bg-bg-hover")
             }
           >
@@ -293,7 +293,7 @@ export default function SupportPage() {
             onClick={() => setStatus(s)}
             className={
               "inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium capitalize transition-colors " +
-              (status === s ? "bg-accent text-white" : "text-text-secondary hover:text-foreground")
+              (status === s ? "bg-accent text-accent-fg" : "text-text-secondary hover:text-foreground")
             }
           >
             {s === "open" ? <MessageSquare className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}

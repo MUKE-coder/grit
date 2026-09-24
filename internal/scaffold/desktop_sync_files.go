@@ -1459,7 +1459,7 @@ export function PendingChangesPanel({
             disabled={running || entries.length === 0}
             className={cn(
               "inline-flex items-center gap-2 h-9 px-3.5 rounded-lg text-[13px] font-medium transition-colors",
-              "bg-accent text-white hover:bg-accent-hover",
+              "bg-accent text-accent-fg hover:bg-accent-hover",
               "disabled:opacity-50 disabled:cursor-not-allowed",
             )}
           >
@@ -1683,7 +1683,7 @@ export function ConflictDialog({
           <button
             onClick={handleResolve}
             disabled={resolving}
-            className="h-9 px-3.5 rounded-lg bg-accent text-white text-[13px] font-medium hover:bg-accent-hover disabled:opacity-60"
+            className="h-9 px-3.5 rounded-lg bg-accent text-accent-fg text-[13px] font-medium hover:bg-accent-hover disabled:opacity-60"
           >
             {resolving ? "Resolving..." : "Apply merge"}
           </button>

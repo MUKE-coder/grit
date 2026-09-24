@@ -40,6 +40,7 @@ var EmailTemplates = map[string]string{
 	"password-reset":     passwordResetTemplate,
 	"email-verification": emailVerificationTemplate,
 	"notification":       notificationTemplate,
+	"two-factor-code":    twoFactorCodeTemplate,
 }
 
 const baseLayout = ` + "`" + `<!DOCTYPE html>
@@ -207,6 +208,42 @@ const notificationTemplate = ` + "`" + `<!DOCTYPE html>
     <div class="footer">
       <p>&copy; {{.Year}} {{.AppName}}. All rights reserved.</p>
     </div>
+  </div>
+</body>
+</html>` + "`" + `
+
+// A sign-in code, and nothing else.
+//
+// No link, deliberately: an email that asks somebody to click to sign in is
+// the shape of every phishing message ever written, and a code they type into
+// a page they already have open cannot be clicked at all. The digits are large
+// because they are read on a phone.
+const twoFactorCodeTemplate = ` + "`" + `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; padding: 0; background-color: #0a0a0f; color: #e8e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+    .card { background-color: #111118; border: 1px solid #2a2a3a; border-radius: 12px; padding: 32px; }
+    .logo { text-align: center; margin-bottom: 24px; font-size: 24px; font-weight: 700; color: #6c5ce7; }
+    h1 { font-size: 20px; margin: 0 0 16px; color: #e8e8f0; }
+    p { font-size: 14px; line-height: 1.6; color: #9090a8; margin: 0 0 16px; }
+    .code { display: block; text-align: center; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 34px; letter-spacing: 10px; font-weight: 700; color: #e8e8f0; background-color: #1a1a24; border: 1px solid #2a2a3a; border-radius: 10px; padding: 20px 12px; margin: 24px 0; }
+    .footer { text-align: center; margin-top: 24px; font-size: 12px; color: #7c7c96; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="logo">{{.AppName}}</div>
+      <h1>Your sign-in code</h1>
+      <p>Type this into the page you already have open. It expires in {{.Minutes}} minutes and works once.</p>
+      <span class="code">{{.Code}}</span>
+      <p>If you were not signing in, somebody has your password. Change it: this code alone lets nobody in.</p>
+    </div>
+    <div class="footer">&copy; {{.Year}} {{.AppName}}</div>
   </div>
 </body>
 </html>` + "`" + `

@@ -563,7 +563,7 @@ function EditShareModal({ share, onClose }: { share: FormShare; onClose: () => v
                 const disabled = mode === "remove" && !share.has_password;
                 return (
                   <button key={mode} type="button" onClick={() => !disabled && setPasswordMode(mode)} disabled={disabled}
-                    className={"flex-1 rounded px-2.5 py-1 text-xs font-medium transition-colors " + (passwordMode === mode ? "bg-accent text-white" : disabled ? "text-text-muted opacity-40 cursor-not-allowed" : "text-text-secondary hover:text-foreground")}>
+                    className={"flex-1 rounded px-2.5 py-1 text-xs font-medium transition-colors " + (passwordMode === mode ? "bg-accent text-accent-fg" : disabled ? "text-text-muted opacity-40 cursor-not-allowed" : "text-text-secondary hover:text-foreground")}>
                     {mode === "keep" ? "Keep current" : mode === "set" ? "Set password" : "Remove password"}
                   </button>
                 );

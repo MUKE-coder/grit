@@ -591,8 +591,11 @@ func (h *AuthHandler) startTOTPChallenge(c *gin.Context, user *models.User) bool
 	// Only the id is read. The secret is encrypted when FIELD_ENCRYPTION_KEY is
 	// set, and loading it here would let a secret that cannot be decrypted read
 	// as "this account has no second factor".
+	// The id and the method. The secret is encrypted when FIELD_ENCRYPTION_KEY
+	// is set, and loading it here would let a secret that cannot be decrypted
+	// read as "this account has no second factor".
 	var totpConfig models.TwoFactorConfig
-	if err := h.DB.WithContext(c.Request.Context()).Select("id").
+	if err := h.DB.WithContext(c.Request.Context()).Select("id", "method").
 		Where("user_id = ? AND enabled = ?", user.ID, true).First(&totpConfig).Error; err != nil {
 		return false
 	}
@@ -606,26 +609,7 @@ func (h *AuthHandler) startTOTPChallenge(c *gin.Context, user *models.User) bool
 		return true
 	}
 
-	// The token is stored hashed, so somebody who can read the table cannot
-	// finish another account's half-completed sign-in with what they find.
-	if err := h.DB.WithContext(c.Request.Context()).Create(&models.TOTPPendingToken{
-		UserID:    user.ID,
-		TokenHash: totp.HashToken(pendingToken),
-		ExpiresAt: time.Now().Add(totp.PendingTokenExpiry),
-	}).Error; err != nil {
-		respond.Fail(c, respond.CodeTokenError, "Failed to create verification session")
-		return true
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
-			"totp_required": true,
-			"pending_token": pendingToken,
-		},
-		"message": "Two-factor authentication required",
-	})
-	return true
-}
+` + emailChallengeTokenNew + `
 
 // Login authenticates a user and returns tokens.
 func (h *AuthHandler) Login(c *gin.Context) {

@@ -30,9 +30,12 @@ import {
   useRegenerateBackupCodes,
   useRevokeTrustedDevice,
 } from "@/hooks/use-auth";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
 import { ShieldCheck, Loader2, Copy, Check, Monitor, X } from "@/lib/icons";
 import { describeDevice } from "@/components/profile/active-sessions";
 import { Button, buttonClasses } from "@/components/ui/button";
+import { inputClasses } from "@/components/ui/input";
 
 /** Recovery codes are unrecoverable once dismissed — see the file header. */
 function BackupCodes({ codes, onDone }: { codes: string[]; onDone: () => void }) {
@@ -107,11 +110,45 @@ function BackupCodes({ codes, onDone }: { codes: string[]; onDone: () => void })
   );
 }
 
+/**
+ * Ask for a code, to prove the mailbox works before email becomes the second
+ * factor. Turning on a factor you cannot receive is how an account locks
+ * itself out, so it is deliberately two steps.
+ */
+export function useSendEmailSetupCode() {
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await apiClient.post<{ data: { sent_to: string } }>(
+        "/api/auth/totp/email/send",
+        {},
+      );
+      return data.data;
+    },
+  });
+}
+
+/** Confirm that code, and turn it on. */
+export function useEnableEmailTwoFactor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (code: string) => {
+      const { data } = await apiClient.post<{ data: { backup_codes: string[]; method: string } }>(
+        "/api/auth/totp/email/enable",
+        { code: code.trim() },
+      );
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["totp-status"] }),
+  });
+}
+
 export function TwoFactorCard() {
   const { data: status, isLoading } = useTOTPStatus();
   const { data: devices } = useTrustedDevices(!!status?.enabled);
   const setup = useTOTPSetup();
   const enable = useEnableTOTP();
+  const sendEmailCode = useSendEmailSetupCode();
+  const enableEmail = useEnableEmailTwoFactor();
   const disable = useDisableTOTP();
   const regenerate = useRegenerateBackupCodes();
   const revoke = useRevokeTrustedDevice();
@@ -123,6 +160,9 @@ export function TwoFactorCard() {
   const [password, setPassword] = useState("");
   const [disabling, setDisabling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Mid-setup for the email method: the address it went to, and the digits.
+  const [emailSetupSentTo, setEmailSetupSentTo] = useState<string | null>(null);
+  const [emailCode, setEmailCode] = useState("");
 
   const errText = (e: unknown) =>
     (e as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
@@ -154,6 +194,26 @@ export function TwoFactorCard() {
         onError: (e) => setError(errText(e)),
       }
     );
+  };
+
+  const startEmailSetup = () => {
+    setError(null);
+    sendEmailCode.mutate(undefined, {
+      onSuccess: (d) => setEmailSetupSentTo(d.sent_to),
+      onError: (e) => setError(errText(e)),
+    });
+  };
+
+  const confirmEmailSetup = () => {
+    setError(null);
+    enableEmail.mutate(emailCode, {
+      onSuccess: (d) => {
+        setCodes(d.backup_codes);
+        setEmailSetupSentTo(null);
+        setEmailCode("");
+      },
+      onError: (e) => setError(errText(e)),
+    });
   };
 
   const confirmDisable = () => {
@@ -205,10 +265,57 @@ export function TwoFactorCard() {
         {codes && <BackupCodes codes={codes} onDone={() => setCodes(null)} />}
 
         {/* ── Off, and not mid-setup ── */}
-        {!status?.enabled && !secret && !codes && (
-          <Button onClick={startSetup} loading={setup.isPending}>
-            Turn on two-factor
-          </Button>
+        {!status?.enabled && !secret && !codes && !emailSetupSentTo && (
+          <div className="flex flex-wrap gap-2">
+            {/* The app first, and not only for looks: a code in an
+                authenticator never leaves the device, while a code by email is
+                only as safe as the mailbox, which is also where a password
+                reset goes. */}
+            <Button onClick={startSetup} loading={setup.isPending}>
+              Set up an authenticator app
+            </Button>
+            <Button variant="outline" onClick={startEmailSetup} loading={sendEmailCode.isPending}>
+              Use codes by email
+            </Button>
+          </div>
+        )}
+
+        {/* ── Mid-setup by email: prove the mailbox works ── */}
+        {emailSetupSentTo && !codes && (
+          <div className="space-y-3">
+            <p className="text-sm text-foreground-secondary">
+              We sent a code to <span className="font-medium text-foreground">{emailSetupSentTo}</span>.
+              Enter it to turn this on, so nothing is switched on that you cannot receive.
+            </p>
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="space-y-1.5">
+                <label htmlFor="two-factor-email-code" className="block text-xs font-medium text-text-secondary">
+                  The code from your email
+                </label>
+                <input
+                  id="two-factor-email-code"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  value={emailCode}
+                  onChange={(e) => setEmailCode(e.target.value.replace(/[^0-9]/g, ""))}
+                  className={inputClasses({ className: "w-40 font-mono text-lg tracking-[0.3em]" })}
+                />
+              </div>
+              <Button onClick={confirmEmailSetup} loading={enableEmail.isPending} disabled={emailCode.length !== 6}>
+                Turn it on
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setEmailSetupSentTo(null);
+                  setEmailCode("");
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
         )}
 
         {/* ── Mid-setup: scan, then confirm with a live code ── */}

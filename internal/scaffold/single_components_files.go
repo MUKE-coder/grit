@@ -554,7 +554,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                   "px-4 py-2 rounded-md text-sm font-medium transition-colors",
                   pending.tone === "danger"
                     ? "bg-danger text-white hover:opacity-90"
-                    : "bg-accent text-white hover:bg-accent-hover",
+                    : "bg-accent text-accent-fg hover:bg-accent-hover",
                 )}
               >
                 {pending.confirmLabel || "Confirm"}
@@ -913,7 +913,7 @@ export function SessionExpiryMonitor({ onLoggedOut }: SessionExpiryMonitorProps)
           <button
             type="button"
             onClick={stay}
-            className="px-4 py-2 rounded-md bg-accent text-white hover:bg-accent-hover transition-colors text-sm font-medium"
+            className="px-4 py-2 rounded-md bg-accent text-accent-fg hover:bg-accent-hover transition-colors text-sm font-medium"
           >
             Stay signed in
           </button>

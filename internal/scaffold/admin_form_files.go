@@ -1217,7 +1217,7 @@ function HorizontalIndicator({
                   ${state === "completed"
                     ? "bg-success text-white"
                     : state === "active"
-                    ? "bg-accent text-white ring-4 ring-accent/20"
+                    ? "bg-accent text-accent-fg ring-4 ring-accent/20"
                     : "bg-bg-hover text-text-muted border border-border group-hover:border-border/80"}
                 ` + "`" + `}
               >
@@ -1291,7 +1291,7 @@ function VerticalIndicator({
                     ${state === "completed"
                       ? "bg-success text-white"
                       : state === "active"
-                      ? "bg-accent text-white ring-2 ring-accent/20"
+                      ? "bg-accent text-accent-fg ring-2 ring-accent/20"
                       : "bg-bg-hover text-text-muted border border-border"}
                   ` + "`" + `}
                 >
@@ -2625,7 +2625,7 @@ export function CheckboxField({ field, value, onChange, error }: CheckboxFieldPr
         <span
           className={
             "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border " +
-            (value ? "border-accent bg-accent text-white" : "border-border")
+            (value ? "border-accent bg-accent text-accent-fg" : "border-border")
           }
         >
           {value && <Check className="h-3.5 w-3.5" />}
@@ -2826,7 +2826,7 @@ export function CheckboxGroupField({ field, value, onChange, error }: CheckboxGr
               <span
                 className={
                   "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border-2 transition-colors " +
-                  (checked ? "border-accent bg-accent text-white" : "border-border")
+                  (checked ? "border-accent bg-accent text-accent-fg" : "border-border")
                 }
               >
                 {checked && (
@@ -4033,7 +4033,7 @@ export function MultiRelationshipSelectField({
                       <span
                         className={
                           "flex h-4 w-4 shrink-0 items-center justify-center rounded border " +
-                          (isSelected ? "border-accent bg-accent text-white" : "border-border")
+                          (isSelected ? "border-accent bg-accent text-accent-fg" : "border-border")
                         }
                       >
                         {isSelected && <Check className="h-3 w-3" aria-hidden="true" />}

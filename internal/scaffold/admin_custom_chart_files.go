@@ -477,7 +477,7 @@ export function ChartBuilderForm({ resources, initial, onSubmit, onCancel }: Pro
                 className={
                   "rounded-md border px-3 py-1.5 text-xs font-medium transition-colors " +
                   (active
-                    ? "border-accent bg-accent text-white"
+                    ? "border-accent bg-accent text-accent-fg"
                     : allowed
                       ? "border-border bg-bg-tertiary text-text-secondary hover:bg-bg-hover"
                       : "border-border bg-bg-tertiary text-text-muted opacity-40 cursor-not-allowed")
