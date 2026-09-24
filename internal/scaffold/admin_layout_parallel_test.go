@@ -17,8 +17,18 @@ func TestAdminLayoutRendersThePageBeforeTheUserIsKnown(t *testing.T) {
 		t.Error("the layout still returns early while /auth/me is in flight, which holds back every page query")
 	}
 	main := strings.Index(layout, "<main")
-	if main < 0 || !strings.Contains(layout[main:], "{inBrowser ? children : null}</main>") {
+	end := strings.Index(layout, "</main>")
+	if main < 0 || end < main || !strings.Contains(layout[main:end], "inBrowser ? children : null") {
 		t.Fatal("the layout no longer renders the page in <main>, in the browser only")
+	}
+	// The landmark is also the skip link's target, so it needs an id and has
+	// to be focusable: sending focus to a plain <main> does nothing, and the
+	// next Tab would start from the top of the page again.
+	if !strings.Contains(layout[main:end], `id="main"`) || !strings.Contains(layout[main:end], "tabIndex={-1}") {
+		t.Error("the main landmark is not a focusable skip-link target")
+	}
+	if !strings.Contains(layout, `href="#main"`) {
+		t.Error("the layout has no skip link, so reaching the page by keyboard means tabbing the whole sidebar")
 	}
 	if !strings.Contains(layout, "useSyncExternalStore(subscribeNever, () => true, () => false)") {
 		t.Error("the page is no longer kept out of the server render")

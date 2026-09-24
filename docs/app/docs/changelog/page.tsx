@@ -66,6 +66,59 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.318.0 */}
+            <div className="mb-12" id="v3.318.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.318.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The admin, audited in a browser</h3>
+                <p>
+                  Not reviewed by reading it: driven with a real browser against a generated project, measuring what
+                  the page actually rendered. Six things failed, and every scaffolded admin had inherited all of them.
+                </p>
+                <p>
+                  <strong>The primary button was unreadable.</strong> White on the default dark theme&apos;s
+                  <code> #60a5fa</code> measures 2.5:1, against the 4.5:1 that AA asks for: a blue rectangle with a
+                  rumour of text on it. The brightness is the point of lifting an accent for a dark canvas, so the
+                  label moved rather than the colour. There is now an <code>--accent-fg</code> token, dark on the
+                  light-blue themes and white on the dark ones, and the twenty-nine places that hard-coded
+                  <code> text-white</code> use it.
+                </p>
+                <p>
+                  <strong>Muted text sat at 3.1:1</strong> on the dark canvas and 2.5:1 on the light one. It is the
+                  colour of every table column header, so the labels on the densest screen in the admin were the
+                  hardest to read. Both tokens moved to values that measure over 4.5:1.
+                </p>
+                <p>
+                  <strong>A screen reader read a page of identical checkboxes.</strong> Every row&apos;s select box
+                  announced nothing at all, so ticking one was a guess. Each now names its row, taken from the first
+                  readable column rather than from an id nobody identifies a row by, and the search box has a name
+                  instead of a placeholder that vanishes the moment you type.
+                </p>
+                <p>
+                  <strong>There was no way past the sidebar.</strong> Eight links, on every page, before the content:
+                  a skip link now comes first and the main landmark it targets is focusable, so the next Tab carries
+                  on from the content instead of the top. The auth pages gained a landmark too, so the sign-in form
+                  can be reached without walking the hero panel.
+                </p>
+                <p>
+                  <strong>And several targets were under 24px</strong> (WCAG 2.5.8): the row checkboxes, the
+                  password eye, the Edit and Delete links in a row, the option library&apos;s delete buttons. The
+                  option library&apos;s three fields also had visible labels attached to nothing, which is the same
+                  defect this admin shipped twelve times once before.
+                </p>
+                <p>
+                  Five tests hold each of these, written against the templates so they fail before a release rather
+                  than after one.
+                </p>
+              </div>
+            </div>
+
             {/* v3.317.0 */}
             <div className="mb-12" id="v3.317.0">
               <div className="flex items-center gap-3 mb-4">

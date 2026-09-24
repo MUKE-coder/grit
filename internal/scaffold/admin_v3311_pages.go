@@ -226,7 +226,7 @@ export default function DashboardPage() {
               <p className="text-sm font-semibold text-foreground">Recent activity</p>
               <p className="text-xs text-text-muted">Latest 8 events across the platform</p>
             </div>
-            <Link href="/system/activity" className="text-xs font-medium text-accent hover:text-accent-hover">
+            <Link href="/system/activity" className="inline-flex min-h-[24px] items-center text-xs font-medium text-accent hover:text-accent-hover">
               View all
             </Link>
           </header>

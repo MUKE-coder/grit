@@ -1378,7 +1378,7 @@ function OptionCard({ option, onRemove }: { option: AdminOption; onRemove: () =>
               title={"Delete " + value.label + ". Refused while a variant is built on it."}
               disabled={removeValue.isPending}
               onClick={() => removeValue.mutate(value.id)}
-              className="rounded p-1 text-text-muted transition-colors hover:bg-bg-hover hover:text-danger disabled:opacity-50"
+              className="rounded p-1.5 text-text-muted transition-colors hover:bg-bg-hover hover:text-danger disabled:opacity-50"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -1391,10 +1391,14 @@ function OptionCard({ option, onRemove }: { option: AdminOption; onRemove: () =>
         className="flex flex-wrap items-end gap-2 border-t border-border px-6 py-3"
       >
         <div className="w-44">
-          <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-muted">
+          <label
+            htmlFor={"add-value-" + option.id}
+            className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-muted"
+          >
             Add a value
           </label>
           <input
+            id={"add-value-" + option.id}
             className={inputClasses({ inputSize: "sm" })}
             placeholder={newValueHint(option.kind)}
             value={label}
@@ -1403,10 +1407,14 @@ function OptionCard({ option, onRemove }: { option: AdminOption; onRemove: () =>
         </div>
         {option.kind === "swatch" && (
           <div>
-            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-muted">
+            <label
+              htmlFor={"add-swatch-" + option.id}
+              className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-muted"
+            >
               Swatch
             </label>
             <input
+              id={"add-swatch-" + option.id}
               type="color"
               aria-label="Swatch colour"
               className="h-8 w-12 cursor-pointer rounded-lg border border-border bg-bg-secondary p-1"
@@ -1417,10 +1425,14 @@ function OptionCard({ option, onRemove }: { option: AdminOption; onRemove: () =>
         )}
         {option.affects_price && (
           <div className="w-28">
-            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-muted">
+            <label
+              htmlFor={"add-delta-" + option.id}
+              className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-text-muted"
+            >
               Price change
             </label>
             <input
+              id={"add-delta-" + option.id}
               className={inputClasses({ inputSize: "sm", className: "tabular-nums" })}
               inputMode="decimal"
               placeholder="+ / -"

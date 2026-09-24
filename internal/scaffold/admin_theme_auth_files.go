@@ -269,8 +269,9 @@ export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMe
         <p className="text-sm opacity-60">Built with Grit — Go + React framework</p>
       </div>
 
-      {/* Right form panel */}
-      <div
+      {/* Right form panel. main, not div: this is the page's content, and
+          landmarks are how somebody skips the hero panel to reach it. */}
+      <main
         className="flex flex-1 items-center justify-center px-6 py-12"
         style={{ background: t.bg }}
       >
@@ -311,7 +312,7 @@ export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMe
             </Link>
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

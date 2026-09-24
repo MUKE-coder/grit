@@ -174,9 +174,10 @@ project-root/
 --border:        #2a2a3a
 --text-primary:  #e8e8f0
 --text-secondary:#9090a8
---text-muted:    #606078
+--text-muted:    #7c7c96  (4.9:1 on bg-primary; #606078 measured 3.1:1 and failed AA)
 --accent:        #6c5ce7  (purple)
 --accent-hover:  #7c6cf7
+--accent-fg:     #ffffff  (the label on an accent button: dark on the light-blue themes)
 --success:       #00b894
 --danger:        #ff6b6b
 --warning:       #fdcb6e

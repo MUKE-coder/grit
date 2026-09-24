@@ -239,19 +239,19 @@ export default function SSOPage() {
                     <button
                       onClick={() => testConnection(c)}
                       disabled={testing === c.id}
-                      className="mr-3 text-xs text-text-secondary hover:text-accent disabled:opacity-50"
+                      className="mr-3 inline-flex min-h-[24px] items-center text-xs text-text-secondary hover:text-accent disabled:opacity-50"
                     >
                       {testing === c.id ? "Testing…" : "Test"}
                     </button>
-                    <button onClick={() => copyCallback(c)} className="mr-3 text-xs text-text-secondary hover:text-accent">
+                    <button onClick={() => copyCallback(c)} className="mr-3 inline-flex min-h-[24px] items-center text-xs text-text-secondary hover:text-accent">
                       <Copy className="mr-1 inline h-3 w-3" />IdP URLs
                     </button>
-                    <button onClick={() => startEdit(c)} className="mr-3 text-xs text-text-secondary hover:text-accent">
+                    <button onClick={() => startEdit(c)} className="mr-3 inline-flex min-h-[24px] items-center text-xs text-text-secondary hover:text-accent">
                       Edit
                     </button>
                     <button
                       onClick={() => setPendingDelete(c)}
-                      className="text-xs text-text-secondary hover:text-danger"
+                      className="inline-flex min-h-[24px] items-center text-xs text-text-secondary hover:text-danger"
                     >
                       <Trash2 className="mr-1 inline h-3 w-3" />Delete
                     </button>

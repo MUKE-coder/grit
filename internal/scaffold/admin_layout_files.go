@@ -472,6 +472,18 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           sidebarCollapsed ? "md:ml-16" : "md:ml-64"
         }` + "`" + `}
       >
+        {/* Every page of this admin starts with the same eight or so sidebar
+            links. Without this, reaching the content by keyboard means tabbing
+            past all of them on every page, which is WCAG 2.4.1 and is also
+            just tedious. Hidden until focused, then it is the first thing you
+            get. */}
+        <a
+          href="#main"
+          className="sr-only rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50"
+        >
+          Skip to content
+        </a>
+
         {/* Mobile menu button — only shown when the sidebar is hidden
             on small screens. PageHeader supplies the rest of the chrome. */}
         <button
@@ -485,7 +497,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
         {/* grit:layout:banner */}
         <EmailVerifiedBanner />
-        <main className="flex-1 px-4 py-6 md:px-8">{inBrowser ? children : null}</main>
+        <main id="main" tabIndex={-1} className="flex-1 px-4 py-6 md:px-8 focus:outline-none">
+          {inBrowser ? children : null}
+        </main>
       </div>
 
       {/* Floating quick-access button (configurable) */}

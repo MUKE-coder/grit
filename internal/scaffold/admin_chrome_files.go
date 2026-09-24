@@ -415,7 +415,7 @@ export function NotificationBell() {
             <Link
               href="/system/notifications"
               onClick={() => setOpen(false)}
-              className="text-xs font-medium text-accent hover:text-accent-hover"
+              className="inline-flex min-h-[24px] items-center text-xs font-medium text-accent hover:text-accent-hover"
             >
               View all notifications
             </Link>
@@ -1004,7 +1004,7 @@ function BrandMark({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-white font-bold text-sm">
+    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-fg font-bold text-sm">
       {brand.logo.text}
     </span>
   );
@@ -1254,7 +1254,7 @@ func adminDarkModeCSSAddon() string {
   --border: #2a2a3a;
   --text-primary: #e8e8f0;
   --text-secondary: #9090a8;
-  --text-muted: #606078;
+  --text-muted: #7c7c96;
 }
 
 /* Per-theme accent lifts so blue/purple/black don't disappear on the
@@ -1265,6 +1265,10 @@ func adminDarkModeCSSAddon() string {
 [data-theme-mode="dark"][data-theme="atlas"] {
   --accent: #60a5fa;
   --accent-hover: #93c5fd;
+  /* Near-black label: white on this blue is 2.5:1, and the brightness is the
+     point of lifting the accent for the dark canvas, so the label moves
+     rather than the colour. */
+  --accent-fg: #0a0a0f;
 }
 
 .dark[data-theme="aurora"],
@@ -1272,6 +1276,7 @@ func adminDarkModeCSSAddon() string {
   /* Apple-dark greys — kept dark enough that the white button label reads. */
   --accent: #48484a;
   --accent-hover: #636366;
+  --accent-fg: #ffffff;
 }
 
 .dark[data-theme="pulse"],
@@ -1279,6 +1284,8 @@ func adminDarkModeCSSAddon() string {
   /* Cloudflare blue, brightened one step for the dark canvas. */
   --accent: #3b82f6;
   --accent-hover: #60a5fa;
+  /* 3.8:1 with a white label, which is under AA for anything but large text. */
+  --accent-fg: #0a0a0f;
 }
 
 /* Form controls + selection still need the dark hint or the browser
