@@ -59,6 +59,10 @@ const (
 	Period = 30
 	// Window is the number of periods to check before/after current (clock skew tolerance).
 	Window = 1
+	// SkewSearch is how far out a refused code is searched, only to explain
+	// the refusal. Five minutes either way covers the drift a phone or a
+	// virtual machine accumulates; beyond that the code is simply wrong.
+	SkewSearch = 10
 	// BackupCodeLength is the character length of each backup code.
 	BackupCodeLength = 8
 	// BackupCodeCount is the default number of backup codes generated.
@@ -99,6 +103,35 @@ func GenerateURI(secret, email, issuer string) string {
 
 	label := url.PathEscape(fmt.Sprintf("%s:%s", issuer, email))
 	return fmt.Sprintf("otpauth://totp/%s?%s", label, v.Encode())
+}
+
+// SkewSeconds reports how far a code's time step is from this server's.
+//
+// Only called when a code has already been refused. A code from an
+// authenticator whose clock has drifted is indistinguishable from a wrong code
+// unless somebody measures it, and "Invalid verification code" sends people to
+// re-scan a QR that was never the problem. Drift is the single most common
+// reason a correct app is rejected, and it is the one thing the server can
+// work out on the user's behalf.
+//
+// Returns the offset in seconds and whether the code matched at all within
+// SkewSearch steps. A match here is NOT an acceptance: the caller still
+// refuses the code. It only changes what the refusal says.
+func SkewSeconds(secret, code string) (int, bool) {
+	counter := time.Now().Unix() / Period
+	for i := -int64(SkewSearch); i <= int64(SkewSearch); i++ {
+		if i >= -int64(Window) && i <= int64(Window) {
+			continue // already tried and refused by ValidateCodeStep
+		}
+		expected, err := generateCode(secret, counter+i)
+		if err != nil {
+			return 0, false
+		}
+		if hmac.Equal([]byte(expected), []byte(code)) {
+			return int(i * Period), true
+		}
+	}
+	return 0, false
 }
 
 // ValidateCode checks if the given TOTP code is valid for the secret.
@@ -357,6 +390,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -471,6 +505,33 @@ func (h *TOTPHandler) Setup(c *gin.Context) {
 	})
 }
 
+// totpRefusal explains a refused code.
+//
+// The code is refused either way. This only decides what to tell the person,
+// and the difference matters: "your clock is 90 seconds behind" is something
+// they can fix in a minute, while "invalid code" sends them to re-scan a QR
+// that was never wrong.
+//
+// It says nothing an attacker can use. Learning that a guess landed near the
+// window requires guessing a valid six-digit code for a nearby step, which is
+// the same work as guessing the current one, and the attempt is counted the
+// same way.
+func totpRefusal(secret, code string) string {
+	if off, found := totp.SkewSeconds(secret, code); found {
+		direction := "behind"
+		if off > 0 {
+			direction = "ahead of"
+		}
+		if off < 0 {
+			off = -off
+		}
+		return fmt.Sprintf(
+			"That code was right, but your device's clock is about %d seconds %s this server's, so the code had already changed. Turn on automatic time on your phone and try the next code.",
+			off, direction)
+	}
+	return "Invalid verification code. Check you are reading the code for this account, and that it has not just expired."
+}
+
 // Enable verifies the initial TOTP code and activates 2FA for the user.
 // Returns backup codes that the user should save.
 func (h *TOTPHandler) Enable(c *gin.Context) {
@@ -494,7 +555,7 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 	// Verify the code matches the secret
 	step, valid, err := totp.ValidateCodeStep(req.Secret, req.Code)
 	if err != nil || !valid {
-		respond.Fail(c, respond.CodeInvalidTOTPCode, "Invalid verification code. Make sure your authenticator app is synced.")
+		respond.Fail(c, respond.CodeInvalidTOTPCode, totpRefusal(req.Secret, req.Code))
 		return
 	}
 

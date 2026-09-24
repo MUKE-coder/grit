@@ -66,6 +66,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.326.0 */}
+            <div className="mb-12" id="v3.326.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.326.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Verifying your own email in development, and a banner you can put away</h3>
+                <p>
+                  A new project has no mailer, so the &quot;confirm your email address&quot; banner sits at the top of
+                  every admin page with no way to act on it. The link exists, in the server log or as a file under{' '}
+                  <code>storage/mail</code>, and nobody goes and gets it. In development the send endpoint now returns
+                  the link with the response, and the banner offers it as something to click. The response body is
+                  guarded on <code>APP_ENV</code>: anywhere else it would hand a working verification link to whoever
+                  asked for one, which is the whole secret.
+                </p>
+                <p>
+                  The banner also has a close button now. Dismissal lasts the browser session, not forever: an
+                  unconfirmed address means a password reset has nowhere to go, so the reminder comes back at the next
+                  sign-in. It is stored in <code>sessionStorage</code> behind a try/catch, because that throws in a
+                  private window and a banner is not worth a blank page.
+                </p>
+
+                <h3>&quot;The authenticator is not working&quot; is usually a clock</h3>
+                <p>
+                  A TOTP code is valid for 30 seconds either side of the server&apos;s clock. A phone or a VM whose time
+                  has drifted past that produces correct codes that are refused, and the refusal said &quot;Invalid
+                  verification code. Make sure your authenticator app is synced&quot;, which sends people to delete the
+                  entry and re-scan a QR that was never the problem.
+                </p>
+                <p>
+                  The server can measure the drift, so it does. A refused code is searched five minutes either way, and
+                  if it matches there, the message says so: how many seconds out the device is, and in which direction.
+                  A code that is simply wrong gets its own message and is not told its clock is broken. The code is
+                  refused either way, the attempt is counted the same way, and the search skips the window the
+                  validator already tried so it can never widen what is accepted.
+                </p>
+
+                <h3>A refused password said why in a sentence nobody could read</h3>
+                <p>
+                  The password rules are shown to the user as a checklist, and the API built its error by joining those
+                  checklist labels after &quot;Your password needs &quot;. Two of the four are phrased as negatives, so
+                  the result was: <em>Your password needs not a password everyone tries first and nothing from your name
+                  or email.</em> That is what the API has been returning.
+                </p>
+                <p>
+                  Each rule now carries its own clause for the sentence, separate from its checklist label, and the
+                  clauses come out in rule order rather than the order they happened to fail, so the same two failures
+                  always read the same way.
+                </p>
+              </div>
+            </div>
+
             {/* v3.325.0 */}
             <div className="mb-12" id="v3.325.0">
               <div className="flex items-center gap-3 mb-4">

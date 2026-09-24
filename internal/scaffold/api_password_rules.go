@@ -31,15 +31,26 @@ type Rule struct {
 	// Required marks the rules that block a save. All four do today; the field
 	// exists so an advisory rule can be added without a second mechanism.
 	Required bool ` + "`" + `json:"required"` + "`" + `
+	// Clause is the same rule as a piece of a sentence, for the error the API
+	// returns. Label is a checklist item and reads as one; dropped into
+	// "Your password ..." it produces "Your password needs not a password
+	// everyone tries first", which is the sort of thing nobody notices until
+	// a user quotes it back. Kept out of the JSON because the checklist has
+	// no use for it.
+	Clause string ` + "`" + `json:"-"` + "`" + `
 }
 
 // Rules is the list, in the order the checklist shows them.
 func Rules() []Rule {
 	return []Rule{
-		{ID: "length", Label: "At least 8 characters", Required: true},
-		{ID: "variety", Label: "Letters and something else: a number, a symbol or a space", Required: true},
-		{ID: "not-common", Label: "Not a password everyone tries first", Required: true},
-		{ID: "not-personal", Label: "Nothing from your name or email", Required: true},
+		{ID: "length", Label: "At least 8 characters", Required: true,
+			Clause: "needs at least 8 characters"},
+		{ID: "variety", Label: "Letters and something else: a number, a symbol or a space", Required: true,
+			Clause: "needs letters and something else: a number, a symbol or a space"},
+		{ID: "not-common", Label: "Not a password everyone tries first", Required: true,
+			Clause: "cannot be one of the passwords everyone tries first"},
+		{ID: "not-personal", Label: "Nothing from your name or email", Required: true,
+			Clause: "cannot contain your name or your email address"},
 	}
 }
 
@@ -86,24 +97,31 @@ func Valid(candidate string, about ...string) bool {
 }
 
 // Message turns the failures into one sentence for an API error.
+//
+// Built from each rule's Clause, in the order Rules lists them rather than the
+// order they happened to fail, so the same two failures always read the same
+// way.
 func Message(failed []string) string {
-	labels := map[string]string{}
-	for _, rule := range Rules() {
-		labels[rule.ID] = rule.Label
+	broken := map[string]bool{}
+	for _, id := range failed {
+		broken[id] = true
 	}
 	parts := make([]string, 0, len(failed))
-	for _, id := range failed {
-		if label, ok := labels[id]; ok {
-			parts = append(parts, strings.ToLower(label[:1])+label[1:])
+	for _, rule := range Rules() {
+		if broken[rule.ID] && rule.Clause != "" {
+			parts = append(parts, rule.Clause)
 		}
 	}
 	switch len(parts) {
 	case 0:
 		return ""
 	case 1:
-		return "Your password needs " + parts[0] + "."
+		return "Your password " + parts[0] + "."
 	default:
-		return "Your password needs " + strings.Join(parts[:len(parts)-1], ", ") + " and " + parts[len(parts)-1] + "."
+		// A serial comma before the last clause, because two of the clauses
+		// contain an "and" of their own and the sentence stops parsing
+		// without it.
+		return "Your password " + strings.Join(parts[:len(parts)-1], ", ") + ", and " + parts[len(parts)-1] + "."
 	}
 }
 

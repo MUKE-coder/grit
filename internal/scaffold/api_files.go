@@ -2366,7 +2366,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	// Off the request path: signup should not wait on SMTP, and a mail failure
 	// must not fail an account that was created successfully.
-	h.deliverVerificationEmail(c.Request.Context(), user)
+	_ = h.deliverVerificationEmail(c.Request.Context(), user)
 
 	tokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
 	if err != nil {
