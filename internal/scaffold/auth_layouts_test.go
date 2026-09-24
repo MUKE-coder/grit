@@ -139,3 +139,31 @@ func TestTheDesktopDispatcherNamesEveryLayout(t *testing.T) {
 		}
 	}
 }
+
+// A theme has to repaint the dashboard too, not only the sign-in page.
+//
+// [data-theme="<name>"] in globals.css is what repaints the admin. Without a
+// block, a theme styles its auth screens and leaves the dashboard on the
+// default palette: coral sign-in, atlas dashboard, and nothing anywhere says
+// so. The picker's own description promises a theme "drives dashboard tokens".
+func TestEveryThemeRepaintsTheDashboard(t *testing.T) {
+	css := adminScreenCSS()
+	// The token every surface reads. A block that omits it is worse than no
+	// block, because the theme half-applies.
+	for _, theme := range ValidThemes {
+		block := `[data-theme="` + theme + `"]`
+		if !strings.Contains(css, block) {
+			t.Errorf("theme %q has no %s block, so its dashboard stays on the default palette", theme, block)
+			continue
+		}
+		body := css[strings.Index(css, block):]
+		if end := strings.Index(body, "}"); end > 0 {
+			body = body[:end]
+		}
+		for _, token := range []string{"--bg-primary", "--text-primary", "--accent", "--accent-fg"} {
+			if !strings.Contains(body, token) {
+				t.Errorf("theme %q sets no %s, so that surface falls back to another theme's colour", theme, token)
+			}
+		}
+	}
+}

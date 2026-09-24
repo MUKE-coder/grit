@@ -66,6 +66,44 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.325.0 */}
+            <div className="mb-12" id="v3.325.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.325.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A theme now repaints the dashboard, not just the sign-in page</h3>
+                <p>
+                  The five themes added in v3.322.0 styled their auth screens and left the dashboard on the default
+                  palette: a coral project had a coral sign-in page and an Atlas-coloured admin behind it. The picker
+                  that offers them says a theme &quot;drives auth layout, dashboard tokens, fonts and brand colours&quot;,
+                  and for those five the middle one was not true.
+                </p>
+                <p>
+                  Each now has its <code>[data-theme]</code> block, with the accent matching the theme&apos;s primary,
+                  so the sign-in button and the dashboard&apos;s buttons are the same colour.
+                </p>
+
+                <h3>Aurora and Pulse had an invisible button label</h3>
+                <p>
+                  Writing the test that holds the above turned up something older. Buttons are{' '}
+                  <code>bg-accent text-accent-fg</code>, and neither Aurora nor Pulse ever set{' '}
+                  <code>--accent-fg</code>. With that token undefined the label falls back to{' '}
+                  <code>--text-primary</code>: near-black text on Aurora&apos;s near-black button, which cannot be read
+                  at all, and near-black on Pulse&apos;s blue, which barely can.
+                </p>
+                <p>
+                  This is the same fault v3.318.0 fixed for the light themes and missed for these two, and it has been
+                  shipping since. Both now name white explicitly, and the test walks every theme rather than checking
+                  the token appears somewhere in the file, which is what let one theme satisfy it for all of them.
+                </p>
+              </div>
+            </div>
+
             {/* v3.324.0 */}
             <div className="mb-12" id="v3.324.0">
               <div className="flex items-center gap-3 mb-4">
