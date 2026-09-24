@@ -66,6 +66,52 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.323.0 */}
+            <div className="mb-12" id="v3.323.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.323.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3><code>grit update</code> worked once on Windows, then failed forever</h3>
+                <p>
+                  A Windows executable is locked while it runs, so updating means moving the running binary aside
+                  before writing the new one. It moved to <code>grit.exe.old</code>, and the leftover was cleared on
+                  the next run. Except Windows does not always clear it: when anything still holds a handle, the file
+                  is marked delete-pending rather than removed, the name stays reserved, and the rename onto it fails
+                  with <code>Access is denied</code>. Nothing in that message names the leftover, so the fix nobody
+                  could guess was to delete a file by hand.
+                </p>
+                <p>
+                  The binary now moves to a name carrying the process id when the plain one cannot be cleared, which
+                  nothing else can be holding, and every leftover is swept after a successful update rather than only
+                  the current one.
+                </p>
+
+                <h3>Both installers now prove they can update before they write</h3>
+                <p>
+                  An install is also a decision about every update after it. A binary installed with sudo into a
+                  root-owned directory, or into Program Files, can never be replaced by <code>grit update</code>
+                  running as you: it fails on permissions, long after the install that caused it, with an error that
+                  names neither the directory nor the reason.
+                </p>
+                <p>
+                  So both installers now write and delete a probe file in the install directory before downloading
+                  anything, and stop with something you can act on if it fails: which directory refused, whether it is
+                  a system directory that would need elevation for every future update, and the one-line command to
+                  install somewhere you own instead. <code>grit update</code> runs the same check up front rather than
+                  discovering the problem halfway through replacing itself.
+                </p>
+                <p>
+                  The advice is always to move the install, never to run as administrator. A CLI that needs elevation
+                  to update is a CLI that stops being updated.
+                </p>
+              </div>
+            </div>
+
             {/* v3.322.0 */}
             <div className="mb-12" id="v3.322.0">
               <div className="flex items-center gap-3 mb-4">

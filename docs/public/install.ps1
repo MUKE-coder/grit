@@ -63,7 +63,39 @@ $installDir = if ($env:GRIT_INSTALL_DIR) {
     Join-Path $env:USERPROFILE '.grit\bin'
 }
 if (-not (Test-Path $installDir)) {
-    New-Item -ItemType Directory -Path $installDir -Force | Out-Null
+    New-Item -ItemType Directory -Path $installDir -Force -ErrorAction SilentlyContinue | Out-Null
+}
+if (-not (Test-Path $installDir)) {
+    Die "Could not create $installDir. Choose somewhere you own with GRIT_INSTALL_DIR."
+}
+
+# Prove the directory can take a binary now, and a replacement later.
+#
+# 'grit update' rewrites this file in place, so a directory that needs an
+# administrator today needs one for every update after it. Failing here, where
+# the answer is still to pick a different directory, beats failing at the first
+# update with an "Access is denied" that names neither the file nor the reason.
+$probe = Join-Path $installDir ('.grit-write-probe-' + [Guid]::NewGuid())
+$writable = $true
+try {
+    New-Item -ItemType File -Path $probe -Force -ErrorAction Stop | Out-Null
+    Remove-Item -Path $probe -Force -ErrorAction Stop
+} catch {
+    $writable = $false
+}
+if (-not $writable) {
+    Write-Host ''
+    Warn "$installDir is not writable by this account."
+    if ($installDir -like 'C:\Program Files*' -or $installDir -like 'C:\Windows*') {
+        Warn 'That is a system directory, so every update would need an administrator.'
+    }
+    Write-Host ''
+    Write-Host '  Install somewhere you own instead, which needs no elevation:' -ForegroundColor Cyan
+    Write-Host ''
+    Write-Host ('    $env:GRIT_INSTALL_DIR = "' + (Join-Path $env:USERPROFILE '.grit\bin') + '"')
+    Write-Host '    irm https://gritframework.dev/install.ps1 | iex'
+    Write-Host ''
+    Die 'Stopping before anything was written.'
 }
 
 # ─── 5. Download + extract ────────────────────────────────────────────

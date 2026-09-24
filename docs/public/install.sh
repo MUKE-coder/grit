@@ -77,6 +77,28 @@ else
   die "Cannot find a writable install directory. Set GRIT_INSTALL_DIR=/some/path and retry."
 fi
 
+# Prove the directory can take a binary now, and a replacement later.
+#
+# "grit update" rewrites this file in place as the user who runs it. A binary
+# installed with sudo into a root-owned directory can never be updated that
+# way: every update fails on permissions, long after the install that caused
+# it. Better to say so here, where choosing a different directory is still easy.
+probe="$install_dir/.grit-write-probe.$$"
+if ! (touch "$probe" 2>/dev/null && rm -f "$probe" 2>/dev/null); then
+  echo ""
+  warn "$install_dir is not writable by $(id -un)."
+  case "$install_dir" in
+    /usr/*|/opt/*|/bin|/sbin)
+      warn "That is a system directory, so every update would need sudo." ;;
+  esac
+  echo ""
+  echo "  Install somewhere you own instead, which needs no sudo:"
+  echo ""
+  echo "    GRIT_INSTALL_DIR=\$HOME/.local/bin curl -fsSL https://gritframework.dev/install.sh | sh"
+  echo ""
+  die "Stopping before anything was written."
+fi
+
 # ─── 5. Download + extract ────────────────────────────────────────────
 archive="grit-${os}-${arch}.tar.gz"
 url="https://github.com/$REPO/releases/download/$tag/$archive"

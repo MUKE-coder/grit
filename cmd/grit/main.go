@@ -32,7 +32,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.322.0"
+var version = "3.323.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -1567,13 +1567,25 @@ Flags:
 			//                  then delete the .old. On failure we rename
 			//                  back so the user is never stranded without a
 			//                  working binary.
+			// Prove we can write here before moving anything.
+			//
+			// Every failure past this point leaves the install half-done, and
+			// the errors the OS gives are not ones anybody can act on: on
+			// Windows an unwritable directory reports "Access is denied" from
+			// the rename, several steps after the actual problem. Better to
+			// find out now and say which directory and what to do about it.
+			if err := checkInstallDirWritable(filepath.Dir(binPath)); err != nil {
+				return err
+			}
+
 			var rollback func() // populated on Windows; nil elsewhere
+			var oldPath string
 			if runtime.GOOS == "windows" {
-				oldPath := binPath + ".old"
-				os.Remove(oldPath) // any leftover from a prior run
+				oldPath = asideName(binPath)
 				spinner.Printf("  → Moving running binary aside: %s → .old\n", binPath)
 				if err := os.Rename(binPath, oldPath); err != nil {
-					return fmt.Errorf("renaming current binary: %w", err)
+					return fmt.Errorf("moving the current binary aside: %w\n\n"+
+						"  Close any other grit process and try again.", err)
 				}
 				rollback = func() {
 					// If go install didn't write a new binary at binPath,
@@ -1617,7 +1629,8 @@ Flags:
 
 			if runtime.GOOS == "windows" {
 				// go install succeeded — drop the rename'd backup.
-				_ = os.Remove(binPath + ".old")
+				_ = os.Remove(oldPath)
+				sweepAsideBinaries(binPath)
 			}
 
 			// Sanity check: ask the freshly-installed binary what version
