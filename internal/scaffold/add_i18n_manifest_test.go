@@ -57,9 +57,9 @@ func TestAddI18nMountsRecordsAndRepairs(t *testing.T) {
 	admin := filepath.Join(root, "apps", "admin")
 	writeTestFile(t, filepath.Join(root, "apps", "api", "go.mod"), "module shop/apps/api\n")
 	files := map[string]string{
-		filepath.Join(admin, "next.config.ts"):                        "import type { NextConfig } from \"next\";\n\nconst nextConfig: NextConfig = {};\n\nexport default nextConfig;\n",
-		filepath.Join(admin, "package.json"):                          "{\n  \"dependencies\": {\n    \"next\": \"15.0.0\"\n  }\n}\n",
-		filepath.Join(admin, "app", "layout.tsx"):                     i18nTestLayout,
+		filepath.Join(admin, "next.config.ts"):                         "import type { NextConfig } from \"next\";\n\nconst nextConfig: NextConfig = {};\n\nexport default nextConfig;\n",
+		filepath.Join(admin, "package.json"):                           "{\n  \"dependencies\": {\n    \"next\": \"15.0.0\"\n  }\n}\n",
+		filepath.Join(admin, "app", "layout.tsx"):                      i18nTestLayout,
 		filepath.Join(admin, "components", "chrome", "PageHeader.tsx"): i18nTestHeader,
 		filepath.Join(admin, "lib", "i18n.tsx"):                        adminI18nLib(),
 	}

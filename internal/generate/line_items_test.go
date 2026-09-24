@@ -43,9 +43,9 @@ func TestLineItemFieldsAreTypedLikeAnyOtherForm(t *testing.T) {
 	for _, want := range []struct{ key, typ string }{
 		{"description", "text"},
 		{"qty", "number"},
-		{"unit_rate", "money"},  // was "text"
-		{"taxable", "toggle"},   // was "text"
-		{"kind", "select"},      // was "text"
+		{"unit_rate", "money"}, // was "text"
+		{"taxable", "toggle"},  // was "text"
+		{"kind", "select"},     // was "text"
 	} {
 		frag := `{ key: "` + want.key + `", label: `
 		i := strings.Index(items, frag)

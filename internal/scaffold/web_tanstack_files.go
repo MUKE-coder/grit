@@ -71,8 +71,8 @@ func webTanStackPackageJSON(opts Options) string {
     "clsx": "^2.1.1",
     "dompurify": "^3.4.15",
     "lucide-react": "^0.468.0",
-    "react": "` + reactVersionFor(opts) + `",
-    "react-dom": "` + reactVersionFor(opts) + `",
+    "react": "`+reactVersionFor(opts)+`",
+    "react-dom": "`+reactVersionFor(opts)+`",
     "tailwind-merge": "^2.6.0",
     "@repo/shared": "workspace:*",
     "@repo/upload": "workspace:*"`+webAdminDependencies(opts)+viteHostDependencies(opts)+`

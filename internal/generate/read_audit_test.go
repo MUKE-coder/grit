@@ -70,7 +70,7 @@ func TestAuditReadsNeedsALogThatRecordsReads(t *testing.T) {
 
 	api := g.APIRoot()
 	for path, body := range map[string]string{
-		filepath.Join(api, "internal", "audit", "audit.go"):           "func Read(c *gin.Context, resource string, ids ...string) {}",
+		filepath.Join(api, "internal", "audit", "audit.go"):         "func Read(c *gin.Context, resource string, ids ...string) {}",
 		filepath.Join(api, "internal", "middleware", "activity.go"): "mark, ok := audit.ReadMarkOf(c)",
 	} {
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
