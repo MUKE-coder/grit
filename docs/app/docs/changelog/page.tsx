@@ -66,16 +66,20 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v3.323.0 */}
-            <div className="mb-12" id="v3.323.0">
+            {/* v3.323.1 */}
+            <div className="mb-12" id="v3.323.1">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
-                  v3.323.0
+                  v3.323.1
                 </span>
                 <span className="text-sm text-muted-foreground">September 24, 2026</span>
               </div>
 
               <div className="prose-grit">
+                <p className="text-sm text-muted-foreground">
+                  Shipped as v3.323.1: the v3.323.0 tag&apos;s release job failed on a test of mine that asserted
+                  differently on Linux than on Windows, so it published no binaries.
+                </p>
                 <h3><code>grit update</code> worked once on Windows, then failed forever</h3>
                 <p>
                   A Windows executable is locked while it runs, so updating means moving the running binary aside
