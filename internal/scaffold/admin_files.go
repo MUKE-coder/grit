@@ -1122,7 +1122,7 @@ import { Providers } from "@/components/shared/providers";
 
 export const metadata: Metadata = {
   title: "%s Admin",
-  description: "Admin panel — Built with Grit",
+  description: "Admin panel, built with Grit",
 };
 
 %s
@@ -1814,7 +1814,7 @@ export default function LoginPage() {
             The admin dashboard for your Grit application. Monitor, manage, and control your entire platform.
           </p>
         </div>
-        <p className="text-text-muted text-sm">Built with Grit — Go + React framework</p>
+        <p className="text-text-muted text-sm">Built with Grit: Go + React framework</p>
       </div>
 
       {/* Right panel — form */}
@@ -1964,7 +1964,7 @@ export default function SignUpPage() {
             Create your account and start managing your application in minutes.
           </p>
         </div>
-        <p className="text-text-muted text-sm">Built with Grit — Go + React framework</p>
+        <p className="text-text-muted text-sm">Built with Grit: Go + React framework</p>
       </div>
 
       {/* Right panel — form */}
@@ -2156,7 +2156,7 @@ export default function ForgotPasswordPage() {
             Enter your email and we&apos;ll send you a link to get back into your account.
           </p>
         </div>
-        <p className="text-text-muted text-sm">Built with Grit — Go + React framework</p>
+        <p className="text-text-muted text-sm">Built with Grit: Go + React framework</p>
       </div>
 
       {/* Right panel — form */}

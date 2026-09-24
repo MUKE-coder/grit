@@ -16,8 +16,10 @@ import "strings"
 //     doesn't declare, rather than a checkbox that silently does nothing.
 //   - live "N / total granted" counter and a text filter.
 //   - copy-permissions-from, to start a new role from an existing one.
-//   - built-in roles: name locked, delete hidden. The server enforces both — the
-//     UI lock is a convenience, not the security boundary.
+//   - built-in roles: name locked, delete hidden. The server enforces both, and
+//     the UI lock is a convenience rather than the security boundary. Everything
+//     else about them is editable, including ADMIN's "*": the wildcard is a
+//     checkbox in the editor, not a property of the role you are stuck with.
 //
 // Selection is seeded from the server's `expanded` list and collapsed back to
 // wildcards on save, so a role granted a whole resource keeps inheriting actions
@@ -43,7 +45,7 @@ import {
 	type Role,
 } from "@/hooks/use-roles";
 import { PageHeader } from "@/components/chrome/PageHeader";
-import { ShieldCheck, Lock, Users, Plus, ArrowLeft, Save, Trash2, Search, Copy } from "@/lib/icons";
+import { ShieldCheck, Users, Plus, ArrowLeft, Save, Trash2, Search, Copy } from "@/lib/icons";
 import { getApiErrorMessage } from "@/lib/api-core";
 import { buttonClasses } from "@/components/ui/button";
 import { inputClasses } from "@/components/ui/input";
@@ -121,11 +123,12 @@ function RolesList({
 					>
 						<div className="mb-3 flex items-start justify-between gap-3">
 							<div className="flex items-center gap-2">
-								{role.is_system ? (
-									<Lock className="h-4 w-4 shrink-0 text-text-muted" />
-								) : (
-									<ShieldCheck className="h-4 w-4 shrink-0 text-accent" />
-								)}
+								<ShieldCheck
+									className={
+										"h-4 w-4 shrink-0 " +
+										(role.is_system ? "text-text-muted" : "text-accent")
+									}
+								/>
 								<span className="font-semibold text-text-primary">{role.name}</span>
 							</div>
 							{role.is_system ? (
@@ -360,7 +363,12 @@ function RoleEditor({
 		new Set(role?.expanded ?? [])
 	);
 
-	const isSuper = role ? role.grants.indexOf("*") >= 0 : false;
+	// The "*" grant is a checkbox, not a property of the role the editor has to
+	// accept. Read from the role once, then owned here: without that, a role
+	// holding it had no editable permissions and no way to give it up.
+	const [superGrant, setSuperGrant] = useState(
+		role ? role.grants.indexOf("*") >= 0 : false
+	);
 	const saving = create.isPending || update.isPending || remove.isPending;
 
 	function toggle(keys: string[], on: boolean) {
@@ -381,7 +389,7 @@ function RoleEditor({
 			return;
 		}
 		// Collapse to wildcards so the role inherits future actions.
-		const grants = isSuper ? ["*"] : collapseGrants(selected, modules);
+		const grants = superGrant ? ["*"] : collapseGrants(selected, modules);
 		try {
 			if (role) {
 				await update.mutateAsync({ id: role.id, name, description, grants });
@@ -475,9 +483,10 @@ function RoleEditor({
 
 			{role && role.is_system ? (
 				<p className="mb-4 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-text-secondary">
-					<strong className="text-text-primary">Built-in role.</strong> Its permissions are
-					editable, but the name is fixed and it cannot be deleted &mdash; routes and the
-					upgrade path resolve this role by name.
+					<strong className="text-text-primary">Built-in role.</strong> Its description and
+					its permissions are yours to change, and changes survive every upgrade. The name
+					is fixed and the role cannot be deleted, because route guards, the seeder and the
+					legacy role column all resolve it by name.
 				</p>
 			) : null}
 
@@ -506,9 +515,18 @@ function RoleEditor({
 			<div className="rounded-xl border border-border bg-bg-elevated">
 				<div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
 					<span className="font-semibold text-text-primary">Permissions</span>
-					<div className="flex items-center gap-3">
+					<div className="flex flex-wrap items-center gap-3">
+						<label className="inline-flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
+							<TriCheckbox
+								state={superGrant ? "on" : "off"}
+								onChange={setSuperGrant}
+								disabled={saving}
+								label="Everything, including permissions added later"
+							/>
+							Everything, including permissions added later
+						</label>
 						<span className="font-mono text-xs text-text-muted">
-							{isSuper ? "all permissions" : selected.size + " / " + totalKeys + " granted"}
+							{superGrant ? "all permissions" : selected.size + " / " + totalKeys + " granted"}
 						</span>
 						<div className="relative">
 							<Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
@@ -522,11 +540,12 @@ function RoleEditor({
 					</div>
 				</div>
 
-				{isSuper ? (
+				{superGrant ? (
 					<p className="px-4 py-6 text-sm text-text-secondary">
-						This role holds the <code className="font-mono text-accent">*</code> grant
-						&mdash; every permission, including any added in future. Remove that grant to
-						pick individual permissions.
+						This role holds the <code className="font-mono text-accent">*</code> grant:
+						every permission there is, including any added by a future release. Untick the
+						box above to choose permissions one by one, starting from everything this role
+						holds today.
 					</p>
 				) : (
 					modules.map((m) => (

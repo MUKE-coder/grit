@@ -314,7 +314,7 @@ function RoleEditor({
 
       {role?.is_system && (
         <p className="mt-2 text-[12px] text-foreground-muted">
-          Built-in role — the name is fixed, but its permissions can still be changed.
+          Built-in role. The name is fixed; its description and permissions are not.
         </p>
       )}
 

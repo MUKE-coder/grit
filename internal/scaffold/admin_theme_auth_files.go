@@ -281,7 +281,7 @@ export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMe
           <p className="text-lg opacity-80">{brand.description}</p>
         </div>
 
-        <p className="text-sm opacity-60">Built with Grit — Go + React framework</p>
+        <p className="text-sm opacity-60">Built with Grit: Go + React framework</p>
       </div>
 
       {/* Right form panel. main, not div: this is the page's content, and

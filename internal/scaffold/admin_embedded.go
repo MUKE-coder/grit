@@ -220,7 +220,7 @@ import { Providers } from "@admin/components/shared/providers";
 
 export const metadata: Metadata = {
   title: "` + opts.ProjectName + ` Admin",
-  description: "Admin panel — Built with Grit",
+  description: "Admin panel, built with Grit",
 };
 
 ` + adminThemeScriptSource() + `

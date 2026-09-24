@@ -287,7 +287,7 @@ export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMe
           <p className="text-lg opacity-80">{brand.description}</p>
         </div>
 
-        <p className="text-sm opacity-60">Built with Grit — Go + React framework</p>
+        <p className="text-sm opacity-60">Built with Grit: Go + React framework</p>
       </div>
 
       {/* Right form panel */}
@@ -471,7 +471,7 @@ export function PulseAuthShell({ theme, mode, title, subtitle, children, errorMe
           <div className="h-1 w-24 rounded-full" style={{ background: t.accent }} />
         </div>
 
-        <p className="text-sm opacity-50">Built with Grit — Go + React framework</p>
+        <p className="text-sm opacity-50">Built with Grit: Go + React framework</p>
       </div>
     </div>
   );

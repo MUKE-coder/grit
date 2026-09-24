@@ -134,7 +134,7 @@ export default function LoginPage() {
 
         {/* Below-card branding */}
         <p className="mt-6 text-center text-xs text-text-muted">
-          Built with Grit — Go + React framework
+          Built with Grit: Go + React framework
         </p>
       </div>
     </div>
@@ -323,7 +323,7 @@ export default function SignUpPage() {
 
         {/* Below-card branding */}
         <p className="mt-6 text-center text-xs text-text-muted">
-          Built with Grit — Go + React framework
+          Built with Grit: Go + React framework
         </p>
       </div>
     </div>
@@ -451,7 +451,7 @@ export default function ForgotPasswordPage() {
 
         {/* Below-card branding */}
         <p className="mt-6 text-center text-xs text-text-muted">
-          Built with Grit — Go + React framework
+          Built with Grit: Go + React framework
         </p>
       </div>
     </div>

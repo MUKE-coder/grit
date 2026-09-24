@@ -66,6 +66,48 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.327.0 */}
+            <div className="mb-12" id="v3.327.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.327.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>ADMIN could not be edited, and the page told you to use a control that did not exist</h3>
+                <p>
+                  ADMIN holds the <code>*</code> grant, which means every permission there is, including any added by a
+                  later release. The roles editor read that off the role and treated it as settled: the permission grid
+                  was replaced by a paragraph saying <em>&quot;remove that grant to pick individual permissions&quot;</em>,
+                  and nothing on the page could remove it. Saving sent <code>*</code> straight back. The first role in
+                  every project was therefore the one role nobody could change.
+                </p>
+                <p>
+                  The wildcard is a checkbox now, sitting in the Permissions header next to the counter. Untick it and
+                  the grid appears with everything the role currently holds already ticked, so narrowing ADMIN means
+                  unticking what you do not want rather than rebuilding it from nothing. Tick it again and the role goes
+                  back to <code>*</code>. The server already allowed all of this; only the screen did not.
+                </p>
+
+                <h3>A padlock on a card that opens</h3>
+                <p>
+                  Built-in roles were drawn with a padlock beside the name. They are not locked: their description and
+                  their permissions have always been editable, and the seeder never overwrites an edit. The padlock is
+                  gone, the <code>BUILT-IN</code> badge stays because it is worth knowing, and the notice inside the
+                  editor now says which parts are yours to change and why the name is not: route guards, the seeder and
+                  the legacy role column all resolve a built-in role by name.
+                </p>
+
+                <h3>Em dashes in the text a project shows its users</h3>
+                <p>
+                  Fourteen of them, in the sign-in footer and the page description of every admin style and theme, plus
+                  two more in the roles screens. Replaced, and the roles screens now have a test that keeps them out.
+                </p>
+              </div>
+            </div>
+
             {/* v3.326.0 */}
             <div className="mb-12" id="v3.326.0">
               <div className="flex items-center gap-3 mb-4">
