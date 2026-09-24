@@ -58,9 +58,14 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 		}),
 
 		// Theme picker — runs for any architecture that includes a frontend.
-		// Themes ship since v3.28: atlas (default), aurora (centered), pulse
-		// (carousel). The choice writes THEME=<name> to .env so the dashboard
-		// + auth pages render with matching tokens, fonts, and layouts.
+		// The choice writes THEME=<name> to .env so the dashboard and auth
+		// pages render with matching tokens, fonts and layout.
+		//
+		// Every theme in scaffold.ValidThemes belongs here. The list started
+		// at three and grew to eight, and the five that arrived in v3.322.0
+		// were reachable only with --theme: the picker is what most people
+		// see, so for them the new layouts may as well not have shipped.
+		// TestThePickerOffersEveryTheme keeps the two lists together.
 		huh.NewGroup(
 			huh.NewSelect[string]().
 				Key("theme").
@@ -70,6 +75,11 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 					huh.NewOption("Atlas — split-screen, blue/white, team/organisation (Inter)", "atlas"),
 					huh.NewOption("Aurora — Apple-inspired, monochrome black/white/grey (Geist)", "aurora"),
 					huh.NewOption("Pulse — Cloudflare-inspired, premium blue, elevated cards (Onest)", "pulse"),
+					huh.NewOption("Coral — a card over a blurred glimpse of the app, rose (Inter)", "coral"),
+					huh.NewOption("Amber — a plain boxed form under a wordmark, amber (Inter)", "amber"),
+					huh.NewOption("Sky — one bold heading, social sign-in first, crisp blue (Inter)", "sky"),
+					huh.NewOption("Mono — a fine grid beside a panel of proof, black/white (Inter)", "mono"),
+					huh.NewOption("Emerald — a form beside a customer quote, green (Inter)", "emerald"),
 				).
 				Value(&theme),
 		).WithHideFunc(func() bool {

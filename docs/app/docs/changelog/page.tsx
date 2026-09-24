@@ -66,6 +66,33 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.324.0 */}
+            <div className="mb-12" id="v3.324.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.324.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The theme picker offers the themes</h3>
+                <p>
+                  v3.322.0 added five sign-in layouts and the themes that select them. They were reachable with{' '}
+                  <code>grit new app --theme emerald</code>, listed in the docs, offered by the stack builder and the
+                  AI wizard, and accepted by the flag validator. The one place they were missing was the interactive
+                  picker that <code>grit new</code> shows when you do not pass a flag, which is what almost everybody
+                  sees. For them the layouts had not shipped.
+                </p>
+                <p>
+                  Nothing failed, which is why it survived a release: a rejected flag says so, a missing option says
+                  nothing at all. The picker now lists all eight, and two tests hold it to{' '}
+                  <code>ValidThemes</code> in both directions, so a theme cannot be accepted by the flag without being
+                  offered, or offered without being accepted.
+                </p>
+              </div>
+            </div>
+
             {/* v3.323.1 */}
             <div className="mb-12" id="v3.323.1">
               <div className="flex items-center gap-3 mb-4">
