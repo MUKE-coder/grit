@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+.env
 
 # IDE
 .vscode/
@@ -30,3 +31,27 @@ docs/pnpm-workspace.yaml
 # Grit UI site build artifacts
 ui/node_modules/
 ui/.next/
+
+# Working notes, plans and marketing drafts. On disk, not published: a visitor
+# to the repository should find a framework, not the room it was built in.
+AUTH_FIXES.md
+GRIT.md
+GRIT_KNOWLEDGE_BASE.txt
+GRIT_SKILL.md
+GRIT_STYLE_GUIDE.md
+PHASE1_PROMPT.md
+PHASES.md
+PLAN.md
+PLAN-*.md
+PLAN_*.md
+LINKEDIN_CONTENT_CALENDAR.md
+SOCIAL.md
+YOUTUBE_CONTENT_CALENDAR.md
+/enterprise/
+/newsletter/
+/deploy-docs/
+
+# Agent context for working on Grit itself. The skill a Grit *user's* agent
+# needs is skills/grit/SKILL.md, which is published.
+CLAUDE.md
+/.claude/

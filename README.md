@@ -20,10 +20,12 @@
 </p>
 
 <p align="center">
+  <a href="https://demo.gritframework.dev"><strong>Live demo</strong></a> ·
   <a href="#install"><strong>Install</strong></a> ·
   <a href="#build-something-real-in-five-minutes"><strong>5-minute tutorial</strong></a> ·
   <a href="#let-an-ai-build-it"><strong>Build with AI</strong></a> ·
-  <a href="https://gritframework.dev/docs"><strong>Docs</strong></a>
+  <a href="https://gritframework.dev/docs"><strong>Docs</strong></a> ·
+  <a href="https://github.com/MUKE-coder/grit/discussions"><strong>Discussions</strong></a>
 </p>
 
 ---
@@ -65,6 +67,12 @@ grit start
 
 Open http://localhost:3000, register, and you are logged into an application that already
 has authentication, two-factor, an admin panel, a database browser and API docs.
+
+Or skip the install: **[demo.gritframework.dev](https://demo.gritframework.dev)** is a real
+application built with Grit, running, and its whole source is in [`demo/`](demo) in this
+repository. Multi-branch inventory, a point of sale, unit sales, loan schedules and
+mobile-money collections, with the admin panel, the audit log and the job dashboard you
+get in every project.
 
 <p align="center">
   <img src="https://gritframework.dev/images/platforms/admin.png" alt="The generated admin dashboard" width="100%" />
@@ -379,6 +387,28 @@ Building with Grit? Add the badge:
 ```markdown
 [![Built with Grit](https://gritframework.dev/badge/built-with-grit.svg)](https://gritframework.dev)
 ```
+
+## Contributing
+
+Bug reports, fixes and documentation corrections are welcome and merged quickly.
+Anything larger is worth an issue first, because a change here lands in every project
+built afterwards. [CONTRIBUTING.md](CONTRIBUTING.md) has the setup, the layout of the
+repository and what gets merged quickly.
+
+Questions and ideas belong in
+[Discussions](https://github.com/MUKE-coder/grit/discussions) rather than the issue
+tracker.
+
+## Code of Conduct
+
+Taking part in this project means agreeing to abide by its
+[Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Security
+
+If you find a security problem, please do not open an issue.
+[SECURITY.md](SECURITY.md) says how to report it privately, what is in scope, and how
+releases are signed and verified.
 
 ## License
 

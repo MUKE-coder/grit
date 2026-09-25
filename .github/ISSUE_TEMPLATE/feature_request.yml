@@ -1,0 +1,67 @@
+name: Feature request
+description: Something Grit should do and does not
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Grit generates code into other people's projects, so anything added
+        here lands in every project built afterwards. That is the bar a feature
+        has to clear, and the question below about what you do today is the one
+        that decides it.
+
+        Not sure yet, or want to talk it through first?
+        [Discussions](https://github.com/MUKE-coder/grit/discussions) is the
+        better room.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: >
+        The problem, not the solution. "Every project I build needs X and I
+        write it by hand each time" is the most useful thing you can say here.
+    validations:
+      required: true
+
+  - type: textarea
+    id: today
+    attributes:
+      label: What do you do today instead?
+      description: >
+        The workaround, however ugly. A feature that replaces forty lines
+        everybody writes is an easier decision than one that replaces nothing.
+    validations:
+      required: true
+
+  - type: textarea
+    id: shape
+    attributes:
+      label: What would it look like?
+      description: >
+        A command, a flag, a generated file, a screen. Rough is fine.
+      placeholder: |
+        grit generate resource Invoice --fields "total:money" --recurring
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Where would it live?
+      options:
+        - The CLI
+        - The generated Go API
+        - The generated admin panel
+        - The generated web app
+        - The desktop or mobile app
+        - A plugin, rather than the core
+        - Not sure
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send it
+      options:
+        - label: I searched the existing issues and discussions.
+          required: true

@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question, idea or "how do I ..."
+    url: https://github.com/MUKE-coder/grit/discussions
+    about: Discussions is the room for anything that is not a defect or agreed work.
+  - name: Documentation
+    url: https://gritframework.dev/docs
+    about: The guides, the tutorials, the API reference and the free 10-part course.
+  - name: Live demo
+    url: https://demo.gritframework.dev
+    about: A full application built with Grit, running, with its source in this repository.
+  - name: Security vulnerability
+    url: https://github.com/MUKE-coder/grit/blob/main/SECURITY.md
+    about: Report privately. Please do not open a public issue for a vulnerability.

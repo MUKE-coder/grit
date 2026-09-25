@@ -1,0 +1,94 @@
+name: Bug report
+description: Something in Grit, or in a project Grit generated, does not work
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. The fields below are the ones that decide
+        whether a bug gets fixed this week or sits waiting for a reply.
+
+        **Security problems do not belong here.** Report those privately:
+        see [SECURITY.md](https://github.com/MUKE-coder/grit/blob/main/SECURITY.md).
+
+  - type: input
+    id: version
+    attributes:
+      label: Grit version
+      description: The output of `grit version`.
+      placeholder: "3.328.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where does it happen?
+      options:
+        - The CLI itself
+        - A generated Go API
+        - A generated admin panel
+        - A generated web app
+        - The desktop app
+        - The Expo app
+        - The documentation
+        - Somewhere else
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce it
+      description: >
+        Ideally starting from `grit new`. A bug somebody else can reproduce in
+        a scratch project gets fixed; one that only happens in your codebase
+        usually cannot be.
+      placeholder: |
+        1. grit new scratch --triple --next --db sqlite
+        2. cd scratch && grit generate resource Invoice --fields "total:money"
+        3. cd apps/api && go build ./...
+        4. It fails with ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: The actual output
+      description: >
+        Paste the error, the failing build, the stack trace. Screenshots are
+        fine for a visual problem; for anything textual, paste the text.
+      render: shell
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "Windows 11 / macOS 15 / Ubuntu 24.04"
+    validations:
+      required: true
+
+  - type: input
+    id: toolchain
+    attributes:
+      label: Go and Node versions
+      description: "`go version` and `node --version`."
+      placeholder: "go1.23.4, node v22.11.0"
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send it
+      options:
+        - label: I am on the latest version, or I have said which version I am on and why.
+          required: true
+        - label: I searched the existing issues.
+          required: true
