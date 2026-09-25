@@ -622,4 +622,4 @@ and the same recipe builds an inventory manager, a field-service app, or a
 clinic front desk. Describe your models, write the one screen that's genuinely
 yours, and let the framework carry the rest.
 
-*Go + React. Built with Grit.*
+*Describe your data. Get the whole app.*

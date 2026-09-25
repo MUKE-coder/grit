@@ -117,4 +117,4 @@ Start on the product.**
 
 Tomorrow in **The Daily Grit**: your first Grit app, step by step.
 
-*Go + React. Built with Grit.*
+*Describe your data. Get the whole app.*

@@ -262,7 +262,7 @@ export default function HirePage() {
       {/* Footer */}
       <footer className="border-t border-border/30 py-8 px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground/50">
-          <span>Grit Framework &mdash; Go + React. Built with Grit.</span>
+          <span>Grit Framework: Describe your data. Get the whole app.</span>
           <div className="flex items-center gap-4">
             <Link href="/docs" className="hover:text-foreground transition-colors">
               Docs

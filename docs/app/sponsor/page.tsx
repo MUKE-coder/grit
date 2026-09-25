@@ -341,7 +341,7 @@ export default function SponsorPage() {
 
       <footer className="border-t border-border/30 px-6 py-8">
         <div className="container flex max-w-screen-xl flex-col items-center justify-between gap-4 text-sm text-muted-foreground/50 sm:flex-row">
-          <span>Grit Framework — Go + React. Built with Grit.</span>
+          <span>Grit Framework: Describe your data. Get the whole app.</span>
           <div className="flex items-center gap-4">
             <Link href="/docs" className="transition-colors hover:text-foreground">
               Docs

@@ -66,6 +66,42 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.329.0 */}
+            <div className="mb-12" id="v3.329.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.329.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Grit&apos;s slogan was in the browser tab of every app built with it</h3>
+                <p>
+                  The generated Next.js app set its page title to{' '}
+                  <code>&quot;MyApp &mdash; Go + React. Built with Grit.&quot;</code>, so every site
+                  anybody shipped carried the framework&apos;s marketing in the tab, in search
+                  results and in every link preview. The generated docs description did the same,
+                  and the generated README managed to say it twice: <em>Built with Grit &mdash; Go +
+                  React. Built with Grit.</em>
+                </p>
+                <p>
+                  A title is the project&apos;s, not the framework&apos;s. The tab now says the
+                  project name and nothing else, the docs description says what it documents, and
+                  the README credit reads once, as a link. The starter landing page keeps a short
+                  &quot;Built with Grit&quot; badge, which is a credit rather than a slogan.
+                </p>
+
+                <h3>A new tagline</h3>
+                <p>
+                  <strong>Describe your data. Get the whole app.</strong> It replaces &quot;Go +
+                  React. Built with Grit.&quot; in the CLI banner, the README and across the
+                  documentation site. The old one named the ingredients; this one says what
+                  happens.
+                </p>
+              </div>
+            </div>
+
             {/* v3.328.0 */}
             <div className="mb-12" id="v3.328.0">
               <div className="flex items-center gap-3 mb-4">

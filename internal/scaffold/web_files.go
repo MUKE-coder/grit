@@ -765,7 +765,7 @@ import { Providers } from "@/components/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "%s — Go + React. Built with Grit.",
+  title: "%s",
   description: "A full-stack framework that combines Go backend with Next.js frontend. Build fast, ship faster.",
 };
 

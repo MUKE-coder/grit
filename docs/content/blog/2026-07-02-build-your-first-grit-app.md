@@ -182,4 +182,4 @@ Grit**, we'll take these products and **render them on the customer-facing web a
 using the generated, type-safe React Query hooks so the frontend and backend never
 drift.
 
-*Go + React. Built with Grit.*
+*Describe your data. Get the whole app.*

@@ -290,7 +290,7 @@ function HomePage() {
       <section className="relative py-24 px-6">
         <div className="max-w-5xl mx-auto text-center">
           <span className="inline-flex items-center rounded-full bg-accent/10 border border-accent/20 px-4 py-1.5 text-sm font-medium text-accent mb-6">
-            Go + React. Built with Grit.
+            Built with Grit
           </span>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
             <span className="text-foreground">Build faster with</span>{' '}

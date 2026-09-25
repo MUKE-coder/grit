@@ -85,7 +85,7 @@ export default function Lesson() {
 
       <h2>The tagline you&apos;ll see everywhere</h2>
       <blockquote className="border-l-2 border-primary pl-4 italic text-foreground/80 my-4">
-        Go + React. Built with Grit.
+        Describe your data. Get the whole app.
       </blockquote>
       <p>
         That&apos;s the elevator pitch — <em>Go on the back, React on the front,

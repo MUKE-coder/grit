@@ -922,7 +922,7 @@ export default {
 func readmeFile(opts Options) string {
 	return fmt.Sprintf(`# %s
 
-Built with [Grit](https://gritframework.dev) — Go + React. Built with Grit.
+Built with [Grit](https://gritframework.dev).
 
 ## Quick Start
 

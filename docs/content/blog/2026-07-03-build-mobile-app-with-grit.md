@@ -441,4 +441,4 @@ image picker, searchable relationship selects, multi-image fields, and CSV impor
 all talking to your API over typed hooks. The store you just built is mostly your
 generated code; the storefront flow is the thin, fun layer on top.
 
-*Go + React. Built with Grit.*
+*Describe your data. Get the whole app.*

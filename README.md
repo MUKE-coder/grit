@@ -5,7 +5,7 @@
 <h1 align="center">Grit</h1>
 
 <p align="center">
-  <strong>Go + React. Built with Grit.</strong><br />
+  <strong>Describe your data. Get the whole app.</strong><br />
   Describe a resource. Get the Go model, the API, the migrations, the TypeScript types,
   the React hooks and the admin screen. Auth, jobs, storage and deploy are already there.
 </p>

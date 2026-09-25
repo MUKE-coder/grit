@@ -191,7 +191,7 @@ export const metadata: Metadata = {
     template: "%%s | %s Docs",
     default: "%s Documentation",
   },
-  description: "Documentation for %s — Go + React. Built with Grit.",
+  description: "Documentation for %s",
 };
 
 export default function RootLayout({
