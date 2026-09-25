@@ -17,6 +17,8 @@
   <a href="https://github.com/MUKE-coder/grit/actions/workflows/scan.yml"><img src="https://img.shields.io/github/actions/workflow/status/MUKE-coder/grit/scan.yml?branch=main&style=flat-square&label=scan&color=6c5ce7" alt="Security scan of a generated app" /></a>
   <a href="https://github.com/MUKE-coder/grit/blob/main/LICENSE"><img src="https://img.shields.io/github/license/MUKE-coder/grit?style=flat-square&color=6c5ce7" alt="License" /></a>
   <a href="https://gritframework.dev"><img src="https://img.shields.io/badge/docs-gritframework.dev-6c5ce7?style=flat-square" alt="Docs" /></a>
+  <a href="https://github.com/MUKE-coder/grit/stargazers"><img src="https://img.shields.io/github/stars/MUKE-coder/grit?style=flat-square&color=6c5ce7" alt="Stars" /></a>
+  <a href="https://gritframework.dev/sponsor"><img src="https://img.shields.io/badge/sponsor-%E2%99%A5-ec4899?style=flat-square" alt="Sponsor" /></a>
 </p>
 
 <p align="center">
@@ -25,7 +27,8 @@
   <a href="#build-something-real-in-five-minutes"><strong>5-minute tutorial</strong></a> ·
   <a href="#let-an-ai-build-it"><strong>Build with AI</strong></a> ·
   <a href="https://gritframework.dev/docs"><strong>Docs</strong></a> ·
-  <a href="https://github.com/MUKE-coder/grit/discussions"><strong>Discussions</strong></a>
+  <a href="https://github.com/MUKE-coder/grit/discussions"><strong>Discussions</strong></a> ·
+  <a href="https://chat.whatsapp.com/HXsOWlp5W6o9lV4YhsY376"><strong>Community</strong></a>
 </p>
 
 ---
@@ -74,9 +77,63 @@ repository. Multi-branch inventory, a point of sale, unit sales, loan schedules 
 mobile-money collections, with the admin panel, the audit log and the job dashboard you
 get in every project.
 
+> **Cloned a teammate's project?** `grit env` writes your `.env` from `.env.example` and
+> generates every secret, so you skip the half hour of hand-making keys.
+>
+> **No Docker, or low on RAM?** Grit runs against free cloud tiers (Neon, Upstash,
+> Cloudflare R2, Resend) with no local containers.
+> [Installing without Docker](https://gritframework.dev/docs/getting-started/installation).
+
 <p align="center">
   <img src="https://gritframework.dev/images/platforms/admin.png" alt="The generated admin dashboard" width="100%" />
 </p>
+
+---
+
+## One command, nine files, zero wiring
+
+```bash
+grit generate resource Invoice --fields "number:string:auto:INV,total:money,status:select:draft|sent|paid,customer:belongs_to:Customer,due:date"
+```
+
+```mermaid
+flowchart LR
+    CMD["grit generate resource Invoice"] --> API
+    CMD --> SHARED
+    CMD --> UI
+
+    subgraph API["apps/api · Go"]
+        M["models/invoice.go<br/>GORM model + hooks"]
+        S["services/invoice.go<br/>business logic"]
+        H["handlers/invoice.go<br/>thin HTTP layer"]
+        R["routes<br/>injected, not hand-wired"]
+    end
+
+    subgraph SHARED["packages/shared"]
+        Z["schemas/invoice.ts<br/>Zod"]
+        T["types/invoice.ts<br/>TypeScript"]
+    end
+
+    subgraph UI["apps/admin + apps/web"]
+        Q["hooks/use-invoices.ts<br/>React Query"]
+        P["resources/invoices<br/>table · form · filters"]
+    end
+```
+
+Run `grit migrate` and the admin has a working invoices screen: stat cards, search, date
+filters, sortable columns, bulk actions, CSV import and export. The customer picker is
+searchable. The total is money, not a float. The invoice number fills itself in from a
+gap-free counter (`INV-202609-0001`). The API validates against the same Zod schema as the
+form.
+
+**There is no runtime magic.** No reflection, no hidden proxies, no framework internals you
+cannot read. Grit writes a normal Go API and a normal Next.js app into your repository. You
+read the files, change them, ship them. Stop using the CLI tomorrow and the project still
+builds.
+
+It is real code, and it holds up: `grit seed Contact --count 1000000` fills a table with a
+million realistic rows in about fifty seconds on Postgres, batched and resumable, and the
+admin still pages through them instantly.
 
 ---
 
@@ -109,6 +166,25 @@ One API, every client: [web](https://gritframework.dev/docs/frontend/web-app) ·
 [admin](https://gritframework.dev/docs/admin/overview) ·
 [mobile (Expo)](https://gritframework.dev/docs/mobile/getting-started) ·
 [desktop (Wails)](https://gritframework.dev/docs/desktop/getting-started)
+
+---
+
+## Why developers pick Grit
+
+Grit is to Go + React what **Laravel + Filament** is to PHP: Rails' convention over
+configuration, Django's batteries and a Filament-style resource admin, on a backend that
+compiles to one static binary.
+
+|   | Assemble it yourself | With Grit |
+|---|---|---|
+| **Day one** | Choose a router, ORM, auth library, validator, mailer, queue, S3 client and admin kit, then wire them together | `grit new` |
+| **A new entity** | Model, migration, service, handler, routes, DTOs, TS types, fetch hooks, table, form: nine files by hand | One `grit generate resource` |
+| **Types across the stack** | Kept in sync by discipline | Go → Zod + TypeScript, via `grit sync` |
+| **Admin panel** | Rebuilt for every project | Tables, forms, filters, bulk actions and widgets from the resource definition |
+| **Test data** | A seed script you write and wait on | `grit seed Contact --count 1000000`: batched, resumable, realistic |
+| **Payments, push, video** | A week of integration each | `grit plugin add stripe` · `push` · `video` |
+| **Security** | A checklist for "later" | CSRF, strict CSP, WAF, rate limiting, 2FA, passkeys, IDOR-safe ownership checks and a verifiable audit log, in the scaffold |
+| **Deploy** | Dockerfiles, reverse proxy, TLS, systemd | `grit deploy --host user@server --domain myapp.com` |
 
 ---
 
@@ -203,6 +279,26 @@ Or copy it from [gritframework.dev/docs/ai-integration](https://gritframework.de
 which also has a wizard that narrows the brief to your stack and plugins. The skill itself
 is readable at [gritframework.dev/skill.md](https://gritframework.dev/skill.md), and there
 is an [MCP server](https://gritframework.dev/docs/ai-workflows/mcp) for tools that speak it.
+
+---
+
+## Plugins: whole features, generated
+
+`grit plugin add` writes a feature into your project as code you own. `grit plugin update`
+brings in fixes later without overwriting a file you have edited, and `grit plugin remove`
+reverses every file and every injection.
+
+```bash
+grit plugin add stripe            # one-off payments and subscriptions, webhook-verified
+grit plugin add push              # push notifications to iOS and Android via Expo
+grit plugin add video             # uploads converted to web-ready MP4 with posters
+grit plugin add webhooks          # outgoing webhooks, signed to the Standard Webhooks spec
+grit plugin add multitenant       # organisations, per-org roles, automatic query scoping
+grit plugin add impersonate       # sign in as a user, with an audit trail
+grit plugin add command-palette   # ⌘K across the admin
+grit plugin add saved-views       # per-user named table views
+grit plugin add device-pairing    # sign in a browser by scanning a QR from a signed-in phone
+```
 
 ---
 
@@ -357,6 +453,34 @@ scaffolded app already ships.
 
 ---
 
+## Released carefully, often
+
+Grit ships almost daily. Every release scaffolds fresh projects in every shape, builds
+them, lints them and runs their tests, then re-verifies against the published binary.
+Fixes reach existing projects through `grit upgrade`, which never overwrites a file you
+have edited: it tells you what it could not change, and why. Every release is explained in
+plain language in the [changelog](https://gritframework.dev/docs/changelog).
+
+---
+
+## When not to use Grit
+
+Better to say this now than waste your weekend.
+
+- **Your core is an unusual data model or request lifecycle.** Grit is at its best on
+  CRUD-shaped products with an admin surface.
+- **Your team is all TypeScript**, and one language everywhere matters more to you than a
+  Go backend. AdonisJS or Nest will suit you better.
+- **Data science or ML is the product.** Python's ecosystem wins there, and it is not
+  close.
+- **You would rather depend on a library than own generated code.** Grit's output is yours
+  to maintain. Upgrades patch what they safely can; code you have rewritten is your own.
+
+The full reasoning, including what each decision costs, is in
+[Why Grit](https://gritframework.dev/docs/getting-started/philosophy).
+
+---
+
 ## Documentation
 
 **[gritframework.dev](https://gritframework.dev)** has the guides, the tutorials, the API
@@ -365,6 +489,17 @@ reference and the [free 10-part course](https://gritframework.dev/courses).
 Start at [/docs/start](https://gritframework.dev/docs/start), which is one ordered route
 from nothing to deployed. [What is stable and what is not](https://gritframework.dev/docs/stability).
 [Changelog](https://gritframework.dev/docs/changelog) ([CHANGELOG.md](CHANGELOG.md)).
+
+## Community
+
+- **[WhatsApp community](https://chat.whatsapp.com/HXsOWlp5W6o9lV4YhsY376)**: questions,
+  help, and the person who builds Grit. No question is too small.
+- **[Discussions](https://github.com/MUKE-coder/grit/discussions)**: ideas, and anything
+  that needs more than a chat message.
+- **[Issues](https://github.com/MUKE-coder/grit/issues)**: defects. The template asks for
+  the version, the steps and the output, which is what decides whether a bug is fixed this
+  week or waits for a reply.
+- **Star the repo** if Grit saved you a week. It is how other developers find it.
 
 ## Sponsors
 
