@@ -4109,7 +4109,7 @@ export function MultiRelationshipSelectField({
               type="button"
               onClick={() => toggleItem(id)}
               aria-label={"Remove " + label}
-              className="ml-0.5 rounded-full p-0.5 hover:bg-danger/20 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="ml-0.5 rounded-full p-0.5 hover:bg-danger/20 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <X className="h-3 w-3" aria-hidden="true" />
             </button>
@@ -4131,7 +4131,7 @@ export function MultiRelationshipSelectField({
               openList();
             }
           }}
-          className="flex-1 rounded px-1 py-0.5 text-left text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex-1 rounded px-1 py-0.5 text-left text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           {selectedLabels.length > 0 ? "Add more..." : "Select " + (field.label ?? "") + "..."}
         </button>

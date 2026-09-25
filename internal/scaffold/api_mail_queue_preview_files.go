@@ -148,18 +148,20 @@ func LookupTemplate(name string) (Template, bool) {
 	return t, ok
 }
 
-var layout = template.Must(template.New("layout").Parse(baseLayout))
+var layout = template.Must(template.New("layout").Parse(Layout))
 
 // RenderLayout puts content inside the shared layout: the app name over the
 // card, the year and the app name under it. content must already be safe
 // HTML, which is what html/template renders. An empty appName uses APP_NAME.
 func RenderLayout(appName string, content template.HTML) (string, error) {
 	var buf bytes.Buffer
-	err := layout.Execute(&buf, map[string]interface{}{
-		"AppName": appNameOr(appName),
-		"Content": content,
-		"Year":    time.Now().Year(),
-	})
+	data := Style(Theme())
+	data["AppName"] = appNameOr(appName)
+	data["Content"] = content
+	data["Year"] = time.Now().Year()
+	data["Subject"] = appNameOr(appName)
+	data["Preheader"] = ""
+	err := layout.Execute(&buf, data)
 	if err != nil {
 		return "", fmt.Errorf("rendering the mail layout: %w", err)
 	}
@@ -197,13 +199,21 @@ func builtIn(name, description, subject string, sample func() map[string]interfa
 
 func init() {
 	builtIn("welcome", "Sent when a new user registers", "Welcome", func() map[string]interface{} {
-		return map[string]interface{}{"Name": "Ada Lovelace", "DashboardURL": "https://example.com/dashboard"}
+		return map[string]interface{}{
+			"Name":       "Ada Lovelace",
+			"ActionURL":  "https://example.com/dashboard",
+			"ActionText": "Open the dashboard",
+		}
 	})
 	builtIn("password-reset", "Sent when a user asks to reset their password", "Reset your password", func() map[string]interface{} {
 		return map[string]interface{}{"ResetURL": "https://example.com/reset-password?token=sample"}
 	})
 	builtIn("email-verification", "Sent to confirm a user's email address", "Confirm your email address", func() map[string]interface{} {
-		return map[string]interface{}{"VerifyURL": "https://example.com/verify-email?token=sample"}
+		return map[string]interface{}{
+			"Title":     "Confirm your email address",
+			"Message":   "Click the button below to confirm this address. The link expires in 48 hours and can only be used once.",
+			"VerifyURL": "https://example.com/verify-email?token=sample",
+		}
 	})
 	builtIn("notification", "A general notification with an optional button", "New activity", func() map[string]interface{} {
 		return map[string]interface{}{
@@ -212,6 +222,14 @@ func init() {
 			"ActionURL":  "https://example.com/activity",
 			"ActionText": "View activity",
 		}
+	})
+	// These two were sent by the app and missing from the preview, which is
+	// how the code email kept a letter-spacing nobody had looked at.
+	builtIn("two-factor-code", "The six-digit code for sign-in by email", "Your sign-in code", func() map[string]interface{} {
+		return map[string]interface{}{"Code": "418902", "Minutes": 10}
+	})
+	builtIn("magic-link", "A sign-in link, for people who would rather not type a password", "Your sign-in link", func() map[string]interface{} {
+		return map[string]interface{}{"MagicURL": "https://example.com/magic?token=sample", "Minutes": 15}
 	})
 }
 `

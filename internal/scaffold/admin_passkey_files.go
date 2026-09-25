@@ -265,12 +265,12 @@ export function PasskeysCard() {
     <section className="rounded-xl border border-border bg-bg-elevated p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 text-accent">
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
             <KeyRound className="h-4 w-4" aria-hidden="true" />
           </span>
-          <div>
-            <h2 className="text-sm font-semibold text-foreground">Passkeys</h2>
-            <p className="mt-0.5 text-xs text-text-muted">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-foreground">Passkeys</h2>
+            <p className="mt-1 text-sm leading-relaxed text-text-muted">
               Sign in with your fingerprint, face or device PIN. Nothing to remember, and
               nothing a phishing page can collect.
             </p>

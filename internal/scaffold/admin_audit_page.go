@@ -88,8 +88,8 @@ function ResealPanel({ fromId, onDone }: { fromId?: string; onDone: () => void }
     ?.response?.data?.error?.message;
 
   return (
-    <div className="mt-3 rounded-lg border border-border bg-bg-primary p-3">
-      <p className="text-xs text-foreground-secondary">
+    <div className="mt-3 rounded-lg border border-border bg-background p-3">
+      <p className="text-xs text-text-secondary">
         If nobody changed these entries, you can reseal from this one. A chain written before
         v3.215.0 on Postgres or MySQL fails on its first entry, because the database rounded the
         timestamps it was hashed with. A reseal trusts every entry from here on as it stands now,
@@ -164,7 +164,7 @@ export default function AuditLogPage() {
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
             <div className="min-w-0 flex-1">
               <h2 className="font-semibold text-foreground">Chain integrity</h2>
-              <p className="text-sm text-foreground-secondary">
+              <p className="text-sm text-text-secondary">
                 Recomputes every hash from the first entry. A mismatch means a row was
                 modified, deleted, or inserted out of order — the result names the first one.
               </p>
@@ -196,7 +196,7 @@ export default function AuditLogPage() {
                 </span>
               </div>
               {!result.valid && (
-                <div className="mt-2 space-y-1 text-xs text-foreground-secondary">
+                <div className="mt-2 space-y-1 text-xs text-text-secondary">
                   <p>{result.message}</p>
                   <p>
                     First bad entry: position {result.broken_at}, id{" "}
@@ -229,7 +229,7 @@ export default function AuditLogPage() {
               value={path}
               onChange={(e) => { setPath(e.target.value); setPage(1); }}
               placeholder="Path starts with /api/v1/…"
-              className="w-72 rounded-lg border border-border bg-bg-primary py-2 pl-9 pr-3 text-sm text-foreground"
+              className="w-72 rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground"
             />
           </div>
           <input
@@ -237,7 +237,7 @@ export default function AuditLogPage() {
             onChange={(e) => { setRecord(e.target.value); setPage(1); }}
             placeholder="Record id"
             aria-label="Show everyone who read or changed this record"
-            className="w-64 rounded-lg border border-border bg-bg-primary px-3 py-2 font-mono text-xs text-foreground"
+            className="w-64 rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs text-foreground"
           />
           {["", "GET", "POST", "PUT", "PATCH", "DELETE", "SECURITY"].map((m) => (
             <button

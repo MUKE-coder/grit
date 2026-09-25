@@ -298,7 +298,7 @@ function HomePage() {
               %s
             </span>
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p className="text-xl text-text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
             A full-stack application powered by Go, React, and the Grit framework.
             Production-ready from day one.
           </p>
@@ -313,7 +313,7 @@ function HomePage() {
               href="/api/health"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center px-6 py-3 rounded-lg border border-border text-foreground font-medium hover:bg-muted transition-colors"
+              className="inline-flex items-center px-6 py-3 rounded-lg border border-border text-foreground font-medium hover:bg-bg-tertiary transition-colors"
             >
               API Health Check
             </a>
@@ -331,9 +331,9 @@ function HomePage() {
               { title: 'React Frontend', desc: 'TanStack Router + React Query + Tailwind CSS. Fast and lightweight.' },
               { title: 'Full-Stack DX', desc: 'Shared types, one-command resource generation, hot reload everywhere.' },
             ].map((f) => (
-              <div key={f.title} className="rounded-xl border border-border/40 bg-card/50 p-6">
+              <div key={f.title} className="rounded-xl border border-border/40 bg-bg-elevated/50 p-6">
                 <h3 className="text-lg font-semibold mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                <p className="text-sm text-text-muted leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -359,16 +359,16 @@ function BlogListPage() {
   return (
     <div className="max-w-4xl mx-auto py-16 px-6">
       <h1 className="text-4xl font-bold mb-2">Blog</h1>
-      <p className="text-muted-foreground mb-10">Latest articles and updates.</p>
+      <p className="text-text-muted mb-10">Latest articles and updates.</p>
 
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-32 rounded-xl bg-card/50 animate-pulse" />
+            <div key={i} className="h-32 rounded-xl bg-bg-elevated/50 animate-pulse" />
           ))}
         </div>
       ) : !blogs?.length ? (
-        <p className="text-muted-foreground">No posts yet. Check back soon!</p>
+        <p className="text-text-muted">No posts yet. Check back soon!</p>
       ) : (
         <div className="space-y-6">
           {blogs.map((blog) => (
@@ -376,11 +376,11 @@ function BlogListPage() {
               key={blog.id}
               to="/blog/$slug"
               params={{ slug: blog.slug }}
-              className="block rounded-xl border border-border/40 bg-card/50 p-6 hover:border-accent/30 transition-colors"
+              className="block rounded-xl border border-border/40 bg-bg-elevated/50 p-6 hover:border-accent/30 transition-colors"
             >
               <h2 className="text-xl font-semibold mb-2">{blog.title}</h2>
-              <p className="text-sm text-muted-foreground line-clamp-2">{blog.excerpt || blog.content?.substring(0, 150)}</p>
-              <span className="text-xs text-muted-foreground/50 mt-3 block">
+              <p className="text-sm text-text-muted line-clamp-2">{blog.excerpt || blog.content?.substring(0, 150)}</p>
+              <span className="text-xs text-text-muted/50 mt-3 block">
                 {new Date(blog.created_at).toLocaleDateString()}
               </span>
             </Link>
@@ -417,9 +417,9 @@ function BlogDetailPage() {
   if (isLoading) {
     return (
       <div className="max-w-3xl mx-auto py-16 px-6">
-        <div className="h-8 w-48 bg-card/50 animate-pulse rounded mb-4" />
-        <div className="h-4 w-full bg-card/50 animate-pulse rounded mb-2" />
-        <div className="h-4 w-3/4 bg-card/50 animate-pulse rounded" />
+        <div className="h-8 w-48 bg-bg-elevated/50 animate-pulse rounded mb-4" />
+        <div className="h-4 w-full bg-bg-elevated/50 animate-pulse rounded mb-2" />
+        <div className="h-4 w-3/4 bg-bg-elevated/50 animate-pulse rounded" />
       </div>
     )
   }
@@ -435,11 +435,11 @@ function BlogDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto py-16 px-6">
-      <Link to="/blog" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-8">
+      <Link to="/blog" className="inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-foreground mb-8">
         <ArrowLeft className="h-4 w-4" /> Back to blog
       </Link>
       <h1 className="text-4xl font-bold mb-4">{blog.title}</h1>
-      <span className="text-sm text-muted-foreground/50 block mb-8">
+      <span className="text-sm text-text-muted/50 block mb-8">
         {new Date(blog.created_at).toLocaleDateString()}
       </span>
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: sanitised by DOMPurify on this line. */}

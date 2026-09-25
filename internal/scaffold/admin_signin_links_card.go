@@ -60,17 +60,19 @@ export function SignInLinksCard() {
   const rows = data ?? [];
 
   return (
-    <section className="rounded-xl border border-border bg-bg-secondary p-6">
+    <section className="rounded-xl border border-border bg-bg-elevated p-6">
       <div className="flex items-start gap-3">
-        <LinkIcon className="mt-0.5 h-5 w-5 text-accent" aria-hidden="true" />
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+          <LinkIcon className="h-4 w-4" aria-hidden="true" />
+        </span>
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-text-primary">Sign-in links</h3>
-          <p className="mt-1 text-sm text-text-secondary">
+          <h2 className="text-base font-semibold text-foreground">Sign-in links</h2>
+          <p className="mt-1 text-sm leading-relaxed text-text-muted">
             You can sign in from the login page without a password, using a link emailed to this
             address. A link lasts 15 minutes, works once, and never gets past two-factor.
           </p>
 
-          <h4 className="mt-5 text-sm font-medium text-text-primary">Recently requested</h4>
+          <h4 className="mt-5 text-sm font-medium text-foreground">Recently requested</h4>
           {isLoading ? (
             <p className="mt-2 text-sm text-text-secondary">Loading...</p>
           ) : rows.length === 0 ? (
@@ -84,7 +86,7 @@ export function SignInLinksCard() {
                   key={row.created_at + (row.ip_address ?? "")}
                   className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm"
                 >
-                  <span className="text-text-primary">{when(row.created_at)}</span>
+                  <span className="text-foreground">{when(row.created_at)}</span>
                   <span className="text-text-secondary">from {row.ip_address || "an unknown address"}</span>
                   <span className="text-text-muted">&middot; {outcome(row)}</span>
                 </li>

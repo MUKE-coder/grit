@@ -59,9 +59,13 @@ const (
 	Period = 30
 	// Window is the number of periods to check before/after current (clock skew tolerance).
 	Window = 1
-	// SkewSearch is how far out a refused code is searched, only to explain
-	// the refusal. Five minutes either way covers the drift a phone or a
-	// virtual machine accumulates; beyond that the code is simply wrong.
+	// SkewSearch is how far out a code is searched when enrolling, and how far
+	// a refused code is searched to explain the refusal. Five minutes either
+	// way covers the drift a phone or a virtual machine accumulates; beyond
+	// that the code is simply wrong.
+	//
+	// This is NOT the window a sign-in accepts. Sign-in stays at Window, one
+	// step either side of the device's own recorded offset.
 	SkewSearch = 10
 	// BackupCodeLength is the character length of each backup code.
 	BackupCodeLength = 8
@@ -105,6 +109,27 @@ func GenerateURI(secret, email, issuer string) string {
 	return fmt.Sprintf("otpauth://totp/%s?%s", label, v.Encode())
 }
 
+// EnrolStep finds the step a code belongs to, searching SkewSearch either way.
+//
+// Only for enrolment, where the person is already signed in, holds the secret
+// they were just shown, and is proving they can read their own authenticator.
+// The offset it returns is what makes the tight sign-in window work afterwards
+// for a device whose clock nobody can fix.
+func EnrolStep(secret, code string) (int64, bool, error) {
+	counter := time.Now().Unix() / Period
+	matched, found := int64(0), false
+	for i := -int64(SkewSearch); i <= int64(SkewSearch); i++ {
+		expected, err := generateCode(secret, counter+i)
+		if err != nil {
+			return 0, false, err
+		}
+		if hmac.Equal([]byte(expected), []byte(code)) {
+			matched, found = counter+i, true
+		}
+	}
+	return matched, found, nil
+}
+
 // SkewSeconds reports how far a code's time step is from this server's.
 //
 // Only called when a code has already been refused. A code from an
@@ -146,7 +171,18 @@ func ValidateCode(secret, code string) (bool, error) {
 // one used, because a code is otherwise good for its whole window, and anyone
 // who saw it could use it again.
 func ValidateCodeStep(secret, code string) (int64, bool, error) {
-	counter := time.Now().Unix() / Period
+	return ValidateCodeOffset(secret, code, 0)
+}
+
+// ValidateCodeOffset is ValidateCodeStep for a device whose clock is known to
+// be offset steps away from this server's.
+//
+// The window is unchanged: one step either side, of the device's time rather
+// than the server's. A device that was 60 seconds behind at enrolment is not
+// given a wider window, it is given the right one, which is the difference
+// between accommodating a wrong clock and accepting older codes from everybody.
+func ValidateCodeOffset(secret, code string, offset int64) (int64, bool, error) {
+	counter := time.Now().Unix()/Period + offset
 	matched, found := int64(0), false
 	for i := -int64(Window); i <= int64(Window); i++ {
 		expected, err := generateCode(secret, counter+i)
@@ -329,6 +365,17 @@ type TwoFactorConfig struct {
 	// LastUsedStep is the time step of the last code accepted. Only a later one
 	// is accepted next, so a code cannot be used twice.
 	LastUsedStep int64 ` + "`" + `gorm:"not null;default:0" json:"-"` + "`" + `
+	// StepOffset is how many 30 second steps this device's clock is from the
+	// server's, measured when the authenticator was enrolled and re-measured on
+	// every accepted code.
+	//
+	// Without it, a laptop a minute behind produces correct codes that are
+	// always one step too old, and the only advice the server can give is "fix
+	// your clock", which on a managed machine is not advice. It does not widen
+	// what is accepted: the window stays one step, around this device's time
+	// rather than the server's. Zero for every device whose clock is right,
+	// which is almost all of them.
+	StepOffset int64 ` + "`" + `gorm:"not null;default:0" json:"-"` + "`" + `
 	// SetupCodeHash and SetupCodeExpiresAt hold the code that proves somebody
 	// can read the mailbox before email becomes their second factor. Turning on
 	// a factor you cannot receive is how an account locks itself out, so it is
@@ -552,12 +599,15 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 		return
 	}
 
-	// Verify the code matches the secret
-	step, valid, err := totp.ValidateCodeStep(req.Secret, req.Code)
+	// Enrolment searches wider than a sign-in does, and keeps the offset it
+	// finds. Refusing a correct code because the device's clock is a minute out
+	// leaves somebody who cannot change that clock with no second factor at all.
+	step, valid, err := totp.EnrolStep(req.Secret, req.Code)
 	if err != nil || !valid {
 		respond.Fail(c, respond.CodeInvalidTOTPCode, totpRefusal(req.Secret, req.Code))
 		return
 	}
+	offset := step - time.Now().Unix()/totp.Period
 
 	// Generate backup codes
 	codes, hashes, err := totp.GenerateBackupCodes(0)
@@ -579,19 +629,47 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 	config.BackupCodes = hashes
 	// The code that enabled 2FA is spent; it cannot also sign in.
 	config.LastUsedStep = step
+	config.StepOffset = offset
 
 	if err := h.DB.WithContext(c.Request.Context()).Save(&config).Error; err != nil {
 		respond.Fail(c, respond.CodeTOTPError, "Failed to enable two-factor authentication")
 		return
 	}
 
+	message := "Two-factor authentication enabled. Save your backup codes in a safe place."
+	if offset != 0 {
+		// Said out loud, because the account now depends on a clock the person
+		// may not know is wrong, and because a clock that has drifted once
+		// usually keeps drifting.
+		message += fmt.Sprintf(
+			" Your device's clock is about %d seconds %s this server's; that has been allowed for, but it is worth fixing.",
+			abs64(offset*totp.Period), aheadOrBehind(offset))
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"enabled":      true,
 			"backup_codes": codes,
+			"clock_offset": offset * totp.Period,
 		},
-		"message": "Two-factor authentication enabled. Save your backup codes in a safe place.",
+		"message": message,
 	})
+}
+
+// abs64 is the absolute value, for turning an offset into a distance.
+func abs64(n int64) int64 {
+	if n < 0 {
+		return -n
+	}
+	return n
+}
+
+// aheadOrBehind names the direction of a clock offset.
+func aheadOrBehind(offset int64) string {
+	if offset > 0 {
+		return "ahead of"
+	}
+	return "behind"
 }
 
 // SendEmailSetupCode emails a code to prove the address works, before email
@@ -749,19 +827,29 @@ func (h *TOTPHandler) Verify(c *gin.Context) {
 		return
 	}
 
-	step, valid, err := totp.ValidateCodeStep(string(config.Secret), req.Code)
+	step, valid, err := totp.ValidateCodeOffset(string(config.Secret), req.Code, config.StepOffset)
 	if err == nil && valid {
 		// A code is good for its window, so without this the same code signs in
 		// again for as long as it lasts. The step only moves forward, and the
 		// update is conditional, so two requests cannot both spend one code.
+		//
+		// The offset is re-recorded from the step that actually matched, which
+		// is RFC 6238 resynchronisation: a clock that keeps losing a second a
+		// day is followed instead of eventually locking the account out.
 		res := h.DB.WithContext(c.Request.Context()).Model(&models.TwoFactorConfig{}).
 			Where("id = ? AND last_used_step < ?", config.ID, step).
-			UpdateColumn("last_used_step", step)
+			UpdateColumns(map[string]interface{}{
+				"last_used_step": step,
+				"step_offset":    step - time.Now().Unix()/totp.Period,
+			})
 		valid = res.Error == nil && res.RowsAffected == 1
 	}
 	if err != nil || !valid {
 		h.failSecondFactor(pending, user)
-		respond.Fail(c, respond.CodeInvalidTOTPCode, "Invalid verification code")
+		// Same diagnosis as enrolment: a clock that jumped since the device was
+		// enrolled is the usual reason a correct-looking code stops working,
+		// and "invalid code" sends people to their backup codes for nothing.
+		respond.Fail(c, respond.CodeInvalidTOTPCode, totpRefusal(string(config.Secret), req.Code))
 		return
 	}
 

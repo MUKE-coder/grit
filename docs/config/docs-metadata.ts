@@ -360,6 +360,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'An honest status per subsystem: stable, beta or new, with what Grit guarantees and the test that proves it, what stays your responsibility, and what went wrong once. Covers auth, two-factor and passkeys, RBAC, generated CRUD, owned resources, optimistic locking, encryption at rest, multitenancy, money, import and export, trees, the public API, append-only resources, realtime, durable events, backups, offline sync, workflows, feature flags, desktop and mobile. Plus how Grit is tested (492 CLI tests, 256 tests shipped into each project, 57 live checks on Postgres 15, 16 and 17, 13 grit doctor checks, gosec, govulncheck, Trivy, CodeQL, Scorecard) and what is not covered yet.',
   },
+  '/docs/security/audit-log': {
+    title: 'The audit log: a record you can prove was not edited',
+    description:
+      "Every authenticated write a Grit API accepts is recorded, and each entry is hashed together with the one before it: hash = SHA-256(prev_hash || canonical(row)). Editing a row, deleting one or inserting forged history breaks every hash from that point forward, and Verify chain names the first entry that disagrees. Bodies are stored as a SHA-256 digest rather than verbatim, so the log proves which payload was sent without becoming the most sensitive table in the database. Reads are opt-in per resource with --audit-reads, recording which records were returned and how many. A weekly audit:prune job trims old entries and re-anchors the chain so what remains still verifies.",
+  },
   '/docs/security/doctor': {
     title: 'Project audit: grit doctor',
     description:

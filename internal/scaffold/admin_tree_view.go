@@ -332,12 +332,12 @@ export function ResourceTree({ resource, onEdit, onAddChild }: ResourceTreeProps
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-background-secondary p-6">
+      <div className="rounded-xl border border-border bg-bg-secondary p-6">
         <div className="space-y-2">
           {[0, 1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="h-[52px] animate-pulse rounded-xl border border-border bg-background-tertiary"
+              className="h-[52px] animate-pulse rounded-xl border border-border bg-bg-tertiary"
               style={{ marginLeft: (i % 3) * 24 }}
             />
           ))}
@@ -348,14 +348,14 @@ export function ResourceTree({ resource, onEdit, onAddChild }: ResourceTreeProps
 
   if (error) {
     return (
-      <div className="rounded-xl border border-border bg-background-secondary p-6 text-sm text-danger">
+      <div className="rounded-xl border border-border bg-bg-secondary p-6 text-sm text-danger">
         Could not load the tree.
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-border bg-background-secondary">
+    <div className="rounded-xl border border-border bg-bg-secondary">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="min-w-0">
           <p className="text-sm font-medium text-foreground">
@@ -492,7 +492,7 @@ function RootDropBar({
       <span
         className={
           "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-2 text-[10px] font-medium transition-colors " +
-          (active ? "bg-accent text-accent-fg" : "bg-background-secondary text-text-muted")
+          (active ? "bg-accent text-accent-fg" : "bg-bg-secondary text-text-muted")
         }
       >
         drop here to make it a root
@@ -613,7 +613,7 @@ function TreeRow({
           type="button"
           onClick={() => onToggle(node.id)}
           className={
-            "flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-background-tertiary hover:text-foreground " +
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-bg-tertiary hover:text-foreground " +
             (hasChildren ? "" : "invisible")
           }
           aria-label={expanded ? "Collapse" : "Expand"}
@@ -635,7 +635,7 @@ function TreeRow({
             className="h-9 w-9 shrink-0 rounded-lg border border-border object-cover"
           />
         ) : (
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background-tertiary text-[11px] font-semibold text-text-muted">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-bg-tertiary text-[11px] font-semibold text-text-muted">
             {initialsOf(node)}
           </span>
         )}
@@ -648,7 +648,7 @@ function TreeRow({
             {/* Stated, not merely implied by indentation. On a wide screen a
                 third-level row sits a long way from its parent, and counting
                 pixels is not reading. */}
-            <span className="shrink-0 rounded bg-background-tertiary px-1.5 py-0.5 font-mono text-[10px] leading-none text-text-muted">
+            <span className="shrink-0 rounded bg-bg-tertiary px-1.5 py-0.5 font-mono text-[10px] leading-none text-text-muted">
               L{depth + 1}
             </span>
           </span>
@@ -684,7 +684,7 @@ function TreeRow({
               type="button"
               onClick={() => onEdit(node)}
               title={"Edit " + labelOf(node)}
-              className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-background-tertiary hover:text-foreground"
+              className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-foreground"
             >
               <Pencil className="h-4 w-4" />
             </button>

@@ -205,7 +205,7 @@ export function EmailVerifiedBanner() {
         <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
         <p className="min-w-0 flex-1 text-sm text-foreground">
           Confirm your email address.{" "}
-          <span className="text-foreground-secondary">
+          <span className="text-text-secondary">
             We sent a link to {user.email} when you signed up.
           </span>
         </p>
@@ -231,7 +231,7 @@ export function EmailVerifiedBanner() {
           type="button"
           onClick={dismiss}
           aria-label="Dismiss until next sign-in"
-          className="-m-1.5 shrink-0 rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="-m-1.5 shrink-0 rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           <X className="h-4 w-4" aria-hidden="true" />
         </button>

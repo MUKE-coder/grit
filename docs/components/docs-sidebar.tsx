@@ -242,6 +242,7 @@ const navItems: NavItem[] = [
       { title: 'Roles & Permissions', href: '/docs/security/authorization' },
       { title: 'Enterprise SSO', href: '/docs/security/sso' },
       { title: 'Privacy & Compliance (GDPR)', href: '/docs/security/compliance' },
+      { title: 'The audit log', href: '/docs/security/audit-log' },
       { title: "Defender's Handbook ↔ Grit", href: '/docs/security/defenders-handbook' },
       { title: 'Project audit (grit doctor)', href: '/docs/security/doctor' },
       { title: 'Performance & Pentest Testing', href: '/docs/testing' },

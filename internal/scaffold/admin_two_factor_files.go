@@ -67,7 +67,7 @@ function BackupCodes({ codes, onDone }: { codes: string[]; onDone: () => void })
   return (
     <div className="rounded-lg border border-warning/40 bg-warning/[0.06] p-4">
       <p className="text-sm font-medium text-foreground mb-1">Save your backup codes</p>
-      <p className="text-xs text-foreground-secondary mb-3">
+      <p className="text-xs text-text-secondary mb-3">
         Each code works once, if you lose your authenticator. This is the only time they are
         shown — the server keeps only hashes.
       </p>
@@ -229,19 +229,21 @@ export function TwoFactorCard() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-bg-secondary p-6">
+      <div className="rounded-xl border border-border bg-bg-elevated p-6">
         <Loader2 className="h-4 w-4 animate-spin text-text-muted" />
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-border bg-bg-secondary overflow-hidden">
-      <div className="flex items-start gap-3 border-b border-border px-6 py-4">
-        <ShieldCheck className="mt-0.5 h-4 w-4 text-accent" />
+    <div className="rounded-xl border border-border bg-bg-elevated p-6">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+          <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+        </span>
         <div className="min-w-0">
-          <h2 className="font-semibold text-foreground">Two-factor authentication</h2>
-          <p className="text-sm text-foreground-secondary">
+          <h2 className="text-base font-semibold text-foreground">Two-factor authentication</h2>
+          <p className="mt-1 text-sm leading-relaxed text-text-muted">
             A code from your authenticator app, on top of your password.
           </p>
         </div>
@@ -257,7 +259,7 @@ export function TwoFactorCard() {
         </span>
       </div>
 
-      <div className="space-y-5 p-6">
+      <div className="mt-5 space-y-5">
         {error && (
           <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>
         )}
@@ -283,7 +285,7 @@ export function TwoFactorCard() {
         {/* ── Mid-setup by email: prove the mailbox works ── */}
         {emailSetupSentTo && !codes && (
           <div className="space-y-3">
-            <p className="text-sm text-foreground-secondary">
+            <p className="text-sm text-text-secondary">
               We sent a code to <span className="font-medium text-foreground">{emailSetupSentTo}</span>.
               Enter it to turn this on, so nothing is switched on that you cannot receive.
             </p>
@@ -327,7 +329,7 @@ export function TwoFactorCard() {
             </div>
 
             <div className="min-w-0 space-y-3">
-              <p className="text-sm text-foreground-secondary">
+              <p className="text-sm text-text-secondary">
                 Scan this with Google Authenticator, 1Password, Authy or similar. Cannot scan?
                 Enter this key by hand:
               </p>
@@ -342,7 +344,7 @@ export function TwoFactorCard() {
                   placeholder="000000"
                   inputMode="numeric"
                   maxLength={6}
-                  className="w-32 rounded-lg border border-border bg-bg-primary px-3 py-2 text-center font-mono tracking-[0.3em] text-foreground"
+                  className="w-32 rounded-lg border border-border bg-background px-3 py-2 text-center font-mono tracking-[0.3em] text-foreground"
                 />
                 <Button
                   onClick={confirmEnable}
@@ -367,7 +369,7 @@ export function TwoFactorCard() {
         {status?.enabled && !codes && (
           <>
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-sm text-foreground-secondary">
+              <span className="text-sm text-text-secondary">
                 {status.backup_codes_remaining} backup code
                 {status.backup_codes_remaining === 1 ? "" : "s"} left
               </span>
@@ -448,7 +450,7 @@ export function TwoFactorCard() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Confirm your password"
-                    className="w-56 rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-foreground"
+                    className="w-56 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
                   />
                   <button
                     type="button"

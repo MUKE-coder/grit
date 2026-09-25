@@ -60,7 +60,7 @@ function Nudge({ id, icon, title, body, action, onDismiss }: NudgeProps) {
     <div className="relative flex items-start gap-3 rounded-xl border border-warning/25 bg-warning/[0.06] p-4 sm:p-5">
       <div className="mt-0.5 shrink-0">{icon}</div>
       <div className="min-w-0 flex-1">
-        <h3 className="font-semibold text-text-primary">{title}</h3>
+        <h3 className="font-semibold text-foreground">{title}</h3>
         <p className="mt-1 text-sm leading-relaxed text-text-secondary">{body}</p>
         <div className="mt-3">{action}</div>
       </div>
@@ -68,7 +68,7 @@ function Nudge({ id, icon, title, body, action, onDismiss }: NudgeProps) {
         type="button"
         onClick={() => onDismiss(id)}
         aria-label={"Dismiss: " + title}
-        className="-m-1.5 shrink-0 rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="-m-1.5 shrink-0 rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         <X className="h-4 w-4" aria-hidden="true" />
       </button>

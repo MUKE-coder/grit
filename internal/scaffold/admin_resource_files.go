@@ -1227,7 +1227,7 @@ function ResourceListView({ resource }: ResourcePageProps) {
                 "min-h-9 rounded-md px-3 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent " +
                 (c.showArchived === tab.archived
                   ? "bg-accent/15 font-medium text-accent"
-                  : "text-text-secondary hover:bg-bg-hover hover:text-text-primary")
+                  : "text-text-secondary hover:bg-bg-hover hover:text-foreground")
               }
             >
               {tab.label}
@@ -2774,7 +2774,7 @@ export function TableTabs({ tabs, active, onChange, endpoint, baseFilters }: Tab
               "inline-flex min-h-10 items-center gap-2 rounded-t-lg border-b-2 px-3 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent " +
               (selected
                 ? "border-accent font-medium text-accent"
-                : "border-transparent text-text-secondary hover:bg-bg-hover hover:text-text-primary")
+                : "border-transparent text-text-secondary hover:bg-bg-hover hover:text-foreground")
             }
           >
             {Icon && <Icon className="h-3.5 w-3.5" aria-hidden="true" />}
@@ -2868,7 +2868,7 @@ export function BulkActionBar({
   const noun = count === 1 ? singularName.toLowerCase() : pluralName.toLowerCase();
   const base =
     "inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-  const neutral = base + " border-border bg-bg-secondary text-text-primary hover:bg-bg-hover";
+  const neutral = base + " border-border bg-bg-secondary text-foreground hover:bg-bg-hover";
   const danger = base + " border-danger/40 bg-transparent text-danger hover:bg-danger/10";
 
   return (
@@ -2876,7 +2876,7 @@ export function BulkActionBar({
       aria-label="Bulk actions"
       className="fixed bottom-6 left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center gap-3 rounded-xl border border-border bg-bg-elevated px-4 py-2.5 shadow-2xl shadow-black/25"
     >
-      <p className="text-sm font-medium text-text-primary">
+      <p className="text-sm font-medium text-foreground">
         {count} {noun} selected
       </p>
 
@@ -2942,7 +2942,7 @@ export function BulkActionBar({
       <button
         type="button"
         onClick={onClear}
-        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         <X className="h-3.5 w-3.5" aria-hidden="true" />
         Clear selection
@@ -3021,7 +3021,7 @@ export function BulkEditModal({ resource, count, pending, onApply, onClose }: Bu
   }
 
   const inputClass =
-    "w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
+    "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -3031,13 +3031,13 @@ export function BulkEditModal({ resource, count, pending, onApply, onClose }: Bu
         className="relative w-full max-w-md rounded-xl border border-border bg-bg-secondary shadow-xl"
       >
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h2 className="text-sm font-semibold text-text-primary">
+          <h2 className="text-sm font-semibold text-foreground">
             Edit {count} {noun.toLowerCase()}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="rounded-md p-1 text-text-secondary hover:bg-bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <X className="h-4 w-4" aria-hidden="true" />
             <span className="sr-only">Close</span>

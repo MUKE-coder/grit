@@ -129,7 +129,7 @@ function RolesList({
 										(role.is_system ? "text-text-muted" : "text-accent")
 									}
 								/>
-								<span className="font-semibold text-text-primary">{role.name}</span>
+								<span className="font-semibold text-foreground">{role.name}</span>
 							</div>
 							{role.is_system ? (
 								<span className="shrink-0 rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-text-muted">
@@ -182,7 +182,7 @@ function FeatureRow({
 						disabled={disabled}
 						label={feature.name}
 					/>
-					<span className="text-sm text-text-primary">{feature.name}</span>
+					<span className="text-sm text-foreground">{feature.name}</span>
 				</label>
 			</td>
 			{ACTIONS.map((a) => {
@@ -281,7 +281,7 @@ function ModuleSection({
 						>
 							<polyline points="9 18 15 12 9 6" />
 						</svg>
-						<span className="font-semibold text-text-primary">{module.name}</span>
+						<span className="font-semibold text-foreground">{module.name}</span>
 					</span>
 					<span className="font-mono text-xs text-text-muted">
 						{granted} / {keys.length}
@@ -422,7 +422,7 @@ function RoleEditor({
 			<div className="mb-6 flex items-center justify-between gap-4">
 				<button
 					onClick={onBack}
-					className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary"
+					className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-foreground"
 				>
 					<ArrowLeft className="h-4 w-4" />
 					All roles
@@ -483,7 +483,7 @@ function RoleEditor({
 
 			{role && role.is_system ? (
 				<p className="mb-4 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-text-secondary">
-					<strong className="text-text-primary">Built-in role.</strong> Its description and
+					<strong className="text-foreground">Built-in role.</strong> Its description and
 					its permissions are yours to change, and changes survive every upgrade. The name
 					is fixed and the role cannot be deleted, because route guards, the seeder and the
 					legacy role column all resolve it by name.
@@ -502,7 +502,7 @@ function RoleEditor({
 								<button
 									key={r.id}
 									onClick={() => setSelected(new Set(r.expanded ?? []))}
-									className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-text-secondary transition-colors hover:border-accent/40 hover:text-text-primary"
+									className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-text-secondary transition-colors hover:border-accent/40 hover:text-foreground"
 								>
 									<Copy className="h-3 w-3" />
 									{r.name}
@@ -514,7 +514,7 @@ function RoleEditor({
 
 			<div className="rounded-xl border border-border bg-bg-elevated">
 				<div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-					<span className="font-semibold text-text-primary">Permissions</span>
+					<span className="font-semibold text-foreground">Permissions</span>
 					<div className="flex flex-wrap items-center gap-3">
 						<label className="inline-flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
 							<TriCheckbox
@@ -534,7 +534,7 @@ function RoleEditor({
 								value={filter}
 								onChange={(e) => setFilter(e.target.value)}
 								placeholder="Filter..."
-								className="w-44 rounded-lg border border-border bg-bg-primary py-1.5 pl-8 pr-3 text-xs text-text-primary"
+								className="w-44 rounded-lg border border-border bg-background py-1.5 pl-8 pr-3 text-xs text-foreground"
 							/>
 						</div>
 					</div>

@@ -84,7 +84,7 @@ func socialLoginButtonsJSX() string {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-bg-primary px-3 text-text-muted lg:bg-transparent">or continue with</span>
+              <span className="bg-background px-3 text-text-muted lg:bg-transparent">or continue with</span>
             </div>
           </div>
 
@@ -190,7 +190,7 @@ function CallbackInner() {
 
 function CallbackSpinner() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bg-primary">
+    <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="text-center">
         <div className="inline-flex h-10 w-10 animate-spin items-center justify-center rounded-full border-2 border-accent border-t-transparent" />
         <p className="mt-4 text-sm text-text-secondary">Signing you in...</p>
@@ -1034,9 +1034,6 @@ body {
   font-size: 15px;
 }
 
-* {
-  border-color: var(--border);
-}
 
 ::-webkit-scrollbar {
   width: 6px;

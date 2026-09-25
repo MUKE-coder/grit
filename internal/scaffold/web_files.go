@@ -315,6 +315,7 @@ func webGlobalCSS() string {
   --color-text-muted: var(--text-muted);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
   --color-success: var(--success);
   --color-danger: var(--danger);
   --color-warning: var(--warning);
@@ -349,15 +350,20 @@ func webGlobalCSS() string {
   --border: #e2e8f0;
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-muted: #64748b;
   --accent: #2563eb;
   --accent-hover: #1d4ed8;
+  --accent-fg: #ffffff;
   --success: #10b981;
   --danger: #ef4444;
   --warning: #f59e0b;
   --info: #0ea5e9;
 }
 
+/* aurora — friendly, pastel, consumer SaaS */
+/* aurora — Apple-inspired. Monochrome: near-black text and CTAs on white and
+ * Apple's warm greys. Blue is reserved for links/info only, so the accent that
+ * drives buttons stays black like iCloud's sign-in pill. */
 [data-theme="aurora"] {
   --bg-primary: #fbfbfd;
   --bg-secondary: #ffffff;
@@ -370,12 +376,15 @@ func webGlobalCSS() string {
   --text-muted: #86868b;
   --accent: #1d1d1f;
   --accent-hover: #000000;
+  --accent-fg: #ffffff;
   --success: #10b981;
   --danger: #ef4444;
   --warning: #f59e0b;
   --info: #0071e3;
 }
 
+/* pulse — Cloudflare-inspired. Premium blue CTAs on a cool grey-blue canvas
+ * with white elevated cards; Cloudflare orange is the single warm accent. */
 [data-theme="pulse"] {
   --bg-primary: #f6f7f9;
   --bg-secondary: #ffffff;
@@ -388,12 +397,118 @@ func webGlobalCSS() string {
   --text-muted: #8a94a6;
   --accent: #0051c3;
   --accent-hover: #003d99;
+  --accent-fg: #ffffff;
   --success: #16a34a;
   --danger: #dc2626;
   --warning: #f6821f;
   --info: #0051c3;
 }
 
+/* coral - rose, warm neutrals. The marketplace palette: the accent is a
+ * statement colour, so the greys around it stay very plain. */
+[data-theme="coral"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f7f7;
+  --bg-tertiary: #f0f0f0;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f0f0f0;
+  --border: #dddddd;
+  --text-primary: #222222;
+  --text-secondary: #494949;
+  --text-muted: #717171;
+  --accent: #e11d48;
+  --accent-hover: #be123c;
+  --accent-fg: #ffffff;
+  --success: #059669;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --info: #2563eb;
+}
+
+/* amber - the storefront palette. Dark text on the accent rather than white:
+ * amber is too light to carry white text at AA. */
+[data-theme="amber"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f8f8;
+  --bg-tertiary: #eff1f1;
+  --bg-elevated: #ffffff;
+  --bg-hover: #eff1f1;
+  --border: #d5d9d9;
+  --text-primary: #0f1111;
+  --text-secondary: #3f4545;
+  --text-muted: #565959;
+  --accent: #f59e0b;
+  --accent-hover: #d97706;
+  --accent-fg: #0f1111;
+  --success: #047857;
+  --danger: #b91c1c;
+  --warning: #b45309;
+  --info: #0369a1;
+}
+
+/* sky - crisp blue on cool greys. */
+[data-theme="sky"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #eef4f9;
+  --bg-elevated: #ffffff;
+  --bg-hover: #eef4f9;
+  --border: #dbe3ec;
+  --text-primary: #0b1521;
+  --text-secondary: #3a4a5e;
+  --text-muted: #5b6b7f;
+  --accent: #0284c7;
+  --accent-hover: #0369a1;
+  --accent-fg: #ffffff;
+  --success: #059669;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --info: #0ea5e9;
+}
+
+/* mono - black and white. The accent is the text colour, which is the whole
+ * idea: nothing on the screen competes for attention with the content. */
+[data-theme="mono"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #f5f5f5;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f5f5f5;
+  --border: #e5e5e5;
+  --text-primary: #0a0a0a;
+  --text-secondary: #525252;
+  --text-muted: #737373;
+  --accent: #0a0a0a;
+  --accent-hover: #262626;
+  --accent-fg: #ffffff;
+  --success: #15803d;
+  --danger: #b91c1c;
+  --warning: #a16207;
+  --info: #1d4ed8;
+}
+
+/* emerald - green on neutral greys. */
+[data-theme="emerald"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f3f4f6;
+  --border: #e5e7eb;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --accent: #059669;
+  --accent-hover: #047857;
+  --accent-fg: #ffffff;
+  --success: #059669;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --info: #2563eb;
+}
+
+/* midnight — legacy v3.27 dark look. Opt in by setting THEME=midnight or
+ * adding data-theme="midnight" on a specific surface. */
 [data-theme="midnight"] {
   --bg-primary: #0a0a0f;
   --bg-secondary: #111118;
@@ -403,9 +518,10 @@ func webGlobalCSS() string {
   --border: #2a2a3a;
   --text-primary: #e8e8f0;
   --text-secondary: #9090a8;
-  --text-muted: #606078;
+  --text-muted: #7c7c96;
   --accent: #6c5ce7;
   --accent-hover: #7c6cf7;
+  --accent-fg: #ffffff;
   --success: #00b894;
   --danger: #ff6b6b;
   --warning: #fdcb6e;
@@ -418,9 +534,6 @@ body {
   font-family: var(--font-display), system-ui, sans-serif;
 }
 
-* {
-  border-color: var(--border);
-}
 
 ::-webkit-scrollbar {
   width: 6px;
@@ -1408,11 +1521,11 @@ export default function ErrorPage({
           </svg>
         </div>
         <h2 className="mb-2 text-2xl font-bold text-foreground">Something went wrong</h2>
-        <p className="mb-6 text-muted-foreground">
+        <p className="mb-6 text-text-muted">
           An unexpected error occurred. You can try again or go back.
         </p>
         {error.digest && (
-          <p className="mb-4 text-xs text-muted-foreground/60 font-mono">Error ID: {error.digest}</p>
+          <p className="mb-4 text-xs text-text-muted/60 font-mono">Error ID: {error.digest}</p>
         )}
         <div className="flex gap-3 justify-center">
           <button
@@ -1450,7 +1563,7 @@ export default function NotFound() {
         <div className="w-full max-w-md text-center">
           <p className="mb-4 text-7xl font-bold text-primary">404</p>
           <h2 className="mb-2 text-2xl font-bold text-foreground">Page not found</h2>
-          <p className="mb-8 text-muted-foreground">
+          <p className="mb-8 text-text-muted">
             The page you&apos;re looking for doesn&apos;t exist or has been moved.
           </p>
           <div className="flex gap-3 justify-center">

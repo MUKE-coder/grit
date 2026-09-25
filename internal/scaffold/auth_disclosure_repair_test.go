@@ -186,7 +186,9 @@ func TestTwoFactorSecretAndCookie(t *testing.T) {
 	handler := totpHandlerGo()
 	for _, want := range []string{
 		"config.Secret = crypto.EncryptedString(req.Secret)",
-		"totp.ValidateCodeStep(string(config.Secret), req.Code)",
+		// Validated against the device's own clock offset since v3.328.0; what
+		// matters here is that the secret is decrypted at the call.
+		"totp.ValidateCodeOffset(string(config.Secret), req.Code, config.StepOffset)",
 		"h.sealSecret(c, config)",
 		"c.SetSameSite(http.SameSiteLaxMode)",
 		`c.SetCookie("totp_trusted", deviceToken, int(totp.TrustedDeviceDuration.Seconds()), "/", "", secure, true)`,

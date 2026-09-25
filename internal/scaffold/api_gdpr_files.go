@@ -769,14 +769,14 @@ function UserPicker({
       <div className="flex min-w-[320px] flex-1 items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2">
         <span className="min-w-0">
           <span className="block truncate text-sm font-medium text-foreground">{name(value)}</span>
-          <span className="block truncate font-mono text-xs text-muted-foreground">
+          <span className="block truncate font-mono text-xs text-text-muted">
             {value.email} &middot; {value.id}
           </span>
         </span>
         <button
           type="button"
           onClick={() => onChange(null)}
-          className="shrink-0 rounded p-1 text-muted-foreground hover:text-foreground"
+          className="shrink-0 rounded p-1 text-text-muted hover:text-foreground"
           title="Clear"
         >
           <X className="h-4 w-4" />
@@ -787,7 +787,7 @@ function UserPicker({
 
   return (
     <div ref={boxRef} className="relative min-w-[320px] flex-1">
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
       <input
         value={query}
         onChange={(e) => {
@@ -797,16 +797,16 @@ function UserPicker({
         onFocus={() => setOpen(true)}
         spellCheck={false}
         placeholder="Search a user by name or email…"
-        className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
+        className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-accent"
       />
       {open && (
-        <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-border bg-card shadow-xl">
+        <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-border bg-bg-elevated shadow-xl">
           {searchQ.isLoading ? (
-            <p className="flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground">
+            <p className="flex items-center gap-2 px-3 py-3 text-sm text-text-muted">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> Searching…
             </p>
           ) : (searchQ.data ?? []).length === 0 ? (
-            <p className="px-3 py-3 text-sm text-muted-foreground">No users match.</p>
+            <p className="px-3 py-3 text-sm text-text-muted">No users match.</p>
           ) : (
             (searchQ.data ?? []).map((u) => (
               <button
@@ -817,10 +817,10 @@ function UserPicker({
                   setOpen(false);
                   setQuery("");
                 }}
-                className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-muted"
+                className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-bg-tertiary"
               >
                 <span className="text-sm text-foreground">{name(u)}</span>
-                <span className="font-mono text-xs text-muted-foreground">{u.email}</span>
+                <span className="font-mono text-xs text-text-muted">{u.email}</span>
               </button>
             ))
           )}
@@ -929,12 +929,12 @@ export default function GDPRPage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-card p-6">
+      <div className="rounded-xl border border-border bg-bg-elevated p-6">
         <div className="mb-4 flex items-center gap-2">
-          <Shield className="h-5 w-5 text-primary" />
+          <Shield className="h-5 w-5 text-accent" />
           <h2 className="text-lg font-semibold">Export or erase a user</h2>
         </div>
-        <p className="mb-4 max-w-2xl text-sm text-muted-foreground">
+        <p className="mb-4 max-w-2xl text-sm text-text-muted">
           Search for the user this request is about. Export downloads a full JSON copy of their
           data (Art. 15). Erase hard-deletes their personal records and anonymizes the account
           (Art. 17) — this cannot be undone.
@@ -951,7 +951,7 @@ export default function GDPRPage() {
             type="button"
             disabled={!userId || exportM.isPending}
             onClick={() => exportM.mutate(userId)}
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:border-primary disabled:opacity-40"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:border-accent disabled:opacity-40"
           >
             {exportM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             Export data
@@ -982,7 +982,7 @@ export default function GDPRPage() {
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="reason (required, recorded in the journal)"
-                className="min-w-[280px] flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                className="min-w-[280px] flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
               />
               {/* The API refuses an erasure with no reason (422). The button is
                   disabled to say so before the request rather than after it. */}
@@ -998,7 +998,7 @@ export default function GDPRPage() {
               <button
                 type="button"
                 onClick={() => setConfirming(false)}
-                className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
+                className="rounded-lg px-3 py-2 text-sm text-text-muted hover:text-foreground"
               >
                 Cancel
               </button>
@@ -1007,7 +1007,7 @@ export default function GDPRPage() {
         )}
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-6">
+      <div className="rounded-xl border border-border bg-bg-elevated p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Deletion journal</h2>
           {meta && (
@@ -1025,25 +1025,25 @@ export default function GDPRPage() {
           )}
         </div>
 
-        <p className="mb-4 text-xs text-muted-foreground">
+        <p className="mb-4 text-xs text-text-muted">
           Erasures only. Deleting a user from the Users page is an ordinary, reversible soft
           delete — it keeps their data and is not recorded here. Use <strong>Erase</strong> above
           for a real Art. 17 erasure.
         </p>
 
         {journalQ.isLoading ? (
-          <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 py-8 text-sm text-text-muted">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading&hellip;
           </div>
         ) : !journalQ.data?.rows.length ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
+          <p className="py-8 text-center text-sm text-text-muted">
             No erasures recorded yet. When you erase a user, an entry appears here.
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-muted-foreground">
+                <tr className="border-b border-border text-left text-text-muted">
                   <th className="py-2 pr-4 font-medium">Deleted user</th>
                   <th className="py-2 pr-4 font-medium">Erased by</th>
                   <th className="py-2 pr-4 font-medium">Records</th>
@@ -1057,8 +1057,8 @@ export default function GDPRPage() {
                     <td className="py-2 pr-4 font-mono text-xs">{r.deleted_user_id.slice(0, 8)}&hellip;</td>
                     <td className="py-2 pr-4">{r.actor_email || "—"}</td>
                     <td className="py-2 pr-4">{r.records_affected}</td>
-                    <td className="py-2 pr-4 text-muted-foreground">{r.reason || "—"}</td>
-                    <td className="py-2 pr-4 text-muted-foreground">
+                    <td className="py-2 pr-4 text-text-muted">{r.reason || "—"}</td>
+                    <td className="py-2 pr-4 text-text-muted">
                       {new Date(r.created_at).toLocaleString()}
                     </td>
                   </tr>

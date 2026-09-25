@@ -92,7 +92,7 @@ function RevealPanel({ token, onDone }: { token: string; onDone: () => void }) {
         <AlertTriangle className="h-4 w-4 text-warning" />
         <h2 className="font-semibold text-foreground">Copy your key now</h2>
       </div>
-      <p className="mb-3 text-sm text-foreground-secondary">
+      <p className="mb-3 text-sm text-text-secondary">
         This is the only time it will be shown. The server keeps a hash, so it cannot be
         recovered — if you lose it, revoke this key and make another.
       </p>
@@ -186,7 +186,7 @@ export default function APIKeysPage() {
         {/* ── Create ── */}
         <div className="mb-6 rounded-xl border border-border bg-bg-secondary p-5">
           <h2 className="mb-1 font-semibold text-foreground">New key</h2>
-          <p className="mb-4 text-sm text-foreground-secondary">
+          <p className="mb-4 text-sm text-text-secondary">
             Name it after the thing that will use it, so it can be revoked without
             guesswork.
           </p>
@@ -221,7 +221,7 @@ export default function APIKeysPage() {
                 }
               >
                 <div className="text-sm font-semibold text-foreground">{option.title}</div>
-                <div className="mt-1 text-xs leading-relaxed text-foreground-secondary">
+                <div className="mt-1 text-xs leading-relaxed text-text-secondary">
                   {option.blurb}
                 </div>
               </button>

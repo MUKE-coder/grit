@@ -135,11 +135,13 @@ export function PasswordForm() {
   }
 
   return (
-    <section className="rounded-xl border border-border bg-bg-secondary">
+    <section className="rounded-xl border border-border bg-bg-elevated">
       <div className="grid gap-6 p-6 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
         <div>
-          <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
-            <Lock className="h-4 w-4 text-accent" aria-hidden="true" />
+          <h2 className="flex items-center gap-2.5 text-base font-semibold text-foreground">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+              <Lock className="h-4 w-4" aria-hidden="true" />
+            </span>
             Password
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-text-muted">
@@ -355,11 +357,13 @@ export function ProfileForm() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-border bg-bg-secondary">
+      <section className="rounded-xl border border-border bg-bg-elevated">
         <div className="grid gap-6 p-6 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
           <div>
-            <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
-              <User className="h-4 w-4 text-accent" aria-hidden="true" />
+            <h2 className="flex items-center gap-2.5 text-base font-semibold text-foreground">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                <User className="h-4 w-4" aria-hidden="true" />
+              </span>
               Profile
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-text-muted">
@@ -484,8 +488,10 @@ export function ProfileForm() {
       <section className="rounded-xl border border-danger/40 bg-danger/5">
         <div className="grid gap-6 p-6 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
           <div>
-            <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
-              <Trash2 className="h-4 w-4 text-danger" aria-hidden="true" />
+            <h2 className="flex items-center gap-2.5 text-base font-semibold text-foreground">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-danger/10 text-danger">
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+              </span>
               Close this account
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-text-muted">
@@ -562,7 +568,10 @@ function AccountTabs() {
         </p>
       </header>
 
-      <nav aria-label="Account sections" className="flex gap-1 overflow-x-auto border-b border-border">
+      <nav
+        aria-label="Account sections"
+        className="-mb-px flex gap-1 overflow-x-auto border-b border-border"
+      >
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const on = tab.id === active;
@@ -572,10 +581,14 @@ function AccountTabs() {
               href={"/system/account?tab=" + tab.id}
               aria-current={on ? "page" : undefined}
               className={
-                "inline-flex min-h-[40px] items-center gap-2 whitespace-nowrap border-b-2 px-4 text-sm transition-colors " +
+                // Three signals, not one: the underline, the weight and the
+                // colour. An underline alone is a two-pixel line somebody has
+                // to go looking for, and it is the only signal a person with
+                // low vision loses first.
+                "inline-flex min-h-[44px] items-center gap-2 whitespace-nowrap border-b-2 px-4 text-sm transition-colors " +
                 (on
-                  ? "border-accent font-medium text-foreground"
-                  : "border-transparent text-text-muted hover:text-foreground")
+                  ? "border-accent font-semibold text-accent"
+                  : "border-transparent font-medium text-text-muted hover:border-border hover:text-foreground")
               }
             >
               <Icon className="h-4 w-4" aria-hidden="true" />

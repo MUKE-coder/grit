@@ -446,7 +446,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           role="status"
           aria-busy="true"
           aria-label="Loading"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background"
         >
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
         </div>

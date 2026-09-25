@@ -66,6 +66,109 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.328.0 */}
+            <div className="mb-12" id="v3.328.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.328.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>One line of CSS had killed every border colour in both apps</h3>
+                <p>
+                  <code>globals.css</code> set the themed border colour twice: once inside{' '}
+                  <code>@layer base</code>, which is right, and once more near the bottom outside
+                  any layer. Unlayered CSS beats every layered rule, so that second copy overrode{' '}
+                  <code>border-accent</code>, <code>border-danger</code> and even{' '}
+                  <code>border-transparent</code>, everywhere, in the admin and the web app, since
+                  the Tailwind v4 migration.
+                </p>
+                <p>
+                  Measured rather than guessed: the active tab on the account screen, the one
+                  carrying <code>border-b-2 border-accent</code>, computed to the same grey as its
+                  three inactive neighbours. That is the report that the tabs do not show which one
+                  is selected, and it was every coloured border in the product.
+                </p>
+
+                <h3>Sixty-seven colour utilities that compiled to nothing</h3>
+                <p>
+                  Tailwind v4 makes one utility per <code>--color-*</code> in the theme block, and
+                  the admin defines sixteen. <code>text-text-primary</code>, <code>bg-card</code>,{' '}
+                  <code>text-muted-foreground</code>, <code>bg-bg-primary</code> and the rest name
+                  nothing, so they produce no rule: no build error, no console warning, just an
+                  element keeping whatever it inherited. A page looks almost right, which is worse
+                  than looking broken.
+                </p>
+                <p>
+                  All of them are now real tokens, and a test walks every file the scaffolder
+                  writes and checks each colour utility against the palette that app&apos;s own
+                  stylesheet defines.
+                </p>
+
+                <h3>The account screen, drawn one way</h3>
+                <p>
+                  Six cards, built at different times, with two surfaces, three icon treatments, two
+                  heading sizes and one bordered header band nothing else had. They share a shell
+                  now: the same tinted icon chip, the same surface, the same heading scale. The
+                  active tab carries its colour and its weight as well as its underline, because an
+                  underline alone is a two-pixel line and it is the first signal somebody with low
+                  vision loses.
+                </p>
+
+                <h3>An authenticator on a drifted clock can now finish enrolling</h3>
+                <p>
+                  v3.326.0 taught the server to say <em>your clock is 60 seconds behind</em> instead
+                  of &quot;invalid code&quot;. Useful, and not enough: knowing why does not let you
+                  turn on two-factor, and &quot;fix your clock&quot; is not advice on a managed
+                  machine.
+                </p>
+                <p>
+                  Enrolment now searches five minutes either way, records how far out the device is,
+                  and validates every later sign-in against that offset with the same one-step
+                  window as before. It does not widen what is accepted: the window is still 30
+                  seconds either side, of the device&apos;s time rather than the server&apos;s. Each
+                  accepted code re-records the offset, which is the resynchronisation RFC 6238
+                  describes, so a clock that loses a second a day is followed rather than locking
+                  the account out six months later.
+                </p>
+
+                <h3>Email that survives an inbox, in the project&apos;s colours</h3>
+                <p>
+                  The six templates were full HTML documents with a <code>&lt;style&gt;</code> block
+                  each. That is the one part of an email that is not reliably delivered: Outlook on
+                  Windows renders through Word and drops most of it, and Gmail strips it when a
+                  message is clipped or forwarded. They arrived as unstyled serif text for a large
+                  share of recipients.
+                </p>
+                <p>
+                  Now one table-based layout with every style inline, a preheader so the inbox
+                  preview says something, and colours from <code>THEME</code>: a project built with{' '}
+                  <code>--theme emerald</code> sends green email rather than the framework&apos;s
+                  purple. The two emails that were never in Mail Preview, the sign-in code and the
+                  magic link, are in it.
+                </p>
+
+                <h3>The theme paints the web app too</h3>
+                <p>
+                  The five themes added in v3.322.0 went into the admin&apos;s stylesheet only, so{' '}
+                  <code>grit new shop --theme emerald</code> produced an emerald admin behind an
+                  Atlas marketing site. The web stylesheet now takes its palette from the
+                  admin&apos;s, and a test holds the two together. The desktop app was already fine:
+                  it reads the shared theme registry at runtime.
+                </p>
+
+                <h3>The audit log is documented</h3>
+                <p>
+                  A new page under Security: what the hash chain is, what <em>Verify chain</em>{' '}
+                  actually does, why request bodies are stored as a digest rather than verbatim,
+                  what <code>--audit-reads</code> adds, how pruning re-anchors the chain, and what
+                  the whole thing does not defend against.
+                </p>
+              </div>
+            </div>
+
             {/* v3.327.0 */}
             <div className="mb-12" id="v3.327.0">
               <div className="flex items-center gap-3 mb-4">
