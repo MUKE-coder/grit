@@ -66,6 +66,51 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.331.0 */}
+            <div className="mb-12" id="v3.331.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.331.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A passkey could be registered and never used</h3>
+                <p>
+                  The account page invited you to add one and said &quot;you can sign in on this
+                  device without a password&quot;. There was no way to do it. The API had{' '}
+                  <code>/auth/passkeys/login/begin</code> and <code>/finish</code> from the day
+                  passkeys shipped, and <code>lib/webauthn.ts</code> had{' '}
+                  <code>toRequestOptions</code> and <code>encodeAssertion</code>, written for
+                  exactly this call. Nothing in any frontend ever called them, so the whole
+                  sign-in half of the feature existed and was unreachable.
+                </p>
+                <p>
+                  The sign-in page now has a <strong>Sign in with a passkey</strong> button, with a
+                  fingerprint on it, under the password form. It uses the discoverable-credential
+                  flow: the challenge carries no <code>allowCredentials</code>, so the browser
+                  offers whichever passkeys it holds and you are in with one touch, no email and no
+                  password. The server issues the same tokens a password sign-in issues and records
+                  the same session row, so the device appears in Active Sessions and can be revoked
+                  like any other.
+                </p>
+                <p>
+                  The button appears only where the browser can actually produce a passkey, and
+                  that question is asked of the browser rather than the server: before anybody has
+                  identified themselves the server does not know whether this person has a passkey,
+                  and asking it would tell an attacker which addresses have accounts. Closing the
+                  system sheet or tapping Cancel is not reported as a failure, because telling
+                  somebody &quot;passkey sign-in failed&quot; when they changed their mind is how a
+                  button stops being trusted.
+                </p>
+                <p>
+                  Proven end to end against a CDP virtual authenticator rather than reasoned about:
+                  register a passkey, clear the cookies, click the button, land on the dashboard.
+                </p>
+              </div>
+            </div>
+
             {/* v3.330.0 */}
             <div className="mb-12" id="v3.330.0">
               <div className="flex items-center gap-3 mb-4">

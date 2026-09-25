@@ -143,6 +143,7 @@ func adminIconMap() string {
   Gauge,
   Copy,
   KeyRound,
+  Fingerprint,
   Unlock,
   FileSpreadsheet,
   Music,
@@ -354,6 +355,8 @@ export {
   // v3.123 — API keys page + System Hub tile
   KeyRound,
   Unlock,
+  // v3.331 — the passkey button on the sign-in page
+  Fingerprint,
   // v3.31.31 — type-aware FilePreview icons (excel, audio).
   FileSpreadsheet,
   Music,
