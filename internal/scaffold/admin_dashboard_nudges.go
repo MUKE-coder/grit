@@ -113,7 +113,7 @@ export function DashboardSecurityNudges() {
         body="Right now your password is the only thing between this account and anybody who has it. Two minutes with an authenticator app, or codes by email if you would rather not install one."
         action={
           <Link
-            href="/system/account?tab=security"
+            href="/system/account#security"
             className="inline-flex h-9 items-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             Set it up

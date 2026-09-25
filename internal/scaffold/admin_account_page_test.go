@@ -73,25 +73,76 @@ func TestAccountPageComposesTheExistingCards(t *testing.T) {
 		}
 	}
 
-	for _, tab := range []string{"profile", "password", "security", "devices"} {
-		if !strings.Contains(page, `id: "`+tab+`"`) {
-			t.Errorf("the %s tab is missing", tab)
+	for _, card := range []string{
+		"<ProfileForm />", "<PasswordForm />", "<TwoFactorCard />",
+		"<PasskeysCard />", "<SignInLinksCard />", "<ActiveSessions />",
+		"<CloseAccountCard />",
+	} {
+		if !strings.Contains(page, card) {
+			t.Errorf("the account page does not render %s", card)
 		}
 	}
 }
 
-// Tabs as links, because the pattern that fails a keyboard user is always the
-// hand-rolled one.
-func TestAccountTabsAreLinks(t *testing.T) {
+// One column, not tabs.
+//
+// Tabs hid six cards behind four labels, so answering "where am I signed in"
+// meant knowing that devices were under Devices rather than under Security.
+// The page this replaced showed all of it at once, and six cards is a scroll
+// rather than a navigation problem.
+func TestAccountPageIsOneColumn(t *testing.T) {
 	page := adminAccountPageTSX()
-	if strings.Contains(page, `role="tablist"`) || strings.Contains(page, `role="tab"`) {
-		t.Error("the tabs are an ARIA tablist, which needs roving focus to be correct; links need nothing")
+
+	for _, gone := range []string{"useSearchParams", `role="tablist"`, "?tab=", "TABS"} {
+		if strings.Contains(page, gone) {
+			t.Errorf("the account page still has tabs: found %q", gone)
+		}
 	}
-	if !strings.Contains(page, `href={"/system/account?tab=" + tab.id}`) {
-		t.Error("the tabs do not carry the section in the URL, so a refresh loses the tab and nobody can link to one")
+	// Every link that used to point at a tab now points at a section, so the
+	// anchors have to exist.
+	for _, id := range []string{`id="security"`, `id="devices"`} {
+		if !strings.Contains(page, id) {
+			t.Errorf("no anchor for an existing deep link: %s", id)
+		}
 	}
-	if !strings.Contains(page, `aria-current={on ? "page" : undefined}`) {
-		t.Error("the active tab is not announced")
+	if !strings.Contains(page, "scroll-mt-24") {
+		t.Error("an anchored section has no scroll margin, so the sticky header covers its heading")
+	}
+	// Destructive last. It used to sit in the middle of the page because it
+	// lived inside the component that draws the first card.
+	if strings.Index(page, "<CloseAccountCard />") < strings.Index(page, "<ActiveSessions />") {
+		t.Error("closing the account is drawn before the other cards")
+	}
+}
+
+// The heading comes from PageHeader, not a hand-written <h1>.
+//
+// PageHeader derives the back link for every /system/* route and carries the
+// refresh, theme and notification controls. Writing the heading by hand is how
+// this page ended up the only screen in the admin with no way back to the hub.
+func TestAccountPageUsesTheSharedHeader(t *testing.T) {
+	page := adminAccountPageTSX()
+
+	if !strings.Contains(page, `import { PageHeader } from "@/components/chrome/PageHeader"`) {
+		t.Fatal("the account page does not use PageHeader, so it has no back link and no chrome")
+	}
+	if !strings.Contains(page, `title="Account"`) {
+		t.Error("PageHeader is imported but not given the title")
+	}
+	// The doc comment above the component mentions <h1> to explain the rule, so
+	// the check is on markup rather than on the file.
+	for _, line := range strings.Split(page, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "*") || strings.HasPrefix(trimmed, "//") {
+			continue
+		}
+		if strings.Contains(line, "<h1") {
+			t.Error("the page writes its own <h1>, which is what lost it the back link")
+		}
+	}
+	// And PageHeader still derives the link for this route.
+	if !strings.Contains(adminPageHeaderComponent(), `pathname.startsWith("/system/")`) {
+		t.Error("PageHeader no longer derives the back link for /system/* pages")
 	}
 }
 

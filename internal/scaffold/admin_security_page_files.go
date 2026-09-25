@@ -331,13 +331,13 @@ export default function AccountSecurityPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/system/account?tab=security");
+    router.replace("/system/account#security");
   }, [router]);
 
   return (
     <div className="p-6 text-sm text-text-secondary">
       This page moved.{" "}
-      <Link href="/system/account?tab=security" className="text-accent underline">
+      <Link href="/system/account#security" className="text-accent underline">
         Open your account
       </Link>
       .

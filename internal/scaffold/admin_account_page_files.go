@@ -135,20 +135,20 @@ export function PasswordForm() {
   }
 
   return (
-    <section className="rounded-xl border border-border bg-bg-elevated">
-      <div className="grid gap-6 p-6 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
-        <div>
-          <h2 className="flex items-center gap-2.5 text-base font-semibold text-foreground">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-              <Lock className="h-4 w-4" aria-hidden="true" />
-            </span>
-            Password
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-text-muted">
+    <section className="overflow-hidden rounded-xl border border-border bg-bg-elevated">
+      <div className="flex items-start gap-3 border-b border-border px-6 py-4">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+          <Lock className="h-4 w-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold text-foreground">Password</h2>
+          <p className="mt-1 text-sm leading-relaxed text-text-muted">
             Changing it signs you out everywhere else.
           </p>
         </div>
+      </div>
 
+      <div className="p-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-1.5">
             <label htmlFor="account-current-password" className="block text-sm font-medium text-text-secondary">
@@ -295,7 +295,6 @@ export function ProfileForm() {
   const updateProfile = useUpdateProfile();
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const avatarInput = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, reset, watch } = useForm<Values>({
@@ -356,21 +355,20 @@ export function ProfileForm() {
   const field = inputClasses();
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-xl border border-border bg-bg-elevated">
-        <div className="grid gap-6 p-6 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
-          <div>
-            <h2 className="flex items-center gap-2.5 text-base font-semibold text-foreground">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-                <User className="h-4 w-4" aria-hidden="true" />
-              </span>
-              Profile
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-text-muted">
-              Your name and picture are what other people in this app see.
-            </p>
-          </div>
+    <section className="overflow-hidden rounded-xl border border-border bg-bg-elevated">
+      <div className="flex items-start gap-3 border-b border-border px-6 py-4">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+          <User className="h-4 w-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold text-foreground">Profile</h2>
+          <p className="mt-1 text-sm leading-relaxed text-text-muted">
+            Your name and picture are what other people in this app see.
+          </p>
+        </div>
+      </div>
 
+      <div className="p-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="flex items-center gap-4">
               <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-bg-tertiary text-lg font-semibold text-text-secondary">
@@ -482,36 +480,47 @@ export function ProfileForm() {
               Save changes
             </button>
           </form>
-        </div>
-      </section>
+      </div>
+    </section>
+  );
+}
 
-      <section className="rounded-xl border border-danger/40 bg-danger/5">
-        <div className="grid gap-6 p-6 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
-          <div>
-            <h2 className="flex items-center gap-2.5 text-base font-semibold text-foreground">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-danger/10 text-danger">
-                <Trash2 className="h-4 w-4" aria-hidden="true" />
-              </span>
-              Close this account
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-text-muted">
-              Your account and the data attached to it. This cannot be undone.
-            </p>
-          </div>
-          <div>
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(true)}
-              className={buttonClasses({ variant: "danger" })}
-            >
-              Close my account
-            </button>
-          </div>
+/**
+ * Closing the account, in a card of its own.
+ *
+ * Split out of ProfileForm so the page can put it where it belongs, which is
+ * last. While it lived inside the component that draws the first card, the
+ * only destructive control on the screen sat in the middle of it.
+ */
+export function CloseAccountCard() {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-danger/40 bg-danger/5">
+      <div className="flex items-start gap-3 border-b border-danger/20 px-6 py-4">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-danger/10 text-danger">
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold text-foreground">Close this account</h2>
+          <p className="mt-1 text-sm leading-relaxed text-text-muted">
+            Your account and the data attached to it. This cannot be undone.
+          </p>
         </div>
-      </section>
+      </div>
+
+      <div className="p-6">
+        <button
+          type="button"
+          onClick={() => setConfirmDelete(true)}
+          className={buttonClasses({ variant: "danger" })}
+        >
+          Close my account
+        </button>
+      </div>
 
       <DeleteAccountDialog open={confirmDelete} onClose={() => setConfirmDelete(false)} />
-    </div>
+    </section>
   );
 }
 `
@@ -521,11 +530,9 @@ export function ProfileForm() {
 func adminAccountPageTSX() string {
 	return `"use client";
 
-import { Suspense } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { KeyRound, Monitor, ShieldCheck, User } from "@/lib/icons";
-import { ProfileForm } from "@/components/account/profile-form";
+import { Monitor } from "@/lib/icons";
+import { PageHeader } from "@/components/chrome/PageHeader";
+import { ProfileForm, CloseAccountCard } from "@/components/account/profile-form";
 import { PasswordForm } from "@/components/account/password-form";
 import { TwoFactorCard } from "@/components/profile/two-factor-card";
 import { PasskeysCard } from "@/components/security/passkeys";
@@ -540,70 +547,33 @@ import { ActiveSessions } from "@/components/profile/active-sessions";
  * other people. This one is about you, and putting "change your password" next
  * to a list of intrusion attempts helps nobody.
  *
- * The tabs are links rather than an ARIA tablist on purpose. A link is
- * keyboard-operable, shareable, and survives a refresh, and it needs no
- * roving-focus code to be correct: the pattern that fails a keyboard user is
- * always the hand-rolled one.
+ * One column rather than tabs. Tabs hid six cards behind four labels, so
+ * answering "where am I signed in" meant knowing that devices were under
+ * Devices and not under Security, and the page this replaced showed all of it
+ * at once. Six cards is a scroll, not a navigation problem.
+ *
+ * PageHeader rather than a hand-written <h1>. It derives the back link for
+ * every /system/* route, and carries the refresh, theme and notification
+ * controls; writing the heading by hand is how this page ended up the only one
+ * in the admin with no way back to the hub.
  */
-const TABS = [
-  { id: "profile", label: "Profile", icon: User },
-  { id: "password", label: "Password", icon: KeyRound },
-  { id: "security", label: "Security", icon: ShieldCheck },
-  { id: "devices", label: "Devices", icon: Monitor },
-] as const;
-
-type TabID = (typeof TABS)[number]["id"];
-
-function AccountTabs() {
-  const params = useSearchParams();
-  const requested = params.get("tab");
-  const active: TabID = (TABS.find((t) => t.id === requested)?.id ?? "profile") as TabID;
-
+export default function AccountPage() {
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6">
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Account</h1>
-        <p className="mt-1 text-sm text-text-muted">
-          Your profile, how you sign in, and where you are signed in.
-        </p>
-      </header>
+    <div className="space-y-6">
+      <PageHeader
+        title="Account"
+        subtitle="Your profile, how you sign in, and where you are signed in."
+      />
 
-      <nav
-        aria-label="Account sections"
-        className="-mb-px flex gap-1 overflow-x-auto border-b border-border"
-      >
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const on = tab.id === active;
-          return (
-            <Link
-              key={tab.id}
-              href={"/system/account?tab=" + tab.id}
-              aria-current={on ? "page" : undefined}
-              className={
-                // Three signals, not one: the underline, the weight and the
-                // colour. An underline alone is a two-pixel line somebody has
-                // to go looking for, and it is the only signal a person with
-                // low vision loses first.
-                "inline-flex min-h-[44px] items-center gap-2 whitespace-nowrap border-b-2 px-4 text-sm transition-colors " +
-                (on
-                  ? "border-accent font-semibold text-accent"
-                  : "border-transparent font-medium text-text-muted hover:border-border hover:text-foreground")
-              }
-            >
-              <Icon className="h-4 w-4" aria-hidden="true" />
-              {tab.label}
-            </Link>
-          );
-        })}
-      </nav>
+      <div className="mx-auto max-w-4xl space-y-6 px-6 pb-10">
+        <ProfileForm />
 
-      {active === "profile" && <ProfileForm />}
+        <PasswordForm />
 
-      {active === "password" && <PasswordForm />}
-
-      {active === "security" && (
-        <div className="space-y-6">
+        {/* Everything that used to be the Security tab. The id is what every
+            existing deep link points at, and scroll-mt keeps the heading clear
+            of the sticky header when one lands here. */}
+        <section id="security" className="scroll-mt-24 space-y-6">
           {/* Two-factor first: it is the single largest improvement available
               on this page, and an account without it is one leaked password
               away from gone. */}
@@ -617,21 +587,34 @@ function AccountTabs() {
               also means it can never warn anybody: this is the only place a
               request somebody did not make becomes visible. */}
           <SignInLinksCard />
-        </div>
-      )}
+        </section>
 
-      {active === "devices" && <ActiveSessions />}
+        <section
+          id="devices"
+          className="scroll-mt-24 overflow-hidden rounded-xl border border-border bg-bg-elevated"
+        >
+          <div className="flex items-start gap-3 border-b border-border px-6 py-4">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+              <Monitor className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold text-foreground">Active sessions</h2>
+              <p className="mt-1 text-sm leading-relaxed text-text-muted">
+                Every device signed in to this account. Changing your password signs the
+                others out.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-6">
+            <ActiveSessions />
+          </div>
+        </section>
+
+        {/* Last, because it is the only thing here you cannot undo. */}
+        <CloseAccountCard />
+      </div>
     </div>
-  );
-}
-
-export default function AccountPage() {
-  return (
-    <Suspense
-      fallback={<div className="mx-auto max-w-4xl p-6 text-sm text-text-muted">One moment...</div>}
-    >
-      <AccountTabs />
-    </Suspense>
   );
 }
 `

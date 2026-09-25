@@ -66,6 +66,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.330.0 */}
+            <div className="mb-12" id="v3.330.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.330.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The account screen was the one page in the admin with no way back</h3>
+                <p>
+                  It wrote its own <code>&lt;h1&gt;</code> instead of using <code>PageHeader</code>,
+                  and <code>PageHeader</code> is what derives the &quot;Back to System Hub&quot; link
+                  for every <code>/system/*</code> route. So the one screen you reach from the hub
+                  and then need to leave was the one screen with no link out, and it was also
+                  missing the refresh, theme and notification controls every other page carries.
+                </p>
+
+                <h3>One page instead of four tabs</h3>
+                <p>
+                  Six cards were hidden behind four tab labels, so answering &quot;where am I
+                  signed in&quot; meant knowing that devices were under Devices and not under
+                  Security. The page this replaced showed all of it at once, and six cards is a
+                  scroll rather than a navigation problem.
+                </p>
+                <p>
+                  Now one column: profile, password, two-factor, passkeys, sign-in links, active
+                  sessions, and closing the account last, because it is the only thing on the page
+                  you cannot undo. It used to sit in the middle, since it lived inside the component
+                  that draws the first card; it is its own card now.
+                </p>
+                <p>
+                  Every card shares one shell: a tinted icon chip, a title, a line of explanation
+                  and a rule under it. Profile and Password had the explanation beside the fields
+                  while the other four had it above, which is the kind of difference nobody can name
+                  and everybody notices. Active sessions has a heading for the first time: under a
+                  tab called Devices the tab said what the list was, and stacked it was an
+                  unlabelled column of device rows.
+                </p>
+                <p>
+                  The five existing deep links that pointed at <code>?tab=security</code> now point
+                  at <code>#security</code>, and the anchored sections carry a scroll margin so the
+                  sticky header does not cover the heading you were sent to.
+                </p>
+              </div>
+            </div>
+
             {/* v3.329.0 */}
             <div className="mb-12" id="v3.329.0">
               <div className="flex items-center gap-3 mb-4">

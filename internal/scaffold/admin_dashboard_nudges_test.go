@@ -48,7 +48,7 @@ func TestTheNudgeSaysNothingWhenThereIsNothingToSay(t *testing.T) {
 	if strings.Count(card, "} catch {") < 2 {
 		t.Error("the localStorage reads and writes are not both guarded")
 	}
-	if !strings.Contains(card, `"/system/account?tab=security"`) {
+	if !strings.Contains(card, `"/system/account#security"`) {
 		t.Error("the nudge does not lead anywhere useful")
 	}
 
