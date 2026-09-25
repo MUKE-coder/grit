@@ -66,6 +66,64 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.332.0 */}
+            <div className="mb-12" id="v3.332.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.332.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Deploy to Railway in one command</h3>
+                <p>
+                  <code>grit deploy --railway</code> pushes the variables a deploy actually needs,
+                  uploads the API and generates a URL. <code>--provision</code> adds Postgres and
+                  Redis on the way and points <code>DATABASE_URL</code> and <code>REDIS_URL</code>{' '}
+                  at them as Railway references rather than copies, so rotating a password does not
+                  need a redeploy and the password never sits in the app service&apos;s own
+                  settings.
+                </p>
+                <p>
+                  The CLI does the upload rather than the GraphQL API, and that is not a
+                  preference: Railway&apos;s API has no endpoint that accepts local source. A
+                  service is built either from a connected repository or from an archive their CLI
+                  uploads, so every step Grit runs is a documented Railway command, printed before
+                  it runs.
+                </p>
+                <p>
+                  <strong>It does not send your whole .env.</strong> A generated one has around a
+                  hundred entries and a real project sends about sixty. Empty placeholders for
+                  providers you do not use are held back, so is <code>PORT</code>, which Railway
+                  assigns, and so are the MinIO, Mailhog and compose-database settings, which
+                  describe containers on your laptop and would contradict the database you just
+                  provisioned. <code>APP_ENV</code> is forced to production whatever the file says.
+                </p>
+                <p>
+                  <code>--dry-run</code> prints the whole plan, in order, and runs none of it. Values
+                  are masked, so the output is safe to paste into an issue.
+                </p>
+                <p>
+                  Generated projects now carry <code>apps/api/railway.json</code>, which builds from
+                  the same Dockerfile <code>docker compose</code> uses rather than letting Nixpacks
+                  guess, and adds the health check and restart policy. The upload happens from{' '}
+                  <code>apps/api</code> rather than the repository root, because the Dockerfile
+                  copies <code>go.mod</code> from the context root and the Go module is{' '}
+                  <code>apps/api</code>.
+                </p>
+
+                <h3>The dashboard says what day it is</h3>
+                <p>
+                  The weekday, date, month, year and time, beside the greeting. Rendered only after
+                  mount and deliberately so: a date formatted on the server and again in the browser
+                  disagrees on both the clock and the locale, and React&apos;s answer to a hydration
+                  mismatch is to throw away the subtree and rebuild it, which is a steep price for a
+                  decoration.
+                </p>
+              </div>
+            </div>
+
             {/* v3.331.0 */}
             <div className="mb-12" id="v3.331.0">
               <div className="flex items-center gap-3 mb-4">

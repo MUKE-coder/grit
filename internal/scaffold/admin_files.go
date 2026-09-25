@@ -279,6 +279,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		// Chrome components (v3.29) — page header, dark toggle, user menu,
 		// notification bell, refactored collapsible sidebar with 2-logo brand.
 		filepath.Join(adminRoot, "components", "chrome", "PageHeader.tsx"):         adminPageHeaderComponent(),
+		filepath.Join(adminRoot, "components", "chrome", "LiveClock.tsx"):          adminLiveClock(),
 		filepath.Join(adminRoot, "components", "chrome", "DarkModeToggle.tsx"):     adminDarkModeToggleComponent(),
 		filepath.Join(adminRoot, "components", "chrome", "UserMenu.tsx"):           adminUserMenuComponent(),
 		filepath.Join(adminRoot, "components", "chrome", "NotificationBell.tsx"):   adminNotificationBellComponent(),

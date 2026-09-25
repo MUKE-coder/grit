@@ -606,6 +606,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Who maintains Grit, what happens if they stop, and how to reduce your exposure: written for the person signing off on adoption.',
   },
+  '/docs/deployment/railway': {
+    title: 'Deploy to Railway',
+    description:
+      "grit deploy --railway links your Railway project, adds Postgres and Redis with --provision, pushes the variables a deploy actually needs, uploads the API from apps/api and generates a URL. Railway's API cannot accept local source, so their CLI does the upload and Grit drives it. Of the hundred-odd entries in a generated .env it sends around sixty: empty placeholders, PORT, and the MinIO, Mailhog and compose-database settings are held back, APP_ENV is forced to production, and with --provision the database URLs become Railway references rather than copies. --dry-run prints the whole plan with values masked.",
+  },
   '/docs/deployment': {
     title: 'Deployment',
     description:

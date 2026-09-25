@@ -32,7 +32,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.331.0"
+var version = "3.332.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -2381,13 +2381,29 @@ func upCmd() *cobra.Command {
 
 func deployCmd() *cobra.Command {
 	var host, port, keyFile, domain, appPort string
+	var railway, railwayProvision, railwayNoDomain, dryRun bool
+	var railwayService, railwayEnv string
 
 	cmd := &cobra.Command{
 		Use:   "deploy",
-		Short: "Deploy application to a remote server",
-		Long:  "Build the application, upload via SSH, configure systemd service, and optionally set up Caddy reverse proxy with auto-TLS.",
+		Short: "Deploy application to a remote server, or to Railway",
+		// A missing Railway CLI is not a usage error, and printing the flag
+		// list under the instructions for fixing it buries them.
+		SilenceUsage: true,
+		Long: "Build the application, upload via SSH, configure systemd service, and optionally set up Caddy reverse proxy with auto-TLS.\n\n" +
+			"With --railway, deploy to Railway instead: link the project, push the variables from .env, upload the API and generate a URL.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
+
+			if railway {
+				return deploy.Railway(deploy.RailwayConfig{
+					Service:     railwayService,
+					Environment: railwayEnv,
+					Provision:   railwayProvision,
+					Domain:      !railwayNoDomain,
+					DryRun:      dryRun,
+				})
+			}
 
 			// Try to detect app name from go.mod or grit.config
 			appName := "grit-app"
@@ -2445,6 +2461,13 @@ func deployCmd() *cobra.Command {
 	cmd.Flags().StringVar(&keyFile, "key", "", "Path to SSH private key or DEPLOY_KEY_FILE env var")
 	cmd.Flags().StringVar(&domain, "domain", "", "Domain for Caddy reverse proxy or DEPLOY_DOMAIN env var")
 	cmd.Flags().StringVar(&appPort, "app-port", "8080", "Port the app runs on")
+
+	cmd.Flags().BoolVar(&railway, "railway", false, "Deploy to Railway instead of a server over SSH")
+	cmd.Flags().StringVar(&railwayService, "service", "api", "Railway service to deploy into")
+	cmd.Flags().StringVar(&railwayEnv, "environment", "", "Railway environment (default: the project's own)")
+	cmd.Flags().BoolVar(&railwayProvision, "provision", false, "Add Postgres and Redis, and point DATABASE_URL and REDIS_URL at them")
+	cmd.Flags().BoolVar(&railwayNoDomain, "no-domain", false, "Skip generating a public URL")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Print every command that would run, and run none of them")
 
 	return cmd
 }

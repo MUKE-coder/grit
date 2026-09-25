@@ -493,6 +493,7 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		// pages could not render.
 		filepath.Join(adminRoot, "src", "components", "chrome", "UserMenu.tsx"):         nextToTanStack(adminUserMenuComponent()),
 		filepath.Join(adminRoot, "src", "components", "chrome", "PageHeader.tsx"):       nextToTanStack(adminPageHeaderComponent()),
+		filepath.Join(adminRoot, "src", "components", "chrome", "LiveClock.tsx"):        nextToTanStack(adminLiveClock()),
 		filepath.Join(adminRoot, "src", "components", "chrome", "NotificationBell.tsx"): nextToTanStack(adminNotificationBellComponent()),
 		filepath.Join(adminRoot, "src", "components", "chrome", "DarkModeToggle.tsx"):   nextToTanStack(adminDarkModeToggleComponent()),
 

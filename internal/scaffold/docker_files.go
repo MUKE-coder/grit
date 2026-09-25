@@ -22,6 +22,12 @@ func writeDockerFiles(root string, opts Options) error {
 	} else {
 		files[filepath.Join(root, "docker-compose.prod.yml")] = dockerComposeProd(opts)
 		files[filepath.Join(root, "apps", "api", "Dockerfile")] = dockerfileAPI()
+		// Railway builds from this Dockerfile rather than guessing with
+		// Nixpacks, and gets the health check and restart policy with it.
+		// `grit deploy --railway` uploads apps/api as the context, which is
+		// what the Dockerfile expects: it copies go.mod from the context root,
+		// and the Go module is apps/api rather than the monorepo.
+		files[filepath.Join(root, "apps", "api", "railway.json")] = railwayJSON()
 		// The API image builds from apps/api, which the root .dockerignore does not cover.
 		files[filepath.Join(root, "apps", "api", ".dockerignore")] = apiDockerIgnore
 		// Frontend choice decides the image: a Vite app builds to a static
@@ -578,4 +584,22 @@ ENV HOSTNAME="0.0.0.0"
 
 func dockerIgnore() string {
 	return dockerIgnoreNew
+}
+
+// railwayJSON emits apps/api/railway.json.
+func railwayJSON() string {
+	return `{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
+  },
+  "deploy": {
+    "healthcheckPath": "/api/v1/health",
+    "healthcheckTimeout": 60,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5
+  }
+}
+`
 }
