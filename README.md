@@ -364,7 +364,7 @@ reference and the [free 10-part course](https://gritframework.dev/courses).
 
 Start at [/docs/start](https://gritframework.dev/docs/start), which is one ordered route
 from nothing to deployed. [What is stable and what is not](https://gritframework.dev/docs/stability).
-[Changelog](https://gritframework.dev/docs/changelog).
+[Changelog](https://gritframework.dev/docs/changelog) ([CHANGELOG.md](CHANGELOG.md)).
 
 ## Sponsors
 
