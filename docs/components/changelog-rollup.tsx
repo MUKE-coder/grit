@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 21 to 27, 2026",
-    count: 40,
+    count: 41,
     entries: [
+      { version: "3.333.0", title: "The production stack no longer asks for a subnet it does not need" },
       { version: "3.332.0", title: "Deploy to Railway in one command" },
       { version: "3.331.0", title: "A passkey could be registered and never used" },
       { version: "3.330.0", title: "The account screen was the one page in the admin with no way back" },

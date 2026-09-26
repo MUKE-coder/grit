@@ -21,6 +21,9 @@ func writeDockerFiles(root string, opts Options) error {
 		files[filepath.Join(root, "Dockerfile")] = dockerfileSingle()
 	} else {
 		files[filepath.Join(root, "docker-compose.prod.yml")] = dockerComposeProd(opts)
+		// The overlay for a host whose Docker address pool is already full:
+		// it joins an existing network rather than asking for a subnet.
+		files[filepath.Join(root, "docker-compose.shared-network.yml")] = dockerComposeSharedNetwork(opts)
 		files[filepath.Join(root, "apps", "api", "Dockerfile")] = dockerfileAPI()
 		// Railway builds from this Dockerfile rather than guessing with
 		// Nixpacks, and gets the health check and restart policy with it.
@@ -186,17 +189,25 @@ func dockerComposeProd(opts Options) string {
 
 	result := fmt.Sprintf(`# Production stack.
 #
-# Security posture: nothing in this file uses `+"`ports:`"+` — only
-# `+"`expose:`"+`. That means none of these services bind to the public host
+# Security posture: nothing in this file uses ` + "`ports:`" + ` — only
+# ` + "`expose:`" + `. That means none of these services bind to the public host
 # interface. Traffic reaches the API and the front-ends ONLY through
 # your reverse proxy (Traefik, Caddy, nginx, or a managed PaaS like
 # Dokploy/Coolify), which lives on the same Docker network and routes
-# domain.com → `+"`api:8080`"+`, app.domain.com → `+"`admin:3000`"+`, etc.
+# domain.com → ` + "`api:8080`" + `, app.domain.com → ` + "`admin:3000`" + `, etc.
 #
 # Postgres and Redis have NO host binding at all — they're reachable
-# only by containers on the `+"`%s`"+` network. That's the property you
+# only by containers on this stack's own network. That is the property you
 # want: a successful host-level compromise still has to pop a container
 # to reach the database.
+#
+# That network is Compose's implicit <project>_default, and this file
+# deliberately declares none of its own. Docker slices bridge subnets out
+# of 172.17.0.0/12 in /16 blocks, which is about sixteen networks for the
+# entire daemon, and it does not release them when a deploy fails or a
+# project is deleted. A named network here would take a second subnet and
+# buy nothing the default does not already give. On a host whose pool is
+# already full, use docker-compose.shared-network.yml, which creates none.
 #
 # MinIO is included as an option but most production deployments use
 # Cloudflare R2 or AWS S3 (see STORAGE_* in .env). Delete the minio
@@ -214,19 +225,16 @@ services:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
-    container_name: %s-api
     restart: unless-stopped
     expose:
       - "8080"
     env_file:
       - .env
-`+composeAPICommentNew+`    environment:
-`+composeDBProvider+composeAPIPostgresNew+composeRedisURLNew+`      MINIO_ENDPOINT: http://minio:9000
-`+composeAPIDependsNew+`      redis:
+` + composeAPICommentNew + `    environment:
+` + composeDBProvider + composeAPIPostgresNew + composeRedisURLNew + `      MINIO_ENDPOINT: http://minio:9000
+` + composeAPIDependsNew + `      redis:
         condition: service_healthy
-    networks:
-      - %s
-`, name, name, name)
+`)
 
 	if opts.ShouldIncludeWeb() {
 		result += fmt.Sprintf(`
@@ -236,13 +244,10 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
 %s
-%s    container_name: %s-web
-    restart: unless-stopped
+%s    restart: unless-stopped
     expose:
       - "3000"
-    networks:
-      - %s
-`, frontendBuildArgs(opts), frontendRuntimeEnv(opts), name, name)
+`, frontendBuildArgs(opts), frontendRuntimeEnv(opts))
 	}
 
 	if opts.ShouldIncludeAdmin() {
@@ -253,34 +258,27 @@ services:
       dockerfile: apps/admin/Dockerfile
       args:
 %s
-    container_name: %s-admin
     restart: unless-stopped
     expose:
       - "3000"
-    networks:
-      - %s
-`, frontendBuildArgs(opts), name, name)
+`, frontendBuildArgs(opts))
 	}
 
 	if opts.ShouldIncludeDocs() {
-		result += fmt.Sprintf(`
+		result += `
   docs:
     build:
       context: .
       dockerfile: apps/docs/Dockerfile
-    container_name: %s-docs
     restart: unless-stopped
     expose:
       - "3002"
-    networks:
-      - %s
-`, name, name)
+`
 	}
 
 	result += fmt.Sprintf(`
   postgres:
     image: postgres:16-alpine
-    container_name: %s-postgres
     restart: unless-stopped
     # Only the settings Postgres reads, from the same .env the api uses. With
     # env_file it was handed all of .env: the JWT secret, the Sentinel keys and
@@ -297,8 +295,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - %s
 
   # Connection pooler. Postgres forks a backend process per connection, so
   # connection count — not query load — is usually what falls over first. The
@@ -314,7 +310,6 @@ services:
   #
 `+pgbouncerUseNew+`  pgbouncer:
     image: edoburu/pgbouncer:v1.25.2-p0
-    container_name: %s-pgbouncer
     restart: unless-stopped
     depends_on:
       postgres:
@@ -336,12 +331,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - %s
 
   redis:
     image: redis:7-alpine
-    container_name: %s-redis
     restart: unless-stopped
 `+composeRedisAuth+`    volumes:
       - redis-data:/data
@@ -350,12 +342,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - %s
 
   minio:
-    `+minioImageNew+`    container_name: %s-minio
-    restart: unless-stopped
+    `+minioImageNew+`    restart: unless-stopped
     # Only its root credentials, with no default. Presigned uploads put MinIO
     # behind the public proxy, where minioadmin/minioadmin is the whole bucket.
     environment:
@@ -363,19 +352,13 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?set MINIO_SECRET_KEY in .env}
     volumes:
       - minio-data:/data
-    networks:
-      - %s
     command: server /data --console-address ":9001"
-
-networks:
-  %s:
-    driver: bridge
 
 volumes:
   postgres-data:
   redis-data:
   minio-data:
-`, name, name, name, name, name, name, name, name, name, name, name, name)
+`, name, name, name)
 
 	return result
 }

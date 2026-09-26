@@ -188,7 +188,7 @@ func writeAdminEdgeGuard(root string, opts Options) error {
 	return writeFile(filepath.Join(web, "middleware.ts"), webAdminMiddlewareTS())
 }
 
-var redisServiceHead = regexp.MustCompile(`(?m)^  redis:\n    image: redis:[^\n]*\n    container_name: [^\n]*\n    restart: unless-stopped\n`)
+var redisServiceHead = regexp.MustCompile(`(?m)^  redis:\r?\n    image: redis:[^\r\n]*\r?\n(?:    container_name: [^\r\n]*\r?\n)?    restart: unless-stopped\r?\n`)
 
 // repairDeployHardening applies M7, M8 and M10 to an existing project. M6 and
 // M9 arrive with files upgrade already delivers whole.
@@ -243,10 +243,38 @@ func repairDockerIgnoreSource(src string) (string, []string, []string) {
 	return dockerIgnoreNew, []string{".dockerignore keeps nested .env files, databases and binaries out of build contexts"}, nil
 }
 
+// composeNamedNetwork matches the network a Grit stack used to declare, and
+// the lines attaching services to it.
+//
+// Docker slices bridge subnets out of 172.17.0.0/12 in /16 blocks, about
+// sixteen for the whole daemon, and does not release them when a deploy fails
+// or a project is deleted. A stack that declares its own network takes one it
+// does not need: Compose's implicit <project>_default gives the same
+// service-name DNS and the same isolation.
+var (
+	composeNetworkDecl   = regexp.MustCompile(`(\r?\n)networks:\r?\n  [a-z0-9][a-z0-9_.-]*:\r?\n    driver: bridge\r?\n`)
+	composeNetworkAttach = regexp.MustCompile(`(?m)^    networks:\r?\n      - [a-z0-9][a-z0-9_.-]*\r?\n`)
+	composeContainerName = regexp.MustCompile(`(?m)^    container_name: [^\r\n]*\r?\n`)
+)
+
 func repairComposeHardeningSource(src string) (string, []string, []string) {
 	out := strings.ReplaceAll(src, pgbouncerImageOld, pgbouncerImageNew)
 	out = strings.ReplaceAll(out, minioImageOld, minioImageNew)
 	var changes, warnings []string
+
+	// Only when the file still declares one of its own: a project that has
+	// already been moved onto an external network keeps it.
+	if composeNetworkDecl.MatchString(out) && !strings.Contains(out, "external: true") {
+		out = composeNetworkDecl.ReplaceAllString(out, "${1}")
+		out = composeNetworkAttach.ReplaceAllString(out, "")
+		changes = append(changes, "the stack no longer declares a network of its own, which is a subnet the daemon only has about sixteen of")
+	}
+	// Names are global to the daemon, so a second copy of the stack, staging
+	// beside production, cannot start while these are pinned.
+	if composeContainerName.MatchString(out) {
+		out = composeContainerName.ReplaceAllString(out, "")
+		changes = append(changes, "container names are Compose's to choose, so a second copy of the stack can run beside the first")
+	}
 	if out != src {
 		changes = append(changes, "pgbouncer and MinIO run pinned image versions, and MinIO comes from quay.io")
 	}

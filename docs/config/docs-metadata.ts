@@ -606,6 +606,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Who maintains Grit, what happens if they stop, and how to reduce your exposure: written for the person signing off on adoption.',
   },
+  '/docs/deployment/docker-networks': {
+    title: 'Docker address pools: "all predefined address pools have been fully subnetted"',
+    description:
+      "Every image builds and the deploy dies at the last step creating a network. Docker hands out bridge subnets from 172.17.0.0/12 in /16 blocks, about sixteen for the whole daemon, and does not return them when a deploy fails or a project is deleted. Grit generates a production stack that declares no network of its own, because Compose's implicit <project>_default gives the same DNS and isolation for one fewer subnet, and pins no container_name so a second copy of the stack can run beside the first. grit upgrade applies both to existing projects. For a host whose pool is already empty, docker-compose.shared-network.yml joins an existing network and asks for no subnet at all. The real fix is docker network prune -f and a default-address-pools entry of size 24 in daemon.json.",
+  },
   '/docs/deployment/railway': {
     title: 'Deploy to Railway',
     description:

@@ -66,6 +66,68 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.333.0 */}
+            <div className="mb-12" id="v3.333.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.333.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The production stack no longer asks for a subnet it does not need</h3>
+                <p>
+                  Docker hands out bridge-network subnets from <code>172.17.0.0/12</code> sliced
+                  into <code>/16</code> blocks: about sixteen networks for the entire daemon. It
+                  does not return them when a deploy fails or a project is deleted. Run half a dozen
+                  Compose stacks on one host and the pool empties, and after that every deploy dies
+                  at the last step with <em>all predefined address pools have been fully
+                  subnetted</em>, after every image has already built. Nothing is said about disk,
+                  memory or CPU, because none of them are the problem.
+                </p>
+                <p>
+                  <code>docker-compose.prod.yml</code> declared a named network and attached every
+                  service to it. Compose&apos;s implicit <code>&lt;project&gt;_default</code> gives
+                  the same service-name DNS and the same isolation, so the named one took a subnet
+                  and bought nothing. It is gone. So are the pinned{' '}
+                  <code>container_name</code>s: names are global to the daemon, so a second copy of
+                  a stack, staging beside production, could not start while they were there.
+                </p>
+                <p>
+                  <code>grit upgrade</code> applies both changes to an existing project, so the
+                  stacks already deployed converge rather than keeping the arrangement that causes
+                  this.
+                </p>
+
+                <h3>And a way out for a host whose pool is already empty</h3>
+                <p>
+                  One fewer network per stack does not help a host with none left: even the implicit
+                  default fails to allocate. Every project now ships{' '}
+                  <code>docker-compose.shared-network.yml</code>, an overlay that joins a network
+                  which already exists and so asks for no subnet at all.
+                </p>
+                <p>
+                  A shared network is shared, and the overlay says so: containers on it resolve each
+                  other by service name, so every service is given a project-prefixed alias and the
+                  API is pointed at those rather than the bare names. Two projects that both call a
+                  service <code>postgres</code> would otherwise resolve each other&apos;s, and a
+                  silent connection to somebody else&apos;s database is a worse day than a failed
+                  deploy.
+                </p>
+
+                <h3>The compose repairs had never run on Windows</h3>
+                <p>
+                  Found while testing the above against real deployed projects: their compose files
+                  are CRLF, because git converts them on checkout, and every repair pattern was
+                  anchored on a bare <code>\n</code>. They matched nothing and reported no change,
+                  which is indistinguishable from a file that needed none. The Redis password repair
+                  in particular has been a silent no-op on every Windows checkout since it shipped.
+                  All of them are line-ending agnostic now, and a CRLF file stays CRLF.
+                </p>
+              </div>
+            </div>
+
             {/* v3.332.0 */}
             <div className="mb-12" id="v3.332.0">
               <div className="flex items-center gap-3 mb-4">

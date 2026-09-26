@@ -291,6 +291,7 @@ const navItems: NavItem[] = [
       { title: 'Choosing a host', href: '/docs/deployment' },
       { title: 'Deploy from GitHub', href: '/docs/deployment/from-github' },
       { title: 'Deploy to Railway', href: '/docs/deployment/railway' },
+      { title: 'Docker address pools', href: '/docs/deployment/docker-networks' },
       { title: 'Environment variables', href: '/docs/deployment/environment' },
       { title: 'Test the build locally', href: '/docs/deployment/build-locally' },
       { title: 'Go-live checklist', href: '/docs/deployment/checklist' },
