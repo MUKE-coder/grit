@@ -66,6 +66,84 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.334.0 */}
+            <div className="mb-12" id="v3.334.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.334.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit scale: measure, then do one thing</h3>
+                <p>
+                  Point it at a running deployment and it reports the request percentiles,
+                  connection use against the ceiling, the slowest queries, the tables being read
+                  end to end and the cache hit rate, then names <strong>one</strong> next step.
+                  Most of the time that step is nothing, and that is the feature: a tool that
+                  nags you to add read replicas at forty requests a minute is a tool you learn to
+                  ignore.
+                </p>
+                <p>
+                  It checks connection exhaustion before anything else, because that is the only
+                  failure here that arrives as errors rather than slowness, and it refuses to
+                  mention a replica while a large table is still being scanned end to end. An
+                  index is free; a bigger database is not.
+                </p>
+                <p>
+                  The measuring happens in the API, at <code>GET /api/v1/scale</code>, admin only
+                  since it reports connection counts and query shapes. Percentiles measured on a
+                  laptop describe a laptop.
+                </p>
+
+                <h3>Read replicas, in one environment variable</h3>
+                <p>
+                  <code>DATABASE_REPLICA_URLS</code>, comma separated, and reads go to the
+                  replicas on the next boot with no handler changes. Routing is per statement
+                  through GORM&apos;s dbresolver rather than per call site, which matters for the
+                  rule nobody writes by hand: a read inside a transaction goes to the primary, so
+                  a balance check inside the transaction that debits the balance cannot read a
+                  replica whatever the handler was written to do. <code>database.Primary()</code>{' '}
+                  and <code>database.Replica()</code> force either side for the reads that decide
+                  a write.
+                </p>
+                <p>
+                  Read-your-own-writes is handled by a cookie rather than a shared store: it
+                  travels with the person who wrote, costs no lookup, and cannot itself be stale.
+                  The alternative puts Redis on every read and takes the read path down with it.
+                </p>
+
+                <h3>cache.Remember</h3>
+                <p>
+                  Cache-aside with the three things a hand-written version misses. A cache read
+                  failure falls through to the loader, so Redis being down makes the app slower
+                  rather than broken. TTLs are jittered, so ten thousand keys written by one
+                  deploy do not expire in the same second. And when a hot key expires one caller
+                  rebuilds it while the rest wait briefly and read the result, instead of every
+                  concurrent request running the same expensive query. Plus a hit rate, which{' '}
+                  <code>grit scale</code> reads.
+                </p>
+
+                <h3>grit doctor does the connection arithmetic</h3>
+                <p>
+                  Instances times <code>DB_MAX_OPEN_CONNS</code> has to stay under{' '}
+                  <code>max_connections</code>, and the number people get wrong is instances: a
+                  pool of 25 is comfortable on one machine and fatal on eight, and nothing else in
+                  the config mentions the other seven. Set <code>APP_INSTANCES</code> and doctor
+                  does the multiplication, before production does it for you.
+                </p>
+
+                <h3>And a page about all of it</h3>
+                <p>
+                  <a href="/docs/scaling">Scaling</a> maps the ten stages to what a Grit app
+                  already does. The honest count: Stages 1, 3, 4 and 8 ship on the first commit,
+                  Stage 2 does not apply because Go uses every core, and Stage 9 is the one thing
+                  Grit deliberately does nothing about.
+                </p>
+              </div>
+            </div>
+
             {/* v3.333.0 */}
             <div className="mb-12" id="v3.333.0">
               <div className="flex items-center gap-3 mb-4">

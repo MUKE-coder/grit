@@ -606,6 +606,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Who maintains Grit, what happens if they stop, and how to reduce your exposure: written for the person signing off on adoption.',
   },
+  '/docs/scaling': {
+    title: 'Scaling a Grit app, one break at a time',
+    description:
+      "Ten stages from one server to sharding, and where a Grit app actually starts. Config from env, one database module, uploads in object storage, a health endpoint, sessions as rows, cron elected to one instance, graceful shutdown, pgbouncer, asynq workers and a transactional outbox all ship on the first commit, which is Stages 1, 3, 4 and 8 done before you have a user. grit scale measures a running deployment (request percentiles, connection use against the ceiling, slowest queries, cache hit rate) and names one thing to do next, which is usually nothing. Read replicas are one environment variable with read-your-own-writes handled by a cookie. cache.Remember is cache-aside with fallback, jittered TTLs and stampede protection. grit doctor does the instances x pool < max_connections arithmetic.",
+  },
   '/docs/deployment/docker-networks': {
     title: 'Docker address pools: "all predefined address pools have been fully subnetted"',
     description:

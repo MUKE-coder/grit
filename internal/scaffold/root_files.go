@@ -490,6 +490,15 @@ APP_URL=http://localhost:8080
 # Create a free project at neon.tech, copy the connection string
 DATABASE_URL=postgres://user:password@ep-xxx-xxx-123456.us-east-2.aws.neon.tech/neondb?sslmode=require
 
+# Read replicas. Empty, and it should stay empty until the database's CPU is
+# pegged by reads AFTER the indexes are right: a replica is money spent on a
+# problem you may not have. Comma-separated postgres:// URLs.
+#
+# Set it and reads go to the replicas on the next boot, with writes, anything
+# inside a transaction, and the few seconds after a person writes staying on
+# the primary. Nothing in the code changes.
+DATABASE_REPLICA_URLS=
+
 # ─── JWT ───────────────────────────────────────────────
 JWT_SECRET=change-me-to-a-random-string-at-least-32-chars
 `+fieldEncryptionKeyComment+`FIELD_ENCRYPTION_KEY=CHANGE_ME

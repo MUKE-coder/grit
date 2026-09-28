@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
@@ -62,6 +63,7 @@ var checks = []struct {
 	name string
 	run  func(*project) []Finding
 }{
+	{"connection-pool-too-large", checkConnectionPool},
 	{"encryption-key-unset", checkEncryptionKey},
 	{"encrypted-column-in-whitelist", checkEncryptedWhitelists},
 	{"owned-resource-unscoped", checkOwnedScoping},
@@ -1015,4 +1017,66 @@ func withoutComments(src string) string {
 		b.WriteString("\n")
 	}
 	return b.String()
+}
+
+// The arithmetic behind "sorry, too many clients already".
+//
+// Every API instance opens its own pool, so the database sees
+// instances x DB_MAX_OPEN_CONNS connections, and that has to stay under
+// max_connections with room left for migrations, psql and the backup job. The
+// number people get wrong is instances: a pool of 25 is comfortable on one
+// machine and fatal on eight, and nothing in .env mentions the other seven.
+//
+// This is a warning rather than an error because the instance count is a guess
+// unless the project says so. APP_INSTANCES is how you tell it.
+func checkConnectionPool(p *project) []Finding {
+	pool := envInt(p.env["DB_MAX_OPEN_CONNS"], 25)
+	instances := envInt(p.env["APP_INSTANCES"], 0)
+	maxConns := envInt(p.env["DB_MAX_CONNECTIONS"], 0)
+
+	// Nothing to say about a database with no pooler and no stated ceiling on
+	// a project running one instance. That is the overwhelming majority.
+	if instances <= 1 && maxConns == 0 {
+		return nil
+	}
+	if maxConns == 0 {
+		// Postgres ships with 100 and most managed tiers give less, not more.
+		maxConns = 100
+	}
+	if instances < 1 {
+		instances = 1
+	}
+
+	// A pooler makes the arithmetic somebody else's problem: the app's
+	// connections terminate at pgbouncer, and only its pool reaches Postgres.
+	if strings.Contains(strings.ToLower(p.env["DATABASE_URL"]), "pgbouncer") ||
+		strings.TrimSpace(p.env["PGBOUNCER_URL"]) != "" {
+		return nil
+	}
+
+	want := instances * pool
+	headroom := maxConns - maxConns/5 // keep a fifth back for everything else
+
+	if want <= headroom {
+		return nil
+	}
+	return []Finding{{
+		Level:    "warning",
+		Resource: "database",
+		Message: fmt.Sprintf(
+			"%d instances x DB_MAX_OPEN_CONNS=%d is %d connections, and max_connections is %d. Spikes will fail with \"sorry, too many clients already\" while every dashboard looks healthy",
+			instances, pool, want, maxConns),
+		Fix: fmt.Sprintf(
+			"put pgbouncer in front (docker-compose.prod.yml already has it), or set DB_MAX_OPEN_CONNS=%d",
+			max(1, headroom/instances)),
+	}}
+}
+
+// envInt reads a whole number from .env, falling back rather than failing: a
+// typo in a pool size should not stop an audit that has other things to say.
+func envInt(raw string, fallback int) int {
+	if v, err := strconv.Atoi(strings.TrimSpace(raw)); err == nil && v > 0 {
+		return v
+	}
+	return fallback
 }

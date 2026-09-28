@@ -16,6 +16,12 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "cmd", "server", "main.go"):                           apiMainGo(opts),
 		filepath.Join(apiRoot, "internal", "config", "config.go"):                    apiConfigGo(),
 		filepath.Join(apiRoot, "internal", "database", "database.go"):                apiDatabaseGo(),
+		filepath.Join(apiRoot, "internal", "database", "replicas.go"):                apiReplicasGo(),
+		filepath.Join(apiRoot, "internal", "cache", "remember.go"):                   apiCacheRememberGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "latency.go"):               apiLatencyMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "scale.go"):                   apiScaleHandlerGo(),
+		filepath.Join(apiRoot, "internal", "database", "for_request.go"):             apiForRequestGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "read_your_writes.go"):      apiReadYourWritesGo(),
 		filepath.Join(apiRoot, "internal", "database", "dialect.go"):                 apiDialectGo(),
 		filepath.Join(apiRoot, "internal", "models", "user.go"):                      apiUserModelGo(),
 		filepath.Join(apiRoot, "internal", "models", "upload.go"):                    apiUploadModelGo(),
@@ -360,6 +366,7 @@ require (
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
+	gorm.io/plugin/dbresolver v1.6.2
 )
 
 require (
@@ -488,6 +495,14 @@ func main() {
 	db, err := database.Connect(cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	// Stage 6 of scaling, and it is one environment variable: set
+	// DATABASE_REPLICA_URLS and reads go to the replicas from the next boot.
+	// Registered here rather than inside Connect because migrate and seed use
+	// Connect too, and a migration must never be routed to a replica.
+	if _, err := database.UseReplicas(db); err != nil {
+		log.Fatalf("Read replicas: %v", err)
 	}
 
 	// DB_PROVIDER=memory keeps everything in RAM, so the only process that can
@@ -9376,6 +9391,14 @@ func mountGlobalMiddleware(r *gin.Engine, cfg *config.Config, svc *Services) fun
 	// The client IP, the user agent and the request id, on the request's
 	// context, so a service can read them without taking a *gin.Context.
 	r.Use(middleware.RequestMeta())
+	// Request timing, for the percentiles grit scale reads. A ring buffer
+	// of the last few thousand requests: no allocation, no time series, and the
+	// only question it answers is how the service is doing right now.
+	r.Use(middleware.Latency())
+	// Pins a person's reads to the primary for a few seconds after they write,
+	// so their own post is never missing from their own feed. A no-op until
+	// DATABASE_REPLICA_URLS is set.
+	r.Use(middleware.ReadYourWrites())
 	r.Use(middleware.Logger())
 	r.Use(gin.Recovery())
 	// Origins come from the cors.origins setting when it has a value, and from
@@ -9797,6 +9820,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// v3.31.77 — full-database backups (weekly cron + manual + download)
 	backupHandler := &handlers.BackupHandler{DB: db, Storage: svc.Storage}
 	roleHandler := handlers.NewRoleHandler(db)
+	// Which scaling stage this deployment is at, measured rather than guessed.
+	// Reads the live request percentiles, the connection count against the
+	// ceiling, and what Postgres says about its own slowest queries.
+	scaleHandler := &handlers.ScaleHandler{DB: db, Cache: svc.Cache}
 	// Permission caches are per process. Share makes a role change on one
 	// replica reach every other within a second.
 	authz.Share(db)
@@ -10158,6 +10185,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 
 		// Roles, the permission catalog, and access reviews over the grants.
 		staff.GET("/permissions", middleware.RequireRole("ADMIN", "perm:roles.view"), roleHandler.Catalog)
+		// Admin only, and rightly: it reports connection counts, the slowest
+		// queries and their shapes. That is a map of the database to anybody
+		// who can read it.
+		staff.GET("/scale", middleware.RequireRole("ADMIN", "perm:system.view"), scaleHandler.Report)
 		staff.GET("/roles", middleware.RequireRole("ADMIN", "perm:roles.view"), roleHandler.List)
 		staff.POST("/roles", middleware.RequireRole("ADMIN", "perm:roles.create"), roleHandler.Create)
 		staff.GET("/roles/:id", middleware.RequireRole("ADMIN", "perm:roles.view"), roleHandler.Get)
