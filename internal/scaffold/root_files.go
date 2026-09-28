@@ -165,6 +165,9 @@ APP_ENV=development
 # Serve the API reference at /docs in production as well. It maps every route
 # and has a console that calls them, so it is off there unless you say so.
 API_DOCS_PUBLIC=false
+# The port the API listens on. A platform that routes to a container injects
+# PORT instead, and PORT wins where both are set, so a deploy binds what the
+# platform is actually sending traffic to.
 APP_PORT=8080
 APP_URL=http://localhost:8080
 
@@ -288,6 +291,14 @@ API_URL=http://localhost:8080
 # the frontend environment to your public storage origin — e.g.
 # https://<bucket>.s3.<region>.amazonaws.com or your CDN domain — or presigned
 # uploads and image display will be blocked by CSP.
+#
+# If presigned PUTs go to a DIFFERENT host from the one files are served from,
+# name that one too: NEXT_PUBLIC_STORAGE_UPLOAD_URL (or VITE_STORAGE_UPLOAD_URL)
+# is added to connect-src and nothing else. A managed bucket usually does this,
+# serving reads from its own CDN host and signing writes for the underlying S3
+# endpoint, and the symptom is an upload that the API signs happily and the
+# browser refuses with a console violation and no HTTP status.
+# NEXT_PUBLIC_STORAGE_UPLOAD_URL=https://<account>.r2.cloudflarestorage.com
 
 # MinIO (local development — used when STORAGE_DRIVER=minio)
 # Unset, built from MINIO_PORT above. Set it only for a MinIO somewhere else.
@@ -302,7 +313,10 @@ MINIO_USE_SSL=false
 # Leave S3_ENDPOINT empty to use the AWS regional default.
 # S3_ACCESS_KEY + S3_SECRET_KEY fall back to AWS_ACCESS_KEY_ID +
 # AWS_SECRET_ACCESS_KEY (and S3_REGION to AWS_REGION) so an IAM role
-# attached to your EC2 / ECS / Lambda Just Works.
+# attached to your EC2 / ECS / Lambda Just Works. S3_BUCKET and S3_ENDPOINT
+# fall back to AWS_BUCKET and AWS_ENDPOINT_URL for the same reason: those are
+# what the AWS SDKs read and what a managed bucket injects, so attaching one
+# needs nothing set here.
 S3_ENDPOINT=
 S3_ACCESS_KEY=
 S3_SECRET_KEY=

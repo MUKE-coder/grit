@@ -73,6 +73,11 @@ func RemoveResource(name string) error {
 		filepath.Join(webRoot, "hooks", "use-"+names.PluralKebab+".ts"),
 		filepath.Join(webRoot, "src", "hooks", "use-"+names.PluralKebab+".ts"),
 		filepath.Join(webRoot, "lib", names.Kebab+"-api.ts"),
+		// The --public read layer, for the same reason as its handler: it is
+		// written only when absent, so a resource regenerated with different
+		// fields would keep a type describing the old allowlist.
+		filepath.Join(webRoot, "lib", names.PluralKebab+"-public.ts"),
+		filepath.Join(webRoot, "src", "lib", names.PluralKebab+"-public.ts"),
 		// --- admin: Next.js ---
 		filepath.Join(adminRoot, "hooks", "use-"+names.PluralKebab+".ts"),
 		filepath.Join(adminRoot, "resources", names.PluralKebab, names.PluralKebab+".ts"),
@@ -272,6 +277,13 @@ func RemoveResource(name string) error {
 		if removed == nil {
 			fmt.Println("  ✗ Removed API routes")
 		}
+	}
+
+	// 5b. Remove the WAF exclusion a richtext body earned. Unconditional: the
+	// definition is gone by the time a resource is removed, so the block itself
+	// is the record of whether there was one.
+	if removeWAFRichtext(routesFile, names) {
+		fmt.Println("  ✗ Removed the WAF body-inspection exclusion")
 	}
 
 	// 5c. Remove the API-reference entries.

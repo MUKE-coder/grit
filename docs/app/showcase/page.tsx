@@ -88,6 +88,31 @@ const projects: ShowcaseProject[] = [
     },
   },
   {
+    name: "Duuka",
+    url: "https://crm-web-production-90ukvx.laravel.cloud",
+    description: "Online shops for businesses that sell on WhatsApp",
+    longDescription:
+      "One deployment serving many storefronts for East African businesses that already sell over chat. Each shop has its own address, catalogue, categories, WhatsApp number and admins, and every query is scoped to a shop before it runs, so one shop's admin cannot reach another's rows. A customer taps Order on WhatsApp and the chat opens with the item, its code, the quantity, the total and the link already written. A Grit triple monorepo running on Laravel Cloud with Neon Postgres.",
+    image: "/showcase/duuka.png",
+    tags: ["E-Commerce", "Multi-tenant", "WhatsApp", "East Africa"],
+    techStack: ["Go", "Gin", "GORM", "React", "Next.js", "Tailwind CSS", "PostgreSQL", "Neon", "Turborepo", "Laravel Cloud"],
+    stats: {
+      // No table or model counts here: they are the author's to publish, and a
+      // number nobody measured is worse than a card without one.
+      highlights: [
+        "A storefront per shop, on its own path",
+        "Catalogue with categories, offers, stock and product codes",
+        "Search across a shop, and related items per product",
+        "Orders prefilled into WhatsApp with item, code, quantity and total",
+        "Price list import from a spreadsheet",
+        "Per-shop admins, no public sign-up",
+        "Two-factor sign-in and passkeys",
+        "Signed-in device list and account lockout",
+        "Web application firewall in front of the admin",
+      ],
+    },
+  },
+  {
     name: "DGateway",
     url: "https://dgateway.desispay.com",
     description: "Unified payment aggregation for East Africa",

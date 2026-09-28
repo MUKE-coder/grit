@@ -121,6 +121,7 @@ const navItems: NavItem[] = [
       { title: 'Models & Database', href: '/docs/backend/models' },
       { title: 'Handlers', href: '/docs/backend/handlers' },
       { title: 'Services', href: '/docs/backend/services' },
+      { title: 'The Public Surface', href: '/docs/backend/public-api' },
       { title: 'Middleware', href: '/docs/backend/middleware' },
       { title: 'Authentication', href: '/docs/backend/authentication' },
       { title: 'Social Login (OAuth2)', href: '/docs/backend/oauth' },

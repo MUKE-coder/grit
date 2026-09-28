@@ -451,6 +451,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Seed your Grit database with initial data: admin users, sample records, and the built-in blog example with posts.',
   },
+  '/docs/backend/public-api': {
+    title: 'The public surface',
+    description:
+      'grit generate resource --public: read-only endpoints behind an API key, an allowlist response, one scope deciding what is live, and the typed read layer in apps/web.',
+  },
   '/docs/backend/services': {
     title: 'Services',
     description:

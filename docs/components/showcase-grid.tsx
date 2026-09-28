@@ -24,10 +24,13 @@ export interface ShowcaseProject {
   tags: string[];
   techStack: string[];
   stats: {
-    tables: string;
-    models: string;
-    goroutines: string;
-    modules: string;
+    // Counts read off the project itself. Optional, because they are internals:
+    // a project whose author has not published them gets a card without the
+    // numbers rather than a card with invented ones.
+    tables?: string;
+    models?: string;
+    goroutines?: string;
+    modules?: string;
     highlights: string[];
   };
   featured?: boolean;
@@ -75,16 +78,22 @@ function GridCard({
             </span>
           ))}
         </div>
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <Database className="h-3 w-3" />
-            {project.stats.tables} tables
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Layers className="h-3 w-3" />
-            {project.stats.modules} modules
-          </span>
-        </div>
+        {(project.stats.tables || project.stats.modules) && (
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            {project.stats.tables && (
+              <span className="flex items-center gap-1.5">
+                <Database className="h-3 w-3" />
+                {project.stats.tables} tables
+              </span>
+            )}
+            {project.stats.modules && (
+              <span className="flex items-center gap-1.5">
+                <Layers className="h-3 w-3" />
+                {project.stats.modules} modules
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </button>
   );
@@ -219,33 +228,39 @@ function ProjectDetailSheet({
                   Project Scale
                 </h3>
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
-                      <Database className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-foreground">
-                        {project.stats.tables}
+                  {project.stats.tables && (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+                          <Database className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-foreground">
+                            {project.stats.tables}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Database Tables
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Database Tables
+                      <div className="h-px bg-border/40" />
+                    </>
+                  )}
+                  {project.stats.models && (
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+                        <Box className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-foreground">
+                          {project.stats.models}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Registered Models
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="h-px bg-border/40" />
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
-                      <Box className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-foreground">
-                        {project.stats.models}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Registered Models
-                      </div>
-                    </div>
-                  </div>
+                  )}
                   {project.stats.goroutines && (
                     <>
                       <div className="h-px bg-border/40" />
@@ -264,20 +279,24 @@ function ProjectDetailSheet({
                       </div>
                     </>
                   )}
-                  <div className="h-px bg-border/40" />
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
-                      <Layers className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-foreground">
-                        {project.stats.modules}
+                  {project.stats.modules && (
+                    <>
+                      <div className="h-px bg-border/40" />
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+                          <Layers className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-foreground">
+                            {project.stats.modules}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Feature Modules
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Feature Modules
-                      </div>
-                    </div>
-                  </div>
+                    </>
+                  )}
                   <div className="h-px bg-border/40" />
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20">

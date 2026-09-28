@@ -190,6 +190,15 @@ func (g *Generator) injectAll(names Names) error {
 		}
 	}
 
+	// 4b. Step Sentinel's WAF aside for a richtext body, on both the public and
+	// the /admin routes. Outside the splitRoutes branch: the exclusion list
+	// lives in routes.go either way.
+	if g.Definition.HasRichtext() {
+		if injectWAFRichtext(routesFile, names) {
+			fmt.Println("  ✓ Excluded the richtext routes from WAF body inspection")
+		}
+	}
+
 	// 5a. Document the resource in the API reference.
 	//
 	// gindocs infers paths and status codes from the router but attaches a

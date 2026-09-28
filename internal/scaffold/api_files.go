@@ -757,6 +757,7 @@ func apiConfigGo() string {
 import (
 	"fmt"
 	"log"
+	"net"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -765,6 +766,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"golang.org/x/net/publicsuffix"
 
 	"{{MODULE}}/internal/crypto"
 )
@@ -961,7 +963,11 @@ func Load() (*Config, error) {
 		AppName:     getEnv("APP_NAME", "grit-app"),
 		// Production unless told otherwise: a server that forgot APP_ENV is strict.
 		AppEnv:      getEnv("APP_ENV", "production"),
-		Port:        getEnv("APP_PORT", "8080"),
+		// PORT first: every platform that routes to a container injects it, and
+		// a deploy that binds the wrong port goes green with nothing answering.
+		// APP_PORT stays the one you set yourself, and wins locally because a
+		// platform is not the thing setting PORT there.
+		Port:        firstNonEmpty(os.Getenv("PORT"), os.Getenv("APP_PORT"), "8080"),
 		AppURL:      getEnv("APP_URL", "http://localhost:8080"),
 		DatabaseURL: resolveDatabaseURL(),
 		JWTSecret:   getEnv("JWT_SECRET", ""),
@@ -1064,7 +1070,74 @@ func Load() (*Config, error) {
 	}
 	cfg.JWTRefreshExpiry = refreshExpiry
 
+	cfg.warnCrossSiteAuth()
+
 	return cfg, nil
+}
+
+// warnCrossSiteAuth says so when the API and a frontend are on different sites,
+// which breaks cookie authentication without breaking anything that logs.
+//
+// Sign-in returns 200 and sets the refresh cookie, and every request after it is
+// a 401, because a browser will not send a SameSite=Lax cookie on a cross-site
+// request. A site is the registrable domain, not the hostname: api.example.com
+// and app.example.com are the same site, and two apps on a platform whose domain
+// is on the Public Suffix List are not. laravel.cloud, vercel.app, onrender.com
+// and up.railway.app are all on it, so api-x.laravel.cloud and web-x.laravel.cloud
+// share no registrable domain at all and the cookies are never sent.
+//
+// A warning and not a refusal: the arrangement is correct behind a same-origin
+// proxy that forwards /api to the API, and correct for a client holding the
+// access token itself. What is never correct is finding out from a user who
+// cannot stay signed in.
+func (c *Config) warnCrossSiteAuth() {
+	apiSite := registrableDomain(c.AppURL)
+	if apiSite == "" {
+		return
+	}
+	for _, origin := range c.CORSOrigins {
+		site := registrableDomain(origin)
+		if site == "" || site == apiSite {
+			continue
+		}
+		log.Printf("WARNING: the API is on %s and CORS_ORIGINS has %s, which is a different site. "+
+			"Browsers do not send SameSite=Lax cookies across sites, so sign-in will return 200 and "+
+			"every request after it 401. Put the frontend and the API on one domain, proxy /api from "+
+			"the frontend so the browser sees one origin, or have the client send the access token as "+
+			"a bearer header. Platform domains like laravel.cloud and vercel.app are themselves public "+
+			"suffixes, so two apps under one project are already cross-site.",
+			apiSite, site)
+	}
+}
+
+// registrableDomain is the site a URL belongs to: its public suffix plus one
+// label. Empty for localhost, a bare IP, and anything unparseable, none of which
+// this check can say anything useful about.
+//
+// The suffix list is the snapshot compiled into golang.org/x/net, so a platform
+// domain added to the list since that release reads as an ordinary domain and
+// the warning is not raised. It errs that way on purpose: a missed warning
+// costs a search, and a wrong one costs trust in every other line at boot.
+func registrableDomain(raw string) string {
+	if raw == "" {
+		return ""
+	}
+	if !strings.Contains(raw, "://") {
+		raw = "https://" + raw
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		return ""
+	}
+	host := u.Hostname()
+	if host == "" || host == "localhost" || net.ParseIP(host) != nil {
+		return ""
+	}
+	site, err := publicsuffix.EffectiveTLDPlusOne(host)
+	if err != nil {
+		return ""
+	}
+	return site
 }
 
 ` + configCheckSecretsFunc + `
@@ -1252,7 +1325,10 @@ func warnProviderMismatch(provider, dsn string) {
 // Credentials fall back to the AWS standard env vars
 // AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY if you don't set the S3_*
 // variants, which is convenient when running on EC2 / ECS / Lambda
-// with an IAM role and you'd rather not duplicate keys in .env.
+// with an IAM role and you'd rather not duplicate keys in .env. The bucket
+// and endpoint fall back to AWS_BUCKET and AWS_ENDPOINT_URL for the same
+// reason: they are what the AWS SDKs read, and what a managed bucket
+// injects, so attaching one needs no configuration here at all.
 func resolveStorage(driver string) StorageConfig {
 	switch driver {
 	case "s3":
@@ -1261,10 +1337,10 @@ func resolveStorage(driver string) StorageConfig {
 		// virtual-hosted style, which AWS requires for buckets created
 		// after Sep 2020.
 		return StorageConfig{
-			Endpoint:  getEnv("S3_ENDPOINT", ""),
+			Endpoint:  firstNonEmpty(os.Getenv("S3_ENDPOINT"), os.Getenv("AWS_ENDPOINT_URL")),
 			AccessKey: firstNonEmpty(os.Getenv("S3_ACCESS_KEY"), os.Getenv("AWS_ACCESS_KEY_ID")),
 			SecretKey: firstNonEmpty(os.Getenv("S3_SECRET_KEY"), os.Getenv("AWS_SECRET_ACCESS_KEY")),
-			Bucket:    getEnv("S3_BUCKET", "uploads"),
+			Bucket:    firstNonEmpty(os.Getenv("S3_BUCKET"), os.Getenv("AWS_BUCKET"), "uploads"),
 			Region:    firstNonEmpty(os.Getenv("S3_REGION"), os.Getenv("AWS_REGION"), "us-east-1"),
 			UseSSL:    true,
 			PublicURL: firstNonEmpty(os.Getenv("S3_PUBLIC_URL"), os.Getenv("STORAGE_PUBLIC_URL")),
@@ -9327,19 +9403,29 @@ const APIVersion = "v1"
 // The richtext resources are here because the XSS heuristics flag ordinary
 // markup: a blog body is <p> and <strong> and <img> by definition.
 //
+// Every richtext resource is listed twice, once at its public path and once
+// under /admin, because a body is inspected on the way in and the writes are
+// what carry the markup: the admin panel's are the /admin ones. With only the
+// public path listed, a post whose body quotes a shell command could be
+// published and then never edited, every PUT from the admin answered 403.
+//
 // Exclusion is from body inspection only. These routes still pass through
-// auth, RBAC, binding validation and rate limiting.
+// auth, RBAC, binding validation, sanitize:"html" and rate limiting.
 func wafExcludedRoutes() []string {
 	prefix := "/api/" + APIVersion
 	paths := []string{
 		"/blogs", "/blogs/*",
+		"/admin/blogs", "/admin/blogs/*",
 		"/posts", "/posts/*",
+		"/admin/posts", "/admin/posts/*",
 		"/articles", "/articles/*",
+		"/admin/articles", "/admin/articles/*",
 		"/uploads", "/uploads/*",
 ` + wafImportExclusion + `		// Public form-share submissions. Auth is the share's bcrypt password
 		// (optional) and the token itself; Sentinel rate-limits the path. The
 		// subtree match also covers .../submit.
 		"/public/forms/*",
+` + wafRichtextMarkerBlock + `
 	}
 	out := make([]string, 0, len(paths))
 	for _, p := range paths {

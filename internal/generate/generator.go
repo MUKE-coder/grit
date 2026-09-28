@@ -382,6 +382,15 @@ func (g *Generator) Run() error {
 		fmt.Printf("  ✓ apps/web/src/hooks/use-%s.ts\n", names.PluralKebab)
 	}
 
+	// The read layer for --public: /public/<plural> with the API key on every
+	// request, typed against the allowlist. Without it the hooks above are the
+	// only fetch layer a public page has, and they answer 401 (grit#91).
+	if path, err := g.writePublicWebReads(names); err != nil {
+		return fmt.Errorf("writing public web reads: %w", err)
+	} else if path != "" {
+		fmt.Printf("  ✓ %s\n", path)
+	}
+
 	// Write hooks for single app frontend
 	singleHooksDir := filepath.Join(g.Root, "frontend", "src", "hooks")
 	if g.Architecture == "single" && dirExists(singleHooksDir) {

@@ -26,6 +26,11 @@ const API_WS_ORIGIN = API_ORIGIN.replace(/^http/, "ws");
 	nextConnectSrcOld = `"connect-src 'self' " + API_ORIGIN + " " + STORAGE_ORIGIN + (isDev`
 	nextConnectSrcNew = `"connect-src 'self' " + API_ORIGIN + " " + API_WS_ORIGIN + " " + STORAGE_ORIGIN + (isDev`
 
+	// The upload origin, for a bucket whose presigned PUTs go somewhere other
+	// than where its files are served from.
+	nextUploadOriginDecl = `const STORAGE_UPLOAD_ORIGIN = process.env.NEXT_PUBLIC_STORAGE_UPLOAD_URL`
+	nextConnectSrcUpload = `"connect-src 'self' " + API_ORIGIN + " " + API_WS_ORIGIN + " " + STORAGE_ORIGIN + STORAGE_UPLOAD_ORIGIN + (isDev`
+
 	// The nginx CSP a Vite frontend is served with allowed http: and https:
 	// connections but no socket at all.
 	nginxConnectSrcOld = "connect-src 'self' https: http:;"

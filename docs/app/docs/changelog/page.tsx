@@ -66,6 +66,111 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.335.0 */}
+            <div className="mb-12" id="v3.335.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.335.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A post you could publish once and then never edit</h3>
+                <p>
+                  Sentinel&apos;s firewall stepped aside for a richtext body at its public path and
+                  not at the <code>/admin</code> path the admin panel writes through. A body is
+                  inspected on the way in, so it is the writes that carry the markup: every{' '}
+                  <code>PUT</code> from the admin was answered 403 and logged as a critical threat,
+                  for a code block whose <code>../</code> reads as path traversal. Reported by Mark
+                  Cole Mukisa with the fix already in production (<a href="https://github.com/MUKE-coder/grit/issues/90">#90</a>).
+                </p>
+                <p>
+                  It was worse than the report: <code>grit generate resource</code> never touched the
+                  exclusion list at all, so every resource generated with a richtext field had the
+                  same fault at its own path. It now adds the resource when it emits one, and{' '}
+                  <code>grit remove</code> takes it back out. <code>grit upgrade</code> repairs a
+                  project already generated, finding its richtext resources by the{' '}
+                  <code>sanitize:&quot;html&quot;</code> tag on the models and reading their paths off
+                  the routes rather than guessing at a plural.
+                </p>
+
+                <h3>--public: the half that was missing</h3>
+                <p>
+                  <code>--public</code> generated read-only endpoints behind an API key and stopped
+                  there. The hooks beside them still called the authenticated routes, and nothing in{' '}
+                  <code>apps/web</code> ever sent the publishable key the seeder had already written
+                  into its <code>.env.local</code>, so a storefront built the obvious way got 401s
+                  and the developer had to write the fetch layer by hand to find out why (<a href="https://github.com/MUKE-coder/grit/issues/91">#91</a>).
+                </p>
+                <p>
+                  There is now a read layer: <code>apps/web/lib/&lt;resource&gt;-public.ts</code>,
+                  calling the public routes with the key on every request, typed against the
+                  allowlist rather than the model, with the related and tree endpoints when the
+                  resource has them. Three more things that report found:
+                </p>
+                <ul>
+                  <li>
+                    <strong>Only <code>archived_at</code> hid a row.</strong> An admin turning{' '}
+                    <code>active</code> off left the product on sale. Every public read now goes
+                    through one scope, and where the model has a column that says whether a row may
+                    be seen, that scope uses it.
+                  </li>
+                  <li>
+                    <strong>Foreign keys were held back with the relation.</strong> Those are not the
+                    same thing, and a storefront could not link a product to its category from a
+                    response that had already agreed to return the product.
+                  </li>
+                  <li>
+                    <strong>Forty products called Emily Gardner.</strong> The faker gave every string
+                    a person&apos;s name and every whole number 1 to 100. It now takes the resource
+                    into account, and a price gets a price.
+                  </li>
+                </ul>
+                <p>See <a href="/docs/backend/public-api">The public surface</a>.</p>
+
+                <h3>Deploying where the platform sets the rules</h3>
+                <p>
+                  From a Grit triple shipped to Laravel Cloud, running in production (<a href="https://github.com/MUKE-coder/grit/issues/92">#92</a>):
+                </p>
+                <ul>
+                  <li>
+                    <strong><code>PORT</code> is read before <code>APP_PORT</code>.</strong> Every
+                    platform that routes to a container injects it, and a deploy that binds the other
+                    one goes green with nothing answering.
+                  </li>
+                  <li>
+                    <strong>A cross-site warning at boot.</strong> On a platform whose domain is on
+                    the Public Suffix List, two apps of one project are already cross-site, so the
+                    browser never sends the <code>SameSite=Lax</code> auth cookies and sign-in
+                    returns 200 followed by 401s with nothing logged. It now says so, and says what
+                    to do about it.
+                  </li>
+                  <li>
+                    <strong><code>AWS_BUCKET</code> and <code>AWS_ENDPOINT_URL</code></strong> are
+                    accepted where <code>S3_BUCKET</code> and <code>S3_ENDPOINT</code> were, so
+                    attaching a managed bucket needs nothing configured.
+                  </li>
+                  <li>
+                    <strong>A separate upload host in the CSP.</strong> A bucket that serves reads
+                    from its own CDN and signs writes for the underlying S3 endpoint had every upload
+                    signed by the API and then refused by the browser, reported as a console
+                    violation and never as an HTTP status. <code>NEXT_PUBLIC_STORAGE_UPLOAD_URL</code>{' '}
+                    goes into <code>connect-src</code> and nowhere else.
+                  </li>
+                </ul>
+
+                <h3>And a shop in Kampala</h3>
+                <p>
+                  <a href="/showcase">Duuka</a> joins the showcase: one deployment serving many
+                  storefronts for East African businesses that sell over WhatsApp, live on Laravel
+                  Cloud. The showcase no longer requires table and model counts, because those are
+                  the author&apos;s to publish and a number nobody measured is worse than a card
+                  without one.
+                </p>
+              </div>
+            </div>
+
             {/* v3.334.0 */}
             <div className="mb-12" id="v3.334.0">
               <div className="flex items-center gap-3 mb-4">

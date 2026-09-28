@@ -336,6 +336,46 @@ func goTypeToFieldType(t string) string {
 	}
 }
 
+// moneyColumnNames are the words that make a whole number a price rather than a
+// count. A quantity of 1 to 100 is fine; a price of 1 to 100 is not a price.
+var moneyColumnNames = []string{
+	"price", "amount", "cost", "total", "subtotal", "fee", "salary", "wage",
+	"balance", "budget", "revenue", "deposit", "charge",
+}
+
+// isMoneyColumn reports whether a whole-number column holds money.
+func isMoneyColumn(lower string) bool {
+	for _, needle := range moneyColumnNames {
+		if strings.Contains(lower, needle) {
+			return true
+		}
+	}
+	return false
+}
+
+// peopleResourceNames are the resources whose rows are people, where a name
+// column wants a person's name.
+//
+// Read off the resource rather than the column, because "name" says nothing on
+// its own: it is a person on Customer and a thing on Product, and the seeder
+// only ever has the one resource in front of it. The list is short and it is
+// meant to be: when it is wrong the seeder produces a plausible name of the
+// other kind, which a developer fixes in one line, and the alternative is
+// guessing from a column that carries no such information at all.
+var peopleResourceNames = map[string]bool{
+	"user": true, "customer": true, "client": true, "member": true,
+	"employee": true, "staff": true, "person": true, "contact": true,
+	"author": true, "student": true, "teacher": true, "patient": true,
+	"doctor": true, "driver": true, "guest": true, "attendee": true,
+	"subscriber": true, "lead": true, "applicant": true, "tenant": true,
+	"owner": true, "agent": true, "speaker": true, "instructor": true,
+}
+
+// seedsPeople reports whether this resource's rows are people.
+func (g *Generator) seedsPeople() bool {
+	return peopleResourceNames[strings.ToLower(toSnakeCase(g.Definition.Name))]
+}
+
 // seederFieldLines returns the "GoField: value," lines for one record, a
 // preamble that resolves belongs_to relations (loads the related ids so each
 // row links to a real parent), and whether the time/files packages are needed.
@@ -413,15 +453,21 @@ func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needs
 				val = `files.FileRefs{{URL: "https://picsum.photos/seed/` + toSnakeCase(f.Name) + `/600/400", Name: "sample.jpg", MIME: "image/jpeg"}}`
 			}
 		case ft == FieldInt:
-			if faker {
+			switch {
+			case faker && isMoneyColumn(lower):
+				val = "gofakeit.Number(1000, 500000)"
+			case faker:
 				val = "gofakeit.Number(1, 100)"
-			} else {
+			default:
 				val = "10"
 			}
 		case ft == FieldUint:
-			if faker {
+			switch {
+			case faker && isMoneyColumn(lower):
+				val = "uint(gofakeit.Number(1000, 500000))"
+			case faker:
 				val = "uint(gofakeit.Number(1, 100))"
-			} else {
+			default:
 				val = "10"
 			}
 		case ft == FieldFloat:
@@ -492,8 +538,19 @@ func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needs
 					val = "gofakeit.FirstName()"
 				case (strings.Contains(lower, "last") || strings.Contains(lower, "sur")) && strings.Contains(lower, "name"):
 					val = "gofakeit.LastName()"
+				// A person's name only where the resource is a person. On a
+				// catalogue this put "Emily Gardner" in every product, which is
+				// demo data nobody can demo with (grit#91).
 				case strings.Contains(lower, "name"):
-					val = "gofakeit.Name()"
+					if g.seedsPeople() {
+						val = "gofakeit.Name()"
+					} else {
+						val = "gofakeit.ProductName()"
+					}
+				// A headline reads as one. gofakeit.Word() put "moreover" in
+				// every title column, which is a word, and not a title.
+				case lower == "title", strings.HasSuffix(lower, "_title"), strings.Contains(lower, "subject"), strings.Contains(lower, "headline"):
+					val = "gofakeit.Sentence(6)"
 				case strings.Contains(lower, "phone"):
 					val = "gofakeit.Phone()"
 				case strings.Contains(lower, "url"), strings.Contains(lower, "website"):

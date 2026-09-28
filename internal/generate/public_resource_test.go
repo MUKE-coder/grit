@@ -125,11 +125,17 @@ func TestPublicHandlerSource(t *testing.T) {
 
 	// The queries are the service's. Looked up by slug, so a public URL reads
 	// as something a person could type rather than a UUID.
-	if !strings.Contains(svc, `Where("slug = ? AND archived_at IS NULL"`) {
+	if !strings.Contains(svc, `Where("slug = ?", key)`) {
 		t.Error("GetPublic does not look the row up by its slug")
 	}
-	if !strings.Contains(svc, `Model(&models.Product{}).Where("archived_at IS NULL")`) {
+	// One scope, applied by every public read, so "why is this not on the site"
+	// has one answer.
+	if !strings.Contains(svc, `func (s *ProductService) publicScope(q *gorm.DB) *gorm.DB {`) ||
+		!strings.Contains(svc, `q = q.Where("archived_at IS NULL")`) {
 		t.Error("a public list must exclude archived rows")
+	}
+	if strings.Count(svc, "s.publicScope(") < 2 {
+		t.Error("a public query does not go through publicScope")
 	}
 	// archived_at is scoped in Go and must never become a query parameter, or
 	// ?archived_at= hands back rows somebody took down on purpose.

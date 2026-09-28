@@ -62,6 +62,15 @@ function toOrigin(value: string): string {
 // NEXT_PUBLIC_STORAGE_URL to your S3/R2/B2 public origin
 // (e.g. https://cdn.example.com or https://<bucket>.s3.<region>.amazonaws.com).
 const STORAGE_ORIGIN = toOrigin(process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:9002");
+// Where presigned uploads are actually sent, when that is not where the files
+// are read back from. A CSP source is an origin, so listing only the read origin
+// blocks the PUT: the API signs a perfectly good URL and the browser refuses it,
+// which shows up as a console violation and never as an HTTP status. A managed
+// bucket does this by default, serving reads from its own CDN host and signing
+// writes for the underlying S3 endpoint. Unset, it costs nothing.
+const STORAGE_UPLOAD_ORIGIN = process.env.NEXT_PUBLIC_STORAGE_UPLOAD_URL
+  ? " " + toOrigin(process.env.NEXT_PUBLIC_STORAGE_UPLOAD_URL)
+  : "";
 ` + nextIsDevLine + nextImageOrigins + `
 ` + cspPluginOrigins + `const csp = [
   "default-src 'self'",
@@ -74,7 +83,7 @@ const STORAGE_ORIGIN = toOrigin(process.env.NEXT_PUBLIC_STORAGE_URL || "http://l
   // public-IP hint the API client fetches so local audit records show a real
   // address instead of ::1 — dev only, and it must be allowed here or the
   // browser logs a CSP violation on every page load.
-  ` + nextConnectSrcNew + ` ? " ws: wss: https://api.ipify.org" : ""),
+  ` + nextConnectSrcUpload + ` ? " ws: wss: https://api.ipify.org" : ""),
   ` + cspFrameSrc + `
   "frame-ancestors 'none'",
   "base-uri 'self'",
@@ -190,6 +199,15 @@ const API_ORIGIN = toOrigin(viteEnv.VITE_API_URL || 'http://localhost:8080')
 // stored images load from it. Defaults to local MinIO; set VITE_STORAGE_URL
 // to your S3/R2/B2 public origin in production.
 const STORAGE_ORIGIN = toOrigin(viteEnv.VITE_STORAGE_URL || 'http://localhost:9002')
+// Where presigned uploads are actually sent, when that is not where the files
+// are read back from. A CSP source is an origin, so listing only the read origin
+// blocks the PUT: the API signs a perfectly good URL and the browser refuses it,
+// which shows up as a console violation and never as an HTTP status. A managed
+// bucket does this by default, serving reads from its own CDN host and signing
+// writes for the underlying S3 endpoint. Unset, it costs nothing.
+const STORAGE_UPLOAD_ORIGIN = viteEnv.VITE_STORAGE_UPLOAD_URL
+  ? ' ' + toOrigin(viteEnv.VITE_STORAGE_UPLOAD_URL)
+  : ''
 ` + viteIsDevLine + viteImageOrigins + `
 const csp = [
   "default-src 'self'",
@@ -200,7 +218,7 @@ const csp = [
   "font-src 'self' data: https://fonts.gstatic.com",
   // api.ipify.org is the dev-only public-IP hint the API client fetches so
   // local audit records show a real address instead of ::1.
-  "connect-src 'self' ws: wss: " + API_ORIGIN + " " + STORAGE_ORIGIN + (isDev ? ' https://api.ipify.org' : ''),
+  "connect-src 'self' ws: wss: " + API_ORIGIN + " " + STORAGE_ORIGIN + STORAGE_UPLOAD_ORIGIN + (isDev ? ' https://api.ipify.org' : ''),
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

@@ -241,6 +241,73 @@ if cfg.SentinelEnabled {
                 </p>
               </div>
 
+              {/* What the WAF does not inspect */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  What the WAF does not inspect
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  A few routes have to be exempt from body inspection, and{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">wafExcludedRoutes()</code> in{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">internal/routes/routes.go</code>{' '}
+                  is the list. A photograph is larger than the inspection cap by design. And a
+                  richtext body is <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">&lt;p&gt;</code>,{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">&lt;strong&gt;</code> and{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">&lt;img&gt;</code> by
+                  definition, so the XSS heuristics flag ordinary markup, and a post whose body
+                  quotes a shell command trips the traversal and command-injection rules on the{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">../</code> and the{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">$(</code> inside a code block.
+                </p>
+                <CodeBlock language="go" filename="internal/routes/routes.go" code={`paths := []string{
+    "/blogs", "/blogs/*",
+    "/admin/blogs", "/admin/blogs/*",
+    "/uploads", "/uploads/*",
+    "/*/import",          // a spreadsheet is over the body cap
+    "/public/forms/*",
+    // grit generate resource adds a resource here when it emits a richtext field.
+    // grit:waf:richtext
+}`} />
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Every richtext resource is listed twice, at its public path and again under{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/admin</code>. A body is
+                  inspected on the way in, so it is the writes that carry the markup, and the admin
+                  panel writes through the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/admin</code>{' '}
+                  prefix. With only the public path listed, a post could be published once and then
+                  never edited: every <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">PUT</code>{' '}
+                  from the admin was answered 403 and logged as a critical threat. That was{' '}
+                  <a href="https://github.com/MUKE-coder/grit/issues/90" className="underline decoration-dotted underline-offset-4 hover:text-foreground">issue&nbsp;90</a>,
+                  fixed in v3.335.0; <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit upgrade</code>{' '}
+                  adds the missing entries to a project generated before it.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  <strong className="text-foreground">Exclusion is from body inspection only.</strong>{' '}
+                  These routes still pass through authentication, RBAC, binding validation,{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">sanitize:&quot;html&quot;</code>{' '}
+                  and the rate limits. The HTML is cleaned on every write whether the WAF looked at
+                  it or not, which is what actually protects the reader: a WAF pattern match is a
+                  guess about intent, and an allowlist sanitizer is not.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Only <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">richtext</code> fields
+                  earn an entry, never <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">text</code>.
+                  Nearly every resource has a description or a note, and exempting all of them would
+                  leave the WAF inspecting nothing worth inspecting. If a plain text column does
+                  carry code, add that resource to the list by hand above the{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit:waf:richtext</code> marker.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  In development the WAF runs in <strong className="text-foreground">log mode</strong>,
+                  so a body it dislikes is recorded and served anyway. It blocks outside development.
+                  That is worth knowing when a payload works on your laptop and returns 403 in
+                  staging: set <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">APP_ENV</code> to
+                  anything but <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">development</code>{' '}
+                  to reproduce it locally, and read the evidence in{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/sentinel/ui</code>, which
+                  names the pattern and the substring that matched.
+                </p>
+              </div>
+
               {/* Dashboard */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">

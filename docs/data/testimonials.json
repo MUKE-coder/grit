@@ -8,6 +8,14 @@
       "photo": "/testimonials/obi-anthony-uchenna.jpg",
       "link": "https://www.linkedin.com/in/obi-anthony/",
       "source": "https://github.com/MUKE-coder/grit/issues/88"
+    },
+    {
+      "quote": "Grit gave me the catalogue, a real admin, two-factor, passkeys and a firewall on day one, so my time went into Duuka itself. Deploying to Laravel Cloud cost me a weekend; the core never did.",
+      "name": "Mark Cole Mukisa",
+      "role": "Engineer, Duuka",
+      "photo": "/testimonials/mark-cole-mukisa.jpg",
+      "link": "https://github.com/MarkColeMukisa",
+      "source": "https://github.com/MUKE-coder/grit/issues/93"
     }
   ]
 }

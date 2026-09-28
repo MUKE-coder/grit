@@ -398,6 +398,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairImportServices(root, opts); err != nil {
 			fmt.Printf("  ⚠ hardening the CSV imports: %v\n", err)
 		}
+		// Sentinel's WAF stepped aside for a richtext body only on its public
+		// path, so the admin panel could publish a post whose body quoted a
+		// shell command and then never edit it: every PUT answered 403. Adds the
+		// /admin twin of each entry, and the resources the list never mentioned.
+		if err := repairWAFRichtext(root, opts); err != nil {
+			fmt.Printf("  ⚠ excluding the richtext routes from WAF body inspection: %v\n", err)
+		}
 		// Sync pull pages on (updated_at, id) and a soft delete moves updated_at:
 		// the soft-delete hook, its wiring and the updated_at indexes.
 		if err := repairSyncPull(root, opts); err != nil {
@@ -484,6 +491,10 @@ func Upgrade(uOpts UpgradeOptions) error {
 		}
 		if err := repairCSPWebSocket(root); err != nil {
 			fmt.Printf("  ⚠ letting the CSP admit the realtime socket: %v\n", err)
+		}
+		// After the socket repair, whose connect-src shape it matches on.
+		if err := repairCSPUploadOrigin(root); err != nil {
+			fmt.Printf("  ⚠ letting the CSP admit a separate upload host: %v\n", err)
 		}
 		// After the link-safety repair, which tightens img-src to the line
 		// media-src is placed after.

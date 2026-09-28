@@ -34,7 +34,7 @@ func TestPublicQueriesAreTheServices(t *testing.T) {
 		`if item.CategoryID != "" {`,
 		`query = query.Where("category_id = ?", item.CategoryID)`,
 		// Excludes itself, or the strip shows the page you are already on.
-		`Where("id <> ? AND archived_at IS NULL", item.ID)`,
+		`Where("id <> ?", item.ID)`,
 	} {
 		if !strings.Contains(svc, want) {
 			t.Errorf("the service is missing %q", want)

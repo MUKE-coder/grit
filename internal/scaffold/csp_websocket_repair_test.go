@@ -11,7 +11,9 @@ import (
 // frontends' nginx CSP allows sockets at all.
 func TestNewFrontendCSPAdmitsTheRealtimeSocket(t *testing.T) {
 	next := nextSecurityHeaders()
-	for _, want := range []string{nextAPIWSOrigin, nextConnectSrcNew} {
+	// nextConnectSrcUpload is nextConnectSrcNew plus the upload origin, which
+	// v3.335.0 added: a fresh config is the whole of it.
+	for _, want := range []string{nextAPIWSOrigin, nextConnectSrcUpload} {
 		if !strings.Contains(next, want) {
 			t.Errorf("the Next.js CSP is missing %q", want)
 		}
@@ -28,16 +30,23 @@ func TestNewFrontendCSPAdmitsTheRealtimeSocket(t *testing.T) {
 // once, and leaves a config it did not write alone with a warning.
 func TestCSPWebSocketRepair(t *testing.T) {
 	now := nextSecurityHeaders()
-	before := strings.Replace(strings.Replace(now, nextAPIWSOrigin, "", 1), nextConnectSrcNew, nextConnectSrcOld, 1)
-	if before == now {
+	// Two repairs stand between the oldest config and this one: the socket
+	// origin, and the upload origin after it. Rebuild the oldest and run both.
+	withoutUpload := strings.Replace(strings.Replace(now, nextUploadOriginBlock, "", 1), nextConnectSrcUpload, nextConnectSrcNew, 1)
+	before := strings.Replace(strings.Replace(withoutUpload, nextAPIWSOrigin, "", 1), nextConnectSrcNew, nextConnectSrcOld, 1)
+	if before == now || before == withoutUpload {
 		t.Fatal("could not rebuild the old config from the template")
 	}
 	got, fixed, warn := repairCSPWebSocketNextSource(before)
-	if got != now || len(fixed) != 1 || len(warn) != 0 {
-		t.Fatalf("repair did not produce the current config (fixed %v, warned %v)", fixed, warn)
+	if got != withoutUpload || len(fixed) != 1 || len(warn) != 0 {
+		t.Fatalf("the socket repair did not produce the config that followed it (fixed %v, warned %v)", fixed, warn)
 	}
 	if again, fixed, _ := repairCSPWebSocketNextSource(got); again != got || len(fixed) != 0 {
 		t.Error("the repair is not idempotent")
+	}
+	// And the pair of them lands on what a project scaffolded today gets.
+	if out, fixed, warn := repairCSPUploadOriginNextSource(got); out != now || len(fixed) != 1 || len(warn) != 0 {
+		t.Errorf("the two repairs together did not produce the current config (fixed %v, warned %v)", fixed, warn)
 	}
 
 	custom := "const csp = [\"connect-src 'self' https://mine.example\"];\n"

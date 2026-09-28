@@ -188,6 +188,26 @@ func (g *Generator) publicHandlerSource(names Names, included []Field) string {
 			"\t\tDepth: m.Depth,")
 	}
 
+	// Foreign keys, which the response used to hold back along with the relation
+	// they point at. Those are not the same thing, and conflating them left a
+	// storefront unable to link a product to its category from a response that
+	// had already agreed to return the product: the id names a row the endpoint
+	// was willing to list, and says nothing about the parent except that it
+	// exists. The relation itself stays unpublished, because publishing it
+	// publishes a whole record nobody vetted.
+	//
+	// A self-referencing key is the tree's parent, published above with the rest
+	// of the shape, so it is not repeated here.
+	for _, f := range g.Definition.Fields {
+		if !f.IsBelongsTo() || f.RelatedModelName() == toPascalCase(g.Definition.Name) {
+			continue
+		}
+		fkGo := toPascalCase(strings.TrimSuffix(f.Name, "_id")) + "ID"
+		viewFields = append(viewFields,
+			fmt.Sprintf("\t%s string `json:%q`", fkGo, f.FKColumnName()))
+		assignments = append(assignments, fmt.Sprintf("\t\t%s: m.%s,", fkGo, fkGo))
+	}
+
 	for _, f := range included {
 		goName := toPascalCase(f.Name)
 		jsonName := toSnakeCase(f.Name)
@@ -294,10 +314,11 @@ func toPublic` + names.Pascal + `(m models.` + names.Pascal + `) public` + names
 // equality filters on the published columns, and a ?x_min= / ?x_max= window on
 // the numeric ones.
 func (h *` + names.Pascal + `Handler) ListPublic(c *gin.Context) {
-	// ListPublic never returns an archived row, and archived_at is deliberately
-	// absent from the filter lists below: a column listed there is settable
-	// from the query string, so ?archived=true would hand back rows somebody
-	// took down on purpose.
+	// The service decides what "live" means and it is not settable from here:
+	// archived_at and the visibility column are deliberately absent from the
+	// filter lists below, because a column listed there is settable from the
+	// query string, and ?active=false would hand back rows somebody took down
+	// on purpose.
 	res, err := h.service().ListPublic(c.Request.Context(), paginate.Bind(c), paginate.Config{
 		Searchable: []string{` + strings.Join(searchable, ", ") + `},
 		Sortable:   map[string]bool{` + strings.Join(sortable, ", ") + `},
@@ -445,6 +466,76 @@ func relatedParent(names Names, def *ResourceDefinition) (relatedParentExpr, boo
 	return e, true
 }
 
+// publicVisibilityNames are the boolean columns that mean "show this".
+//
+// Named rather than inferred from the type, because most booleans on a model
+// say something about the row and only these say whether anyone outside may see
+// it. featured, taxable and fragile are all bool and none of them is this.
+var publicVisibilityNames = map[string]bool{
+	"active": true, "published": true, "visible": true, "enabled": true,
+	"is_active": true, "is_published": true, "is_visible": true,
+	"public": true, "is_public": true,
+}
+
+// publicVisibilityColumn is the column every public query gates on, or "".
+//
+// An admin turning a row off expects it to leave the storefront, and before
+// this only archived_at did that: "active: off" stayed on sale, which is the
+// kind of gap you find out about from a customer. Archiving is not the same
+// act, and a shop that wants a product back next week should not have to
+// archive it.
+//
+// The first matching field in declaration order, so the choice is the model's
+// and is stable across regenerations.
+func publicVisibilityColumn(fields []Field) string {
+	for _, f := range fields {
+		if t := FieldType(f.Type); t != FieldBool && t != FieldToggle {
+			continue
+		}
+		if name := toSnakeCase(f.Name); publicVisibilityNames[name] {
+			return name
+		}
+	}
+	return ""
+}
+
+// publicLiveDescription says in English what publicScope does, for the comment
+// on each method that calls it.
+func publicLiveDescription(fields []Field) string {
+	if col := publicVisibilityColumn(fields); col != "" {
+		return "not archived, and " + col + " is true"
+	}
+	return "not archived"
+}
+
+// publicScopeMethod is the one place the public surface decides what it will
+// show. Every public query goes through it, so there is one answer to "why is
+// this not on the site" rather than one per endpoint.
+//
+// A scope rather than a string spliced into each Where: the visibility value is
+// bound, because a boolean literal in raw SQL is not spelled the same on every
+// engine Grit supports.
+func publicScopeMethod(p string, fields []Field) string {
+	visible := ""
+	if col := publicVisibilityColumn(fields); col != "" {
+		visible = `
+	// An admin switching a row off expects it to leave the site. Archiving is a
+	// different act, and a shop that wants a product back next week should not
+	// have to archive it to take it down today.
+	q = q.Where("` + col + ` = ?", true)`
+	}
+	return `
+// publicScope narrows a query to what an anonymous caller may see.
+//
+// Every public read below goes through it. Add a condition here and it applies
+// to the list, the detail page and everything derived from them at once.
+func (s *` + p + `Service) publicScope(q *gorm.DB) *gorm.DB {
+	q = q.Where("archived_at IS NULL")` + visible + `
+	return q
+}
+`
+}
+
 // publicSlugColumn is the column GetPublic looks a row up by: the first
 // published slug, or the id when there is none.
 func publicSlugColumn(included []Field) string {
@@ -468,20 +559,26 @@ func (g *Generator) publicServiceMethods(names Names) string {
 	}
 	included, _ := PublicFields(g.Definition.Fields)
 	slug := publicSlugColumn(included)
+	live := publicLiveDescription(g.Definition.Fields)
 	p := names.Pascal
 
-	out := `
-// ListPublic returns one page of what the public surface may list, which is
-// never an archived row. cfg is the public allowlist the public handler keeps.
+	out := publicScopeMethod(p, g.Definition.Fields) + `
+// ListPublic returns one page of what the public surface may list: rows that are
+// ` + live + `. cfg is the allowlist the public handler keeps.
 func (s *` + p + `Service) ListPublic(ctx context.Context, params paginate.Params, cfg paginate.Config) (paginate.Result[models.` + p + `], error) {
-	query := s.db(ctx).Model(&models.` + p + `{}).Where("archived_at IS NULL")
+	query := s.publicScope(s.db(ctx).Model(&models.` + p + `{}))
 	return paginate.List[models.` + p + `](query, params, cfg)
 }
 
-// GetPublic returns the live ` + names.Lower + ` whose ` + slug + ` is key.
+// GetPublic returns the ` + names.Lower + ` whose ` + slug + ` is key, if it is
+// ` + live + `.
+//
+// A row outside that is a 404 rather than a 403: whether it exists is itself
+// not public.
 func (s *` + p + `Service) GetPublic(ctx context.Context, key string) (*models.` + p + `, error) {
 	var item models.` + p + `
-	if err := s.db(ctx).Where("` + slug + ` = ? AND archived_at IS NULL", key).First(&item).Error; err != nil {
+	if err := s.publicScope(s.db(ctx).Model(&models.` + p + `{})).
+		Where("` + slug + ` = ?", key).First(&item).Error; err != nil {
 		return nil, err
 	}
 	return &item, nil
@@ -493,8 +590,8 @@ func (s *` + p + `Service) GetPublic(ctx context.Context, key string) (*models.`
 // and everything below it, in one indexed LIKE on the materialized path.
 func (s *` + p + `Service) PublicSubtreeIDs(ctx context.Context, path string) ([]string, error) {
 	var ids []string
-	err := s.db(ctx).Model(&models.` + p + `{}).
-		Where("path LIKE ? AND archived_at IS NULL", path+"%").
+	err := s.publicScope(s.db(ctx).Model(&models.` + p + `{})).
+		Where("path LIKE ?", path+"%").
 		Pluck("id", &ids).Error
 	return ids, err
 }
@@ -503,7 +600,7 @@ func (s *` + p + `Service) PublicSubtreeIDs(ctx context.Context, path string) ([
 // siblings in the order the admin arranged, for the public tree to assemble.
 func (s *` + p + `Service) PublicTreeRows(ctx context.Context) ([]models.` + p + `, error) {
 	var rows []models.` + p + `
-	err := s.db(ctx).Where("archived_at IS NULL").
+	err := s.publicScope(s.db(ctx).Model(&models.` + p + `{})).
 		Order("depth asc, position asc, name asc").
 		Find(&rows).Error
 	return rows, err
@@ -517,8 +614,8 @@ func (s *` + p + `Service) PublicTreeRows(ctx context.Context) ([]models.` + p +
 // siblings, so it gets the newest rows instead: a worse recommendation than a
 // real match, and a better one than an empty strip.
 func (s *` + p + `Service) RelatedPublic(ctx context.Context, item *models.` + p + `, limit int) ([]models.` + p + `, error) {
-	query := s.db(ctx).Model(&models.` + p + `{}).
-		Where("id <> ? AND archived_at IS NULL", item.ID)
+	query := s.publicScope(s.db(ctx).Model(&models.` + p + `{})).
+		Where("id <> ?", item.ID)
 	if ` + rel.set + ` {
 		query = query.Where("` + rel.fk + ` = ?", ` + rel.value + `)
 	}
