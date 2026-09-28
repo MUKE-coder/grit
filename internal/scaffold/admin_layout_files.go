@@ -172,6 +172,8 @@ func adminIconMap() string {
   Truck,
   UsersRound,
   Workflow,
+  Circle,
+  CircleDashed,
   // grit:icons:import
   type LucideIcon,
 } from "lucide-react";
@@ -363,6 +365,9 @@ export {
   // v3.103.0 — the form field "Generate" button. Note: an icon being in the
   // iconMap above does NOT make it a named export — it must be listed here too.
   Sparkles,
+  // v3.336.0 — the scaling readiness panel on /system/observability.
+  Circle,
+  CircleDashed,
 };
 `
 }

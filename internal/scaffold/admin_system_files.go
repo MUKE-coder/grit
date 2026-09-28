@@ -57,6 +57,24 @@ export function useObservabilitySummary<T = Record<string, unknown>>() {
   });
 }
 
+// The scaling report: percentiles, connection use, the slowest queries, the
+// cache hit rate, one verdict, and the stage-by-stage state of this deployment.
+// Admin only, because it reports connection counts and query shapes.
+//
+// Polled a good deal slower than the observability summary: it runs several
+// statistics queries against Postgres, and nothing it reports changes in ten
+// seconds.
+export function useScaleReport<T = Record<string, unknown>>() {
+  return useQuery<T>({
+    queryKey: ["admin", "scale", "report"],
+    queryFn: async () => {
+      const { data } = await apiClient.get("/api/scale");
+      return (data?.data ?? data) as T;
+    },
+    refetchInterval: 60_000,
+  });
+}
+
 export function useJobStats() {
   return useQuery<QueueStats[]>({
     queryKey: ["admin", "jobs", "stats"],
@@ -1007,8 +1025,8 @@ func adminObservabilityPage() string {
 
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Activity, ExternalLink, AlertTriangle, Zap } from "@/lib/icons";
-import { useObservabilitySummary } from "@/hooks/use-system";
+import { Activity, ExternalLink, AlertTriangle, Zap, CheckCircle, Circle, CircleDashed, Minus, Gauge } from "@/lib/icons";
+import { useObservabilitySummary, useScaleReport } from "@/hooks/use-system";
 import { getApiErrorMessage } from "@/lib/api-core";
 
 import { API_URL } from "@/lib/api-core";
@@ -1024,6 +1042,29 @@ interface Summary {
   alerts?: { data?: Array<{ id: string; name: string; severity: string; message: string }> }
   _errors?: Record<string, string>
 }
+
+type StageState = "on" | "ready" | "attention" | "yours";
+
+interface ScaleReport {
+  stage?: string
+  next?: string
+  why?: string
+  notes?: string[]
+  stages?: Array<{ n: string; name: string; state: StageState; what: string; evidence: string }>
+  latency?: { samples?: number; p50_ms?: number; p95_ms?: number; p99_ms?: number }
+  database?: { replicas?: number; open_connections?: number; max_connections?: number }
+  cache?: { configured?: boolean; hit_rate?: number }
+}
+
+// How each state reads. "ready" is a tick too, hollow rather than filled: the
+// stage is shipped and switched off because nothing yet needs it, which is a
+// good answer and not a missing feature.
+const STAGE_STATE: Record<StageState, { icon: typeof CheckCircle; cls: string; label: string }> = {
+  on:        { icon: CheckCircle,  cls: "text-success",    label: "In force" },
+  ready:     { icon: Circle,       cls: "text-success/60", label: "Ready, not needed yet" },
+  attention: { icon: AlertTriangle, cls: "text-warning",   label: "Needs attention" },
+  yours:     { icon: Minus,        cls: "text-text-muted", label: "Yours to decide" },
+};
 
 const BAND_CLS: Record<string, string> = {
   green:   "bg-success/15 text-success border-success/30",
@@ -1071,6 +1112,8 @@ export default function ObservabilityPage() {
           </div>
         </div>
       )}
+
+      <ScalingReadiness />
 
       {/* Top-line KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -1187,6 +1230,100 @@ export default function ObservabilityPage() {
           )}
         </Panel>
       </div>
+    </div>
+  );
+}
+
+// Which of the ten scaling stages this deployment is past, measured rather than
+// claimed. The verdict names the one thing to do next, and most of the time
+// that is nothing; the list below it is the half people ask about first, which
+// is what is already handled.
+function ScalingReadiness() {
+  const query = useScaleReport<ScaleReport>();
+  const report = query.data ?? null;
+  const stages = report?.stages ?? [];
+  const attention = stages.filter((s) => s.state === "attention").length;
+  const covered = stages.filter((s) => s.state === "on" || s.state === "ready").length;
+
+  if (query.isError) {
+    return (
+      <Panel title="Scaling readiness">
+        <p className="text-sm text-text-muted">
+          {getApiErrorMessage(query.error, "Could not read the scaling report")}
+        </p>
+      </Panel>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-bg-secondary overflow-hidden">
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <Gauge className="h-4 w-4 text-accent" /> Scaling readiness
+        </h2>
+        {stages.length > 0 && (
+          <span className={` + "`${attention > 0 ? \"text-warning\" : \"text-success\"} text-xs font-mono`" + `}>
+            {covered} of {stages.length} stages handled{attention > 0 ? ` + "`, ${attention} need${attention === 1 ? \"s\" : \"\"} attention`" + ` : ""}
+          </span>
+        )}
+      </div>
+
+      {/* The verdict, first, because it is the answer to "what now". */}
+      <div className="px-4 py-3 border-b border-border bg-bg-elevated/40">
+        {query.isPending ? (
+          <p className="text-sm text-text-muted">Measuring…</p>
+        ) : (
+          <>
+            <p className="text-sm font-medium text-foreground">{report?.stage ?? "—"}</p>
+            {report?.why && <p className="text-xs text-text-secondary mt-0.5">{report.why}</p>}
+            {report?.next && (
+              <p className="text-xs text-text-muted mt-1.5">
+                <span className="font-mono uppercase tracking-wider text-[10px] text-text-muted">Do this next</span>{" "}
+                <span className="text-foreground">{report.next}</span>
+              </p>
+            )}
+          </>
+        )}
+      </div>
+
+      <ul className="divide-y divide-border">
+        {stages.map((stage) => {
+          const state = STAGE_STATE[stage.state] ?? STAGE_STATE.yours;
+          const Icon = state.icon;
+          return (
+            <li key={stage.n} className="flex items-start gap-3 px-4 py-2.5">
+              <Icon className={` + "`h-4 w-4 mt-0.5 shrink-0 ${state.cls}`" + `} aria-hidden />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-mono text-[10px] text-text-muted shrink-0">{stage.n}</span>
+                  <span className="text-sm font-medium text-foreground">{stage.name}</span>
+                </div>
+                <p className="text-xs text-text-secondary mt-0.5">{stage.what}</p>
+                {stage.evidence && (
+                  <p className="text-[11px] text-text-muted mt-0.5 font-mono">{stage.evidence}</p>
+                )}
+              </div>
+              <span className={` + "`text-[10px] shrink-0 mt-1 ${state.cls}`" + `}>{state.label}</span>
+            </li>
+          );
+        })}
+        {!query.isPending && stages.length === 0 && (
+          <li className="px-4 py-6 text-center text-sm text-text-muted">
+            No stage report. This needs an API on v3.336.0 or later.
+          </li>
+        )}
+      </ul>
+
+      {(report?.notes ?? []).length > 0 && (
+        <div className="px-4 py-3 border-t border-border space-y-1">
+          {(report?.notes ?? []).map((note, i) => (
+            <p key={i} className="text-[11px] text-text-muted flex items-start gap-1.5">
+              <CircleDashed className="h-3 w-3 mt-0.5 shrink-0" aria-hidden />
+              {note}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

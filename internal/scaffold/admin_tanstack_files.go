@@ -731,6 +731,10 @@ func adminTanStackIndexHTML(opts Options) string {
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- The convention technology scanners read. No version: knowing an app is
+         a Grit app is fine, knowing its release is a list of that release's
+         advisories. Delete this line to opt out. -->
+    <meta name="generator" content="Grit" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     %s

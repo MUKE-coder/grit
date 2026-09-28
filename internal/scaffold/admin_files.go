@@ -1121,6 +1121,11 @@ import { Providers } from "@/components/shared/providers";
 export const metadata: Metadata = {
   title: "%s Admin",
   description: "Admin panel, built with Grit",
+  // <meta name="generator" content="Grit">, the convention every static site
+  // generator and CMS uses and the one technology scanners read. No version:
+  // knowing an app is a Grit app is fine, and knowing which release it is
+  // running is a list of that release's advisories. Delete the line to opt out.
+  generator: "Grit",
 };
 
 %s

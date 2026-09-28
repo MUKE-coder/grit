@@ -84,7 +84,8 @@ export default function ScalingPage() {
               <h2 id="scale">Which stage are you at?</h2>
               <p>
                 Point it at the deployment that is struggling. These numbers describe wherever they
-                are measured, and a laptop under no load is always healthy.
+                are measured, and a laptop under no load is always healthy. The admin panel shows
+                the same report; see <a href="#readiness">below</a>.
               </p>
               <CodeBlock
                 terminal
@@ -116,6 +117,57 @@ export default function ScalingPage() {
                 is. Measuring in the CLI would describe your laptop. The API exposes{' '}
                 <code>GET /api/v1/scale</code> (admin only, because it reports connection counts
                 and query shapes) and <code>grit scale</code> reads it over the network.
+              </Callout>
+
+              <h2 id="readiness">The same thing, in the admin panel</h2>
+              <p>
+                <code>grit scale</code> answers it from a terminal. The admin&apos;s{' '}
+                <strong>Observability</strong> page answers it for everyone else, at the top of the
+                page, refreshed every minute: the verdict, and then all ten stages with the state of
+                each on this deployment.
+              </p>
+              <CodeBlock
+                language="text"
+                code={`Scaling readiness                        9 of 10 stages handled
+
+  Healthy
+  p99 13ms over 65 requests, 11 of 100 database connections in use.
+  Do this next: Nothing. Adding infrastructure now buys complexity and no speed.
+
+  0  Measure first               p50 3ms, p95 7ms, p99 13ms over 65 requests
+  1  One server, one database    config from the environment, one database
+                                 module (postgres), uploads in object storage
+  2  Vertical scaling            8 cores visible, GOMAXPROCS 8
+  3  Horizontal + load balancer  4 instances declared
+  4  Stateless servers           sessions are rows, uploads on s3, cron
+                                 elected to one instance through Redis
+  5  Connection pooling          11 of 100 connections in use, pool max 25
+  6  Indexes, then replicas      no replicas, and none needed until reads peg
+                                 the primary with the indexes already right
+  7  Caching                     hit rate 94% over 20,431 lookups
+  8  Queues and background jobs  asynq workers, retries with backoff, cron
+                                 and a transactional outbox
+  9  Sharding                    largest table orders, about 412,000 rows`}
+              />
+              <p>
+                Every line is read off the running deployment rather than off a list of features. A
+                tick against Stage 4 means this app was observed keeping sessions in the database
+                and uploads in object storage; it is not a claim about what the framework can do.
+                The three measured stages, 5, 6 and 7, go amber on the same thresholds the verdict
+                uses, so the panel cannot show green for the stage the verdict is calling out.
+              </p>
+              <p>
+                Two things it will tell you about that are easy to miss until a second instance
+                exists. <code>STORAGE_DRIVER=local</code> keeps uploads on one machine&apos;s disk,
+                so the second instance serves 404s for half of them. And SQLite serialises writes,
+                which makes every scaling question after Stage 1 have the same answer.
+              </p>
+              <Callout type="note" title="Why a hollow tick is still a good answer">
+                Stages 6 and 7 usually read &quot;ready, not needed yet&quot;. That is the correct
+                state for almost every application, and the panel says so rather than leaving a gap
+                that looks like something missing. Replica routing and{' '}
+                <code>cache.Remember</code> are in the project either way; they are one environment
+                variable and one function call from being in force.
               </Callout>
 
               <h2 id="replicas">Stage 6: read replicas</h2>

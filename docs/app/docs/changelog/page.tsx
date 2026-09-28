@@ -66,6 +66,63 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.336.0 */}
+            <div className="mb-12" id="v3.336.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.336.0
+                </span>
+                <span className="text-sm text-muted-foreground">September 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Scaling readiness, at the top of Observability</h3>
+                <p>
+                  <code>grit scale</code> answered &quot;what should I do next&quot; from a
+                  terminal. The question people ask first is the other one: what is already handled
+                  here? The admin&apos;s <strong>Observability</strong> page now opens with all ten
+                  scaling stages and the state of each on this deployment, under the verdict.
+                </p>
+                <p>
+                  Every line is measured off the running app rather than read from a list of
+                  features. A tick against Stage 4 means this deployment was observed keeping
+                  sessions in the database and uploads in object storage, with the driver named
+                  beside it. Stage 2 reports the cores it can see. Stage 9 reports the largest
+                  table, because that is the number that decides whether sharding is even a
+                  question, and the honest answer is almost always no.
+                </p>
+                <p>
+                  The three measured stages go amber on the same constants the verdict uses, so the
+                  panel cannot show a green tick for the stage the verdict is calling out. Two
+                  things it will tell you about are the ones that are invisible until a second
+                  instance exists: <code>STORAGE_DRIVER=local</code>, which leaves uploads on one
+                  machine&apos;s disk, and SQLite, which makes every question after Stage 1 have the
+                  same answer.
+                </p>
+                <p>
+                  A stage that is off reads &quot;ready, not needed yet&quot; rather than leaving a
+                  gap. That is the correct state for replicas and caching in almost every
+                  application, and a gap there looks like something missing when it is not. See{' '}
+                  <a href="/docs/scaling#readiness">Scaling</a>.
+                </p>
+
+                <h3>A Grit app now says it is one</h3>
+                <p>
+                  Nothing a Grit app served identified the framework, so a technology scanner could
+                  find Next.js, React and Tailwind and stop. Both frontend shapes now emit{' '}
+                  <code>&lt;meta name=&quot;generator&quot; content=&quot;Grit&quot;&gt;</code>, the
+                  convention every static site generator and CMS uses for exactly this.
+                </p>
+                <p>
+                  The name and not the version. Telling an unauthenticated visitor which release is
+                  running hands them that release&apos;s advisories, which is the same reason{' '}
+                  <code>poweredByHeader</code> is off in the Next config two files away and why the
+                  Go API still names nothing at all. One line in your own layout, so deleting it is
+                  the opt-out.
+                </p>
+              </div>
+            </div>
+
             {/* v3.335.0 */}
             <div className="mb-12" id="v3.335.0">
               <div className="flex items-center gap-3 mb-4">
