@@ -455,7 +455,13 @@ def check_public_surface(alice, admin, category, product_id):
     rows = data(body) or []
     check('Public: the list answers with a key', status == 200 and rows, (status, body[:200]))
     check('Public: it publishes the allowlist, not the model',
-          all('secret' not in r and 'category_id' not in r for r in rows), body[:250])
+          all('secret' not in r and 'category' not in r and 'tags' not in r for r in rows), body[:250])
+    # A foreign key is not the relation it points at. The id names a row the
+    # endpoint already agreed to return and says nothing about the parent; the
+    # relation would publish a whole record nobody vetted. Holding both back
+    # left a storefront unable to link a product to its category (grit#91).
+    check('Public: a foreign key is published, its relation is not',
+          all(isinstance(r.get('category_id'), str) for r in rows), body[:250])
 
     status, _, body = call('GET', '/api/v1/public/products?category_id=' + category, headers=headers)
     check('Public: a foreign key filters the list', status == 200 and product_id in ids(data(body)),
