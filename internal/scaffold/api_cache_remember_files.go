@@ -182,6 +182,11 @@ func jitter(ttl time.Duration) time.Duration {
 	if ttl <= 0 {
 		return ttl
 	}
+	// math/rand, not crypto/rand: this decides how long a cache entry lives,
+	// and an attacker who could predict it learns when a key expires, which is
+	// a thing the TTL already tells them.
+	//nolint:gosec // G404: TTL spread, not a secret
+	//#nosec G404
 	return ttl + time.Duration(rand.Int63n(int64(ttl)/10+1))
 }
 

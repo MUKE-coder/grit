@@ -112,6 +112,16 @@ func Style(theme string) map[string]interface{} {
 	heading := "font-family:" + font + ";font-size:20px;line-height:1.35;font-weight:700;letter-spacing:-0.01em;color:" + p.Ink + ";margin:0 0 12px;"
 	body := "font-family:" + font + ";font-size:15px;line-height:1.65;color:" + p.Muted + ";margin:0 0 16px;"
 
+	// template.CSS on every rule below, because html/template will not put an
+	// unmarked string into a style attribute: it writes ZgotmplZ instead, and
+	// the mail arrives unstyled with no error anywhere.
+	//
+	// Safe because none of it comes from outside. Every value is either a
+	// constant in this file or a field of the palette, which is chosen by name
+	// from a fixed set in this package. Nothing a user or a request can reach
+	// is interpolated here, so there is no input to escape.
+	//nolint:gosec // G203: our own stylesheet, no external input
+	//#nosec G203
 	return map[string]interface{}{
 		"Canvas":   p.Canvas,
 		"Card":     p.Card,

@@ -157,7 +157,14 @@ func (m *Mailer) renderTemplate(name string, data map[string]interface{}) (strin
 
 	// The fragment is our own markup, already escaped by its own pass, so it
 	// goes into the shell as HTML rather than being escaped a second time into
-	// visible angle brackets.
+	// visible angle brackets. Escaping twice is what turns a paragraph into
+	// visible &lt;p&gt; in somebody's inbox.
+	//
+	// Safe because body is the output of html/template, not an input to it:
+	// whatever the caller put in the data was escaped when the fragment was
+	// executed, one statement above.
+	//nolint:gosec // G203: already escaped by the fragment's own render
+	//#nosec G203
 	full["Content"] = template.HTML(body.String())
 
 	shell, err := template.New("layout").Parse(Layout)

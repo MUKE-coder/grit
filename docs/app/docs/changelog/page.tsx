@@ -66,6 +66,37 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.336.1 */}
+            <div className="mb-12" id="v3.336.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.336.1
+                </span>
+                <span className="text-sm text-muted-foreground">September 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The security scan is green again</h3>
+                <p>
+                  A generated project&apos;s <code>gosec</code> run had eight
+                  findings, all of them from Grit&apos;s own recent work and none of
+                  them a real vulnerability: the <code>template.CSS</code> calls the
+                  email themes need (without them <code>html/template</code> writes{' '}
+                  <code>ZgotmplZ</code> and the mail arrives unstyled), the{' '}
+                  <code>template.HTML</code> that puts an already-escaped fragment
+                  into the layout shell, and the <code>math/rand</code> jitter that
+                  spreads cache expiry.
+                </p>
+                <p>
+                  Each now carries a <code>#nosec</code> with the reasoning written
+                  out rather than a bare annotation, because an unexplained finding
+                  and a suppressed one look identical to the next person reading the
+                  file. Nothing behaves differently; the scan in your project&apos;s
+                  own CI passes again.
+                </p>
+              </div>
+            </div>
+
             {/* v3.336.0 */}
             <div className="mb-12" id="v3.336.0">
               <div className="flex items-center gap-3 mb-4">
