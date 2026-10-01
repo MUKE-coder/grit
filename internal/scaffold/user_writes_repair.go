@@ -344,6 +344,14 @@ func repairUserHandlerWritesSource(src, module string) (out string, fixed, warn 
 	if !strings.Contains(src, "func (h *UserHandler) Update(c *gin.Context) {") {
 		return src, nil, nil
 	}
+	// A handler that calls the service has none of these three problems, because
+	// it runs none of the queries they are about: the unique index decides a
+	// duplicate email, the role assignment and the row share the service's
+	// transaction, and the list is paginate's. See services.UserService
+	// (v3.340.0).
+	if strings.Contains(src, "h.users()") {
+		return src, nil, nil
+	}
 	out = src
 
 	// Create: let the unique index answer.

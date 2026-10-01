@@ -121,54 +121,8 @@ const (
 		"\t// Required to change the email or the password.\n" +
 		"\tCurrentPassword string `json:\"current_password\"`\n}\n"
 	profileChecksAnchor = "\tupdates := map[string]interface{}{}\n\tpasswordChanged := false\n"
-	profileChecks       = `	// Changing the address or the password takes the current password. Without
-	// it a stolen session was enough to take the account for good. An account
-	// with no password, one made through a provider, proves the address with a
-	// password reset instead.
-	emailChanged := req.Email != "" && !strings.EqualFold(req.Email, user.Email)
-	if emailChanged || req.Password != "" {
-		if user.Password == "" {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": gin.H{"code": "NO_PASSWORD", "message": "Set a password with a password reset before changing your email or password"},
-			})
-			return
-		}
-		if req.CurrentPassword == "" {
-			c.JSON(http.StatusUnprocessableEntity, gin.H{
-				"error": gin.H{
-					"code":    "VALIDATION_ERROR",
-					"message": "Enter your current password to change your email or password",
-					"details": gin.H{"current_password": "Required"},
-				},
-			})
-			return
-		}
-		if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.CurrentPassword)) != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": gin.H{"code": "INVALID_PASSWORD", "message": "Your current password is not correct"},
-			})
-			return
-		}
-	}
-	if emailChanged {
-		var taken int64
-		if err := h.DB.WithContext(c.Request.Context()).Model(&models.User{}).Where("LOWER(email) = LOWER(?) AND id <> ?", req.Email, user.ID).Count(&taken).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to check the email address"},
-			})
-			return
-		}
-		if taken > 0 {
-			c.JSON(http.StatusConflict, gin.H{
-				"error": gin.H{"code": "EMAIL_EXISTS", "message": "Another account already uses that email address"},
-			})
-			return
-		}
-	}
-
-`
-	profileEmailOld = "\tif req.Email != \"\" {\n\t\tupdates[\"email\"] = req.Email\n\t}\n"
-	profileEmailNew = "\tif emailChanged {\n" +
+	profileEmailOld     = "\tif req.Email != \"\" {\n\t\tupdates[\"email\"] = req.Email\n\t}\n"
+	profileEmailNew     = "\tif emailChanged {\n" +
 		"\t\t// A new address is unconfirmed until its owner confirms it.\n" +
 		"\t\tupdates[\"email\"] = req.Email\n" +
 		"\t\tupdates[\"email_verified_at\"] = nil\n" +
@@ -178,6 +132,48 @@ const (
 		"\t// takeover, by way of the password reset the new address would receive.\n" +
 		"\tif passwordChanged || emailChanged {\n\t\tif err := services.RevokeAllUserSessions("
 )
+
+// profileChecks is the block that makes a profile change prove the account,
+// taken from the handler template rather than transcribed here.
+//
+// It asks the service whether the new address is free, so a handler that has not
+// got the accessor gets that too: see withUsersAccessor. The alternative was a
+// frozen copy of the pre-v3.340.0 block here, free to drift from the template on
+// its own, which is how the auth handler came to have two copies that had.
+var profileChecks = repairBlock("api/handlers/user.go", "profile-checks")
+
+// usersAccessorBlock is the one method that reaches services.UserService, as the
+// template writes it.
+var usersAccessorBlock = repairBlock("api/handlers/user.go", "users-accessor")
+
+// withUsersAccessor adds that method to a handler that has not got it, below the
+// type and above the first method, with nothing left between a doc comment and
+// the function it describes.
+//
+// It reports false when this is not a handler Grit wrote, in which case the
+// caller leaves the file alone rather than writing a call to a method that is
+// not there.
+func withUsersAccessor(src string) (string, bool) {
+	if strings.Contains(src, "func (h *UserHandler) users()") {
+		return src, true
+	}
+	if !strings.Contains(src, "type UserHandler struct {") || !strings.Contains(src, "/internal/services\"") {
+		return src, false
+	}
+	at := strings.Index(src, "func (h *UserHandler) ")
+	if at < 0 {
+		return src, false
+	}
+	lineStart := strings.LastIndex(src[:at], "\n") + 1
+	for lineStart > 0 {
+		prev := strings.LastIndex(src[:lineStart-1], "\n") + 1
+		if !strings.HasPrefix(src[prev:], "//") {
+			break
+		}
+		lineStart = prev
+	}
+	return src[:lineStart] + usersAccessorBlock + src[lineStart:], true
+}
 
 // repairAccountSecurity applies M1, M3, M4 and M5 to an existing project.
 func repairAccountSecurity(root string, opts Options) error {
@@ -285,13 +281,25 @@ func repairProfileChangeSource(src string) (string, []string, []string) {
 		strings.Count(body, profileEmailOld) != 1 || strings.Count(body, profileRevokeOld) != 1 {
 		return src, nil, warn
 	}
+	withAccessor, ok := withUsersAccessor(src)
+	if !ok {
+		return src, nil, warn
+	}
+	if withAccessor != src {
+		// The block below calls that method, so what follows has to work on the
+		// file that has it: the offsets into src moved.
+		src = withAccessor
+		start = strings.Index(src, head)
+		end = strings.Index(src[start:], "\n}\n")
+		body = src[start : start+end+3]
+	}
 	newBody := strings.Replace(body, profileChecksAnchor, profileChecks+profileChecksAnchor, 1)
 	newBody = strings.Replace(newBody, profileEmailOld, profileEmailNew, 1)
 	newBody = strings.Replace(newBody, profileRevokeOld, profileRevokeNew, 1)
 	out := src[:start] + newBody + src[start+len(body):]
 	out = strings.Replace(out, profileRequestAnchor, profileRequestNew, 1)
-	out, ok := withImports(out, "strings")
-	if !ok {
+	out, imported := withImports(out, "strings")
+	if !imported {
 		return src, nil, []string{"could not add the strings import to user.go"}
 	}
 	return out, []string{"changing the email or password takes the current password, and a new email is checked and unconfirmed"}, nil

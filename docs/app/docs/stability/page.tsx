@@ -50,7 +50,7 @@ const rows: Row[] = [
     status: 'beta',
     guaranteed:
       'A custom role reaches only the endpoints its permissions name, a revoked permission stops working everywhere, and a route that names no permission stays ADMIN-only, so one that forgets fails closed.',
-    proof: 'authz/grants_test.go, authz/permissions_test.go, handlers/role_test.go, handlers/user_role_sync_test.go, plus a live check that a staff account holding notes.delete still cannot delete another user’s row',
+    proof: 'authz/grants_test.go, authz/permissions_test.go, handlers/role_test.go, services/user_test.go, plus a live check that a staff account holding notes.delete still cannot delete another user’s row',
     yours: 'Name a permission on every route you add yourself. The generator does it for generated resources; a hand-written route is yours.',
     history: 'A custom role could not reach a single admin endpoint until v3.220.0; a revoked permission kept working on other replicas until v3.218.0.',
   },

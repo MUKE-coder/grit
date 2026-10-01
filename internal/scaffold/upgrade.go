@@ -621,6 +621,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairThinServices(root, opts); err != nil {
 			fmt.Printf("  ⚠ moving the ticket rules into a service: %v\n", err)
 		}
+		// After the framework files are delivered: the user handler that arrives
+		// with them no longer declares syncUserRoleAssignment, so the old test
+		// beside it would not compile.
+		if err := pruneMovedUserRoleSyncTest(root, opts); err != nil {
+			fmt.Printf("  ⚠ %v\n", err)
+		}
 		// Before the sign-in repair, and the reason that ordering is not
 		// arbitrary: the Login it writes calls AuthService methods that a
 		// project from before v3.339.0 does not have.

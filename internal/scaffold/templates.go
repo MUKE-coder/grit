@@ -118,7 +118,11 @@ func repairBlock(template, id string) string {
 	if j < 0 {
 		panic(fmt.Sprintf("scaffold: %s has no %s%s:end marker after the start", template, repairMarkerPrefix, id))
 	}
-	return stripRepairMarkers(src[i : i+j])
+	// A marker is indented where the code it marks is, and the whitespace in
+	// front of the end marker belongs to that marker's line, not to the block:
+	// left on, it put a stray tab at the end of the text a repair writes, and
+	// the block then matched nothing in the file it came from.
+	return strings.TrimRight(stripRepairMarkers(src[i:i+j]), " 	")
 }
 
 // templateNames lists every embedded template, for the tests that check them

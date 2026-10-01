@@ -11,3 +11,9 @@ internal/scaffold/templates/** text eol=lf
 
 # The scaffolder reads these and writes their contents into projects too.
 *.tmpl text eol=lf
+
+# Repair fixtures are files a repair matches character for character, which
+# includes the line endings. The same conversion that broke the templates would
+# make every anchor miss on a Windows clone.
+internal/scaffold/testdata/** text eol=lf
+internal/generate/testdata/** text eol=lf

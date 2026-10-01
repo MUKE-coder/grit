@@ -2,6 +2,8 @@ package scaffold
 
 import (
 	"go/format"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -14,8 +16,8 @@ func TestUserWritesAreAtomicInTheTemplates(t *testing.T) {
 	for _, want := range []string{
 		"services.CreateUser(c.Request.Context(), h.DB, &user)",
 		"errors.Is(err, services.ErrEmailExists)",
-		"writeUserRoleAssignment(tx, user.ID, req.Role)",
-		"paginate.List[models.User](",
+		"h.users().Update(c.Request.Context(), user, updates, req.Role)",
+		"h.users().List(c.Request.Context(), paginate.Bind(c))",
 	} {
 		if !strings.Contains(user, want) {
 			t.Errorf("the user handler is missing %q", want)
@@ -29,6 +31,18 @@ func TestUserWritesAreAtomicInTheTemplates(t *testing.T) {
 	} {
 		if strings.Contains(user, gone) {
 			t.Errorf("the user handler still has %q", gone)
+		}
+	}
+	// The writes themselves, where they live now.
+	svc := apiUserServiceGo()
+	for _, want := range []string{
+		"func (s *UserService) Update(",
+		"writeUserRoleAssignment(tx, user.ID, roleName)",
+		"paginate.List[models.User](",
+		"authz.Invalidate()",
+	} {
+		if !strings.Contains(svc, want) {
+			t.Errorf("services/user.go is missing %q", want)
 		}
 	}
 	if strings.Contains(user, "\t\"math\"\n") || strings.Contains(user, "\t\"strconv\"\n") {
@@ -120,11 +134,17 @@ func TestRepairRegisterWrites(t *testing.T) {
 	}
 }
 
-// previousUserHandler rebuilds user.go as it stood in v3.280.0 from the current
-// template, so the repair is exercised against the text it will actually meet.
+// previousUserHandler rebuilds user.go as it stood in v3.280.0, so the repair is
+// exercised against the text it will actually meet.
+//
+// From a fixture rather than from the current template, which is where this
+// started: the template moved its queries onto UserService in v3.340.0 and every
+// reverse substitution here stopped matching. A repair's input is a file some
+// project still holds, and nothing in a later release changes what that file
+// says, so it belongs in testdata and not in a derivation from HEAD.
 func previousUserHandler(t *testing.T) string {
 	t.Helper()
-	src := apiUserHandlerGo()
+	src := userHandlerFixture(t, "v3.339.0.go.txt")
 
 	src = strings.Replace(src, userCreateInsertNew, userCreateInsertAnchor, 1)
 	src = strings.Replace(src, "\tuser := models.User{\n\t\tFirstName: req.FirstName,",
@@ -150,6 +170,17 @@ func previousUserHandler(t *testing.T) string {
 		}
 	}
 	return src
+}
+
+// userHandlerFixture reads a user handler as some earlier version of Grit wrote
+// it, with {{MODULE}} where the project's module path goes.
+func userHandlerFixture(t *testing.T, name string) string {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join("testdata", "user_handler", name))
+	if err != nil {
+		t.Fatalf("fixture: %v", err)
+	}
+	return strings.ReplaceAll(string(raw), "\r\n", "\n")
 }
 
 // oldUserListForTest is the hand-rolled list as v3.280.0 wrote it, counts

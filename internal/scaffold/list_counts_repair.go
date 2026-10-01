@@ -113,9 +113,10 @@ func repairUserListCountsSource(src, module string) (string, []string, []string)
 	if !strings.Contains(src, "func (h *UserHandler) List(") {
 		return src, nil, nil
 	}
-	// The users list went through paginate.List in v3.281.0, and paginate.List
-	// answers ?counts= itself. Nothing to splice, and nothing to warn about.
-	if strings.Contains(src, "paginate.List[models.User]") {
+	// The users list went through paginate.List in v3.281.0, and onto
+	// UserService in v3.340.0. paginate.List answers ?counts= itself either way:
+	// nothing to splice, and nothing to warn about.
+	if strings.Contains(src, "paginate.List[models.User]") || strings.Contains(src, "h.users().List(") {
 		return src, nil, nil
 	}
 	return insertListCounts(src, module, "user.go", userListAnchor, userListCounts,

@@ -118,14 +118,20 @@ func TestHandWrittenListsReturnCounts(t *testing.T) {
 // sends, which the hand-rolled version did not.
 func TestUsersListGoesThroughPaginate(t *testing.T) {
 	src := apiUserHandlerGo()
+	// The list itself is the service's since v3.340.0; the handler asks it for a
+	// page and writes the answer.
+	svc := apiUserServiceGo()
 	for _, want := range []string{
 		"paginate.List[models.User](",
 		"userListConfig",
 		`Filterable:   map[string]bool{"role": true, "active": true, "provider": true}`,
 	} {
-		if !strings.Contains(src, want) {
+		if !strings.Contains(svc, want) {
 			t.Errorf("the users list is missing %q", want)
 		}
+	}
+	if !strings.Contains(src, "h.users().List(c.Request.Context(), paginate.Bind(c))") {
+		t.Error("the users handler does not list through its service")
 	}
 	for _, gone := range []string{"allowedSorts", "offset := (page - 1) * pageSize", "query.Count(&total)"} {
 		if strings.Contains(src, gone) {

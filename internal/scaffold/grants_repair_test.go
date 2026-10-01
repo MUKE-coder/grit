@@ -42,7 +42,12 @@ func TestRepairAddsTheGrantCeiling(t *testing.T) {
 		t.Error("the repaired role handler differs from the template")
 	}
 
-	user := apiUserHandlerGo()
+	// From the fixture, not from the template: the checks this repair writes name
+	// &user, and the template holds a pointer since the queries moved onto the
+	// service. What the repair meets is the older file, which is what testdata
+	// holds.
+	userFresh := userHandlerFixture(t, "v3.339.0.go.txt")
+	user := userFresh
 	for _, s := range []string{
 		"\t// Only an ADMIN makes an ADMIN, and nobody hands out a role that grants more\n\t// than they hold.\n" + userRoleCheck + "\n",
 		"\t// Only an ADMIN changes an ADMIN account or makes one. Before, a users.edit\n\t// holder could PUT {\"role\":\"ADMIN\"} on themselves, or reset an\n\t// administrator's password or email and sign in as them.\n" + userAdminCheck + userRoleCheck + "\n",
@@ -57,8 +62,8 @@ func TestRepairAddsTheGrantCeiling(t *testing.T) {
 	if len(warn) > 0 || len(fixed) != 1 {
 		t.Fatalf("user.go: fixed %v, warned %v", fixed, warn)
 	}
-	if out != apiUserHandlerGo() {
-		t.Error("the repaired user handler differs from the template")
+	if out != userFresh {
+		t.Error("the repaired user handler differs from the one that release wrote")
 	}
 
 	test := strings.Replace(roleHandlerTestGo(), roleTestRouterAdmin, roleTestRouterAnchor, 1)

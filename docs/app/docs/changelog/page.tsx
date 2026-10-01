@@ -66,6 +66,63 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.340.0 */}
+            <div className="mb-12" id="v3.340.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.340.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The user endpoints have a service</h3>
+                <p>
+                  <code>internal/handlers/user.go</code> ran fourteen queries of its own: the row
+                  behind an id, the row behind a session, the address check, the two writes an
+                  update makes, the soft deletes, and the paging config for the list. Every
+                  generated resource was moved onto its service in v3.224, so the handler a
+                  developer is most likely to copy from was the one breaking the rule.
+                </p>
+                <p>
+                  They are now <code>services.UserService</code>:{' '}
+                  <code>List</code>, <code>GetByID</code>, <code>Update</code>,{' '}
+                  <code>Delete</code>, <code>EmailTakenByAnother</code> and{' '}
+                  <code>SyncRoleAssignment</code>. The handler reads the request, calls one of them
+                  and writes the answer. A job that deactivates accounts and a console command that
+                  fixes a role now go through the same rules as the HTTP route, which is the point:
+                  a rule written in a handler applies to the handler.
+                </p>
+                <p>
+                  The role assignment and the user row still share one transaction, and that claim
+                  now has a test: it forces the second write to fail and checks the promotion did
+                  not survive. Nothing tested it before, and it is the kind of thing that only shows
+                  up as a user who kept the permissions of a role they were never given.
+                </p>
+
+                <h3>handlers/user.go travels on upgrade</h3>
+                <p>
+                  It used to be written once, when the project was scaffolded. A fix to it reached
+                  new projects and no existing one, which is why the hand-rolled users list that
+                  read none of the admin's filters had to be repaired into place with text
+                  substitutions, three separate times.
+                </p>
+                <p>
+                  It is now one of the framework-owned files, so an upgrade delivers it. That
+                  delivery is manifest-guarded: a <code>user.go</code> you have edited is reported
+                  as a conflict and kept exactly as it is, and the repairs are still there for it.
+                  Verified both ways, on a copy of a real project: pristine takes the new handler and
+                  its service, edited keeps its edit and still builds.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  <code>handlers/user_role_sync_test.go</code> is removed on upgrade, because its two
+                  cases moved to <code>services/user_test.go</code> beside the code they are about.
+                  Only when your handler no longer declares what it calls, and only when you have not
+                  edited the test yourself: either way you are told.
+                </p>
+              </div>
+            </div>
+
             {/* v3.339.0 */}
             <div className="mb-12" id="v3.339.0">
               <div className="flex items-center gap-3 mb-4">

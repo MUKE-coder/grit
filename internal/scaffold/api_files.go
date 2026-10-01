@@ -40,7 +40,6 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "auth_email_verification.go"): apiAuthEmailVerificationGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "auth_oauth.go"):              apiAuthOAuthGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "auth_lockout.go"):            apiAuthLockoutGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "user.go"):                    apiUserHandlerGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "auth.go"):                  apiAuthMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "cors.go"):                  apiCorsMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "logger.go"):                apiLoggerMiddlewareGo(),

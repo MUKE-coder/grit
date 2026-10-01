@@ -73,6 +73,20 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// project has not got is a project that does not compile.
 		filepath.Join(apiRoot, "internal", "services", "user_write.go"):      apiUserWriteServiceGo(),
 		filepath.Join(apiRoot, "internal", "services", "user_write_test.go"): apiUserWriteServiceTestGo(),
+
+		// The user endpoints: the handler, the service behind it and the
+		// service's tests, as one set.
+		//
+		// The handler moved here from the scaffold-only map in v3.340.0, which is
+		// the release that gave it a service. Before that, a fix to it reached new
+		// projects and no existing one, so the hand-rolled list that read none of
+		// the admin's filters had to be repaired into place with text
+		// substitutions, three separate times. writeFile is manifest-guarded: a
+		// user.go somebody has edited is reported as a conflict and kept, and the
+		// repairs below are still there for it.
+		filepath.Join(apiRoot, "internal", "handlers", "user.go"):      apiUserHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "user.go"):      apiUserServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "user_test.go"): apiUserServiceTestGo(),
 	}
 
 	for path, content := range files {
