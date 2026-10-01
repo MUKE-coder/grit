@@ -1,55 +1,54 @@
-# Grit Framework — Example Projects
+# Grit architecture guides — the Job Portal, six ways
 
-Same **Job Portal** app built with every Grit architecture. Each example has identical features
-but different project structures, demonstrating how Grit adapts to your needs.
+**These folders hold guides, not checked-in applications.** Each one is the
+exact sequence of commands that builds the same Job Portal in a different Grit
+architecture, with the decisions explained and the shape of the result
+described. Nothing here is a repository you clone and run.
 
-## Features (all examples)
+That is deliberate. Six copies of a generated application, checked in, would
+be six copies to keep green against a framework that releases most days, and
+the day they fell behind they would be teaching the wrong thing while looking
+authoritative. The guides stay correct because the commands in them are checked
+against the real command tree on every push, and a renamed flag fails the docs
+build.
 
-- Auth: email/password + OAuth (Google, GitHub) + JWT + TOTP 2FA
+**If you want an application to read, clone and run, it is [`demo/`](../demo).**
+That one is real code, it is the app behind the live demo, and it is built on
+every release.
+
+## The six shapes
+
+| Folder | Architecture | What it is |
+|---|---|---|
+| [`job-portal-api-only`](job-portal-api-only) | `--api` | A Go API and nothing else. Bring your own frontend. |
+| [`job-portal-single-vite`](job-portal-single-vite) | `--single --vite` | One Go binary serving a TanStack Router SPA. |
+| [`job-portal-double-vite`](job-portal-double-vite) | `--double --vite` | API plus one Vite frontend with the admin inside it. |
+| [`job-portal-triple-vite`](job-portal-triple-vite) | `--triple --vite` | API, public TanStack site, separate TanStack admin. |
+| [`job-portal-triple-next`](job-portal-triple-next) | `--triple --next` | API, public Next.js site, separate Next.js admin. |
+| [`job-portal-mobile-expo`](job-portal-mobile-expo) | `--triple --next --mobile` | The above plus an Expo app sharing the types. |
+
+Each folder has:
+
+- `README.md` — the architecture, and who should pick it
+- `GUIDE.md` — the commands in order, from `grit new` to a running app
+- `.env.example` — the environment the guide assumes
+- `docker-compose.prod.yml` — how that shape deploys
+
+## Features the guides build
+
+The same application each time, so the only variable is the architecture:
+
+- Auth: email and password, OAuth (Google, GitHub), JWT, TOTP 2FA
 - Resources: Job, Company, Application, Category
-- Dashboard with stats cards
-- Data tables with sorting, filtering, pagination, export
-- File uploads via presigned URLs (company logos, resumes)
-- Emails (welcome, application confirmation)
-- Full deployment guide (README + .env.example + docker-compose.prod.yml)
+- A dashboard with stat cards
+- Data tables with sorting, filtering, pagination and export
+- File uploads through presigned URLs (company logos, résumés)
+- A generated admin panel with roles and permissions
 
-## The 6 Examples
+## Start here
 
-| Example | Architecture | Frontend | Command | Best For |
-|---------|-------------|----------|---------|----------|
-| [job-portal-triple-next](./job-portal-triple-next/) | Triple (Web + Admin + API) | Next.js | `grit new jp --triple --next` | SaaS, marketplaces, content platforms |
-| [job-portal-triple-vite](./job-portal-triple-vite/) | Triple (Web + Admin + API) | TanStack Router | `grit new jp --triple --vite` | Dashboards, internal tools with admin |
-| [job-portal-double-vite](./job-portal-double-vite/) | Double (Web + API) | TanStack Router | `grit new jp --double --vite` | Simpler apps without separate admin |
-| [job-portal-single-vite](./job-portal-single-vite/) | Single (one binary) | TanStack Router | `grit new jp --single --vite` | Laravel-like apps, microservices |
-| [job-portal-api-only](./job-portal-api-only/) | API Only | None | `grit new jp --api` | Mobile backends, headless APIs |
-| [job-portal-mobile-expo](./job-portal-mobile-expo/) | Mobile (API + Expo) | React Native | `grit new jp --mobile` | Mobile-first apps |
-
-## How to Use These Examples
-
-1. Pick the architecture that matches your project
-2. Read the README.md for setup instructions
-3. Read the GUIDE.md for a step-by-step walkthrough
-4. Copy the .env.example and docker-compose.prod.yml for deployment
-
-## Architecture Decision Guide
-
+```bash
+# Read the shape you want, then follow its GUIDE.md.
+# Or let the CLI ask you, which is the same decision with fewer tabs open:
+grit new job-portal
 ```
-Do you need a separate admin panel?
-├── Yes → Triple (triple-next for SEO, triple-vite for speed)
-├── No → Do you need a web frontend?
-│   ├── Yes → Is SSR/SEO important?
-│   │   ├── Yes → Double + Next.js (grit new app --double --next)
-│   │   └── No → Double + Vite (grit new app --double --vite)
-│   └── No → Is this for mobile?
-│       ├── Yes → Mobile + Expo (grit new app --mobile)
-│       └── No → API Only (grit new app --api)
-└── Want one binary? → Single + Vite (grit new app --single --vite)
-```
-
-## For LLMs / AI Assistants
-
-If you are an AI assistant helping someone build with Grit:
-1. Ask which architecture they need (use the decision guide above)
-2. Reference the matching example for the correct project structure
-3. Read the .claude/skills/grit/SKILL.md in any Grit project for conventions
-4. Report bugs at https://github.com/MUKE-coder/grit/issues

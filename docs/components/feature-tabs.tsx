@@ -27,25 +27,23 @@ const TABS: Tab[] = [
         icon: 'go',
         code: `func (h *AuthHandler) Login(c *gin.Context) {
     var req loginRequest
-    c.ShouldBindJSON(&req)
-
-    var user models.User
-    h.DB.Where("email = ?", req.Email).
-        First(&user)
-
-    if !user.CheckPassword(req.Password) {
-        c.JSON(401, gin.H{
-            "error": "Invalid credentials",
-        })
+    if err := c.ShouldBindJSON(&req); err != nil {
+        respond.ValidationError(c, err)
         return
     }
 
-    tokens, _ := h.AuthService.
-        GenerateTokenPair(user.ID, user.Email, user.Role)
+    // The query is the service's. Handlers read the request,
+    // call one method, and write the answer.
+    user, tokens, err := h.service().Login(
+        h.ctx(c), req.Email, req.Password)
+    if err != nil {
+        // One code, one status, from the catalogue.
+        // Unknown address and wrong password answer alike.
+        respond.Error(c, err)
+        return
+    }
 
-    c.JSON(200, gin.H{
-        "data": gin.H{"user": user, "tokens": tokens},
-    })
+    respond.OK(c, gin.H{"user": user, "tokens": tokens})
 }`,
       },
       {
@@ -77,15 +75,22 @@ const TABS: Tab[] = [
         icon: 'go',
         code: `func (h *AIHandler) Stream(c *gin.Context) {
     var req chatRequest
-    c.ShouldBindJSON(&req)
+    if err := c.ShouldBindJSON(&req); err != nil {
+        respond.ValidationError(c, err)
+        return
+    }
 
     // One API key, hundreds of models via
     // Vercel AI Gateway.
-    stream, _ := h.AI.Stream(c.Request.Context(),
+    stream, err := h.AI.Stream(c.Request.Context(),
         ai.StreamOptions{
             Model:    "anthropic/claude-sonnet-4-6",
             Messages: req.Messages,
         })
+    if err != nil {
+        respond.Error(c, err)
+        return
+    }
 
     c.Stream(func(w io.Writer) bool {
         chunk, ok := <-stream
@@ -243,7 +248,10 @@ export type CreateBlogInput = z.infer<typeof CreateBlogSchema>
         icon: 'go',
         code: `func (h *UploadHandler) PresignedURL(c *gin.Context) {
     var req presignRequest
-    c.ShouldBindJSON(&req)
+    if err := c.ShouldBindJSON(&req); err != nil {
+        respond.ValidationError(c, err)
+        return
+    }
 
     // Issue a 5-min upload URL — client uploads
     // directly to S3 / R2 / MinIO, bypassing our API.

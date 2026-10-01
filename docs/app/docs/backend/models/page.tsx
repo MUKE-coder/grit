@@ -236,7 +236,7 @@ type Invoice struct {
     Number     string         \`gorm:"size:50;uniqueIndex;not null" json:"number" binding:"required"\`
     CustomerID string         \`gorm:"size:36;not null;index" json:"customer_id" binding:"required"\`
     Customer   User           \`gorm:"foreignKey:CustomerID" json:"customer,omitempty"\`
-    Amount     float64        \`gorm:"not null" json:"amount" binding:"required,gt=0"\`
+    Amount     money.Money        \`gorm:"not null" json:"amount" binding:"required,gt=0"\`
     Status     string         \`gorm:"size:20;default:pending" json:"status"\`
     DueDate    time.Time      \`json:"due_date"\`
     Notes      string         \`gorm:"type:text" json:"notes"\`
@@ -546,7 +546,7 @@ type Product struct {
     ID          string         \`gorm:"primaryKey;size:36" json:"id"\`
     Name        string         \`gorm:"size:255;not null" json:"name" binding:"required"\`
     Description string         \`gorm:"type:text" json:"description"\`
-    Price       float64        \`gorm:"not null" json:"price" binding:"required,gt=0"\`
+    Price   money.Money        \`gorm:"not null" json:"price" binding:"required,gt=0"\`
     SKU         string         \`gorm:"size:100;uniqueIndex" json:"sku" binding:"required"\`
     Stock       int            \`gorm:"default:0" json:"stock"\`
     Active      bool           \`gorm:"default:true" json:"active"\`

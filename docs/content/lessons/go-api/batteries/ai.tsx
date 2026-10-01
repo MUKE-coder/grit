@@ -43,7 +43,10 @@ AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1`}
     var in struct {
         Text string \`json:"text"\`
     }
-    c.ShouldBindJSON(&in)
+    if err := c.ShouldBindJSON(&in); err != nil {
+        respond.ValidationError(c, err)
+        return
+    }
 
     out, err := h.ai.Chat(c.Request.Context(), []ai.Message{
         {Role: "system", Content: "Summarize the input in 2 sentences."},

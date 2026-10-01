@@ -233,7 +233,7 @@ export default function LLMGuidePage() {
                     {
                       cmd: 'grit generate resource <Name> --fields "field:type,..."',
                       desc: 'Generate a full-stack resource: Go model + GORM migration, handler, service, routes, Zod schema, TypeScript types, React Query hook, and admin page — all wired together. Fields are comma-separated name:type[:extra] triples. Special types: slug:slug:title (auto-generated from the title field), file/files with an accept-list (image:file:image, gallery:files:image, doc:file:all), category:belongs_to (one-to-many parent, model inferred), tags:many_to_many:Tag (join table), sizes:string_array (JSON array). Extra flags: --seed (also emit a seeder), --faker + --count N (seed many realistic rows), --from schema.yaml (fields from YAML), -i / --interactive (prompt per field), --roles "ADMIN,EDITOR" (restrict to roles).',
-                      example: 'grit generate resource Product --fields "name:string,slug:slug:name,price:float,image:file:image"',
+                      example: 'grit generate resource Product --fields "name:string,slug:slug:name,price:money,image:file:image"',
                     },
                     {
                       cmd: 'grit generate seeder <Resource> [<Resource2> ...]',
@@ -552,7 +552,7 @@ grit generate resource Tag --fields "name:string,slug:slug:name,color:string"
 
 # 2. Generate Product with an M2M relationship
 grit generate resource Product \\
-  --fields "name:string,slug:slug:name,price:float,thumbnail:file:image,tags:many_to_many:Tag,is_active:bool"
+  --fields "name:string,slug:slug:name,price:money,thumbnail:file:image,tags:many_to_many:Tag,is_active:bool"
 
 # GORM auto-creates the product_tags join table
 
@@ -609,7 +609,7 @@ grit migrate`} />
                     Prices are <code className="font-mono bg-accent/50 px-1 rounded">float</code>, and the status is a plain <code className="font-mono bg-accent/50 px-1 rounded">string</code>.
                   </p>
                   <CodeBlock language="bash" code={`grit generate resource Product \\
-  --fields "name:string,slug:slug:name,description:text,price:float,compare_price:float,sku:string,stock:int,thumbnail:file:image,gallery:files:image,is_featured:bool,is_active:bool,status:string"
+  --fields "name:string,slug:slug:name,description:text,price:money,compare_price:float,sku:string,stock:int,thumbnail:file:image,gallery:files:image,is_featured:bool,is_active:bool,status:string"
 
 grit migrate`} />
                 </div>
@@ -646,7 +646,7 @@ grit migrate`} />
                   </p>
                   <CodeBlock language="bash" code={`# Course (parent)
 grit generate resource Course \\
-  --fields "title:string,slug:slug:title,description:text,thumbnail:file:image,intro_video:file:video,price:float,level:string,is_published:bool"
+  --fields "title:string,slug:slug:title,description:text,thumbnail:file:image,intro_video:file:video,price:money,level:string,is_published:bool"
 
 # Lesson (child — belongs to Course via course:belongs_to)
 grit generate resource Lesson \\
@@ -663,7 +663,7 @@ grit migrate`} />
                     money is <code className="font-mono bg-accent/50 px-1 rounded">float</code>, timestamps are <code className="font-mono bg-accent/50 px-1 rounded">datetime</code>, and the customer is <code className="font-mono bg-accent/50 px-1 rounded">belongs_to:User</code>.
                   </p>
                   <CodeBlock language="bash" code={`grit generate resource Order \\
-  --fields "order_number:string,status:string,subtotal:float,tax:float,shipping_fee:float,total:float,notes:text,shipping_address:text,payment_method:string,payment_status:string,paid_at:datetime,shipped_at:datetime,delivered_at:datetime,customer:belongs_to:User"
+  --fields "order_number:string,status:string,subtotal:float,tax:float,shipping_fee:float,total:money,notes:text,shipping_address:text,payment_method:string,payment_status:string,paid_at:datetime,shipped_at:datetime,delivered_at:datetime,customer:belongs_to:User"
 
 grit migrate`} />
                 </div>
@@ -705,7 +705,7 @@ func (h *ProductHandler) List(c *gin.Context) {
 func (h *ProductHandler) Create(c *gin.Context) {
     var req struct {
         Name  string  \`json:"name" binding:"required"\`
-        Price float64 \`json:"price" binding:"required"\`
+        Price money.Money \`json:"price" binding:"required"\`
         Image string  \`json:"image"\`
     }
     if err := c.ShouldBindJSON(&req); err != nil {
@@ -1441,7 +1441,7 @@ grit start server
 grit start client`} />
                   <CodeBlock language="bash" filename="Add a full-stack resource (seed parents first)" code={`grit generate resource Category --fields "name:string,slug:slug:name" --seed
 grit generate resource Product \\
-  --fields "name:string,slug:slug:name,price:float,thumbnail:file:image,gallery:files:image,category:belongs_to,status:string" \\
+  --fields "name:string,slug:slug:name,price:money,thumbnail:file:image,gallery:files:image,category:belongs_to,status:string" \\
   --seed --faker --count 50
 grit migrate && grit seed`} />
                   <CodeBlock language="bash" filename="Start servers independently" code={`grit start server    # Go API only (no hot-reload)

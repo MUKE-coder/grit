@@ -171,9 +171,14 @@ B2_PUBLIC_URL=`,
 
 const REDIS_CODE = `// Cache — the service is on every handler that needs it.
 // Nil-safe: with REDIS_URL unset, svc.Cache is nil and callers skip it.
+// The query is the service's, as it is everywhere: handlers run none.
 var products []models.Product
 if err := h.Cache.Get(ctx, "products:featured", &products); err != nil {
-    h.DB.Where("featured = ?", true).Find(&products)
+    products, err = h.service().Featured(ctx)
+    if err != nil {
+        h.fail(c, err, "Failed to fetch products")
+        return
+    }
     h.Cache.Set(ctx, "products:featured", products, cache.DefaultTTL)
 }
 
@@ -201,12 +206,14 @@ const DB_CODE = `// One URL. The driver is chosen by the DSN's shape.
 
 // Models are ordinary GORM structs — generated, then yours.
 type Product struct {
-    ID         string    \`gorm:"primaryKey" json:"id"\`
-    Name       string    \`gorm:"not null" json:"name"\`
-    CategoryID string    \`json:"category_id"\`
-    Category   *Category \`json:"category,omitempty"\`
-    Price      float64   \`json:"price"\`
-    CreatedAt  time.Time \`json:"created_at"\`
+    ID         string      \`gorm:"primaryKey" json:"id"\`
+    Name       string      \`gorm:"not null" json:"name"\`
+    CategoryID string      \`json:"category_id"\`
+    Category   *Category   \`json:"category,omitempty"\`
+    // money, never float: integer minor units and a currency column,
+    // so 0.1 + 0.2 is never a question anyone has to answer.
+    Price      money.Money \`json:"price"\`
+    CreatedAt  time.Time   \`json:"created_at"\`
 }
 
 // grit migrate runs AutoMigrate across every registered model,
@@ -261,6 +268,12 @@ const TOPICS: Topic[] = [
         env: ['DATABASE_URL=sqlite:./app.db', 'DATABASE_URL=sqlite::memory:'],
         note: 'Ideal for the first five minutes and for the generated Go test suite.',
       },
+      {
+        name: 'MySQL',
+        detail: 'MySQL 8 and MariaDB, for a team that already runs one.',
+        env: ['DATABASE_URL=mysql://user:pass@tcp(host:3306)/db'],
+        note: 'parseTime is added for you: without it every time.Time field on every model fails to scan, which is the first thing people hit.',
+      },
     ],
     code: DB_CODE,
     uses: [
@@ -270,7 +283,7 @@ const TOPICS: Topic[] = [
       'Sessions, roles, permissions and the audit log are all ordinary tables',
     ],
     footnote:
-      'MySQL is not supported. The connector picks SQLite or Postgres by DSN prefix: there is no third dialector to fall back to.',
+      'The connector reads the DSN prefix, so moving between the three is an environment change. The live suite scaffolds an app and drives it over HTTP against Postgres 15, 16 and 17, MySQL 8, SQLite and memory on every push.',
   },
   {
     key: 'storage',

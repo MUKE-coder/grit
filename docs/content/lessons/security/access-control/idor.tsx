@@ -46,7 +46,10 @@ export default function Lesson() {
   id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 
   var in services.UpdateNoteInput
-  c.ShouldBindJSON(&in)
+  if err := c.ShouldBindJSON(&in); err != nil {
+    respond.ValidationError(c, err)
+    return
+  }
 
   // 🚨 BUG: no check that the note belongs to the authed user
   var note models.Note

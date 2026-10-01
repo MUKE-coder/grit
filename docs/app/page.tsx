@@ -443,7 +443,7 @@ export default function HomePage() {
               <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Themes
             </span>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
-              Four themes.<br />None of them look generated.
+              Nine themes.<br />None of them look generated.
             </h2>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
               Every scaffolded admin ships with four complete themes: not palettes, but

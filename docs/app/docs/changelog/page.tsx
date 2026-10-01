@@ -66,6 +66,95 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.337.1 */}
+            <div className="mb-12" id="v3.337.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.337.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p className="text-sm text-muted-foreground">
+                  v3.337.0 was tagged with an empty commit: a <code>git add</code> that failed
+                  silently staged nothing, so that release carries no changes. Everything below is
+                  in this one. Nothing was wrong with v3.337.0 beyond its being identical to
+                  v3.336.1.
+                </p>
+
+                <h3>The docs now have to follow the rules the framework states</h3>
+                <p>
+                  Every command the documentation shows has been checked against the real command
+                  tree for a long time: a renamed flag fails the build. The Go <em>code</em> on the
+                  same pages was checked against nothing, and it had drifted badly.
+                </p>
+                <p>
+                  A product review found four things on the homepage that the agent skill tells an
+                  agent never to do: a handler running its own query, a <code>float64</code> price, a
+                  swallowed bind error, and a hand-built error envelope with no code in it. The
+                  homepage is the page an agent reads <em>before</em> the skill, so it was teaching
+                  the wrong pattern from the opening screen.
+                </p>
+                <p>
+                  There is now a check for it, with four narrow rules taken from what Grit already
+                  says in its README, its skill and its stability page. It found 49 violations
+                  across the site, not four, and all 49 are fixed: 29 money columns moved off{' '}
+                  <code>float64</code>, including an invoice <code>Amount</code> and a
+                  point-of-sale <code>Price</code>; five swallowed bind errors; nine handler
+                  queries.
+                </p>
+                <p>
+                  The worst of them was not on the homepage. A lesson on building a public
+                  catalogue carried three samples labelled{' '}
+                  <strong>&quot;(already generated)&quot;</strong> that showed handlers building
+                  their own GORM queries. The generator stopped writing that shape at v3.224,
+                  around 110 releases ago, so the page was not teaching a bad habit: it was making a
+                  false claim about what the tool produces, and then telling the reader to add more
+                  of the same. It now shows what the generator writes, with the{' '}
+                  <code>paginate.Config</code> allowlist in the service where it lives, which is the
+                  half worth reading and was buried in a handler.
+                </p>
+                <p>
+                  A page that needs to show what a rule forbids says so by name:{' '}
+                  <code>docscheck:allow float-money</code> with a reason on the same line. The Go
+                  language primer uses one, because <code>float64</code> there is the subject being
+                  taught. A blanket skip-this-file switch would have been the easier design and
+                  would have stopped covering the pages that drifted most.
+                </p>
+
+                <h3>MySQL is supported, and the homepage said it was not</h3>
+                <p>
+                  The connector has picked MySQL off the DSN prefix since v3.146, the live suite
+                  scaffolds an app and drives it over HTTP against MySQL 8 on every push, and the
+                  database section of the homepage carried a footnote saying there was no third
+                  dialector. Anyone evaluating Grit with MySQL in the building read that and left.
+                  It is now a provider card beside Postgres and SQLite.
+                </p>
+
+                <h3>Smaller things from the same review</h3>
+                <ul>
+                  <li>
+                    The themes heading said four and listed nine. A version badge in one graphic had
+                    been frozen at v3.23 since roughly release 23 of 450; it reads the same source as
+                    everything else now.
+                  </li>
+                  <li>
+                    The Wails desktop stack was a release train behind every other mode, on Gin
+                    1.10 and GORM 1.25 while the rest was on 1.11 and 1.31. Raised.
+                  </li>
+                  <li>
+                    <code>examples/</code> said &quot;Example Projects&quot; and held no code. It now
+                    says what it is, which is a set of build guides, and points at{' '}
+                    <code>demo/</code> for an application you can actually clone and run.
+                  </li>
+                  <li>
+                    A compiled Python cache file had been committed to the docs folder.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.336.1 */}
             <div className="mb-12" id="v3.336.1">
               <div className="flex items-center gap-3 mb-4">

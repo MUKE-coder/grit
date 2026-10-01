@@ -40,7 +40,7 @@ const DEMOS: Demo[] = [
     body:
       'Declare a field as file or files and add what it accepts: image, pdf, zip, doc, video, or a bracketed list. You get a dropzone with the right filter, image previews, per-type icons, size caps and progress, on both create and edit.',
     command:
-      'grit generate resource Product --fields \\\n  "name:string,category:belongs_to:Category,price:float,\\\n   cover:file:image,gallery:files:image,\\\n   spec_sheet:file:pdf,downloads:files:[zip,doc],\\\n   description:richtext,published:bool"',
+      'grit generate resource Product --fields \\\n  "name:string,category:belongs_to:Category,price:money,\\\n   cover:file:image,gallery:files:image,\\\n   spec_sheet:file:pdf,downloads:files:[zip,doc],\\\n   description:richtext,published:bool"',
     commandNote: 'One command: model, migration, API, types, hooks and this form.',
     detail:
       'Uploads go browser-to-storage through a presigned URL, and the field’s accept list is enforced on the server too: a field declared file:pdf will not take a PNG even if the client asks nicely.',

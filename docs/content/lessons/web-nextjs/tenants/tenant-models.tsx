@@ -76,7 +76,10 @@ func (h *InvoiceHandler) Create(c *gin.Context) {
     tenantID, _ := uuid.Parse(c.GetString("tenant_id"))
 
     var inv models.Invoice
-    c.ShouldBindJSON(&inv)
+    if err := c.ShouldBindJSON(&inv); err != nil {
+        respond.ValidationError(c, err)
+        return
+    }
     inv.TenantID = tenantID  // ← force the tenant, never trust input
 
     h.db.Create(&inv)

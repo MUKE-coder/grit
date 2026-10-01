@@ -334,12 +334,12 @@ Suffix:       anything_url  (image_url, profile_url, callback_url, …)`}
       <CodeBlock
         terminal
         code={`grit generate resource Invoice \\
-  --fields "number:string:unique,amount:float,description:string,due_date:date"`}
+  --fields "number:string:unique,amount:money,description:string,due_date:date"`}
       />
       <p>The generator quietly does the right thing for each column:</p>
       <ul>
         <li>
-          <code>amount:float</code> → <code>DECIMAL(12,2)</code>{' '}
+          <code>amount:money</code> → <code>DECIMAL(12,2)</code>{' '}
           (the name <code>amount</code> triggers the money heuristic).
         </li>
         <li>
@@ -399,12 +399,12 @@ video_url:string, duration_seconds:int, free_preview:bool
 
 # E-commerce product
 sku:string:unique, name:string, slug:slug:sku, description:richtext,
-price:float, stock_quantity:int, hero:file:image, photos:files:image,
+price:money, stock_quantity:int, hero:file:image, photos:files:image,
 spec_sheet:file:pdf, featured:bool
 
 # Real-estate listing
 title:string, slug:slug, address:string, city:string, state:string,
-price:float, bedrooms:int, bathrooms:float, square_feet:int,
+price:money, bedrooms:int, bathrooms:float, square_feet:int,
 description:text, photos:files:image, floorplan:file:pdf,
 listed_at:datetime
 

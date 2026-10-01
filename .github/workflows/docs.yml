@@ -69,6 +69,14 @@ jobs:
       - name: Commands and field specs
         run: go test ./cmd/grit/ -run 'TestDocs' -count=1 -v
 
+      # The commands in the docs have been checked against the real command
+      # tree for a long time. The Go samples were checked against nothing, and
+      # a product review in October 2026 found the homepage teaching four
+      # things the agent skill forbids, plus a lesson showing a generated-code
+      # shape the generator stopped writing around v3.224.
+      - name: Go samples follow the framework's own rules
+        run: go test ./internal/docscheck/ -run 'Sample' -count=1 -v
+
   flows:
     name: the runnable blocks run
     runs-on: ubuntu-latest

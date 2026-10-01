@@ -316,15 +316,15 @@ cd pos-system`}
               </div>
               <CodeBlock
                 terminal
-                code={`grit generate resource Product --fields "name:string,sku:string,price:float,cost:float,stock:int,category:string,barcode:string"
+                code={`grit generate resource Product --fields "name:string,sku:string,price:money,cost:money,stock:int,category:string,barcode:string"
 
 grit generate resource Customer --fields "name:string,email:string,phone:string,address:text,loyalty_points:int"
 
-grit generate resource Sale --fields "customer_id:uint,total:float,tax:float,payment_method:string,status:string,notes:text"
+grit generate resource Sale --fields "customer_id:uint,total:money,tax:float,payment_method:string,status:string,notes:text"
 
 grit generate resource SaleItem --fields "sale_id:uint,product_id:uint,quantity:int,unit_price:float,subtotal:float"
 
-grit generate resource Expense --fields "description:string,amount:float,category:string,date:date"`}
+grit generate resource Expense --fields "description:string,amount:money,category:string,date:date"`}
                 className="mb-4 glow-purple-sm"
               />
               <div className="prose-grit mb-4">
@@ -409,8 +409,8 @@ type Product struct {
 	ID        uint           \`gorm:"primaryKey" json:"id"\`
 	Name      string         \`json:"name"\`
 	Sku       string         \`json:"sku"\`
-	Price     float64        \`json:"price"\`
-	Cost      float64        \`json:"cost"\`
+	Price     money.Money        \`json:"price"\`
+	Cost  money.Money        \`json:"cost"\`
 	Stock     int            \`json:"stock"\`
 	Category  string         \`json:"category"\`
 	Barcode   string         \`json:"barcode"\`
@@ -442,7 +442,7 @@ import (
 type Sale struct {
 	ID            uint           \`gorm:"primaryKey" json:"id"\`
 	CustomerID    uint           \`json:"customer_id"\`
-	Total         float64        \`json:"total"\`
+	Total     money.Money        \`json:"total"\`
 	Tax           float64        \`json:"tax"\`
 	PaymentMethod string         \`json:"payment_method"\`
 	Status        string         \`json:"status"\`
@@ -597,7 +597,7 @@ type ProcessSaleInput struct {
 type SaleItemInput struct {
 	ProductID uint    \`json:"product_id"\`
 	Quantity  int     \`json:"quantity"\`
-	UnitPrice float64 \`json:"unit_price"\`
+	UnitPrice money.Money \`json:"unit_price"\`
 }`}
                 className="mb-4"
               />
@@ -949,8 +949,8 @@ func (a *App) GenerateReceipt(saleID uint) (string, error) {
 	type lineItem struct {
 		Name     string
 		Qty      int
-		Price    float64
-		Subtotal float64
+		Price    money.Money
+		Subtotal money.Money
 	}
 	var lines []lineItem
 	for _, item := range items {
@@ -1095,7 +1095,7 @@ func (a *App) GetDailyReport(date string) (*types.DailyReport, error) {
 
 	// Aggregate sales
 	var salesResult struct {
-		Total float64
+		Total money.Money
 		Tax   float64
 		Count int64
 	}

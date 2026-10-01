@@ -212,9 +212,10 @@ database.Replica(h.DB).Find(&monthlyTotals)`}
                 code={`var followers int64
 err := cache.Remember(ctx, svc.Cache, "user:"+id+":followers", time.Minute, &followers,
     func() (int64, error) {
-        var n int64
-        err := h.DB.Model(&models.Follow{}).Where("followee_id = ?", id).Count(&n).Error
-        return n, err
+        // The loader is a cache miss doing the real read, so it is the
+        // service's query like any other. Caching is not a reason for a
+        // handler to start talking to the database.
+        return h.service().FollowerCount(ctx, id)
     })`}
               />
               <p>

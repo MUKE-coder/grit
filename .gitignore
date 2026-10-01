@@ -55,3 +55,4 @@ YOUTUBE_CONTENT_CALENDAR.md
 # needs is skills/grit/SKILL.md, which is published.
 CLAUDE.md
 /.claude/
+__pycache__/

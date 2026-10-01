@@ -108,24 +108,37 @@ protected.PATCH("/products/:id",   productHandler.Patch)`}
       <CodeBlock
         language="go"
         filename="apps/api/internal/handlers/category.go (already generated)"
-        code={`func (h *CategoryHandler) List(c *gin.Context) {
-    query := h.DB.Model(&models.Category{})
-
-    res, err := paginate.List[models.Category](
-        query,
-        paginate.Bind(c),
-        paginate.Config{
-            Searchable: []string{"name", "slug"},
-            Sortable:   map[string]bool{"id": true, "created_at": true, "name": true},
-        },
-    )
+        code={`// The handler reads the request, calls one method, writes the answer.
+// It runs no queries: that is the rule the generator enforces and that
+// grit doctor checks.
+func (h *CategoryHandler) List(c *gin.Context) {
+    res, err := h.service().List(h.ctx(c), paginate.Bind(c), c.Query("archived"))
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{
-            "error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to fetch categories"},
-        })
+        h.fail(c, err, "Failed to fetch categories")
         return
     }
     c.JSON(http.StatusOK, res)
+}`}
+      />
+
+      <p>
+        What a caller may search, sort and filter by is the interesting part,
+        and it lives in the service beside the query:
+      </p>
+      <CodeBlock
+        language="go"
+        filename="apps/api/internal/services/category.go (already generated)"
+        code={`// The allowlists are a package var, not a literal inside the method,
+// so grit generate field can add a column to them.
+var categoryListConfig = paginate.Config{
+    Searchable: []string{"name", "slug"},
+    Sortable:   map[string]bool{"id": true, "created_at": true, "name": true},
+    Filterable: map[string]bool{"id": true, "name": true, "slug": true, "featured": true},
+}
+
+func (s *CategoryService) List(ctx context.Context, p paginate.Params, archived string) (paginate.Result[models.Category], error) {
+    query := s.db(ctx).Model(&models.Category{})
+    return paginate.List[models.Category](query, p, categoryListConfig)
 }`}
       />
 
@@ -194,20 +207,22 @@ export default function HomePage() {
       </p>
       <CodeBlock
         language="go"
-        filename="apps/api/internal/handlers/product.go (already generated)"
-        code={`func (h *ProductHandler) List(c *gin.Context) {
-    query := h.DB.Model(&models.Product{}).Preload("Category")
+        filename="apps/api/internal/services/product.go (already generated)"
+        code={`// The handler is the same three lines as Category's. This is the half
+// worth reading: the query, and what a caller is allowed to ask of it.
+//
+// Filterable is a whitelist and not a free-for-all because the column
+// name reaches the WHERE clause. Anything not listed is ignored rather
+// than rejected, so an unknown query param is never an error.
+var productListConfig = paginate.Config{
+    Searchable: []string{"name", "slug", "description"},
+    Sortable:   map[string]bool{"id": true, "created_at": true, "name": true, "price": true},
+    Filterable: map[string]bool{"category_id": true, "featured": true},
+}
 
-    res, err := paginate.List[models.Product](
-        query,
-        paginate.Bind(c),
-        paginate.Config{
-            Searchable: []string{"name", "slug", "description"},
-            Sortable:   map[string]bool{"id": true, "created_at": true, "name": true, "price": true},
-        },
-    )
-    if err != nil { /* 500 */ return }
-    c.JSON(http.StatusOK, res)
+func (s *ProductService) List(ctx context.Context, p paginate.Params, archived string) (paginate.Result[models.Product], error) {
+    query := s.db(ctx).Model(&models.Product{}).Preload("Category")
+    return paginate.List[models.Product](query, p, productListConfig)
 }`}
       />
 
@@ -237,12 +252,11 @@ export default function HomePage() {
         language="go"
         filename="apps/api/internal/handlers/product.go (already generated)"
         code={`func (h *ProductHandler) GetByID(c *gin.Context) {
-    id := c.Param("id")
-    var item models.Product
-    if err := h.DB.Preload("Category").First(&item, "id = ?", id).Error; err != nil {
-        c.JSON(http.StatusNotFound, gin.H{
-            "error": gin.H{"code": "NOT_FOUND", "message": "Product not found"},
-        })
+    item, err := h.service().GetByID(h.ctx(c), c.Param("id"))
+    if err != nil {
+        // One place decides what a missing row answers, so a stranger's
+        // id and a deleted one are indistinguishable: both 404.
+        h.fail(c, err, "Failed to load product")
         return
     }
     c.JSON(http.StatusOK, gin.H{"data": item})
@@ -259,25 +273,35 @@ export default function HomePage() {
       <CodeBlock
         language="go"
         filename="apps/api/internal/handlers/product.go (add)"
-        code={`// GetByIDOrSlug -- v3.31.49 cheatsheet. Tries ID first (UUIDs are
-// 36 chars; slugs aren't), then slug. Lets customer URLs use the
-// slug form without a second endpoint.
+        code={`// The handler stays thin. Which column to look in is a decision
+// about the data, so it belongs beside the data.
 func (h *ProductHandler) GetByIDOrSlug(c *gin.Context) {
-    key := c.Param("id")
-    var item models.Product
-    q := h.DB.Preload("Category")
+    item, err := h.service().ByIDOrSlug(h.ctx(c), c.Param("id"))
+    if err != nil {
+        h.fail(c, err, "Failed to load product")
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"data": item})
+}`}
+      />
+      <CodeBlock
+        language="go"
+        filename="apps/api/internal/services/product.go (add)"
+        code={`// ByIDOrSlug tries the id first, then the slug. A UUID is 36 characters
+// and a slug is not, which is enough to tell them apart without a second
+// endpoint or a second round trip.
+func (s *ProductService) ByIDOrSlug(ctx context.Context, key string) (*models.Product, error) {
+    q := s.db(ctx).Preload("Category")
     if len(key) == 36 {
         q = q.Where("id = ?", key)
     } else {
         q = q.Where("slug = ?", key)
     }
+    var item models.Product
     if err := q.First(&item).Error; err != nil {
-        c.JSON(http.StatusNotFound, gin.H{
-            "error": gin.H{"code": "NOT_FOUND", "message": "Product not found"},
-        })
-        return
+        return nil, err
     }
-    c.JSON(http.StatusOK, gin.H{"data": item})
+    return &item, nil
 }`}
       />
       <p>
@@ -348,28 +372,35 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         language="go"
         filename="apps/api/internal/handlers/product.go (extend List)"
         code={`func (h *ProductHandler) List(c *gin.Context) {
-    query := h.DB.Model(&models.Product{}).Preload("Category")
+    res, err := h.service().List(h.ctx(c), paginate.Bind(c),
+        c.Query("archived"), c.Query("category"))
+    if err != nil {
+        h.fail(c, err, "Failed to fetch products")
+        return
+    }
+    c.JSON(http.StatusOK, res)
+}`}
+      />
+      <CodeBlock
+        language="go"
+        filename="apps/api/internal/services/product.go (extend List)"
+        code={`// ?category_id=<uuid> already works, and needed no code: category_id
+// is in productListConfig's Filterable above, which is what that
+// whitelist is for. Only the slug form needs anything written, because
+// it is a join rather than a column.
+//
+// The slug arrives as an argument, the same way archived does. A
+// service method says what it needs in its signature instead of
+// reaching into the request.
+func (s *ProductService) List(ctx context.Context, p paginate.Params, archived, categorySlug string) (paginate.Result[models.Product], error) {
+    query := s.db(ctx).Model(&models.Product{}).Preload("Category")
 
-    // v3.31.49 cheatsheet -- filter by category. Accepts both
-    // ?category_id=<uuid>  and  ?category=<slug> so the customer
-    // app can pass whichever it has.
-    if catID := c.Query("category_id"); catID != "" {
-        query = query.Where("category_id = ?", catID)
-    } else if slug := c.Query("category"); slug != "" {
+    if categorySlug != "" {
         query = query.Joins("JOIN categories ON categories.id = products.category_id").
-            Where("categories.slug = ?", slug)
+            Where("categories.slug = ?", categorySlug)
     }
 
-    res, err := paginate.List[models.Product](
-        query,
-        paginate.Bind(c),
-        paginate.Config{
-            Searchable: []string{"name", "slug", "description"},
-            Sortable:   map[string]bool{"id": true, "created_at": true, "name": true, "price": true},
-        },
-    )
-    if err != nil { /* 500 */ return }
-    c.JSON(http.StatusOK, res)
+    return paginate.List[models.Product](query, p, productListConfig)
 }`}
       />
 
@@ -446,30 +477,31 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 // Nested-route flavour of the same data the
 // GET /products?category=<slug> form returns.
 func (h *CategoryHandler) Products(c *gin.Context) {
-    slug := c.Param("slug")
-
-    var cat models.Category
-    if err := h.DB.Where("slug = ?", slug).First(&cat).Error; err != nil {
-        c.JSON(http.StatusNotFound, gin.H{
-            "error": gin.H{"code": "NOT_FOUND", "message": "Category not found"},
-        })
+    res, err := h.service().ProductsBySlug(h.ctx(c), c.Param("slug"), paginate.Bind(c))
+    if err != nil {
+        h.fail(c, err, "Failed to fetch products")
         return
     }
+    c.JSON(http.StatusOK, res)
+}`}
+      />
+      <CodeBlock
+        language="go"
+        filename="apps/api/internal/services/category.go (add)"
+        code={`// Two statements, one method: resolve the slug, then page the products.
+// Keeping them together is what makes "category not found" and "category
+// with no products" different answers rather than both an empty list.
+func (s *CategoryService) ProductsBySlug(ctx context.Context, slug string, p paginate.Params) (paginate.Result[models.Product], error) {
+    var cat models.Category
+    if err := s.db(ctx).Where("slug = ?", slug).First(&cat).Error; err != nil {
+        return paginate.Result[models.Product]{}, err
+    }
 
-    query := h.DB.Model(&models.Product{}).
+    query := s.db(ctx).Model(&models.Product{}).
         Where("category_id = ?", cat.ID).
         Preload("Category")
 
-    res, err := paginate.List[models.Product](
-        query,
-        paginate.Bind(c),
-        paginate.Config{
-            Searchable: []string{"name", "slug", "description"},
-            Sortable:   map[string]bool{"id": true, "created_at": true, "name": true, "price": true},
-        },
-    )
-    if err != nil { /* 500 */ return }
-    c.JSON(http.StatusOK, res)
+    return paginate.List[models.Product](query, p, productListConfig)
 }`}
       />
       <CodeBlock

@@ -113,7 +113,10 @@ func (h *BookmarkHandler) Update(c *gin.Context) {
         language="go"
         code={`func (h *NoteHandler) Update(c *gin.Context) {
   var input UpdateNoteInput
-  c.ShouldBindJSON(&input)
+  if err := c.ShouldBindJSON(&input); err != nil {
+    respond.ValidationError(c, err)
+    return
+  }
 
   var existing models.Note
   h.db.First(&existing, c.Param("id"))

@@ -36,6 +36,7 @@ const tocItems = [
   { id: 'putting-it-together', label: 'Putting It Together' },
 ]
 
+{/* docscheck:allow float-money - a Go language primer: float64 here is the subject being taught, not guidance about money in a Grit model. */}
 export default function GoForGritPage() {
   return (
     <div className="min-h-screen bg-background isolate">
@@ -4314,7 +4315,9 @@ func RequireAPIKey() gin.HandlerFunc {
     return func(c *gin.Context) {
         key := c.GetHeader("X-API-Key")
         if key != "valid-key" {
-            c.JSON(401, gin.H{"error": "Invalid API key"})
+            c.JSON(401, gin.H{"error": gin.H{
+                "code": "UNAUTHORIZED", "message": "Invalid API key",
+            }})
             c.Abort() // ← Stop the chain, handler never runs
             return
         }
@@ -4828,9 +4831,17 @@ func (h *AuthHandler) Login(c *gin.Context) {
         return
     }
 
-    // 2. Find user in database
-    var user models.User
-    if err := h.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+    // 2. Hand it to the service. The lookup and the password check live
+    //    there, together, because they answer one question and because an
+    //    unknown address and a wrong password must be indistinguishable:
+    //    two branches here would answer at two different speeds and tell an
+    //    attacker which addresses have accounts.
+    //
+    //    This is the rule the whole framework is built on. A handler reads
+    //    the request, calls one method, and writes the answer. It runs no
+    //    queries of its own.
+    user, err := h.AuthService.Authenticate(c.Request.Context(), req.Email, req.Password)
+    if err != nil {
         c.JSON(http.StatusUnauthorized, gin.H{
             "error": gin.H{
                 "code":    "INVALID_CREDENTIALS",
@@ -4840,18 +4851,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
         return
     }
 
-    // 3. Check password (delegate to model method)
-    if !user.CheckPassword(req.Password) {
-        c.JSON(http.StatusUnauthorized, gin.H{
-            "error": gin.H{
-                "code":    "INVALID_CREDENTIALS",
-                "message": "Invalid email or password",
-            },
-        })
-        return
-    }
-
-    // 4. Generate tokens (delegate to auth service)
+    // 3. Generate tokens (the service again)
     tokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{

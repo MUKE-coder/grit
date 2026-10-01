@@ -804,7 +804,7 @@ React Component
                 </h3>
                 <CodeBlock
                   terminal
-                  code={`grit generate resource Product --fields "name:string,price:float,stock:int,published:bool"`}
+                  code={`grit generate resource Product --fields "name:string,price:money,stock:int,published:bool"`}
                 />
 
                 <div className="mt-6 mb-4">
@@ -823,14 +823,14 @@ import (
 type Product struct {
     gorm.Model
     Name      string  \`gorm:"not null" json:"name"\`
-    Price     float64 \`json:"price"\`
+    Price     money.Money \`json:"price"\`
     Stock     int     \`json:"stock"\`
     Published bool    \`gorm:"default:false" json:"published"\`
 }
 
 type ProductInput struct {
     Name      string  \`json:"name"\`
-    Price     float64 \`json:"price"\`
+    Price     money.Money \`json:"price"\`
     Stock     int     \`json:"stock"\`
     Published bool    \`json:"published"\`
 }`}
@@ -1776,7 +1776,7 @@ grit new-desktop inventory
 cd inventory
 
 # Generate resources
-grit generate resource Product --fields "name:string,sku:string,price:float,stock:int,reorder_level:int,active:bool"
+grit generate resource Product --fields "name:string,sku:string,price:money,stock:int,reorder_level:int,active:bool"
 grit generate resource Supplier --fields "name:string,email:string,phone:string,address:text,notes:text"
 
 # Start development
@@ -2055,9 +2055,9 @@ grit start`}
                   <CodeBlock
                     language="bash"
                     filename="Generate resources"
-                    code={`grit generate resource Product --fields "name:string,price:float,stock:int,active:bool"
+                    code={`grit generate resource Product --fields "name:string,price:money,stock:int,active:bool"
 grit generate resource Category --fields "name:string,description:text"
-grit generate resource Order --fields "customer_name:string,total:float,status:string,notes:text,completed:bool"`}
+grit generate resource Order --fields "customer_name:string,total:money,status:string,notes:text,completed:bool"`}
                   />
 
                   <CodeBlock

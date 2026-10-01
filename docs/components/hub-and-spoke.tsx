@@ -32,6 +32,7 @@ import {
   Terminal as TerminalIcon,
   Activity,
 } from 'lucide-react'
+import { GRIT_VERSION } from '@/config/site'
 
 const SOURCES = [
   { icon: GitBranch,   label: 'Git push deploys',     hue: 'text-emerald-500' },
@@ -234,7 +235,7 @@ export function HubAndSpoke() {
                     <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" /> LIVE
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/30 px-2 py-0.5 text-[9px] font-mono text-primary">
-                    v3.23
+                    v{GRIT_VERSION}
                   </span>
                 </div>
               </div>

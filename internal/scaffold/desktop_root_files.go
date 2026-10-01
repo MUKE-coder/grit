@@ -49,14 +49,14 @@ go 1.26.6
 
 require (
 	github.com/wailsapp/wails/v2 v2.9.1
-	gorm.io/gorm v1.25.12
+	gorm.io/gorm v1.31.1
 	github.com/glebarez/sqlite v1.11.0
-	gorm.io/driver/postgres v1.5.11
+	gorm.io/driver/postgres v1.6.0
 	golang.org/x/crypto v0.31.0
 	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/xuri/excelize/v2 v2.8.1
 	github.com/joho/godotenv v1.5.1
-	github.com/gin-gonic/gin v1.10.0
+	github.com/gin-gonic/gin v1.11.0
 	github.com/google/uuid v1.6.0
 	github.com/MUKE-coder/gorm-studio v1.1.0
 )
