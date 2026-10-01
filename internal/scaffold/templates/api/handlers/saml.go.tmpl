@@ -104,9 +104,8 @@ func (h *SSOHandler) SAMLACS(c *gin.Context) {
 		return
 	}
 
-	var conn models.SSOConnection
-	if err := h.DB.WithContext(c.Request.Context()).Where("slug = ? AND enabled = ? AND protocol = ?", slug, true, "saml").
-		First(&conn).Error; err != nil {
+	conn, err := h.sso().EnabledBySlugAndProtocol(c.Request.Context(), slug, "saml")
+	if err != nil {
 		h.failLogin(c, "That sign-in method is not available.")
 		return
 	}
@@ -133,7 +132,7 @@ func (h *SSOHandler) SAMLACS(c *gin.Context) {
 		return
 	}
 
-	ident := samlIdentity(&conn, assertion)
+	ident := samlIdentity(conn, assertion)
 	if strings.TrimSpace(ident.Email) == "" {
 		h.failLogin(c, "Your identity provider did not release an email address.")
 		return
@@ -143,17 +142,18 @@ func (h *SSOHandler) SAMLACS(c *gin.Context) {
 		return
 	}
 
-	user, err := h.resolveUser(c, &conn, ident)
+	user, err := h.resolveUser(c, conn, ident)
 	if err != nil {
 		h.refuseSignIn(c, slug, err, ident.Email)
 		return
 	}
-	if err := h.applyGroupRoles(&conn, user, ident); err != nil {
+	if err := h.applyGroupRoles(c.Request.Context(), conn, user, ident); err != nil {
 		log.Printf("saml %s: role mapping for %s: %v", slug, user.ID, err)
 	}
 
 	// Reload so the token carries any role the mapping just assigned.
-	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", user.ID).First(user).Error; err != nil {
+	user, err = h.users().GetByID(c.Request.Context(), user.ID)
+	if err != nil {
 		h.failLogin(c, "Could not complete sign-in.")
 		return
 	}

@@ -22,7 +22,7 @@ func TestSSOTrustsAnIdPOnlyForItsDomains(t *testing.T) {
 		}
 	}
 	// The email check has to come before the lookup that links by email.
-	lookup := strings.Index(h, `err = h.DB.WithContext(c.Request.Context()).Where("email = ?", email).First(&user).Error`)
+	lookup := strings.Index(h, "h.users().ByEmail(c.Request.Context(), email)")
 	if lookup < 0 {
 		t.Fatal("resolveUser no longer looks the account up by email")
 	}
@@ -77,8 +77,12 @@ func TestSSOToggleAndDomainOwnership(t *testing.T) {
 	if !strings.Contains(h, `updates["allow_id_p_initiated"]`) || strings.Contains(h, `updates["allow_idp_initiated"]`) {
 		t.Error("the update still writes a column that does not exist")
 	}
-	if strings.Count(h, "h.domainTaken(in.Domains") != 2 {
+	if strings.Count(h, "h.domainTaken(c.Request.Context(), in.Domains") != 2 {
 		t.Error("create and update do not both refuse a domain another connection claims")
+	}
+	// And the query behind it, which is where it went in v3.343.0.
+	if !strings.Contains(apiSSOServiceGo(), "func (s *SSOService) DomainClaimedElsewhere(") {
+		t.Error("the service cannot say whether another connection claims a domain")
 	}
 }
 

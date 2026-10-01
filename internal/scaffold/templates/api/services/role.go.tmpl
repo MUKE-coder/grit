@@ -185,3 +185,16 @@ func (s *RoleService) ReplaceUserRoles(ctx context.Context, userID string, roleI
 	authz.Invalidate()
 	return nil
 }
+
+// ByNames reads the roles these names belong to, for a caller holding names
+// rather than ids: the SSO group mapping, which gets names from a directory.
+func (s *RoleService) ByNames(ctx context.Context, names []string) ([]models.Role, error) {
+	var roles []models.Role
+	if len(names) == 0 {
+		return roles, nil
+	}
+	if err := s.db(ctx).Where("name IN ?", names).Find(&roles).Error; err != nil {
+		return nil, err
+	}
+	return roles, nil
+}

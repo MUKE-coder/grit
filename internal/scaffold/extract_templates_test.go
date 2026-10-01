@@ -71,6 +71,10 @@ var handlerTemplates = map[string]func() string{
 	// Two-factor: 870 lines and thirty-five queries, the largest of the
 	// framework's handlers.
 	"api/handlers/totp.go": totpHandlerGo,
+
+	// The SSO service, which is gaining the connection and identity queries its
+	// handler used to run.
+	"api/services/sso.go": apiSSOServiceGo,
 }
 
 func TestExtractTemplates(t *testing.T) {

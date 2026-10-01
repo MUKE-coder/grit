@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -165,7 +166,7 @@ func TestSSO_GroupMappingWritesBothRoleStores(t *testing.T) {
 
 	u, err := h.resolveUser(ssoCtx(), &conn, ext)
 	require.NoError(t, err)
-	require.NoError(t, h.applyGroupRoles(&conn, u, ext))
+	require.NoError(t, h.applyGroupRoles(context.Background(), &conn, u, ext))
 
 	var links []models.UserRole
 	require.NoError(t, db.Where("user_id = ?", u.ID).Find(&links).Error)
@@ -194,11 +195,11 @@ func TestSSO_GroupRemovalRevokesRole(t *testing.T) {
 	ext.Groups = []string{"it-admins"}
 	u, err := h.resolveUser(ssoCtx(), &conn, ext)
 	require.NoError(t, err)
-	require.NoError(t, h.applyGroupRoles(&conn, u, ext))
+	require.NoError(t, h.applyGroupRoles(context.Background(), &conn, u, ext))
 
 	// Next login: demoted at the IdP.
 	ext.Groups = []string{"engineering"}
-	require.NoError(t, h.applyGroupRoles(&conn, u, ext))
+	require.NoError(t, h.applyGroupRoles(context.Background(), &conn, u, ext))
 
 	var reloaded models.User
 	require.NoError(t, db.Where("id = ?", u.ID).First(&reloaded).Error)
@@ -225,7 +226,7 @@ func TestSSO_MalformedMappingFailsClosed(t *testing.T) {
 	ext.Groups = []string{"it-admins"}
 	u, err := h.resolveUser(ssoCtx(), &conn, ext)
 	require.NoError(t, err)
-	require.NoError(t, h.applyGroupRoles(&conn, u, ext))
+	require.NoError(t, h.applyGroupRoles(context.Background(), &conn, u, ext))
 
 	var links []models.UserRole
 	require.NoError(t, db.Where("user_id = ?", u.ID).Find(&links).Error)
@@ -286,10 +287,10 @@ func TestSSO_LeavingEveryMappedGroupRevokes(t *testing.T) {
 	ext.Groups = []string{"engineering"}
 	u, err := h.resolveUser(ssoCtx(), &conn, ext)
 	require.NoError(t, err)
-	require.NoError(t, h.applyGroupRoles(&conn, u, ext))
+	require.NoError(t, h.applyGroupRoles(context.Background(), &conn, u, ext))
 
 	ext.Groups = nil
-	require.NoError(t, h.applyGroupRoles(&conn, u, ext))
+	require.NoError(t, h.applyGroupRoles(context.Background(), &conn, u, ext))
 	var reloaded models.User
 	require.NoError(t, db.Where("id = ?", u.ID).First(&reloaded).Error)
 	assert.Equal(t, models.RoleUser, reloaded.Role, "leaving the group must revoke what it granted")

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"crypto/rand"
 	"encoding/base64"
@@ -15,7 +16,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"{{MODULE}}/internal/authz"
 	"{{MODULE}}/internal/config"
 	"{{MODULE}}/internal/crypto"
 	"{{MODULE}}/internal/models"
@@ -80,6 +80,28 @@ type SSODiscoverRequest struct {
 //
 //	POST /api/auth/sso/discover  {"email": "bob@acme.com"}
 //	200 {"data": {"sso": true, "slug": "acme", "name": "Acme Okta", "redirect_url": "..."}}
+
+// sso, roles and users are the services this handler reads and writes through.
+// Built per request because each is one field and a struct literal, and because
+// building them here means the wiring in routes.go did not have to change.
+//
+// Which account an assertion belongs to, and what a connection is, are decisions
+// about data: see internal/services/sso.go. What follows decides what a refusal
+// says and which fields a request may set.
+func (h *SSOHandler) sso() *services.SSOService {
+	return &services.SSOService{DB: h.DB}
+}
+
+func (h *SSOHandler) roles() *services.RoleService {
+	return &services.RoleService{DB: h.DB}
+}
+
+// users reads accounts through its own service rather than through AuthService,
+// whose field on this handler is optional: a lookup that panics depending on how
+// the handler was wired is worse than one more struct literal.
+func (h *SSOHandler) users() *services.UserService {
+	return &services.UserService{DB: h.DB}
+}
 
 func (h *SSOHandler) Discover(c *gin.Context) {
 	var req SSODiscoverRequest
@@ -225,8 +247,8 @@ func (h *SSOHandler) Callback(c *gin.Context) {
 		return
 	}
 
-	var conn models.SSOConnection
-	if err := h.DB.WithContext(c.Request.Context()).Where("slug = ? AND enabled = ?", slug, true).First(&conn).Error; err != nil {
+	conn, err := h.sso().EnabledBySlug(c.Request.Context(), slug)
+	if err != nil {
 		h.failLogin(c, "That sign-in method is not available.")
 		return
 	}
@@ -240,20 +262,21 @@ func (h *SSOHandler) Callback(c *gin.Context) {
 		Groups:    services.ClaimGroups(external.RawData, conn.GroupsClaim),
 	}
 
-	user, err := h.resolveUser(c, &conn, ident)
+	user, err := h.resolveUser(c, conn, ident)
 	if err != nil {
 		h.refuseSignIn(c, slug, err, ident.Email)
 		return
 	}
 
-	if err := h.applyGroupRoles(&conn, user, ident); err != nil {
+	if err := h.applyGroupRoles(c.Request.Context(), conn, user, ident); err != nil {
 		// Role mapping failing shouldn't strand a user who authenticated
 		// correctly — log it and let them in with whatever they already have.
 		log.Printf("sso %s: role mapping for %s: %v", slug, user.ID, err)
 	}
 
 	// Reload so the token carries any role the mapping just assigned.
-	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", user.ID).First(user).Error; err != nil {
+	user, err = h.users().GetByID(c.Request.Context(), user.ID)
+	if err != nil {
 		h.failLogin(c, "Could not complete sign-in.")
 		return
 	}
@@ -285,11 +308,10 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 	now := time.Now()
 	email := strings.ToLower(strings.TrimSpace(external.Email))
 
-	var identity models.UserIdentity
-	err := h.DB.WithContext(c.Request.Context()).Where("provider = ? AND subject = ?", conn.Slug, external.Subject).First(&identity).Error
+	identity, err := h.sso().IdentityBySubject(c.Request.Context(), conn.Slug, external.Subject)
 	if err == nil {
-		var user models.User
-		if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", identity.UserID).First(&user).Error; err != nil {
+		user, err := h.users().GetByID(c.Request.Context(), identity.UserID)
+		if err != nil {
 			return nil, fmt.Errorf("%w: %w", errSSOLinkedAccountMissing, err)
 		}
 		// The account must still be one this connection can vouch for. A link
@@ -301,10 +323,10 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 		if !user.Active {
 			return nil, errSSOAccountDisabled
 		}
-		if err := h.DB.WithContext(c.Request.Context()).Model(&identity).Updates(map[string]interface{}{"last_login_at": now, "email": email}).Error; err != nil {
+		if err := h.sso().RecordIdentityLogin(c.Request.Context(), identity, now, email); err != nil {
 			log.Printf("sso: recording sign-in for identity %s: %v", identity.ID, err)
 		}
-		return &user, nil
+		return user, nil
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("%w: %w", errSSOLookupFailed, err)
@@ -318,8 +340,7 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 		return nil, errSSOOutsideDomains
 	}
 
-	var user models.User
-	err = h.DB.WithContext(c.Request.Context()).Where("email = ?", email).First(&user).Error
+	user, err := h.users().ByEmail(c.Request.Context(), email)
 	switch {
 	case err == nil:
 		if !user.Active {
@@ -329,7 +350,7 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 		if !conn.JITProvisioning {
 			return nil, errSSONoAccount
 		}
-		user = models.User{
+		provisioned := models.User{
 			FirstName:       firstNonBlank(external.FirstName, "User"),
 			LastName:        external.LastName,
 			Email:           email,
@@ -340,9 +361,13 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 			EmailVerifiedAt: &now, // the IdP asserted it
 			IPAddress:       c.ClientIP(),
 		}
-		if err := h.DB.WithContext(c.Request.Context()).Create(&user).Error; err != nil {
+		// Through CreateUser, so two assertions for one new address in the same
+		// instant are decided by the unique index rather than by which read
+		// finished first.
+		if err := services.CreateUser(c.Request.Context(), h.DB, &provisioned); err != nil {
 			return nil, fmt.Errorf("%w: %w", errSSOProvisionFailed, err)
 		}
+		user = &provisioned
 	default:
 		return nil, fmt.Errorf("%w: %w", errSSOLookupFailed, err)
 	}
@@ -355,10 +380,10 @@ func (h *SSOHandler) resolveUser(c *gin.Context, conn *models.SSOConnection, ext
 		Email:       email,
 		LastLoginAt: &now,
 	}
-	if err := h.DB.WithContext(c.Request.Context()).Create(&link).Error; err != nil {
+	if err := h.sso().LinkIdentity(c.Request.Context(), &link); err != nil {
 		log.Printf("sso %s: linking identity for %s: %v", conn.Slug, user.ID, err)
 	}
-	return &user, nil
+	return user, nil
 }
 
 // Why resolveUser refuses a sign-in. They are errors rather than sentences, and
@@ -410,14 +435,14 @@ func (h *SSOHandler) refuseSignIn(c *gin.Context, slug string, err error, email 
 // removes the role here on their next login — which is the only reason to map
 // groups at all. Connections with no mapping configured are left alone so an
 // admin's manual grants survive.
-func (h *SSOHandler) applyGroupRoles(conn *models.SSOConnection, user *models.User, external externalIdentity) error {
+func (h *SSOHandler) applyGroupRoles(ctx context.Context, conn *models.SSOConnection, user *models.User, external externalIdentity) error {
 	names := services.GroupRoleNames(conn, external.Groups)
 
 	if len(names) == 0 {
 		switch {
 		case conn.DefaultRoleID != "":
-			var role models.Role
-			if err := h.DB.Where("id = ?", conn.DefaultRoleID).First(&role).Error; err != nil {
+			role, err := h.roles().ByID(ctx, conn.DefaultRoleID)
+			if err != nil {
 				return err
 			}
 			names = []string{role.Name}
@@ -431,34 +456,25 @@ func (h *SSOHandler) applyGroupRoles(conn *models.SSOConnection, user *models.Us
 		}
 	}
 
-	var roles []models.Role
-	if err := h.DB.Where("name IN ?", names).Find(&roles).Error; err != nil {
+	roles, err := h.roles().ByNames(ctx, names)
+	if err != nil {
 		return err
 	}
 	if len(roles) == 0 {
 		return nil
 	}
 
-	err := h.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("user_id = ?", user.ID).Delete(&models.UserRole{}).Error; err != nil {
-			return err
-		}
-		for _, r := range roles {
-			if err := tx.Create(&models.UserRole{UserID: user.ID, RoleID: r.ID}).Error; err != nil {
-				return err
-			}
-		}
-		// The legacy users.role string is what GenerateTokenPair bakes into the
-		// JWT, so it has to move in step with the join table or the token and
-		// the grants disagree.
-		return tx.Model(&models.User{}).Where("id = ?", user.ID).
-			Update("role", strings.ToUpper(roles[0].Name)).Error
-	})
-	if err != nil {
-		return err
+	// The same replacement the admin's role picker makes, and the same
+	// transaction: the join table and the legacy users.role column move together
+	// or not at all, because users.role is what GenerateTokenPair bakes into the
+	// JWT and a token that disagrees with the grants is the worst of both. This
+	// used to be a second copy of that transaction, written months apart from the
+	// first, each free to drift about which column it kept in step.
+	ids := make([]string, 0, len(roles))
+	for _, r := range roles {
+		ids = append(ids, r.ID)
 	}
-	authz.Invalidate()
-	return nil
+	return h.roles().ReplaceUserRoles(ctx, user.ID, ids)
 }
 
 func (h *SSOHandler) failLogin(c *gin.Context, message string) {
@@ -494,8 +510,8 @@ type SSOConnectionRequest struct {
 }
 
 func (h *SSOHandler) List(c *gin.Context) {
-	var conns []models.SSOConnection
-	if err := h.DB.WithContext(c.Request.Context()).Order("created_at desc").Find(&conns).Error; err != nil {
+	conns, err := h.sso().All(c.Request.Context())
+	if err != nil {
 		respond.Internal(c, err)
 		return
 	}
@@ -530,7 +546,7 @@ func (h *SSOHandler) Create(c *gin.Context) {
 		respond.BadRequest(c, "issuer_url, client_id and client_secret are required for OIDC")
 		return
 	}
-	if domain, owner := h.domainTaken(in.Domains, ""); domain != "" {
+	if domain, owner := h.domainTaken(c.Request.Context(), in.Domains, ""); domain != "" {
 		respond.BadRequest(c, fmt.Sprintf("%s is already routed to %s: an email domain can belong to one connection", domain, owner))
 		return
 	}
@@ -558,7 +574,7 @@ func (h *SSOHandler) Create(c *gin.Context) {
 		GroupsClaim:     firstNonBlank(in.GroupsClaim, "groups"),
 		GroupMappings:   in.GroupMappings,
 	}
-	if err := h.DB.WithContext(c.Request.Context()).Create(&conn).Error; err != nil {
+	if err := h.sso().Create(c.Request.Context(), &conn); err != nil {
 		respond.BadRequest(c, "could not save the connection — is the slug already in use?")
 		return
 	}
@@ -571,8 +587,8 @@ func (h *SSOHandler) Create(c *gin.Context) {
 }
 
 func (h *SSOHandler) Update(c *gin.Context) {
-	var conn models.SSOConnection
-	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", c.Param("id")).First(&conn).Error; err != nil {
+	conn, err := h.sso().ByID(c.Request.Context(), c.Param("id"))
+	if err != nil {
 		respond.NotFound(c, "SSO connection not found")
 		return
 	}
@@ -606,7 +622,7 @@ func (h *SSOHandler) Update(c *gin.Context) {
 		updates["name"] = in.Name
 	}
 	if in.Domains != "" {
-		if domain, owner := h.domainTaken(in.Domains, conn.ID); domain != "" {
+		if domain, owner := h.domainTaken(c.Request.Context(), in.Domains, conn.ID); domain != "" {
 			respond.BadRequest(c, fmt.Sprintf("%s is already routed to %s: an email domain can belong to one connection", domain, owner))
 			return
 		}
@@ -651,18 +667,20 @@ func (h *SSOHandler) Update(c *gin.Context) {
 		updates["allow_id_p_initiated"] = *in.AllowIDPInitiated
 	}
 
-	if err := h.DB.WithContext(c.Request.Context()).Model(&conn).Updates(updates).Error; err != nil {
+	// The row as it now stands, because the screen renders what comes back and a
+	// connection carries fields this request never named.
+	saved, err := h.sso().Update(c.Request.Context(), conn, updates)
+	if err != nil {
 		respond.Internal(c, err)
 		return
 	}
 
 	h.reload()
-	h.DB.WithContext(c.Request.Context()).Where("id = ?", conn.ID).First(&conn)
-	c.JSON(http.StatusOK, gin.H{"data": conn, "message": "SSO connection updated"})
+	c.JSON(http.StatusOK, gin.H{"data": saved, "message": "SSO connection updated"})
 }
 
 func (h *SSOHandler) Delete(c *gin.Context) {
-	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", c.Param("id")).Delete(&models.SSOConnection{}).Error; err != nil {
+	if err := h.sso().Delete(c.Request.Context(), c.Param("id")); err != nil {
 		respond.Internal(c, err)
 		return
 	}
@@ -673,8 +691,8 @@ func (h *SSOHandler) Delete(c *gin.Context) {
 // Test re-runs discovery for one connection so an admin can tell a typo in the
 // issuer URL from a wrong client secret without waiting for a user to fail.
 func (h *SSOHandler) Test(c *gin.Context) {
-	var conn models.SSOConnection
-	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", c.Param("id")).First(&conn).Error; err != nil {
+	conn, err := h.sso().ByID(c.Request.Context(), c.Param("id"))
+	if err != nil {
 		respond.NotFound(c, "SSO connection not found")
 		return
 	}
@@ -693,33 +711,15 @@ func (h *SSOHandler) Test(c *gin.Context) {
 }
 
 // domainTaken returns a domain in domains that another connection already
-// claims, and that connection's name. Discovery sends an address to the first
-// connection claiming its domain, so two claiming one made sign-in depend on
-// row order.
-func (h *SSOHandler) domainTaken(domains, exceptID string) (string, string) {
-	wanted := map[string]bool{}
-	for _, d := range (&models.SSOConnection{Domains: domains}).DomainList() {
-		wanted[d] = true
-	}
-	if len(wanted) == 0 {
+// claims, and that connection's name. A failure to look reads as "not claimed",
+// which is what it did before: the unique index on the slug is the backstop, and
+// refusing every save because one read failed would be worse.
+func (h *SSOHandler) domainTaken(ctx context.Context, domains, exceptID string) (string, string) {
+	domain, name, err := h.sso().DomainClaimedElsewhere(ctx, domains, exceptID)
+	if err != nil {
 		return "", ""
 	}
-	var others []models.SSOConnection
-	q := h.DB
-	if exceptID != "" {
-		q = q.Where("id <> ?", exceptID)
-	}
-	if err := q.Find(&others).Error; err != nil {
-		return "", ""
-	}
-	for _, o := range others {
-		for _, d := range o.DomainList() {
-			if wanted[d] {
-				return d, o.Name
-			}
-		}
-	}
-	return "", ""
+	return domain, name
 }
 
 func (h *SSOHandler) reload() {

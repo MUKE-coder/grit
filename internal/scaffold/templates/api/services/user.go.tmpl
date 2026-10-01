@@ -69,6 +69,17 @@ func (s *UserService) GetByID(ctx context.Context, id string) (*models.User, err
 	return &user, nil
 }
 
+// ByEmail is the lookup by address, for a caller holding one: an SSO assertion,
+// an invitation, a support tool. It returns the error GORM gave it, so a missing
+// row and a database that is down stay distinguishable.
+func (s *UserService) ByEmail(ctx context.Context, email string) (*models.User, error) {
+	var user models.User
+	if err := s.db(ctx).Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 // EmailTakenByAnother reports whether some other account already uses this
 // address, case-insensitively.
 //

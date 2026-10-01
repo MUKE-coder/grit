@@ -41,3 +41,11 @@ func apiTwoFactorServiceGo() string { return tmpl("api/services/two_factor.go") 
 
 // apiTwoFactorServiceTestGo emits internal/services/two_factor_test.go.
 func apiTwoFactorServiceTestGo() string { return tmpl("api/services/two_factor_test.go") }
+
+// apiSSOServiceTestGo emits internal/services/sso_connections_test.go.
+//
+// The connection and identity store, which the SSO handler stopped querying
+// itself in v3.343.0: one domain claimed twice, a disabled connection, a SAML
+// assertion arriving for a connection switched to OIDC, and the subject match a
+// returning sign-in depends on.
+func apiSSOServiceTestGo() string { return tmpl("api/services/sso_connections_test.go") }

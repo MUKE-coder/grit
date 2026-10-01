@@ -31,6 +31,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "session.go"):                 apiSessionHandlerGo(),
 		filepath.Join(apiRoot, "internal", "models", "sso.go"):                       apiSSOModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "sso.go"):                     apiSSOServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "sso_connections_test.go"):    apiSSOServiceTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "sso.go"):                     apiSSOHandlerGo(),
 		filepath.Join(apiRoot, "internal", "models", "saml.go"):                      apiSAMLModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "saml.go"):                    apiSAMLServiceGo(),

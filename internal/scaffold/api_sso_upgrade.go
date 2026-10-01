@@ -40,6 +40,7 @@ func writeSSOFiles(root string, opts Options) error {
 
 	for _, f := range []struct{ path, content string }{
 		{filepath.Join(apiRoot, "internal", "services", "sso.go"), apiSSOServiceGo()},
+		{filepath.Join(apiRoot, "internal", "services", "sso_connections_test.go"), apiSSOServiceTestGo()},
 		{filepath.Join(apiRoot, "internal", "handlers", "sso.go"), apiSSOHandlerGo()},
 		{filepath.Join(apiRoot, "internal", "handlers", "sso_test.go"), apiSSOTestGo()},
 		{filepath.Join(apiRoot, "internal", "services", "saml.go"), apiSAMLServiceGo()},

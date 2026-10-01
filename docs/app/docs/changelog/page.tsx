@@ -66,6 +66,47 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.343.0 */}
+            <div className="mb-12" id="v3.343.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.343.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>SSO and SAML run no queries of their own</h3>
+                <p>
+                  The connection and identity tables are now{' '}
+                  <code>services.SSOService</code>, and both sign-in flows read accounts through{' '}
+                  <code>UserService</code>. The handlers keep what they are for: which domains a
+                  customer's identity provider may vouch for, what a refused sign-in says, which
+                  fields an admin request may set.
+                </p>
+                <p>
+                  The group-role mapping is the part worth reading. Its transaction was a second copy
+                  of the one behind the admin's role picker, written months apart, and both had to
+                  agree about the legacy <code>users.role</code> column, because that column is what
+                  the JWT carries: a token that disagrees with the grants is worse than either being
+                  wrong. One implementation now, in <code>RoleService.ReplaceUserRoles</code>, which
+                  the SSO mapping calls.
+                </p>
+                <p>
+                  A just-in-time provisioned account goes through <code>services.CreateUser</code>,
+                  so two assertions for one new address in the same instant are decided by the unique
+                  index rather than by which read finished first.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The connection store has its own tests for the first time: one domain claimed
+                  twice, a disabled connection still answering a callback, a SAML assertion arriving
+                  for a connection switched to OIDC, and the subject match a returning sign-in
+                  depends on. The SSO service also moved out of a Go string literal into{' '}
+                  <code>internal/scaffold/templates/</code>, verified byte-for-byte.
+                </p>
+              </div>
+            </div>
+
             {/* v3.342.0 */}
             <div className="mb-12" id="v3.342.0">
               <div className="flex items-center gap-3 mb-4">
