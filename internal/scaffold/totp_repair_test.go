@@ -72,9 +72,18 @@ func TestFreshTemplatesNeedNoTwoFactorRepair(t *testing.T) {
 		t.Errorf("the scaffold's Login still needs the repair (fixed %v, warn %v)", fixed, warn)
 	}
 	h := totpHandlerGo()
-	for _, want := range []string{"func (h *TOTPHandler) failSecondFactor(", "last_used_step < ?", "respond.CodeTOTPAlreadyEnabled", "user.LockedUntil != nil"} {
+	for _, want := range []string{"func (h *TOTPHandler) failSecondFactor(", "respond.CodeTOTPAlreadyEnabled", "user.LockedUntil != nil"} {
 		if !strings.Contains(h, want) {
 			t.Errorf("the TOTP handler template is missing %s", want)
+		}
+	}
+	// The conditional writes moved onto the service in v3.342.0, and are the
+	// reason they moved: each one decides whether this request, rather than
+	// another one carrying the same code, may go on.
+	svc := apiTwoFactorServiceGo()
+	for _, want := range []string{"last_used_step < ?", "AND code_hash = ?", "AND backup_codes = ?", "attempts + 1"} {
+		if !strings.Contains(svc, want) {
+			t.Errorf("the two-factor service is missing %s", want)
 		}
 	}
 	if !strings.Contains(totpServiceGo(), "func ValidateCodeStep(") || !strings.Contains(twoFactorModelsGo(), "LastUsedStep") {

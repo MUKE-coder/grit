@@ -67,6 +67,10 @@ var handlerTemplates = map[string]func() string{
 	// the test that goes with it.
 	"api/handlers/role.go":      roleHandlerGo,
 	"api/handlers/role_test.go": roleHandlerTestGo,
+
+	// Two-factor: 870 lines and thirty-five queries, the largest of the
+	// framework's handlers.
+	"api/handlers/totp.go": totpHandlerGo,
 }
 
 func TestExtractTemplates(t *testing.T) {

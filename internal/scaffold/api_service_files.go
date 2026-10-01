@@ -31,3 +31,13 @@ func apiRoleServiceGo() string { return tmpl("api/services/role.go") }
 
 // apiRoleServiceTestGo emits internal/services/role_test.go.
 func apiRoleServiceTestGo() string { return tmpl("api/services/role_test.go") }
+
+// apiTwoFactorServiceGo emits internal/services/two_factor.go.
+//
+// The two-factor tables, moved out of an 870-line handler in v3.342.0. Three of
+// its methods are compare-and-sets: a code, a backup code and a pending token
+// each spent by one request and not another.
+func apiTwoFactorServiceGo() string { return tmpl("api/services/two_factor.go") }
+
+// apiTwoFactorServiceTestGo emits internal/services/two_factor_test.go.
+func apiTwoFactorServiceTestGo() string { return tmpl("api/services/two_factor_test.go") }

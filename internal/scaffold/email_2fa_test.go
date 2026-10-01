@@ -61,7 +61,8 @@ func TestEmailCodesAreStoredHashedAndSpent(t *testing.T) {
 	if !strings.Contains(handler, "totp.EmailCodeMatches(pending.CodeHash, req.Code)") {
 		t.Error("verifying does not check the emailed code")
 	}
-	if !strings.Contains(handler, `Update("code_hash", "")`) {
+	if !strings.Contains(handler, "h.twoFactor().SpendEmailChallengeCode(") ||
+		!strings.Contains(apiTwoFactorServiceGo(), `Update("code_hash", "")`) {
 		t.Error("an emailed code is not spent when it is used, so it works twice")
 	}
 	if !strings.Contains(handler, "h.failSecondFactor(pending, user)") {

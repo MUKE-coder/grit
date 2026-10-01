@@ -66,6 +66,50 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.342.0 */}
+            <div className="mb-12" id="v3.342.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.342.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Two-factor has a service, and the races live in one place</h3>
+                <p>
+                  <code>internal/handlers/totp.go</code> was 870 lines and thirty-five queries, the
+                  largest handler Grit ships. They are now{' '}
+                  <code>services.TwoFactorService</code>: the config a user enrols, the pending token
+                  a half-finished sign-in carries, and the devices allowed to skip the prompt.
+                </p>
+                <p>
+                  Three of those methods are the reason this one mattered most. A TOTP code is valid
+                  for its whole time step, a backup code sits in a list, and a pending token is a row
+                  anybody holding it can present: each has to be spent by one request and not by a
+                  second one arriving in the same instant. That is a compare-and-set, and whether
+                  this request won is a question only the write can answer, which makes it the
+                  service's and not a handler's. The guarantees were already there; they were spread
+                  across three handler methods, and nothing tested them. They have tests now, each
+                  one playing the second request.
+                </p>
+                <p>
+                  The lockout decision reads the failure count the database holds rather than the one
+                  the request arrived with, which is what several wrong codes in flight at once
+                  needed all along. The &quot;trusted devices&quot; count on the status endpoint had
+                  its error dropped, so a database that was down read as a user with no trusted
+                  devices; it is reported now. User lookups go through <code>AuthService</code>,
+                  which this handler already held.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  An upgrade delivers the handler and the service together, as it already delivered
+                  this handler: one without the other would not compile. 852 lines also came out of a
+                  Go string literal into <code>internal/scaffold/templates/</code>, verified
+                  byte-for-byte against the previous release.
+                </p>
+              </div>
+            </div>
+
             {/* v3.341.0 */}
             <div className="mb-12" id="v3.341.0">
               <div className="flex items-center gap-3 mb-4">

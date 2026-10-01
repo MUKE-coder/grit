@@ -31,6 +31,10 @@ func repairTwoFactor(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "totp", "totp.go"):         totpServiceGo(),
 		filepath.Join(apiRoot, "internal", "models", "two_factor.go"): twoFactorModelsGo(),
 		handler: totpHandlerGo(),
+		// The handler calls these, so a project that got one without the other
+		// would not compile.
+		filepath.Join(apiRoot, "internal", "services", "two_factor.go"):      apiTwoFactorServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "two_factor_test.go"): apiTwoFactorServiceTestGo(),
 	}
 	for path, content := range files {
 		if err := writeFile(path, strings.ReplaceAll(content, "{{MODULE}}", opts.Module())); err != nil {
