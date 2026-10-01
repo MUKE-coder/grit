@@ -62,6 +62,11 @@ var handlerTemplates = map[string]func() string{
 	// The auth service, because the repair that brings an older project up to
 	// the current handler needs its query methods as a block it can append.
 	"api/services/auth.go": apiAuthServiceGo,
+
+	// The roles API: the handler whose queries are moving onto a service, and
+	// the test that goes with it.
+	"api/handlers/role.go":      roleHandlerGo,
+	"api/handlers/role_test.go": roleHandlerTestGo,
 }
 
 func TestExtractTemplates(t *testing.T) {
@@ -70,6 +75,16 @@ func TestExtractTemplates(t *testing.T) {
 	}
 	for name, fn := range handlerTemplates {
 		path := filepath.Join("templates", name+".tmpl")
+		// A template that already exists is left alone, and this is not a
+		// nicety. Its function reads it through tmpl, which strips the repair
+		// markers on the way out, so writing that back deletes every marker in
+		// the file: the next scaffold panicked at init, having lost the blocks
+		// four repairs take their text from. The comment above said re-running
+		// was a no-op. It was, for one release.
+		if _, err := os.Stat(path); err == nil {
+			t.Logf("kept %s", path)
+			continue
+		}
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			t.Fatal(err)
 		}

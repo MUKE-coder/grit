@@ -87,6 +87,13 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "user.go"):      apiUserHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "user.go"):      apiUserServiceGo(),
 		filepath.Join(apiRoot, "internal", "services", "user_test.go"): apiUserServiceTestGo(),
+
+		// The roles API, the same way, since v3.341.0: the handler, its test and
+		// the service its queries moved to, which have to arrive together.
+		filepath.Join(apiRoot, "internal", "handlers", "role.go"):      roleHandlerGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "role_test.go"): roleHandlerTestGo(),
+		filepath.Join(apiRoot, "internal", "services", "role.go"):      apiRoleServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "role_test.go"): apiRoleServiceTestGo(),
 	}
 
 	for path, content := range files {

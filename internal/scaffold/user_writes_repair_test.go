@@ -172,15 +172,33 @@ func previousUserHandler(t *testing.T) string {
 	return src
 }
 
-// userHandlerFixture reads a user handler as some earlier version of Grit wrote
-// it, with {{MODULE}} where the project's module path goes.
-func userHandlerFixture(t *testing.T, name string) string {
+// handlerFixture reads a handler as some earlier version of Grit wrote it, with
+// {{MODULE}} where the project's module path goes.
+//
+// A repair's input is a file some project still holds, and no later release
+// changes what that file says. Rebuilding it by substituting text out of the
+// current template worked only while the template and the repair's output were
+// the same thing, and broke in both of the releases that moved queries onto a
+// service.
+func handlerFixture(t *testing.T, kind, name string) string {
 	t.Helper()
-	raw, err := os.ReadFile(filepath.Join("testdata", "user_handler", name))
+	raw, err := os.ReadFile(filepath.Join("testdata", kind, name))
 	if err != nil {
 		t.Fatalf("fixture: %v", err)
 	}
 	return strings.ReplaceAll(string(raw), "\r\n", "\n")
+}
+
+// userHandlerFixture is handlerFixture for the user handler.
+func userHandlerFixture(t *testing.T, name string) string {
+	t.Helper()
+	return handlerFixture(t, "user_handler", name)
+}
+
+// roleHandlerFixture is handlerFixture for the roles handler.
+func roleHandlerFixture(t *testing.T, name string) string {
+	t.Helper()
+	return handlerFixture(t, "role_handler", name)
 }
 
 // oldUserListForTest is the hand-rolled list as v3.280.0 wrote it, counts

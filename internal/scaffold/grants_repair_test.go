@@ -12,7 +12,9 @@ func TestFreshTemplatesNeedNoGrantCeilingRepair(t *testing.T) {
 		src string
 		fn  func(string) (string, []string, []string)
 	}{
-		"handlers/role.go":      {roleHandlerGo(), repairRoleCeilingSource},
+		"handlers/role.go": {roleHandlerGo(), repairRoleCeilingSource},
+		// The template that replaced it is checked the same way, since the
+		// ceiling has to survive the queries moving onto the service.
 		"handlers/role_test.go": {roleHandlerTestGo(), repairRoleTestCallerSource},
 		"handlers/user.go":      {apiUserHandlerGo(), repairUserCeilingSource},
 	} {
@@ -23,11 +25,13 @@ func TestFreshTemplatesNeedNoGrantCeilingRepair(t *testing.T) {
 	}
 }
 
-// The repair applied to handlers as v3.246.0 generated them. Stripping the
-// ceiling back out of the current templates gives that shape exactly, because
-// the ceiling is the only difference.
+// The repair applied to handlers as v3.246.0 generated them: the ceiling taken
+// back out of the handler each release wrote before this repair existed, which is
+// the fixture, because the blocks the repair writes build their own queries and
+// the templates do not any more.
 func TestRepairAddsTheGrantCeiling(t *testing.T) {
-	role := roleHandlerGo()
+	roleFresh := roleHandlerFixture(t, "v3.340.0.go.txt")
+	role := roleFresh
 	for _, s := range []string{roleCeilingCheck, roleSystemCheck, roleAssignCheck} {
 		role = strings.ReplaceAll(role, s, "")
 	}
@@ -38,8 +42,8 @@ func TestRepairAddsTheGrantCeiling(t *testing.T) {
 	if len(warn) > 0 || len(fixed) != 1 {
 		t.Fatalf("role.go: fixed %v, warned %v", fixed, warn)
 	}
-	if out != roleHandlerGo() {
-		t.Error("the repaired role handler differs from the template")
+	if out != roleFresh {
+		t.Error("the repaired role handler differs from the one that release wrote")
 	}
 
 	// From the fixture, not from the template: the checks this repair writes name

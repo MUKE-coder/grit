@@ -66,6 +66,64 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.341.0 */}
+            <div className="mb-12" id="v3.341.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.341.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The roles API has a service</h3>
+                <p>
+                  Seventeen queries out of <code>internal/handlers/role.go</code> and into{' '}
+                  <code>services.RoleService</code>. The handler still decides who may ask: only an
+                  ADMIN changes a built-in role, a role hands out no more than its author holds, an
+                  unknown permission key is a 400. What a role is, how its holders are counted and
+                  which writes have to land together is the service's, and a job or a console command
+                  reaches the same rules.
+                </p>
+                <p>
+                  Two things the move turned up. The holder count behind the roles list had its
+                  error dropped, so a failed count drew every role as held by nobody; it is reported
+                  now. And assigning roles counted the ids, then fetched the rows, where one read
+                  answers both.
+                </p>
+
+                <h3>&quot;Role is assigned to N user(s)&quot; now counts users</h3>
+                <p>
+                  A role reaches a user two ways: the <code>user_roles</code> join table, and the
+                  legacy <code>users.role</code> string the admin's user form writes. The delete
+                  guard counted rows, so somebody holding a role both ways counted twice, and the
+                  number in that message is what an operator is told to go and reassign before they
+                  can delete the role. It counts people now, and a deleted account is not one of
+                  them, so a role held only by deleted users can be removed.
+                </p>
+
+                <h3>role.go travels on upgrade, and is a file again</h3>
+                <p>
+                  The handler and its test were written once, when the project was scaffolded, so a
+                  fix to either reached new projects and no existing one. They are framework-owned
+                  now, which means an upgrade delivers them, manifest-guarded as always: a{' '}
+                  <code>role.go</code> you have edited is reported as a conflict and kept.
+                </p>
+                <p>
+                  Both also moved out of Go string literals into{' '}
+                  <code>internal/scaffold/templates/</code>, 591 lines of Go that a parser can now
+                  see. Verified byte-for-byte: the same project name scaffolded with both binaries
+                  produced identical files.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The extractor that moves a batch of templates now refuses to overwrite a template
+                  that exists. Re-running it over a moved batch used to be a no-op, and stopped
+                  being one the moment templates carried repair markers: it wrote the stripped
+                  output back and deleted every marker in the file.
+                </p>
+              </div>
+            </div>
+
             {/* v3.340.0 */}
             <div className="mb-12" id="v3.340.0">
               <div className="flex items-center gap-3 mb-4">
