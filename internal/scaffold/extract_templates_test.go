@@ -58,6 +58,10 @@ var handlerTemplates = map[string]func() string{
 	"api/handlers/saml_test.go":               apiSAMLTestGo,
 	"api/handlers/user_test.go":               apiUserTestGo,
 	"api/handlers/bench_test.go":              apiBenchTestGo,
+
+	// The auth service, because the repair that brings an older project up to
+	// the current handler needs its query methods as a block it can append.
+	"api/services/auth.go": apiAuthServiceGo,
 }
 
 func TestExtractTemplates(t *testing.T) {

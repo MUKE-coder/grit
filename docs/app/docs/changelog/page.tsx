@@ -66,6 +66,70 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.339.0 */}
+            <div className="mb-12" id="v3.339.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.339.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Sign-in runs no queries of its own</h3>
+                <p>
+                  <code>internal/handlers/auth.go</code> read five things from the database by
+                  itself: the account behind an address, the account behind a refresh token, an
+                  enabled second factor, the row that records a half-finished sign-in, and the reset
+                  of the lockout counters. Every generated resource was moved onto its service in
+                  v3.224, and <code>grit doctor</code> reports a handler that queries, so the first
+                  file a developer opens was breaking the rule the generator enforces.
+                </p>
+                <p>
+                  They are now five <code>AuthService</code> methods, and each one is a decision
+                  about data rather than about HTTP: which columns of a two-factor row are safe to
+                  load (the id and the method, never the secret, because a secret that cannot be
+                  decrypted would otherwise read as <em>this account has no second factor</em>),
+                  what an unknown address answers, when a failure count is cleared. The handler
+                  calls them and formats the answer.
+                </p>
+                <p>
+                  An existing project gets the methods before the sign-in repair runs, which is the
+                  part that had to be built rather than noticed:{' '}
+                  <code>grit upgrade</code> rewrites an older <code>Login</code> to what the
+                  template says today, and what it says today calls{' '}
+                  <code>h.AuthService.UserByEmail</code>. Writing that into a project whose service
+                  has no such method is an upgrade that reports success and leaves a project that
+                  does not compile.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  What an existing project gets: the five service methods, and, if its sign-in
+                  predates v3.286.0, a Login that calls them. An auth handler that already holds the
+                  current sign-in keeps its own queries, because{' '}
+                  <code>internal/handlers/auth.go</code> is a file developers edit and the upgrade
+                  changes it only where it still reads as Grit wrote it. It compiles and behaves the
+                  same either way.
+                </p>
+
+                <h3>The repair blocks are taken from the templates, not copied out of them</h3>
+                <p>
+                  A repair needs the text the generator writes today, and it used to keep its own
+                  transcription: 229 lines of the auth handler in one constant, spliced with a
+                  second copy from another file. Editing the template without editing both copies
+                  left an upgraded project holding code the generator no longer writes, and nothing
+                  caught it, because the two halves are joined by a Go <code>+</code> that no search
+                  for the text can follow. That is how this release found two of them already out of
+                  step.
+                </p>
+                <p>
+                  The templates now mark the parts a repair needs, the repair takes a slice of the
+                  one source, and the markers are stripped on the way out so no generated project
+                  sees them. Four blocks, no second copy. Proven by changing a string in the
+                  template alone and watching the repair tests follow it without being touched.
+                </p>
+              </div>
+            </div>
+
             {/* v3.338.1 */}
             <div className="mb-12" id="v3.338.1">
               <div className="flex items-center gap-3 mb-4">

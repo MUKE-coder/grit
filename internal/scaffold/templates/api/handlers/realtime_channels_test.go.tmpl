@@ -17,7 +17,7 @@ import (
 
 func TestRealtime_ChannelsOverTheSocket(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	auth := newTestAuthSvc(testCfg())
+	auth := newTestAuthSvc(testCfg(), nil)
 	pair, err := auth.GenerateTokenPair("user-7", "seven@example.com", "USER")
 	require.NoError(t, err)
 	realtime.Channel("socket-test-notes.{id}", func(c realtime.ChannelContext) bool {

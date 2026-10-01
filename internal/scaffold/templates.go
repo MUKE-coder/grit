@@ -53,7 +53,72 @@ func tmpl(name string) string {
 	// Files on disk end with a newline and the string literals they replaced
 	// did not, and a scaffolded project has to be byte-identical across the
 	// move. One trailing newline is added back by the writer.
-	return strings.TrimSuffix(string(data), "\n")
+	return stripRepairMarkers(strings.TrimSuffix(string(data), "\n"))
+}
+
+// Repair markers, and why they are in the templates.
+//
+// grit upgrade rewrites parts of an older project's files to what the generator
+// writes today, which means the repair needs that text. It used to hold its own
+// transcription: loginBlockNew was 229 lines copied out of the auth handler,
+// spliced with a second copy from another file. Editing the template without
+// editing both copies left an upgraded project with code the generator no
+// longer writes, and nothing caught it, because the two are joined by a Go "+"
+// that no search for the text can follow.
+//
+// So the template marks the parts a repair needs, and the repair takes a slice
+// of the one source. There is no second copy to drift.
+//
+//	// grit:repair:login:start
+//	... the block ...
+//	// grit:repair:login:end
+//
+// The markers are stripped on the way out, so a generated project never sees
+// them. They are a fact about this repository, not about anybody's app.
+const repairMarkerPrefix = "// grit:repair:"
+
+// stripRepairMarkers removes the marker lines from a template's output.
+func stripRepairMarkers(src string) string {
+	if !strings.Contains(src, repairMarkerPrefix) {
+		return src
+	}
+	lines := strings.Split(src, "\n")
+	out := lines[:0]
+	for _, l := range lines {
+		if strings.HasPrefix(strings.TrimSpace(l), repairMarkerPrefix) {
+			continue
+		}
+		out = append(out, l)
+	}
+	return strings.Join(out, "\n")
+}
+
+// repairBlock returns the part of a template a repair replaces, named by its
+// markers and with any nested markers removed.
+//
+// It panics on a missing or malformed marker pair for the same reason tmpl
+// does: both arguments are constants in this package, so a miss is a typo and
+// not a condition a caller could handle. TestEveryRepairBlockResolves covers
+// every one of them.
+func repairBlock(template, id string) string {
+	data, err := templateFS.ReadFile("templates/" + template + ".tmpl")
+	if err != nil {
+		panic(fmt.Sprintf("scaffold: no template %q for repair block %q: %v", template, id, err))
+	}
+	src := string(data)
+	open := repairMarkerPrefix + id + ":start\n"
+	close := repairMarkerPrefix + id + ":end"
+
+	i := strings.Index(src, open)
+	if i < 0 {
+		panic(fmt.Sprintf("scaffold: %s has no %s%s:start marker", template, repairMarkerPrefix, id))
+	}
+	i += len(open)
+	j := strings.Index(src[i:], close)
+	if j < 0 {
+		panic(fmt.Sprintf("scaffold: %s has no %s%s:end marker after the start", template, repairMarkerPrefix, id))
+	}
+	return stripRepairMarkers(src[i : i+j])
 }
 
 // templateNames lists every embedded template, for the tests that check them

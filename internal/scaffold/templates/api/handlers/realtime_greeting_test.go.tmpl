@@ -47,7 +47,7 @@ func TestRealtime_GreetingDoesNotRaceADisconnect(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	realtime.SetConnectionLimits(0, 0)
 	t.Cleanup(func() { realtime.SetConnectionLimits(10, 10000) })
-	auth := newTestAuthSvc(testCfg())
+	auth := newTestAuthSvc(testCfg(), nil)
 	pair, err := auth.GenerateTokenPair("user-g", "greeting@example.com", "USER")
 	require.NoError(t, err)
 

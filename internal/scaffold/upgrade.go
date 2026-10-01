@@ -621,6 +621,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairThinServices(root, opts); err != nil {
 			fmt.Printf("  ⚠ moving the ticket rules into a service: %v\n", err)
 		}
+		// Before the sign-in repair, and the reason that ordering is not
+		// arbitrary: the Login it writes calls AuthService methods that a
+		// project from before v3.339.0 does not have.
+		if err := repairAuthServiceQueries(root, opts); err != nil {
+			fmt.Printf("  ⚠ moving the sign-in queries onto AuthService: %v\n", err)
+		}
 		// After repairThinServices: that one writes auth.go through the manifest
 		// guard, which refuses a file this upgrade has already changed.
 		// Sign-in says nothing about an account until its password matches, a

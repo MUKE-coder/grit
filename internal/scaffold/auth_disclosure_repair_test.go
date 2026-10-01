@@ -110,7 +110,7 @@ func TestLoginReportsNothingBeforeThePassword(t *testing.T) {
 	for _, want := range []string{
 		"func (h *AuthHandler) checkCredentials(",
 		"spendPasswordCheck(req.Password)",
-		"if !h.checkCredentials(c, &user, req.Password) {",
+		"if !h.checkCredentials(c, user, req.Password) {",
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("auth.go is missing %q", want)
@@ -122,7 +122,7 @@ func TestLoginReportsNothingBeforeThePassword(t *testing.T) {
 		}
 	}
 	// The password is checked before any refusal that names the account's state.
-	if strings.Index(src, "h.checkCredentials(c, &user, req.Password)") > strings.Index(src, "h.loginRefusal(&user)") {
+	if strings.Index(src, "h.checkCredentials(c, user, req.Password)") > strings.Index(src, "h.loginRefusal(user)") {
 		t.Error("Login reports a refusal before it checks the password")
 	}
 	mustFormatGo(t, "handlers/auth.go", src)
@@ -711,7 +711,7 @@ func TestMonolithicLoginRepair(t *testing.T) {
 		if formatted(t, "repaired auth.go", out) != formatted(t, "auth.go", fresh) {
 			t.Errorf("%s: the repaired auth.go is not the template:\n%s", c.name, out)
 		}
-		if !strings.Contains(out, "if !h.checkCredentials(c, &user, req.Password) {") || strings.Contains(out, "SOCIAL_AUTH_ONLY") {
+		if !strings.Contains(out, "if !h.checkCredentials(c, user, req.Password) {") || strings.Contains(out, "SOCIAL_AUTH_ONLY") {
 			t.Errorf("%s: the repaired Login does not answer once until the password matches", c.name)
 		}
 		if again, fixed, _ := repairLoginDisclosureSource(out); again != out || len(fixed) != 0 {

@@ -221,6 +221,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	})
 }
 
+// grit:repair:login:start
 // invalidCredentials is the one answer a sign-in gets until its password has
 // been checked and found right. An unknown address, a wrong password, a locked
 // account and an account with no password all get it, with the same status,
@@ -341,17 +342,14 @@ func (h *AuthHandler) checkCredentials(c *gin.Context, user *models.User, passwo
 // because this device is already trusted, and Login should carry on and issue
 // tokens.
 func (h *AuthHandler) startTOTPChallenge(c *gin.Context, user *models.User) bool {
-	// Only the id is read. The secret is encrypted when FIELD_ENCRYPTION_KEY is
-	// set, and loading it here would let a secret that cannot be decrypted read
-	// as "this account has no second factor".
-	// The id and the method. The secret is encrypted when FIELD_ENCRYPTION_KEY
-	// is set, and loading it here would let a secret that cannot be decrypted
-	// read as "this account has no second factor".
-	var totpConfig models.TwoFactorConfig
-	if err := h.DB.WithContext(c.Request.Context()).Select("id", "method").
-		Where("user_id = ? AND enabled = ?", user.ID, true).First(&totpConfig).Error; err != nil {
+// grit:repair:two-factor-lookup:start
+	// Which columns are safe to read here is a decision about the data, so it
+	// is the service's: see EnabledTwoFactor.
+	totpConfig, err := h.AuthService.EnabledTwoFactor(c.Request.Context(), user.ID)
+	if err != nil {
 		return false
 	}
+// grit:repair:two-factor-lookup:end
 	if IsTrustedDevice(c, h.DB, user.ID) {
 		return false
 	}
@@ -362,6 +360,7 @@ func (h *AuthHandler) startTOTPChallenge(c *gin.Context, user *models.User) bool
 		return true
 	}
 
+// grit:repair:email-challenge:start
 	pending := models.TOTPPendingToken{
 		UserID: user.ID,
 		// The token is stored hashed, so somebody who can read the table cannot
@@ -391,7 +390,7 @@ func (h *AuthHandler) startTOTPChallenge(c *gin.Context, user *models.User) bool
 		pending.CodeHash = totp.HashToken(code)
 	}
 
-	if err := h.DB.WithContext(c.Request.Context()).Create(&pending).Error; err != nil {
+	if err := h.AuthService.StartPendingTOTP(c.Request.Context(), &pending); err != nil {
 		respond.Fail(c, respond.CodeTokenError, "Failed to create verification session")
 		return true
 	}
@@ -430,6 +429,7 @@ func (h *AuthHandler) startTOTPChallenge(c *gin.Context, user *models.User) bool
 	})
 	return true
 }
+// grit:repair:email-challenge:end
 
 // Login authenticates a user and returns tokens.
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -439,8 +439,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	var user models.User
-	if err := h.DB.WithContext(c.Request.Context()).Where("email = ?", req.Email).First(&user).Error; err != nil {
+	user, err := h.AuthService.UserByEmail(c.Request.Context(), req.Email)
+	if err != nil {
 		// v3.30.1: unknown email is the most common brute-force fingerprint;
 		// surface it in /system/activity as "warn" severity so operators
 		// can spot credential-stuffing spikes.
@@ -451,13 +451,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	// Nothing about the account is reported until its password is right.
-	if !h.checkCredentials(c, &user, req.Password) {
+	if !h.checkCredentials(c, user, req.Password) {
 		return
 	}
 
 	// The password matched, so the caller may be told why the account still
 	// cannot sign in.
-	if refusal := h.loginRefusal(&user); refusal != nil {
+	if refusal := h.loginRefusal(user); refusal != nil {
 		if refusal.Action != "" {
 			services.LogActivity(h.DB, c, services.ActivityArgs{
 				Action:       refusal.Action,
@@ -473,7 +473,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	// The second factor, when this account has one and this device is not
 	// already trusted. It answers the request itself when it does.
-	if h.startTOTPChallenge(c, &user) {
+	if h.startTOTPChallenge(c, user) {
 		return
 	}
 
@@ -481,8 +481,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	// password, with 2FA still ahead, it handed a fresh set of guesses at the
 	// code to anyone who knew the password and simply signed in again.
 	if user.FailedLoginCount > 0 || user.LockedUntil != nil {
-		if err := h.DB.WithContext(c.Request.Context()).Model(&models.User{}).Where("id = ?", user.ID).
-			Updates(map[string]interface{}{"failed_login_count": 0, "locked_until": nil}).Error; err != nil {
+		if err := h.AuthService.ClearLoginFailures(c.Request.Context(), user.ID); err != nil {
 			log.Printf("lockout: clearing the failure count for %s: %v", user.ID, err)
 		}
 	}
@@ -518,6 +517,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
+// grit:repair:login:end
 // Refresh generates a new access token from a refresh token. The token is
 // read from the grit_refresh cookie first (web client) and falls back to
 // the JSON body (mobile/desktop bearer clients) — so a single endpoint
@@ -546,8 +546,8 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	// deactivated; re-loading the user closes that window and lets a role
 	// change take effect on the next refresh (partial revocation without a
 	// server-side token store).
-	var user models.User
-	if err := h.DB.WithContext(c.Request.Context()).First(&user, "id = ?", claims.UserID).Error; err != nil {
+	user, err := h.AuthService.UserByID(c.Request.Context(), claims.UserID)
+	if err != nil {
 		respond.Fail(c, respond.CodeInvalidToken, "Account no longer exists")
 		return
 	}

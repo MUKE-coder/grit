@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 28 to October 4, 2026",
-    count: 7,
+    count: 8,
     entries: [
+      { version: "3.339.0", title: "Sign-in runs no queries of its own" },
       { version: "3.338.1", title: "The templates are LF on every machine" },
       { version: "3.338.0", title: "Templates as files, starting with the handlers" },
       { version: "3.337.1", title: "The docs now have to follow the rules the framework states" },

@@ -128,3 +128,96 @@ func TestTemplatesCarryOnlyTheModulePlaceholder(t *testing.T) {
 		}
 	}
 }
+
+// Every repair block a repair asks for still exists in its template, and still
+// holds the code the repair means to write.
+//
+// The markers were lost once already, when the template was restored from a
+// copy taken before they were placed. repairBlock panics at init, so that was
+// caught in seconds, but a block whose markers survive in the wrong place would
+// not be: it would hand an upgraded project a slice of somebody else's
+// function. So this checks each block's shape and not only that it resolves.
+func TestEveryRepairBlockResolves(t *testing.T) {
+	blocks := map[string]struct {
+		text        string
+		startsWith  string
+		endsWith    string
+		mustContain []string
+	}{
+		"login": {
+			text:       loginBlockNew,
+			startsWith: "// invalidCredentials is the one answer",
+			// The blank line after Login is part of it: the text it replaces
+			// carried one, and gofmt will not put it back.
+			endsWith:    "}\n\n",
+			mustContain: []string{"func (h *AuthHandler) Login(", "func (h *AuthHandler) loginRefusal(", "func (h *AuthHandler) startTOTPChallenge("},
+		},
+		"two-factor-lookup": {
+			text:        emailChallengeNew,
+			startsWith:  "\t// Which columns are safe to read here",
+			endsWith:    "\t}",
+			mustContain: []string{"h.AuthService.EnabledTwoFactor("},
+		},
+		"email-challenge": {
+			text:        emailChallengeTokenNew,
+			startsWith:  "\tpending := models.TOTPPendingToken{",
+			endsWith:    "\treturn true\n}",
+			mustContain: []string{"h.AuthService.StartPendingTOTP(", "Two-factor authentication required"},
+		},
+		"auth-service-queries": {
+			text:       repairBlock("api/services/auth.go", "auth-service-queries"),
+			startsWith: "// The reads and writes behind signing in",
+			endsWith:   "}\n\n",
+			mustContain: []string{
+				"func (s *AuthService) UserByEmail(",
+				"func (s *AuthService) UserByID(",
+				"func (s *AuthService) EnabledTwoFactor(",
+				"func (s *AuthService) StartPendingTOTP(",
+				"func (s *AuthService) ClearLoginFailures(",
+			},
+		},
+	}
+	for id, want := range blocks {
+		t.Run(id, func(t *testing.T) {
+			if !strings.HasPrefix(want.text, want.startsWith) {
+				t.Errorf("starts at the wrong line:\n%.80q", want.text)
+			}
+			if !strings.HasSuffix(want.text, want.endsWith) {
+				t.Errorf("ends at the wrong line:\n%.80q", want.text[max(0, len(want.text)-80):])
+			}
+			for _, s := range want.mustContain {
+				if !strings.Contains(want.text, s) {
+					t.Errorf("does not contain %q", s)
+				}
+			}
+			if strings.Contains(want.text, repairMarkerPrefix) {
+				t.Error("carries a marker line, which would end up in a user's file")
+			}
+		})
+	}
+}
+
+// No generated project ever sees a marker. They are a fact about this
+// repository and about nobody's app.
+func TestNoTemplateLeaksARepairMarker(t *testing.T) {
+	names, err := templateNames()
+	if err != nil {
+		t.Fatal(err)
+	}
+	marked := 0
+	for _, name := range names {
+		if strings.Contains(tmpl(name), repairMarkerPrefix) {
+			t.Errorf("%s leaks a repair marker into generated code", name)
+		}
+		raw, err := templateFS.ReadFile("templates/" + name + ".tmpl")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(string(raw), repairMarkerPrefix) {
+			marked++
+		}
+	}
+	if marked == 0 {
+		t.Error("no template carries a marker, so every repair block must have been lost")
+	}
+}

@@ -22,12 +22,6 @@ const (
 		return false
 	}`
 
-	emailChallengeNew = `	var totpConfig models.TwoFactorConfig
-	if err := h.DB.WithContext(c.Request.Context()).Select("id", "method").
-		Where("user_id = ? AND enabled = ?", user.ID, true).First(&totpConfig).Error; err != nil {
-		return false
-	}`
-
 	emailChallengeTokenOld = `	// The token is stored hashed, so somebody who can read the table cannot
 	// finish another account's half-completed sign-in with what they find.
 	if err := h.DB.WithContext(c.Request.Context()).Create(&models.TOTPPendingToken{
@@ -48,76 +42,21 @@ const (
 	})
 	return true
 }`
-
-	emailChallengeTokenNew = `	pending := models.TOTPPendingToken{
-		UserID: user.ID,
-		// The token is stored hashed, so somebody who can read the table cannot
-		// finish another account's half-completed sign-in with what they find.
-		TokenHash: totp.HashToken(pendingToken),
-		ExpiresAt: time.Now().Add(totp.PendingTokenExpiry),
-	}
-
-	// A code by email instead of an authenticator.
-	code := ""
-	if totpConfig.Method == models.TwoFactorMethodEmail && h.Mailer == nil && h.Jobs == nil {
-		// The account is set to a factor this deployment can no longer deliver,
-		// which happens when mail is switched off after somebody turned it on.
-		// Say so: the alternative is a code box waiting for a code that will
-		// never arrive.
-		log.Printf("two-factor: %s uses codes by email and no mailer is configured", user.ID)
-		respond.Fail(c, respond.CodeMailFailed, "Your sign-in code cannot be sent: this deployment has no mail configured. Ask an administrator.")
-		return true
-	}
-	if totpConfig.Method == models.TwoFactorMethodEmail {
-		var err error
-		code, err = totp.GenerateEmailCode()
-		if err != nil {
-			respond.Fail(c, respond.CodeTokenError, "Failed to create verification session")
-			return true
-		}
-		pending.CodeHash = totp.HashToken(code)
-	}
-
-	if err := h.DB.WithContext(c.Request.Context()).Create(&pending).Error; err != nil {
-		respond.Fail(c, respond.CodeTokenError, "Failed to create verification session")
-		return true
-	}
-
-	if code != "" {
-		// Sent after the row exists, so a code can never arrive for a challenge
-		// that was not recorded.
-		if err := dispatchMail(c.Request.Context(), h.Mailer, h.Jobs, "two-factor:"+user.ID+":"+totp.HashToken(code), mail.SendOptions{
-			To:       user.Email,
-			Subject:  "Your sign-in code",
-			Template: "two-factor-code",
-			Data: map[string]interface{}{
-				"AppName": h.Config.AppName,
-				"Title":   "Your sign-in code",
-				"Code":    code,
-				"Minutes": int(totp.PendingTokenExpiry.Minutes()),
-				"Year":    time.Now().Year(),
-			},
-		}); err != nil {
-			log.Printf("two-factor: emailing a code to %s: %v", user.ID, err)
-			respond.Fail(c, respond.CodeMailFailed, "We could not email your code. Try again in a moment.")
-			return true
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
-			"totp_required": true,
-			"pending_token": pendingToken,
-			// Which of the two the client should ask for. The older shape had
-			// no method and meant an authenticator, so that is what an empty
-			// value means here.
-			"method": totpConfig.Method,
-		},
-		"message": "Two-factor authentication required",
-	})
-	return true
-}`
 )
+
+// emailChallengeTokenNew is the block that records a pending two-factor
+// challenge, taken from the auth template rather than transcribed here. It is
+// nested inside the login block, so the two cannot disagree about it.
+//
+// Markers are whole lines, so a block always ends with the newline that closed
+// its last line. The text it replaces here ends at a brace, and leaving the
+// newline on would put a blank line after it that gofmt has no reason to remove.
+var emailChallengeTokenNew = strings.TrimSuffix(repairBlock("api/handlers/auth.go", "email-challenge"), "\n")
+
+// emailChallengeNew is the two-factor lookup, from the same template. It moved
+// onto the service in the handlers-run-no-queries work, so the repair has to
+// write what the generator writes and not a copy of what it used to.
+var emailChallengeNew = strings.TrimSuffix(repairBlock("api/handlers/auth.go", "two-factor-lookup"), "\n")
 
 func repairEmailTwoFactorLoginSource(src string) (string, []string, []string) {
 	if !strings.Contains(src, "startTOTPChallenge") {
