@@ -157,8 +157,7 @@ func TestImageWorkIsBounded(t *testing.T) {
 		}
 	}
 	mustFormatGo(t, "media/transform.go", src)
-	raw, _ := os.ReadFile("api_storage_files.go")
-	if !strings.Contains(string(raw), "renditionsWG.Wait()") {
+	if !strings.Contains(uploadHandlerGo(), "renditionsWG.Wait()") {
 		t.Error("renditions still upload one after another")
 	}
 }

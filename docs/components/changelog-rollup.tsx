@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 28 to October 4, 2026",
-    count: 13,
+    count: 14,
     entries: [
+      { version: "3.345.0", title: "A public form stops losing submissions when two arrive at once" },
       { version: "3.344.0", title: "The access-review list was 4n queries, and dropped every error" },
       { version: "3.343.0", title: "SSO and SAML run no queries of their own" },
       { version: "3.342.0", title: "Two-factor has a service, and the races live in one place" },

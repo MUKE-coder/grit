@@ -36,9 +36,20 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// dispatch package all read the same columns, so upgrading one without
 		// the others gives a project that does not compile: the receiver
 		// assigning a string to a *string is how this was found.
-		filepath.Join(apiRoot, "internal", "models", "webhook_event.go"):              apiWebhookEventModelGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "webhooks.go"):                 apiWebhooksHandlerGo(),
-		filepath.Join(apiRoot, "internal", "webhooks", "webhooks.go"):                 apiWebhooksGo(),
+		filepath.Join(apiRoot, "internal", "models", "webhook_event.go"): apiWebhookEventModelGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "webhooks.go"):    apiWebhooksHandlerGo(),
+		filepath.Join(apiRoot, "internal", "webhooks", "webhooks.go"):    apiWebhooksGo(),
+		// Public form sharing: the handler, its service and the two models, as one
+		// set. Written once at scaffold time until v3.345.0, so the submission
+		// count that lost a submission whenever two visitors posted together would
+		// have been fixed for new projects only.
+		filepath.Join(apiRoot, "internal", "models", "form_share.go"):      formShareModelGo(),
+		filepath.Join(apiRoot, "internal", "models", "form_submission.go"): formSubmissionModelGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "form_share.go"):    formShareHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "form_share.go"):    apiFormShareServiceGo(),
+
+		filepath.Join(apiRoot, "internal", "services", "webhook_event.go"):            apiWebhookEventServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "webhook_event_test.go"):       apiWebhookEventServiceTestGo(),
 		filepath.Join(apiRoot, "internal", "webhooks", "dedup_test.go"):               apiWebhookDedupTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "webhooks_redelivery_test.go"): apiWebhookRedeliveryTestGo(),
 		filepath.Join(apiRoot, "internal", "services", "oauth_hooks.go"):              apiOAuthHooksGo(),

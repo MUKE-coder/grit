@@ -80,6 +80,12 @@ var handlerTemplates = map[string]func() string{
 	// four counts per campaign.
 	"api/services/access_review.go":      apiAccessReviewServiceGo,
 	"api/services/access_review_test.go": apiAccessReviewTestGo,
+
+	// The last three handlers with queries of their own that are not the sync
+	// engine: public form sharing, the webhook receiver and uploads.
+	"api/handlers/form_share.go": formShareHandlerGo,
+	"api/handlers/webhooks.go":   apiWebhooksHandlerGo,
+	"api/handlers/upload.go":     uploadHandlerGo,
 }
 
 func TestExtractTemplates(t *testing.T) {

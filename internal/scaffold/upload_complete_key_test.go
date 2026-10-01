@@ -1,7 +1,6 @@
 package scaffold
 
 import (
-	"os"
 	"strings"
 	"testing"
 )
@@ -10,13 +9,10 @@ import (
 // including another user's upload, and deleting that row deleted the object.
 // It now records only a key presigned for the caller, and only once.
 func TestCompleteUploadRecordsOnlyTheCallersPresignedKey(t *testing.T) {
-	raw, err := os.ReadFile("api_storage_files.go")
-	if err != nil {
-		t.Fatal(err)
-	}
-	// A Windows checkout with core.autocrlf writes CRLF, and the search for the
-	// end of the handler below looks for "\n}\n".
-	src := strings.ReplaceAll(string(raw), "\r\n", "\n")
+	// From the generator rather than from the file it used to live in: the handler
+	// moved into internal/scaffold/templates in v3.345.0, and tmpl reads it back
+	// with its line endings pinned, so there is nothing to normalise.
+	src := uploadHandlerGo()
 
 	if !strings.Contains(src, `key := fmt.Sprintf("uploads/%s/%s/%s", userID, time.Now().Format("2006/01"), filename)`) {
 		t.Error("presigned keys are not under the caller's own prefix")

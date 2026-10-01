@@ -66,6 +66,60 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.345.0 */}
+            <div className="mb-12" id="v3.345.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.345.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A public form stops losing submissions when two arrive at once</h3>
+                <p>
+                  Every submission to a shared form bumped a counter by writing{' '}
+                  <code>share.SubmissionCount + 1</code> from the row the request had read. Two
+                  visitors submitting in the same moment both wrote the same number, so the count
+                  lost one of them. A public form is exactly where that happens: nobody is taking
+                  turns. The increment is in SQL now.
+                </p>
+
+                <h3>Uploads list through paginate, and their stats report failures</h3>
+                <p>
+                  The files list clamped the page and did the offset arithmetic itself, which is why
+                  it answered none of the search, sort or <code>?counts=</code> parameters the rest of
+                  the API does. It goes through <code>paginate</code> like every other list, with the
+                  same response envelope it already returned.
+                </p>
+                <p>
+                  Two of the three queries behind the storage stats discarded their errors, so a
+                  database that was down drew a page of zeros: indistinguishable from an empty
+                  bucket. All three report now.
+                </p>
+
+                <h3>Three more services</h3>
+                <p>
+                  <code>FormShareService</code>, <code>UploadService</code> and{' '}
+                  <code>WebhookEventService</code>. The webhook one carries the claim that decides
+                  which of two redeliveries of one event may run its handler, and that claim has
+                  tests for the first time: one for a failed event taken over once, one for a pending
+                  event left alone until the process holding it must be gone.
+                </p>
+                <p>
+                  Uploads keep their scoping in the handler, because who may see everybody's files
+                  reads the request; the handler says whose, and the service scopes every query by
+                  it.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  All three handlers now travel on upgrade. Public form sharing was written once at
+                  scaffold time, so the lost-submission fix would have reached new projects only.
+                  1,378 more lines came out of Go string literals into{' '}
+                  <code>internal/scaffold/templates/</code>, verified byte-for-byte.
+                </p>
+              </div>
+            </div>
+
             {/* v3.344.0 */}
             <div className="mb-12" id="v3.344.0">
               <div className="flex items-center gap-3 mb-4">

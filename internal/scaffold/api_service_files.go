@@ -59,3 +59,25 @@ func apiFeatureFlagServiceGo() string { return tmpl("api/services/feature_flag.g
 
 // apiFeatureFlagServiceTestGo emits internal/services/feature_flag_test.go.
 func apiFeatureFlagServiceTestGo() string { return tmpl("api/services/feature_flag_test.go") }
+
+// apiWebhookEventServiceGo emits internal/services/webhook_event.go.
+//
+// The webhook_events table, including the claim that decides which of two
+// redeliveries of one event may run its handler.
+func apiWebhookEventServiceGo() string { return tmpl("api/services/webhook_event.go") }
+
+// apiWebhookEventServiceTestGo emits internal/services/webhook_event_test.go.
+func apiWebhookEventServiceTestGo() string { return tmpl("api/services/webhook_event_test.go") }
+
+// apiFormShareServiceGo emits internal/services/form_share.go.
+//
+// Public form shares and their submission rows. The submission count is an
+// increment in SQL, because a public form is where two writes arrive at once.
+func apiFormShareServiceGo() string { return tmpl("api/services/form_share.go") }
+
+// apiUploadServiceGo emits internal/services/upload.go.
+//
+// The uploads table, scoped by owner. The storage bucket stays with the handler:
+// a row and an object are two systems, and only the caller knows which order to
+// fail in.
+func apiUploadServiceGo() string { return tmpl("api/services/upload.go") }
