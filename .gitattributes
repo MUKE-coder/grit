@@ -1,0 +1,13 @@
+# Scaffold templates are embedded into the CLI byte for byte and become the
+# files a generated project contains. Git's autocrlf converts text files on
+# checkout, so without this a clone on Windows gets CRLF templates, the CLI
+# embeds CRLF, and every generated project differs from the one CI verified.
+#
+# Found the day the templates moved out of Go string literals (v3.338.0): the
+# repair constants stopped matching the templates they mirror, and only on
+# Windows, because CI runs on Linux where no conversion happens. The same shape
+# as v3.333, where the compose repairs had never once run on a Windows checkout.
+internal/scaffold/templates/** text eol=lf
+
+# The scaffolder reads these and writes their contents into projects too.
+*.tmpl text eol=lf

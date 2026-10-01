@@ -66,6 +66,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.338.1 */}
+            <div className="mb-12" id="v3.338.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.338.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The templates are LF on every machine</h3>
+                <p>
+                  v3.338.0 moved the handler templates out of Go string literals and into files.
+                  Files are subject to a thing string literals were not: git converts text on
+                  checkout, and this repository had no <code>.gitattributes</code> to stop it. A
+                  clone on Windows got all 29 templates with CRLF, the CLI embedded CRLF, and the
+                  repair constants that mirror those templates stopped matching them.
+                </p>
+                <p>
+                  Confirmed by cloning the released tag: 29 of 29. It was invisible because the
+                  checks run on Linux, where no conversion happens, so all six workflows were green
+                  on a release that behaved differently on the machine it was written on. The same
+                  shape as v3.333, where the compose repairs had never once run on a Windows
+                  checkout.
+                </p>
+                <p>
+                  <code>.gitattributes</code> now pins{' '}
+                  <code>internal/scaffold/templates/**</code> to <code>eol=lf</code>, and a test
+                  reads every embedded template back and fails on a CRLF, because an attributes file
+                  is easy to lose in a merge and the failure it prevents cannot be seen from Linux.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  If you cloned at v3.338.0 on Windows, <code>git pull</code> then{' '}
+                  <code>git add --renormalize .</code> restores the templates; nothing in a
+                  generated project needs changing.
+                </p>
+              </div>
+            </div>
+
             {/* v3.338.0 */}
             <div className="mb-12" id="v3.338.0">
               <div className="flex items-center gap-3 mb-4">

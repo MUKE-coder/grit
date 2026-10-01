@@ -87,6 +87,30 @@ func TestGoTemplatesParse(t *testing.T) {
 // Syntax is module-independent and is checked above. Formatting is the
 // scaffolder's job and it already does it.
 
+// Every template is LF, on every machine.
+//
+// Git converts text files on checkout unless told not to, so a clone on Windows
+// turned all 650 line endings in auth.go.tmpl into CRLF. The CLI then embedded
+// CRLF, the repair constants stopped matching the templates they mirror, and
+// every generated project differed from the one CI verified. CI runs on Linux
+// and saw none of it.
+//
+// .gitattributes pins these to LF. This is the check that says so, because an
+// attributes file is easy to lose in a merge and the failure it prevents is
+// invisible on the machine most of the testing happens on.
+func TestTemplatesAreLF(t *testing.T) {
+	names, err := templateNames()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range names {
+		if strings.Contains(tmpl(name), "\r\n") {
+			t.Errorf("%s has CRLF line endings: check .gitattributes, then "+
+				"git add --renormalize internal/scaffold/templates", name)
+		}
+	}
+}
+
 // {{MODULE}} is the only placeholder these templates carry. A second one that
 // nothing substitutes would ship to a user's project as literal braces, which
 // has happened before in this codebase and compiles fine until somebody reads
