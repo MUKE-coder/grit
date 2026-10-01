@@ -66,6 +66,69 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.338.0 */}
+            <div className="mb-12" id="v3.338.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.338.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Templates as files, starting with the handlers</h3>
+                <p>
+                  Nothing in this release changes a generated project. Every one of the 633 files a{' '}
+                  <code>--triple --next</code> scaffold produces is byte-for-byte what v3.337.1
+                  produced. This is about the framework being maintainable by somebody other than
+                  its author.
+                </p>
+                <p>
+                  <code>internal/scaffold</code> is 174,000 lines, and most of it is Go, TypeScript,
+                  CSS and YAML living inside Go string literals, with one file at 10,437 lines. An
+                  editor cannot highlight any of it, a parser cannot see it, and finding the
+                  template that produces a given file means grepping. A product review scored the
+                  maintainability of the framework itself 4 out of 10 for exactly this, and it is
+                  the reason a colour utility that compiled to nothing and a hook after an early
+                  return both shipped.
+                </p>
+                <p>
+                  The 29 handler templates now live under{' '}
+                  <code>internal/scaffold/templates/api/handlers/</code> as ordinary files, embedded
+                  with <code>go:embed</code>. <code>api_files.go</code> drops from 10,437 lines to
+                  8,521. A test parses every Go template with <code>go/parser</code>, so a missing
+                  brace is now a unit-test failure naming the line
+                  (<code>api/handlers/auth.go:524:47</code>) in under a second, rather than a
+                  scaffold-and-build in CI.
+                </p>
+                <p>
+                  What this does not do is type-check them. These templates import packages that
+                  exist only in a generated project, so the compiler cannot see them from here, and
+                  that stays the live suite&apos;s job. Syntax and findability are what moved, and
+                  syntax is where the bugs came from.
+                </p>
+
+                <h3>Two things that were tried and deliberately not shipped</h3>
+                <p>
+                  Running <code>gofmt</code> over the templates looked like an obvious win and is
+                  wrong twice. The scaffolder already formats Go on the way out, so a generated
+                  project is formatted whatever the template looks like. And formatting a template
+                  means substituting a stand-in for <code>{'{{MODULE}}'}</code> first, which sorts
+                  to a different place in the import block than a real module path does: four
+                  handlers came out with their imports reordered. A tidy-up of the source was
+                  quietly changing what every project receives. The reasoning is recorded in the
+                  test file so the next person does not spend the afternoon rediscovering it.
+                </p>
+                <p>
+                  The other is a note about verification. Comparing two scaffolded projects to prove
+                  nothing changed only works if they have the same name: the module path is part of
+                  the import block, and <code>v3361b</code> sorts after <code>&quot;time&quot;</code>{' '}
+                  while <code>pilot3</code> sorts before it. Comparing differently named projects
+                  shows four false differences and hides real ones.
+                </p>
+              </div>
+            </div>
+
             {/* v3.337.1 */}
             <div className="mb-12" id="v3.337.1">
               <div className="flex items-center gap-3 mb-4">
