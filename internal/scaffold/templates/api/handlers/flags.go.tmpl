@@ -11,6 +11,7 @@ import (
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
 	"{{MODULE}}/internal/respond"
+	"{{MODULE}}/internal/services"
 )
 
 // FeatureFlagHandler exposes admin-side CRUD over feature flags +
@@ -24,17 +25,19 @@ func NewFeatureFlagHandler(db *gorm.DB, engine *flags.Engine) *FeatureFlagHandle
 	return &FeatureFlagHandler{DB: db, Engine: engine}
 }
 
+// flags is the service every method below reads and writes through. What a flag
+// row is, and what may be searched or sorted by, is a decision about data: see
+// internal/services/feature_flag.go. When the engine's cache is stale is not,
+// which is why RefreshAndBroadcast stays here.
+func (h *FeatureFlagHandler) flags() *services.FeatureFlagService {
+	return &services.FeatureFlagService{DB: h.DB}
+}
+
 // List returns all flags with the standard paginate envelope.
 //
 //	GET /api/admin/flags
 func (h *FeatureFlagHandler) List(c *gin.Context) {
-	q := h.DB.WithContext(c.Request.Context()).Model(&models.FeatureFlag{})
-	res, err := paginate.List[models.FeatureFlag](q, paginate.Bind(c), paginate.Config{
-		Searchable:   []string{"name", "description"},
-		Sortable:     map[string]bool{"name": true, "created_at": true, "enabled": true},
-		DefaultSort:  "name",
-		DefaultOrder: "asc",
-	})
+	res, err := h.flags().List(c.Request.Context(), paginate.Bind(c))
 	if err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
@@ -76,7 +79,7 @@ func (h *FeatureFlagHandler) Create(c *gin.Context) {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
-	if err := h.DB.WithContext(c.Request.Context()).Create(&flag).Error; err != nil {
+	if err := h.flags().Create(c.Request.Context(), &flag); err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
@@ -90,8 +93,8 @@ func (h *FeatureFlagHandler) Create(c *gin.Context) {
 //	PUT /api/admin/flags/:id
 func (h *FeatureFlagHandler) Update(c *gin.Context) {
 	id := c.Param("id")
-	var flag models.FeatureFlag
-	if err := h.DB.WithContext(c.Request.Context()).First(&flag, "id = ?", id).Error; err != nil {
+	flag, err := h.flags().ByID(c.Request.Context(), id)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			respond.Fail(c, respond.CodeNotFound, "flag not found")
 			return
@@ -113,7 +116,7 @@ func (h *FeatureFlagHandler) Update(c *gin.Context) {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
-	if err := h.DB.WithContext(c.Request.Context()).Save(&flag).Error; err != nil {
+	if err := h.flags().Save(c.Request.Context(), flag); err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
@@ -128,8 +131,8 @@ func (h *FeatureFlagHandler) Update(c *gin.Context) {
 //	DELETE /api/admin/flags/:id
 func (h *FeatureFlagHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
-	var flag models.FeatureFlag
-	if err := h.DB.WithContext(c.Request.Context()).First(&flag, "id = ?", id).Error; err != nil {
+	flag, err := h.flags().ByID(c.Request.Context(), id)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			respond.Fail(c, respond.CodeNotFound, "flag not found")
 			return
@@ -137,7 +140,7 @@ func (h *FeatureFlagHandler) Delete(c *gin.Context) {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
-	if err := h.DB.WithContext(c.Request.Context()).Delete(&flag).Error; err != nil {
+	if err := h.flags().Delete(c.Request.Context(), flag); err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}
@@ -151,18 +154,8 @@ func (h *FeatureFlagHandler) Delete(c *gin.Context) {
 //	GET /api/admin/flags/:id/exposures
 //	→ { "data": [{ "variant": "enabled", "count": 4231 }, ...] }
 func (h *FeatureFlagHandler) Exposures(c *gin.Context) {
-	id := c.Param("id")
-	type bucket struct {
-		Variant string `json:"variant"`
-		Count   int64  `json:"count"`
-	}
-	var rows []bucket
-	if err := h.DB.WithContext(c.Request.Context()).Model(&models.FlagExposure{}).
-		Select("variant, COUNT(DISTINCT user_id) as count").
-		Where("flag_id = ?", id).
-		Group("variant").
-		Order("count desc").
-		Scan(&rows).Error; err != nil {
+	rows, err := h.flags().Exposures(c.Request.Context(), c.Param("id"))
+	if err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
 	}

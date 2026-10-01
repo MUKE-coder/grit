@@ -75,6 +75,11 @@ var handlerTemplates = map[string]func() string{
 	// The SSO service, which is gaining the connection and identity queries its
 	// handler used to run.
 	"api/services/sso.go": apiSSOServiceGo,
+
+	// The access-review service, for the same reason: its handler's list runs
+	// four counts per campaign.
+	"api/services/access_review.go":      apiAccessReviewServiceGo,
+	"api/services/access_review_test.go": apiAccessReviewTestGo,
 }
 
 func TestExtractTemplates(t *testing.T) {

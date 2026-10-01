@@ -66,6 +66,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.344.0 */}
+            <div className="mb-12" id="v3.344.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.344.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The access-review list was 4n queries, and dropped every error</h3>
+                <p>
+                  Drawing the recertification campaigns ran four counts per campaign, so a year of
+                  monthly reviews was forty-nine queries for one page. Each of those counts discarded
+                  its error, which meant a count that failed drew a campaign as having no items at
+                  all. In an access review that reads as nothing left to certify, which is the one
+                  wrong answer that matters.
+                </p>
+                <p>
+                  It is two queries now, whatever the number of campaigns, and a failure is reported.
+                  The total is the sum of every decision rather than a fourth count, so a decision a
+                  later release adds is included instead of silently missing from the total.
+                </p>
+                <p>
+                  The list also ordered by <code>created_at</code> alone, and two campaigns opened in
+                  the same second came back in whichever order the database felt like, which an
+                  operator sees as a list that reorders itself between refreshes. It breaks the tie on
+                  the id, which Grit issues in time order.
+                </p>
+
+                <h3>Feature flags have a service, and exposures count people</h3>
+                <p>
+                  The flag rows and their exposure counts are{' '}
+                  <code>services.FeatureFlagService</code>. The engine in <code>internal/flags</code>
+                  {' '}still decides what a flag answers for a given user and when its cache is stale,
+                  which is the one thing a service cannot know. The exposure query counts distinct
+                  users, as it did before, and now has a test that spends forty checks by one person
+                  to prove it.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Both handlers moved into the framework-owned set, so an upgrade delivers them and
+                  the 4n list stops being something only new projects escape. Four more files came out
+                  of Go string literals into <code>internal/scaffold/templates/</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.343.0 */}
             <div className="mb-12" id="v3.343.0">
               <div className="flex items-center gap-3 mb-4">

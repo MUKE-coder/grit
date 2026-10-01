@@ -66,6 +66,16 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "models", "feature_flag.go"): apiFeatureFlagModelGo(),
 		filepath.Join(apiRoot, "internal", "flags", "flags.go"):         apiFlagsGo(),
 		filepath.Join(apiRoot, "internal", "flags", "flags_test.go"):    apiFlagsTestGo(),
+		// The flag and access-review endpoints, whose handlers joined this set in
+		// v3.344.0 for the reason user.go did: a fix in one of them used to reach
+		// new projects only, and the access-review list ran four counts per
+		// campaign with every error dropped.
+		filepath.Join(apiRoot, "internal", "handlers", "flags.go"):              apiFlagsHandlerGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "access_review.go"):      apiAccessReviewHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "access_review.go"):      apiAccessReviewServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "access_review_test.go"): apiAccessReviewTestGo(),
+		filepath.Join(apiRoot, "internal", "services", "feature_flag.go"):       apiFeatureFlagServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "feature_flag_test.go"):  apiFeatureFlagServiceTestGo(),
 
 		// The one insert of a user row, which registration and the admin's
 		// Create User both call. Here because the handlers that call it are

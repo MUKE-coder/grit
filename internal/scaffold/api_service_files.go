@@ -49,3 +49,13 @@ func apiTwoFactorServiceTestGo() string { return tmpl("api/services/two_factor_t
 // assertion arriving for a connection switched to OIDC, and the subject match a
 // returning sign-in depends on.
 func apiSSOServiceTestGo() string { return tmpl("api/services/sso_connections_test.go") }
+
+// apiFeatureFlagServiceGo emits internal/services/feature_flag.go.
+//
+// The flag rows and the exposure counts drawn from them. The engine in
+// internal/flags still decides what a flag answers and when its cache is stale,
+// which is the one thing a service cannot know.
+func apiFeatureFlagServiceGo() string { return tmpl("api/services/feature_flag.go") }
+
+// apiFeatureFlagServiceTestGo emits internal/services/feature_flag_test.go.
+func apiFeatureFlagServiceTestGo() string { return tmpl("api/services/feature_flag_test.go") }
