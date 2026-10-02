@@ -79,7 +79,6 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "models", "activity_log.go"):             apiActivityLogModelGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "activity.go"):             apiActivityMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "activity_read_test.go"):   apiActivityReadTestGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "activity.go"):               apiActivityHandlerGo(),
 		filepath.Join(apiRoot, "internal", "respond", "respond.go"):                 apiRespondGo(),
 		filepath.Join(apiRoot, "internal", "password", "password.go"):               apiPasswordRulesGo(),
 		filepath.Join(apiRoot, "internal", "password", "password_test.go"):          apiPasswordRulesTestGo(),
@@ -107,9 +106,7 @@ func writeAPIFiles(root string, opts Options) error {
 		// loopback, so dev activity logs show the operator's actual
 		// public IP instead of "::1".
 		filepath.Join(apiRoot, "internal", "services", "clientip.go"):       clientIPHelperGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "user_activity.go"):  userActivityHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "ocsf.go"):           apiOCSFServiceGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "ocsf.go"):           apiOCSFHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "ocsf_test.go"):      apiOCSFTestGo(),
 		filepath.Join(apiRoot, "internal", "models", "access_review.go"):    apiAccessReviewModelGo(),
 		filepath.Join(apiRoot, "internal", "models", "deletion_journal.go"): apiGDPRModelGo(),

@@ -41,8 +41,12 @@ func TestAuditCanMarkAndCapReads(t *testing.T) {
 func TestActivityListFindsARecord(t *testing.T) {
 	src := apiActivityHandlerGo()
 	if !strings.Contains(src, `With("resource", c.Query("resource"))`) ||
-		!strings.Contains(src, `q.Where("resource_ids LIKE ?", "%"+record+"%")`) {
-		t.Error("the activity list cannot be filtered to one resource or one record")
+		!strings.Contains(src, `h.activity().Logs(c.Request.Context(), params, c.Query("path"), c.Query("record"))`) {
+		t.Error("the activity list does not pass the resource and record filters to its service")
+	}
+	// And the query behind the record filter, which is where it went in v3.348.0.
+	if !strings.Contains(apiActivityReadsServiceGo(), `Where("resource_ids LIKE ?", "%"+record+"%")`) {
+		t.Error("the activity service cannot be filtered to one record")
 	}
 	if !strings.Contains(apiActivityReadTestGo(), "func TestMarkedReadsAreRecorded(") {
 		t.Error("the shipped read-audit test is missing")

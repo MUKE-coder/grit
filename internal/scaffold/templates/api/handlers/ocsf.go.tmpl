@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/services"
 	"{{MODULE}}/internal/respond"
 )
@@ -27,6 +26,13 @@ func NewOCSFHandler(db *gorm.DB, productName string) *OCSFHandler {
 		productName = "grit-app"
 	}
 	return &OCSFHandler{DB: db, ProductName: productName}
+}
+
+// activity is the service the reads below go through: which columns a client may
+// sort or filter by is a decision about data, because each name ends up in SQL.
+// See internal/services/activity_reads.go.
+func (h *OCSFHandler) activity() *services.ActivityService {
+	return &services.ActivityService{DB: h.DB}
 }
 
 const (
@@ -55,31 +61,21 @@ func (h *OCSFHandler) Export(c *gin.Context) {
 		limit = ocsfMaxLimit
 	}
 
-	q := h.DB.WithContext(c.Request.Context()).Model(&models.UserActivity{}).Order("created_at asc, id asc").Limit(limit)
-
-	// since is a wall-clock floor (a collector's first poll); after is the exact
-	// cursor for every poll thereafter. Both may be present — after wins ties
-	// within the same millisecond as since.
+	// since is a wall-clock floor, which is a collector's first poll; after is the
+	// exact cursor for every poll thereafter. Both may be present, and what they
+	// mean to the query is the service's: see ActivityService.Export.
+	var since time.Time
 	if v := c.Query("since"); v != "" {
 		t, err := time.Parse(time.RFC3339, v)
 		if err != nil {
 			respond.Fail(c, respond.CodeValidationError, "since must be RFC3339, e.g. 2026-07-01T00:00:00Z")
 			return
 		}
-		q = q.Where("created_at >= ?", t)
-	}
-	if afterID := c.Query("after"); afterID != "" {
-		var cursor models.UserActivity
-		if err := h.DB.WithContext(c.Request.Context()).Select("created_at", "id").First(&cursor, "id = ?", afterID).Error; err == nil {
-			q = q.Where("(created_at, id) > (?, ?)", cursor.CreatedAt, cursor.ID)
-		}
-		// An unknown after id falls through to since/start rather than erroring:
-		// a collector that lost its place still makes progress instead of
-		// wedging.
+		since = t
 	}
 
-	var rows []models.UserActivity
-	if err := q.Find(&rows).Error; err != nil {
+	rows, err := h.activity().Export(c.Request.Context(), since, c.Query("after"), limit)
+	if err != nil {
 		respond.Fail(c, respond.CodeInternalError, "failed to read audit log")
 		return
 	}

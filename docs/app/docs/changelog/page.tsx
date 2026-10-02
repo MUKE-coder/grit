@@ -66,6 +66,48 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.348.0 */}
+            <div className="mb-12" id="v3.348.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.348.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The audit tables have a read side</h3>
+                <p>
+                  Three handlers read them: the request log, the semantic activity feed, and the
+                  OCSF export a SIEM collector polls. Each built its own query, and the whitelists
+                  that decide which columns a client may sort or filter by were written three times.
+                  They are <code>services.ActivityService</code> now. Writing to those tables stays
+                  with the <code>LogX</code> functions: somebody logging an action should not have to
+                  build a service for it.
+                </p>
+                <p>
+                  The severity chips above the activity dashboard dropped the error from their count,
+                  so a database that was down drew the same zeros as a quiet day. It is reported now.
+                  The window is still chosen by the endpoint, because 24 hours is that endpoint's
+                  promise; what the service owns is that the cutoff is bound as a value rather than
+                  written as <code>NOW() - INTERVAL</code>, which is Postgres-only syntax and used to
+                  return zeros on every SQLite project.
+                </p>
+                <p>
+                  The export's cursor is in one place too: <code>since</code> is a wall-clock floor
+                  for a collector's first poll, <code>after</code> is the exact position for every
+                  poll after that, and an <code>after</code> that no longer exists falls through to{' '}
+                  <code>since</code> rather than erroring, so a collector that lost its place still
+                  makes progress instead of wedging.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  All three handlers travel on upgrade now. Twenty of the framework's handlers have
+                  had their queries moved; twelve files still hold 26 sites between them, three of
+                  which only hand the connection to a service rather than building a query.
+                </p>
+              </div>
+            </div>
+
             {/* v3.347.0 */}
             <div className="mb-12" id="v3.347.0">
               <div className="flex items-center gap-3 mb-4">

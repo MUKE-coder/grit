@@ -7,13 +7,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
 	"{{MODULE}}/internal/respond"
+	"{{MODULE}}/internal/services"
 )
 
 type UserActivityHandler struct {
 	DB *gorm.DB
+}
+
+// activity is the service the reads below go through: which columns a client may
+// sort or filter by is a decision about data, because each name ends up in SQL.
+// See internal/services/activity_reads.go.
+func (h *UserActivityHandler) activity() *services.ActivityService {
+	return &services.ActivityService{DB: h.DB}
 }
 
 // List returns paginated activity events. Filters: user_id, action,
@@ -23,27 +30,13 @@ type UserActivityHandler struct {
 //	GET /api/user-activity?severity=critical&page=1&page_size=25
 //	GET /api/user-activity?q=login&user_id=...
 func (h *UserActivityHandler) List(c *gin.Context) {
-	q := h.DB.WithContext(c.Request.Context()).Model(&models.UserActivity{}).Order("created_at desc")
-
 	params := paginate.Bind(c).
 		With("user_id", c.Query("user_id")).
 		With("action", c.Query("action")).
 		With("severity", c.Query("severity")).
 		With("resource_type", c.Query("resource_type"))
 
-	if needle := c.Query("q"); needle != "" {
-		q = q.Where("summary LIKE ?", "%"+needle+"%")
-	}
-
-	res, err := paginate.List[models.UserActivity](q, params, paginate.Config{
-		Sortable: map[string]bool{
-			"created_at": true,
-			"severity":   true,
-			"action":     true,
-		},
-		DefaultSort:  "created_at",
-		DefaultOrder: "desc",
-	})
+	res, err := h.activity().Events(c.Request.Context(), params, c.Query("q"))
 	if err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return
@@ -57,25 +50,14 @@ func (h *UserActivityHandler) List(c *gin.Context) {
 //	GET /api/user-activity/stats
 //	→ { "data": { "info": 142, "warn": 8, "critical": 1, "total": 151 } }
 func (h *UserActivityHandler) Stats(c *gin.Context) {
-	type bucket struct {
-		Severity string `json:"severity"`
-		Count    int64  `json:"count"`
-	}
-	var rows []bucket
-	// Bind a Go-computed cutoff rather than NOW() - INTERVAL '24 hours':
-	// that syntax is Postgres-only and errors on SQLite, which is a supported
-	// target here, so this panel returned zeros on every SQLite project.
-	since := time.Now().Add(-24 * time.Hour)
-	h.DB.WithContext(c.Request.Context()).Model(&models.UserActivity{}).
-		Select("severity, COUNT(*) AS count").
-		Where("created_at > ?", since).
-		Group("severity").
-		Scan(&rows)
-
-	out := map[string]int64{"info": 0, "warn": 0, "critical": 0, "total": 0}
-	for _, r := range rows {
-		out[r.Severity] = r.Count
-		out["total"] += r.Count
+	// The window is this endpoint's promise, so it is chosen here; the count and
+	// the reason it binds a cutoff rather than writing an interval are the
+	// service's. Its error is reported now: it used to be dropped, so a failure
+	// drew the same zeros as a quiet day.
+	out, err := h.activity().SeverityCounts(c.Request.Context(), time.Now().Add(-24*time.Hour))
+	if err != nil {
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": out})
 }

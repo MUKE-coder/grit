@@ -48,6 +48,14 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "form_share.go"):    formShareHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "form_share.go"):    apiFormShareServiceGo(),
 
+		// The audit tables' read side: the request log, the semantic feed and the
+		// OCSF export a collector polls, which had a query each in three handlers.
+		// Writing to them stays with the LogX functions.
+		filepath.Join(apiRoot, "internal", "services", "activity_reads.go"): apiActivityReadsServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "activity.go"):       apiActivityHandlerGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "user_activity.go"):  userActivityHandlerGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "ocsf.go"):           apiOCSFHandlerGo(),
+
 		// The auth endpoints that read or write one account: the provider callback,
 		// the password reset, the verification resend and the recovery contacts.
 		// Here since v3.347.0, when they stopped running those queries themselves,

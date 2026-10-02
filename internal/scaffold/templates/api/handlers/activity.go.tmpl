@@ -10,9 +10,9 @@ import (
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/audit"
-	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
 	"{{MODULE}}/internal/respond"
+	"{{MODULE}}/internal/services"
 )
 
 // ActivityHandler exposes the audit log as a paginated, filterable
@@ -25,33 +25,25 @@ func NewActivityHandler(db *gorm.DB) *ActivityHandler {
 	return &ActivityHandler{DB: db}
 }
 
+// activity is the service the reads below go through. Which columns a client may
+// sort or filter by is a decision about data, because each name ends up in SQL:
+// see internal/services/activity_reads.go.
+func (h *ActivityHandler) activity() *services.ActivityService {
+	return &services.ActivityService{DB: h.DB}
+}
+
 // List returns activity log entries, newest first. Supports filtering
 // by user_id, method, resource, path prefix and record id via query params.
 func (h *ActivityHandler) List(c *gin.Context) {
-	q := h.DB.WithContext(c.Request.Context()).Model(&models.ActivityLog{}).Order("created_at desc")
 	params := paginate.Bind(c).
 		With("user_id", c.Query("user_id")).
 		With("method", c.Query("method")).
 		With("resource", c.Query("resource"))
 
-	if pathPrefix := c.Query("path"); pathPrefix != "" {
-		q = q.Where("path LIKE ?", pathPrefix+"%")
-	}
-	// Everyone who read or changed one record: the question an access review
-	// asks about a patient's chart.
-	if record := c.Query("record"); record != "" {
-		q = q.Where("resource_ids LIKE ?", "%"+record+"%")
-	}
-
-	res, err := paginate.List[models.ActivityLog](q, params, paginate.Config{
-		Sortable: map[string]bool{
-			"created_at": true,
-			"status":     true,
-			"method":     true,
-		},
-		DefaultSort:  "created_at",
-		DefaultOrder: "desc",
-	})
+	// path narrows to one area of the API; record answers the question an access
+	// review asks about one patient's chart, which is everybody who read or
+	// changed that row.
+	res, err := h.activity().Logs(c.Request.Context(), params, c.Query("path"), c.Query("record"))
 	if err != nil {
 		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
 		return

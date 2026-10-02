@@ -89,3 +89,10 @@ func apiUploadServiceGo() string { return tmpl("api/services/upload.go") }
 // registry's: what the service owns is the keyset pagination a pull depends on,
 // and what a save from a phone may touch.
 func apiSyncServiceGo() string { return tmpl("api/services/sync.go") }
+
+// apiActivityReadsServiceGo emits internal/services/activity_reads.go.
+//
+// The read side of the two audit tables, which had a query each in three
+// handlers. Writing to them is still what the LogX functions in that package do:
+// a caller logging an action should not have to build a service for it.
+func apiActivityReadsServiceGo() string { return tmpl("api/services/activity_reads.go") }
