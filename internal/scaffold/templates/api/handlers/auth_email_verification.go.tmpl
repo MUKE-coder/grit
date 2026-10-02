@@ -23,8 +23,8 @@ import (
 func (h *AuthHandler) SendVerificationEmail(c *gin.Context) {
 	userID := c.GetString("user_id")
 
-	var user models.User
-	if err := h.DB.WithContext(c.Request.Context()).First(&user, "id = ?", userID).Error; err != nil {
+	user, err := h.AuthService.UserByID(c.Request.Context(), userID)
+	if err != nil {
 		respond.Fail(c, respond.CodeNotFound, "User not found")
 		return
 	}
@@ -34,7 +34,7 @@ func (h *AuthHandler) SendVerificationEmail(c *gin.Context) {
 		return
 	}
 
-	link := h.deliverVerificationEmail(c.Request.Context(), user)
+	link := h.deliverVerificationEmail(c.Request.Context(), *user)
 
 	body := gin.H{"message": "Verification email sent. The link is valid for 48 hours."}
 

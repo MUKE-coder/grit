@@ -19,7 +19,6 @@ func writeRecoveryFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "models", "recovery_contact.go"): recoveryModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "recovery.go"):       recoveryServiceGo(),
 		filepath.Join(apiRoot, "internal", "services", "recovery_test.go"):  recoveryServiceTestGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "recovery.go"):       recoveryHandlerGo(),
 	}
 	for path, content := range files {
 		content = strings.ReplaceAll(content, "{{MODULE}}", module)

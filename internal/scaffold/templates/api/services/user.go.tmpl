@@ -127,6 +127,15 @@ func (s *UserService) Update(ctx context.Context, user *models.User, updates map
 	return nil
 }
 
+// SetPassword stores an already-hashed password.
+//
+// Hashing is the caller's: a service that took a plaintext password would be a
+// second place where the cost parameter is chosen, and the two would drift.
+func (s *UserService) SetPassword(ctx context.Context, userID, hashed string) error {
+	return s.db(ctx).Model(&models.User{}).Where("id = ?", userID).
+		Update("password", hashed).Error
+}
+
 // ClearLockout unlocks an account early and reports whether there was an account
 // to unlock.
 //

@@ -12,7 +12,7 @@ import (
 func TestTemplatesCarryAccountSecurity(t *testing.T) {
 	checks := map[string][]string{
 		"idempotency middleware": {apiIdempotencyMiddlewareGo(), idempotencyKeyNew, idempotencyScopeFunc},
-		"OAuth handler":          {apiAuthOAuthGo(), oauthEmailGuard, oauthUnverifiedLink},
+		"OAuth handler":          {apiAuthOAuthGo(), oauthEmailGuard, "if user.EmailVerifiedAt == nil {", "services.RevokeAllUserSessions(h.DB, user.ID"},
 		"user handler":           {apiUserHandlerGo(), profileChecks, profileEmailNew, profileRevokeNew, "CurrentPassword string"},
 	}
 	for name, parts := range checks {
@@ -59,12 +59,20 @@ func TestRepairIdempotencyScope(t *testing.T) {
 }
 
 func TestRepairOAuthLink(t *testing.T) {
-	fresh := strings.ReplaceAll(apiAuthOAuthGo(), "{{MODULE}}", "example.com/app")
+	// From the fixture, not from the template: the block this repair writes names
+	// h.DB, and the template calls a service since v3.347.0. What the repair meets
+	// is the older file, which is what testdata holds.
+	fresh := strings.ReplaceAll(handlerFixture(t, "oauth_handler", "v3.346.0.go.txt"), "{{MODULE}}", "example.com/app")
 	old := strings.Replace(fresh, oauthEmailGuard, "", 1)
 	old = strings.Replace(old, oauthUnverifiedLink, oauthLinkAnchor, 1)
 	out, changes, warnings := repairOAuthLinkSource(old)
 	if len(warnings) != 0 || len(changes) != 1 || out != fresh {
-		t.Fatalf("the repaired handler differs from a fresh one (changes %v warnings %v)", changes, warnings)
+		t.Fatalf("the repaired handler differs from the one that release wrote (changes %v warnings %v)", changes, warnings)
+	}
+	// And the current template needs nothing: its guard is already there.
+	current := strings.ReplaceAll(apiAuthOAuthGo(), "{{MODULE}}", "example.com/app")
+	if out, changes, warnings := repairOAuthLinkSource(current); out != current || len(changes)+len(warnings) != 0 {
+		t.Errorf("a fresh OAuth handler still needs the repair (changes %v warnings %v)", changes, warnings)
 	}
 }
 

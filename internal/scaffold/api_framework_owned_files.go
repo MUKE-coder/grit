@@ -48,6 +48,15 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "form_share.go"):    formShareHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "form_share.go"):    apiFormShareServiceGo(),
 
+		// The auth endpoints that read or write one account: the provider callback,
+		// the password reset, the verification resend and the recovery contacts.
+		// Here since v3.347.0, when they stopped running those queries themselves,
+		// because a fix in any of them reached new projects only.
+		filepath.Join(apiRoot, "internal", "handlers", "auth_oauth.go"):              apiAuthOAuthGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "auth_password_reset.go"):     apiAuthPasswordResetGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "auth_email_verification.go"): apiAuthEmailVerificationGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "recovery.go"):                recoveryHandlerGo(),
+
 		// Failed-login counting and the admin unlock. Here since v3.346.0, when the
 		// counters became AuthService's: an existing project that kept this file
 		// would keep its own copy of the three writes the second factor shares.

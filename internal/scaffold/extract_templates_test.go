@@ -86,6 +86,10 @@ var handlerTemplates = map[string]func() string{
 	"api/handlers/form_share.go": formShareHandlerGo,
 	"api/handlers/webhooks.go":   apiWebhooksHandlerGo,
 	"api/handlers/upload.go":     uploadHandlerGo,
+
+	// The recovery contacts handler, whose user reads are moving onto the user
+	// service with the rest of the auth handlers.
+	"api/handlers/recovery.go": recoveryHandlerGo,
 }
 
 func TestExtractTemplates(t *testing.T) {

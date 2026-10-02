@@ -66,6 +66,47 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.347.0 */}
+            <div className="mb-12" id="v3.347.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.347.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The auth handlers stop reading the users table themselves</h3>
+                <p>
+                  Four handlers, ten queries: the provider callback, the password reset, the
+                  verification resend and the recovery contacts. Each one was a read or a write of a
+                  single account, and each one is now a call to a service.
+                </p>
+                <p>
+                  Reads during a sign-in go through <code>AuthService</code>, which is where{' '}
+                  <code>Login</code> already gets them, so an unknown address is answered the same way
+                  whichever endpoint was asked. Writes to an account go through{' '}
+                  <code>UserService</code>, which owns them. The recovery handler builds its own,
+                  because it holds no <code>AuthService</code> and a lookup should not work or panic
+                  depending on how the handler was wired.
+                </p>
+                <p>
+                  A provider sign-in for an address nobody has registered now inserts through{' '}
+                  <code>services.CreateUser</code>, so two callbacks for one new address in the same
+                  instant are settled by the unique index rather than by which read finished first.
+                  That is the third endpoint to pick this up: registration and the SSO provisioning
+                  path were the others.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  All four travel on upgrade now, and <code>recovery.go</code> came out of a Go string
+                  literal into <code>internal/scaffold/templates/</code>, verified byte-for-byte. The
+                  repair that hardens an older OAuth handler still writes what that handler can
+                  compile, so its test runs against a fixture of the file it actually meets rather
+                  than against the current template.
+                </p>
+              </div>
+            </div>
+
             {/* v3.346.0 */}
             <div className="mb-12" id="v3.346.0">
               <div className="flex items-center gap-3 mb-4">
