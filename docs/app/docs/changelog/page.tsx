@@ -66,6 +66,51 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.346.0 */}
+            <div className="mb-12" id="v3.346.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.346.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>One lockout, not one per factor</h3>
+                <p>
+                  A wrong password and a wrong two-factor code are counted against the same account,
+                  and each had its own copy of the three writes that do it: count, read the count
+                  back, lock past the threshold. Written months apart, with the same trap in both,
+                  which is that the count a request arrived with is already stale and the decision has
+                  to be made from what the database holds.
+                </p>
+                <p>
+                  They are <code>AuthService.CountLoginFailure</code> and{' '}
+                  <code>AuthService.LockAccount</code> now, beside the{' '}
+                  <code>ClearLoginFailures</code> that was already there, and both handlers call them.
+                  The threshold and the window stay with each caller, because one reads this project's
+                  configuration and the other reads the two-factor constants. The admin unlock went to{' '}
+                  <code>UserService</code>: it is an action on a user rather than part of signing in.
+                </p>
+
+                <h3>The offline sync protocol has a row store</h3>
+                <p>
+                  <code>services.SyncService</code> takes the destination the handler built rather
+                  than a model, because a project syncs whatever it registered and the type is the
+                  registry's. The reflection stays in the handler with the protocol; what moved is the
+                  part that is a decision about data: that a pull is keyset-paginated on{' '}
+                  <code>(updated_at, id)</code> so rows sharing a timestamp are not lost at a page
+                  boundary, that it reads soft-deleted rows because those are the tombstones a client
+                  needs, and that a save from a phone touches neither associations nor{' '}
+                  <code>created_at</code>.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Both handlers travel on upgrade now, so an existing project gets the single lockout
+                  rather than keeping its own copy of it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.345.0 */}
             <div className="mb-12" id="v3.345.0">
               <div className="flex items-center gap-3 mb-4">

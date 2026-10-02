@@ -305,6 +305,41 @@ func (s *AuthService) ClearLoginFailures(ctx context.Context, userID string) err
 }
 
 // grit:repair:auth-service-queries:end
+
+// CountLoginFailure counts one wrong credential against an account and returns
+// the count as the database now holds it.
+//
+// The increment is in SQL, so parallel attempts cannot each read the same number
+// and overwrite one another, and the count is read back for the same reason: the
+// one the caller arrived with is already stale, and it is what a lockout decision
+// is made from. Both the password step and the second factor had their own copy
+// of this, written months apart.
+func (s *AuthService) CountLoginFailure(ctx context.Context, userID string) (int, error) {
+	if err := s.DB.WithContext(ctx).Model(&models.User{}).Where("id = ?", userID).
+		UpdateColumn("failed_login_count", gorm.Expr("failed_login_count + 1")).Error; err != nil {
+		return 0, err
+	}
+	var fresh models.User
+	if err := s.DB.WithContext(ctx).Select("id", "failed_login_count").
+		First(&fresh, "id = ?", userID).Error; err != nil {
+		return 0, err
+	}
+	return fresh.FailedLoginCount, nil
+}
+
+// LockAccount locks an account until until, and clears the counter and the
+// pending two-factor tokens that are now useless to it.
+//
+// The pending tokens go because each one is a set of guesses at a code: leaving
+// them is the difference between locking an account and pausing it.
+func (s *AuthService) LockAccount(ctx context.Context, userID string, until time.Time) error {
+	if err := s.DB.WithContext(ctx).Model(&models.User{}).Where("id = ?", userID).
+		Updates(map[string]interface{}{"locked_until": until, "failed_login_count": 0}).Error; err != nil {
+		return err
+	}
+	return s.DB.WithContext(ctx).Where("user_id = ?", userID).Delete(&models.TOTPPendingToken{}).Error
+}
+
 // isRequestHTTPS returns true when the request is on HTTPS (directly or
 // via a trusted proxy that set X-Forwarded-Proto=https). We use it to flip
 // the Secure cookie flag so the browser refuses to send these cookies

@@ -117,14 +117,19 @@ func TestPendingByTokenIgnoresAnExpiredOne(t *testing.T) {
 
 // The lockout reads the count the database holds rather than the one the request
 // arrived with, because several wrong codes can be in flight at once.
+//
+// Through AuthService, which owns the account's counters: a wrong password and a
+// wrong code are counted against one account by one rule, and there used to be a
+// copy of that rule per factor.
 func TestCountLoginFailureReturnsTheStoredCount(t *testing.T) {
-	db, twoFactor := twoFactorDB(t)
+	db, _ := twoFactorDB(t)
 	ctx := context.Background()
+	auth := &AuthService{DB: db}
 	u := models.User{ID: "u5", Email: "u5@x.com", FirstName: "U", LastName: "5", Role: models.RoleUser}
 	require.NoError(t, db.Create(&u).Error)
 
 	for want := 1; want <= 3; want++ {
-		got, err := twoFactor.CountLoginFailure(ctx, u.ID)
+		got, err := auth.CountLoginFailure(ctx, u.ID)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 	}
@@ -132,7 +137,7 @@ func TestCountLoginFailureReturnsTheStoredCount(t *testing.T) {
 	until := time.Now().Add(time.Hour)
 	pending := models.TOTPPendingToken{UserID: u.ID, TokenHash: totp.HashToken("x"), ExpiresAt: time.Now().Add(time.Minute)}
 	require.NoError(t, db.Create(&pending).Error)
-	require.NoError(t, twoFactor.LockAccount(ctx, u.ID, until))
+	require.NoError(t, auth.LockAccount(ctx, u.ID, until))
 
 	var after models.User
 	require.NoError(t, db.First(&after, "id = ?", u.ID).Error)

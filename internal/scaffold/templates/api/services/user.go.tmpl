@@ -127,6 +127,21 @@ func (s *UserService) Update(ctx context.Context, user *models.User, updates map
 	return nil
 }
 
+// ClearLockout unlocks an account early and reports whether there was an account
+// to unlock.
+//
+// Waiting out the window is the normal path. This is the support call that
+// follows somebody locking themselves out five minutes before a demo, which is
+// why it is an administrative action on a user rather than part of signing in.
+func (s *UserService) ClearLockout(ctx context.Context, userID string) (bool, error) {
+	res := s.db(ctx).Model(&models.User{}).Where("id = ?", userID).
+		Updates(map[string]interface{}{"locked_until": nil, "failed_login_count": 0})
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return res.RowsAffected > 0, nil
+}
+
 // Delete soft-deletes an account.
 func (s *UserService) Delete(ctx context.Context, user *models.User) error {
 	return s.db(ctx).Delete(user).Error

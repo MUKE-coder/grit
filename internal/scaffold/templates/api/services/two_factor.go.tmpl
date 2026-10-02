@@ -219,30 +219,10 @@ func (s *TwoFactorService) CountPendingAttempt(ctx context.Context, pendingID ui
 		UpdateColumn("attempts", gorm.Expr("attempts + 1")).Error
 }
 
-// CountLoginFailure counts a wrong code against the account and returns the
-// count as the database now holds it, which is what a lockout decision needs:
-// the value this request read is already stale.
-func (s *TwoFactorService) CountLoginFailure(ctx context.Context, userID string) (int, error) {
-	if err := s.db(ctx).Model(&models.User{}).Where("id = ?", userID).
-		UpdateColumn("failed_login_count", gorm.Expr("failed_login_count + 1")).Error; err != nil {
-		return 0, err
-	}
-	var fresh models.User
-	if err := s.db(ctx).Select("id", "failed_login_count").First(&fresh, "id = ?", userID).Error; err != nil {
-		return 0, err
-	}
-	return fresh.FailedLoginCount, nil
-}
-
-// LockAccount locks an account out until until, and clears the pending tokens
-// that are now useless to it.
-func (s *TwoFactorService) LockAccount(ctx context.Context, userID string, until time.Time) error {
-	if err := s.db(ctx).Model(&models.User{}).Where("id = ?", userID).
-		Updates(map[string]interface{}{"locked_until": until, "failed_login_count": 0}).Error; err != nil {
-		return err
-	}
-	return s.db(ctx).Where("user_id = ?", userID).Delete(&models.TOTPPendingToken{}).Error
-}
+// The account's own lockout counters are AuthService's, not this service's: a
+// wrong password and a wrong code are counted against one account by one rule,
+// and there used to be two copies of that rule. See AuthService.CountLoginFailure
+// and AuthService.LockAccount.
 
 // TrustedDevices lists the live devices allowed to skip the prompt, newest
 // first.

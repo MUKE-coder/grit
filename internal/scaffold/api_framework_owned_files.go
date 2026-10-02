@@ -48,6 +48,15 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "form_share.go"):    formShareHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "form_share.go"):    apiFormShareServiceGo(),
 
+		// Failed-login counting and the admin unlock. Here since v3.346.0, when the
+		// counters became AuthService's: an existing project that kept this file
+		// would keep its own copy of the three writes the second factor shares.
+		filepath.Join(apiRoot, "internal", "handlers", "auth_lockout.go"): apiAuthLockoutGo(),
+
+		// The offline sync protocol's row store, which its handler stopped
+		// querying directly in v3.346.0.
+		filepath.Join(apiRoot, "internal", "services", "sync.go"): apiSyncServiceGo(),
+
 		filepath.Join(apiRoot, "internal", "services", "webhook_event.go"):            apiWebhookEventServiceGo(),
 		filepath.Join(apiRoot, "internal", "services", "webhook_event_test.go"):       apiWebhookEventServiceTestGo(),
 		filepath.Join(apiRoot, "internal", "webhooks", "dedup_test.go"):               apiWebhookDedupTestGo(),

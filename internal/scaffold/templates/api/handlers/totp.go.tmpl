@@ -529,7 +529,7 @@ func (h *TOTPHandler) failSecondFactor(pending *models.TOTPPendingToken, user *m
 	if err := h.twoFactor().CountPendingAttempt(ctx, pending.ID); err != nil {
 		log.Printf("totp: counting an attempt for %s: %v", user.ID, err)
 	}
-	count, err := h.twoFactor().CountLoginFailure(ctx, user.ID)
+	count, err := h.AuthService.CountLoginFailure(ctx, user.ID)
 	if err != nil {
 		log.Printf("totp: counting a failure for %s: %v", user.ID, err)
 		return
@@ -540,7 +540,7 @@ func (h *TOTPHandler) failSecondFactor(pending *models.TOTPPendingToken, user *m
 		return
 	}
 	until := time.Now().Add(totp.LockoutDuration)
-	if err := h.twoFactor().LockAccount(ctx, user.ID, until); err != nil {
+	if err := h.AuthService.LockAccount(ctx, user.ID, until); err != nil {
 		log.Printf("totp: locking %s: %v", user.ID, err)
 		return
 	}

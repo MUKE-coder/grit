@@ -59,14 +59,22 @@ func TestRepairUpdatedAtIndex(t *testing.T) {
 
 func TestFreshSyncPullTemplates(t *testing.T) {
 	handler := apiSyncHandlerGo()
-	for _, want := range []string{`q.Order("updated_at asc, id asc")`, "func parseSyncCursor(", "WithContext(c.Request.Context())"} {
+	// The cursor is the request's, so it is parsed in the handler; the query it
+	// turns into is the service's since v3.346.0.
+	for _, want := range []string{"func parseSyncCursor(", "h.rows().Page(c.Request.Context()"} {
 		if !strings.Contains(handler, want) {
 			t.Errorf("the sync handler is missing %s", want)
 		}
 	}
+	service := apiSyncServiceGo()
+	for _, want := range []string{`Order("updated_at asc, id asc")`, "Unscoped()", "updated_at = ? AND id > ?"} {
+		if !strings.Contains(service, want) {
+			t.Errorf("the sync service is missing %s", want)
+		}
+	}
 	for _, gone := range []string{"GREATEST(", "MAX(updated_at", "effectiveSyncTime"} {
-		if strings.Contains(handler, gone) {
-			t.Errorf("the sync handler still has %s", gone)
+		if strings.Contains(handler+service, gone) {
+			t.Errorf("the sync pull still has %s", gone)
 		}
 	}
 	if !strings.Contains(apiMigrateMainGo(), "sync.BackfillUpdatedAt(db, models.Models()...)") {

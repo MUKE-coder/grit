@@ -81,3 +81,11 @@ func apiFormShareServiceGo() string { return tmpl("api/services/form_share.go") 
 // a row and an object are two systems, and only the caller knows which order to
 // fail in.
 func apiUploadServiceGo() string { return tmpl("api/services/upload.go") }
+
+// apiSyncServiceGo emits internal/services/sync.go.
+//
+// The row store behind the offline sync protocol. It takes destinations rather
+// than models, because a project syncs whatever it registered and the type is the
+// registry's: what the service owns is the keyset pagination a pull depends on,
+// and what a save from a phone may touch.
+func apiSyncServiceGo() string { return tmpl("api/services/sync.go") }
