@@ -17,9 +17,10 @@ import (
 // writeAdminAccountFiles writes the account page and the two cards it owns.
 func writeAdminAccountFiles(root string, opts Options) error {
 	files := map[string]string{
-		adminComponent(root, opts, "account", "password-form.tsx"): adminAccountPasswordFormTSX(),
-		adminComponent(root, opts, "account", "profile-form.tsx"):  adminAccountProfileFormTSX(),
-		adminComponent(root, opts, "account", "sign-in-links.tsx"): adminSignInLinksCardTSX(),
+		adminComponent(root, opts, "account", "password-form.tsx"):  adminAccountPasswordFormTSX(),
+		adminComponent(root, opts, "account", "avatar-cropper.tsx"): adminAvatarCropperTSX(),
+		adminComponent(root, opts, "account", "profile-form.tsx"):   adminAccountProfileFormTSX(),
+		adminComponent(root, opts, "account", "sign-in-links.tsx"):  adminSignInLinksCardTSX(),
 	}
 	for path, content := range files {
 		if err := writeFile(path, content); err != nil {
@@ -279,6 +280,7 @@ import { useMe } from "@/hooks/use-auth";
 import { useUpdateProfile } from "@/hooks/use-profile";
 import { DeleteAccountDialog } from "@/components/profile/delete-account-dialog";
 import { buttonClasses } from "@/components/ui/button";
+import { AvatarCropper } from "@/components/account/avatar-cropper";
 import { uploadFile } from "@/lib/api-client";
 
 interface Values {
@@ -295,6 +297,9 @@ export function ProfileForm() {
   const updateProfile = useUpdateProfile();
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  // The picked file waits here while it is positioned. Nothing is uploaded until
+  // the cropper hands back a square, so cancelling sends nothing at all.
+  const [picked, setPicked] = useState<File | null>(null);
   const avatarInput = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, reset, watch } = useForm<Values>({
@@ -316,9 +321,17 @@ export function ProfileForm() {
 
   const emailChanged = (watch("email") ?? "") !== (user?.email ?? "");
 
-  async function onAvatarPicked(event: React.ChangeEvent<HTMLInputElement>) {
+  function onAvatarPicked(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
+    // Cleared so picking the same file twice still opens the cropper: the input
+    // fires no change event when the value has not changed.
+    event.target.value = "";
     if (!file) return;
+    setUploadError("");
+    setPicked(file);
+  }
+
+  async function onAvatarCropped(file: File) {
     setUploading(true);
     setUploadError("");
     try {
@@ -335,6 +348,7 @@ export function ProfileForm() {
       setUploadError("That picture did not upload. Try again.");
     } finally {
       setUploading(false);
+      setPicked(null);
     }
   }
 
@@ -406,6 +420,12 @@ export function ProfileForm() {
                     {uploadError}
                   </p>
                 )}
+                <AvatarCropper
+                  file={picked}
+                  saving={uploading}
+                  onCancel={() => setPicked(null)}
+                  onCropped={onAvatarCropped}
+                />
               </div>
             </div>
 
@@ -619,3 +639,16 @@ export default function AccountPage() {
 }
 `
 }
+
+// adminAvatarCropperTSX emits components/account/avatar-cropper.tsx.
+//
+// A profile picture is square and the pictures people have are not. Uploading the
+// file as picked meant the browser did the cropping on display, where object-cover
+// takes the middle: a photo of two people became a photo of somebody's shoulder,
+// and the only fix was to go and edit the file. This asks first, and uploads the
+// square it produced, so the bytes stored are the bytes shown.
+//
+// No cropping library. The whole thing is a scale and an offset applied twice,
+// once to the preview and once to the canvas, and those two agreeing is the only
+// hard part: easier to keep right in thirty lines than across a dependency's API.
+func adminAvatarCropperTSX() string { return tmpl("admin/components/account/avatar-cropper.tsx") }

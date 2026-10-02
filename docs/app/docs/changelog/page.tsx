@@ -66,6 +66,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.349.0 */}
+            <div className="mb-12" id="v3.349.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.349.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A profile picture is cropped before it is uploaded</h3>
+                <p>
+                  A profile picture is square and the pictures people have are not. Picking a file
+                  uploaded it as it came, and the browser did the cropping on display, where{' '}
+                  <code>object-cover</code> takes the middle: a photo of two people became a photo of
+                  somebody's shoulder, and the only fix was to go and edit the file.
+                </p>
+                <p>
+                  Both places that change a picture, the account screen and the profile page, now open
+                  a cropper first. The whole picture stays visible with a round selection over it,
+                  which moves and resizes, and what is uploaded is a square cut from exactly that
+                  selection, scaled to 512 pixels. A PNG stays a PNG, because flattening transparency
+                  to JPEG turns it black.
+                </p>
+                <p>
+                  Arrow keys move the selection and plus and minus resize it, so the cropper works
+                  without a pointer. A cropper that only works by dragging is one a keyboard user
+                  cannot use at all, and the alternative there is no picture.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  No cropping library: the whole thing is a scale and an offset applied twice, once to
+                  the preview and once to the canvas, and those two agreeing is the only hard part.
+                  Verified against a running admin, which is how the one real bug was found: Tailwind
+                  preflight's <code>img &#123; max-width: 100% &#125;</code> was shrinking the picture
+                  below the size everything else was measured in.
+                </p>
+              </div>
+            </div>
+
             {/* v3.348.0 */}
             <div className="mb-12" id="v3.348.0">
               <div className="flex items-center gap-3 mb-4">

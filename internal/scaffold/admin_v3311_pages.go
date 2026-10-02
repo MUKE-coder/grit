@@ -513,6 +513,7 @@ import {
 import { useMe } from "@/hooks/use-auth";
 import { useUpdateProfile, useChangePassword } from "@/hooks/use-profile";
 import { PageHeader } from "@/components/chrome/PageHeader";
+import { AvatarCropper } from "@/components/account/avatar-cropper";
 import { DeleteAccountDialog } from "@/components/profile/delete-account-dialog";
 import { ActiveSessions } from "@/components/profile/active-sessions";
 import { TwoFactorCard } from "@/components/profile/two-factor-card";
@@ -533,6 +534,9 @@ export default function ProfilePage() {
   const changePassword = useChangePassword();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+  // The picked file waits here while it is positioned.
+  const [pickedAvatar, setPickedAvatar] = useState<File | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const personalForm = useForm<PersonalInfoValues>({
@@ -563,19 +567,35 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Pick, position, then upload. The file waits in state while the cropper is
+  // open, so cancelling sends nothing.
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Cleared so picking the same file twice reopens the cropper.
+    e.target.value = "";
     if (!file) return;
+    setAvatarError("");
+    setPickedAvatar(file);
+  };
+
+  const handleAvatarCropped = async (file: File) => {
     setAvatarUploading(true);
+    setAvatarError("");
     try {
       const result = await uploadFile(file);
       const url = (result.data as Record<string, unknown>)?.url as string;
-      if (url) updateProfile.mutate({ avatar: url });
+      if (url) {
+        updateProfile.mutate({ avatar: url });
+      } else {
+        setAvatarError("That upload came back without a URL. Try again.");
+      }
     } catch {
-      // Upload failed — surface via toast in a future iteration.
+      // Said out loud rather than swallowed: a picture that silently does not
+      // change is a bug report nobody can describe.
+      setAvatarError("That picture did not upload. Try again.");
     } finally {
       setAvatarUploading(false);
-      if (avatarInputRef.current) avatarInputRef.current.value = "";
+      setPickedAvatar(null);
     }
   };
 
@@ -638,6 +658,17 @@ export default function ProfilePage() {
               {avatarUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               Upload new
             </button>
+            {avatarError && (
+              <p role="alert" className="w-full text-xs text-danger">
+                {avatarError}
+              </p>
+            )}
+            <AvatarCropper
+              file={pickedAvatar}
+              saving={avatarUploading}
+              onCancel={() => setPickedAvatar(null)}
+              onCropped={handleAvatarCropped}
+            />
           </div>
         </div>
       </section>
