@@ -66,6 +66,65 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.358.0 */}
+            <div className="mb-12" id="v3.358.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.358.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A generated resource now comes with its tests</h3>
+                <p>
+                  <code>grit generate resource</code> wrote twelve files and no test. The only
+                  thing standing between a generator change and a broken resource was somebody
+                  scaffolding a project by hand and looking at it.
+                </p>
+                <p>
+                  It writes a factory and four tests now. Not tests of the CRUD mechanics, which
+                  are the same code for every resource and already covered: tests of the{" "}
+                  <em>wiring</em>, which is what varies. That the route refuses an anonymous
+                  caller, because a resource injected into the wrong group is reachable by anyone
+                  and nothing else would notice. That a signed-in user without the permission gets
+                  a 403, which is the difference between a permission that is declared and one
+                  that is checked. That a created row survives the round trip through the model,
+                  the service, the handler and the serialiser. And that an unknown id is a 404 and
+                  not a 500, which is the most common shape of generated-handler bug.
+                </p>
+                <p>
+                  The factory at <code>internal/factory/&lt;resource&gt;.go</code> is the one place
+                  that knows what a valid row looks like, so adding a required field is one edit
+                  rather than one per test. A <code>belongs_to</code> is deliberately left empty:
+                  the factory cannot know which parent you mean, and inserting one would make every
+                  test that touches the resource write rows in another table too. The doc comment
+                  says so and shows the override.
+                </p>
+                <h4>Run the same suite against Postgres</h4>
+                <p>
+                  <code>internal/testkit</code> is the shared setup: a database, a config, a
+                  request client and the assertions. By default the database is SQLite in memory,
+                  which is fast and needs nothing installed, and is not what you deploy to.
+                  Postgres stores timestamps to microseconds and SQLite to nanoseconds, so a hash
+                  chain over a timestamp verifies locally and fails in production. JSONB, ILIKE
+                  and numeric precision all differ too.
+                </p>
+                <pre><code>{`docker compose up -d postgres
+GRIT_TEST_DATABASE_URL=postgres://grit:grit@localhost:5432/grit go test ./...`}</code></pre>
+                <p>
+                  Every call gets its own schema, created and dropped around the test, so they
+                  stay isolated and can run in parallel. Worth doing before a release even if you
+                  do not do it every day.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  A failing assertion prints the body. &quot;expected 200, got 422&quot; sends you
+                  to add a print statement and run it again; the same line followed by the
+                  validation error is the answer.
+                </p>
+              </div>
+            </div>
+
             {/* v3.357.0 */}
             <div className="mb-12" id="v3.357.0">
               <div className="flex items-center gap-3 mb-4">

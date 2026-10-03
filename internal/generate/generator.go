@@ -337,6 +337,28 @@ func (g *Generator) Run() error {
 		return fmt.Errorf("writing the CSV import: %w", err)
 	}
 
+	// A factory, and the tests that use it.
+	//
+	// Until now this command wrote twelve files and no test, so the only
+	// thing between a generator change and a broken resource was somebody
+	// scaffolding a project by hand and looking at it. What the tests
+	// assert is the wiring rather than the CRUD: that the route refuses an
+	// anonymous caller, that the permission is checked and not merely
+	// declared, that a created row survives the round trip, and that an
+	// unknown id is a 404 rather than a 500.
+	if err := g.ensureFactoryCounter(); err != nil {
+		return err
+	}
+	if err := g.writeFactory(names); err != nil {
+		return fmt.Errorf("writing the factory: %w", err)
+	}
+	fmt.Printf("  ✓ %sinternal/factory/%s.go\n", apiPrefix, names.Snake)
+
+	if err := g.writeResourceTest(names); err != nil {
+		return fmt.Errorf("writing the tests: %w", err)
+	}
+	fmt.Printf("  ✓ %sinternal/handlers/%s_test.go\n", apiPrefix, names.Snake)
+
 	fmt.Printf("  ✓ %sinternal/handlers/%s_import.go\n", apiPrefix, names.Snake)
 	fmt.Printf("  ✓ %sinternal/services/%s_import.go\n", apiPrefix, names.Snake)
 

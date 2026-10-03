@@ -94,6 +94,12 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// last handler and nothing about the middleware in front of it.
 		filepath.Join(apiRoot, "internal", "access", "access.go"): apiAccessGo(),
 
+		// The shared test setup and assertions. Framework-owned so an upgrade
+		// delivers a new assertion to a project that already has tests, and so a
+		// generated resource's test can rely on it existing.
+		filepath.Join(apiRoot, "internal", "testkit", "testkit.go"): apiTestKitGo(),
+		filepath.Join(apiRoot, "internal", "testkit", "http.go"):    apiTestKitHTTPGo(),
+
 		filepath.Join(apiRoot, "internal", "services", "webhook_event.go"):            apiWebhookEventServiceGo(),
 		filepath.Join(apiRoot, "internal", "services", "webhook_event_test.go"):       apiWebhookEventServiceTestGo(),
 		filepath.Join(apiRoot, "internal", "webhooks", "dedup_test.go"):               apiWebhookDedupTestGo(),
