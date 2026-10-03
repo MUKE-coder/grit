@@ -99,6 +99,11 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// generated resource's test can rely on it existing.
 		// Policies: rules about a record and a user together, which neither
 		// the permission catalogue nor the owner column can express.
+		// OpenTelemetry. Inert until OTEL_EXPORTER_OTLP_ENDPOINT is set, and
+		// framework-owned so an existing project gets it from an upgrade.
+		filepath.Join(apiRoot, "internal", "tracing", "tracing.go"):    apiTracingGo(),
+		filepath.Join(apiRoot, "internal", "tracing", "middleware.go"): apiTracingMiddlewareGo(),
+
 		filepath.Join(apiRoot, "internal", "authz", "gate.go"):      apiGateGo(),
 		filepath.Join(apiRoot, "internal", "authz", "gate_test.go"): apiGateTestGo(),
 

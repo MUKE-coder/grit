@@ -293,6 +293,18 @@ require (
 	// parsers could be made to allocate without bound, and this is what
 	// the CSV/XLSX importer hands user uploads to.
 	github.com/xuri/excelize/v2 v2.11.0
+	// OpenTelemetry, for internal/tracing. Four modules and no more: the
+	// OTLP/HTTP exporter rather than both transports, and a hand-written gin
+	// middleware rather than otelgin, because the span has to be named after
+	// the route pattern and carry this project's request id, which a
+	// general-purpose middleware cannot know about.
+	//
+	// Inert until OTEL_EXPORTER_OTLP_ENDPOINT is set: with no endpoint the
+	// global provider is a no-op and a span costs an allocation.
+	go.opentelemetry.io/otel v1.39.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.39.0
+	go.opentelemetry.io/otel/sdk v1.39.0
+	go.opentelemetry.io/otel/trace v1.39.0
 	golang.org/x/crypto v0.57.0
 	// singleflight, which collapses concurrent cache misses in middleware/cache.go.
 	golang.org/x/sync v0.23.0
@@ -428,6 +440,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/routes"
 	"` + "{{MODULE}}" + `/internal/services"
 	"` + "{{MODULE}}" + `/internal/storage"
+	"` + "{{MODULE}}" + `/internal/tracing"
 )
 
 func main() {
@@ -435,6 +448,28 @@ func main() {
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	// OpenTelemetry, when OTEL_EXPORTER_OTLP_ENDPOINT points somewhere.
+	//
+	// Started before the database, so a slow connection is a span rather
+	// than a gap. A failure here is logged and not fatal: a collector that
+	// is down must not stop the API from serving, because observability is
+	// how you find out something is wrong and it refusing to start is not
+	// something being wrong.
+	shutdownTracing, err := tracing.Setup(context.Background(), cfg)
+	if err != nil {
+		log.Printf("Tracing: %v", err)
+	}
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownTracing(ctx); err != nil {
+			log.Printf("Draining traces: %v", err)
+		}
+	}()
+	if tracing.Enabled() {
+		log.Printf("Tracing to %s", os.Getenv(tracing.EndpointEnv))
 	}
 
 	// Connect to database
@@ -6880,6 +6915,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/paginate"
 	"` + "{{MODULE}}" + `/internal/handlers"
 	"` + "{{MODULE}}" + `/internal/settings"
+	"` + "{{MODULE}}" + `/internal/tracing"
 	"` + "{{MODULE}}" + `/internal/mail"
 	"` + "{{MODULE}}" + `/internal/middleware"
 	"` + "{{MODULE}}" + `/internal/models"
@@ -7018,6 +7054,15 @@ func mountGlobalMiddleware(r *gin.Engine, cfg *config.Config, svc *Services) fun
 	r.Use(middleware.Maintenance())
 	r.Use(middleware.SecurityHeaders())
 ` + routesRequestLimitsBlock + `	r.Use(middleware.RequestID())
+	// A span per request, continuing one the caller sent. Mounted after
+	// RequestID because it replaces the generated id with the trace id when
+	// the request is sampled, so a log line and a span share one id, and
+	// before RequestMeta so what RequestMeta puts on the context is that id.
+	//
+	// Unconditional: with no OTEL_EXPORTER_OTLP_ENDPOINT the provider is a
+	// no-op and the span costs an allocation. A conditional mount is a line
+	// somebody reorders.
+	r.Use(tracing.Middleware())
 	// The client IP, the user agent and the request id, on the request's
 	// context, so a service can read them without taking a *gin.Context.
 	r.Use(middleware.RequestMeta())

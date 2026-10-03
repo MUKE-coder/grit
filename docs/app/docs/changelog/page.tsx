@@ -66,6 +66,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.361.0 */}
+            <div className="mb-12" id="v3.361.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.361.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Traces, when you point them somewhere</h3>
+                <p>
+                  Grit already answered &quot;what is my server doing&quot; better than most:
+                  Pulse profiles every request, the activity log records who did what, and every
+                  response carries an <code>X-Request-ID</code> that ties a log line to a request.
+                  All of that stops at the edge of the process.
+                </p>
+                <p>
+                  A trace does not. When this API calls a payments service, which calls a ledger,
+                  a trace is the one artifact that shows the whole thing as a single timeline with
+                  the slow span highlighted. You cannot reconstruct that from three sets of logs
+                  with three different request ids, which is what everybody tries first.
+                </p>
+                <pre><code>{`OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`}</code></pre>
+                <p>
+                  That is the whole configuration, and it is OpenTelemetry&apos;s variable rather
+                  than one Grit invented. <code>OTEL_SERVICE_NAME</code> and{" "}
+                  <code>OTEL_TRACES_SAMPLER_ARG</code> work too. Anyone who has run a collector
+                  before already knows them; anyone who has not can paste a line from a
+                  vendor&apos;s quickstart and have it work.
+                </p>
+                <p>
+                  Off until the endpoint is set, because a tracer with nowhere to send spans is a
+                  background goroutine and a growing buffer that pays for nothing. Everything is
+                  sampled in development and a tenth in production, because a developer looking
+                  for one request wants that request and not a tenth of it, and a trace per
+                  request at a thousand a second is a bill rather than a tool.
+                </p>
+                <h4>One id, not two</h4>
+                <p>
+                  When a request is sampled, the request id becomes the trace id. A log line and a
+                  span that share an id are one search away from each other; two ids that do not
+                  match are two searches and a guess. <code>X-Request-ID</code> still goes out, so
+                  nothing that reads it breaks, and <code>X-Trace-Id</code> goes out beside it.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Four modules, not ten: the OTLP/HTTP exporter rather than both transports, and a
+                  hand-written Gin middleware rather than otelgin, because the span has to be
+                  named after the route pattern (<code>/api/v1/widgets/:id</code>, not one span
+                  per id) and carry this project&apos;s request id. Only a 5xx marks a span as an
+                  error: a 404 or a 422 is the API working, and a trace list where everything is
+                  red is one nobody reads.
+                </p>
+              </div>
+            </div>
+
             {/* v3.360.0 */}
             <div className="mb-12" id="v3.360.0">
               <div className="flex items-center gap-3 mb-4">
