@@ -576,6 +576,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairPerfLows(root, opts); err != nil {
 			fmt.Printf("  ⚠ trimming Redis connections and queries: %v\n", err)
 		}
+		// Policies: a rule about one row, which neither the permission catalogue
+		// nor the owner column can express. Delivered to resources generated
+		// before it existed, or a project with forty of them would have to
+		// regenerate all forty to use one rule.
+		if err := repairGeneratedPolicies(root, opts); err != nil {
+			fmt.Printf("  ⚠ wiring the policy checks: %v\n", err)
+		}
 		// The dashboard layout and upload handlers check for a signed-in user
 		// instead of asserting one, and the ticket statuses and priorities the
 		// new ticket service uses are declared in models.

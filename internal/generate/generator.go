@@ -346,6 +346,21 @@ func (g *Generator) Run() error {
 	// anonymous caller, that the permission is checked and not merely
 	// declared, that a created row survives the round trip, and that an
 	// unknown id is a 404 rather than a 500.
+	// Where this resource's conditional rules go: editable while a draft,
+	// approvable by anyone but the raiser. A stub with the rules commented out,
+	// because an empty file teaches nothing and a working rule would be a guess
+	// about the domain that is wrong more often than right.
+	if err := g.ensurePoliciesRegistry(); err != nil {
+		return err
+	}
+	if err := g.writePolicy(names); err != nil {
+		return fmt.Errorf("writing the policy: %w", err)
+	}
+	if err := g.injectPolicyRegistration(names); err != nil {
+		return fmt.Errorf("registering the policy: %w", err)
+	}
+	fmt.Printf("  ✓ %sinternal/policies/%s.go\n", apiPrefix, names.Snake)
+
 	if err := g.ensureFactoryCounter(); err != nil {
 		return err
 	}

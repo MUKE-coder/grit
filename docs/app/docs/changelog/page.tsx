@@ -66,6 +66,67 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.360.0 */}
+            <div className="mb-12" id="v3.360.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.360.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Rules about one row</h3>
+                <p>
+                  A Grit project could already answer two authorization questions. The route&apos;s
+                  middleware answers <em>may this user touch widgets at all</em>, from the
+                  permission catalogue. <code>--owned-by</code> scoping answers{" "}
+                  <em>is this their row</em>, from the owner column.
+                </p>
+                <p>
+                  Neither can say anything conditional on the record itself. A post may be edited
+                  while it is a draft and not after it is published. An order may be approved by
+                  anyone except the person who raised it. Those were hand-written{" "}
+                  <code>if</code> statements at the top of a handler, which is where they stop
+                  being findable and start being forgotten in the second handler that needs them.
+                </p>
+                <p>
+                  <code>internal/policies</code> is where they go now. A rule gets the actor and
+                  the row, and returns <code>authz.Allow()</code> or{" "}
+                  <code>authz.Deny(&quot;...&quot;)</code>. Three abilities are checked around
+                  every row the API loads: <code>widgets.read</code> before returning one,{" "}
+                  <code>widgets.update</code> before an update or a patch, and{" "}
+                  <code>widgets.delete</code> before a delete, so a rule can refuse a delete
+                  without refusing an edit.
+                </p>
+                <h4>The reason is the feature</h4>
+                <p>
+                  A permission check can only say no, so a user who cannot do something is told
+                  that they cannot, and files a ticket. A denial here carries words, and they come
+                  back as the 403 body: <em>this post was published on Tuesday, and published
+                  posts are edited through a revision</em>. That is 403 and not the 404 ownership
+                  uses, deliberately: the caller is already allowed to see this row, so hiding it
+                  says nothing and withholds the reason, which is the thing the rule exists to
+                  give.
+                </p>
+                <h4>An ability with no rule allows</h4>
+                <p>
+                  Deliberately, and it is the opposite of what a security layer usually wants. A
+                  gate is a <em>narrowing</em>: the route&apos;s permission has already said yes,
+                  and a rule decides whether this record is an exception. Failing closed would mean
+                  that delivering this to an existing project refused every write in it, which is
+                  not a safe default, it is an outage. So a rule is a restriction you add, never a
+                  permission you forget to grant.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  <code>grit upgrade</code> adds the check to resources generated before this
+                  release, both halves in one pass: a project with forty resources would otherwise
+                  have to regenerate all forty to use one rule. The repaired service is
+                  byte-identical to a freshly generated one, comments included.
+                </p>
+              </div>
+            </div>
+
             {/* v3.359.0 */}
             <div className="mb-12" id="v3.359.0">
               <div className="flex items-center gap-3 mb-4">

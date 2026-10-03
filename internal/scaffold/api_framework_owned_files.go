@@ -97,6 +97,11 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// The shared test setup and assertions. Framework-owned so an upgrade
 		// delivers a new assertion to a project that already has tests, and so a
 		// generated resource's test can rely on it existing.
+		// Policies: rules about a record and a user together, which neither
+		// the permission catalogue nor the owner column can express.
+		filepath.Join(apiRoot, "internal", "authz", "gate.go"):      apiGateGo(),
+		filepath.Join(apiRoot, "internal", "authz", "gate_test.go"): apiGateTestGo(),
+
 		filepath.Join(apiRoot, "internal", "testkit", "testkit.go"): apiTestKitGo(),
 		filepath.Join(apiRoot, "internal", "testkit", "http.go"):    apiTestKitHTTPGo(),
 

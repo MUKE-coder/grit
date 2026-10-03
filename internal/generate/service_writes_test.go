@@ -91,11 +91,27 @@ func TestGeneratedWritesDoNotReadTheRowBack(t *testing.T) {
 		if !changed {
 			t.Fatalf("%s was not repaired", tc.service)
 		}
+
+		// Both repairs, because an upgrade runs both. Checking only the
+		// first would leave this test claiming an upgraded service equals a
+		// generated one while comparing something weaker.
+		out, changed = scaffold.RepairGeneratedServicePolicies(out, module)
+		if !changed {
+			t.Fatalf("%s did not get the policy check", tc.service)
+		}
+
 		if got := codefmt.Go(out); got != tc.want {
 			t.Errorf("repairing %s did not produce the generated service.\n--- repaired\n%s\n--- generated\n%s", tc.service, got, tc.want)
 		}
-		if again, changed := scaffold.RepairGeneratedServiceWrites(codefmt.Go(out), model); changed || again != codefmt.Go(out) {
+
+		// Both are idempotent: an upgrade run twice must not double the
+		// check or the import.
+		settled := codefmt.Go(out)
+		if again, changed := scaffold.RepairGeneratedServiceWrites(settled, model); changed || again != settled {
 			t.Errorf("repairing %s twice changed it again", tc.service)
+		}
+		if again, changed := scaffold.RepairGeneratedServicePolicies(settled, module); changed || again != settled {
+			t.Errorf("the policy repair on %s was not idempotent", tc.service)
 		}
 	}
 	if _, changed := scaffold.RepairGeneratedServiceWrites(linked, ""); changed {

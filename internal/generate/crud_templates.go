@@ -540,9 +540,9 @@ func (g *Generator) serviceSource(names Names) string {
 	p := g.crud(names)
 
 	imports := "\t\"" + g.Module + "/internal/concurrency\""
-	if p.owned {
-		imports = "\t\"" + g.Module + "/internal/authz\"\n" + imports
-	}
+	// authz unconditionally now: the policy check around a loaded row runs for
+	// every resource, owned or not. It used to come in only with --owned-by.
+	imports = "\t\"" + g.Module + "/internal/authz\"\n" + imports
 	if p.hasFiles {
 		imports += "\n\t\"" + g.Module + "/internal/files\""
 	}
@@ -804,16 +804,28 @@ func (s *{{Pascal}}Service) GetByID(ctx context.Context, id string) (*models.{{P
 	if err := s.db(ctx){{PRELOADS}}.First(&item, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
-{{OWNER_GUARD}}	return &item, nil
+{{OWNER_GUARD}}	if d := authz.Inspect(ctx, "{{plural}}.read", &item); !d.Allowed() {
+		return nil, authz.Denied("{{plural}}.read", d)
+	}
+	return &item, nil
 }
 
 // load reads the row a write is about to change, without its relations.
-func (s *{{Pascal}}Service) load(ctx context.Context, id string) (*models.{{Pascal}}, error) {
+//
+// ability is what the caller is about to do, "update" or "delete", so a
+// policy can refuse one without refusing the other.
+func (s *{{Pascal}}Service) load(ctx context.Context, id, ability string) (*models.{{Pascal}}, error) {
 	var item models.{{Pascal}}
 	if err := s.db(ctx).First(&item, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
-{{OWNER_GUARD}}	return &item, nil
+{{OWNER_GUARD}}	// A policy rule narrows this further than the route's permission did.
+	// None defined means no narrowing, which is how the project behaved
+	// before it had policies. See internal/policies.
+	if d := authz.Inspect(ctx, "{{plural}}."+ability, &item); !d.Allowed() {
+		return nil, authz.Denied("{{plural}}."+ability, d)
+	}
+	return &item, nil
 }
 
 // conflict is the answer to a write whose precondition failed: the version
@@ -836,7 +848,7 @@ func (s *{{Pascal}}Service) Create(ctx context.Context, item *models.{{Pascal}}{
 // if the row is still at that version, and otherwise returns an
 // *concurrency.ErrConflict naming the version it is at.
 func (s *{{Pascal}}Service) Update(ctx context.Context, id string, updates map[string]interface{}{{LINKS_PARAM}}{{ITEMS_PARAM}}, pre *concurrency.Precondition) (*models.{{Pascal}}, error) {
-	item, err := s.load(ctx, id)
+	item, err := s.load(ctx, id, "update")
 	if err != nil {
 		return nil, err
 	}
@@ -848,7 +860,7 @@ func (s *{{Pascal}}Service) Update(ctx context.Context, id string, updates map[s
 // is. Keys that are not writable columns are dropped. It returns the row and
 // the columns it wrote.
 func (s *{{Pascal}}Service) Patch(ctx context.Context, id string, body map[string]interface{}, pre *concurrency.Precondition) (*models.{{Pascal}}, map[string]interface{}, error) {
-	item, err := s.load(ctx, id)
+	item, err := s.load(ctx, id, "update")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -878,7 +890,7 @@ func (s *{{Pascal}}Service) Patch(ctx context.Context, id string, body map[strin
 
 // Delete soft-deletes one {{lower}} and returns it as it was.
 func (s *{{Pascal}}Service) Delete(ctx context.Context, id string) (*models.{{Pascal}}, error) {
-	item, err := s.load(ctx, id)
+	item, err := s.load(ctx, id, "delete")
 	if err != nil {
 		return nil, err
 	}
@@ -1066,9 +1078,16 @@ func (h *{{Pascal}}Handler) ctx(c *gin.Context) context.Context {
 // message, and anything else as an opaque 500 that is logged.
 func (h *{{Pascal}}Handler) fail(c *gin.Context, err error, fallback string) {
 	var conflict *concurrency.ErrConflict
+	var denied *authz.DeniedError
 	switch {
 	case errors.As(err, &conflict):
 		concurrency.WriteConflict(c, conflict.Current)
+	case errors.As(err, &denied):
+		// A policy refused, and said why. 403 rather than the 404 that
+		// ownership uses: the caller is already allowed to see this row,
+		// so hiding it says nothing and withholds the reason, which is the
+		// thing the rule exists to give.
+		respond.Fail(c, respond.CodeForbidden, denied.Reason)
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		respond.Fail(c, respond.CodeNotFound, "{{Pascal}} not found")
 	default:

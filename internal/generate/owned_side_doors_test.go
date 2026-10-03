@@ -40,7 +40,7 @@ func TestOwnedResourceGuardsTheSideDoors(t *testing.T) {
 	if !strings.Contains(method(t, h, "func (h *InvoiceHandler) PDF("), "h.service().GetByID(") {
 		t.Error("PDF loads a row by id without checking who owns it")
 	}
-	if !strings.Contains(method(t, s, "func (s *InvoiceService) Patch("), "s.load(ctx, id)") {
+	if !strings.Contains(method(t, s, "func (s *InvoiceService) Patch("), "s.load(ctx, id,") {
 		t.Error("Patch loads a row by id without checking who owns it")
 	}
 	if !strings.Contains(method(t, s, "func (s *InvoiceService) load("), "authz.Owns(ctx, &item)") {

@@ -76,7 +76,7 @@ func TestOwnedResourceScopesEveryAccessPath(t *testing.T) {
 		}
 	}
 	for _, fn := range []string{"Update", "Patch", "Delete"} {
-		if !strings.Contains(method(t, s, "func (s *InvoiceService) "+fn+"("), "s.load(ctx, id)") {
+		if !strings.Contains(method(t, s, "func (s *InvoiceService) "+fn+"("), "s.load(ctx, id,") {
 			t.Errorf("%s does not load its row through the guarded read", fn)
 		}
 	}
@@ -143,7 +143,10 @@ func TestSharedResourcesAreUnchanged(t *testing.T) {
 	h := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "handlers", "product.go"))
 	s := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "services", "product.go"))
 
-	for _, owned := range []string{`"shop/apps/api/internal/authz"`, "authz.ScopeOwned(", "authz.Owns(", "authz.UserIDFrom("} {
+	// The import is no longer a proxy for ownership: every service imports
+	// authz for the policy check, owned or not. These three functions are
+	// the ownership itself, and they are what must stay absent.
+	for _, owned := range []string{"authz.ScopeOwned(", "authz.Owns(", "authz.UserIDFrom("} {
 		if strings.Contains(s, owned) {
 			t.Errorf("a resource generated without --owned-by grew ownership checks (%s); "+
 				"a shared catalogue would become invisible to everyone but its creator", owned)
