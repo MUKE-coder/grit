@@ -75,7 +75,31 @@ var realtimeWhisperRepairs = []struct {
 	{"presence", []string{"internal", "realtime", "presence.go"}, realtimePresenceWhisperHunks, repairRealtimePresenceWhispersSource},
 	{"backplane", []string{"internal", "realtime", "backplane.go"}, realtimeBackplaneWhisperHunks, repairRealtimeBackplaneWhispersSource},
 	{"handler", []string{"internal", "handlers", "realtime.go"}, realtimeHandlerWhisperHunks, repairRealtimeHandlerWhispersSource},
-	{"health", []string{"internal", "routes", "routes.go"}, [][2]string{{healthRealtimeOld, healthRealtimeNew}}, repairRealtimeHealthStatsSource},
+}
+
+// routes.go is not in that table. The health-stats repair inserts the hub's
+// counters beside "events": eventBusStatus(), which is how the handler looked
+// up to v3.349.0; v3.350.0 replaced it with the four states, so this repair
+// ends at that older text and repairHealthStates carries on from it. Its own
+// test is below, against the text it actually runs on.
+
+func TestRepairRealtimeHealthStats(t *testing.T) {
+	old := strings.Replace(v3349Routes(t), healthRealtimeNew, healthRealtimeOld, 1)
+	if old == v3349Routes(t) {
+		t.Fatal("could not take the hub stats back out of routes.go")
+	}
+	out, fixed, warnings := repairRealtimeHealthStatsSource(old)
+	if out != v3349Routes(t) || len(fixed) != 1 || len(warnings) != 0 {
+		t.Fatalf("fixed %v, warned %v", fixed, warnings)
+	}
+	if again, fixed, _ := repairRealtimeHealthStatsSource(out); again != out || len(fixed) != 0 {
+		t.Error("not idempotent")
+	}
+	// A fresh routes.go already reports the stats, so there is nothing to do
+	// and nothing to warn about.
+	if out, fixed, warnings := repairRealtimeHealthStatsSource(apiRoutesGo()); out != apiRoutesGo() || len(fixed) != 0 || len(warnings) != 0 {
+		t.Errorf("a fresh routes.go: fixed %v, warned %v", fixed, warnings)
+	}
 }
 
 func TestRealtimeWhisperRepairsProduceTheTemplate(t *testing.T) {

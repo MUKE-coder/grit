@@ -140,6 +140,7 @@ const navItems: NavItem[] = [
       { title: 'Workflows (State Machines)', href: '/docs/backend/workflows' },
       { title: 'API Documentation', href: '/docs/backend/api-docs' },
       { title: 'Pulse (Observability)', href: '/docs/backend/pulse' },
+      { title: 'Health Checks', href: '/docs/backend/health' },
       { title: 'Feature Flags', href: '/docs/backend/feature-flags' },
       { title: 'Webhooks', href: '/docs/backend/webhooks' },
       { title: 'Realtime (WebSockets)', href: '/docs/backend/realtime' },

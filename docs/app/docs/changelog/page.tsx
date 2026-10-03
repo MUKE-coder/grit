@@ -66,6 +66,61 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.350.0 */}
+            <div className="mb-12" id="v3.350.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.350.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>/api/health answers in four states, and reports storage</h3>
+                <p>
+                  Every component reported one boolean, and that boolean covered two opposite
+                  situations: Redis is down, and this deployment has no Redis. Nothing reading the
+                  response could tell them apart, so the admin page guessed, and guessed differently
+                  per component: Redis read <code>ok === false ? down : ok ? ok : unknown</code>,
+                  email read <code>configured ? ok : unknown</code>, and storage was not on the page
+                  at all.
+                </p>
+                <p>
+                  Components now answer <code>ok</code>, <code>degraded</code>, <code>off</code> or{' '}
+                  <code>unknown</code>. Off is a dependency this deployment never asked for and
+                  unknown is a probe that could not find out, so neither lowers the overall status.
+                  Only degraded does, and that rule lives in one function rather than in a condition
+                  that named Redis and therefore quietly excluded the mailer and the object store.
+                </p>
+                <p>
+                  Storage is reported, which is the gap that prompted this: an upload answering 503
+                  came with a System Health page that had nothing to say, because no object store was
+                  configured in that environment at all.
+                </p>
+                <p>
+                  A missing cache is the one probe that asks which environment it is in.{' '}
+                  <code>REDIS_URL=</code> turned it off on purpose, and that is off. Anything else
+                  means the API dialled Redis at boot, was refused, and carried on with caching, jobs
+                  and cron disabled: on a laptop that is still off, with a detail saying so, and in
+                  production it is degraded, because there it is an incident.
+                </p>
+                <p>
+                  Anything else reports itself through <code>health.Register(name, probe)</code>, from
+                  a plugin or from your own main.go, and appears beside the framework&apos;s own
+                  components under the same rule. A probe that panics is reported as unknown rather
+                  than taking the endpoint down with it. See{' '}
+                  <a href="/docs/backend/health">Health checks</a>.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The <code>ok</code> field is still sent, and is exactly{' '}
+                  <code>state === &quot;ok&quot;</code>, so load balancers, uptime probes and the
+                  desktop heartbeat are unaffected. <code>grit upgrade</code> rewrites the handler of
+                  a project that still has the one Grit wrote, and reports a handler you have edited
+                  rather than overwriting it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.349.0 */}
             <div className="mb-12" id="v3.349.0">
               <div className="flex items-center gap-3 mb-4">

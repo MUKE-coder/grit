@@ -593,7 +593,7 @@ func desktopClientSystemHealthPage() string {
 	return `import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Database, HardDrive, Server, Activity, Mail, RefreshCw,
+  Database, HardDrive, Server, Activity, Mail, RefreshCw, FolderOpen,
   CheckCircle2, AlertCircle, type LucideIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
@@ -604,13 +604,42 @@ export const Route = createFileRoute("/app/system/health")({
   component: SystemHealthPage,
 });
 
+// The four states /api/health answers in. "off" is a component this deployment
+// never configured and "unknown" is a probe that could not find out, and this
+// page already has a drawing for both: N/A. Reading ok alone made every one of
+// them a red card.
+type HealthState = "ok" | "degraded" | "off" | "unknown";
+
+interface Component {
+  state?: HealthState;
+  ok?: boolean;
+  latency_ms?: number;
+  configured?: boolean;
+  driver?: string;
+}
+
 interface Health {
-  status: "ok" | "degraded" | "down";
-  database?: { ok: boolean; latency_ms?: number };
-  redis?: { ok: boolean; latency_ms?: number };
-  api?: { ok: boolean };
-  jobs?: { ok: boolean };
-  email?: { ok: boolean; configured?: boolean; driver?: string };
+  status: HealthState | "down";
+  database?: Component;
+  redis?: Component;
+  api?: Component;
+  jobs?: Component;
+  email?: Component;
+  storage?: Component;
+}
+
+// liveness is true for ok, false for degraded, and undefined for anything that
+// is nobody's fault. An API older than the four states sends only ok, where
+// false covered both "down" and "never configured", so undefined is the honest
+// reading of it.
+function liveness(component?: Component): boolean | undefined {
+  if (!component) return undefined;
+  if (component.state) {
+    if (component.state === "ok") return true;
+    if (component.state === "degraded") return false;
+    return undefined;
+  }
+  return component.ok ? true : undefined;
 }
 
 function SystemHealthPage() {
@@ -627,11 +656,12 @@ function SystemHealthPage() {
 
   const ok = data?.status !== "down" && data?.status !== "degraded";
   const cards: { label: string; icon: LucideIcon; up?: boolean; detail: string }[] = [
-    { label: "PostgreSQL", icon: Database, up: data?.database?.ok, detail: data?.database?.latency_ms != null ? data.database.latency_ms + "ms" : "Primary database" },
-    { label: "Redis", icon: HardDrive, up: data?.redis?.ok, detail: data?.redis?.latency_ms != null ? data.redis.latency_ms + "ms" : "Cache & queue" },
-    { label: "API Server", icon: Server, up: data?.api?.ok ?? true, detail: "HTTP gateway" },
-    { label: "Background Jobs", icon: Activity, up: data?.jobs?.ok, detail: "Worker queue" },
-    { label: "Email", icon: Mail, up: data?.email?.ok, detail: data?.email?.driver ? "Sending with " + data.email.driver : data?.email?.configured === false ? "Not configured" : "Transactional mail" },
+    { label: "PostgreSQL", icon: Database, up: liveness(data?.database), detail: data?.database?.latency_ms != null ? data.database.latency_ms + "ms" : "Primary database" },
+    { label: "Redis", icon: HardDrive, up: liveness(data?.redis), detail: data?.redis?.latency_ms != null ? data.redis.latency_ms + "ms" : "Cache & queue" },
+    { label: "API Server", icon: Server, up: liveness(data?.api) ?? true, detail: "HTTP gateway" },
+    { label: "Background Jobs", icon: Activity, up: liveness(data?.jobs), detail: "Worker queue" },
+    { label: "File Storage", icon: FolderOpen, up: liveness(data?.storage), detail: data?.storage?.driver ? "Storing files on " + data.storage.driver : "Object store" },
+    { label: "Email", icon: Mail, up: liveness(data?.email), detail: data?.email?.driver ? "Sending with " + data.email.driver : "Transactional mail" },
   ];
 
   return (

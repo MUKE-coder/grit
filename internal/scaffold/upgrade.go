@@ -655,6 +655,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairPoolAndCache(root, opts); err != nil {
 			fmt.Printf("  ⚠ sizing connection pools and the response cache: %v\n", err)
 		}
+		// /api/health answers four states per component instead of one boolean,
+		// so a missing Redis reads as off rather than as down, and reports
+		// storage, which nothing reported at all. After the realtime and mail
+		// repairs, whose text is in the handler this replaces.
+		if err := repairHealthStates(root, opts); err != nil {
+			fmt.Printf("  ⚠ giving /api/health its four states: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {

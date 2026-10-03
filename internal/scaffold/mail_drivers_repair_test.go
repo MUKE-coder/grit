@@ -26,7 +26,7 @@ func TestMailDriversInTemplates(t *testing.T) {
 	mustFormatGo(t, "config.go", cfg)
 
 	routes := apiRoutesGo()
-	if strings.Contains(routes, "cfg.ResendAPIKey != \"\"") || !strings.Contains(routes, healthMailStatusNew) || !strings.Contains(routes, healthDriverFieldNew) {
+	if strings.Contains(routes, "cfg.ResendAPIKey != \"\"") || !strings.Contains(routes, "svc.Mailer.Driver()") {
 		t.Error("/api/health still reports email from RESEND_API_KEY rather than the mailer's driver")
 	}
 
@@ -93,7 +93,9 @@ func TestMailDriverRepairs(t *testing.T) {
 		t.Error("an edited main.go should get a note")
 	}
 
-	routes := apiRoutesGo()
+	// v3.349.0, not today: this repair ends at a handler with a compStatus in
+	// it, which the four states replaced in v3.350.0.
+	routes := v3349Routes(t)
 	oldRoutes := strings.Replace(routes, healthMailStatusNew, healthMailStatusOld, 1)
 	oldRoutes = strings.Replace(oldRoutes, healthDriverFieldNew, healthDriverFieldOld, 1)
 	out, changes, warnings = repairMailHealthSource(oldRoutes)

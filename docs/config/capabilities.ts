@@ -279,6 +279,20 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
         },
       },
       {
+        id: 'health',
+        label: 'Dependency health endpoint',
+        detail:
+          'One endpoint saying whether the database, cache, queue, mailer and object store are there, in states that tell "not configured" apart from "down".',
+        cells: {
+          grit: G('/api/health in four states, with a screen in the admin'),
+          laravel: O('A /up liveness route is core; dependency checks are spatie/laravel-health'),
+          django: C('django-health-check'),
+          nextjs: N(),
+          encore: B('Service and infrastructure health are part of the platform'),
+          express: C('terminus or lightship'),
+        },
+      },
+      {
         id: 'storage',
         label: 'File storage with image processing',
         detail: 'S3-compatible uploads, presigned URLs, and thumbnails generated for you.',

@@ -5,9 +5,30 @@ import (
 	"testing"
 )
 
-func oldHealthRoutes(t *testing.T) string {
+// v3349Routes is routes.go as v3.349.0 wrote it: the health handler that
+// reported one boolean per component, before the four states replaced it.
+//
+// Built from oldHealthCheckBlock rather than by undoing today's template, which
+// is what these two tests did until v3.350.0. The input was rebuilt from the
+// current template, so when the template moved the input moved with it and the
+// tests described a transition nobody was making. oldHealthCheckBlock is fixed
+// text, taken out of a project a release generated.
+func v3349Routes(t *testing.T) string {
 	t.Helper()
 	fresh := apiRoutesGo()
+	old := strings.Replace(fresh, healthCheckBlock, oldHealthCheckBlock, 1)
+	old = strings.Replace(old, eventBusStatusBlock, oldEventBusStatus, 1)
+	old = strings.Replace(old, "\t\"{{MODULE}}/internal/health\"\n", "", 1)
+	if old == fresh || !strings.Contains(old, "type compStatus struct {") ||
+		strings.Contains(old, "/internal/health\"") || strings.Contains(old, "health.Overall(") {
+		t.Fatal("could not rebuild routes.go as v3.349.0 wrote it")
+	}
+	return old
+}
+
+func oldHealthRoutes(t *testing.T) string {
+	t.Helper()
+	fresh := v3349Routes(t)
 	old := strings.Replace(fresh, healthJobsBlock+"\n", oldHealthJobsBlock, 1)
 	old = strings.Replace(old, healthQueueFields, oldHealthQueueField, 1)
 	old = strings.Replace(old, healthQueueStatsSetup, "", 1)
@@ -22,8 +43,8 @@ func TestRepairHealthQueueProbe(t *testing.T) {
 	if len(warn) > 0 || len(fixed) != 1 {
 		t.Fatalf("fixed %v, warned %v", fixed, warn)
 	}
-	if out != apiRoutesGo() {
-		t.Error("the repaired routes.go differs from a fresh one")
+	if out != v3349Routes(t) {
+		t.Error("the repaired routes.go differs from the one that release wrote")
 	}
 	if again, fixed, _ := repairHealthQueueProbeSource(out); again != out || len(fixed) > 0 {
 		t.Error("a second upgrade changed routes.go again")
@@ -38,7 +59,7 @@ func TestRepairHealthQueueProbeWarnsOnEditedCode(t *testing.T) {
 }
 
 func TestFreshTemplatesNeedNoHealthQueueRepair(t *testing.T) {
-	src := apiRoutesGo()
+	src := v3349Routes(t)
 	if strings.Contains(src, "redis.call('keys'") || strings.Contains(src, "queue_keys") {
 		t.Error("/api/health still counts asynq keys inside Redis")
 	}

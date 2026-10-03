@@ -74,6 +74,13 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// querying directly in v3.346.0.
 		filepath.Join(apiRoot, "internal", "services", "sync.go"): apiSyncServiceGo(),
 
+		// The four states /api/health answers in, and the registry a plugin adds
+		// its own probe to. Here rather than in the API map because routes.go is
+		// repaired in place on upgrade, and a repair that writes health.OK into a
+		// project without the package is a project that does not compile.
+		filepath.Join(apiRoot, "internal", "health", "health.go"):      apiHealthGo(),
+		filepath.Join(apiRoot, "internal", "health", "health_test.go"): apiHealthTestGo(),
+
 		filepath.Join(apiRoot, "internal", "services", "webhook_event.go"):            apiWebhookEventServiceGo(),
 		filepath.Join(apiRoot, "internal", "services", "webhook_event_test.go"):       apiWebhookEventServiceTestGo(),
 		filepath.Join(apiRoot, "internal", "webhooks", "dedup_test.go"):               apiWebhookDedupTestGo(),

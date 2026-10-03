@@ -163,6 +163,23 @@ func (s *Storage) Describe() string {
 	}
 }
 
+// Driver names the kind of store this is: local, s3, or the type behind a Disk
+// of your own.
+//
+// For /api/health, which is public so a load balancer can reach it. Describe
+// also names the bucket and the endpoint, which is right for a startup log line
+// and wrong for an unauthenticated response.
+func (s *Storage) Driver() string {
+	switch d := s.disk.(type) {
+	case *LocalDisk:
+		return "local"
+	case *S3Disk:
+		return "s3"
+	default:
+		return fmt.Sprintf("%T", d)
+	}
+}
+
 // Upload stores a file at the given key.
 func (s *Storage) Upload(ctx context.Context, key string, reader io.Reader, contentType string) error {
 	return s.disk.Put(ctx, key, reader, PutOptions{ContentType: contentType})

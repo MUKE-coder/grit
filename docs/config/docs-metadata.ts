@@ -431,6 +431,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Native desktop binary with Wails v2 + React + Tailwind on the front and Go + GORM (SQLite or Postgres) on the back. Local auth, PDF + Excel export, frameless window, draggable panels.',
   },
+  '/docs/backend/health': {
+    title: 'Health checks',
+    description:
+      'GET /api/health in four states rather than a boolean: ok, degraded, off and unknown, so a dependency nobody configured stops reading as one that is down. How each component is probed, what the response carries, and how to register your own.',
+  },
   '/docs/backend/outbox': {
     title: 'The transactional outbox',
     description:

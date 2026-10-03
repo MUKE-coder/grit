@@ -6868,6 +6868,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/config"
 	"` + "{{MODULE}}" + `/internal/database"
 	"` + "{{MODULE}}" + `/internal/events"
+	"` + "{{MODULE}}" + `/internal/health"
 	"` + "{{MODULE}}" + `/internal/handlers"
 	"` + "{{MODULE}}" + `/internal/settings"
 	"` + "{{MODULE}}" + `/internal/mail"
@@ -6910,22 +6911,7 @@ func splitOrigins(raw string) []string {
 //
 // Nil-safe so a project whose routes.go predates events.Init still answers
 // the health check rather than panicking on it.
-func eventBusStatus() interface{} {
-	bus := events.Default()
-	if bus == nil {
-		return map[string]interface{}{"ok": false, "configured": false}
-	}
-	s := bus.Stats()
-	return map[string]interface{}{
-		"ok":          s.Dropped == 0,
-		"configured":  true,
-		"subscribers": s.Subscribers,
-		"queued":      s.Queued,
-		"capacity":    s.Capacity,
-		"dropped":     s.Dropped,
-	}
-}
-
+` + eventBusStatusBlock + `
 // APIVersion is the version segment every /api route is served under, so the
 // public surface is /api/v1/... rather than /api/....
 //
@@ -7494,78 +7480,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// rewrite a path that already names the version: the page read "degraded"
 	// with a 404 behind it. /api/health stays for probes, load balancers and the
 	// desktop client's heartbeat, which are configured outside this repo.
-	healthCheck := func(c *gin.Context) {
-		type compStatus struct {
-			OK         bool   ` + "`" + `json:"ok"` + "`" + `
-			LatencyMS  int64  ` + "`" + `json:"latency_ms,omitempty"` + "`" + `
-			Tables     int    ` + "`" + `json:"tables,omitempty"` + "`" + `
-` + healthQueueFields + `			Configured bool   ` + "`" + `json:"configured,omitempty"` + "`" + `
-			Driver     string ` + "`" + `json:"driver,omitempty"` + "`" + `
-			Error      string ` + "`" + `json:"error,omitempty"` + "`" + `
-		}
-
-		// Database ping + table count. We probe with a 500ms deadline so a
-		// blocked write loop can't hang the health check.
-		dbStatus := compStatus{OK: true}
-		dbStart := time.Now()
-		if sqlDB, err := db.DB(); err == nil {
-			ctx, cancel := context.WithTimeout(c.Request.Context(), 500*time.Millisecond)
-			defer cancel()
-			if err := sqlDB.PingContext(ctx); err != nil {
-				dbStatus.OK = false
-				log.Printf("health: database ping failed: %v", err)
-			}
-		}
-		dbStatus.LatencyMS = time.Since(dbStart).Milliseconds()
-		if dbStatus.OK {
-			// Best-effort table count. Dialect-aware, and 0 rather than an
-			// error when the database cannot be asked: a missing tooltip
-			// figure is not a health problem.
-			dbStatus.Tables = database.TableCount(db)
-		}
-
-		// Redis ping. Reuse the same cache client the rest of the app uses
-		// rather than opening a new connection — that way "Redis healthy"
-		// on the dashboard means the same Redis the cache + jobs use.
-		redisStatus := compStatus{}
-		if svc.Cache != nil {
-			redisStart := time.Now()
-			ctx, cancel := context.WithTimeout(c.Request.Context(), 500*time.Millisecond)
-			defer cancel()
-			if err := svc.Cache.Client().Ping(ctx).Err(); err != nil {
-				redisStatus.OK = false
-				log.Printf("health: redis ping failed: %v", err)
-			} else {
-				redisStatus.OK = true
-			}
-			redisStatus.LatencyMS = time.Since(redisStart).Milliseconds()
-		}
-
-` + healthJobsBlock + `
-` + healthMailStatusNew + `
-		// Overall status — ok if every wired-up component is up. Components
-		// that aren't configured (e.g. Redis off in a single-binary dev
-		// run) don't drag the overall status down.
-		overall := "ok"
-		if !dbStatus.OK || (svc.Cache != nil && !redisStatus.OK) {
-			overall = "degraded"
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"status":   overall,
-			"version":  "0.1.0",
-			"database": dbStatus,
-			"redis":    redisStatus,
-			"api":      compStatus{OK: true},
-			"jobs":     jobsStatus,
-			"email":    mailStatus,
-			// The event bus reports itself. Dropped rising is the only signal
-			// from outside that a subscriber is too slow or the queue too
-			// small, and "did my webhook fire" deserves a better answer than
-			// reading logs.
-` + healthRealtimeNew + `		})
-	}
-	r.GET("/api/health", healthCheck)
+` + healthCheckBlock + `	r.GET("/api/health", healthCheck)
 	r.GET("/api/"+APIVersion+"/health", healthCheck)
 
 ` + routesRealtimeRouteNew + `
