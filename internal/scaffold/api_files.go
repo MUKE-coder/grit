@@ -301,10 +301,15 @@ require (
 	//
 	// Inert until OTEL_EXPORTER_OTLP_ENDPOINT is set: with no endpoint the
 	// global provider is a no-op and a span costs an allocation.
-	go.opentelemetry.io/otel v1.39.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.39.0
-	go.opentelemetry.io/otel/sdk v1.39.0
-	go.opentelemetry.io/otel/trace v1.39.0
+	go.opentelemetry.io/otel v1.45.0
+	// Pulled in by the OTLP exporter even on the HTTP transport: the
+	// collector proto package depends on it. Pinned rather than left to
+	// whatever the otel modules ask for, which was v1.77.0 and carries two
+	// reachable advisories.
+	google.golang.org/grpc v1.83.1
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.45.0
+	go.opentelemetry.io/otel/sdk v1.45.0
+	go.opentelemetry.io/otel/trace v1.45.0
 	golang.org/x/crypto v0.57.0
 	// singleflight, which collapses concurrent cache misses in middleware/cache.go.
 	golang.org/x/sync v0.23.0
