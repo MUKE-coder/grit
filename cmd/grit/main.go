@@ -33,7 +33,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.358.1"
+var version = "3.359.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -1498,6 +1498,7 @@ func findAPIDir() (string, error) {
 func upgradeCmd() *cobra.Command {
 	var force bool
 	var showDiff bool
+	var writePlan bool
 
 	cmd := &cobra.Command{
 		Use:   "upgrade",
@@ -1513,6 +1514,7 @@ func upgradeCmd() *cobra.Command {
 			if err := scaffold.Upgrade(scaffold.UpgradeOptions{
 				Force:    force,
 				ShowDiff: showDiff,
+				Plan:     writePlan,
 				Version:  version,
 			}); err != nil {
 				return err
@@ -1529,6 +1531,7 @@ func upgradeCmd() *cobra.Command {
 
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite every file, including ones you have edited")
 	cmd.Flags().BoolVar(&showDiff, "diff", false, "Show what the upgrade would change in the files it leaves alone")
+	cmd.Flags().BoolVar(&writePlan, "plan", false, "Write UPGRADE-PLAN.md: a runbook for the files the upgrade leaves alone")
 
 	return cmd
 }

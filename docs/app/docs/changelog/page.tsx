@@ -66,6 +66,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.359.0 */}
+            <div className="mb-12" id="v3.359.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.359.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A runbook for the part of an upgrade that needs judgment</h3>
+                <p>
+                  <code>grit upgrade</code> rewrites the project and will not touch a file you have
+                  edited since Grit wrote it. That protection is also the limit: what the new
+                  version would have changed in that file goes unapplied, and it was reported as one
+                  line of terminal output that scrolls away.
+                </p>
+                <p>
+                  There is no mechanical answer to that, because the reason the file was skipped is
+                  that applying the change needs judgment about code you wrote. But a change that
+                  needs judgment is one a coding agent can carry out when it is told what the change
+                  is, where to look and how to check the result.
+                </p>
+                <p>
+                  <code>grit upgrade --plan</code> writes <code>UPGRADE-PLAN.md</code> at your
+                  project root: which version you came from, every file left alone, the diff of what
+                  the new version does to it, and a command whose success means it worked. Paste the
+                  whole file into a coding agent, or work through it yourself.
+                </p>
+                <p>
+                  Every entry is <strong>detect</strong>, <strong>change</strong>,{" "}
+                  <strong>verify</strong>. The third one is the point: an instruction with no
+                  verification step is one an agent will report as done whether or not it is. The
+                  command fits the file, because &quot;the whole project builds&quot; is slow enough
+                  that nobody runs it between edits, and a check nobody runs is not a check. A Go
+                  file gets <code>gofmt</code> and <code>go build</code> from its own module
+                  directory, a <code>.tsx</code> gets <code>tsc --noEmit</code> in its app, a
+                  compose file gets <code>docker compose config</code>.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The diff is what Grit would have written against what you have, and it is not a
+                  patch to apply blindly: your edits are in there for a reason, and the job is to
+                  carry the new behaviour into them rather than to replace one with the other. The
+                  file says so.
+                </p>
+              </div>
+            </div>
+
             {/* v3.358.0 */}
             <div className="mb-12" id="v3.358.0">
               <div className="flex items-center gap-3 mb-4">

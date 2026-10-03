@@ -50,3 +50,26 @@ func stampProjectVersion(root, version string) error {
 	}
 	return os.WriteFile(path, append(out, '\n'), 0o644)
 }
+
+// projectVersion reads the Grit version recorded in grit.json.
+//
+// Read before the upgrade stamps the new one, because the runbook wants to say
+// which version the project is coming from, and that is the single most useful
+// line in it: the reader can go and look at what changed in between.
+//
+// An empty string for a project that has never been stamped, which is any
+// project generated before the stamp existed. The runbook then says nothing
+// about the old version rather than inventing one.
+func projectVersion(root string) string {
+	body, err := os.ReadFile(filepath.Join(root, "grit.json"))
+	if err != nil {
+		return ""
+	}
+	var project struct {
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal(body, &project); err != nil {
+		return ""
+	}
+	return project.Version
+}

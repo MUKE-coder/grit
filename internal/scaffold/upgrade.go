@@ -22,6 +22,13 @@ type UpgradeOptions struct {
 	// ShowDiff prints what the upgrade would have changed in the files it
 	// left alone.
 	ShowDiff bool
+
+	// Plan writes UPGRADE-PLAN.md: a runbook for the files the upgrade
+	// left alone, each with what the new version does to it and a command
+	// that proves the change landed. Meant to be handed to a coding agent,
+	// which is the only thing that can finish work needing judgment about
+	// code somebody else wrote.
+	Plan bool
 	// Version is the Grit version performing the upgrade, recorded against
 	// every file it rewrites.
 	Version string
@@ -35,6 +42,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 	if err != nil {
 		return err
 	}
+
+	// Read before anything stamps the new one. The runbook's most useful line
+	// is which version the project is coming from, because that is what tells
+	// the reader where to go and look at what changed in between.
+	previousVersion := projectVersion(root)
 
 	projectName, err := readProjectName(root)
 	if err != nil {
@@ -1023,6 +1035,23 @@ func Upgrade(uOpts UpgradeOptions) error {
 			cyan.Println("    grit upgrade --diff     # see what the new version would change")
 		}
 		cyan.Println("    grit upgrade --force    # take the new version and lose your edits")
+	}
+
+	// The runbook. Offered rather than written by default: a file appearing
+	// at the project root uninvited is noise, and most upgrades leave
+	// nothing outstanding.
+	if uOpts.Plan {
+		path, err := writeUpgradePlan(root, previousVersion, uOpts.Version, skipped, written)
+		if err != nil {
+			spinner.Printf("  Could not write the plan: %v\n", err)
+		} else {
+			fmt.Println()
+			green.Printf("  ✓ %s\n", filepath.Base(path))
+			cyan.Println("    Hand it to a coding agent, or read it yourself: it is the part")
+			cyan.Println("    of this upgrade that needs judgment about code you wrote.")
+		}
+	} else if len(skipped) > 0 {
+		cyan.Println("    grit upgrade --plan     # write a runbook for finishing these")
 	}
 
 	fmt.Println()

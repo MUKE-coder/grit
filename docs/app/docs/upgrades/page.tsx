@@ -71,8 +71,53 @@ grit upgrade    # run inside a project: brings THAT project up to the CLI's vers
                 language="bash"
                 code={`grit upgrade --diff     # show what it would change in the files it leaves alone
 grit upgrade            # do it
+grit upgrade --plan     # write a runbook for the files it left alone
 grit upgrade --force    # overwrite everything, including your edits`}
               />
+
+              <h2>The part that needs judgment</h2>
+              <p>
+                Leaving an edited file alone is a protection, and it is also a limit. What
+                the new version would have changed in that file goes unapplied, and before
+                v3.359.0 it was reported as one line of terminal output that scrolls away.
+              </p>
+              <p>
+                There is no mechanical answer: the reason the file was skipped is that
+                applying the change needs judgment about code you wrote. But a change that
+                needs judgment is one a coding agent can carry out when it is told what the
+                change is, where to look and how to check the result.
+              </p>
+              <p>
+                <code>grit upgrade --plan</code> writes <code>UPGRADE-PLAN.md</code> at your
+                project root: which version you came from, every file left alone, the diff
+                of what the new version does to it, and a command whose success means it
+                worked. An instruction with no verification step is one an agent will report
+                as done whether or not it is, so every entry has all three.
+              </p>
+              <CodeBlock
+                language="markdown"
+                code={`### 1. \`docker-compose.yml\`
+
+**Detect.** Open it, and see what you changed:
+
+    git diff HEAD -- docker-compose.yml
+
+**Change.** This is what the new version does to it:
+
+    -    restart: unless-stopped
+    +    container_name: shop-postgres
+    +    restart: unless-stopped
+
+**Verify.**
+
+    docker compose -f docker-compose.yml config > /dev/null`}
+              />
+              <p>
+                The diff is what Grit would have written against what you have. It is not a
+                patch to apply blindly: your edits are in there for a reason, and the job is
+                to carry the new behaviour into them rather than to replace one with the
+                other.
+              </p>
 
               <h2>The files you own, that Grit also writes into</h2>
               <p>
