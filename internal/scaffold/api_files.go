@@ -305,8 +305,8 @@ require (
 	// Pulled in by the OTLP exporter even on the HTTP transport: the
 	// collector proto package depends on it. Pinned rather than left to
 	// whatever the otel modules ask for, which was v1.77.0 and carries two
-	// reachable advisories.
-	google.golang.org/grpc v1.83.1
+	// reachable advisories, and v1.83.1 carries CVE-2026-84445.
+	google.golang.org/grpc v1.83.2
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.45.0
 	go.opentelemetry.io/otel/sdk v1.45.0
 	go.opentelemetry.io/otel/trace v1.45.0
