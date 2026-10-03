@@ -431,6 +431,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Native desktop binary with Wails v2 + React + Tailwind on the front and Go + GORM (SQLite or Postgres) on the back. Local auth, PDF + Excel export, frameless window, draggable panels.',
   },
+  '/docs/ai-workflows/llms-txt': {
+    title: 'llms.txt',
+    description:
+      'An llmstxt.org index for the framework and for the API you build with it: what gritframework.dev/llms.txt and llms-full.txt contain, the pair a scaffolded API serves, and why the OpenAPI spec is still the contract.',
+  },
   '/docs/backend/health': {
     title: 'Health checks',
     description:

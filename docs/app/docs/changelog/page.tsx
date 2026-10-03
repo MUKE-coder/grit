@@ -66,6 +66,48 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.351.0 */}
+            <div className="mb-12" id="v3.351.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.351.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>llms.txt, for the framework and for the API you build with it</h3>
+                <p>
+                  An agent pointed at Grit had to crawl 171 pages of rendered HTML or guess.{' '}
+                  <a href="/llms.txt">gritframework.dev/llms.txt</a> is the index instead: what Grit
+                  is, the one thing to understand about it, and every documentation page with its
+                  description, grouped by subject.{' '}
+                  <a href="/llms-full.txt">gritframework.dev/llms-full.txt</a> adds the working guide
+                  and the complete CLI reference, as one file.
+                </p>
+                <p>
+                  Neither is written twice. The page list is the metadata the pages already use for
+                  their titles, the CLI reference is the catalogue <code>/docs/cli</code> renders, and
+                  the working guide is the file <code>grit init</code> writes into a project, so none
+                  of it can drift from the docs.
+                </p>
+                <p>
+                  A scaffolded API serves its own pair. <code>/llms.txt</code> is the orientation an
+                  OpenAPI document does not carry: how versioning works, which header holds the token,
+                  what a response and an error look like, and the parameters every list endpoint takes.{' '}
+                  <code>/llms-full.txt</code> adds every route the router holds, grouped by what it is
+                  about, which is the one thing the spec cannot answer, because the spec documents the
+                  routes somebody wrote an override for and this is the router&apos;s own table.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Both are mounted behind the same condition as the API reference, since they describe
+                  the same surface: off in production unless <code>API_DOCS_PUBLIC=true</code>. The
+                  text lives in <code>internal/llms</code> and is yours to edit. See{' '}
+                  <a href="/docs/ai-workflows/llms-txt">llms.txt</a>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.350.0 */}
             <div className="mb-12" id="v3.350.0">
               <div className="flex items-center gap-3 mb-4">

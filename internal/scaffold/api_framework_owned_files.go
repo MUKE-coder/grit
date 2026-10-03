@@ -81,6 +81,13 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "health", "health.go"):      apiHealthGo(),
 		filepath.Join(apiRoot, "internal", "health", "health_test.go"): apiHealthTestGo(),
 
+		// llms.txt and llms-full.txt, which an agent pointed at a running service
+		// reads before it calls anything. Here for the reason health is: routes.go
+		// is repaired in place, and a repair that mounts a package the project has
+		// not got is a project that does not compile.
+		filepath.Join(apiRoot, "internal", "llms", "llms.go"):      apiLLMSGo(),
+		filepath.Join(apiRoot, "internal", "llms", "llms_test.go"): apiLLMSTestGo(),
+
 		filepath.Join(apiRoot, "internal", "services", "webhook_event.go"):            apiWebhookEventServiceGo(),
 		filepath.Join(apiRoot, "internal", "services", "webhook_event_test.go"):       apiWebhookEventServiceTestGo(),
 		filepath.Join(apiRoot, "internal", "webhooks", "dedup_test.go"):               apiWebhookDedupTestGo(),

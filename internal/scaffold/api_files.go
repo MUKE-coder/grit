@@ -6869,6 +6869,8 @@ import (
 	"` + "{{MODULE}}" + `/internal/database"
 	"` + "{{MODULE}}" + `/internal/events"
 	"` + "{{MODULE}}" + `/internal/health"
+	"` + "{{MODULE}}" + `/internal/llms"
+	"` + "{{MODULE}}" + `/internal/paginate"
 	"` + "{{MODULE}}" + `/internal/handlers"
 	"` + "{{MODULE}}" + `/internal/settings"
 	"` + "{{MODULE}}" + `/internal/mail"
@@ -6911,7 +6913,7 @@ func splitOrigins(raw string) []string {
 //
 // Nil-safe so a project whose routes.go predates events.Init still answers
 // the health check rather than panicking on it.
-` + eventBusStatusBlock + `
+` + eventBusStatusBlock + llmsRegisterFunc + `
 // APIVersion is the version segment every /api route is served under, so the
 // public surface is /api/v1/... rather than /api/....
 //
@@ -7315,7 +7317,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// The OpenAPI reference. Its 141 route overrides live in apidocs.go, where
 	// they are 500 lines of description rather than 500 lines in the middle of
 	// the file that wires your application together.
-` + routesDocsBlock + `
+` + routesDocsBlock + llmsRoutesBlock + `
 	mountPulse(r, db, cfg, svc)
 
 	// Auth service

@@ -279,6 +279,20 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
         },
       },
       {
+        id: 'llms-txt',
+        label: 'An index an AI agent can read',
+        detail:
+          'llms.txt for the framework, and one the application itself serves describing its own API.',
+        cells: {
+          grit: G('Both: gritframework.dev/llms.txt, and /llms.txt on every scaffolded API'),
+          laravel: C('Community mirrors of the docs; nothing the application serves'),
+          django: C('Community mirrors of the docs'),
+          nextjs: O('Next.js docs serve one; nothing the application serves'),
+          encore: B('The docs serve one, and the platform is built around agent access'),
+          express: N(),
+        },
+      },
+      {
         id: 'health',
         label: 'Dependency health endpoint',
         detail:

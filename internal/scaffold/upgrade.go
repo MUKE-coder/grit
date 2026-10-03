@@ -662,6 +662,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairHealthStates(root, opts); err != nil {
 			fmt.Printf("  ⚠ giving /api/health its four states: %v\n", err)
 		}
+		// /llms.txt and /llms-full.txt, which an agent pointed at this service
+		// reads before it calls anything. After the four-state repair, beside
+		// whose eventBusStatus the handler is written.
+		if err := repairLLMSFiles(root, opts); err != nil {
+			fmt.Printf("  ⚠ mounting /llms.txt: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {
