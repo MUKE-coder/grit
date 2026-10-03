@@ -683,6 +683,11 @@ func backoff(def *Definition, attempt int) time.Duration {
 	if d > float64(def.MaxBackoff) || math.IsInf(d, 0) {
 		d = float64(def.MaxBackoff)
 	}
+	// #nosec G404 -- the jitter spreads retries across a window so a thousand
+	// runs waiting on one outage do not all come back in the same
+	// millisecond. Nothing is guessed from it and nothing is protected by it,
+	// and crypto/rand here would be a syscall per retry to pick a number
+	// nobody can act on.
 	jitter := 1 + (rand.Float64()-0.5)*0.4 // +/- 20%
 	return time.Duration(d * jitter)
 }
