@@ -33,7 +33,7 @@ func (g *Generator) writeFactory(names Names) error {
 
 // factorySource renders the factory file.
 func (g *Generator) factorySource(names Names) string {
-	assignments, needsFmt, needsTime, needsMoney, relations := g.factoryFields(names)
+	assignments, needsFmt, needsTime, needsMoney, needsCrypto, needsJSONTime, relations := g.factoryFields(names)
 
 	imports := []string{}
 	if needsFmt {
@@ -51,6 +51,12 @@ func (g *Generator) factorySource(names Names) string {
 		b.WriteString("\t" + imp + "\n")
 	}
 	b.WriteString("\n\t\"gorm.io/gorm\"\n\n")
+	if needsCrypto {
+		fmt.Fprintf(&b, "\t%q\n", g.Module+"/internal/crypto")
+	}
+	if needsJSONTime {
+		fmt.Fprintf(&b, "\t%q\n", g.Module+"/internal/jsontime")
+	}
 	if needsMoney {
 		fmt.Fprintf(&b, "\t%q\n", g.Module+"/internal/money")
 	}
@@ -74,8 +80,12 @@ func (g *Generator) factorySource(names Names) string {
 	}
 	fmt.Fprintf(&b, "func New%s(overrides ...func(*models.%s)) *models.%s {\n",
 		names.Pascal, names.Pascal, names.Pascal)
-	b.WriteString("\tn := next()\n")
-	b.WriteString("\t_ = n\n\n")
+	// The counter is declared only when a field interpolates it. A resource
+	// whose every field is a relation or a file has no use for it, and `_ = n`
+	// in generated code reads as something the generator was not sure about.
+	if strings.Contains(assignments, "n)") || strings.Contains(assignments, "n,") {
+		b.WriteString("\tn := next()\n\n")
+	}
 	fmt.Fprintf(&b, "\trecord := &models.%s{\n", names.Pascal)
 	b.WriteString(assignments)
 	b.WriteString("\t}\n\n")
@@ -109,7 +119,7 @@ func (g *Generator) factorySource(names Names) string {
 }
 
 // factoryFields renders the struct literal body, and reports what it needed.
-func (g *Generator) factoryFields(names Names) (assignments string, needsFmt, needsTime, needsMoney bool, relations []string) {
+func (g *Generator) factoryFields(names Names) (assignments string, needsFmt, needsTime, needsMoney, needsCrypto, needsJSONTime bool, relations []string) {
 	var b strings.Builder
 
 	for _, f := range g.Definition.Fields {
@@ -134,10 +144,22 @@ func (g *Generator) factoryFields(names Names) (assignments string, needsFmt, ne
 		needsFmt = needsFmt || usesFmt
 		needsTime = needsTime || usesTime
 		needsMoney = needsMoney || FieldType(f.Type) == FieldMoney
+		switch FieldType(f.Type) {
+		case FieldDate, FieldDatetime:
+			needsJSONTime = true
+		}
+
+		// An :encrypted column is stored as crypto.EncryptedString:
+		// AES-256-GCM at rest, a plain string in code. The field is still
+		// declared with that type, so the literal has to say so.
+		if f.Encrypted {
+			needsCrypto = true
+			value = "crypto.EncryptedString(" + value + ")"
+		}
 		fmt.Fprintf(&b, "\t\t%s: %s,\n", goName, value)
 	}
 
-	return b.String(), needsFmt, needsTime, needsMoney, relations
+	return b.String(), needsFmt, needsTime, needsMoney, needsCrypto, needsJSONTime, relations
 }
 
 // factoryValue is a plausible value for one field.
@@ -162,8 +184,10 @@ func factoryValue(f Field, names Names) (value string, needsFmt, needsTime bool)
 		return `"#6c5ce7"`, false, false
 	case FieldCountry:
 		return `"US"`, false, false
-	case FieldInt, FieldUint:
+	case FieldInt:
 		return "n", false, false
+	case FieldUint:
+		return "uint(n)", false, false
 	case FieldMoney:
 		// money.Money is two columns, an amount in minor units and a currency,
 		// so this is 19.99 and not 1999 dollars.
@@ -176,11 +200,16 @@ func factoryValue(f Field, names Names) (value string, needsFmt, needsTime bool)
 		return "4", false, false
 	case FieldBool, FieldToggle:
 		return "true", false, false
-	case FieldDatetime, FieldDate:
+	case FieldDatetime:
 		// A fixed point rather than time.Now(): a test asserting on a date
 		// should not change its answer at midnight, and one asserting on
 		// ordering needs the values to be predictable.
-		return "time.Date(2026, 1, 15, 9, 30, 0, 0, time.UTC)", false, true
+		//
+		// A *jsontime.DateTime and not a time.Time, because the admin sends
+		// "2001-08-06T14:30", which is not RFC3339 and time.Time refuses.
+		return "&jsontime.DateTime{Time: time.Date(2026, 1, 15, 9, 30, 0, 0, time.UTC)}", false, true
+	case FieldDate:
+		return "&jsontime.Date{Time: time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC)}", false, true
 	case FieldTime:
 		return `"09:30"`, false, false
 	case FieldSelect, FieldRadio:
