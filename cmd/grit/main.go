@@ -32,7 +32,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.353.0"
+var version = "3.354.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -365,6 +365,47 @@ func generateCmd() *cobra.Command {
 	cmd.AddCommand(generateFieldCmd())
 	cmd.AddCommand(generateJobCmd())
 	cmd.AddCommand(generateMailCmd())
+	cmd.AddCommand(generateWorkflowCmd())
+
+	return cmd
+}
+
+func generateWorkflowCmd() *cobra.Command {
+	var steps string
+
+	cmd := &cobra.Command{
+		Use:   "workflow <Name>",
+		Short: "Generate a saga: steps that have to either all finish or be undone",
+		Long: `Generate a multi-step process that crosses systems.
+
+A database transaction is the right tool when every write is in one database. It
+is no help when the steps are in four places: charge a card, reserve stock, book
+a courier, send the receipt. The card does not roll back when the courier
+refuses, and the process holding all of that in its head is exactly the thing
+that crashes.
+
+A saga is the answer. Each step gets a Do and an Undo. The steps run in order,
+and when one fails for good the completed ones are undone newest first. Where the
+run got to is a row, so a process that dies between the charge and the
+reservation resumes rather than leaving a customer charged for nothing.
+
+Writes internal/sagas/<name>.go with the steps stubbed out, and registers it.
+Each stub returns an error until you write it, so a half-built saga fails loudly
+instead of reporting success and doing nothing.
+
+Examples:
+  grit generate workflow Checkout --steps "charge,reserve_stock,book_courier"
+  grit generate workflow Onboarding --steps "create_account,provision,welcome_email"`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+			cmd.SilenceUsage = true
+			return generate.GenerateWorkflow(generate.WorkflowOptions{Name: args[0], Steps: steps})
+		},
+	}
+
+	cmd.Flags().StringVar(&steps, "steps", "",
+		"The step names in order, comma separated (e.g. \"charge,reserve_stock,book_courier\")")
 
 	return cmd
 }

@@ -66,6 +66,61 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.354.0 */}
+            <div className="mb-12" id="v3.354.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.354.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit generate workflow: steps that finish or are undone</h3>
+                <p>
+                  A transaction is the right tool when every write is in one database. It is no help
+                  when the steps are in four places: charge a card, reserve stock, book a courier,
+                  send the receipt. The card does not roll back when the courier refuses, and the
+                  process holding all of it in its head is exactly the thing that crashes, usually
+                  between the charge and the reservation.
+                </p>
+                <p>
+                  Every step now gets a <code>Do</code> and an <code>Undo</code>. They run in order,
+                  and when one fails for good the completed ones are undone newest first. Where the
+                  run got to is a row in <code>saga_runs</code>, not a stack frame, so a process that
+                  dies resumes rather than losing the thread, and every replica runs a runner because
+                  a run is claimed before it is touched.
+                </p>
+                <CodeBlock
+                  language="bash"
+                  code={'grit generate workflow Checkout --steps "charge,reserve_stock,book_courier,send_receipt"'}
+                />
+                <p>
+                  Each generated step returns an error until you write it. A stub that returned nil
+                  would be a saga reporting success and doing nothing, and the first you would hear
+                  of it is a customer saying the parcel never came.
+                </p>
+                <p>
+                  The parts that are easy to get wrong are the ones the engine takes a position on.{' '}
+                  <code>r.IdempotencyKey()</code> is stable across retries, because a crash between
+                  the charge and the record of it is not preventable and a provider that deduplicates
+                  on that key is what stops the second charge. What a step writes with{' '}
+                  <code>r.Set</code> survives even when that step then fails, because a charge id
+                  obtained just before a timeout is exactly what the refund needs. And a compensation
+                  that cannot complete leaves the run <code>stuck</code> rather than{' '}
+                  <code>compensated</code>: something happened that could not be taken back, and a
+                  status that reads as resolved would be a lie.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  A step you cannot undo declares <code>Undo: nil</code>, which is legitimate and
+                  makes the ordering the design: anything after it that fails leaves it done. See{' '}
+                  <a href="/docs/backend/sagas">Sagas</a>. This is a different thing from{' '}
+                  <a href="/docs/backend/workflows">workflows</a>, which turn a status column into a
+                  state machine; most projects want both.
+                </p>
+              </div>
+            </div>
+
             {/* v3.353.0 */}
             <div className="mb-12" id="v3.353.0">
               <div className="flex items-center gap-3 mb-4">

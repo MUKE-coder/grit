@@ -134,6 +134,7 @@ const navItems: NavItem[] = [
       { title: 'Invoices & Line Items', href: '/docs/backend/invoices' },
       { title: 'Append-only Records', href: '/docs/backend/append-only' },
       { title: 'Transactional Outbox', href: '/docs/backend/outbox' },
+      { title: 'Sagas', href: '/docs/backend/sagas' },
       { title: 'Product Variants', href: '/docs/backend/variants' },
       { title: 'Seeders', href: '/docs/backend/seeders' },
       { title: 'RBAC & Roles', href: '/docs/backend/rbac' },

@@ -97,6 +97,15 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 
 		filepath.Join(apiRoot, "internal", "models", "outbox_message.go"): apiOutboxModelGo(),
 
+		// Sagas: the engine, its tests, and the two tables. A set like the
+		// webhook cluster, and here rather than in the API map for the reason
+		// the outbox model is: a fix to the engine that reached new projects
+		// only would be no fix at all for the one app that has money moving
+		// through it.
+		filepath.Join(apiRoot, "internal", "saga", "saga.go"):       apiSagaGo(),
+		filepath.Join(apiRoot, "internal", "saga", "saga_test.go"):  apiSagaTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "saga_run.go"): apiSagaModelsGo(),
+
 		// The migration history, and the rollback computed from it. Here rather
 		// than with cmd/migrate because an existing project needs the package
 		// before its rewritten cmd/migrate can import it: split across the two

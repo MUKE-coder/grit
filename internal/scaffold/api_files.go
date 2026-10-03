@@ -166,6 +166,11 @@ func writeAPIFiles(root string, opts Options) error {
 	if err := writeFrameworkOwnedFiles(root, opts); err != nil {
 		return err
 	}
+	// The project's own sagas package, created once. The generator injects
+	// into it, so it is never rewritten.
+	if _, err := writeSagaRegistry(root, opts); err != nil {
+		return err
+	}
 
 	for path, content := range files {
 		// Replace module placeholder
@@ -1814,7 +1819,7 @@ func Models() []interface{} {
 		// AutoMigrate creates it and the backup writer includes it; an outbox
 		// missing from a backup loses events nobody knows were pending.
 		&OutboxMessage{},
-		// grit:models
+` + sagaModelRegistration + `		// grit:models
 	}
 }
 
@@ -6870,6 +6875,8 @@ import (
 	"` + "{{MODULE}}" + `/internal/events"
 	"` + "{{MODULE}}" + `/internal/health"
 	"` + "{{MODULE}}" + `/internal/llms"
+	"` + "{{MODULE}}" + `/internal/saga"
+	"` + "{{MODULE}}" + `/internal/sagas"
 	"` + "{{MODULE}}" + `/internal/paginate"
 	"` + "{{MODULE}}" + `/internal/handlers"
 	"` + "{{MODULE}}" + `/internal/settings"
@@ -7395,7 +7402,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// Durable subscribers are delivered from the outbox by this relay. Every
 	// replica runs one; row claims keep two from delivering a message twice.
 	events.StartRelay(db)
-
+` + sagaRuntimeBlock + `
 	// Settings: declare, then open the store. Declaring after Init would mean
 	// a setting the first cache load never saw.
 	settings.RegisterDefaults()

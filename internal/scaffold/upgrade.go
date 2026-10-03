@@ -135,6 +135,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeFrameworkOwnedFiles(root, opts); err != nil {
 			return fmt.Errorf("updating framework models: %w", err)
 		}
+		// The sagas package, for a project that predates it. Created once: it
+		// holds the developer's sagas and the generator injects into it.
+		if _, err := writeSagaRegistry(root, opts); err != nil {
+			fmt.Printf("  ⚠ adding the sagas package: %v\n", err)
+		}
 		if err := ensureRouteRegistry(root, opts); err != nil {
 			return fmt.Errorf("adding the route registry: %w", err)
 		}
@@ -667,6 +672,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		// whose eventBusStatus the handler is written.
 		if err := repairLLMSFiles(root, opts); err != nil {
 			fmt.Printf("  ⚠ mounting /llms.txt: %v\n", err)
+		}
+		// The saga tables and the runner. After the framework files, which
+		// deliver the engine these two lines reference.
+		if err := repairSagaWiring(root, opts); err != nil {
+			fmt.Printf("  ⚠ wiring the saga engine: %v\n", err)
 		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.

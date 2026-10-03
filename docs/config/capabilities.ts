@@ -279,6 +279,20 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
         },
       },
       {
+        id: 'sagas',
+        label: 'Distributed transactions (sagas)',
+        detail:
+          'Steps across systems with compensating actions, persisted so a crash resumes rather than leaving work half done.',
+        cells: {
+          grit: G('grit generate workflow writes the steps, the engine runs and compensates them'),
+          laravel: C('Packages exist; the common answer is queued jobs and hand-written rollback'),
+          django: C('django-saga and similar; usually hand-written'),
+          nextjs: C('Inngest, Temporal or Trigger.dev, as a hosted service'),
+          encore: B('Pub/Sub and workflows are framework primitives'),
+          express: C('Temporal or a hand-rolled state machine'),
+        },
+      },
+      {
         id: 'llms-txt',
         label: 'An index an AI agent can read',
         detail:

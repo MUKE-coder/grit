@@ -67,6 +67,8 @@ var reservedModels = map[string]string{
 	"BackupSchedule":   "backups",
 	"WebhookEvent":     "webhooks",
 	"OutboxMessage":    "the transactional outbox",
+	"SagaRun":          "the saga engine",
+	"SagaStep":         "the saga engine",
 }
 
 // CheckReservedName reports whether name collides with a model the scaffold
