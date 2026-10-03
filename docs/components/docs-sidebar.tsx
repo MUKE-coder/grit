@@ -241,6 +241,7 @@ const navItems: NavItem[] = [
     items: [
       { title: 'Scaling', href: '/docs/scaling' },
       { title: 'Stability & hardening', href: '/docs/stability' },
+      { title: 'Upgrading a project', href: '/docs/upgrades' },
       { title: 'Security Guide (OWASP)', href: '/docs/security' },
       { title: 'Roles & Permissions', href: '/docs/security/authorization' },
       { title: 'Enterprise SSO', href: '/docs/security/sso' },

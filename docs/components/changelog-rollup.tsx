@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "September 28 to October 4, 2026",
-    count: 21,
+    count: 22,
     entries: [
+      { version: "3.353.0", title: "The upgrade machinery is on the site" },
       { version: "3.352.0", title: "The MCP server has ten tools and two modes" },
       { version: "3.351.0", title: "llms.txt, for the framework and for the API you build with it" },
       { version: "3.350.0", title: "/api/health answers in four states, and reports storage" },

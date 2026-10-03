@@ -355,6 +355,11 @@ export const docsMetadata: Record<string, DocPage> = {
       "Let each customer's team sign in with their own identity provider. One OIDC connection per organisation, routed by email domain, configured at runtime in the admin: works with Okta, Entra ID, Auth0, Keycloak, Google Workspace, Ping and OneLogin. Users are provisioned on first login, roles are derived from IdP groups and re-applied on every sign-in, identities are linked by the provider's immutable subject rather than email, and client secrets are encrypted at rest and never returned by the API.",
   },
 
+  '/docs/upgrades': {
+    title: 'Upgrading a project',
+    description:
+      'grit upgrade brings an existing project up to the current templates without overwriting your edits: the manifest that knows which files are still Grit\'s, the 53 repairs that rewrite the files you share with it, and what travels on every upgrade.',
+  },
   '/docs/stability': {
     title: 'Stability and hardening matrix',
     description:

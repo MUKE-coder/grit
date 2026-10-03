@@ -959,6 +959,75 @@ export default function HomePage() {
       </section>
 
       {/* ═══ ARCHITECTURE ═══ */}
+      {/* ═══ UPGRADES ═══
+
+          The thing nothing else in this category does, and until now the only
+          place it appeared was a changelog entry. A scaffolder hands you code
+          once; this one keeps fixing the project it generated. */}
+      <section className="py-24 px-6 border-t border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">Upgrades</p>
+              <h2 className="text-3xl font-bold text-foreground mb-4">
+                The framework keeps<br />fixing your project
+              </h2>
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                A scaffolder gives you code once and then watches it rot. Every fix on the
+                changelog reaches projects that already exist: <code className="font-mono text-sm text-foreground">grit upgrade</code>{' '}
+                brings an app up to the current templates, and it knows which files you have
+                edited, so it never overwrites your work to do it.
+              </p>
+              <ul className="space-y-3 mb-8">
+                {[
+                  ['A hash per generated file', 'Pristine files are replaced. Files you edited are reported as a conflict and left exactly as they are.'],
+                  ['53 repairs for the files you share', 'routes.go and main.go carry your code and Grit’s. A repair rewrites the exact text Grit wrote, and when it finds something else it says so and changes nothing.'],
+                  ['Upgraded equals fresh', 'Each repair is tested against the file the previous release actually wrote, asserting the result is byte-for-byte what a new project gets today.'],
+                ].map(([title, body]) => (
+                  <li key={title} className="flex gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm text-muted-foreground leading-relaxed">
+                      <span className="text-foreground font-medium">{title}.</span> {body}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <Button variant="outline" className="border-border/60 text-foreground hover:bg-accent/30 rounded-full" asChild>
+                <Link href="/docs/upgrades">
+                  How upgrades work <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            </div>
+
+            <div className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
+              <div className="flex items-center gap-2 border-b border-border/40 px-4 py-2.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-red-400/60" />
+                <span className="h-2.5 w-2.5 rounded-full bg-yellow-400/60" />
+                <span className="h-2.5 w-2.5 rounded-full bg-green-400/60" />
+                <span className="ml-2 text-xs font-mono text-muted-foreground">grit upgrade</span>
+              </div>
+              <pre className="p-4 text-[11px] md:text-xs font-mono leading-relaxed overflow-x-auto">
+<span className="text-muted-foreground">  → Updating the media pipeline...</span>{'\n'}
+<span className="text-emerald-400">  ✓ apps/api/internal/routes/routes.go</span>{'\n'}
+<span className="text-muted-foreground">    /api/health answers ok, degraded, off or unknown per</span>{'\n'}
+<span className="text-muted-foreground">    component, reports storage, and merges anything</span>{'\n'}
+<span className="text-muted-foreground">    health.Register was given</span>{'\n'}
+<span className="text-amber-400">  ⚠ the verification email is not sent the way Grit wrote it</span>{'\n'}
+<span className="text-muted-foreground">    send it with dispatchMail rather than from a `go`</span>{'\n'}
+<span className="text-muted-foreground">    statement, so it is queued, retried and survives a restart</span>{'\n'}
+<span className="text-emerald-400">  ✓ Admin panel updated (177 files)</span>{'\n'}
+{'\n'}
+<span className="text-emerald-400">  ✓ Upgrade complete. Updated 485 files.</span>{'\n'}
+              </pre>
+              <p className="border-t border-border/40 px-4 py-3 text-xs text-muted-foreground">
+                The warning is the interesting half: Grit found code it did not write, so it
+                did not touch it, and told you what the fix would have been.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="py-24 px-6 border-t border-border/40 bg-card/30">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">

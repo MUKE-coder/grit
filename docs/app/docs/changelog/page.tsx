@@ -66,6 +66,41 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.353.0 */}
+            <div className="mb-12" id="v3.353.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.353.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The upgrade machinery is on the site</h3>
+                <p>
+                  The strongest thing this project does had no page. A scaffolder gives you code once
+                  and then watches it rot; this one keeps fixing the project it generated, and the
+                  only place that appeared was in changelog entries, which is to say nowhere a
+                  visitor looks.
+                </p>
+                <p>
+                  <a href="/docs/upgrades">Upgrading a project</a> is the detail: the manifest that
+                  records a hash per generated file, the three answers it gives (unchanged, modified,
+                  untracked) and the three behaviours they lead to, the 53 repairs that rewrite the
+                  files you share with Grit by matching the exact text it wrote, and what travels on
+                  every upgrade rather than only at scaffold time.
+                </p>
+                <p>
+                  Documentation only. Nothing in the framework changed.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The page also says the part that is easiest to miss: a warning from{' '}
+                  <code>grit upgrade</code> is the interesting half. Grit found code it did not
+                  write, so it did not touch it, and told you what the fix would have been and why.
+                </p>
+              </div>
+            </div>
+
             {/* v3.352.0 */}
             <div className="mb-12" id="v3.352.0">
               <div className="flex items-center gap-3 mb-4">
