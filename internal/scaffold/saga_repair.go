@@ -103,6 +103,15 @@ func repairSagaRuntimeSource(module string) func(string) (string, []string, []st
 			out = strings.Replace(out, routeAnchor, routeAnchor+sagaRoutesBlock, 1)
 			fixed = append(fixed, "the saga runs screen can read them at /api/v1/admin/sagas")
 		}
+
+		// The routes screen, on the same two anchors. It is a different feature
+		// and it is mounted in the same two places, so doing it in a second pass
+		// would mean matching text this one has already moved.
+		if !strings.Contains(out, "routeExplorerHandler :=") && strings.Contains(out, sagaHandlerBlock) {
+			out = strings.Replace(out, sagaHandlerBlock, sagaHandlerBlock+routeExplorerHandlerBlock, 1)
+			out = strings.Replace(out, sagaRoutesBlock, sagaRoutesBlock+routeExplorerRoutesBlock, 1)
+			fixed = append(fixed, "the routes screen can read the router's table at /api/v1/admin/routes")
+		}
 		return out, fixed, nil
 	}
 }

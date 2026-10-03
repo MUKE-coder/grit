@@ -7447,7 +7447,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	syncHandler := handlers.NewSyncHandler(db, syncRegistry)
 	// v3.31.68 — shared background CSV import status endpoint
 	importJobHandler := &handlers.ImportJobHandler{DB: db}
-` + sagaHandlerBlock + `	// v3.31.77 — full-database backups (weekly cron + manual + download)
+` + sagaHandlerBlock + `` + routeExplorerHandlerBlock + `	// v3.31.77 — full-database backups (weekly cron + manual + download)
 	backupHandler := &handlers.BackupHandler{DB: db, Storage: svc.Storage}
 	roleHandler := handlers.NewRoleHandler(db)
 	// Which scaling stage this deployment is at, measured rather than guessed.
@@ -7765,7 +7765,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		staff.GET("/admin/jobs/:status", middleware.RequireRole("ADMIN", "perm:jobs.view"), jobsHandler.ListByStatus)
 		staff.POST("/admin/jobs/:id/retry", middleware.RequireRole("ADMIN", "perm:jobs.edit"), jobsHandler.Retry)
 		staff.DELETE("/admin/jobs/queue/:queue", middleware.RequireRole("ADMIN", "perm:jobs.edit"), jobsHandler.ClearQueue)
-` + sagaRoutesBlock + `` + routesMailPreviewAnchor + routesMailPreview + `		staff.GET("/admin/security/summary", middleware.RequireRole("ADMIN", "perm:system.view"), securityHandler.Summary)
+` + sagaRoutesBlock + `` + routeExplorerRoutesBlock + `` + routesMailPreviewAnchor + routesMailPreview + `		staff.GET("/admin/security/summary", middleware.RequireRole("ADMIN", "perm:system.view"), securityHandler.Summary)
 		staff.GET("/admin/observability/summary", middleware.RequireRole("ADMIN", "perm:system.view"), observabilityHandler.Summary)
 		staff.GET("/admin/webhooks", middleware.RequireRole("ADMIN", "perm:system.view"), webhookHandler.List)
 		staff.GET("/admin/flags", middleware.RequireRole("ADMIN", "perm:system.view"), featureFlagHandler.List)

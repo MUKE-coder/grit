@@ -1,0 +1,105 @@
+package handlers
+
+import (
+	"net/http"
+	"sort"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+
+	"{{MODULE}}/internal/llms"
+)
+
+// RouteExplorerHandler serves the route table to the admin's Routes screen.
+//
+// # What it can say, and what it deliberately cannot
+//
+// The router knows a route's method, path and final handler, and that is what
+// this returns. It does not know which middleware a route is behind: Gin's
+// RouteInfo carries the last handler and nothing about the chain, so the
+// authorization level is not readable here at all.
+//
+// It would be easy to guess one from the path and wrong six times over in this
+// very project: /api/v1/auth/me and the passkey endpoints are under /auth/ and
+// every one of them needs a signed-in user. An access column that is wrong is
+// worse than no access column, because somebody will read it as a security
+// statement. So the screen shows what is true and says where the rest is:
+// `grit routes` in a terminal parses routes.go and reports the real group and
+// the permission each route wants.
+type RouteExplorerHandler struct {
+	// Engine is the router itself. The one handler in the project that holds it,
+	// because the table is the thing being served.
+	Engine *gin.Engine
+}
+
+// routeRow is one route, as the screen renders it.
+type routeRow struct {
+	Method string `json:"method"`
+	Path   string `json:"path"`
+	// Handler is the function the route ends at, as the router names it. It is
+	// the honest answer to "what runs" and it is not documentation.
+	Handler string `json:"handler,omitempty"`
+	// Group is what the route is about, read from the path. It is a heading, not
+	// a permission.
+	Group string `json:"group"`
+}
+
+// List returns every registered route.
+//
+// Unpaginated on purpose. It is a few hundred rows of three short strings, the
+// screen filters in the browser so typing is instant, and a page of routes that
+// needed a second request to find the next one would be slower to use than the
+// terminal command it exists to replace.
+func (h *RouteExplorerHandler) List(c *gin.Context) {
+	if h.Engine == nil {
+		c.JSON(http.StatusOK, gin.H{"data": []routeRow{}, "count": 0})
+		return
+	}
+
+	method := strings.ToUpper(strings.TrimSpace(c.Query("method")))
+	contains := strings.ToLower(strings.TrimSpace(c.Query("contains")))
+
+	infos := h.Engine.Routes()
+	out := make([]routeRow, 0, len(infos))
+	for _, info := range infos {
+		if method != "" && info.Method != method {
+			continue
+		}
+		if contains != "" && !strings.Contains(strings.ToLower(info.Path), contains) {
+			continue
+		}
+		out = append(out, routeRow{
+			Method:  info.Method,
+			Path:    info.Path,
+			Handler: llms.ShortHandlerName(info.Handler),
+			Group:   llms.GroupOf(info.Path),
+		})
+	}
+
+	// Alphabetical within the API, and the mounted dashboards last. They are
+	// the biggest group by a distance, 130 of the routes in a fresh project, and
+	// they are somebody else's: the reference, the profiler, the database
+	// browser. Sorting them first put the least useful thing at the top of the
+	// page.
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Group != out[j].Group {
+			iMounted, jMounted := out[i].Group == llms.GroupMounted, out[j].Group == llms.GroupMounted
+			if iMounted != jMounted {
+				return jMounted
+			}
+			return out[i].Group < out[j].Group
+		}
+		if out[i].Path != out[j].Path {
+			return out[i].Path < out[j].Path
+		}
+		return out[i].Method < out[j].Method
+	})
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  out,
+		"count": len(out),
+		"note": "Method, path and handler come from the router. Which middleware a route sits " +
+			"behind is not readable at runtime, so there is no access column here: run `grit routes` " +
+			"for the real group and the permission each route wants.",
+	})
+}

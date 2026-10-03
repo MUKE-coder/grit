@@ -149,7 +149,17 @@ func Full(cfg Config, routes []Route) string {
 	for name := range grouped {
 		names = append(names, name)
 	}
-	sort.Strings(names)
+	// Alphabetical within the API, and the mounted dashboards last. They are the
+	// biggest group by a distance and they are somebody else's: the reference,
+	// the profiler, the database browser. A reader scanning for an endpoint of
+	// this application should not wade through them first.
+	sort.Slice(names, func(i, j int) bool {
+		iMounted, jMounted := names[i] == GroupMounted, names[j] == GroupMounted
+		if iMounted != jMounted {
+			return jMounted
+		}
+		return names[i] < names[j]
+	})
 
 	for _, name := range names {
 		rs := grouped[name]
@@ -178,9 +188,14 @@ func Full(cfg Config, routes []Route) string {
 //
 // Anything outside /api is something this app mounts rather than part of its
 // API: the reference, the database browser, the dashboards, static files.
+// GroupMounted is the group for anything outside /api: the reference, the
+// profiler, the database browser, static files. Named because two files sort
+// on it and a typo in one of them would silently stop matching.
+const GroupMounted = "Mounted dashboards and static files"
+
 func GroupOf(path string) string {
 	if !strings.HasPrefix(path, "/api/") {
-		return "Mounted dashboards and static files"
+		return GroupMounted
 	}
 	parts := strings.Split(strings.Trim(path, "/"), "/")
 	// parts[0] is "api". Drop a version segment after it, so /api/v1/users and
@@ -204,6 +219,47 @@ func isVersion(segment string) bool {
 		return false
 	}
 	for _, r := range segment[1:] {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+// ShortHandlerName turns what Gin records, which is a fully qualified function
+// name with a closure suffix, into the part worth reading:
+// "acme/apps/api/internal/handlers.(*UserHandler).List-fm" becomes
+// "UserHandler.List".
+//
+// Here rather than in routes.go because two things name handlers now, this file
+// and the routes explorer, and two spellings of the same handler in two places
+// is a difference somebody would try to explain.
+func ShortHandlerName(full string) string {
+	name := full
+	if i := strings.LastIndex(name, "/"); i >= 0 {
+		name = name[i+1:]
+	}
+	name = strings.TrimSuffix(name, "-fm")
+	// Drop the package qualifier and the pointer receiver's punctuation.
+	if i := strings.Index(name, "."); i >= 0 {
+		name = name[i+1:]
+	}
+	name = strings.ReplaceAll(name, "(*", "")
+	name = strings.ReplaceAll(name, ")", "")
+	// An anonymous handler ends in func1, func2 and so on, which names nothing:
+	// a closure declared inside Setup arrives here as "Setup.func1".
+	if last := name[strings.LastIndex(name, ".")+1:]; name == "" || isAnonymous(last) {
+		return ""
+	}
+	return name
+}
+
+// isAnonymous reports whether a name segment is Go's funcN for a closure.
+func isAnonymous(segment string) bool {
+	if !strings.HasPrefix(segment, "func") || len(segment) == len("func") {
+		return false
+	}
+	for _, r := range segment[len("func"):] {
 		if r < '0' || r > '9' {
 			return false
 		}

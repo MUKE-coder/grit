@@ -184,7 +184,7 @@ func TestTheSagaRepairMountsTheScreenToo(t *testing.T) {
 	// A project with the handler file and no routes has an admin page that
 	// answers 404, which looks broken rather than absent.
 	out, fixed, warn := repairSagaRuntimeSource("demo")(preSagaScreenRoutes(t))
-	if len(warn) > 0 || len(fixed) != 2 {
+	if len(warn) > 0 || len(fixed) != 3 {
 		t.Fatalf("fixed %v, warned %v", fixed, warn)
 	}
 	for _, want := range []string{"sagaHandler := &handlers.SagaHandler{DB: db}", `staff.GET("/admin/sagas"`} {
@@ -197,10 +197,50 @@ func TestTheSagaRepairMountsTheScreenToo(t *testing.T) {
 // preSagaScreenRoutes is routes.go with neither the runner nor the screen.
 func preSagaScreenRoutes(t *testing.T) string {
 	t.Helper()
-	old := strings.Replace(preSagaRoutes(t), sagaHandlerBlock, "", 1)
-	old = strings.Replace(old, sagaRoutesBlock, "", 1)
+	old := strings.Replace(preSagaRoutes(t), sagaHandlerBlock+routeExplorerHandlerBlock, "", 1)
+	old = strings.Replace(old, sagaRoutesBlock+routeExplorerRoutesBlock, "", 1)
 	if strings.Contains(old, "sagaHandler :=") {
 		t.Fatal("could not rebuild routes.go from before the saga screen")
 	}
 	return old
+}
+
+func TestTheRoutesScreenIsMountedAndReachable(t *testing.T) {
+	routes := apiRoutesGo()
+	for _, want := range []string{
+		"routeExplorerHandler := &handlers.RouteExplorerHandler{Engine: r}",
+		`staff.GET("/admin/routes"`,
+	} {
+		if !strings.Contains(routes, want) {
+			t.Errorf("a fresh routes.go is missing %q", want)
+		}
+	}
+	if !strings.Contains(adminSystemHubPageV2(), `href: "/system/routes"`) {
+		t.Error("the System Hub has no tile for the routes screen, so nothing links to it")
+	}
+	// No access column, and the page says why. A level guessed from the path is
+	// wrong for /api/v1/auth/me and every passkey endpoint, and somebody would
+	// read it as a security statement.
+	page := adminRoutesPage()
+	if !strings.Contains(page, "no access column") {
+		t.Error("the routes page does not explain the missing access column")
+	}
+	if !strings.Contains(page, "grit routes") {
+		t.Error("the routes page does not point at the command that does know")
+	}
+}
+
+func TestTheRepairMountsTheRoutesScreenToo(t *testing.T) {
+	out, fixed, warn := repairSagaRuntimeSource("demo")(preSagaScreenRoutes(t))
+	if len(warn) > 0 || len(fixed) != 3 {
+		t.Fatalf("fixed %v, warned %v", fixed, warn)
+	}
+	for _, want := range []string{"routeExplorerHandler := &handlers.RouteExplorerHandler{Engine: r}", `staff.GET("/admin/routes"`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the repaired routes.go is missing %q", want)
+		}
+	}
+	if again, fixed, _ := repairSagaRuntimeSource("demo")(out); again != out || len(fixed) > 0 {
+		t.Error("a second upgrade mounted it again")
+	}
 }

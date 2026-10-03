@@ -58,7 +58,7 @@ func registerLLMSFiles(r *gin.Engine, cfg *config.Config) {
 			out = append(out, llms.Route{
 				Method:  info.Method,
 				Path:    info.Path,
-				Handler: shortHandlerName(info.Handler),
+				Handler: llms.ShortHandlerName(info.Handler),
 			})
 		}
 		return out
@@ -70,42 +70,5 @@ func registerLLMSFiles(r *gin.Engine, cfg *config.Config) {
 	r.GET("/llms-full.txt", func(c *gin.Context) {
 		c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte(llms.Full(conf, table())))
 	})
-}
-
-// shortHandlerName turns what Gin records, which is a fully qualified function
-// name with a closure suffix, into the part worth reading:
-// "acme/apps/api/internal/handlers.(*UserHandler).List-fm" becomes
-// "UserHandler.List".
-func shortHandlerName(full string) string {
-	name := full
-	if i := strings.LastIndex(name, "/"); i >= 0 {
-		name = name[i+1:]
-	}
-	name = strings.TrimSuffix(name, "-fm")
-	// Drop the package qualifier and the pointer receiver's punctuation.
-	if i := strings.Index(name, "."); i >= 0 {
-		name = name[i+1:]
-	}
-	name = strings.ReplaceAll(name, "(*", "")
-	name = strings.ReplaceAll(name, ")", "")
-	// An anonymous handler ends in func1, func2 and so on, which names nothing:
-	// a closure declared inside Setup arrives here as "Setup.func1".
-	if last := name[strings.LastIndex(name, ".")+1:]; name == "" || isAnonymous(last) {
-		return ""
-	}
-	return name
-}
-
-// isAnonymous reports whether a name segment is Go's funcN for a closure.
-func isAnonymous(segment string) bool {
-	if !strings.HasPrefix(segment, "func") || len(segment) == len("func") {
-		return false
-	}
-	for _, r := range segment[len("func"):] {
-		if r < '0' || r > '9' {
-			return false
-		}
-	}
-	return true
 }
 `

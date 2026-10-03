@@ -144,3 +144,19 @@ func TestNeitherFileNamesASecret(t *testing.T) {
 		}
 	}
 }
+
+func TestTheMountedDashboardsComeLast(t *testing.T) {
+	// They are the biggest group by a distance, 130 of the routes in a fresh
+	// project, and they are somebody else's: the reference, the profiler, the
+	// database browser. Sorted alphabetically they came first, which put the
+	// least useful thing at the top of the file.
+	out := Full(testConfig(), []Route{
+		{Method: "GET", Path: "/studio", Handler: "studio.Handler"},
+		{Method: "GET", Path: "/api/v1/users", Handler: "UserHandler.List"},
+	})
+	mounted := strings.Index(out, "## "+GroupMounted)
+	users := strings.Index(out, "## users")
+	if mounted < 0 || users < 0 || mounted < users {
+		t.Errorf("the mounted dashboards are not last (mounted at %d, users at %d)", mounted, users)
+	}
+}

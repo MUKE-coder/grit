@@ -212,6 +212,224 @@ export function useCronTasks() {
 // that was supposed to be taken back. Without this screen the only way to find
 // one is SQL against saga_runs, which means nobody finds one until a customer
 // complains.
+// adminRoutesPage is the route table in a browser.
+//
+// `grit routes` has printed it in a terminal for a long time and remains the
+// fuller answer, because the CLI parses routes.go and can report the middleware
+// group and the permission each route wants. What nothing provided was a
+// searchable version for somebody already in the admin, looking for the URL of
+// an endpoint they are about to call.
+func adminRoutesPage() string {
+	return `"use client";
+
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { PageHeader } from "@/components/chrome/PageHeader";
+import { apiClient, API_URL } from "@/lib/api-client";
+import { inputClasses } from "@/components/ui/input";
+import { Search, Copy, Check, Server, Loader2 } from "@/lib/icons";
+
+interface Route {
+  method: string;
+  path: string;
+  handler?: string;
+  group: string;
+}
+
+interface RoutesResponse {
+  data: Route[];
+  count: number;
+  note?: string;
+}
+
+const METHOD_TONE: Record<string, string> = {
+  GET: "border-info/30 bg-info/10 text-info",
+  POST: "border-success/30 bg-success/10 text-success",
+  PUT: "border-warning/30 bg-warning/10 text-warning",
+  PATCH: "border-warning/30 bg-warning/10 text-warning",
+  DELETE: "border-danger/30 bg-danger/10 text-danger",
+};
+
+const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
+
+// A curl for the route, with the path parameters left as they are written. A
+// command with :id still in it is obviously a template; one with a plausible
+// fake id in it is the kind of thing people paste without reading.
+function curlFor(route: Route): string {
+  const url = API_URL.replace(/\/$/, "") + route.path;
+  const parts = ["curl -X " + route.method, '"' + url + '"'];
+  if (route.method !== "GET" && route.method !== "DELETE") {
+    parts.push('-H "Content-Type: application/json"');
+    parts.push("-d '{}'");
+  }
+  parts.push('-H "Authorization: Bearer $TOKEN"');
+  return parts.join(" \\\n  ");
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        } catch {
+          // A browser that refuses the clipboard, usually because the page is
+          // not on https. Saying nothing is better than an error for something
+          // the person can still select by hand.
+        }
+      }}
+      title="Copy as curl"
+      className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-1 text-[11px] text-text-muted hover:bg-bg-hover hover:text-foreground"
+    >
+      {copied ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+      {copied ? "copied" : "curl"}
+    </button>
+  );
+}
+
+export default function RoutesPage() {
+  const [query, setQuery] = useState("");
+  const [method, setMethod] = useState<string>("");
+
+  const { data, isLoading } = useQuery<RoutesResponse>({
+    queryKey: ["system-routes"],
+    queryFn: async () => {
+      const { data } = await apiClient.get<RoutesResponse>("/api/admin/routes");
+      return data;
+    },
+    // The table changes when the binary does, which is not while somebody is
+    // looking at it.
+    staleTime: 5 * 60_000,
+  });
+
+  // Filtered in the browser rather than by refetching: it is a few hundred rows
+  // of three short strings, and typing should not wait on a round trip.
+  const routes = useMemo(() => {
+    const all = data?.data ?? [];
+    const q = query.trim().toLowerCase();
+    return all.filter((r) => {
+      if (method && r.method !== method) return false;
+      if (!q) return true;
+      return (
+        r.path.toLowerCase().includes(q) ||
+        (r.handler ?? "").toLowerCase().includes(q) ||
+        r.group.toLowerCase().includes(q)
+      );
+    });
+  }, [data, query, method]);
+
+  const groups = useMemo(() => {
+    const out = new Map<string, Route[]>();
+    for (const route of routes) {
+      const list = out.get(route.group);
+      if (list) list.push(route);
+      else out.set(route.group, [route]);
+    }
+    return [...out.entries()];
+  }, [routes]);
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Routes"
+        subtitle="Every endpoint this API serves, from the router itself."
+      />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[16rem]">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Filter by path, handler or group"
+            // inputClasses rather than a className of its own, so a project that
+            // runs grit swap input gets this field too.
+            className={inputClasses({ className: "pl-9" })}
+          />
+        </div>
+        {METHODS.map((m) => (
+          <button
+            key={m}
+            onClick={() => setMethod(method === m ? "" : m)}
+            className={
+              "rounded-full border px-2.5 py-1 text-xs font-semibold " +
+              (method === m ? METHOD_TONE[m] : "border-border text-text-secondary hover:bg-bg-hover")
+            }
+          >
+            {m}
+          </button>
+        ))}
+        <span className="text-xs text-text-muted">
+          {routes.length} of {data?.count ?? 0}
+        </span>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-sm text-text-muted">
+          <Loader2 className="h-4 w-4 animate-spin" /> Reading the route table
+        </div>
+      ) : groups.length === 0 ? (
+        <div className="rounded-xl border border-border bg-bg-secondary p-8 text-center">
+          <Server className="mx-auto h-8 w-8 text-text-muted" />
+          <p className="mt-3 text-sm font-semibold text-foreground">Nothing matches</p>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {groups.map(([group, rows]) => (
+            <section key={group}>
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
+                {group} <span className="font-mono normal-case opacity-70">{rows.length}</span>
+              </h2>
+              <div className="overflow-hidden rounded-xl border border-border">
+                <table className="w-full text-sm">
+                  <tbody className="divide-y divide-border">
+                    {rows.map((route) => (
+                      <tr key={route.method + route.path} className="hover:bg-bg-hover">
+                        <td className="w-24 px-3 py-2">
+                          <span
+                            className={
+                              "inline-flex rounded border px-1.5 py-0.5 font-mono text-[11px] font-semibold " +
+                              (METHOD_TONE[route.method] ?? "border-border text-text-secondary")
+                            }
+                          >
+                            {route.method}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 font-mono text-xs text-foreground">{route.path}</td>
+                        <td className="px-3 py-2 text-right font-mono text-[11px] text-text-muted">
+                          {route.handler}
+                        </td>
+                        <td className="w-20 px-3 py-2 text-right">
+                          <CopyButton text={curlFor(route)} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
+
+      <p className="max-w-3xl text-xs text-text-muted">
+        Method, path and handler come from the router. There is no access column
+        because the router does not know one: it carries a route&apos;s last handler and
+        nothing about the middleware in front of it, and a level guessed from the path
+        would be wrong for every endpoint under /auth/ that needs a session. Run{" "}
+        <code className="font-mono">grit routes</code> for the real group and the permission
+        each route wants, or open <code className="font-mono">/docs</code> for the full
+        reference with a request console.
+      </p>
+    </div>
+  );
+}
+`
+}
+
 func adminSagasPage() string {
 	return `"use client";
 

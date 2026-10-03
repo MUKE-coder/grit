@@ -258,7 +258,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import {
   Activity, Bell, Calendar, Database, FileText, Mail,
-  MessageSquare, Settings, Shield, TrendingUp, Upload, Link as LinkIcon, Workflow,
+  MessageSquare, Settings, Shield, TrendingUp, Upload, Link as LinkIcon, Workflow, Server,
 } from "@/lib/icons";
 
 interface SystemTile {
@@ -272,6 +272,7 @@ interface SystemTile {
 const TILES: SystemTile[] = [
   { href: "/system/jobs",         title: "Background Jobs",  description: "Queue depth, in-flight workers, dead-letter queue.",       icon: <Database className="h-5 w-5" />,     tone: "default" },
   { href: "/system/sagas",        title: "Sagas",            description: "Multi-step processes, and the ones whose undo could not be completed.", icon: <Workflow className="h-5 w-5" />,     tone: "warning" },
+  { href: "/system/routes",       title: "Routes",           description: "Every endpoint this API serves, searchable, with a curl for each.",  icon: <Server className="h-5 w-5" />,       tone: "default" },
   { href: "/system/files",        title: "File Storage",     description: "Browse uploads, manage retention, audit usage.",            icon: <Upload className="h-5 w-5" />,       tone: "default" },
   { href: "/system/cron",         title: "Cron Schedules",   description: "Recurring jobs, next-run times, run history.",              icon: <Calendar className="h-5 w-5" />,     tone: "default" },
   { href: "/system/mail",         title: "Mail Preview",     description: "Every email template, rendered by the API.",       icon: <Mail className="h-5 w-5" />,         tone: "default" },

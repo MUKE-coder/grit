@@ -102,12 +102,13 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// the outbox model is: a fix to the engine that reached new projects
 		// only would be no fix at all for the one app that has money moving
 		// through it.
-		filepath.Join(apiRoot, "internal", "saga", "saga.go"):          apiSagaGo(),
-		filepath.Join(apiRoot, "internal", "saga", "saga_test.go"):     apiSagaTestGo(),
-		filepath.Join(apiRoot, "internal", "models", "saga_run.go"):    apiSagaModelsGo(),
-		filepath.Join(apiRoot, "internal", "services", "saga.go"):      apiSagaServiceGo(),
-		filepath.Join(apiRoot, "internal", "services", "saga_test.go"): apiSagaServiceTestGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "saga.go"):      apiSagaHandlerGo(),
+		filepath.Join(apiRoot, "internal", "saga", "saga.go"):                apiSagaGo(),
+		filepath.Join(apiRoot, "internal", "saga", "saga_test.go"):           apiSagaTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "saga_run.go"):          apiSagaModelsGo(),
+		filepath.Join(apiRoot, "internal", "services", "saga.go"):            apiSagaServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "saga_test.go"):       apiSagaServiceTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "saga.go"):            apiSagaHandlerGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "routes_explorer.go"): apiRouteExplorerHandlerGo(),
 
 		// The migration history, and the rollback computed from it. Here rather
 		// than with cmd/migrate because an existing project needs the package

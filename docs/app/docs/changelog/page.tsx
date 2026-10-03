@@ -66,6 +66,47 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.356.0 */}
+            <div className="mb-12" id="v3.356.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.356.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The route table, in the browser</h3>
+                <p>
+                  <code>grit routes</code> has printed it in a terminal for a long time and remains
+                  the fuller answer, because the CLI parses <code>routes.go</code> and can report
+                  the middleware group and the permission each route wants. What nothing provided
+                  was a searchable version for somebody already in the admin, looking for the URL of
+                  an endpoint they are about to call.
+                </p>
+                <p>
+                  <code>/system/routes</code> lists every registered route grouped by what it is
+                  about, filtered as you type, with a copy-as-curl on each row. The API&apos;s own
+                  endpoints come first and the mounted dashboards last: the reference, the profiler
+                  and the database browser are 130 of the 298 routes in a fresh project and they are
+                  somebody else&apos;s.
+                </p>
+                <p>
+                  There is deliberately <strong>no access column</strong>. Gin&apos;s route table
+                  carries a route&apos;s last handler and nothing about the middleware in front of
+                  it, so the authorization level is not readable at runtime at all. A level guessed
+                  from the path would be wrong for <code>/api/v1/auth/me</code> and all six passkey
+                  endpoints, which sit under <code>/auth/</code> and every one of them needs a
+                  signed-in user, and somebody would read that as a security statement. The page
+                  says so and points at the command that does know.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  <code>/llms-full.txt</code> now orders its route listing the same way, since it
+                  was sorting the same 130 mounted routes to the top of the file.
+                </p>
+              </div>
+            </div>
+
             {/* v3.355.0 */}
             <div className="mb-12" id="v3.355.0">
               <div className="flex items-center gap-3 mb-4">
