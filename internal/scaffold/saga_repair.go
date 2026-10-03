@@ -85,6 +85,24 @@ func repairSagaRuntimeSource(module string) func(string) (string, []string, []st
 				return src, nil, []string{"could not add the saga imports to routes.go, so the runner was not started"}
 			}
 		}
-		return out, []string{"sagas are registered and a runner advances them, so a generated workflow actually runs"}, nil
+		fixed := []string{"sagas are registered and a runner advances them, so a generated workflow actually runs"}
+
+		// The screen's endpoints, in the same pass. A project with the handler
+		// file and no routes has an admin page that answers 404, which is a
+		// worse state than not having the page: it looks broken rather than
+		// absent.
+		const handlerAnchor = "\timportJobHandler := &handlers.ImportJobHandler{DB: db}\n"
+		const routeAnchor = "\t\tstaff.DELETE(\"/admin/jobs/queue/:queue\", middleware.RequireRole(\"ADMIN\", \"perm:jobs.edit\"), jobsHandler.ClearQueue)\n"
+		switch {
+		case strings.Contains(out, "sagaHandler :="):
+			// Already there.
+		case strings.Count(out, handlerAnchor) != 1 || strings.Count(out, routeAnchor) != 1:
+			fixed = append(fixed, "the saga runs screen has no endpoints: routes.go is not where Grit left it, so mount sagaHandler by hand or /system/sagas will answer 404")
+		default:
+			out = strings.Replace(out, handlerAnchor, handlerAnchor+sagaHandlerBlock, 1)
+			out = strings.Replace(out, routeAnchor, routeAnchor+sagaRoutesBlock, 1)
+			fixed = append(fixed, "the saga runs screen can read them at /api/v1/admin/sagas")
+		}
+		return out, fixed, nil
 	}
 }

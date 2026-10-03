@@ -66,6 +66,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.355.0 */}
+            <div className="mb-12" id="v3.355.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.355.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The saga runs screen</h3>
+                <p>
+                  v3.354.0 shipped the engine and no way to look at it. A run that goes{' '}
+                  <code>stuck</code> is one whose compensation failed past its attempts, so there is
+                  a charge, a reservation or a booking still standing that was supposed to be taken
+                  back, and the only way to find one was SQL against <code>saga_runs</code>. That
+                  means nobody finds one until a customer complains.
+                </p>
+                <p>
+                  <code>/system/sagas</code> lists every run with its status, filtered by chips that
+                  carry the counts, and a banner at the top when anything is stuck. Opening a run
+                  shows its steps in order with the error that stopped each one, and a stuck run gets
+                  a Retry button: it resumes compensating from the step it stopped on, because the
+                  thing that could not be undone is still not undone.
+                </p>
+                <p>
+                  Retry refuses a run that is not stuck, and says why. A running one needs no help
+                  and a finished one has nothing left to do, so retrying either would re-run work
+                  that already happened.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The status chips carry what each word means on hover, because{' '}
+                  <code>compensated</code> reads as a failure and is the opposite: a step failed and
+                  everything before it was undone, so the world is back where it started. See{' '}
+                  <a href="/docs/backend/sagas">Sagas</a>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.354.0 */}
             <div className="mb-12" id="v3.354.0">
               <div className="flex items-center gap-3 mb-4">

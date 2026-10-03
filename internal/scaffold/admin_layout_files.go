@@ -368,6 +368,9 @@ export {
   // v3.336.0 — the scaling readiness panel on /system/observability.
   Circle,
   CircleDashed,
+  // v3.355.0 — the saga runs screen. Note again: being in the iconMap above
+  // does NOT make an icon importable. It has to be listed here too.
+  Workflow,
 };
 `
 }

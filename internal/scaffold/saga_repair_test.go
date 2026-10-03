@@ -151,3 +151,56 @@ func TestTheSagasPackageIsCreatedOnceAndNeverRewritten(t *testing.T) {
 		t.Error("the developer's registry was overwritten")
 	}
 }
+
+func TestTheSagaScreenIsMountedAndReachable(t *testing.T) {
+	routes := apiRoutesGo()
+	for _, want := range []string{
+		"sagaHandler := &handlers.SagaHandler{DB: db}",
+		`staff.GET("/admin/sagas"`,
+		`staff.POST("/admin/sagas/:id/retry"`,
+		`staff.GET("/admin/sagas/definitions"`,
+	} {
+		if !strings.Contains(routes, want) {
+			t.Errorf("a fresh routes.go is missing %q", want)
+		}
+	}
+	// The page, the System Hub tile and the icon. An icon in the map above the
+	// export block is not importable, which is the trap this one walked into:
+	// Workflow was in iconMap and not exported, so the page would not compile.
+	if !strings.Contains(adminSagasPage(), `from "@/lib/icons"`) {
+		t.Error("the sagas page does not import its icons")
+	}
+	icons := adminIconMap()
+	exportAt := strings.Index(icons, "export {")
+	if exportAt < 0 || !strings.Contains(icons[exportAt:], "Workflow,") {
+		t.Error("Workflow is not a named export of lib/icons, so the sagas page will not compile")
+	}
+	if !strings.Contains(adminSystemHubPageV2(), `href: "/system/sagas"`) {
+		t.Error("the System Hub has no tile for the sagas screen, so nothing links to it")
+	}
+}
+
+func TestTheSagaRepairMountsTheScreenToo(t *testing.T) {
+	// A project with the handler file and no routes has an admin page that
+	// answers 404, which looks broken rather than absent.
+	out, fixed, warn := repairSagaRuntimeSource("demo")(preSagaScreenRoutes(t))
+	if len(warn) > 0 || len(fixed) != 2 {
+		t.Fatalf("fixed %v, warned %v", fixed, warn)
+	}
+	for _, want := range []string{"sagaHandler := &handlers.SagaHandler{DB: db}", `staff.GET("/admin/sagas"`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the repaired routes.go is missing %q", want)
+		}
+	}
+}
+
+// preSagaScreenRoutes is routes.go with neither the runner nor the screen.
+func preSagaScreenRoutes(t *testing.T) string {
+	t.Helper()
+	old := strings.Replace(preSagaRoutes(t), sagaHandlerBlock, "", 1)
+	old = strings.Replace(old, sagaRoutesBlock, "", 1)
+	if strings.Contains(old, "sagaHandler :=") {
+		t.Fatal("could not rebuild routes.go from before the saga screen")
+	}
+	return old
+}

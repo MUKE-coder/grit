@@ -29,7 +29,7 @@ import { SYSTEM_NAV, INTERNAL_ICON } from "@/components/chrome/CollapsibleSideba
 import {
   Activity, Bell, Calendar, Database, FileText, Mail,
   MessageSquare, Shield, ShieldCheck, TrendingUp, Upload, Link as LinkIcon,
-  UserCheck, Settings, LayoutGrid, KeyRound,
+  UserCheck, Settings, LayoutGrid, KeyRound, Workflow,
 } from "@/lib/icons";
 
 // Every operational surface is grouped under one of these tabs. The whole
@@ -70,6 +70,7 @@ const TILES: SystemTile[] = [
   { href: "/system/performance",   category: "Operations", title: "Performance",     description: "Four Google SRE golden signals — latency, traffic, errors, saturation.", icon: <TrendingUp className="h-5 w-5" /> },
   { href: "/system/observability", category: "Operations", title: "Observability",   description: "Pulse summary — latency, SLOs, top N+1, runtime.",                        icon: <TrendingUp className="h-5 w-5" /> },
   { href: "/system/jobs",          category: "Operations", title: "Background Jobs",  description: "Queue depth, in-flight workers, dead-letter queue.",                      icon: <Database className="h-5 w-5" /> , module: "jobs" },
+  { href: "/system/sagas",         category: "Operations", title: "Sagas",           description: "Multi-step processes, and the ones whose undo could not be completed.", icon: <Workflow className="h-5 w-5" /> },
   { href: "/system/cron",          category: "Operations", title: "Cron Schedules",  description: "Recurring jobs, next-run times, run history.",                            icon: <Calendar className="h-5 w-5" /> , module: "cron" },
   { href: "/system/activity",      category: "Operations", title: "User Activity",   description: "Auth events, writes, operator actions with IP + severity.",               icon: <Activity className="h-5 w-5" /> , module: "audit" },
   // ── Security & Access ───────────────────────────────────────────────────

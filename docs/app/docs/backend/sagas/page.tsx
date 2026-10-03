@@ -170,6 +170,20 @@ export default function SagasPage() {
                 fix.
               </p>
 
+              <h2>Finding a stuck run</h2>
+              <p>
+                The admin has a screen at <code>/system/sagas</code>: every run, filtered by
+                status, with its steps in order and the error that stopped each one. A stuck run
+                gets a Retry button, which is the only state where a person pressing something is
+                the right answer. It resumes compensating from the step it stopped on, because the
+                thing that could not be undone is still not undone and whoever fixed the refund API
+                wants that same undo attempted again.
+              </p>
+              <p>
+                Without the screen the only way to find a stuck run is SQL against{' '}
+                <code>saga_runs</code>, which means nobody finds one until a customer complains.
+              </p>
+
               <h2>Not the same as a workflow field</h2>
               <p>
                 <a href="/docs/backend/workflows">Workflows</a> turn a status column into a state

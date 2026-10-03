@@ -80,3 +80,28 @@ func writeSagaRegistry(root string, opts Options) (bool, error) {
 	path := filepath.Join(opts.APIRoot(root), "internal", "sagas", "sagas.go")
 	return createIfMissing(path, strings.ReplaceAll(apiSagasRegistryGo(), "{{MODULE}}", opts.Module()))
 }
+
+// apiSagaServiceGo emits internal/services/saga.go, the read side of the two
+// tables plus the one write an operator needs.
+func apiSagaServiceGo() string { return tmpl("api/services/saga.go") }
+
+// apiSagaHandlerGo emits internal/handlers/saga.go.
+func apiSagaHandlerGo() string { return tmpl("api/handlers/saga.go") }
+
+// apiSagaServiceTestGo emits internal/services/saga_test.go.
+func apiSagaServiceTestGo() string { return tmpl("api/services/saga_test.go") }
+
+// sagaHandlerBlock builds the handler, beside the other system handlers.
+const sagaHandlerBlock = `	// The saga runs screen. A run that goes stuck needs a person, and without a
+	// screen the only way to find one is SQL against saga_runs.
+	sagaHandler := &handlers.SagaHandler{DB: db}
+`
+
+// sagaRoutesBlock mounts the screen's endpoints, under the same guard as the
+// jobs screen: these rows carry what a saga was started with, which for a
+// checkout is an order id and for an onboarding is somebody's email.
+const sagaRoutesBlock = `		staff.GET("/admin/sagas", middleware.RequireRole("ADMIN", "perm:jobs.view"), sagaHandler.List)
+		staff.GET("/admin/sagas/definitions", middleware.RequireRole("ADMIN", "perm:jobs.view"), sagaHandler.Definitions)
+		staff.GET("/admin/sagas/:id", middleware.RequireRole("ADMIN", "perm:jobs.view"), sagaHandler.GetByID)
+		staff.POST("/admin/sagas/:id/retry", middleware.RequireRole("ADMIN", "perm:jobs.edit"), sagaHandler.Retry)
+`

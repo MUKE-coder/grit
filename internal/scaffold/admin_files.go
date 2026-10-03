@@ -458,7 +458,8 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "components", "forms", "word-editor.tsx"):                       adminWordEditor(),
 
 		// System pages — under (dashboard) route group
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "jobs", "page.tsx"): adminJobsPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "jobs", "page.tsx"):  adminJobsPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "sagas", "page.tsx"): adminSagasPage(),
 		// v3.31.77 — full-database backups (weekly cron + manual + download)
 		filepath.Join(adminRoot, "hooks", "use-backups.ts"):                             adminUseBackups(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "backups", "page.tsx"): adminBackupsPage(),
