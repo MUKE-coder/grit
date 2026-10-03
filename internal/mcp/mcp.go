@@ -1,13 +1,17 @@
 // Package mcp implements a Model Context Protocol server over stdio, exposing
 // what Grit knows about a project to an AI coding agent.
 //
-// Every tool here is READ-ONLY and STATIC: answers come from parsing the
-// project's source, never from a running server or a database. That is a
-// deliberate constraint rather than a first-draft limitation. It means the
-// server works on a checkout that has never been started, needs no credentials,
-// cannot mutate the repo, and cannot be talked into running a migration by a
-// prompt-injected README. An agent that wants to change the project still has
-// to call the CLI, where the change is visible in the diff.
+// Answers come from parsing the project's source, never from a running server
+// or a database. That is a deliberate constraint rather than a first-draft
+// limitation: the server works on a checkout that has never been started, needs
+// no credentials, and cannot be talked into running a migration by a
+// prompt-injected README.
+//
+// A server has a mode, and the default is read. In read mode the tools that
+// write files are not registered at all, so there is no path that reaches one.
+// --mode write adds them, and then an agent can run a generator; even there,
+// every change it makes is in the diff. See mode.go for why that is absence
+// rather than a permission check.
 package mcp
 
 import (
@@ -61,12 +65,36 @@ type rpcError struct {
 	Message string `json:"message"`
 }
 
+// CommandInfo is one CLI command, as grit_cli_reference reports it. Built by
+// the command layer from cobra, because that is where the real command tree is
+// and a copy of it here would be a second version to keep in step.
+type CommandInfo struct {
+	// Path is the command as it is typed, without the binary: "generate resource".
+	Path  string     `json:"command"`
+	Short string     `json:"summary"`
+	Long  string     `json:"description,omitempty"`
+	Flags []FlagInfo `json:"flags,omitempty"`
+}
+
+// FlagInfo is one flag of one command.
+type FlagInfo struct {
+	Name    string `json:"flag"`
+	Type    string `json:"type,omitempty"`
+	Usage   string `json:"usage,omitempty"`
+	Default string `json:"default,omitempty"`
+}
+
 // Server answers MCP requests about one Grit project.
 type Server struct {
 	// Root is the project root — the directory holding grit.json.
 	Root string
 	// Version is the Grit CLI version, reported in serverInfo.
 	Version string
+	// Mode decides which tools exist. The zero value is ModeRead, so a Server
+	// built without thinking about it is the one that cannot write. See mode.go.
+	Mode Mode
+	// Commands is the CLI's own command tree, for grit_cli_reference.
+	Commands []CommandInfo
 }
 
 // Serve runs the stdio loop until in is exhausted or closed.
@@ -144,7 +172,7 @@ func (s *Server) handle(req request) (response, bool) {
 		return reply(map[string]interface{}{})
 
 	case "tools/list":
-		return reply(map[string]interface{}{"tools": toolDefinitions()})
+		return reply(map[string]interface{}{"tools": s.toolDefinitions()})
 
 	case "tools/call":
 		var p struct {

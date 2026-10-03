@@ -66,6 +66,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.352.0 */}
+            <div className="mb-12" id="v3.352.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.352.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The MCP server has ten tools and two modes</h3>
+                <p>
+                  It had three, all of them read-only, and no way to say so structurally. It now has
+                  nine that answer questions and one that writes, and the default server does not
+                  contain the one that writes: <code>grit mcp serve</code> builds a map without it,
+                  so no token, no scope, no misconfigured client and no instruction hidden in a README
+                  can reach it. <code>--mode write</code> builds the one that has it.
+                </p>
+                <p>
+                  The alternative, which is what most servers do, is to register everything and check
+                  a flag inside each handler. That works until somebody adds a tool and forgets the
+                  check, and the failure is silent and total: the tool simply works for everyone.
+                  Letting the mode decide what gets built removes the class of mistake.
+                </p>
+                <p>
+                  The new tools are the ones an agent actually needs.{' '}
+                  <code>grit_file_ownership</code> reports which generated files are still exactly as
+                  Grit wrote them and which you have edited, which nothing else can answer and which
+                  decides both whether an upgrade will keep updating a file and where it will report
+                  a conflict. <code>grit_list_permissions</code> gives the real permission keys, so a
+                  guard is not written against one that matches nothing and fails silently.{' '}
+                  <code>grit_list_resources</code> finds what the generator made, by the marker it
+                  leaves rather than by guessing from filenames. <code>grit_doctor</code> returns the
+                  audit as data. <code>grit_env_keys</code> names the variables and whether{' '}
+                  <code>.env</code> sets them, and never returns a value from either file.{' '}
+                  <code>grit_cli_reference</code> reads the commands out of the running binary, so an
+                  agent proposes a flag that exists in the version you have.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  <code>grit_generate_resource</code> is the write-mode tool, and it checks its
+                  arguments before anything runs: a name that is not a name, a field type this
+                  version does not have, or a shell metacharacter is an error the agent can read
+                  rather than a half-generated resource to clean up. See{' '}
+                  <a href="/docs/ai-workflows/mcp">MCP Server</a>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.351.0 */}
             <div className="mb-12" id="v3.351.0">
               <div className="flex items-center gap-3 mb-4">

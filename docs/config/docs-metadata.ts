@@ -740,7 +740,7 @@ export const docsMetadata: Record<string, DocPage> = {
   '/docs/ai-workflows/mcp': {
     title: 'MCP Server',
     description:
-      'Expose your Grit project to AI coding agents over the Model Context Protocol: real routes, real models, real layout, read-only and parsed from source.',
+      'Expose your Grit project to AI coding agents over the Model Context Protocol: ten tools over real routes, models, resources, permissions, file ownership and doctor findings, parsed from source. The default server is read-only because the tools that write files are not in it.',
   },
   '/docs/ai-workflows/antigravity': {
     title: 'Using Grit with Antigravity',

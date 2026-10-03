@@ -32,7 +32,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.351.0"
+var version = "3.352.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
