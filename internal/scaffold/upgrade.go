@@ -10,6 +10,7 @@ import (
 
 	"github.com/fatih/color"
 
+	"github.com/MUKE-coder/grit/v3/internal/accessgen"
 	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
@@ -1031,6 +1032,18 @@ func Upgrade(uOpts UpgradeOptions) error {
 		cyan.Println("    pnpm dev        # Restart development servers")
 	}
 	fmt.Println()
+
+	// The access table: what each route demands of a caller, read out of the
+	// route files because the running process cannot work it out. An upgrade
+	// is the one moment a project that has never had this table gets one, and
+	// the one moment a repaired routes.go could have changed it.
+	if res, err := accessgen.Generate(root); err != nil {
+		spinner.Printf("  ! the access table could not be regenerated: %v\n", err)
+		spinner.Printf("    the routes screen will show access as unknown until it is\n")
+	} else if res.Changed {
+		green.Printf("  ✓ %s covers %d routes, so the routes screen can show what each one needs\n",
+			res.Path, res.Routes)
+	}
 
 	spinner.Println("  Note: Resource definitions and API code were preserved.")
 	spinner.Println("  Run 'grit sync' to regenerate TypeScript types from Go models.")

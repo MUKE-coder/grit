@@ -20,6 +20,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
+	"github.com/MUKE-coder/grit/v3/internal/accessgen"
 	"github.com/MUKE-coder/grit/v3/internal/deploy"
 	"github.com/MUKE-coder/grit/v3/internal/expose"
 	"github.com/MUKE-coder/grit/v3/internal/generate"
@@ -32,7 +33,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.356.0"
+var version = "3.357.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -291,6 +292,19 @@ func newCmd() *cobra.Command {
 				}
 				fmt.Printf("  ✓ Internationalisation added (%d files, %d wirings)\n",
 					len(res.Written), len(res.Wired))
+			}
+
+			// The access table is read out of the route files, which exist only
+			// now that the scaffold is on disk. Without this the routes screen
+			// has no access column on a brand new project, which is the first
+			// place anyone would look at it.
+			projectRoot := projectName
+			if inPlace {
+				projectRoot = "."
+			}
+			if _, err := accessgen.Generate(projectRoot); err != nil {
+				color.Yellow("  ! the access table could not be written: %v\n", err)
+				color.Yellow("    the project is fine; `grit doctor` has the detail\n")
 			}
 
 			printSuccess(projectName, opts)
@@ -2351,7 +2365,7 @@ func routesCmd() *cobra.Command {
 				return err
 			}
 
-			routes, err := routeparser.Parse(routesFile)
+			routes, err := routeparser.ParseProject(routesFile)
 			if err != nil {
 				return err
 			}

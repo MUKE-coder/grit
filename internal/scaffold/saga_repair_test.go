@@ -218,15 +218,27 @@ func TestTheRoutesScreenIsMountedAndReachable(t *testing.T) {
 	if !strings.Contains(adminSystemHubPageV2(), `href: "/system/routes"`) {
 		t.Error("the System Hub has no tile for the routes screen, so nothing links to it")
 	}
-	// No access column, and the page says why. A level guessed from the path is
-	// wrong for /api/v1/auth/me and every passkey endpoint, and somebody would
-	// read it as a security statement.
+	// There is an access column, and the one thing it must never do is call a
+	// route public that it has not read. The reference, the profiler and the
+	// database browser register their own routes, which this project's route
+	// files never saw, and those have to read unknown: a level guessed from the
+	// path is wrong for /api/v1/auth/me and every passkey endpoint, and somebody
+	// would read this column as a security statement.
 	page := adminRoutesPage()
-	if !strings.Contains(page, "no access column") {
-		t.Error("the routes page does not explain the missing access column")
+	for _, want := range []string{
+		"access_known",
+		`if (!route.access_known || !route.access) return "unknown"`,
+		"rather than public",
+		"grit routes",
+	} {
+		if !strings.Contains(page, want) {
+			t.Errorf("the routes page is missing %q", want)
+		}
 	}
-	if !strings.Contains(page, "grit routes") {
-		t.Error("the routes page does not point at the command that does know")
+	// The old page explained why there was no access column. If that sentence
+	// comes back while the column exists, one of them is lying.
+	if strings.Contains(page, "no access column") {
+		t.Error("the routes page still says it has no access column, and it has one")
 	}
 }
 

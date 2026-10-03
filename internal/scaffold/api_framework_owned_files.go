@@ -88,6 +88,12 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "llms", "llms.go"):      apiLLMSGo(),
 		filepath.Join(apiRoot, "internal", "llms", "llms_test.go"): apiLLMSTestGo(),
 
+		// What each route demands of a caller. The table beside this is
+		// generated from routes.go after the files are written, because the
+		// running process cannot work it out: gin's RouteInfo carries a route's
+		// last handler and nothing about the middleware in front of it.
+		filepath.Join(apiRoot, "internal", "access", "access.go"): apiAccessGo(),
+
 		filepath.Join(apiRoot, "internal", "services", "webhook_event.go"):            apiWebhookEventServiceGo(),
 		filepath.Join(apiRoot, "internal", "services", "webhook_event_test.go"):       apiWebhookEventServiceTestGo(),
 		filepath.Join(apiRoot, "internal", "webhooks", "dedup_test.go"):               apiWebhookDedupTestGo(),

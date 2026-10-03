@@ -66,6 +66,67 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.357.0 */}
+            <div className="mb-12" id="v3.357.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.357.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>What each route asks of a caller</h3>
+                <p>
+                  <code>grit routes</code> was reading 108 of the 171 routes a fresh project
+                  registers, and it was calling <code>/api/v1/auth/me</code> public. Three
+                  separate faults, all of the same shape: each one produced a plausible answer
+                  rather than no answer.
+                </p>
+                <p>
+                  A route with its guard written in front of it, which is how every permission is
+                  attached, matched nothing at all, so the 55 lines that name a permission were
+                  dropped. Authentication was detected by looking for{" "}
+                  <code>.Use(middleware.Auth</code> and the generated file writes{" "}
+                  <code>.Use(middleware.APIKeyOrAuth(db, middleware.Auth(...)))</code>, so no
+                  group was ever recognised as protected and every authenticated route was
+                  reported public. And a path built from a constant came out as{" "}
+                  <code>/api/&quot;+APIVersion+&quot;/health</code>.
+                </p>
+                <p>
+                  The parser does less guessing now: the group graph is built first and resolved
+                  afterwards, each group&apos;s middleware chain is accumulated rather than tracked
+                  as one running variable, and arguments are split with a paren-aware scanner
+                  instead of a pattern that assumed their shape. It reads the per-resource route
+                  files too, which is most of what a real project serves. 182 routes in a fresh
+                  project, against 108.
+                </p>
+                <p>
+                  So <code>grit routes</code> has an ACCESS column, and so does{" "}
+                  <code>/system/routes</code>. v3.356.0 shipped that screen with a paragraph
+                  explaining why it could not have one: Gin&apos;s route table carries a
+                  route&apos;s last handler and nothing about the middleware in front of it. That
+                  was true about Gin and wrong about the problem. The answer is written in{" "}
+                  <code>routes.go</code>, so <code>grit</code> reads it there and generates{" "}
+                  <code>internal/access/registry.go</code>, which the screen and the MCP route
+                  tool both read.
+                </p>
+                <p>
+                  There are four states, not two. A route the table does not cover reads{" "}
+                  <strong>unknown</strong>, never public: the reference, the profiler and the
+                  database browser register 125 routes this project&apos;s route files never saw,
+                  and calling those public would be the one wrong answer worth avoiding, because
+                  somebody reads this column as a security statement.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The table is rewritten by <code>grit new</code>,{" "}
+                  <code>grit generate resource</code>, <code>grit remove</code> and{" "}
+                  <code>grit upgrade</code>. Add a route by hand and <code>grit doctor</code> says
+                  so, which is the one case no command catches.
+                </p>
+              </div>
+            </div>
+
             {/* v3.356.0 */}
             <div className="mb-12" id="v3.356.0">
               <div className="flex items-center gap-3 mb-4">

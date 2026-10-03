@@ -12,6 +12,7 @@ import (
 
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 
+	"github.com/MUKE-coder/grit/v3/internal/accessgen"
 	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
@@ -551,6 +552,20 @@ func (g *Generator) Run() error {
 		}
 	}
 	fmt.Println()
+
+	// The access table is read out of the route files, and this command just
+	// wrote one. Regenerating it here is what keeps the routes screen's access
+	// column true for a resource added after the project was scaffolded.
+	//
+	// A failure is reported and not returned: the resource is written, the
+	// build works, and the only thing a stale table costs is one column on one
+	// screen. Failing the command after twelve files landed would be worse.
+	if res, err := accessgen.Generate(g.Root); err != nil {
+		fmt.Printf("  ! the access table could not be regenerated: %v\n", err)
+		fmt.Printf("    run `grit doctor` for the detail; the resource itself is fine\n\n")
+	} else if res.Changed {
+		fmt.Printf("  ✓ %s now covers %d routes\n\n", res.Path, res.Routes)
+	}
 
 	return nil
 }

@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/accessgen"
 )
 
 // RemoveResource removes a previously generated resource — deleting files and
@@ -449,6 +451,16 @@ func RemoveResource(name string) error {
 				fmt.Println("  ✗ Removed blog section from web home page")
 			}
 		}
+	}
+
+	// The resource took its route file with it, so the access table now
+	// names routes that no longer exist. A stale entry here is harmless to
+	// the build and wrong on the routes screen, which is exactly the kind of
+	// quietly-wrong this table exists to avoid.
+	if res, err := accessgen.Generate(root); err != nil {
+		fmt.Printf("  ! the access table could not be regenerated: %v\n", err)
+	} else if res.Changed {
+		fmt.Printf("  ✓ %s now covers %d routes\n", res.Path, res.Routes)
 	}
 
 	fmt.Println()

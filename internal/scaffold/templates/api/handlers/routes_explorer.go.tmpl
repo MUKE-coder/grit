@@ -7,25 +7,37 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"{{MODULE}}/internal/access"
 	"{{MODULE}}/internal/llms"
 )
 
 // RouteExplorerHandler serves the route table to the admin's Routes screen.
 //
-// # What it can say, and what it deliberately cannot
+// # Where each column comes from
 //
-// The router knows a route's method, path and final handler, and that is what
-// this returns. It does not know which middleware a route is behind: Gin's
-// RouteInfo carries the last handler and nothing about the chain, so the
-// authorization level is not readable here at all.
+// Method, path and the final handler come from the router, which is the only
+// thing that knows what was actually registered.
 //
-// It would be easy to guess one from the path and wrong six times over in this
-// very project: /api/v1/auth/me and the passkey endpoints are under /auth/ and
-// every one of them needs a signed-in user. An access column that is wrong is
-// worse than no access column, because somebody will read it as a security
-// statement. So the screen shows what is true and says where the rest is:
-// `grit routes` in a terminal parses routes.go and reports the real group and
-// the permission each route wants.
+// Access comes from the generated access table, not from the router. Gin's
+// RouteInfo carries a route's last handler and nothing about the middleware in
+// front of it, so at runtime this process genuinely cannot tell that
+// /api/v1/widgets sits behind RequireRole("ADMIN", "perm:widgets.view"). The
+// table is built by `grit` from routes.go and the per-resource route files,
+// where the truth is written, and `grit doctor` reports when it has gone stale.
+//
+// # The three states, and why there are three
+//
+// A route is either covered by the table, or it is not, and those are
+// different answers. The reference at /docs, the profiler and the database
+// browser mount their own routes and appear in the router's table without
+// appearing in routes.go, so nothing here can speak for them: they come back
+// with access_known false, and the screen renders them as unknown.
+//
+// It would be easier to call an unknown route public and show two states
+// instead of three. That is the one thing this must not do. Guessed from the
+// path, /api/v1/auth/me and all six passkey endpoints read as public, because
+// they sit under /auth/, and every one of them needs a signed-in user.
+// Somebody would read that column as a security statement.
 type RouteExplorerHandler struct {
 	// Engine is the router itself. The one handler in the project that holds it,
 	// because the table is the thing being served.
@@ -42,6 +54,13 @@ type routeRow struct {
 	// Group is what the route is about, read from the path. It is a heading, not
 	// a permission.
 	Group string `json:"group"`
+
+	// AccessKnown is false when the generated table does not cover this route,
+	// which is every route a mounted dashboard brought with it. The screen must
+	// render that as unknown rather than as public.
+	AccessKnown bool `json:"access_known"`
+	// Access is what the route demands of a caller, when AccessKnown is true.
+	Access access.Requirement `json:"access,omitzero"`
 }
 
 // List returns every registered route.
@@ -68,11 +87,14 @@ func (h *RouteExplorerHandler) List(c *gin.Context) {
 		if contains != "" && !strings.Contains(strings.ToLower(info.Path), contains) {
 			continue
 		}
+		req, known := access.Of(info.Method, info.Path)
 		out = append(out, routeRow{
-			Method:  info.Method,
-			Path:    info.Path,
-			Handler: llms.ShortHandlerName(info.Handler),
-			Group:   llms.GroupOf(info.Path),
+			Method:      info.Method,
+			Path:        info.Path,
+			Handler:     llms.ShortHandlerName(info.Handler),
+			Group:       llms.GroupOf(info.Path),
+			AccessKnown: known,
+			Access:      req,
 		})
 	}
 
@@ -98,8 +120,12 @@ func (h *RouteExplorerHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data":  out,
 		"count": len(out),
-		"note": "Method, path and handler come from the router. Which middleware a route sits " +
-			"behind is not readable at runtime, so there is no access column here: run `grit routes` " +
-			"for the real group and the permission each route wants.",
+		"covered": gin.H{
+			"routes": access.Count(),
+			"note": "Access comes from a table grit builds out of routes.go, because the " +
+				"router does not carry the middleware in front of a route. Rows with " +
+				"access_known false are routes a mounted dashboard registered, which this " +
+				"project's route files never saw: unknown, not public.",
+		},
 	})
 }

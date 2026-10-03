@@ -81,6 +81,7 @@ var checks = []struct {
 	{"rate-limits-per-process", checkSentinelCounters},
 	{"public-allowlist-sensitive", checkPublicAllowlist},
 	{"outbox-topic-undelivered", checkOutboxRelays},
+	{"access-table-stale", checkAccessTableStale},
 }
 
 // Run audits the project at root.

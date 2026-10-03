@@ -62,7 +62,7 @@ func (s *Server) listRoutes(args json.RawMessage) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	routes, err := routeparser.Parse(routesFile)
+	routes, err := routeparser.ParseProject(routesFile)
 	if err != nil {
 		return "", err
 	}
@@ -82,7 +82,11 @@ func (s *Server) listRoutes(args json.RawMessage) (string, error) {
 			"method":  r.Method,
 			"path":    r.Path,
 			"handler": r.Handler,
-			"access":  r.Group,
+			// Group is the coarse bucket, access is what a caller must present.
+			// These were one field reporting the group under the name "access",
+			// which told a model that /api/v1/auth/me was public.
+			"group":  r.Group,
+			"access": r.Access.Summary(),
 		})
 	}
 
