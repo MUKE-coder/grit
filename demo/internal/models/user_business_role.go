@@ -29,8 +29,8 @@ type UserBusinessRole struct {
 	ID              uint      `gorm:"primaryKey" json:"id"`
 	UserID          uint      `gorm:"not null;index" json:"user_id"`
 	BusinessID      uint      `gorm:"not null;index" json:"business_id"`
-	BranchID        *uint     `gorm:"index" json:"branch_id"` // nil = access to all branches
-	Role            string    `gorm:"not null" json:"role"`    // admin|manager|cashier|stock_clerk
+	BranchID        *uint     `gorm:"index" json:"branch_id"`                                  // nil = access to all branches
+	Role            string    `gorm:"not null" json:"role"`                                    // admin|manager|cashier|stock_clerk
 	WorkspaceAccess string    `gorm:"type:varchar(16);default:'both'" json:"workspace_access"` // loans|spares|both
 	User            User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	Business        Business  `gorm:"foreignKey:BusinessID" json:"business,omitempty"`

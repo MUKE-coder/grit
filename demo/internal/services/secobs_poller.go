@@ -123,11 +123,11 @@ func (p *SecObsPoller) tick() {
 	// — Pulse: top-impact N+1 (single notification, dedup'd by hour)
 	var n1 struct {
 		Data []struct {
-			Route               string  `json:"route"`
-			Pattern             string  `json:"pattern"`
-			ImpactScore         float64 `json:"impact_score"`
-			Occurrences         int     `json:"occurrences"`
-			AvgQueriesPerReq    int     `json:"avg_queries_per_request"`
+			Route            string  `json:"route"`
+			Pattern          string  `json:"pattern"`
+			ImpactScore      float64 `json:"impact_score"`
+			Occurrences      int     `json:"occurrences"`
+			AvgQueriesPerReq int     `json:"avg_queries_per_request"`
 		} `json:"data"`
 	}
 	if err := p.Bridge.PulseGet(ctx, "/pulse/api/database/n1/ranked?range=1h&limit=1", &n1); err == nil && len(n1.Data) > 0 {

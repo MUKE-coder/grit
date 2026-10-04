@@ -3,8 +3,9 @@
 // to verify the status of pending transactions.
 //
 // Auth: header `X-Api-Key`. Two endpoints we care about:
-//   POST /v1/payments/collect    — initiate a request-to-pay
-//   POST /v1/webhooks/verify     — poll for a transaction's final status
+//
+//	POST /v1/payments/collect    — initiate a request-to-pay
+//	POST /v1/webhooks/verify     — poll for a transaction's final status
 //
 // All amounts are in major units (UGX). Phones must be `256XXXXXXXXX` or
 // `0XXXXXXXXX`. DGateway charges an 8% platform fee per collect by default —
@@ -61,7 +62,7 @@ type CollectRequest struct {
 	Amount      float64 `json:"amount"`
 	Currency    string  `json:"currency"` // e.g. "UGX"
 	PhoneNumber string  `json:"phone_number"`
-	Provider    string  `json:"provider,omitempty"` // iotec | relworx; omit = default
+	Provider    string  `json:"provider,omitempty"`  // iotec | relworx; omit = default
 	Reference   string  `json:"reference,omitempty"` // optional client-side correlation id
 	Description string  `json:"description,omitempty"`
 	CallbackURL string  `json:"callback_url,omitempty"`

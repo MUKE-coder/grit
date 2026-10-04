@@ -17,9 +17,9 @@ type Activity struct {
 	ID          uint           `gorm:"primaryKey" json:"id"`
 	BusinessID  uint           `gorm:"not null;index:idx_activity_biz_created" json:"business_id"`
 	UserID      uint           `gorm:"not null;index" json:"user_id"`
-	Action      string         `gorm:"type:varchar(64);not null;index" json:"action"`     // login, create, update, delete, approve, verify, etc.
-	Resource    string         `gorm:"type:varchar(64);not null;index" json:"resource"`   // sale, loan, product, etc.
-	ResourceID  *uint          `gorm:"index" json:"resource_id,omitempty"`                // nullable — login has no resource id
+	Action      string         `gorm:"type:varchar(64);not null;index" json:"action"`   // login, create, update, delete, approve, verify, etc.
+	Resource    string         `gorm:"type:varchar(64);not null;index" json:"resource"` // sale, loan, product, etc.
+	ResourceID  *uint          `gorm:"index" json:"resource_id,omitempty"`              // nullable — login has no resource id
 	Description string         `gorm:"type:text" json:"description"`
 	Metadata    datatypes.JSON `gorm:"type:jsonb" json:"metadata,omitempty"`
 	IPAddress   string         `gorm:"type:varchar(64)" json:"ip_address,omitempty"`

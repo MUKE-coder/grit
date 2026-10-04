@@ -80,6 +80,60 @@ jobs:
         working-directory: examples/library/apps/api
         run: go test ./internal/handlers/ -run 'TestAReturnedLoan|TestDeletingIsJudged' -v
 
+  demo:
+    name: Grit Motors, the live demo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.6"
+          check-latest: true
+          cache: true
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # demo/ is Grit Motors, the application behind demo.gritframework.dev, and
+      # CONTRIBUTING.md says so. Nothing built it until now, which meant the one
+      # application in this repository with a public URL was also the one nobody
+      # would notice breaking.
+      #
+      # It is a --single app: the Go binary embeds the built frontend through
+      # //go:embed all:frontend/dist, and frontend/dist is generated rather than
+      # committed. So the frontend has to be built first or the Go build fails
+      # on a pattern with no matching files, which is what `make build` does and
+      # what this repeats.
+      - name: Build the frontend it embeds
+        working-directory: demo/frontend
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm build
+
+      # Pinned at an older Grit version on purpose, like any real deployed
+      # application. That makes this the one check that asks whether an
+      # application generated a long time ago still builds and passes its tests
+      # against today's libraries.
+      - name: Build, vet and test it
+        working-directory: demo
+        run: |
+          # pipefail: without it the step reports tee's exit code, and a failing
+          # demo passes CI.
+          set -o pipefail
+          gofmt -l . | grep -v '^frontend/' | tee /tmp/demo-unformatted || true
+          test ! -s /tmp/demo-unformatted
+          go build ./...
+          go vet ./...
+          go test ./... 2>&1 | tail -30
+
   security:
     name: Vulnerability scan
     runs-on: ubuntu-latest

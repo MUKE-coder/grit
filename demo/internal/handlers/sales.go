@@ -20,9 +20,9 @@ type SaleHandler struct {
 }
 
 type CreateSaleRequest struct {
-	BranchID       uint   `json:"branch_id" binding:"required"`
-	PaymentMethod  string `json:"payment_method" binding:"required"`
-	CustomerPhone  string `json:"customer_phone"`
+	BranchID       uint    `json:"branch_id" binding:"required"`
+	PaymentMethod  string  `json:"payment_method" binding:"required"`
+	CustomerPhone  string  `json:"customer_phone"`
 	DiscountAmount float64 `json:"discount_amount"`
 	Items          []struct {
 		ProductID uint `json:"product_id" binding:"required"`

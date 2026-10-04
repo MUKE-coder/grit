@@ -16,9 +16,9 @@ type StockMovement struct {
 	ID           uint      `gorm:"primaryKey" json:"id"`
 	ProductID    uint      `gorm:"not null;index" json:"product_id"`
 	BranchID     uint      `gorm:"not null;index" json:"branch_id"`
-	MovementType string    `json:"movement_type"` // stock_in | sale | transfer_out | transfer_in | adjustment
+	MovementType string    `json:"movement_type"`            // stock_in | sale | transfer_out | transfer_in | adjustment
 	Quantity     int       `gorm:"not null" json:"quantity"` // positive = in, negative = out
-	ReferenceID  *uint     `json:"reference_id"` // sale_id or transfer_id
+	ReferenceID  *uint     `json:"reference_id"`             // sale_id or transfer_id
 	Note         string    `json:"note"`
 	CreatedBy    uint      `json:"created_by"`
 	CreatedAt    time.Time `json:"created_at"`

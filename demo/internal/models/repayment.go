@@ -13,10 +13,10 @@ const (
 
 // Payment method constants for repayments.
 const (
-	RepaymentMethodCash         = "cash"
-	RepaymentMethodMobileMoney  = "mobile_money" // via DGateway
-	RepaymentMethodBank         = "bank_transfer"
-	RepaymentMethodCheque       = "cheque"
+	RepaymentMethodCash        = "cash"
+	RepaymentMethodMobileMoney = "mobile_money" // via DGateway
+	RepaymentMethodBank        = "bank_transfer"
+	RepaymentMethodCheque      = "cheque"
 )
 
 // RepaymentSchedule is one row per planned installment. Generated when a Loan is
@@ -54,12 +54,12 @@ type Repayment struct {
 	Notes          string    `gorm:"type:text" json:"notes"`
 
 	// DGateway integration fields (mobile money via Desispay)
-	DGatewayReference  string     `gorm:"index" json:"dgateway_reference"` // dgw_xxxxx
-	DGatewayProvider   string     `json:"dgateway_provider"`               // iotec | relworx
-	DGatewayPhone      string     `json:"dgateway_phone"`
-	DGatewayFee        float64    `json:"dgateway_fee"`     // platform commission deducted
-	DGatewayNetAmount  float64    `json:"dgateway_net_amount"`
-	DGatewayFailReason string     `json:"dgateway_fail_reason"`
+	DGatewayReference   string     `gorm:"index" json:"dgateway_reference"` // dgw_xxxxx
+	DGatewayProvider    string     `json:"dgateway_provider"`               // iotec | relworx
+	DGatewayPhone       string     `json:"dgateway_phone"`
+	DGatewayFee         float64    `json:"dgateway_fee"` // platform commission deducted
+	DGatewayNetAmount   float64    `json:"dgateway_net_amount"`
+	DGatewayFailReason  string     `json:"dgateway_fail_reason"`
 	DGatewayConfirmedAt *time.Time `json:"dgateway_confirmed_at"`
 
 	// Cashier/verifier audit

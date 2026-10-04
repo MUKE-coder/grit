@@ -38,12 +38,12 @@ func newTestDB(t *testing.T) *gorm.DB {
 // LoanProduct + Borrower + Motorcycle. Returns IDs in struct fields named for
 // what they are. Keeps tests terse.
 type fixture struct {
-	BusinessID    uint
-	BranchID      uint
-	UserID        uint
-	ProductID     uint
-	BorrowerID    uint
-	MotorcycleID  uint
+	BusinessID   uint
+	BranchID     uint
+	UserID       uint
+	ProductID    uint
+	BorrowerID   uint
+	MotorcycleID uint
 }
 
 func setupFixture(t *testing.T, db *gorm.DB) fixture {

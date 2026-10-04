@@ -50,9 +50,10 @@ cd scratch/apps/api && go build ./...
 | `internal/generate/` | `grit generate resource`: parsing a field spec into a model, service, handler, schema, types, hooks and an admin screen |
 | `internal/prompt/` | The interactive `grit new` |
 | `docs/` | The documentation site (Next.js), deployed at gritframework.dev |
-| `demo/` | Grit Motors, the application behind demo.gritframework.dev |
+| `demo/` | Grit Motors, the application behind demo.gritframework.dev. CI builds and tests it too |
 | `ui/` | The Grit UI block registry |
-| `examples/` | Complete applications, each with a guide |
+| `examples/library/` | A generated application, checked in. CI builds, vets and tests it on every push |
+| `examples/job-portal-*/` | Guides: the commands that build the same application in each architecture |
 
 **Generated code lives in `internal/scaffold`, not in a template directory.**
 A template is a Go function returning a backtick string, with `{{MODULE}}`

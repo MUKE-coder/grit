@@ -30,17 +30,17 @@ const DefaultDailyBodaRate = 15000.0
 // DailyBodaMotorcycle is a motorcycle in the daily-rental fleet (separate from
 // inventory Motorcycle which is loan/cash-sale inventory).
 type DailyBodaMotorcycle struct {
-	ID                uint           `gorm:"primaryKey" json:"id"`
-	BusinessID        uint           `gorm:"not null;index;uniqueIndex:idx_dboda_plate" json:"business_id"`
-	BranchID          uint           `gorm:"not null;index" json:"branch_id"`
-	Name              string         `gorm:"not null" json:"name"`
-	NumberPlate       string         `gorm:"not null;uniqueIndex:idx_dboda_plate" json:"number_plate"`
-	Status            string         `gorm:"default:available;index" json:"status"`
-	AssignedDriverID  *uint          `gorm:"uniqueIndex" json:"assigned_driver_id"` // one driver at a time
-	CreatedAt         time.Time      `json:"created_at"`
-	UpdatedAt         time.Time      `json:"updated_at"`
-	DeletedAt         gorm.DeletedAt `gorm:"index" json:"-"`
-	Branch            Branch         `gorm:"foreignKey:BranchID" json:"branch,omitempty"`
+	ID               uint           `gorm:"primaryKey" json:"id"`
+	BusinessID       uint           `gorm:"not null;index;uniqueIndex:idx_dboda_plate" json:"business_id"`
+	BranchID         uint           `gorm:"not null;index" json:"branch_id"`
+	Name             string         `gorm:"not null" json:"name"`
+	NumberPlate      string         `gorm:"not null;uniqueIndex:idx_dboda_plate" json:"number_plate"`
+	Status           string         `gorm:"default:available;index" json:"status"`
+	AssignedDriverID *uint          `gorm:"uniqueIndex" json:"assigned_driver_id"` // one driver at a time
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        time.Time      `json:"updated_at"`
+	DeletedAt        gorm.DeletedAt `gorm:"index" json:"-"`
+	Branch           Branch         `gorm:"foreignKey:BranchID" json:"branch,omitempty"`
 }
 
 // DailyBodaDriver is a registered rider in the daily-rental program.
@@ -69,9 +69,9 @@ type DailyBodaPayment struct {
 	DriverID      uint       `gorm:"not null;index" json:"driver_id"`
 	MotorcycleID  uint       `gorm:"not null;index" json:"motorcycle_id"`
 	BranchID      uint       `gorm:"not null;index" json:"branch_id"`
-	Amount        float64    `gorm:"not null" json:"amount"`        // paid this transaction
-	DailyRate     float64    `gorm:"not null" json:"daily_rate"`    // expected for this day
-	Balance       float64    `json:"balance"`                       // remaining for the day after this payment
+	Amount        float64    `gorm:"not null" json:"amount"`     // paid this transaction
+	DailyRate     float64    `gorm:"not null" json:"daily_rate"` // expected for this day
+	Balance       float64    `json:"balance"`                    // remaining for the day after this payment
 	PaymentDate   time.Time  `gorm:"not null;index" json:"payment_date"`
 	PaymentMethod string     `json:"payment_method"`
 	Status        string     `gorm:"default:pending;index" json:"status"`

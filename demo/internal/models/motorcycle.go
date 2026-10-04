@@ -8,10 +8,10 @@ import (
 
 // Motorcycle status constants.
 const (
-	MotorcycleStatusAvailable  = "available"
-	MotorcycleStatusReserved   = "reserved"   // Pending loan approval / pending cash sale checkout
-	MotorcycleStatusSold       = "sold"       // Sold via cash sale or fully paid loan
-	MotorcycleStatusOnLoan     = "on_loan"    // Loan disbursed, balance still outstanding
+	MotorcycleStatusAvailable   = "available"
+	MotorcycleStatusReserved    = "reserved" // Pending loan approval / pending cash sale checkout
+	MotorcycleStatusSold        = "sold"     // Sold via cash sale or fully paid loan
+	MotorcycleStatusOnLoan      = "on_loan"  // Loan disbursed, balance still outstanding
 	MotorcycleStatusRepossessed = "repossessed"
 )
 
@@ -22,7 +22,7 @@ type Motorcycle struct {
 	ID           uint           `gorm:"primaryKey" json:"id"`
 	BusinessID   uint           `gorm:"not null;index;uniqueIndex:idx_business_plate" json:"business_id"`
 	BranchID     uint           `gorm:"not null;index" json:"branch_id"`
-	Name         string         `gorm:"not null" json:"name"`         // brand/model, e.g. "KEVLA"
+	Name         string         `gorm:"not null" json:"name"` // brand/model, e.g. "KEVLA"
 	NumberPlate  string         `gorm:"not null;uniqueIndex:idx_business_plate" json:"number_plate"`
 	ChassisNo    string         `json:"chassis_no"`
 	EngineNo     string         `json:"engine_no"`

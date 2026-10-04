@@ -12,7 +12,8 @@ import (
 )
 
 // AdminHandler hosts dangerous one-shot maintenance endpoints. Currently:
-//   POST /api/admin/wipe-seed   — admin-only nuclear reset
+//
+//	POST /api/admin/wipe-seed   — admin-only nuclear reset
 //
 // This file exists because the temporary "Reset Database" button in
 // Settings needs a server endpoint to call. Remove the route + this file

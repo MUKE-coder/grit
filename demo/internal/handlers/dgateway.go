@@ -23,7 +23,7 @@ type DGatewayHandler struct {
 	DB *gorm.DB
 	DG *dgateway.Client
 
-	DefaultProvider string // "iotec" or "relworx"
+	DefaultProvider    string // "iotec" or "relworx"
 	WebhookCallbackURL string // Public URL where DGateway can POST webhooks (e.g. https://demo.gritframework.dev/api/dgateway/webhook)
 }
 
@@ -122,12 +122,12 @@ func (h *DGatewayHandler) Collect(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"repayment_id":        repayment.ID,
-			"dgateway_reference":  res.Reference,
-			"status":              res.Status,
-			"provider":            res.Provider,
-			"amount":              res.Amount,
-			"message":             "Approve the prompt on your phone to complete the payment.",
+			"repayment_id":       repayment.ID,
+			"dgateway_reference": res.Reference,
+			"status":             res.Status,
+			"provider":           res.Provider,
+			"amount":             res.Amount,
+			"message":            "Approve the prompt on your phone to complete the payment.",
 		},
 	})
 }
@@ -177,8 +177,8 @@ func (h *DGatewayHandler) Verify(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"repayment_id":  r.ID,
-			"status":        r.Status,
+			"repayment_id":   r.ID,
+			"status":         r.Status,
 			"gateway_status": res.Status,
 			"failure_reason": res.FailureReason,
 		},

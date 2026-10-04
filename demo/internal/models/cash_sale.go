@@ -6,12 +6,12 @@ import "time"
 // (which is a multi-line POS transaction) — one CashSale = one motorcycle.
 // Loan-financed motorcycle sales go through Loan, not CashSale.
 type CashSale struct {
-	ID             uint    `gorm:"primaryKey" json:"id"`
-	BusinessID     uint    `gorm:"not null;index" json:"business_id"`
-	BranchID       uint    `gorm:"not null;index" json:"branch_id"`
-	MotorcycleID   uint    `gorm:"not null;uniqueIndex" json:"motorcycle_id"` // a motorcycle can only be sold once
-	SaleNumber     string  `gorm:"uniqueIndex" json:"sale_number"`            // KM-MC-000123
-	SoldBy         uint    `gorm:"not null;index" json:"sold_by"`
+	ID           uint   `gorm:"primaryKey" json:"id"`
+	BusinessID   uint   `gorm:"not null;index" json:"business_id"`
+	BranchID     uint   `gorm:"not null;index" json:"branch_id"`
+	MotorcycleID uint   `gorm:"not null;uniqueIndex" json:"motorcycle_id"` // a motorcycle can only be sold once
+	SaleNumber   string `gorm:"uniqueIndex" json:"sale_number"`            // KM-MC-000123
+	SoldBy       uint   `gorm:"not null;index" json:"sold_by"`
 
 	// Customer details (we don't always have a Borrower record for cash buyers)
 	CustomerName    string `gorm:"not null" json:"customer_name"`

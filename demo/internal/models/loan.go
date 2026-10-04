@@ -35,19 +35,19 @@ type Loan struct {
 	RepaymentCycle  string  `gorm:"not null" json:"repayment_cycle"`
 
 	// Computed amounts
-	TotalInterest    float64 `json:"total_interest"`
-	TotalRepayments  int     `json:"total_repayments"` // = Duration; kept for clarity
+	TotalInterest     float64 `json:"total_interest"`
+	TotalRepayments   int     `json:"total_repayments"` // = Duration; kept for clarity
 	InstallmentAmount float64 `json:"installment_amount"`
-	TotalAmount      float64 `json:"total_amount"`      // disbursed + total_interest
-	BalanceRemaining float64 `json:"balance_remaining"` // updated as Repayments come in
+	TotalAmount       float64 `json:"total_amount"`      // disbursed + total_interest
+	BalanceRemaining  float64 `json:"balance_remaining"` // updated as Repayments come in
 
 	// Status & lifecycle
-	Status            string     `gorm:"default:pending;index" json:"status"`
-	DisbursementDate  *time.Time `json:"disbursement_date"`
-	FirstPaymentDate  *time.Time `json:"first_payment_date"`
-	NextPaymentDate   *time.Time `json:"next_payment_date"`
-	MaturityDate      *time.Time `json:"maturity_date"`
-	CompletedAt       *time.Time `json:"completed_at"`
+	Status           string     `gorm:"default:pending;index" json:"status"`
+	DisbursementDate *time.Time `json:"disbursement_date"`
+	FirstPaymentDate *time.Time `json:"first_payment_date"`
+	NextPaymentDate  *time.Time `json:"next_payment_date"`
+	MaturityDate     *time.Time `json:"maturity_date"`
+	CompletedAt      *time.Time `json:"completed_at"`
 
 	// Audit
 	CreatedBy   uint      `json:"created_by"`

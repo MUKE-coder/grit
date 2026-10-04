@@ -91,13 +91,13 @@ func (h *RepaymentHandler) Create(c *gin.Context) {
 	}
 
 	var req struct {
-		LoanID         uint    `json:"loan_id" binding:"required"`
-		ScheduleID     *uint   `json:"schedule_id"`
-		Amount         float64 `json:"amount" binding:"required"`
-		PaymentMethod  string  `json:"payment_method" binding:"required"`
-		TransactionRef string  `json:"transaction_ref"`
+		LoanID         uint       `json:"loan_id" binding:"required"`
+		ScheduleID     *uint      `json:"schedule_id"`
+		Amount         float64    `json:"amount" binding:"required"`
+		PaymentMethod  string     `json:"payment_method" binding:"required"`
+		TransactionRef string     `json:"transaction_ref"`
 		CollectionDate *time.Time `json:"collection_date"`
-		Notes          string  `json:"notes"`
+		Notes          string     `json:"notes"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Loan, amount and payment_method are required"})

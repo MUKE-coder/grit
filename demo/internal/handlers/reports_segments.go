@@ -130,29 +130,29 @@ func (h *SegmentReportHandler) Main(c *gin.Context) {
 		"today_transaction_count": sparesTxCount,
 	}
 	out["motorcycles"] = gin.H{
-		"available":         motoStatusMap[models.MotorcycleStatusAvailable],
-		"reserved":          motoStatusMap[models.MotorcycleStatusReserved],
-		"sold":              motoStatusMap[models.MotorcycleStatusSold],
-		"on_loan":           motoStatusMap[models.MotorcycleStatusOnLoan],
-		"repossessed":       motoStatusMap[models.MotorcycleStatusRepossessed],
-		"inventory_value":   inventoryValue,
-		"cash_sales_today":  cashSalesTodayTotal,
+		"available":              motoStatusMap[models.MotorcycleStatusAvailable],
+		"reserved":               motoStatusMap[models.MotorcycleStatusReserved],
+		"sold":                   motoStatusMap[models.MotorcycleStatusSold],
+		"on_loan":                motoStatusMap[models.MotorcycleStatusOnLoan],
+		"repossessed":            motoStatusMap[models.MotorcycleStatusRepossessed],
+		"inventory_value":        inventoryValue,
+		"cash_sales_today":       cashSalesTodayTotal,
 		"cash_sales_today_count": cashSalesTodayCount,
 	}
 	out["loans"] = gin.H{
-		"pending":          loanStatusMap[models.LoanStatusPending],
-		"approved":         loanStatusMap[models.LoanStatusApproved],
-		"active":           loanStatusMap[models.LoanStatusActive],
-		"completed":        loanStatusMap[models.LoanStatusCompleted],
-		"defaulted":        loanStatusMap[models.LoanStatusDefaulted],
+		"pending":           loanStatusMap[models.LoanStatusPending],
+		"approved":          loanStatusMap[models.LoanStatusApproved],
+		"active":            loanStatusMap[models.LoanStatusActive],
+		"completed":         loanStatusMap[models.LoanStatusCompleted],
+		"defaulted":         loanStatusMap[models.LoanStatusDefaulted],
 		"total_outstanding": totalOutstanding,
-		"total_disbursed":  disbursedTotal,
+		"total_disbursed":   disbursedTotal,
 	}
 	out["repayments"] = gin.H{
-		"collected_today":         repaymentsTodayTotal,
-		"collected_today_count":   repaymentsTodayCount,
-		"pending_verification":    pendingRepaymentsCount,
-		"overdue_installments":    overdueCount,
+		"collected_today":       repaymentsTodayTotal,
+		"collected_today_count": repaymentsTodayCount,
+		"pending_verification":  pendingRepaymentsCount,
+		"overdue_installments":  overdueCount,
 	}
 	out["daily_boda"] = gin.H{
 		"today_total": dailyBodaTodayTotal,
@@ -161,10 +161,10 @@ func (h *SegmentReportHandler) Main(c *gin.Context) {
 	out["combined"] = gin.H{
 		"today_total": totalToday,
 		"by_segment": gin.H{
-			"spares":          sparesToday,
+			"spares":           sparesToday,
 			"motorcycles_cash": cashSalesTodayTotal,
-			"loans":           repaymentsTodayTotal,
-			"daily_boda":      dailyBodaTodayTotal,
+			"loans":            repaymentsTodayTotal,
+			"daily_boda":       dailyBodaTodayTotal,
 		},
 	}
 	c.JSON(http.StatusOK, gin.H{"data": out})
@@ -394,15 +394,15 @@ func (h *SegmentReportHandler) MotorcyclesReport(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"from_date":          fromDate,
-			"to_date":            toDate,
-			"inventory":          inventory,
-			"cash_sales_total":   cashSalesTotal,
-			"cash_sales_count":   cashSalesCount,
+			"from_date":            fromDate,
+			"to_date":              toDate,
+			"inventory":            inventory,
+			"cash_sales_total":     cashSalesTotal,
+			"cash_sales_count":     cashSalesCount,
 			"cash_sales_by_branch": cashByBranch,
-			"loan_sales_total":   loanSalesTotal,
-			"loan_sales_count":   loanSalesCount,
-			"motorcycles_moved":  cashSalesCount + loanSalesCount,
+			"loan_sales_total":     loanSalesTotal,
+			"loan_sales_count":     loanSalesCount,
+			"motorcycles_moved":    cashSalesCount + loanSalesCount,
 		},
 	})
 }
@@ -427,11 +427,11 @@ func (h *SegmentReportHandler) DailyBodaReport(c *gin.Context) {
 		Select("COALESCE(SUM(balance), 0)").Row().Scan(&totalBalance)
 
 	type DriverStats struct {
-		DriverID    uint    `json:"driver_id"`
-		FullName    string  `json:"full_name"`
-		Phone       string  `json:"phone"`
-		TotalPaid   float64 `json:"total_paid"`
-		PaymentCount int64  `json:"payment_count"`
+		DriverID     uint    `json:"driver_id"`
+		FullName     string  `json:"full_name"`
+		Phone        string  `json:"phone"`
+		TotalPaid    float64 `json:"total_paid"`
+		PaymentCount int64   `json:"payment_count"`
 	}
 	var topDrivers []DriverStats
 	h.DB.Model(&models.DailyBodaPayment{}).

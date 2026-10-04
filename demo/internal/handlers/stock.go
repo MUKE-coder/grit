@@ -44,15 +44,15 @@ func (h *StockHandler) Levels(c *gin.Context) {
 		Find(&stocks)
 
 	type StockLevel struct {
-		ProductID     uint    `json:"product_id"`
-		ProductTitle  string  `json:"product_title"`
-		CategoryName  string  `json:"category_name"`
-		BranchID      uint    `json:"branch_id"`
-		BranchName    string  `json:"branch_name"`
-		Quantity      int     `json:"quantity"`
-		Threshold     int     `json:"threshold"`
-		Status        string  `json:"status"`
-		SellingPrice  float64 `json:"selling_price"`
+		ProductID    uint    `json:"product_id"`
+		ProductTitle string  `json:"product_title"`
+		CategoryName string  `json:"category_name"`
+		BranchID     uint    `json:"branch_id"`
+		BranchName   string  `json:"branch_name"`
+		Quantity     int     `json:"quantity"`
+		Threshold    int     `json:"threshold"`
+		Status       string  `json:"status"`
+		SellingPrice float64 `json:"selling_price"`
 	}
 
 	results := make([]StockLevel, 0, len(stocks))
@@ -98,11 +98,11 @@ func (h *StockHandler) StockIn(c *gin.Context) {
 	}
 
 	var req struct {
-		ProductID         uint    `json:"product_id" binding:"required"`
-		BranchID          uint    `json:"branch_id" binding:"required"`
-		Quantity          int     `json:"quantity" binding:"required,min=1"`
+		ProductID         uint     `json:"product_id" binding:"required"`
+		BranchID          uint     `json:"branch_id" binding:"required"`
+		Quantity          int      `json:"quantity" binding:"required,min=1"`
 		CostPriceOverride *float64 `json:"cost_price_override"`
-		Note              string  `json:"note"`
+		Note              string   `json:"note"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "product_id, branch_id, and quantity (>0) are required"})
@@ -148,10 +148,10 @@ func (h *StockHandler) StockIn(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"data": gin.H{
-			"product_id":    req.ProductID,
-			"branch_id":     req.BranchID,
+			"product_id":     req.ProductID,
+			"branch_id":      req.BranchID,
 			"quantity_added": req.Quantity,
-			"current_stock": qty,
+			"current_stock":  qty,
 		},
 	})
 }
@@ -251,8 +251,8 @@ func (h *StockHandler) Transfer(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"product_id":       req.ProductID,
-			"quantity":         req.Quantity,
+			"product_id":        req.ProductID,
+			"quantity":          req.Quantity,
 			"from_branch_stock": fromQty,
 			"to_branch_stock":   toQty,
 		},

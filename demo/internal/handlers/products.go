@@ -226,13 +226,13 @@ func (h *ProductHandler) POS(c *gin.Context) {
 	results := make([]POSProduct, 0, len(products))
 	for _, p := range products {
 		pp := POSProduct{
-			ID:           p.ID,
-			Title:        p.Title,
-			SellingPrice: p.SellingPrice,
-			CostPrice:    p.CostPrice,
-			CategoryID:   p.CategoryID,
-			CategoryName: p.Category.Name,
-			Barcode:      p.Barcode,
+			ID:            p.ID,
+			Title:         p.Title,
+			SellingPrice:  p.SellingPrice,
+			CostPrice:     p.CostPrice,
+			CategoryID:    p.CategoryID,
+			CategoryName:  p.Category.Name,
+			Barcode:       p.Barcode,
 			StockInBranch: stockByProduct[p.ID], // 0 if no stock row exists
 		}
 

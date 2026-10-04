@@ -128,13 +128,13 @@ func (h *ReportHandler) Dashboard(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"today_sales_total":      todaySalesTotal,
+			"today_sales_total":       todaySalesTotal,
 			"today_transaction_count": todayTxCount,
-			"total_stock_value":      totalStockValue,
-			"total_capital_invested": totalCapital,
-			"estimated_profit_today": todaySalesTotal - todayCOGS,
-			"low_stock_items":        lowStockItems,
-			"recent_sales":           recent,
+			"total_stock_value":       totalStockValue,
+			"total_capital_invested":  totalCapital,
+			"estimated_profit_today":  todaySalesTotal - todayCOGS,
+			"low_stock_items":         lowStockItems,
+			"recent_sales":            recent,
 		},
 	})
 }
@@ -248,12 +248,12 @@ func (h *ReportHandler) Daily(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"total_sales":       totalSales,
-			"transaction_count": txCount,
-			"by_payment_method": paymentBreakdown,
-			"top_products":      topProducts,
+			"total_sales":        totalSales,
+			"transaction_count":  txCount,
+			"by_payment_method":  paymentBreakdown,
+			"top_products":       topProducts,
 			"products_breakdown": productsBreakdown,
-			"sales_per_day":     salesPerDay,
+			"sales_per_day":      salesPerDay,
 		},
 	})
 }

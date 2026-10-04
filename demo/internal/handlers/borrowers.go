@@ -24,30 +24,30 @@ type BorrowerHandler struct {
 
 func (h *BorrowerHandler) response(b models.Borrower) gin.H {
 	resp := gin.H{
-		"id":                  b.ID,
-		"business_id":         b.BusinessID,
-		"branch_id":           b.BranchID,
-		"first_name":          b.FirstName,
-		"last_name":           b.LastName,
-		"full_name":           b.FullName(),
-		"phone":               b.Phone,
-		"alt_phone":           b.AltPhone,
-		"email":               b.Email,
-		"date_of_birth":       b.DateOfBirth,
-		"gender":              b.Gender,
-		"national_id":         b.NationalID,
-		"address":             b.Address,
-		"employment_status":   b.EmploymentStatus,
-		"occupation":          b.Occupation,
-		"employer":            b.Employer,
-		"monthly_income":      b.MonthlyIncome,
-		"next_of_kin_name":    b.NextOfKinName,
-		"next_of_kin_phone":   b.NextOfKinPhone,
+		"id":                   b.ID,
+		"business_id":          b.BusinessID,
+		"branch_id":            b.BranchID,
+		"first_name":           b.FirstName,
+		"last_name":            b.LastName,
+		"full_name":            b.FullName(),
+		"phone":                b.Phone,
+		"alt_phone":            b.AltPhone,
+		"email":                b.Email,
+		"date_of_birth":        b.DateOfBirth,
+		"gender":               b.Gender,
+		"national_id":          b.NationalID,
+		"address":              b.Address,
+		"employment_status":    b.EmploymentStatus,
+		"occupation":           b.Occupation,
+		"employer":             b.Employer,
+		"monthly_income":       b.MonthlyIncome,
+		"next_of_kin_name":     b.NextOfKinName,
+		"next_of_kin_phone":    b.NextOfKinPhone,
 		"next_of_kin_relation": b.NextOfKinRelation,
-		"credit_score":        b.CreditScore,
-		"risk_level":          b.RiskLevel,
-		"created_at":          b.CreatedAt,
-		"updated_at":          b.UpdatedAt,
+		"credit_score":         b.CreditScore,
+		"risk_level":           b.RiskLevel,
+		"created_at":           b.CreatedAt,
+		"updated_at":           b.UpdatedAt,
 	}
 	if b.Branch.ID != 0 {
 		resp["branch"] = gin.H{"id": b.Branch.ID, "name": b.Branch.Name}
@@ -124,24 +124,24 @@ func (h *BorrowerHandler) Create(c *gin.Context) {
 	}
 
 	var req struct {
-		BranchID          uint    `json:"branch_id" binding:"required"`
-		FirstName         string  `json:"first_name" binding:"required"`
-		LastName          string  `json:"last_name" binding:"required"`
-		Phone             string  `json:"phone" binding:"required"`
-		AltPhone          string  `json:"alt_phone"`
-		Email             string  `json:"email"`
+		BranchID          uint       `json:"branch_id" binding:"required"`
+		FirstName         string     `json:"first_name" binding:"required"`
+		LastName          string     `json:"last_name" binding:"required"`
+		Phone             string     `json:"phone" binding:"required"`
+		AltPhone          string     `json:"alt_phone"`
+		Email             string     `json:"email"`
 		DateOfBirth       *time.Time `json:"date_of_birth"`
-		Gender            string  `json:"gender"`
-		NationalID        string  `json:"national_id"`
-		Address           string  `json:"address"`
-		EmploymentStatus  string  `json:"employment_status"`
-		Occupation        string  `json:"occupation"`
-		Employer          string  `json:"employer"`
-		MonthlyIncome     float64 `json:"monthly_income"`
-		NextOfKinName     string  `json:"next_of_kin_name"`
-		NextOfKinPhone    string  `json:"next_of_kin_phone"`
-		NextOfKinRelation string  `json:"next_of_kin_relation"`
-		RiskLevel         string  `json:"risk_level"`
+		Gender            string     `json:"gender"`
+		NationalID        string     `json:"national_id"`
+		Address           string     `json:"address"`
+		EmploymentStatus  string     `json:"employment_status"`
+		Occupation        string     `json:"occupation"`
+		Employer          string     `json:"employer"`
+		MonthlyIncome     float64    `json:"monthly_income"`
+		NextOfKinName     string     `json:"next_of_kin_name"`
+		NextOfKinPhone    string     `json:"next_of_kin_phone"`
+		NextOfKinRelation string     `json:"next_of_kin_relation"`
+		RiskLevel         string     `json:"risk_level"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Branch, first_name, last_name and phone are required"})

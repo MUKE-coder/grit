@@ -11,15 +11,15 @@ import "time"
 // StockMovement of type MovementReturn, with reference_id pointing at the
 // Return row.
 type Return struct {
-	ID             uint    `gorm:"primaryKey" json:"id"`
-	BusinessID     uint    `gorm:"not null;index" json:"business_id"`
-	SaleID         uint    `gorm:"not null;index" json:"sale_id"`
-	BranchID       uint    `gorm:"not null;index" json:"branch_id"`
-	RefundedTotal  float64 `gorm:"not null" json:"refunded_total"`
-	PaymentMethod  string  `json:"payment_method"`  // cash | mobile_money | store_credit
-	TransactionRef string  `json:"transaction_ref"` // for mobile-money refunds
-	Reason         string  `gorm:"type:text" json:"reason"`
-	ProcessedBy    uint    `gorm:"not null;index" json:"processed_by"`
+	ID             uint      `gorm:"primaryKey" json:"id"`
+	BusinessID     uint      `gorm:"not null;index" json:"business_id"`
+	SaleID         uint      `gorm:"not null;index" json:"sale_id"`
+	BranchID       uint      `gorm:"not null;index" json:"branch_id"`
+	RefundedTotal  float64   `gorm:"not null" json:"refunded_total"`
+	PaymentMethod  string    `json:"payment_method"`  // cash | mobile_money | store_credit
+	TransactionRef string    `json:"transaction_ref"` // for mobile-money refunds
+	Reason         string    `gorm:"type:text" json:"reason"`
+	ProcessedBy    uint      `gorm:"not null;index" json:"processed_by"`
 	CreatedAt      time.Time `json:"created_at"`
 
 	Sale      Sale         `gorm:"foreignKey:SaleID" json:"sale,omitempty"`

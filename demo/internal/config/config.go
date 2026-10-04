@@ -58,17 +58,17 @@ type Config struct {
 	TOTPIssuer string
 
 	// Security (Sentinel v2.0)
-	SentinelEnabled        bool
-	SentinelUsername       string
-	SentinelPassword       string
-	SentinelSecretKey      string
+	SentinelEnabled   bool
+	SentinelUsername  string
+	SentinelPassword  string
+	SentinelSecretKey string
 	// Empty by default — XFF is ignored. Populate when behind a known proxy.
 	SentinelTrustedProxies []string
 
 	// Observability (Pulse v1.0)
-	PulseEnabled    bool
-	PulseUsername    string
-	PulsePassword   string
+	PulseEnabled  bool
+	PulseUsername string
+	PulsePassword string
 	// "memory" (default) or "sqlite" for the v1.0 persistent backend.
 	PulseStorage    string
 	PulseStorageDSN string
@@ -86,8 +86,8 @@ type Config struct {
 	OAuthFrontendURL   string // Where to redirect after OAuth callback
 
 	// DGateway (Desispay) — mobile money collections for loan repayments
-	DGatewayAPIKey         string
-	DGatewayBaseURL        string
+	DGatewayAPIKey          string
+	DGatewayBaseURL         string
 	DGatewayDefaultProvider string // iotec | relworx
 }
 
@@ -100,15 +100,15 @@ func Load() (*Config, error) {
 	storageDriver := getEnv("STORAGE_DRIVER", "minio")
 
 	cfg := &Config{
-		AppName:     getEnv("APP_NAME", "grit-app"),
-		AppEnv:      getEnv("APP_ENV", "development"),
-		Port:        getEnv("APP_PORT", "8080"),
-		AppURL:      getEnv("APP_URL", "http://localhost:8080"),
-		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:5173"),
-		DatabaseURL: getEnv("DATABASE_URL", ""),
-		JWTSecret:   getEnv("JWT_SECRET", ""),
+		AppName:        getEnv("APP_NAME", "grit-app"),
+		AppEnv:         getEnv("APP_ENV", "development"),
+		Port:           getEnv("APP_PORT", "8080"),
+		AppURL:         getEnv("APP_URL", "http://localhost:8080"),
+		FrontendURL:    getEnv("FRONTEND_URL", "http://localhost:5173"),
+		DatabaseURL:    getEnv("DATABASE_URL", ""),
+		JWTSecret:      getEnv("JWT_SECRET", ""),
 		InternalAPIKey: getEnv("INTERNAL_API_KEY", ""),
-		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379"),
+		RedisURL:       getEnv("REDIS_URL", "redis://localhost:6379"),
 
 		StorageDriver: storageDriver,
 		Storage:       resolveStorage(storageDriver),
@@ -135,7 +135,7 @@ func Load() (*Config, error) {
 		SentinelTrustedProxies: splitCSV(getEnv("SENTINEL_TRUSTED_PROXIES", "")),
 
 		PulseEnabled:    getEnv("PULSE_ENABLED", "true") == "true",
-		PulseUsername:    getEnv("PULSE_USERNAME", "admin"),
+		PulseUsername:   getEnv("PULSE_USERNAME", "admin"),
 		PulsePassword:   getEnv("PULSE_PASSWORD", "pulse"),
 		PulseStorage:    getEnv("PULSE_STORAGE", "memory"),
 		PulseStorageDSN: getEnv("PULSE_STORAGE_DSN", "pulse.db"),

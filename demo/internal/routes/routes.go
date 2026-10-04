@@ -30,7 +30,7 @@ type Services struct {
 	// SecObsBridge talks to the locally-mounted Sentinel/Pulse APIs over
 	// loopback so the in-app Security/Observability dashboards can show
 	// summary cards without an iframe. Nil when both are disabled.
-	SecObs  *services.SecObsBridge
+	SecObs *services.SecObsBridge
 }
 
 // Setup configures all routes and returns the Gin engine.
