@@ -1,0 +1,398 @@
+@import "tailwindcss";
+/* Successor to tailwindcss-animate for v4: provides the animate-in, fade-in
+ * and zoom-in used by the dialog, sheet and dropdown components. */
+@import "tw-animate-css";
+
+/* Map the design-token CSS variables (defined per [data-theme] below) onto
+ * Tailwind utility colors and fonts.
+ *
+ * Regular @theme, NOT @theme inline, and that is the load-bearing detail. The
+ * utilities compile to var(--color-*), whose values are var(--bg-*)
+ * indirections that re-resolve per element, so overriding --bg-* under
+ * [data-theme="..."] repaints the whole UI at runtime. With @theme inline the
+ * values are substituted at build time and theme switching silently stops
+ * working. */
+@theme {
+  --color-background: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-hover: var(--bg-hover);
+  --color-border: var(--border);
+  --color-foreground: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+
+  --font-sans: var(--font-display), system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+  --font-serif: var(--font-serif), Georgia, serif;
+}
+
+/* v3 parity: v4 defaults the border color to currentColor, but the admin
+ * relies on the themed border everywhere. Point bare borders at --border. */
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--border);
+  }
+}
+
+/* Print: isolate the record. Everything is hidden, then only #print-area (the
+ * detail card + line items) is made visible and floated to the top-left, so the
+ * sidebar, navbar and action buttons never reach the paper. Resource detail
+ * pages wrap their printable content in #print-area and mark controls .no-print. */
+@page {
+  margin: 16mm 14mm;
+}
+@media print {
+  body * { visibility: hidden !important; }
+  #print-area, #print-area * { visibility: visible !important; }
+  #print-area {
+    position: absolute !important;
+    left: 0; top: 0; width: 100%;
+    padding: 0 !important; margin: 0 !important;
+  }
+  .no-print { display: none !important; }
+  body { background: #fff !important; }
+  /* Ink-friendly: drop the dark surfaces and shadows the screen theme uses. */
+  #print-area * {
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #000 !important;
+  }
+  #print-area .rounded-xl, #print-area .rounded-lg {
+    border-color: #d4d4d8 !important;
+  }
+  /* Keep tables readable across page breaks: repeat the head on each page
+     and never split a row down the middle. */
+  #print-area thead { display: table-header-group; }
+  #print-area tfoot { display: table-footer-group; }
+  #print-area tr, #print-area img { break-inside: avoid; page-break-inside: avoid; }
+  #print-area h1, #print-area h2 { break-after: avoid; page-break-after: avoid; }
+}
+
+/* v3.28.1 — theme-aware CSS variables.
+ *
+ * Each theme overrides the variable set via [data-theme="<name>"] on the
+ * <html> root. The root layout writes that attribute from NEXT_PUBLIC_THEME
+ * at render time, so swapping THEME in .env re-paints the whole dashboard
+ * without code edits.
+ *
+ * Defaults (:root) match the Atlas theme — that's the scaffold default.
+ * The legacy dark palette is preserved under [data-theme="midnight"] so
+ * teams that want the old look can opt in.
+ */
+
+/* atlas (default) — professional, blue/white, team/organisation */
+:root,
+[data-theme="atlas"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f1f5f9;
+  --border: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-fg: #ffffff;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #0ea5e9;
+}
+
+/* aurora — friendly, pastel, consumer SaaS */
+/* aurora — Apple-inspired. Monochrome: near-black text and CTAs on white and
+ * Apple's warm greys. Blue is reserved for links/info only, so the accent that
+ * drives buttons stays black like iCloud's sign-in pill. */
+[data-theme="aurora"] {
+  --bg-primary: #fbfbfd;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f5f5f7;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f5f5f7;
+  --border: #d2d2d7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #424245;
+  --text-muted: #86868b;
+  --accent: #1d1d1f;
+  --accent-hover: #000000;
+  --accent-fg: #ffffff;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #0071e3;
+}
+
+/* pulse — Cloudflare-inspired. Premium blue CTAs on a cool grey-blue canvas
+ * with white elevated cards; Cloudflare orange is the single warm accent. */
+[data-theme="pulse"] {
+  --bg-primary: #f6f7f9;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #eef1f5;
+  --bg-elevated: #ffffff;
+  --bg-hover: #eef1f5;
+  --border: #e0e4e9;
+  --text-primary: #1d1f26;
+  --text-secondary: #4b5563;
+  --text-muted: #8a94a6;
+  --accent: #0051c3;
+  --accent-hover: #003d99;
+  --accent-fg: #ffffff;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #f6821f;
+  --info: #0051c3;
+}
+
+/* coral - rose, warm neutrals. The marketplace palette: the accent is a
+ * statement colour, so the greys around it stay very plain. */
+[data-theme="coral"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f7f7;
+  --bg-tertiary: #f0f0f0;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f0f0f0;
+  --border: #dddddd;
+  --text-primary: #222222;
+  --text-secondary: #494949;
+  --text-muted: #717171;
+  --accent: #e11d48;
+  --accent-hover: #be123c;
+  --accent-fg: #ffffff;
+  --success: #059669;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --info: #2563eb;
+}
+
+/* amber - the storefront palette. Dark text on the accent rather than white:
+ * amber is too light to carry white text at AA. */
+[data-theme="amber"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f8f8;
+  --bg-tertiary: #eff1f1;
+  --bg-elevated: #ffffff;
+  --bg-hover: #eff1f1;
+  --border: #d5d9d9;
+  --text-primary: #0f1111;
+  --text-secondary: #3f4545;
+  --text-muted: #565959;
+  --accent: #f59e0b;
+  --accent-hover: #d97706;
+  --accent-fg: #0f1111;
+  --success: #047857;
+  --danger: #b91c1c;
+  --warning: #b45309;
+  --info: #0369a1;
+}
+
+/* sky - crisp blue on cool greys. */
+[data-theme="sky"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #eef4f9;
+  --bg-elevated: #ffffff;
+  --bg-hover: #eef4f9;
+  --border: #dbe3ec;
+  --text-primary: #0b1521;
+  --text-secondary: #3a4a5e;
+  --text-muted: #5b6b7f;
+  --accent: #0284c7;
+  --accent-hover: #0369a1;
+  --accent-fg: #ffffff;
+  --success: #059669;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --info: #0ea5e9;
+}
+
+/* mono - black and white. The accent is the text colour, which is the whole
+ * idea: nothing on the screen competes for attention with the content. */
+[data-theme="mono"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #f5f5f5;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f5f5f5;
+  --border: #e5e5e5;
+  --text-primary: #0a0a0a;
+  --text-secondary: #525252;
+  --text-muted: #737373;
+  --accent: #0a0a0a;
+  --accent-hover: #262626;
+  --accent-fg: #ffffff;
+  --success: #15803d;
+  --danger: #b91c1c;
+  --warning: #a16207;
+  --info: #1d4ed8;
+}
+
+/* emerald - green on neutral greys. */
+[data-theme="emerald"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f3f4f6;
+  --border: #e5e7eb;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --accent: #059669;
+  --accent-hover: #047857;
+  --accent-fg: #ffffff;
+  --success: #059669;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --info: #2563eb;
+}
+
+/* midnight — legacy v3.27 dark look. Opt in by setting THEME=midnight or
+ * adding data-theme="midnight" on a specific surface. */
+[data-theme="midnight"] {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #111118;
+  --bg-tertiary: #1a1a24;
+  --bg-elevated: #22222e;
+  --bg-hover: #2a2a38;
+  --border: #2a2a3a;
+  --text-primary: #e8e8f0;
+  --text-secondary: #9090a8;
+  --text-muted: #7c7c96;
+  --accent: #6c5ce7;
+  --accent-hover: #7c6cf7;
+  --accent-fg: #ffffff;
+  --success: #00b894;
+  --danger: #ff6b6b;
+  --warning: #fdcb6e;
+  --info: #74b9ff;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-display), system-ui, sans-serif;
+  /* Base a notch below the 16px browser default so the whole admin reads a bit
+     tighter and more dashboard-dense. Tailwind's text-* scale is rem-based, so
+     this rescales every size proportionally. */
+  font-size: 15px;
+}
+
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-hover);
+  border-radius: 3px;
+}
+
+/* Sonner toaster — bridge our theme tokens into sonner's richColors slots
+ * so success = Grit --success, error = Grit --danger, etc. Works across
+ * every theme because each [data-theme] already redefines these tokens. */
+[data-sonner-toaster] {
+  --normal-bg: var(--bg-elevated);
+  --normal-text: var(--text-primary);
+  --normal-border: var(--border);
+
+  --success-bg: color-mix(in srgb, var(--success) 14%, var(--bg-elevated));
+  --success-text: var(--success);
+  --success-border: color-mix(in srgb, var(--success) 32%, transparent);
+
+  --error-bg: color-mix(in srgb, var(--danger) 14%, var(--bg-elevated));
+  --error-text: var(--danger);
+  --error-border: color-mix(in srgb, var(--danger) 32%, transparent);
+
+  --warning-bg: color-mix(in srgb, var(--warning) 16%, var(--bg-elevated));
+  --warning-text: var(--warning);
+  --warning-border: color-mix(in srgb, var(--warning) 36%, transparent);
+
+  --info-bg: color-mix(in srgb, var(--info) 14%, var(--bg-elevated));
+  --info-text: var(--info);
+  --info-border: color-mix(in srgb, var(--info) 32%, transparent);
+}
+
+[data-sonner-toast].grit-toast [data-icon] svg {
+  width: 18px;
+  height: 18px;
+}
+
+
+/* v3.31 — Dark mode. The DarkModeToggle component writes three signals
+ * to <html> on every flip: class="dark", data-theme-mode="dark", and
+ * style="color-scheme: dark". We honour the two pertinent to CSS here.
+ * The active data-theme (atlas / aurora / pulse) keeps its accent hue;
+ * only the surface + text variables flip. */
+
+.dark,
+[data-theme-mode="dark"] {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #111118;
+  --bg-tertiary: #1a1a24;
+  --bg-elevated: #22222e;
+  --bg-hover: #2a2a38;
+  --border: #2a2a3a;
+  --text-primary: #e8e8f0;
+  --text-secondary: #9090a8;
+  --text-muted: #7c7c96;
+}
+
+/* Per-theme accent lifts so blue/purple/black don't disappear on the
+ * dark canvas. These come after the base dark block on purpose — the
+ * surface tokens above stay; only the brand colours refresh. */
+
+.dark[data-theme="atlas"],
+[data-theme-mode="dark"][data-theme="atlas"] {
+  --accent: #60a5fa;
+  --accent-hover: #93c5fd;
+  /* Near-black label: white on this blue is 2.5:1, and the brightness is the
+     point of lifting the accent for the dark canvas, so the label moves
+     rather than the colour. */
+  --accent-fg: #0a0a0f;
+}
+
+.dark[data-theme="aurora"],
+[data-theme-mode="dark"][data-theme="aurora"] {
+  /* Apple-dark greys — kept dark enough that the white button label reads. */
+  --accent: #48484a;
+  --accent-hover: #636366;
+  --accent-fg: #ffffff;
+}
+
+.dark[data-theme="pulse"],
+[data-theme-mode="dark"][data-theme="pulse"] {
+  /* Cloudflare blue, brightened one step for the dark canvas. */
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  /* 3.8:1 with a white label, which is under AA for anything but large text. */
+  --accent-fg: #0a0a0f;
+}
+
+/* Form controls + selection still need the dark hint or the browser
+ * renders them with the OS light scheme regardless of our vars. */
+.dark input,
+.dark textarea,
+.dark select,
+[data-theme-mode="dark"] input,
+[data-theme-mode="dark"] textarea,
+[data-theme-mode="dark"] select {
+  color-scheme: dark;
+}

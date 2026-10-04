@@ -1,0 +1,228 @@
+/*
+ * Optional default styling for <Dropzone>.
+ *
+ *   import "@gritframework/upload/styles.css";
+ *
+ * Entirely optional: the component ships unstyled so it can sit inside any
+ * design system without a fight. This is here so that "npm install and render
+ * it" produces something presentable rather than a stack of unstyled divs.
+ *
+ * Everything is scoped under .grit-dz, so it cannot leak into the rest of a
+ * page, and every colour and radius is a custom property. Retheme it by
+ * setting those on any ancestor rather than by overriding rules:
+ *
+ *   .grit-dz { --grit-dz-accent: #6c5ce7; --grit-dz-radius: 4px; }
+ *
+ * Dark mode follows prefers-color-scheme. If your app has its own toggle,
+ * set the properties under whatever class it puts on the root instead.
+ */
+
+.grit-dz {
+  --grit-dz-accent: #6c5ce7;
+  --grit-dz-fg: #18181b;
+  --grit-dz-muted: #71717a;
+  --grit-dz-border: #d4d4d8;
+  --grit-dz-surface: #ffffff;
+  --grit-dz-surface-alt: #fafafa;
+  --grit-dz-success: #059669;
+  --grit-dz-danger: #dc2626;
+  --grit-dz-radius: 10px;
+
+  color: var(--grit-dz-fg);
+  font-family: inherit;
+  width: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  .grit-dz {
+    --grit-dz-fg: #e8e8f0;
+    --grit-dz-muted: #9090a8;
+    --grit-dz-border: #2a2a3a;
+    --grit-dz-surface: #111118;
+    --grit-dz-surface-alt: #1a1a24;
+    --grit-dz-success: #34d399;
+    --grit-dz-danger: #f87171;
+  }
+}
+
+/* --- the drop target ---------------------------------------------------- */
+
+.grit-dz__zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 2.25rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  border: 2px dashed var(--grit-dz-border);
+  border-radius: var(--grit-dz-radius);
+  background: var(--grit-dz-surface-alt);
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.grit-dz__zone:hover {
+  border-color: color-mix(in srgb, var(--grit-dz-accent) 40%, var(--grit-dz-border));
+}
+
+/* Both the class and the data attribute, so a consumer replacing classNames
+   still gets the drag feedback. */
+.grit-dz__zone--dragging,
+.grit-dz__zone[data-dragging] {
+  border-color: var(--grit-dz-accent);
+  background: color-mix(in srgb, var(--grit-dz-accent) 6%, transparent);
+}
+
+.grit-dz__zone--disabled,
+.grit-dz__zone[data-disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* The ring lives on the label because the input inside it is the thing that
+   actually takes focus, and it is visually hidden. Without this, tabbing to
+   the dropzone shows nothing at all. */
+.grit-dz__zone:focus-within {
+  outline: 2px solid var(--grit-dz-accent);
+  outline-offset: 2px;
+}
+
+.grit-dz__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.grit-dz__hint {
+  font-size: 0.75rem;
+  color: var(--grit-dz-muted);
+}
+
+/* Visually hidden, not display:none, so the input stays focusable. */
+.grit-dz__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* --- the list ----------------------------------------------------------- */
+
+.grit-dz__list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.grit-dz__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--grit-dz-border);
+  border-radius: calc(var(--grit-dz-radius) - 2px);
+  background: var(--grit-dz-surface);
+}
+
+.grit-dz__item[data-state="error"] {
+  border-color: color-mix(in srgb, var(--grit-dz-danger) 40%, var(--grit-dz-border));
+}
+
+.grit-dz__thumb {
+  flex: 0 0 auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--grit-dz-surface-alt);
+}
+
+.grit-dz__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.grit-dz__name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grit-dz__meta {
+  font-size: 0.75rem;
+  color: var(--grit-dz-muted);
+}
+
+/* describeSaving() returns "5.2 MB -> 41 KB". The arrow is kept as text rather
+   than styled into a struck-through pair, because the string is one unit and
+   splitting it here would break the moment its format changed. */
+.grit-dz__saving {
+  color: var(--grit-dz-success);
+}
+
+.grit-dz__error {
+  color: var(--grit-dz-danger);
+}
+
+.grit-dz__progress {
+  display: block;
+  height: 3px;
+  margin-top: 0.375rem;
+  border-radius: 999px;
+  background: var(--grit-dz-border);
+  overflow: hidden;
+}
+
+.grit-dz__progress-bar {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--grit-dz-accent);
+  transition: width 200ms ease;
+}
+
+.grit-dz__remove {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 1.125rem;
+  line-height: 1;
+  color: var(--grit-dz-muted);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.grit-dz__remove:hover {
+  color: var(--grit-dz-fg);
+  background: var(--grit-dz-surface-alt);
+}
+
+.grit-dz__remove:focus-visible {
+  outline: 2px solid var(--grit-dz-accent);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grit-dz__zone,
+  .grit-dz__progress-bar {
+    transition: none;
+  }
+}

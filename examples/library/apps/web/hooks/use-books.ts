@@ -1,0 +1,92 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api";
+import type { Book } from "@repo/shared/types";
+
+interface BooksResponse {
+  data: Book[];
+  meta: {
+    total: number;
+    page: number;
+    page_size: number;
+    pages: number;
+  };
+}
+
+interface UseBooksParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: string;
+}
+
+export function useBooks({ page = 1, pageSize = 20, search = "", sortBy = "created_at", sortOrder = "desc" }: UseBooksParams = {}) {
+  return useQuery<BooksResponse>({
+    queryKey: ["books", { page, pageSize, search, sortBy, sortOrder }],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: String(pageSize),
+        sort_by: sortBy,
+        sort_order: sortOrder,
+      });
+      if (search) {
+        params.set("search", search);
+      }
+      const { data } = await apiClient.get(`/api/books?${params}`);
+      return data;
+    },
+  });
+}
+
+export function useGetBook(id: string) {
+  return useQuery<Book>({
+    queryKey: ["books", id],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/api/books/${id}`);
+      return data.data;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useCreateBook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: Record<string, unknown>) => {
+      const { data } = await apiClient.post("/api/books", input);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["books"] });
+    },
+  });
+}
+
+export function useUpdateBook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...input }: { id: string } & Record<string, unknown>) => {
+      const { data } = await apiClient.put(`/api/books/${id}`, input);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["books"] });
+    },
+  });
+}
+
+export function useDeleteBook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.delete(`/api/books/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["books"] });
+    },
+  });
+}

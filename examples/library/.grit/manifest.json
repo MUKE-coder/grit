@@ -1,0 +1,3682 @@
+{
+  "format": 1,
+  "grit": "3.361.2",
+  "updatedAt": "2026-10-04T05:03:55Z",
+  "files": {
+    ".claude/skills/grit/SKILL.md": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:34321a5925f84f95e6823b53d2093bdfe0a3e93451622ec066850813302c98d6"
+    },
+    ".claude/skills/grit/reference.md": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:aa3118d5c8588bb2631fc49f6c660741ec99bf11271210ab63d3fd2d8ece0294"
+    },
+    ".dockerignore": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2e633d7d6b40c2bbe8be011b73806cf99deb4b374f9b77b13c330ed721c8d4e6"
+    },
+    ".env": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a05b786723194e9cb354127855561b10eb08c54af76cb365b65bf11253303d18"
+    },
+    ".env.example": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:586cdc995e5fb1b89e6c32faa969241cfa45a15165d30ec50428b82cb5248fd5"
+    },
+    ".github/dependabot.yml": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:85b4e55a63ca7cc0f8738defea664a5244b4410c81923fd684f44660a81044d4"
+    },
+    ".github/govulncheck-allow.txt": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b419f68e586b42164a19dd4c8bf72a602cf8db4f3e992a3b9c6fa7ff5fb53697"
+    },
+    ".github/workflows/ci.yml": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:27f43a9bbcae12352a84276c0f567d5c53ba81e734dab163fb87a07856854d1e"
+    },
+    ".github/workflows/lint.yml": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3e03c23922799947d5d55246bea4bd240cfc7812de50019492ab7a3396d97f17"
+    },
+    ".github/workflows/release.yml": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:00d4a66a2fbbda41be5baa7d10cb45cacfffb2856ede98c7dcfbd95133a4839f"
+    },
+    ".github/workflows/security.yml": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8d088db2f91fb933f6674d40fbd4e0fd08be78f75ecf1970e3738346a5c422be"
+    },
+    ".gitignore": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:87360b4673df16a2a2d19fe1f2509ce7fe1bd909fe31968e66049bead67fe134"
+    },
+    ".npmrc": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:26e892905bcf496adc8278b1015e079df33f479c7d0ea8844d1202e86922ce38"
+    },
+    "README.md": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:84dd1393cde370d063f35c0bb2c702553db5ad136dcb86c80168069d284bf441"
+    },
+    "apps/admin/Dockerfile": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8838620f4057c8782c3270068d10e34383bbb6302912bc9cd16ee5d255a3d2ab"
+    },
+    "apps/admin/__tests__/dropzone.test.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:125db38b5682ba76226290deb2b9e7ed2b4e100bd1894d6bbfd6dd4d9c205d1e"
+    },
+    "apps/admin/__tests__/field-inputs.test.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:641ce0a3b8b8036781248fb2ef58457246a0fd180e84907afb1b6d8cc482bcc2"
+    },
+    "apps/admin/__tests__/form-values.test.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:34d4017524bf10bce2e9d482b2095bb814c9593d7305bfe0967751acc8b2f893"
+    },
+    "apps/admin/__tests__/login.test.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:00d2619ec55cd11a4b4d748617592aff39aa8fcee3fe63986ab2772f8975a0d6"
+    },
+    "apps/admin/__tests__/safe-href.test.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:23ce77c64658675dd8c74dfdcc11316c814f814c4ee7659b2f686d2f11620f37"
+    },
+    "apps/admin/__tests__/tiptap-extensions.test.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1e6ab1ed6429f9ba30215bcda0ebd0c8a61c6a63bd864947ab0304b98fc7a07e"
+    },
+    "apps/admin/__tests__/utils.test.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c6046d0893e8ae4538a26dba11476028ff5a494a6dccf2e84684e00d731f864d"
+    },
+    "apps/admin/app/(auth)/callback/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f3f65d262bec9c07e50c5ef962e0df88431eba4c9fe27b660b5dfb855788b370"
+    },
+    "apps/admin/app/(auth)/forgot-password/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:992f1c4d317d6c3776cafff3c398d6d2e0e66ec74617eff54212487fc4d8ba83"
+    },
+    "apps/admin/app/(auth)/login/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:075f638f8b2e6b94da076853df4063b1f6c044257e5a0f412b7bba7b3203b4bd"
+    },
+    "apps/admin/app/(auth)/magic-link/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:fb83189d35f57acdb809c98d9a6997a8c87b23ef6b9d712402d486ba494f54fa"
+    },
+    "apps/admin/app/(auth)/reset-password/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:65ab6cadfa050c3fbf1d685743bdfc4033b354b6f51dde3b4db024204868cf15"
+    },
+    "apps/admin/app/(auth)/sign-up/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7cb660f6f07198c205aad0789425e203b201e3132730be7d61289cbc964953cf"
+    },
+    "apps/admin/app/(auth)/verify-email/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:818401dab221d40256246a5b71f32a1f17377cda166b87ee287795c36f15856b"
+    },
+    "apps/admin/app/(dashboard)/account/security/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6c66cffc75605b461b575da943ccf670042d6871e320d6af64403abcda76558c"
+    },
+    "apps/admin/app/(dashboard)/dashboard/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e905a0cf10f158c417866987313d9099152e8efa26db67f4c49f354d7c6c7229"
+    },
+    "apps/admin/app/(dashboard)/layout.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f7237349175e339ac2f51bad665b23c2871af18a3d35b01e936b6fab1937e7c8"
+    },
+    "apps/admin/app/(dashboard)/profile/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c55e08027d145206c5d8851da1190a5c9b9d55144690c4980c66d3d5104fbcb1"
+    },
+    "apps/admin/app/(dashboard)/resources/authors/[id]/page.tsx": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:1673d32f289a194a08bd06583e5ce3a6d450718e6f8a117ea2c3fcd7b32c9ae3"
+    },
+    "apps/admin/app/(dashboard)/resources/authors/page.tsx": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:cb709ea5f13dcb1f39d925c3e476a49fc84dfff5cdab6d2efe6cdc9487b9c0c8"
+    },
+    "apps/admin/app/(dashboard)/resources/blogs/[id]/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:fea8730327134bc2ae942eee5738f1f1dfc23bb12e58eea0d1741295a1ca1c3b"
+    },
+    "apps/admin/app/(dashboard)/resources/blogs/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b2f8ceaf049152fed80a5e64aa816eb497ae3508d827116b6ad85598e89056bd"
+    },
+    "apps/admin/app/(dashboard)/resources/books/[id]/page.tsx": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:abc6f1c70a404c53f0e31632dcff5329456506375f92982a192e39e4d0abf343"
+    },
+    "apps/admin/app/(dashboard)/resources/books/page.tsx": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:743727e282a35f012289208aba2d65569e385d202d0d41ad8794b0f1d37efb0a"
+    },
+    "apps/admin/app/(dashboard)/resources/loans/[id]/page.tsx": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:2f40766fa2a276d1cf68b0b29d202f1b0fdf5b29e43db79a1eb16d75e8364317"
+    },
+    "apps/admin/app/(dashboard)/resources/loans/page.tsx": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:318c6a4bf0aa74c4871b68f6a49a302376f3d9b0858de2fd678b25e77d4fe4ae"
+    },
+    "apps/admin/app/(dashboard)/resources/users/[id]/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:0b102b877f8b36ebee2f0e8593fe7266ca1ad1783ce868cbf312f712f1e65793"
+    },
+    "apps/admin/app/(dashboard)/resources/users/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d2bf65106cdfc3a8be2197abd0d58348563109972eac13c73e89295281be1c7a"
+    },
+    "apps/admin/app/(dashboard)/settings/dashboard/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d2a402220f587396b5d43095b1d3b8a6348a361432163deae375c3147eb2edf6"
+    },
+    "apps/admin/app/(dashboard)/system/access-reviews/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:29b6aea3696af7590893f758bf011a05a388e87741728e0ae051ccce1c89530d"
+    },
+    "apps/admin/app/(dashboard)/system/account/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:fbe33970676ccdb9445bf8dc29c394753021faefe0e48e002768adcd64399185"
+    },
+    "apps/admin/app/(dashboard)/system/activity/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:36f2195e65d3e725d1b9b2c1973e26bbce3ad3a2c47eac3650ca5262b0421bd6"
+    },
+    "apps/admin/app/(dashboard)/system/api-keys/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e492a9496b3555b58ed215094a7c29c5d9c974f908bea3df56ab8e7fe116bd45"
+    },
+    "apps/admin/app/(dashboard)/system/audit/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a98cfa61230ff6192602ae392319d717c4457127f10cd0082fdeaf44e37216f4"
+    },
+    "apps/admin/app/(dashboard)/system/backups/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:11f1ab17c1c29144ad0813bf5f1c1087178566009b54a477a6808efbf9e5cefb"
+    },
+    "apps/admin/app/(dashboard)/system/cron/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:94fd7dd736ab00994046a31f7b05033b727c9668f79914525aeebc9bd6c6dafc"
+    },
+    "apps/admin/app/(dashboard)/system/files/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:46393d42b074a42e45519ffd1f6ebe7f23b6a3591ae08e1c5b4b8b2be2841c8e"
+    },
+    "apps/admin/app/(dashboard)/system/form-shares/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1519c90e2b3bc43f843d788ece1883c605490ce4f07ab96eae851583d2fd082c"
+    },
+    "apps/admin/app/(dashboard)/system/gdpr/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:768d13c5a957a742b09c18ba91f6ed81387cece286c10411da6a720f772710e3"
+    },
+    "apps/admin/app/(dashboard)/system/health/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:88ca263a227c9bedc90265e4699c8031f870d5193bbb1220c158f71a09d1a36f"
+    },
+    "apps/admin/app/(dashboard)/system/jobs/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:857a742d30440a0c7b99f717be08436eb8e3dd328ab8c1fb439a8a3f5f74a5b8"
+    },
+    "apps/admin/app/(dashboard)/system/mail/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:0f916cbaf7dc76eb47c048b1f0bb3fe9cd0aff4f77a2720acf82a226fc9e88a4"
+    },
+    "apps/admin/app/(dashboard)/system/notifications/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a87621fff081bb4f0d742e25cd043240fdc7063821ec3a6d180eb0f4c5b1f651"
+    },
+    "apps/admin/app/(dashboard)/system/observability/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:dee6be7eab5040ba82d023df07ff56bc625cd192858a59fd4e35d31e59d71a34"
+    },
+    "apps/admin/app/(dashboard)/system/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:76fb0c1e9678f9756aa8f31d783e452bb89f8cd0f9ee810de9a25ec74c3a5333"
+    },
+    "apps/admin/app/(dashboard)/system/performance/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ec64279b3b74b5f687f492726cdd6da52b53bc920287aa5475baf0324a77c09a"
+    },
+    "apps/admin/app/(dashboard)/system/roles/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:49cf5084b9c4becb72013d44861066a5cf7a0d275d574c0b74f9db7b2d3a1fcb"
+    },
+    "apps/admin/app/(dashboard)/system/routes/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ef5bde6e9f80ddfd592155a760179087af80b64cd686291742478796ed1c80f4"
+    },
+    "apps/admin/app/(dashboard)/system/sagas/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:55ca91cf6b00c6ddd6e350917ea28884c3401c2a50943e3b8fa6c2198e647b20"
+    },
+    "apps/admin/app/(dashboard)/system/security/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5adb356ee784ce714233fe59a36762aec5fc5d1cc1d28cc387f772905f8f1c43"
+    },
+    "apps/admin/app/(dashboard)/system/sso/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a13b2ac48f2cf0a87012800e37d858a62f5e56fd456d2f3a70de56575445353f"
+    },
+    "apps/admin/app/(dashboard)/system/support/[id]/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d260d33a7c449fdd5d7983eed55df3d82c042dc35d2c02d0c10c7bdabe2140e5"
+    },
+    "apps/admin/app/(dashboard)/system/support/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2f2d600a040305254a4b4e1cb0b7f4a6b7ed1363b73dfabbc1d8746cf4bd4ce9"
+    },
+    "apps/admin/app/error.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7c39127341f77d0f1013c5183f58f247d44b5636c3f9b182a608b78b3adc8a85"
+    },
+    "apps/admin/app/global-error.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7874f8bd0fc2c426d7a04dc579367c5e5b70666873805dd32d3765c170ae5ff4"
+    },
+    "apps/admin/app/globals.css": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d4621912d9b6a974488c5ca06e074edbc324dd7dc8d0c53c9d6c9ae636b28c2b"
+    },
+    "apps/admin/app/layout.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:22bc317eaf59e3f16771a8c8d044d00b97fc61e371f0deac50143aa30736dce0"
+    },
+    "apps/admin/app/not-found.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:460d8b0883309cec7cff373068930ccd40bb3de03dced4529f3e65f100d13f48"
+    },
+    "apps/admin/app/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:fde89812b7a7574864ee98610befe420558a8369353327b929b3b0a317e7af5c"
+    },
+    "apps/admin/components.json": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e7defa9454603dacd72877b75bf9ebd2efce6686e56e2115a99051cafbecc42c"
+    },
+    "apps/admin/components/account/avatar-cropper.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:4da8ae9b80baafa2fc825a42a3b5e88566a45397d572151b70131c000cda4e7b"
+    },
+    "apps/admin/components/account/password-form.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f303fbe5bb47ef66d0881512f077724684ffff4d0d6009c0e7b9b206ea8d01de"
+    },
+    "apps/admin/components/account/profile-form.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:440b647053b8235c2274513e1d7d258e09016b3b08551e472fe9f1bd31f01371"
+    },
+    "apps/admin/components/account/sign-in-links.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7ca8fffe7777553c24f037bd6031b7f530a5b76ba13bcabea659e052b48e0f76"
+    },
+    "apps/admin/components/auth/AmberAuthShell.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f4d1cdd7ffd960c6a10eda2321d391cc78103633a07e38e306abce2333ec6fbc"
+    },
+    "apps/admin/components/auth/AtlasAuthShell.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b4c175ee83f9c2569f23787e682cb22292b342a19d0b7f4fc4839bc90a5e4579"
+    },
+    "apps/admin/components/auth/AuroraAuthShell.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5e6dcaf4a915ae4d158080319c4e57f84c4013e49cf8f81f61bfc9e28591cc0a"
+    },
+    "apps/admin/components/auth/AuthShell.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:57ea511a61b0388ba8fd1985651ae76af2138f88d26821bb35cff2ccc161f79e"
+    },
+    "apps/admin/components/auth/CoralAuthShell.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b60f8d4fe10ab5939b95d500c216e9a2f41180085652a3ee1de7f674d26e6bc5"
+    },
+    "apps/admin/components/auth/EmeraldAuthShell.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a219facffe7a5d1a01e5eedf804fb1d45141be54a7ddf5515a0b799703232b77"
+    },
+    "apps/admin/components/auth/MonoAuthShell.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b77a0ec57dfdc971f4caeb0f432f5c54cf3a0adb132a120c6abf2ad8212393c3"
+    },
+    "apps/admin/components/auth/PulseAuthShell.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8dc98cf8054344025128b4599ed0bef8fac125e2f073659ef6a4d06de3de2be1"
+    },
+    "apps/admin/components/auth/SkyAuthShell.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:0caffb58d42f7a0de8871f22bca759e577bed12c7601a7487498d59784b9e294"
+    },
+    "apps/admin/components/auth/SocialAuthButtons.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ceca8a2079ed8b67916d8a07a03c70eb090be09927665d5561f6bf1219f1c2e8"
+    },
+    "apps/admin/components/chrome/CollapsibleSidebar.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:fd79a37a9fe3fb2f015c89d584dad04fe6523aa78811a07f54375d7023e56c13"
+    },
+    "apps/admin/components/chrome/DarkModeToggle.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:0d362ed4650a91902f90fc652d1e6367d50ed18b4cef8c44a969c7ef16314bc7"
+    },
+    "apps/admin/components/chrome/EmailVerifiedBanner.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1cfa424b174d026a85dcac59997f8625f38d926ed58e38341e707903ace98e24"
+    },
+    "apps/admin/components/chrome/LiveClock.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:08f6f02ede3d2a890b992bb80f089cf6d7fad69178ada5e795fffa1a75488a90"
+    },
+    "apps/admin/components/chrome/NotificationBell.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3fb2d5fa7151a0ae035b65253a96928562363632cf35e690d2292872973ede06"
+    },
+    "apps/admin/components/chrome/PageHeader.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:4c086259c2c2c60074cb7befc7f2c962b1d230b2cad7b17afbb54865dcf62b94"
+    },
+    "apps/admin/components/chrome/QuickAccess.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8363f6d86626ba523373ff8bc638aca385f9724870f17b75368c2cfa2beb2174"
+    },
+    "apps/admin/components/chrome/SessionWatchdog.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d560a1880815b46422493c1ee6dcbcb3c804500da6b9b71b85e032a5cf1b86ca"
+    },
+    "apps/admin/components/chrome/StatCards.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:49c37fafb301f8586bdf94dda247885d1b934b7f979a38caf4a3daee053988a8"
+    },
+    "apps/admin/components/chrome/UserMenu.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6164a26a2c1b9f271c9bc26a33028f2b88255d89a6efa52b5df2244c64862152"
+    },
+    "apps/admin/components/dashboard/ChartBuilderForm.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d4f995c11121a527f102758546b94d87408b8931bcf7cb0091bf61e24ec32796"
+    },
+    "apps/admin/components/dashboard/CustomChartCard.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:960c4c287da09feceac78593fcf98728943b6d0ccb031ff9b17cd488c7787a24"
+    },
+    "apps/admin/components/dashboard/DashboardCharts.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:67f704c910d65e6c23b0020e2208fa277a20d64e226627654204d8f302aad142"
+    },
+    "apps/admin/components/dashboard/ResourceLatestTable.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8f894451c6e0d52ddc15f5cd8a154775cab323859adf25d98c72f3cc28003161"
+    },
+    "apps/admin/components/dashboard/ResourceSparkline.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:338f0c2f98b6ca9e860f38daaa3ad71601e898fcbc832712ee62f29fabd0ed6f"
+    },
+    "apps/admin/components/dashboard/ResourceStatCard.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3b523d1fd87afad4d6e137b080b7d3dea18ec7644b877294a8a8d3e430a6c431"
+    },
+    "apps/admin/components/dashboard/ResourceWidgetsRow.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e88abaf4bf83dd8cddfb2753c782d9c5ae36998263246d9d6dd44033e4a07fbc"
+    },
+    "apps/admin/components/dashboard/security-nudges.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1366f9d0bf020b1b36244b552654d4e9bdab6cab4aa65bd6958fabdd55a011ff"
+    },
+    "apps/admin/components/forms/fields/checkbox-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:77db586f79690288eb8bf24574fb731a51e2eef3d7de0bf6c365c2c31d987195"
+    },
+    "apps/admin/components/forms/fields/checkbox-group-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:13caac8bc5eab656c0200e64dfd5ce0e93adb31915b2935d11a5d53c2c31be5d"
+    },
+    "apps/admin/components/forms/fields/color-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3147461b32bd11cb00337be92d6f207a8d052281c360afef1654a885f6f48bf9"
+    },
+    "apps/admin/components/forms/fields/country-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:92601186aada78d52ac497fd5d62922825509d01ef6db22f02136854b72c76a3"
+    },
+    "apps/admin/components/forms/fields/country-select.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ee9fb4693b2151178422005b796a3f10256144332af50d9607c21ade3b534eb1"
+    },
+    "apps/admin/components/forms/fields/date-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:576f0e2d8788c58ffc2c207f48ef7209c803d093b66641cb9a1468db69ce902f"
+    },
+    "apps/admin/components/forms/fields/file-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c458b666175f56cfe15b0dedb680fb330bf3a3937412dc8c1a4f8c943740a620"
+    },
+    "apps/admin/components/forms/fields/files-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f597fb75e7e27d07638f6b19f42a9e1f960fa6e977706447764145b9881de05a"
+    },
+    "apps/admin/components/forms/fields/format-text-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ef6784b1eb7dedb76c61363f9e08fcaa5f75d1da698d441f3462505f5de54e1f"
+    },
+    "apps/admin/components/forms/fields/generate-button.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ed221dc13850b269a8b73db20c34f618bd1f15d4ffcd87666630fd88a6d703bf"
+    },
+    "apps/admin/components/forms/fields/image-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b3a9153cc2e51de9e79b940f1194a9e1e0b37916f7143d44162ac892076c102b"
+    },
+    "apps/admin/components/forms/fields/images-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:bae6a98186043622b62bd7544439a38baae59b93d10a1e58f3b4294c75c9331b"
+    },
+    "apps/admin/components/forms/fields/inline-create-dialog.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6f20a9c995ec232ddcea5021b39ae1f5925aebeb380ec6d06bb6cd50549d5789"
+    },
+    "apps/admin/components/forms/fields/json-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:0638ff2d1a27d1568281336ed00b1facbeb5b3386c86b51606a5c7e854f671e0"
+    },
+    "apps/admin/components/forms/fields/line-items-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6342bf682bc1540437e86cc52bfab821fbf46c663f9c7fd54415cf3b29f395ae"
+    },
+    "apps/admin/components/forms/fields/money-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f5ed59785dec6cf17d4d7030db4b54a018a0ae0b79fa293f2b33b60803ac27a7"
+    },
+    "apps/admin/components/forms/fields/multi-relationship-select-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6bc316d224e1aed019e6ecb1ae33182553b64e047ebd334d58601990937a4f61"
+    },
+    "apps/admin/components/forms/fields/number-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5a52635aad37e1d1dc70e9b868e99344583c41aebe9c057899ec544b75315e50"
+    },
+    "apps/admin/components/forms/fields/percent-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1d2b36c8a4a2882d0ebe0fbceea9c75d4bed6c7410bc37bd6781766edbd6a140"
+    },
+    "apps/admin/components/forms/fields/phone-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:79e99cbdf489a476813cb1a4486ab4f851cd8146ebe25448b5ff2553f82f7b86"
+    },
+    "apps/admin/components/forms/fields/radio-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:148121da095dfa6ee7a179b0163731661ca52f83f61abad60d257af2d76c91bb"
+    },
+    "apps/admin/components/forms/fields/rating-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:df12fc1f5b3df587313ff625b28d5a61bc4f7b53d4ee99c50d263a01a9288015"
+    },
+    "apps/admin/components/forms/fields/relationship-select-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6a5f2a4c71b7804076e9d0bc2eb0bca85fd63094c8c77e8b9bda7dab00528e40"
+    },
+    "apps/admin/components/forms/fields/rich-text-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:956c68d842aa09b92b2e0ad4c01d8d4a1057afb9dc295c087a0aa18e3340c865"
+    },
+    "apps/admin/components/forms/fields/select-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b4ff88465449298c78590e7d9545a9464578b912148f216789f83c9727f3a218"
+    },
+    "apps/admin/components/forms/fields/text-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:4c511d87467c84f51423daf0a710af26102bd515ad065156998021029f6bd481"
+    },
+    "apps/admin/components/forms/fields/textarea-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b9462023d1d1dcecc473e1da7d69017f6c69787c140f0dce4bed159b31480d6c"
+    },
+    "apps/admin/components/forms/fields/toggle-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:34a64c0501b7da9ecf58171b2fc8be5202e54056c7616d9b132c22ade773ecf9"
+    },
+    "apps/admin/components/forms/fields/video-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e59c8328701f625a8378f94b134f5e604bcaf2415c3f6aa3bf0992eaa67c4b84"
+    },
+    "apps/admin/components/forms/fields/videos-field.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:31f2215acf765eb0d98da7b445499996bf2bf533d05b3e49978d0f088c1a08f7"
+    },
+    "apps/admin/components/forms/form-builder.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b3c99e37fe8de38f66e5d0e93351c7508e0043c40ce02f0b76724535eb18dae4"
+    },
+    "apps/admin/components/forms/form-modal-steps.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ef36c5615966dbcc688148e03cc68342fea3cc3e118ceed7d17074c3777b9f37"
+    },
+    "apps/admin/components/forms/form-modal.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e9d49784739d474dfca57f369c3f36045d149a6a2b2fb7ae8269345d6c057b8b"
+    },
+    "apps/admin/components/forms/form-page-steps.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a346ad64447e27f2d72f62197f30367b37122eda9454d10c0d102f17fa12c8d3"
+    },
+    "apps/admin/components/forms/form-page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:80bbfc87b672d9a4d10658e6ac2d6063821661d22a1a7e2a8be911af4e56e2cc"
+    },
+    "apps/admin/components/forms/form-sheet.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:52af8ac28056bf2893307e3ec2d70f57c33e050ad2a41b820a2ab1d4a7bac40f"
+    },
+    "apps/admin/components/forms/form-stepper.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ec8d938be0e40e9e86a82deddceb110e31f7cd9442f166f564a41c7ceaa2607f"
+    },
+    "apps/admin/components/forms/update-groups.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:047a54c61de5bc31e4238990f9d0b4851fe3b8c039afc57778fc8bdebca2fe30"
+    },
+    "apps/admin/components/forms/word-editor.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6c19d3e4ceae82567ffb15b71951e73ac5681712daf9ea3ae0999d75eb3264b7"
+    },
+    "apps/admin/components/layout/admin-layout.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9d2fdab7d79cb159459bc44525d995ff4050e82898b2bdcdabb3c25d80b06084"
+    },
+    "apps/admin/components/profile/active-sessions.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1ac143dbcf1e5a652bdd2f690364febb5ce1387954c01fa7f73a13fda41a4ddb"
+    },
+    "apps/admin/components/profile/delete-account-dialog.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ca93149deefbfeff6c17da7c18954870e7f4a940047a489b9ee0d26e981ac204"
+    },
+    "apps/admin/components/profile/two-factor-card.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2601a06e9bac45eb7ba69c24280ce28003d37df1e6e7f177eb66189a8dfdf067"
+    },
+    "apps/admin/components/resource/resource-detail-page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e9816db4c12f539ea3162edc23bb87d4d35d59a9fce21f8090ef5c770834b21c"
+    },
+    "apps/admin/components/resource/resource-page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:41e6b679be362c0500e350e28f370c1e27ac95ebfcadb29418b53f37349b0d46"
+    },
+    "apps/admin/components/resource/resource-tree.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7b0cd68f7c52beb648902c57248c3ad25eaa87758e455ce873252fa3e7a8a628"
+    },
+    "apps/admin/components/resource/tree-breadcrumbs.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9026b9709a94a66bbb7bf62af40e98c8988ec488ee0aa1d03b9cbc5b02ab4fc0"
+    },
+    "apps/admin/components/security/passkeys.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9790b76cf25119a505439c14e9b1bc4c23aa02cd1079085e666152f04b65e048"
+    },
+    "apps/admin/components/security/recovery-contacts.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ac73f84b0fd0313b25a346e494d112545d9d8808572d93197ceb9070348c0a44"
+    },
+    "apps/admin/components/shared/providers.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:dac66b4abd55f18c982e2018ca935bf620153edc5ec552ad62775ed42f9fa2b7"
+    },
+    "apps/admin/components/tables/bulk-action-bar.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:cf48730e601252b05324faa59d64b8ecbf94699f385130cda1482fe7ac5fd083"
+    },
+    "apps/admin/components/tables/bulk-edit-modal.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:440b4b9b78b848382e90272f9a779374a13a284b16c218ec511d4e12535e15fe"
+    },
+    "apps/admin/components/tables/cell-renderers.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3353fde4be562b66b731ad8d64d4d2addba7f88981bcf26ef627d31027a961bd"
+    },
+    "apps/admin/components/tables/column-header.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5859d0c35bacf116f89fcc9f7c57cd3ca2adba908976f7ce881429fb9d981ca9"
+    },
+    "apps/admin/components/tables/data-table.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ec02f2bdf482b0903e68566af60fc63dff41e38e66ed86abaf0f2dec0b961ba7"
+    },
+    "apps/admin/components/tables/date-filter.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5bfb051ec27c6c94890d893a18996d279b5c41da76e849548f083f9151c486aa"
+    },
+    "apps/admin/components/tables/export-menu.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d1327fc447e50fe22d564a781cce8b47b0d27ab43c87bdaa2ca4fabf75032e7a"
+    },
+    "apps/admin/components/tables/import-modal.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ae4f9543746d103dfe11157d9e5e37aee52c670bac693d3dc65f31eeb8c58d50"
+    },
+    "apps/admin/components/tables/phone-cell.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:82710662dc45d33eee16d40e50fd511fbccf4393d7cee5c67c30cbf99d329d5c"
+    },
+    "apps/admin/components/tables/stacked-cell.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:68e371497054d2d32b6bf37c7883bb950a5d572e0bd5bb57b6bd55d946ba38bb"
+    },
+    "apps/admin/components/tables/table-empty-state.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:32b085c755fa1c6ad501544e474dcc62fba18afb58327ac1b4e148692c911981"
+    },
+    "apps/admin/components/tables/table-filters.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:cffac04694166d2c447ccba1a9f40ef691f0608302960636e9024951ac293580"
+    },
+    "apps/admin/components/tables/table-pagination.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:605e050c2a2b39cefe6dadbd55ea5da635390842205b24f1be467b463e586c14"
+    },
+    "apps/admin/components/tables/table-skeleton.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:66793e96f3644be21f14e358f47248864c77ef10697d9f3800ad904b637e2502"
+    },
+    "apps/admin/components/tables/table-tabs.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5bc06dd79f1217023c652a17a1773fbb456c779d55b1a3dce56861ce30cc5004"
+    },
+    "apps/admin/components/tables/table-toolbar.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:40b690ccb463a43611e50b0033028cb10a74e04fcb138bbf33c340c27e64ff9b"
+    },
+    "apps/admin/components/ui/CurrencyInput.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:4e48ec5a22b285dae04d34fd52c5ca9be3f638aaf49ae2bf123ffd25dbd6f529"
+    },
+    "apps/admin/components/ui/IconButton.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:88f75fbf8f508ca1f8ad9cb3a5b886e61ee0eee2df17146f3cf20604005d1be5"
+    },
+    "apps/admin/components/ui/ResponsiveSheet.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:64d5ce15fa6ad18ee599c6a1995a73e6b013bcd54d01d8c4983cfc10b1a0007b"
+    },
+    "apps/admin/components/ui/ResponsiveTable.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:bf0a57d4aae0e536d30e2147d81405db2bb9324414074a2b40b65c0f35ba394d"
+    },
+    "apps/admin/components/ui/Skeleton.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a8e11427c877a69a38876500888cfa61313c7156b3488cd6371f182c0a7fdd8d"
+    },
+    "apps/admin/components/ui/UserCell.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:028267a220749ba407c2d23c4c5aadf9b5a3b7726b1e150f8a9a2356843ec613"
+    },
+    "apps/admin/components/ui/button.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:adc2c8f2813f14d9e863c924a1160829b4155c1cbed32ccebc8ddc7d58f3d5b8"
+    },
+    "apps/admin/components/ui/confirm-modal.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:213e486a353ab9e8cc2d293cdf0b9edf4c3b249a3fe7b73eae4ce28edcb49a5d"
+    },
+    "apps/admin/components/ui/dropzone.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:cfe0bb52de06319a75021b32731db5e3a0e43cc27f6fa7ecfed1a15ea2680ac0"
+    },
+    "apps/admin/components/ui/input.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b69b0a31625ff557980d87bae66e8af8fe68ed02ea8cb1f7ef892d3f6f9567b4"
+    },
+    "apps/admin/hooks/use-access-reviews.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d6557711c00fa4e2ce66bf990e26c1800a79ee665d82536e230d28b5711c47c5"
+    },
+    "apps/admin/hooks/use-api-keys.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2198b1dc7249d0eee874ffb089bc5248765c4606f6f313457485e2071d114c57"
+    },
+    "apps/admin/hooks/use-auth.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2cf36b2a59b7e6ceba5be023b92097435f2c0d498b3b6acd7a669d5a786b09e9"
+    },
+    "apps/admin/hooks/use-backups.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e4fa7b28daa8f5259580f26b28829391390435a1a0a2c53ff89aeb0dda059d95"
+    },
+    "apps/admin/hooks/use-dashboard-layout.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:131feccd83df8f874f62a2512e3b6c1e403a3149870bee0f5c5bfedb1b06481a"
+    },
+    "apps/admin/hooks/use-form-shares.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e446fdd5644a91a033f0992300d3f01d69caa0912dcc7b5ceea17cefe6eff3e2"
+    },
+    "apps/admin/hooks/use-modules.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:769de58ac777f40f7da2865af0bd8b6c2d23bd67ac01d32377de927c1841129d"
+    },
+    "apps/admin/hooks/use-notifications.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f6aa891c04054f10d764f0ef2ccb349b54b9b5bc20234c2427f2d9dbc7485df2"
+    },
+    "apps/admin/hooks/use-permissions.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9393229ed6fa95a02a4069abb4383f7befa6bec7a3d74b7904e097a099a901c7"
+    },
+    "apps/admin/hooks/use-profile.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:27079673e66c2b3f3c1bd1d856dbe0ecb44a7da1b3f818aa4d26c57ce5a02d2a"
+    },
+    "apps/admin/hooks/use-realtime.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:dc5c98ef7ea352bdca1a53c19d1a4f636b2e450db709dc8d38d45ead6a65792d"
+    },
+    "apps/admin/hooks/use-resource-controller.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d32d4d9e7daa39570a7c3fa06313b6f1f2ca31d4f7f7cfac734523aa6a793d7b"
+    },
+    "apps/admin/hooks/use-resource-detail-controller.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9386ecd395e43c04d42d69de6477517a58875e8887d72897df371c116d1bbe3d"
+    },
+    "apps/admin/hooks/use-resource-dialogs.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7269f7fb5b0fb71e0518ad61e6dad3da2f12c9ec88b7bb5b90a4df91d9e2b1ed"
+    },
+    "apps/admin/hooks/use-resource-selection.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:93c3421e8dce49b23f260ed57e0e0e4ad3cd3965665e3a2ae003b016098e76b1"
+    },
+    "apps/admin/hooks/use-resource-url-state.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:26b7d7375757b836f6e16e5ffcfb35138c15a6662fbef2c83e0b358f53495149"
+    },
+    "apps/admin/hooks/use-resource.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c6b4f28685665c254c3612720bfbba7ab2be22110871c6d489917b2a9f399195"
+    },
+    "apps/admin/hooks/use-roles.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:03d30edb75d0c57438c194085372350c141fe9b6b56a6e4c063a7fbc4793ec2f"
+    },
+    "apps/admin/hooks/use-security.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b748c408c7abf8d5ecb9451e7e4bbecc173a28f94b52889829d466fbf254f773"
+    },
+    "apps/admin/hooks/use-sso.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3def484144e5234d78e2c1fb0ebf5f32d294a93ce45f82b17522720d4d296ba6"
+    },
+    "apps/admin/hooks/use-system.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:01cc0ff58b7c0ec2c34e487955d9e6b50d135ab426018c0493c83130ff8213b3"
+    },
+    "apps/admin/hooks/use-toasted-mutation.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:22f409bbf983d41ae80a6e3108c06a823f72fe93ad58a4a4fb59965f2dc6fb9f"
+    },
+    "apps/admin/lib/api-client.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ec70e10db5e5c448a4251525d2661e6e1590323fd09438907c406e6b1e76928a"
+    },
+    "apps/admin/lib/api-core.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1b1b145305c2ddd31006c896060ddaab3183723e8990034f3ab541bf9a2306ae"
+    },
+    "apps/admin/lib/countries.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5afb27872a129d93b68316bd1c9310f70a7c97913360efaa237d1c773fcf04c2"
+    },
+    "apps/admin/lib/dashboard-catalog.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9b84e5bd689be34901947230115ee1e51a591695b835ba4b850b63cac0f5e427"
+    },
+    "apps/admin/lib/excel-utils.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:94116398dac8e275b76f819898b388ad2973da13e5eb6f943dc9b41c69ac98ec"
+    },
+    "apps/admin/lib/export.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:35e58dc709a9004f43c3a4fb206cc21077bef06aedb9efbb6d3553e703526555"
+    },
+    "apps/admin/lib/field-formats.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1506dea6afeb3e2e3e9551e41b03ebf81b902eaa994f6c89ea5d467da092ab35"
+    },
+    "apps/admin/lib/file-accepts.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3ff6d3b66eac9cdc7c3b8969722a3afb4b295866942ac62c84366eaa2bd9cdac"
+    },
+    "apps/admin/lib/form-values.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:bcd416048ba6eaeafe8485200c7396c08404b4aa25ea9bedd622fb0c5667173e"
+    },
+    "apps/admin/lib/formatters.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2a8438087342906a26e5e19dd6d31d85cc3ccae9180f07a3934d8a01174b579d"
+    },
+    "apps/admin/lib/i18n.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f284aa92105c879710525441556775fcc822600fafbc12ae314cacb6ac60b32f"
+    },
+    "apps/admin/lib/icons.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b26f5767783e8fe9e4b586679d5540bc2758dc3c019cb1ef9715fabff61b58fe"
+    },
+    "apps/admin/lib/query-client.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:bf30935d529b2949830d25b0b933008ec422800c6de532e9f4bdc9fc1650d6b4"
+    },
+    "apps/admin/lib/realtime.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:92c9758ab0a8e4c81dc3d8419287b25ec3847b2379033e95d29e48e0e6d54ddf"
+    },
+    "apps/admin/lib/resource.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3289b3f03b6440b9aa16529cc1b6f4fb6b86793fa66c10bfc3085f27c75d29ae"
+    },
+    "apps/admin/lib/safe-href.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3c773d328204264d117bab0fc8b92e3cb4d54c5906cb94b529b4cd04b250625d"
+    },
+    "apps/admin/lib/tiptap-extensions.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:cb6abc6c49cc5fbcc5a6eecb95c9cdc016002ade9936d72986b7b140d4712011"
+    },
+    "apps/admin/lib/utils.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d1f1e0d62cb8d8d1e04c26e14de842d8a151f75812d81b046c65b5d1fe8e4b27"
+    },
+    "apps/admin/lib/webauthn.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e1d27121c88d30f4382c9a15ec3d73d2ff94b283d5fe7e75f8e7179423c1ed36"
+    },
+    "apps/admin/next.config.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:54365ed6aa1908e9a6b277904800e63ddcc06737c0e38194fae250468ef4506a"
+    },
+    "apps/admin/package.json": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5b202535d7e723b32e69317fb5ac85e155de7344509d33a0c1fb054efa09728f"
+    },
+    "apps/admin/postcss.config.js": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8fa4b01f6633f478ec8ea70633058c85858e2298649cf0aee711362e5bce7b7a"
+    },
+    "apps/admin/public/.gitkeep": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "apps/admin/resources/authors/authors.custom.tsx": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:921a8be0f728cefd15c2222a0e44d6de6cf94a433419774903c5651d8ac1dda6"
+    },
+    "apps/admin/resources/authors/authors.ts": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:71dbed6a2189c890b1d97c73d0ab2eb293f2c2718ef403389e1243155df94de6"
+    },
+    "apps/admin/resources/blogs/blogs.custom.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6cf798070159ab88f6077f583f18f540521a2981d8b2b1e1a61eea46cfef3948"
+    },
+    "apps/admin/resources/blogs/blogs.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5bbd2eed17cb18ce377c807d876aaacdece4cc270919c92c9f1a88de6ee2ae59"
+    },
+    "apps/admin/resources/books/books.custom.tsx": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:400d884990c3610a9c91ffebfb647d746664fb301dbf5c7aa2e51154cd94d5b4"
+    },
+    "apps/admin/resources/books/books.ts": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:192c0374c6b42185bdec7c982f8020671c4f668b0a17c584f009bfd28fb844c6"
+    },
+    "apps/admin/resources/index.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:53d9ff96e9d60f31543133942071ad1945c4423ebab92bcaeb0ad3e12b257371"
+    },
+    "apps/admin/resources/loans/loans.custom.tsx": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:aad604e4d1f760e519c01120bcbf43979e55e126a4bbf14fd653d48018378cc7"
+    },
+    "apps/admin/resources/loans/loans.ts": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:0bd8b7cdbe40d3ca5a492925b7bfe52446c0b9904efc42a3743bc08e9823af7e"
+    },
+    "apps/admin/resources/users/users.custom.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5efd023600b0dccf83b7c848bf4928fc909ab2fb9dc17fcf9b3d429b64711652"
+    },
+    "apps/admin/resources/users/users.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:55a3ad72228e4b9b5774579ae4ce699c1b84464968ea423c4181fb57fca6f9e5"
+    },
+    "apps/admin/tsconfig.json": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:42fea5075a505d534a648399062caade3c6dfba99b60c5d70d069ded3334a141"
+    },
+    "apps/admin/vitest.config.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c0b1c70e614f9623d485e9d92996a2dd8c6fabc7c53c2a5f70a0f579a7fef146"
+    },
+    "apps/admin/vitest.setup.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:90ec9100c29e008c3d9194acd818e2cfa6dc6e177154bc8e10c5959aa35619ed"
+    },
+    "apps/api/.air.toml": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7c6f2646e013f23f3bfe9b52998d01873972895d9ae9039841598b49a494bbfc"
+    },
+    "apps/api/.dockerignore": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d50a495004191054994ba6c894c6b845770d852a6fffd4fc832e51df1cc0ddf4"
+    },
+    "apps/api/.gitignore": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b1345a14b5bac7619e4da706bba60be1223e1448caaf8724ae064937016bccc5"
+    },
+    "apps/api/.golangci.yml": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:37a78225679873b67cf2a4d0d814834f1c52fed716ec142988b5bc348273927b"
+    },
+    "apps/api/Dockerfile": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5b3d7bee1cff2caf0365cee5a69d9bfaa9f8cadcb93491b079ba204b0919da5e"
+    },
+    "apps/api/cmd/backup/main.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:fce2c397aca328ee6f059dee771f35a5f4e0c3e7a31d878a995c4117bccfb089"
+    },
+    "apps/api/cmd/migrate/main.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3c2e242760491f65016f18ab315cba299d1ac4999321c0d2c3ce221f1f6c8288"
+    },
+    "apps/api/cmd/restore/main.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c1112900dba6c8d562b5f389c2e9671cf120751d9c8d544db67c0a22801e3625"
+    },
+    "apps/api/cmd/seed/main.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e558965a8bda89206ee0ed01a1ee9ebdaae0c524b5a64a6f438b3baa8db03d2b"
+    },
+    "apps/api/cmd/server/main.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6c5e7f03bcb05220be4b349dad0ce7cb5e583957a7bbf882c4fa94c68dddcaf5"
+    },
+    "apps/api/go.mod": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9de55669bddcc6faa3b015c63cababbb29a8b42a305219395b0484937f7edd2e"
+    },
+    "apps/api/internal/access/access.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:0daf9d0cd3059b6ee0e74e62b0b54b92114e72eeeee67a01a44c1a4e4007a6c3"
+    },
+    "apps/api/internal/ai/ai.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:871f709fdacac12fecae1c48b0f45cc733de975bf2602c48ef254e7aabf4c435"
+    },
+    "apps/api/internal/appendonly/appendonly.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:94c253ac75eb2f229352198dbcb4f8ddc2b61b95bf883df5be75a13a39602578"
+    },
+    "apps/api/internal/appendonly/appendonly_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:43b6ef653f6fa0d015defa2b3697a676e27deaaf9eab21d40f1c3e5a8a1e8c5b"
+    },
+    "apps/api/internal/audit/audit.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:4bd5dba973396b73e22beeb0f0ca4d70e925832e2e397283cbc12d4239202dcd"
+    },
+    "apps/api/internal/audit/chain_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:59fcdc6c122b94ae4d129b30f694037ea038f9d025198e52f57785831425556c"
+    },
+    "apps/api/internal/authz/actor.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3183022f9a9dba4bca03186a460fa6b3f48222e537659de8914ab75cae5ae701"
+    },
+    "apps/api/internal/authz/actor_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:11c78437fe8c516a0b91d19eb1d044929173385df7cdc0d9bda64d06ea888291"
+    },
+    "apps/api/internal/authz/authz.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:242b489be0ae884d6ac9d6a8d5f9b105f358d2d236f844386205822e21d22adf"
+    },
+    "apps/api/internal/authz/authz_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e9387cf85a0da0d5dd2a7c4b0f59fa0d0d7a000bc1cc585048094d51d3a67ea7"
+    },
+    "apps/api/internal/authz/ceiling.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:46e2f24b80debb7e167b951228f36b63babf2839fd5aeb8407b2a9d6860db66c"
+    },
+    "apps/api/internal/authz/ceiling_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8b9b21cd4a8c7a4dc67722a287f2a7ff81a7086282dfa1767ffd74227b937605"
+    },
+    "apps/api/internal/authz/gate.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6fe127b34fcd52ebaa4fbc1f92d5dc2f9c8220f3e4f80f3fb9b2131ec9661dd1"
+    },
+    "apps/api/internal/authz/gate_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:119bc43a73261ab2744c1a08d06288e486d5332ef7c9eb09fe767302945affb4"
+    },
+    "apps/api/internal/authz/grants.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5689ad2e21495bab6cb8e49221e3e4114a962c846cd8d930867ab622a29f6be7"
+    },
+    "apps/api/internal/authz/grants_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:913d1a10ca98c5bc6ca829d5a540feb14d643d48aedc43a36d6096f0ff2fe16f"
+    },
+    "apps/api/internal/authz/permissions.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:96611778817ca6490b8c12b0833f85bcb147c5b4fd87f105f8efed4ac12b1541"
+    },
+    "apps/api/internal/authz/permissions_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:fa1dc93571fb4e937a7310c95b20df9bd04d6b133b109af8e48382b52ad9cda9"
+    },
+    "apps/api/internal/backup/backup.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d05101c203f3216a2d32eda7ace3583512ae6702235483e48698d7b342199493"
+    },
+    "apps/api/internal/backup/restore.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a6cbf641c2f3a5e6c39656e8e93bc64435dcd307016091f57dfa3610019804f6"
+    },
+    "apps/api/internal/cache/cache.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6e176f82c15a030f40b8f5c94bef9623474df0aac08623229cc2845eaa996962"
+    },
+    "apps/api/internal/cache/remember.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:cba0924be6a98b598c23b51f05f8eb1160beba8138c70d3e5cf6acf74d2d6511"
+    },
+    "apps/api/internal/cluster/cluster.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5d3b039e575e375d28b8d41361beb6a3ba465491caf78234ac46f08742ceb31a"
+    },
+    "apps/api/internal/cluster/cluster_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:0aec0a3d71327b8826e73a2059225bdaf8e009a1c7cb4f0414ad521b2c0f9c84"
+    },
+    "apps/api/internal/concurrency/concurrency.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c0d08e68e5f6b16daa499e759c9372e410436efa0885f13ad9241acaa6cab471"
+    },
+    "apps/api/internal/concurrency/concurrency_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:837b802969fe15e078b07601222bddbfc32943b27311ce93b7de8d79959029ba"
+    },
+    "apps/api/internal/config/config.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:154126e51bec096b6469c17afab7091fa5e735d7fbfdadcf6f3d44272f234423"
+    },
+    "apps/api/internal/config/modules_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:cb59ea272bff6c5f4de245fa5823c3216a180cb62a378fff16ddb0cccfc2c9a6"
+    },
+    "apps/api/internal/cron/cron.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9379e2ffe9eef81fc8b7db5f23e5cb3a467b57a15068099fefd1e01e597a13e6"
+    },
+    "apps/api/internal/cron/leader.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e76fccc4d686f80d132c7667f2a823f72e324efb8719a32ddfbdf2f62cf7fed5"
+    },
+    "apps/api/internal/cron/start.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9447506a3b939fc2f75dc0aad3edd136f52a0be9efe62c6bd0c2a18d7519efdd"
+    },
+    "apps/api/internal/crypto/field.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ed6e3d1c11e2395898f68f87c75e30fa7875ee8ed32af97d58a0ed9355173cb1"
+    },
+    "apps/api/internal/crypto/field_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:051b86738da871c12b0e04088e632e77bcb7db0eb442d8e3b394d8546c4a770b"
+    },
+    "apps/api/internal/crypto/map_update_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:acf3eaa2f539ca7485f03d4e7ddf2b030003d3538c572f73c43914e0f189b97a"
+    },
+    "apps/api/internal/database/api_keys_seeder.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1de78ea80954aa7a26fd9f38f5209cb3b87e93524f4a291826585b73e90ac2bc"
+    },
+    "apps/api/internal/database/blogs_seeder.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f26277c254f58af13214c01b8933dc88ad9188a87e39bfbf32d8d0a03365bc78"
+    },
+    "apps/api/internal/database/database.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:0b773cfb5d20a92be3cd8df336692adbd01847f3504d223486b51ec9c0a3a2f4"
+    },
+    "apps/api/internal/database/dialect.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ec158de2aa81e98807443a1d993fb1c3eb58e303e75bcf7425ca54dd99192291"
+    },
+    "apps/api/internal/database/for_request.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d730abbfe670cdb0acf7cab9d4890b5cd974e2d36a2cda684bc20d40c6eea620"
+    },
+    "apps/api/internal/database/migrate.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8a47397e7389b2c8d0810322c7bbca2391565bbdd4f2364bcf51a7fe9f4f57f8"
+    },
+    "apps/api/internal/database/replicas.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5ff3c311a055659395a54b0849cdc14b12ec85bd0ccabd4e270617778d8c41b2"
+    },
+    "apps/api/internal/database/seed.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:76783ac68c8e72cd73ba1ee7c9a4bf05b3fb79e2282b4dcaabafc74f22b41e28"
+    },
+    "apps/api/internal/database/seed_helpers.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:be88063fb6c0d38b53b84725b14e2b3c297ca9b97ab800bf590c8aa96f07cb4f"
+    },
+    "apps/api/internal/database/seedbatch.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:97424080c54398e5debba686d19601af64fbbab55c5020eba16a3ef746a80213"
+    },
+    "apps/api/internal/database/users_seeder.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c6dce1231d0b7ba18db783645766e52aa5e6b21ec7ad2d5c622cd5b5d9fcedbe"
+    },
+    "apps/api/internal/erasure/erasure.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:15b5f028a7efc7068016ae8462206cfa84765c38216a06a812d411ed261fcd0a"
+    },
+    "apps/api/internal/erasure/erasure_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:970eb42cd57112bd65ac7b6250c6836962992c13369eb237003a893eced7f1ea"
+    },
+    "apps/api/internal/events/durable.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c440bb64cec6197569f9ba8314c85480913fa056c91e721ca19e462176f8a99f"
+    },
+    "apps/api/internal/events/events.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e8b18c96b792b49c4b68416aeb925bfe0ebea3f33a9009d92b01cd734d60430e"
+    },
+    "apps/api/internal/export/export.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:516b1535725b9e39cd29d242848fe06854234d538f00b33c745db5adae625eff"
+    },
+    "apps/api/internal/export/export_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:4bff5b57f58f644ab3032e7f01f4b31201c9fc413dfb16c2fbab8cd41436627a"
+    },
+    "apps/api/internal/factory/author.go": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:237883210fe9881e50001cdfc33cc144ee1d8ecaa4832336c0b49c695eae01dd"
+    },
+    "apps/api/internal/factory/book.go": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:ccedbdb53a874cc9babfdb97c5295c32257351e893e628a099960d187d673a52"
+    },
+    "apps/api/internal/factory/factory.go": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:fbef63d42287c4d0ce66b86f299e910ec9992268924073e4b8ed8077a08a41e3"
+    },
+    "apps/api/internal/factory/loan.go": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:df78a03517920e02b9871ffdbbe65ad923aacf308b0f25eaf0dc02022a7b3bb6"
+    },
+    "apps/api/internal/fieldtypes/countries.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:dbc063eb9156860b795759d9a33cbd6f6bbe894f1555a31b2b32222c48e56cdc"
+    },
+    "apps/api/internal/fieldtypes/fieldtypes.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:26c53226f4b0bc92792e0dc1446456a9c3aaa06b4aeaca5083c8a55410b4d1cc"
+    },
+    "apps/api/internal/fieldtypes/fieldtypes_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ecf0f0bad7826ffa0676f185918113bf5e68e29894680106287022985a649b56"
+    },
+    "apps/api/internal/fieldtypes/samples.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:97c3f94a507cf98c07e5076b1882f5aa3dddae221fd608759fd7e10937d34eb1"
+    },
+    "apps/api/internal/files/accepts.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ff8d8baff3911a0501e2d9fec320455533c1c1c5bcad2d81230358eb7d022c1a"
+    },
+    "apps/api/internal/files/file_ref.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:14e32aafbf4a5ed83c68359dbf66b70cba86bc180bb2f6e1209151640a608fb9"
+    },
+    "apps/api/internal/files/file_ref_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:002254feb12968ee2cdf54fb304cf234751ebb4f74a7ad50bfa8572f95313eb9"
+    },
+    "apps/api/internal/files/lifecycle.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ae64fa55282019c31782b0a968b4d2c92fb8056387bdee919bc21c3690e0788f"
+    },
+    "apps/api/internal/files/lifecycle_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a0e561d25e87c762ea807c7c05bfd2aaa3067aba62c7495c56e5dda98997c4b5"
+    },
+    "apps/api/internal/flags/flags.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7b5eaba19ef7709fa374b2066b7308ec3f8278c3d819cf06f5ab0aa3a8735935"
+    },
+    "apps/api/internal/flags/flags_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5506f526ff4d3c90e3bce75af3ab2b9173608dc4add8ea3b2b1172573e574a3e"
+    },
+    "apps/api/internal/handlers/access_review.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ed117878a6ef651de241d5e0e5d6af1b9e41bb956faa9582855c21815cdd0f44"
+    },
+    "apps/api/internal/handlers/activity.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:678287fce408a23d14c59d35f76796f1a7196875a67e71b3fa578f5a9145261c"
+    },
+    "apps/api/internal/handlers/ai.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e1b00a82c04d750225428f3d08f2a8e082882ab869087b6685cd2332e7cfc997"
+    },
+    "apps/api/internal/handlers/api_key.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5ff7e8444eaf8c8ab8a34c92ab4618781f2e1ed33dcadbf7824a8a011d7823f8"
+    },
+    "apps/api/internal/handlers/auth.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f958384401c4c7cd5ef339296f49aecdac64dbeb0037b49cb8635c4e71bd9ba3"
+    },
+    "apps/api/internal/handlers/auth_email_verification.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a83c0910328ac7774245eda674f58a0abe2f4eb5733bf52eaf680ad4d88faccb"
+    },
+    "apps/api/internal/handlers/auth_lockout.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:0babf72aa92215df631ec2cc96d6b8eb324204ab90a995faa2bf0a9a767664e7"
+    },
+    "apps/api/internal/handlers/auth_oauth.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e6b743899a6d95b6da73affb235579c4a9f9a902a2d6dccd28dafa1b931468f6"
+    },
+    "apps/api/internal/handlers/auth_password_reset.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:08a707d87691dd0a9134a19091c86be055aa804daa61597f91507220743b2f70"
+    },
+    "apps/api/internal/handlers/auth_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9c7074103f719692dfa129e419babb3c2f218bf38188b5c0866e6a5a306c593c"
+    },
+    "apps/api/internal/handlers/author.go": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:62ec82cb4e772a8d5906d1449f5e8be209830f2682bf73fc597ff727ca2a6165"
+    },
+    "apps/api/internal/handlers/author_import.go": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:e9316816731288f3eecfdb79711a2b8d95898471c2e6f96dd1000ed6f4958d91"
+    },
+    "apps/api/internal/handlers/author_test.go": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:4d51fe17489f2b42cc20499d6cd4a319ae852e405bbf27454ccc81b4e4308991"
+    },
+    "apps/api/internal/handlers/backup.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:30cc50ef82e8d3faabc83ec7e5bb4d06a95e06b10417f99f25822af29753b6ba"
+    },
+    "apps/api/internal/handlers/bench_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5734c4f932a77816f41f4e0f22ddb5983225a81470e99802d013e9bda2e54731"
+    },
+    "apps/api/internal/handlers/blog_handler.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6b4517b142e627261208f3d6d837e8550cd097f318a439ba7f1c842514c75724"
+    },
+    "apps/api/internal/handlers/book.go": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:7446630ac9b5d8c842a79d3dae941775e4665aba6c09d20a5ebcb01acb7b9311"
+    },
+    "apps/api/internal/handlers/book_import.go": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:73ba170f498ecaa24c7a7ee8f666135378470a3cd8db0a1cd3ab48ea01800bb8"
+    },
+    "apps/api/internal/handlers/book_test.go": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:1f38809c13328d4c483359bd975bacd6d12310b931aeceee3142d3559dbf7b26"
+    },
+    "apps/api/internal/handlers/chart.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c70f893c7c71598da2cbaccab430652463e2589b1b6f709169ee1a8f51286500"
+    },
+    "apps/api/internal/handlers/cron.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:897a6b500e0d36087abd52779663f788a31108cd41de6108734074d951ea1d24"
+    },
+    "apps/api/internal/handlers/dashboard_layout.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3d07e3e0f6e714489214e983985227fda4b40c0db2d007bba6038109b5ba534b"
+    },
+    "apps/api/internal/handlers/flags.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b164a17abbf10dc2d115c551d3d87afb3aadb3016c145ada49579b949e62edec"
+    },
+    "apps/api/internal/handlers/form_share.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:292c74e7daccd1ce05c1acdb06ba2e0faf7c84d2ef196000d5040bc2664cf406"
+    },
+    "apps/api/internal/handlers/gdpr.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9896871c7c4ab8323dc3bacded5edec738cce6f63accd94ad155c9d2d87fe1ce"
+    },
+    "apps/api/internal/handlers/import_job.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d6744c879ecca9bc59bd9d34349fa9edff17c5dd610f7d5464988bb7244ad82e"
+    },
+    "apps/api/internal/handlers/jobs.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9facad71fe38b64264a408382182cafe80181508ab5443a66ea1853e9f144adc"
+    },
+    "apps/api/internal/handlers/loan.go": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:4111a00a91c23f5f3034ae7deb74394c82ce92f5f316ad4bd86df79678ef2513"
+    },
+    "apps/api/internal/handlers/loan_import.go": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:4f8d3672a1ebe48d262e1bb3c82da5a6cc7d4d871e0e823c066a40089f01b586"
+    },
+    "apps/api/internal/handlers/loan_test.go": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:3c17ebf757ef0f71836e21f31cd91a3f79ceb4dc4b7df8e39ba17d03f4b2112f"
+    },
+    "apps/api/internal/handlers/magic_link.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:547c625fe103a97efd12335dab8298cb1d2dc3e61d69a9d0bf69ac1b6cd8020b"
+    },
+    "apps/api/internal/handlers/mail_dispatch.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ad07e768a3d902dd2109c6dfabb1868b1d10f1e262b2250a7e351af1d67165ae"
+    },
+    "apps/api/internal/handlers/mail_preview.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:fd4335143503923080265cfb56706d6ec3f72ae018c2770236fc52489b356a50"
+    },
+    "apps/api/internal/handlers/notification.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:01a6e7b1cc51c5a24ebfd5188499d462d5be0eb1261f8e4620f08b0ac12c3c4c"
+    },
+    "apps/api/internal/handlers/observability.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:35c39f1a27f359923d193f96bc40d6538d14179b575ec5a557e6dcebfa01fb72"
+    },
+    "apps/api/internal/handlers/ocsf.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7f2ac5cd9ff4ef38799232ca611ae3fab29a1c728fe35c69c45b9e3a4a3fc8ce"
+    },
+    "apps/api/internal/handlers/passkey.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:07de71f981ac121030139fb89e7632b2e16e3025921c0395bbd18cecf2a88026"
+    },
+    "apps/api/internal/handlers/realtime.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:fb76d08a391eee239e4c69a26ea3072d49dfe086baf79ab4f1bc77fa828f573b"
+    },
+    "apps/api/internal/handlers/realtime_channels_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3a85ffe035d2c0172678a55133400745182dcb7c1841699965fefa186a69c1bc"
+    },
+    "apps/api/internal/handlers/realtime_greeting_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7ca024f1aca7587dcbb0af4c1573f16c4b02549f232e44fa47c6dcd145059faa"
+    },
+    "apps/api/internal/handlers/realtime_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e7a81bcaa727665b9dabb32b290c0809ab9aeb976b65a7caf498f0144af47b58"
+    },
+    "apps/api/internal/handlers/recovery.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8337628f3b9fd21731eef55691afdbc3975509044abb2e13128bc7962739de10"
+    },
+    "apps/api/internal/handlers/resource_stats.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e8cf41f7bcdea1de38ebe2b7d954bc8f5574ddb573686ac57bd216a68e301204"
+    },
+    "apps/api/internal/handlers/role.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:82b4620716ad0ba3dafceeb1408abced6110cfbd7df7a1ba9d36f9f2871ca14a"
+    },
+    "apps/api/internal/handlers/role_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3b5746ef4376aed3375c40e8e190334f67ffe3bf525077a38bb7aa9f6aa4e852"
+    },
+    "apps/api/internal/handlers/routes_explorer.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:87efed94890198ca4e0f098e0f190d755585e39c0e90b6ad403784c678f2f04d"
+    },
+    "apps/api/internal/handlers/saga.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:54a736a985c4048eb69209d42e60ce0868e391ac4eedb0c815eb7900ddb59743"
+    },
+    "apps/api/internal/handlers/saml.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:557125580fb1d5dd7bb9b2e98e9e9a2c58281a2c43f8bacd67d9efaa3678cbaf"
+    },
+    "apps/api/internal/handlers/saml_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6a1a463fa3fd95aedc08327432a0204f9c1c72b4069ec288148584a92c966beb"
+    },
+    "apps/api/internal/handlers/scale.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:32c551be7acb681db5918fa975493add348f695c3d69b188833e759641074472"
+    },
+    "apps/api/internal/handlers/security.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:fc0ed523f32f68032cab0a4d8c782a3f2ba90b640e700855f7ae4650bc8dff6d"
+    },
+    "apps/api/internal/handlers/session.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:35609769c3539bc5baca6f3c65f70d52d766dcc2f40a40a6732dd183d6e6854f"
+    },
+    "apps/api/internal/handlers/settings.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d16a4ed7791180f85a85441ef1f860a0dccee6997602a6e32680d6b73c68c897"
+    },
+    "apps/api/internal/handlers/sso.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e8716bfe20a9fc71466e5d2a3710ac49d1b5ee1a42b046839dc704012314322e"
+    },
+    "apps/api/internal/handlers/sso_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:4f78d855e24aeb348634a155475cc41e32b98c3f40932bad1e55bada8c84eb07"
+    },
+    "apps/api/internal/handlers/sync.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ce7bad31d4f7e89c89419e2651b73ab0abbfd36826f9a245b490077181023136"
+    },
+    "apps/api/internal/handlers/ticket.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:195ddda36aec9b04e69b60824ead92f0e9439db473c01440dd14aaef83db2a5f"
+    },
+    "apps/api/internal/handlers/totp.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:933c8abc653b601e6b01623d66386c8a5d30d88f4c4f01205317c72208512a09"
+    },
+    "apps/api/internal/handlers/upload.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:0b822742d9bceaca0a0f5d67c46c6b1e85e9eb3d9053000fbf4a58b45054b8af"
+    },
+    "apps/api/internal/handlers/user.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c5a278ff8d6d1f42bfdaebaa9deb6ca00674ec62fad991ceb6bae52b2e369622"
+    },
+    "apps/api/internal/handlers/user_activity.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d31f31c2e12ccef084a949d36c949630beaf8d01ebf5679a2eff5e954b6f5d25"
+    },
+    "apps/api/internal/handlers/user_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8433d963f9e53d1a415c18ffd096e4901dd36d1f1d94474d32566e942cdd151e"
+    },
+    "apps/api/internal/handlers/webhooks.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:03c73f40c4ec50b64fde59e95c0b9945e36b70a706dfd3a6623b328e6211543f"
+    },
+    "apps/api/internal/handlers/webhooks_redelivery_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8a2a4670c567cda07e10710755259f3f6c2c3d211f91800d0aa41e58c8944039"
+    },
+    "apps/api/internal/health/health.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a0ae6438e3474e6786139fb12e82f60e16c15807ace09d031b70bd48ab6e1d29"
+    },
+    "apps/api/internal/health/health_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:fa698fcfd814ab2b0c86dc5585236c31bf5d34741a5abe97eb5984f917e23e2b"
+    },
+    "apps/api/internal/ids/ids.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f746711f3e71bca5046705dd21697e870429ed4399c4d9fe5a50bc7da0575227"
+    },
+    "apps/api/internal/ids/ids_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:29ec1a7248ed1e13b34d48df348656bc2e2fa4d9fca42072bcf55d34de741e1f"
+    },
+    "apps/api/internal/imports/limit.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ad183a9de765ff2cffa592c7305e1adc9dd4243f4c1eddecce96fd6c700d07a7"
+    },
+    "apps/api/internal/imports/limit_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:150b1724af8a3121aa17e5ad13f3851bfaa5fbb07a58c234ec940142205e012a"
+    },
+    "apps/api/internal/jobs/client.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:585463a0da5f746a35d3267ff7ef4f7c9160b0a2253913748e65cd1c64bb816f"
+    },
+    "apps/api/internal/jobs/stats.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:711eb70743fedffaace3f4115b6b388b2363de1742da1960d59a338845bbd5e8"
+    },
+    "apps/api/internal/jobs/stats_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:90a431908b7e3024ed5e37956b1eb5f4a38173fe269cd8ebe4d30ac4b355087f"
+    },
+    "apps/api/internal/jobs/workers.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e45c4f8c6d5e0456949a5f295200fbd5db1e13341287b2c8c87bd054d7b97719"
+    },
+    "apps/api/internal/jsontime/jsontime.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:23bc73a7207ffb0f9851d58991c2dd0f5109dceabb64144b2ae1042b371d0276"
+    },
+    "apps/api/internal/jsontime/jsontime_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:304214d1007866f3a8f4b7a72b7f52915df340541eb917ac1b797a802b2982f3"
+    },
+    "apps/api/internal/llms/llms.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d97929c863e49a6c668f3c5b198cc1849188a897c6fba632a0369c8554d11c9d"
+    },
+    "apps/api/internal/llms/llms_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1c3d2194fc213ce462b5e493bca5f7b7452a53423d34d348bcee50c8884058fc"
+    },
+    "apps/api/internal/mail/failover.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:78cd6a2a5663e0fe62addec8c725301ad9bd6c6111f4eab25424acfd5e20fd10"
+    },
+    "apps/api/internal/mail/from_config.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:de996c2e2fce5bc6eeb0b02c5a9d959424147e264d17b29368d8a8192b1ce777"
+    },
+    "apps/api/internal/mail/log_transport.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2e0b021834b90321b3bdce1227de482036f30871d173ab46364ab5052bc231da"
+    },
+    "apps/api/internal/mail/mail_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3229aa9deb612b838045af243a943f6a5366a774ec4f64a6a0c83c7ec4a6db1f"
+    },
+    "apps/api/internal/mail/mailer.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:30c116b237fb8ba8030e1ac3e9441422f1a20dc939e5ae456f5cb68a28a9d3b9"
+    },
+    "apps/api/internal/mail/mailgun.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:4180b401b7735bf5d0638bd30dadcec5060fac43bb123da3150aff6041ef1280"
+    },
+    "apps/api/internal/mail/mailtest/mailtest.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:07c1a709d8d21ea55d770dfa51b54b2b0532b397f4b1a98c83b1c3a9c000f074"
+    },
+    "apps/api/internal/mail/mailtest/mailtest_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:82dba2aca3fbe5bc04fdd61d38ffcf4df77c2755aa86db477a06da1003b2360e"
+    },
+    "apps/api/internal/mail/mime.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ba1f6a08856236c02f056ba025ad7c672b0efb69a683ba6af74617bbc3cb0da0"
+    },
+    "apps/api/internal/mail/postmark.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:03cb9528f5ceb4b734f2dae6dbca9359be6648c7c3f05a7cae38cf40b3e912f7"
+    },
+    "apps/api/internal/mail/preview.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9059e43abec2d4c80a83d33557ce24d624459d0591cfb3ce39c4d4581f4ad112"
+    },
+    "apps/api/internal/mail/queue.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:fdd4a9e6c9da3fea821ea612a79c86e36d051724de5d9789aaa2a41a0d922b92"
+    },
+    "apps/api/internal/mail/queue_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:702f4ac37be094da4e2ac111fd00addcd220ffc5f12822633e2dba6ae6a2b353"
+    },
+    "apps/api/internal/mail/resend.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:28ca0cd08c08414ad29ba992ac1493235cb511576e7029ccd516bc153fc6b3d8"
+    },
+    "apps/api/internal/mail/sendgrid.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2062a49bb6b9686eb360b2c9014ba2295f60596588a6c8ea3eeaaf9c43e76f3c"
+    },
+    "apps/api/internal/mail/ses.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e1c56abaec37ca8a64fe140f6be13f1021445d33f7c4c5ad5bbe232e24da0e43"
+    },
+    "apps/api/internal/mail/sigv4.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:44c1236d44bbb8f4aa7a2ac22d5f99317b04b91c6f04a58d4ea4897f357b43ce"
+    },
+    "apps/api/internal/mail/smtp.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7dfc3f2c0ebe47a8527e7ac6495a89594739d785c86b1fc5fe5799397a0e04e1"
+    },
+    "apps/api/internal/mail/templates.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:267191af631fbf4af7afe45e5b097c3a50db96a65d986d3a05d44eb66fb0d933"
+    },
+    "apps/api/internal/mail/templates/templates.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:4adff5e2cd93bd88175b59a9eec4c3c410d79e3e9acee65471d74807ff4e8713"
+    },
+    "apps/api/internal/mail/theme.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:965339b267ea8fa14c0a9c0c70c33ddf53dfd0de19d0d5194ab2862a6a1219bc"
+    },
+    "apps/api/internal/mail/transport.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:02b67cd82fc944262381d0dd260b30ff532273524095f2dc0af87d28315862b3"
+    },
+    "apps/api/internal/media/image.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:cd02dc9fa2d9edb12704a807095a54c8c22ed470e774691ea4f849b6396993d4"
+    },
+    "apps/api/internal/media/image_load.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:856af3615cc998d08348b3a7c8e0fb6e22e784a3bb5c16e2a7d8364fa146d319"
+    },
+    "apps/api/internal/media/image_purego.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:97b2a78f0fb51c3d9e50276ad201295eae01c069ba3e37982302bca4f7ba86a4"
+    },
+    "apps/api/internal/media/image_storage_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:863331bc360b569859d1d2f68488a3ca7e0b3cac72d846f381eddbb557d4939e"
+    },
+    "apps/api/internal/media/image_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e3f50f74c0ac3d28179086268a3c2aa18e9f1e1d4e46c25c74d64d1ecb4c2db5"
+    },
+    "apps/api/internal/media/image_vips.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c281979dd0748e3e8bee9d514681f1942765eef5e419a330a7240115fcb0c5c5"
+    },
+    "apps/api/internal/media/profile.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9556689f4dc235ca9a7215778496a81967a3c1f07d7b4a9726c03f2f7d28dd65"
+    },
+    "apps/api/internal/media/profiles.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:249094901117ed9b072cfeb0e0ba21bad2601204d37e61a1efbd890e2d405be2"
+    },
+    "apps/api/internal/media/transform.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ae500934bd94e71ff88d63ad06c989d95cc5f98fa3a58c7398e343c092b970bd"
+    },
+    "apps/api/internal/media/transform_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7dd9b2bac3d1a6c0eb05afe218a1f06e3ffc54eda8589ea7f5e059da5335f2a5"
+    },
+    "apps/api/internal/media/transform_vips.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:47003fca8b808dc8921ec42fe8f785100d9086eda748872bb08f87f4361ab6d0"
+    },
+    "apps/api/internal/middleware/activity.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:593d1aadb822ee42a5bde2b09820b8d1880dd102536a6e8a8fbae95698293678"
+    },
+    "apps/api/internal/middleware/activity_read_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:588277755486f2dafec6b21353abec0af77a6999e353b2bf527c9bfbc5c707ce"
+    },
+    "apps/api/internal/middleware/api_key.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:0dc9bd45a65d9cb8a7ba6730af9d6480ba23379f7d51e6ef55b02a177ff2951d"
+    },
+    "apps/api/internal/middleware/auth.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d4f982a1c4177991bcb6cb51dfc681053c955f0da334081a6fbf47c880fa6e7a"
+    },
+    "apps/api/internal/middleware/cache.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3ccd237565f57ffe5bc530dc69109a54955491538673786a86ac6cbd91d0d63b"
+    },
+    "apps/api/internal/middleware/cors.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:da0f2c38937843fb55b75d16e3738ec3f81899a39cf65babe1b5972377d73b8b"
+    },
+    "apps/api/internal/middleware/csrf.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:bf9ac37d0c373bc7be05f3df7afd65541df765d7e94d291356fe7f071b92ada0"
+    },
+    "apps/api/internal/middleware/gzip.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f2afd4576e0df10e675a130502930c06b981f5cb2ff57e492d476b33d1d6f91f"
+    },
+    "apps/api/internal/middleware/gzip_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7b288ca2cf4ce5bcf38e4493557c40948941445b91c8342e79a5c6cd62bda92e"
+    },
+    "apps/api/internal/middleware/idempotency.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9bfdb2b2ac48cb72b1a463606564595f029a42213be0f6c6faba755654b73c05"
+    },
+    "apps/api/internal/middleware/latency.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:59e018dd311f689e7dfc7099af2140cc689ee7e0f83b204c255269e01e2546b8"
+    },
+    "apps/api/internal/middleware/limits.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b9166caba7f72af403987b367f819028c479e3529adf36ebc3c0ff9bd8e3e8c7"
+    },
+    "apps/api/internal/middleware/limits_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:bb4c7a01449438f0a7709f7d451772fc16b6dd235bfd5e6f929bc413540dc262"
+    },
+    "apps/api/internal/middleware/logger.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:0429bf6ea2ce42a1df8047e3a512952bf9d696f688c338127cf8cd14b7d95a75"
+    },
+    "apps/api/internal/middleware/maintenance.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:353731eff1faac9b8cf74c43e5e3ede9cf2ead6342e375d06a1f3667bf8e433f"
+    },
+    "apps/api/internal/middleware/proxies.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2f78eda14d97bf314174843dc32845330883112aa6bd8227a9e571fcde071a1f"
+    },
+    "apps/api/internal/middleware/proxies_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:109425181be284182a6d74e972e5e60ae96a970affaef13f9d385eb37685b476"
+    },
+    "apps/api/internal/middleware/read_your_writes.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:0ac6c05efd740ffa8b4225bcb4c5b161859c624ea56c3d3a484473bc0efcfa13"
+    },
+    "apps/api/internal/middleware/request_meta.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:129764a4fcb0f2ee87f40d1c5725f8ef904d33d4b74c03886482332a510b27e0"
+    },
+    "apps/api/internal/middleware/security_log.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:44964e988780aa039febb54f987872867dc0013755e1cedd32616ab28293301a"
+    },
+    "apps/api/internal/migrate/history.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a074a8b51cc9aba9c5f4929b5019d6a20605a58048c11703c94f3e83d32cc654"
+    },
+    "apps/api/internal/migrate/history_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b5832f29a74c87177176ce41d04af17c223043be475710cc24702088a0f2b506"
+    },
+    "apps/api/internal/models/access_review.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f6131fb1aede13b6c59ec4e334f319c43e9fa57d5b1f7b117eb2635e60cd7b78"
+    },
+    "apps/api/internal/models/activity_log.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:598f6336f31f5e80d5f4fcbedf77de86db5baeb2473202eaae34c399708289ce"
+    },
+    "apps/api/internal/models/api_key.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3ac569877375639e3f0237ae7d82e26f2c9b8855cdb097852684961f4e4340c5"
+    },
+    "apps/api/internal/models/author.go": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:541f68514ad633ef93fa3ee03c078d353edddf77a7dda6ae3e3326c9fcfcacc1"
+    },
+    "apps/api/internal/models/backup.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:30f62650106ce5865412cdd54873a8af852bb674f9d7634a246d27ff574fb3a4"
+    },
+    "apps/api/internal/models/blog.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:158f09188a0c574d43a0adcfb666de836e96b82d0ea1484827e52327bc7ac949"
+    },
+    "apps/api/internal/models/book.go": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:f7db880a9fd07149beb075faf627efa204f399e0c9deb93b15f8d12b41e8da57"
+    },
+    "apps/api/internal/models/bool_flags_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6514cb95d874cfb46f00edca0e2d7964e957dd93e6f2ad7da95ed215358d0949"
+    },
+    "apps/api/internal/models/dashboard_layout.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d721e64430859c1bab987dfb386595eefa0ed3056d4a28197c5cbc20192ca7a1"
+    },
+    "apps/api/internal/models/deletion_journal.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:850b01a67f41c96bfb46cf7a5158896a6ad2d98bc03aad151861dad2375c9038"
+    },
+    "apps/api/internal/models/email_verification.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2cffbcd9e9e7d3e9330d8d87f16a1341a9dae6fdd93e1913e2f1ccd2bc0dd8de"
+    },
+    "apps/api/internal/models/erasable.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:03d23c56f8ce21fd6b6f6bc54f238fb32a9f1820e1e79e7947232fca36cd262f"
+    },
+    "apps/api/internal/models/feature_flag.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:cba0bdde195094e16a9ace01c25255a88cbe056226155e999f04e7b89537dbd8"
+    },
+    "apps/api/internal/models/form_share.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e59619f3d4ca93d2249d81c9dc1f0e5829b089181278c3bf913b913bd57ea500"
+    },
+    "apps/api/internal/models/form_submission.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f3cbbe302a4aa9a9a992de5603b725390526e0bd523c9c539342c0dc77773513"
+    },
+    "apps/api/internal/models/helpers.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:775c0f67c3dd59ad2184b8faaf0acde4f38cabcc871da6207544c54bb09cf82f"
+    },
+    "apps/api/internal/models/import_job.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:716d12266e925e14087c3d84f765fffdc800cb92faa983fb2e11d0cee6098b81"
+    },
+    "apps/api/internal/models/loan.go": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:04b59ea3b11c46926e2f3b15b0f9368f85a5304d8bdee9407bcabab6c42de4e6"
+    },
+    "apps/api/internal/models/magic_link.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c75f627253019ddc62c51794d3dafee1756223ddc3cc0c38c191f0934a7e54bf"
+    },
+    "apps/api/internal/models/notification.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:78e5b583231261ec76076a1424c8fd4fce74ab64c6ce26811ffd591da5a45ad2"
+    },
+    "apps/api/internal/models/outbox_message.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:62db723a28cfa3cea22a87f26cf2c2716c019109657d4dd9cd7a90d1894996f8"
+    },
+    "apps/api/internal/models/passkey.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e15eecbf49e5049950cc92f42818ad4bcb26d530905bb9db5b8b51bba0dc8c5b"
+    },
+    "apps/api/internal/models/password_reset.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:824ea0bc802ffa54d18291d5c54f89a08e893b63077780afc7c9c392f1e094a0"
+    },
+    "apps/api/internal/models/recovery_contact.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8d8ce30c159779f293f00ae6dfdf5f7963e4312371e16c17cc8de142e45efb6c"
+    },
+    "apps/api/internal/models/role.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5cb86c0c670877783bf73d51eea2fea5f0936949a1b4cf72c29bcf2e5a3c32f7"
+    },
+    "apps/api/internal/models/saga_run.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c61fb76a2b69dda63735a2df35ce0e6816337a29a5cf7902f116eeeae5bf887c"
+    },
+    "apps/api/internal/models/saml.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:cc6aad00748d5cb68335ab402f7d718d92f36b5b7e3bf4491426ae450bbbe208"
+    },
+    "apps/api/internal/models/session.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5bf47a2770a8c5e86aa00e9fbd88cda4ed2311d0c5776bfb292ef06c8b518f02"
+    },
+    "apps/api/internal/models/setting.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8941483604676eb4474156b43e3e8f096cb1f893bf6aa4f33d37cd8c9bccf4a6"
+    },
+    "apps/api/internal/models/sso.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:40b32ef0036570e1bc6616ae267e77a52af9b4309371fc8cd6e03b03cacf213f"
+    },
+    "apps/api/internal/models/ticket.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d07530345d779e8febc306903282d8ba2857a49b8e92cc3066aab5d588cf6dab"
+    },
+    "apps/api/internal/models/two_factor.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9c5c315df334194ce50bb4dcbb506b37280654c7dcc08e793859e34c45c6e0ea"
+    },
+    "apps/api/internal/models/upload.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:85af15b12208db6793beed13396c19a4b4cdef4bb8c7c74ba2a2e0484e668867"
+    },
+    "apps/api/internal/models/user.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8d2558cbf3780ad2d744382133f2496e0b44ca4eb7acdf3c8972424c08c99716"
+    },
+    "apps/api/internal/models/user_activity.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2b4b62243f20392fc9690da1b71f5101e8892284a16b8933c36ffd4917418e8c"
+    },
+    "apps/api/internal/models/webhook_event.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:45aff5b4a267942dcfb8c504b2b342738c67b41cd270e43ebdb2a2baaf5124e8"
+    },
+    "apps/api/internal/money/money.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:cd309acb91ae9a8ae4562b23b9fb4b85148a74e224f42e7051fe3a5498830fa3"
+    },
+    "apps/api/internal/money/money_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:cf154766dc6093092f6b1063614387a96a728c30b65703430a61d63d7c0c8024"
+    },
+    "apps/api/internal/outbox/outbox.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e69f44b0e97a81211cca410574f5a4ddc1ecdf892af8d9906ac4b1a29ddcaddd"
+    },
+    "apps/api/internal/outbox/outbox_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:04caead340a7ca5182986d4d964f8e312e24ae59a78358c9dd6511cb4ce448ce"
+    },
+    "apps/api/internal/outbox/relay.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:523e1f5aa1cffc7f35ceb1a0e18c6f54326b0a1f6c46e150691e62e1e01af539"
+    },
+    "apps/api/internal/paginate/count.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5d2c70d041be139d7dc9f1a659106eec39e999299c4206d6328280e909841d3e"
+    },
+    "apps/api/internal/paginate/count_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:90fe6b10988357af59d2d5ab9cd366efaee33827c49341e9161ca36f1cc89dc6"
+    },
+    "apps/api/internal/paginate/counts_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:543328e56a67ca779651af0f14f7687467a903ba0d0f677ccbdc52e62cb9c857"
+    },
+    "apps/api/internal/paginate/paginate.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d2481b532bdd39e7a97dcd39aaf2cac832bdc974ec27a532d498e34f8ea773b5"
+    },
+    "apps/api/internal/paginate/paginate_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7adc1990fafce2955e937f270345c52483a1bc95acf775673b6f7904c62022e8"
+    },
+    "apps/api/internal/paginate/search_index.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d33a9d8998f99472ad79749fb2fff8412054dd32ef22e4f8af117d7b25a066a6"
+    },
+    "apps/api/internal/password/password.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9049c7b2a6af607038f830c36b5ca5ec8d07ef2558ef3b193c45fb0ce8207e19"
+    },
+    "apps/api/internal/password/password_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3e89c847509a8424fff3aa0d851e5eb6663114f955b716c56927b0e673471822"
+    },
+    "apps/api/internal/pdf/invoice.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a457c1e3d5050bd0cef41133f77ce28bf70348fcb41d4e28e46b90be88b2be06"
+    },
+    "apps/api/internal/pdf/pdf.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:430078c29a3b938c1e3f8fb8eaf4b8a3d4a058d2c3a5c2026b0b169156a9601c"
+    },
+    "apps/api/internal/pdf/record.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c01b760c104c01dba5fe3c99e59247ec861857fec14fddff93914681549174f6"
+    },
+    "apps/api/internal/policies/author.go": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:20328fb809496803f79cb0f4e135b30900fd3c63f60a2a377d37f0be3c057a03"
+    },
+    "apps/api/internal/policies/book.go": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:8a803e90ee7d6a460b5c64f7ca5e8dc8509f07a7e28bf4c81b3c18204ed10eab"
+    },
+    "apps/api/internal/policies/loan.go": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:41584d1b406ab7231c0ebfae210582866b000123a78ffc81827de902964e4024"
+    },
+    "apps/api/internal/policies/policies.go": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:9e3a50658e71fa1edac65bbaaa71ee8557556bf001635e621aac7ab1be7b192b"
+    },
+    "apps/api/internal/realtime/backplane.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:05851c52061c816e6e2a30beb63fb4e060017487e364dadfaca4633395b0f45e"
+    },
+    "apps/api/internal/realtime/backplane_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a366db0ac69417a939d95f02606345e8b75d554b917b0f78c42fb67915b2d12f"
+    },
+    "apps/api/internal/realtime/channels.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:985dd84bceabecbb2c81f3f971fe9c549cb9043b3add40c5375191805a6eefcd"
+    },
+    "apps/api/internal/realtime/channels_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:958e86a6c290927b9282ebc35604bd113a04b106a99edab5772d6f1aeaa8661e"
+    },
+    "apps/api/internal/realtime/guard.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:67bf8d15bf48384d5b0ba31f5201cbd6ae119bff1e3863265506fd6ed39606dd"
+    },
+    "apps/api/internal/realtime/guard_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a07b890ea0977bd79207af07ff2242cb81a9eea46f479efac0446d8676adbc5b"
+    },
+    "apps/api/internal/realtime/hub.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8bb47bf0238cb3f18ad169ea46ff6c5e363fcd549d1aaf753297e09c40f35eb2"
+    },
+    "apps/api/internal/realtime/hub_send_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ada4cd495d7326842845bdf03e7b4cca7f529dd4234999f2b5e98a075494f40e"
+    },
+    "apps/api/internal/realtime/presence.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:19e6103dfb3629db3700f544dba67a3df18ee2d54a8ebc3040e340e1d4333051"
+    },
+    "apps/api/internal/realtime/presence_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b038b7535c7f151bf521a55d027e12b0673b6e25b5c93be5e8a288a67fce7570"
+    },
+    "apps/api/internal/realtime/stats.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:4538afe67a0d6ab3e5481fc08ba3724bf6707a82db2180065fc516a1995304b9"
+    },
+    "apps/api/internal/realtime/whispers.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:fbf2ffc1feb34fb76d641b222a94c4bd3c7d736c0c40fda06b4443d3858f852e"
+    },
+    "apps/api/internal/realtime/whispers_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1fe645837387ad9ddd2f903b8300b6a11d127eaf2cfacb9014a8e7837dd62935"
+    },
+    "apps/api/internal/respond/codes.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:cbeda2e1f509491f298a800403243a165c4eb360d57d77e4e818a62e9db20c42"
+    },
+    "apps/api/internal/respond/respond.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c6ad65aade09918f0a51a59401fdd4d351948d3b4f888aaf8b1a03a9bb088d1e"
+    },
+    "apps/api/internal/respond/respond_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9882b1cba783cdfb790445c32f159559a28defeb6424c3164b7f405c6ef51447"
+    },
+    "apps/api/internal/routes/apidocs.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3014e7b93dddc47018e6c64451a18db4299eaf2baa31a61b2d732a7d3c1d2e2d"
+    },
+    "apps/api/internal/routes/author_routes.go": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:cf6df5e76d5c38cae8861335b76434b296c510f1511d4ac4be1a52547103499d"
+    },
+    "apps/api/internal/routes/book_routes.go": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:0b75cc155469e6a1a7e3bb266474e5b509d3ed0603f7c173f9c4b7ccf8c4bed5"
+    },
+    "apps/api/internal/routes/loan_routes.go": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:b9cd366d917b4175fc8b8ab790767cdd6c9c39f6d525287c71e1fd9ca95345c0"
+    },
+    "apps/api/internal/routes/resources.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:83062f8cf0e25ac036b23c434db207a89b06c78ec4dfcb01bcbb27096bbb138a"
+    },
+    "apps/api/internal/routes/routes.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:89de7875a1a90aefd5f128aa79ce1a686e57b9bd30cbe4fc01d3127ac009d888"
+    },
+    "apps/api/internal/safefetch/safefetch.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1a98264b816c0041fe464791b2185a8bb9467d95bdce2d1a4d635644dae033a8"
+    },
+    "apps/api/internal/safefetch/safefetch_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c7bf0d36317d7419834db0be2e952d856bc8073f17a51c83a91ed14ac0811058"
+    },
+    "apps/api/internal/saga/saga.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:465b45e85f6509908cd6bb54ee724315b6888522d8e830013b3abc678f742ac9"
+    },
+    "apps/api/internal/saga/saga_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:168f43784f3df6f932128cc5208de1c9fdf21d1c2c774fd7fca1f13064ef24a3"
+    },
+    "apps/api/internal/sagas/sagas.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1345560d9bc04a8fef9282bdedc339ba5b93360af245b0eb65fc835808c518ee"
+    },
+    "apps/api/internal/sanitize/html.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6433ec86a3d055a7087c4cae840ca1a6500177a11241b18e21ac0e8a5c48affb"
+    },
+    "apps/api/internal/sanitize/html_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f36fd405d343d0f47711c41774d2cc583600ebbef95952c8409b2b66c7210348"
+    },
+    "apps/api/internal/services/access_review.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:be4e8c5607cbcf18491fd236644a68f6142d2c2e8aa6c4779af3d2fe552b51c2"
+    },
+    "apps/api/internal/services/access_review_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c32d39eadc5daf8a17e494c1ad3a1d9db4a11a1210deccaf4aa6ab75b4f565ef"
+    },
+    "apps/api/internal/services/activity.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:951de22e4e974da9e2692a6d48d50b1c994d83290d55b3a721189e415cba5ee6"
+    },
+    "apps/api/internal/services/activity_reads.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:fd0a4b749561281fcd816488982425d8f0d9898327eb5a8e153f265926fdf5ac"
+    },
+    "apps/api/internal/services/activity_writer.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e34cab09a16efb557ba60d3bd15ffa447e49171a52dc7618647f9465d07b669a"
+    },
+    "apps/api/internal/services/api_key.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2e922d93d2a6964acba53298b246126026c33a2be082af8056ae297cc684aeab"
+    },
+    "apps/api/internal/services/api_key_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:52ab0195d60c0b4189e97f4e940165ca7efcdf53fef06dacad6e83d161badba0"
+    },
+    "apps/api/internal/services/auth.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a9cb31ab2aafc327dbf01e7b637f080fb8fc61703689961f97baec1f6e938579"
+    },
+    "apps/api/internal/services/author.go": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:947f9e76cf8ca42569a90aca148fe8420b7698e5d2a14bb3837cabfe49ef949e"
+    },
+    "apps/api/internal/services/author_import.go": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:3a191e6e26ae5c4d1e6366a3331a791307f68dcb82127209a140c63cc7a790ff"
+    },
+    "apps/api/internal/services/blog_service.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e7e9189705993304e0002e781cf2a7d57f392b9fcc451c069ac73055e78734e1"
+    },
+    "apps/api/internal/services/book.go": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:7b68b20da1d560fcd95d6d4993a28f3468d8722deccf78062c97d79e0c545650"
+    },
+    "apps/api/internal/services/book_import.go": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:f4bfc02c122916ebf73c28bc1e84715e4e7ff841225ffc3dbc71b93fa2404e9b"
+    },
+    "apps/api/internal/services/chart_dispatch.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6e09fd1deb928e76462be1d5bd5ddcc2f794188420d431718e8b2a1c4e3f5cef"
+    },
+    "apps/api/internal/services/clientip.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:be1938b8571590fa09576f9f25039bf69992afceb111e5b8501b2f7d6d7ff9c8"
+    },
+    "apps/api/internal/services/day_bucket.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b1803682207e391431f12de95a144e27abc48cb1c748e57aa526cee0e15060a3"
+    },
+    "apps/api/internal/services/email_verification.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:4df2717687ea450e1150f0cb86889052747a15d44614405fbdd94ea3cf7d929a"
+    },
+    "apps/api/internal/services/email_verification_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7e4fea94c4caf643af762fc76bf1d9f5d1b91b35220143dabd42193b54e8ec77"
+    },
+    "apps/api/internal/services/event_subscribers.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:38d0d16f8b4fe391293217986892c18bc1fb6b53b06d3c44a688360939b7a367"
+    },
+    "apps/api/internal/services/feature_flag.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:4a8fc2c36b2f62fa6f9d7423f9ef69f61eb0cb95f77ee4bdc66d3340eb160e24"
+    },
+    "apps/api/internal/services/feature_flag_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:aeddd36ffea7b5e75ede7de1322083c2562227a18c54a577bade14764f6f5410"
+    },
+    "apps/api/internal/services/form_share.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:45a8447874bf5384ffda5efb0f362334b1794f94c162ce5828f2756b7a7d0f2e"
+    },
+    "apps/api/internal/services/form_share_dispatch.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c45dd42e6a31fa720ded5989be417fcab861b7031dbebce5f7cd8c97e04cf714"
+    },
+    "apps/api/internal/services/gdpr.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1c9c354941cb6910d8e91b45d4001440a2ef38fbe0068ad9f51d20a8ea3f85b1"
+    },
+    "apps/api/internal/services/gdpr_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a51f3e57a8947a159adc47642fc5220fd405f3cf875fd8ecc3c31643ef0151a7"
+    },
+    "apps/api/internal/services/loan.go": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:8dedbb554738a294caf6eaabdd2f2c3bf57e32aadc5ff1a90ae97022202cf948"
+    },
+    "apps/api/internal/services/loan_import.go": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:a889a1397d71f32a201e931d853407c565b655ef4761a85f7838a0ef51523ca7"
+    },
+    "apps/api/internal/services/magic_link.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:935178cb77c3250220ccc586e5ba48d1e8b2a6be7236447fc082acc51930eb7b"
+    },
+    "apps/api/internal/services/magic_link_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:39b7fef9ba005e360d1924f15c1eed0d5d5df1b4e0fe693e3dc73717aea7de76"
+    },
+    "apps/api/internal/services/oauth_hooks.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6e8d52cab4ded5b3b78b552a07ebae9e947fe122b333a90d5073fee942bb3736"
+    },
+    "apps/api/internal/services/oauth_hooks_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:b125a2ab01b0ffb4de1bdfaf92f3e12cf3a14e40c4b50619674c197d5ee5c3c3"
+    },
+    "apps/api/internal/services/ocsf.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d3133954a7be83d6d1b90a8ffe7a61dbf29002e7fffd10f65db207dba0187748"
+    },
+    "apps/api/internal/services/ocsf_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8b30f91e0f3594f0b0dcf481fb5b186fe64fa28947ba907a56f2f23a2f9e849b"
+    },
+    "apps/api/internal/services/passkey.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:39dbb4507b7597ef7177614456fe6c969e449876dc14276f4caa83f84958539d"
+    },
+    "apps/api/internal/services/passkey_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:daaa746999281562e53d2c832fc04e42d59b1755ea37e12d26a15dadb9863465"
+    },
+    "apps/api/internal/services/password_reset.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f0f1f7cc3701c7851903ed6272f19166c326d2a0e4769900b31b3305dc133342"
+    },
+    "apps/api/internal/services/password_reset_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1480ad13a0f12b5424d0dab01a66b1fe44406bdd1ccb88a1668dc208948ded40"
+    },
+    "apps/api/internal/services/recovery.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:3a02a44f6ffa45a8c679581b52b513cff69c4819b96fb3ef7d125ea2b34a60e2"
+    },
+    "apps/api/internal/services/recovery_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ca856ce48d2b358ecdabcfa9f9f2e49502d0c608d279ed69075af7b7a2df6c87"
+    },
+    "apps/api/internal/services/request_meta.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:db377bd54225b701748cdc6b36328cd78582f3776aad0851f4119101f2d41317"
+    },
+    "apps/api/internal/services/resource_stats_dispatch.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6c4dd87e65893d4982ee2d0502aa1e2b74215273c8d11aaab5bc349719b43b02"
+    },
+    "apps/api/internal/services/role.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:261ed068b1f5b44c69060033aa71bc031d83695e9fb73ac1048b75a013ea6764"
+    },
+    "apps/api/internal/services/role_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5528886466eeba2a1a34ebbfbbd9c7d583bb65f895af51fbe111248b861fbe60"
+    },
+    "apps/api/internal/services/saga.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:085cad2653262065700d0045373cb97cc437a56926a5b2dfb76ca2b8920f0c15"
+    },
+    "apps/api/internal/services/saga_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e242edfd387c2dc70621fa1c5882b7a088890650aa8371bb4bfedb4bd0c9d635"
+    },
+    "apps/api/internal/services/saml.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:49e950a7786b2b4f728617f67a2e4e10e8bfdd396e8c43d6bbb453c7de278e87"
+    },
+    "apps/api/internal/services/secobs_bridge.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:db1010f7d382a1fa1541c7a63258fa04e4fc80414a07b9d70d8a7c2e37bda06c"
+    },
+    "apps/api/internal/services/secobs_poller.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:aaaba4fdc1d3e21d334ef77b06932a4bf4c4815a9852a89c83bb871a03090e93"
+    },
+    "apps/api/internal/services/session.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e593daa3e2b5e4faba39454ee83b9206a8b2154687bc13740439787e58f08218"
+    },
+    "apps/api/internal/services/session_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5f1a8b76ce0435b4a26796ef42cc65097e2260948893de11b6df4526c2104585"
+    },
+    "apps/api/internal/services/sso.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:89ddd62bf636c17a1a55fb160a70f0298678680f0e80319963af038c00cd5248"
+    },
+    "apps/api/internal/services/sso_connections_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7b8ed5449d573f013aaee224dbb7b085753923970e68f228cff5910a180342bc"
+    },
+    "apps/api/internal/services/sync.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:db58e786050231992039e1593b5750bfcaedb7ee5cfc67625336efed16c67476"
+    },
+    "apps/api/internal/services/ticket.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:731762a9d2be82a796ceb796e1c78f0f8a0c2ebd5fb38b344a2cf11f98d2a9d9"
+    },
+    "apps/api/internal/services/ticket_mail.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:59aa07a8f436af6b7d417f30a795438aacc94ba05de25a3dad03b2900026d35d"
+    },
+    "apps/api/internal/services/two_factor.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c4f5ca6297196ebf7cba13b661c09cbb3560cedf3378e47a7f0d65174547688b"
+    },
+    "apps/api/internal/services/two_factor_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e5e07c08c839ec09b073292d43bced99492cfeb500323b70304bdf0f138b8c17"
+    },
+    "apps/api/internal/services/upload.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:31f07d548712584638d58f6241a05d22ae543c678f0dac5fb310926d7e95b202"
+    },
+    "apps/api/internal/services/user.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6f749b3a39b6dd911e91011d57b5be171d7ea8a3fca21f22b83e574a3b14f523"
+    },
+    "apps/api/internal/services/user_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:537a04a2d675c068befb459b7ea2b0379460d6312fedf245d1a8bd44c8fefd6a"
+    },
+    "apps/api/internal/services/user_write.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:dacbcf366dd587015368531ecbe015b1f62cf555fbd7fe511a1a4b331d11b95d"
+    },
+    "apps/api/internal/services/user_write_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:62b96d7f8a01cbb545312a63798d4216816e5f7b37682062452608285306ca87"
+    },
+    "apps/api/internal/services/webhook_event.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:0c2ca371201d7b32242a40fec77e32ee26a2ee5de780ccfdb42a842d9768d1f1"
+    },
+    "apps/api/internal/services/webhook_event_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6b095d06d341e2d267a85d88d4949c735993338363e98578628b213c65613d75"
+    },
+    "apps/api/internal/settings/defaults.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d744fd16e61b2a8eda9301b412f39477c9d11d57c1160ad79e01c126b9353bb8"
+    },
+    "apps/api/internal/settings/settings.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:11bbc2af5a54c96ef677e869c1bdeb293d6687165dc6b49cee55974c71e4c200"
+    },
+    "apps/api/internal/settings/store.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:bf16a132279ad4cee6bf77f033ae9731d895d02a01c7dea020ae6d9a8dc081f9"
+    },
+    "apps/api/internal/sms/sms.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5869475148b645eb345ba7bad2e078bd9643cf42ae1dd2945c30da3486e4478a"
+    },
+    "apps/api/internal/sms/sms_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:413aca3d2f74c62be9e69fe8008715b4095d7bc77b64c0dc0242b334a17ab224"
+    },
+    "apps/api/internal/stock/stock.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:24db0641b13839aad869da0efab7cdd429933038b95fcd62fa92498c76597b41"
+    },
+    "apps/api/internal/stock/stock_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:eff34cb2dbfe0a7ebe7957bdccf904032b1da0e1d63cfec751559007c1984c5e"
+    },
+    "apps/api/internal/storage/disk.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:4891bef1dccbf97459a8ff46a0664bd0847680bbc8f98236c0dfbb38a9f3622a"
+    },
+    "apps/api/internal/storage/disk_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d9e07db5ce46c81816f2503a7f585b5ec152583245f28dc55063b35aa50fbf7d"
+    },
+    "apps/api/internal/storage/disks.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2da69823f6cc992183ea2cfb0b129b0c2e00cb9f1916b6b230962e59d5f77934"
+    },
+    "apps/api/internal/storage/image.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1ee07486f7142382524f15bcd200feb2d95df873c4336756a6ebd3b40138c2f7"
+    },
+    "apps/api/internal/storage/image_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2c0f9223d1baa38a3300fcead19487b300bd9a54dd072602a2178d2043b06051"
+    },
+    "apps/api/internal/storage/local.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:43e8ec8b06c12bbd2aca4eabf65ea23f83e39686543f92f0af19babf5ed3f481"
+    },
+    "apps/api/internal/storage/storage.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:dd14dfbb638522c6b190cdc21486a905c414bd7353e5027466d46d3087398d95"
+    },
+    "apps/api/internal/storage/store.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a5444bcf6aacd40782633f98786c4db9b5fad2214a7442fc63ec49e15f99a00f"
+    },
+    "apps/api/internal/storage/store_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:766a2a7f061a28ff34f642ecbe758ccbe37844ef9f0523ddc58d983680c8f412"
+    },
+    "apps/api/internal/storage/url_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1d0c6630d6552d2f02c83b61554caf4b6cfb37e81554cd7c05df486d12fcbbef"
+    },
+    "apps/api/internal/sync/policy.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1267e1f57c0a6947cd67642646c6f43eb3136a7373e84dbf0f5d45b2e4b5910d"
+    },
+    "apps/api/internal/sync/registry.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:293f30092f947971a523187c0e26941df3494f320e0894420fac646832b0c08d"
+    },
+    "apps/api/internal/sync/softdelete.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f4692df8089f14bac91ca227f22310c61a3472df2727fee0a0bdd1aec82e448f"
+    },
+    "apps/api/internal/sync/softdelete_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:45fdd6fb11af2f9b9d43ec072b0d9aed12985b3a9281bb6255144407f5e4a14a"
+    },
+    "apps/api/internal/testkit/http.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f76f5bc596fdb0d0ac4a9ed14ffc24c63767fdee63da91081d919b0c460d0e10"
+    },
+    "apps/api/internal/testkit/testkit.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:bfabbde5189fa0b623cdc59b6a293ec0de9e4aa569e39e7f2828ccbdf159a5ab"
+    },
+    "apps/api/internal/totp/totp.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:623521755d184cdae115763515187a8da3811ef6575856659382ba7549c7604d"
+    },
+    "apps/api/internal/tracing/middleware.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8294fd07d042783c5555e2611fc5317e2234d431bb50956fa1894e134c277b3e"
+    },
+    "apps/api/internal/tracing/tracing.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:529907745899fe5f8f48dcd602f35a725a6a59bb1790b9198b3f58c123f7551c"
+    },
+    "apps/api/internal/webhooks/dedup_test.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d7b4e780fe67d99110523105a7406361edb1d0143bacbd0891af42478236f770"
+    },
+    "apps/api/internal/webhooks/verifiers.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e7968ed1dfc9f100771352097c8c5370bf2dddf0b14731c320cf36526abfd204"
+    },
+    "apps/api/internal/webhooks/webhooks.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d1abf2795849dbfc3109bf34594a785cee797caf53c6fcdbe4f1bcb6dae033b8"
+    },
+    "apps/api/internal/workflow/workflow.go": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:fcf5c789d1ac3fee5aa0fb23b69070b5e8dc2c846a30da47f3729702308818f8"
+    },
+    "apps/api/railway.json": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:984d8223354154e61a7d3798fcb5e05e14b18e91e41d7bf71f14d330d1cc0dca"
+    },
+    "apps/web/Dockerfile": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5e2480bde04b2523d73806243bfb8e776347217d79fc4d28044d583eaafcc4e0"
+    },
+    "apps/web/__tests__/footer.test.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:bb69de72d329948420699514f8c86c1ff33badb415939183d8d820be0e08d315"
+    },
+    "apps/web/__tests__/navbar.test.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:32128fcc1530831769db76de0b76070a73cd92af1fa10187a299e8a0bca35720"
+    },
+    "apps/web/app/(marketing)/blog/[slug]/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2af797334d43ac0eb7c96b4db9007f9172ca5550d2afd7d39a97a856bb6a4303"
+    },
+    "apps/web/app/(marketing)/blog/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:37fed380d2cf395cd50000e6d29f12aab444eecdf23294d2ace00c3ff0584900"
+    },
+    "apps/web/app/(marketing)/layout.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e4b82195139c9770b15211925d52df4aeff96439f8238fabab5bc6769e917fb8"
+    },
+    "apps/web/app/(marketing)/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8fbdb6277e09518c67dd0d8851eb6370c2d66cb56efbeb6922f4ab8852c238d8"
+    },
+    "apps/web/app/error.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1a1cf7451a50c89293e083d2953c6cd3f434501eca5d2516e7f42017b63cb177"
+    },
+    "apps/web/app/forms/[token]/page.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a7645cf394508f1b8cd308dc7c7274cd5861919ef4c0dd4f40665e5783359094"
+    },
+    "apps/web/app/forms/[token]/public-form.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:64d1e1bd166401dbab0c9346ba2fe5d1170df46f85a61d7b3061b5b9bd5ed38a"
+    },
+    "apps/web/app/global-error.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7874f8bd0fc2c426d7a04dc579367c5e5b70666873805dd32d3765c170ae5ff4"
+    },
+    "apps/web/app/globals.css": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f54cef9d60b889786369ee0019231765e7cbfda07629c3d51756072c7dffeefd"
+    },
+    "apps/web/app/layout.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ddb5e754f2a4f1f4e2d109e3ed475689db14abfb4df0a526e367a6919be21875"
+    },
+    "apps/web/app/not-found.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6f6e7228fb4c52834957befcfcb0ddf8b4b008c796bd5005a3c1639e02826074"
+    },
+    "apps/web/components.json": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e7defa9454603dacd72877b75bf9ebd2efce6686e56e2115a99051cafbecc42c"
+    },
+    "apps/web/components/dev-links.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:87309d0089e60f9e75dd12ed900718f724ad265f93c643fffe2b898a70769224"
+    },
+    "apps/web/components/footer.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:411b5fa715a528d17bab9406577b324a8e9f8d7764d01644afa7a7ee60751e27"
+    },
+    "apps/web/components/navbar.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7e7bde351e1518ea1161702601f4f0bf7c7588a5d5b4a82e1696eb42c8fa27f9"
+    },
+    "apps/web/components/providers.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ca33e5c633532843ada6e0d4a2ed134abda80e1cdd71b50d7809e6a93a998151"
+    },
+    "apps/web/hooks/use-authors.ts": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:6b88e2a46bf725fff1d8a1c6fbefb012b759c8a12c7727033d21f5666a147b8e"
+    },
+    "apps/web/hooks/use-blogs.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:6b6e1d9eff61537a1b67a6bfee7f026cd8be0b634b7f79b88d118aaa168e1256"
+    },
+    "apps/web/hooks/use-books.ts": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:50cfc28afad1c869989da57a26d4b9b69d20128979baf170addca94900f7ff5e"
+    },
+    "apps/web/hooks/use-loans.ts": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:cb39ea2e9276da4b87464ca417f08f7f4af37a997c27bdf8bdab86316aa2fc5d"
+    },
+    "apps/web/hooks/use-realtime.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:dc5c98ef7ea352bdca1a53c19d1a4f636b2e450db709dc8d38d45ead6a65792d"
+    },
+    "apps/web/lib/api-core.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1b1b145305c2ddd31006c896060ddaab3183723e8990034f3ab541bf9a2306ae"
+    },
+    "apps/web/lib/api.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:85383a107c88eee3806036ca15609b0132d3f977abe2da04a17d7fcb0fd00886"
+    },
+    "apps/web/lib/blog-api.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ee3325ea53da60823c3f971d55b6c143c3d752dd7b2778c0420d248ea8c6ab99"
+    },
+    "apps/web/lib/realtime.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:92c9758ab0a8e4c81dc3d8419287b25ec3847b2379033e95d29e48e0e6d54ddf"
+    },
+    "apps/web/lib/utils.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d1f1e0d62cb8d8d1e04c26e14de842d8a151f75812d81b046c65b5d1fe8e4b27"
+    },
+    "apps/web/next.config.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f7d4ec8c3ebb6bd7502463186b8c1a9934fa05e43201c1c7af823c175a7fc527"
+    },
+    "apps/web/package.json": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:4ea0520df26ab0c79469e99a388d98ca36837bfa8484a71c4be9593367d7485f"
+    },
+    "apps/web/postcss.config.js": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8fa4b01f6633f478ec8ea70633058c85858e2298649cf0aee711362e5bce7b7a"
+    },
+    "apps/web/public/.gitkeep": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "apps/web/tsconfig.json": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:87fbb583ac3bb3534f092b41ee9e7d993a52313c874ef411b71fab7e397ab737"
+    },
+    "apps/web/vitest.config.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c0b1c70e614f9623d485e9d92996a2dd8c6fabc7c53c2a5f70a0f579a7fef146"
+    },
+    "apps/web/vitest.setup.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:90ec9100c29e008c3d9194acd818e2cfa6dc6e177154bc8e10c5959aa35619ed"
+    },
+    "biome.jsonc": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:548929603879b7e88b3eb8362db7ad8c0f37a9dd600ffda03f3c8cfc51eee616"
+    },
+    "docker-compose.prod.yml": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a1e52a0af7acbae9fd84f4e3b0139e418c6efade2b5336b4045c2c272458150d"
+    },
+    "docker-compose.shared-network.yml": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2e1d5f50c0a489d05cce435bf1ec9dcfa161324c8300977304e3f00a6919b2bc"
+    },
+    "docker-compose.yml": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:40f995fce80f6f8580a175856f70d34a9af00a0dd0ddb00abb2898c9c132056f"
+    },
+    "e2e/admin.spec.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:da77e384d5a26fdd3ba108b56c56215721a873d81ec4f484b3d11ef089128bb8"
+    },
+    "e2e/auth.spec.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e6a6f5f931cafdd67cd4c54c6c9ce3d2db0874f6d2aad4a0156641d0f1886712"
+    },
+    "grit.config.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:7d5f90aa29695a14655ba1f4080445af59ff540b82e22f4531c339e8bb030432"
+    },
+    "grit.json": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5282db4e5c5a62c0a450f3badc303a4fb1fd5a576258d4ab36c067511577f45b"
+    },
+    "package.json": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ca01e52c92d02e4d40869897aec70559926c027cf34a844bc9ed0144df3d25c3"
+    },
+    "packages/shared/brand.config.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:51f595bf0ebf94dab88051440d73751fc12153e8115a31ba8e82c0249a339dbd"
+    },
+    "packages/shared/constants/index.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:79a39d1c93692e2e5cbff882d33bc96bfebc591fa5753fee173c6fe474b01303"
+    },
+    "packages/shared/package.json": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ccafa3413954d3d4572c1f52bc6a52d3621dd6b040ac0fe088e9c5abab96c834"
+    },
+    "packages/shared/schemas/author.ts": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:9efd9ff4e2788d36d450f5424b6ab394363eb2236d1c4a4fb05d782b3f4b5abd"
+    },
+    "packages/shared/schemas/blog.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d98e6a43d0e10f3a125196a771599857a8cfa3c4aba77f3eab1f34b2de6f2b88"
+    },
+    "packages/shared/schemas/book.ts": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:64bb3250c8767da4945b6ab6998436930fd6429dad7a5fc7292a6990e3829da9"
+    },
+    "packages/shared/schemas/field-formats.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:dfa907f8b3f75b17ea36aad531ad5c67b3fdd255c4793eb53360bb4124c7e671"
+    },
+    "packages/shared/schemas/file-ref.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:371f978e222d1ef55b37e461ce7a1f649d73b831d03a7c3521d764a551cd5d97"
+    },
+    "packages/shared/schemas/index.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8177ec4d443bcfb63d43a8fceb2321b1f3df5cc18c2e2fd18a4decfbdac2e089"
+    },
+    "packages/shared/schemas/loan.ts": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:f11d438f9ee4b9d0d738ea582879fc659afb1bdb2a9a781c3b2e19d1d0dcec41"
+    },
+    "packages/shared/schemas/money.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:90288efa52660e9e3115d8450f24f8c0566a5d404c6b3f6467393fbaa7a6805e"
+    },
+    "packages/shared/schemas/phone.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8eddac417136de45463234c03e908ded9670e8bcb2437b0e40ec1c39de65c565"
+    },
+    "packages/shared/schemas/profile.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e0a0649dea5c25b00d7d1f2d6747fc9f3a9bd88b34effe063ad5cfaf682d4bc9"
+    },
+    "packages/shared/schemas/user.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:dab110ad0744d67a96f937538bc3c06b980b9d0f90a86c0f7ddde3c15cae3e77"
+    },
+    "packages/shared/themes.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a8654c92d02be6d7a3846987d8f79ec1a347537dad121f80179951f224c8151a"
+    },
+    "packages/shared/tsconfig.json": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a4801707354766b1aac7c91bf3dc5f99dbe4b64f4ecbc2d39663af3b2e6e4999"
+    },
+    "packages/shared/types/api-key.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:a8ce7f1cf26163a95b8300b7949c0f32e974993585069f62ec5704059929f1ba"
+    },
+    "packages/shared/types/api.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:0a9ca1682dd99e3b35a64136aaacab41ffd256d07829c51d98027732d46ead85"
+    },
+    "packages/shared/types/author.ts": {
+      "generator": "resource:Author",
+      "grit": "3.361.2",
+      "hash": "sha256:38d94665b62a109a71edc21701f01b965e0bad8d65e60e7ed3b51597beabca75"
+    },
+    "packages/shared/types/blog.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1261cf6b4508f5a6bdd136fac4dd5c726d37cb0d1aaeeb8b65a8673be205fb3f"
+    },
+    "packages/shared/types/book.ts": {
+      "generator": "resource:Book",
+      "grit": "3.361.2",
+      "hash": "sha256:02ef1c38f147cc1bc359afa60ed563ab588321d47dc24bfe28e1cfa4c6a1b9cf"
+    },
+    "packages/shared/types/errors.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:20b456fa21698e108395ff494cbfeec1179fce18c087ce9b470bcdb8c27d3f41"
+    },
+    "packages/shared/types/file-ref.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8db8019264021fb7c2bddbc40ce458b752fcc78ef42caab59db6cbc708c86490"
+    },
+    "packages/shared/types/form-share.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f3238bdedc35028ec2737610d1280e6277b988d9cea5dcd93c3124988f134cc4"
+    },
+    "packages/shared/types/form-submission.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:715027b1d1d4bedbec811b0a5ea92c6e1820f795d1a9b042102aac7bb9a1b173"
+    },
+    "packages/shared/types/index.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:993896007b72e9a121ad6511da9f8413d8435887efb283f6a479fdcb3e15f3fb"
+    },
+    "packages/shared/types/loan.ts": {
+      "generator": "resource:Loan",
+      "grit": "3.361.2",
+      "hash": "sha256:d0fd530df659ba61d9e160f8e708528535fceab4d13f808b8e62062e57531efa"
+    },
+    "packages/shared/types/money.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:2bbd8f281c81d3819098e03505c7498b5acf1d4bb1b9c732a84fe4e985f5d023"
+    },
+    "packages/shared/types/notification.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8d460fc3972aeb8d9379bffb967f95f159af26f3d231fa0f839b71a24580c4f2"
+    },
+    "packages/shared/types/sso-connection.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:1ea30b9ddedb7f27960412b8668d6acd41131fff127b51d215d09ef33d8abc42"
+    },
+    "packages/shared/types/ticket-reply.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:899c98521a14acf6584d8115e12067a2cee38c78d228d8e47b34a8aee305ce52"
+    },
+    "packages/shared/types/ticket.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e310fc41aaadcd9ae41b610a1bf62b35207964b6262606194d6e963f72b5c335"
+    },
+    "packages/shared/types/upload.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:75e58dd4c075a5a68f06f8ca911c1eb0936fb0fdeecb9772dd1f2aee3efeeb7c"
+    },
+    "packages/shared/types/user.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f278d91d3e09fdf999f6e03012dcb0fa776a67c26a36a0d638bb7137d53e8795"
+    },
+    "packages/upload/README.md": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:bc5d8d9bc755177072a3076909abd8fc1b65d017db2572a4e626cfe93c3bedb0"
+    },
+    "packages/upload/package.json": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d3171a3ff7c818a5bf6fcd59800836b7f3b39340c5a88ff3f2f22a3f474f5662"
+    },
+    "packages/upload/src/expo.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5a81231208a81086cec21d3cde17ce8089f55e8106f9696bccc6b96ae9b4e1c6"
+    },
+    "packages/upload/src/index.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:39bd6c22b81c7e4e110037443306afd60c1df130f3c0c6c8bdb336b1f43e9683"
+    },
+    "packages/upload/src/react.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8aeacb5063975dc523ebd7408bf3cd0190c17c3b1c5a6b53d7c51bf0740ee54d"
+    },
+    "packages/upload/src/transport.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:41be4241134ca050e50b1a1dca24b44ea16bc5122ae3090c03c072e577e94fbc"
+    },
+    "packages/upload/src/types.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:94f47bec7a39fc1949c9dc368a9ae950e61caf2d276fd650a7eded6e7513b12e"
+    },
+    "packages/upload/src/ui.tsx": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f336984a9abba68a0feb0155fa037513220dc6e53fa5b5524698ad5b82578ecb"
+    },
+    "packages/upload/src/uploader.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f99de270737dab52075c13b3ee46ca894739d5cfea6ce144b1bae11702a57560"
+    },
+    "packages/upload/src/web.test.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:00d081d863346928d8cbc3617e66fa99db694f6f7ac9889376e1b1f6fb282a2b"
+    },
+    "packages/upload/src/web.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ae6cbf91c98359fec53ef73e13f63c6d6e578ef56087a4a5800fc1b95888f9db"
+    },
+    "packages/upload/styles.css": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8d76b50c2fd40ba784c8d4a73320373c5cd7d29d67997adcbefd5c58f3709287"
+    },
+    "packages/upload/tsconfig.json": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:c1d0145cb6c116b16b74826599c403238a5d4dc35b9d6cad57c3325751cc4298"
+    },
+    "playwright.config.ts": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:9aa05db2852a8e5b79e00fc25c7406f28eed5a707415717a2f4c83a275f31cb2"
+    },
+    "pnpm-workspace.yaml": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:288c4f1eddd340d3e107af608dc4944fcc03dbcd83c70e4c8267f0c0dad626ba"
+    },
+    "tests/k6/README.md": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:e2da0f9f5c6375a0efb9e74d6a8e6a0ac6c2b45e48941569dff533ff7121d790"
+    },
+    "tests/k6/average-load.js": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8ffc51bd34560fb4c2329f30b04b4f556d16671460ce30defb6885c0e88e6d48"
+    },
+    "tests/k6/breakpoint.js": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:8fbbddac5a6489b93bda8c72ed836ae156032cf556ade407bf8da93aada6515e"
+    },
+    "tests/k6/lib/common.js": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d2b6c5fb6720be07a9a11c44102b894d4c7f9b3c5f85229623544c0d89fba1be"
+    },
+    "tests/k6/smoke.js": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:f3bd7b2e0930bb62f87b9305d7b60c88a03db15af28721fbed1fcc2f157b7718"
+    },
+    "tests/k6/soak.js": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:ee3dd13a5cdab2720aac03c5f4246c476e4c9f58aa6a604ed08954526e238fa1"
+    },
+    "tests/k6/spike.js": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:d42f851cd68edd1fb0660ac481b5e936cfd92cb768dfc8e85eef2bb257f05558"
+    },
+    "tests/k6/stress.js": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:5ee6022d2f7425a585eab14f9b46191ca8a6f527bb1ff33a8f701131fd4e305a"
+    },
+    "turbo.json": {
+      "generator": "scaffold",
+      "grit": "3.361.2",
+      "hash": "sha256:4275cde936471f6de0c0e5d6c8d1fcc53adcaf190e2583c8e8b71073b5063405"
+    }
+  }
+}

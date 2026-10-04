@@ -36,6 +36,50 @@ jobs:
           file: coverage.out
           fail_ci_if_error: false
 
+  example:
+    name: The checked-in example application
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.6"
+          check-latest: true
+          cache: true
+
+      # examples/library is a real Grit application, generated and committed.
+      #
+      # The Live workflow proves that today's templates produce a working
+      # application. This proves something else, and something nobody else
+      # checks: that an application generated at an earlier version still
+      # builds, vets and passes its own tests against today's libraries. That is
+      # the question every existing user has, and a fresh scaffold cannot ask it
+      # because it is never old.
+      #
+      # It is its own Go module, so the root `go test ./...` never sees it.
+      - name: Build, vet and test it
+        working-directory: examples/library/apps/api
+        run: |
+          # pipefail: without it the step reports tee's exit code, and a
+          # failing example passes CI.
+          set -o pipefail
+          gofmt -l . | tee /tmp/unformatted
+          test ! -s /tmp/unformatted
+          go build ./...
+          go vet ./...
+          go test ./... 2>&1 | tail -40
+
+      # The one hand-written file in the example is a policy rule, and the
+      # claim it makes is that a returned loan cannot be edited. Run on its own
+      # so a failure names the thing that broke rather than being one line in a
+      # wall of output.
+      - name: The policy rule still holds
+        working-directory: examples/library/apps/api
+        run: go test ./internal/handlers/ -run 'TestAReturnedLoan|TestDeletingIsJudged' -v
+
   security:
     name: Vulnerability scan
     runs-on: ubuntu-latest

@@ -1,0 +1,135 @@
+package services
+
+import (
+	"context"
+	"time"
+
+	"gorm.io/gorm"
+
+	"library/apps/api/internal/models"
+	"library/apps/api/internal/paginate"
+)
+
+// WebhookEventService owns the webhook_events table.
+//
+// The handler verifies the signature, extracts the event and dispatches it. What
+// it means for an event to be stored once, claimed by one request and recorded
+// as processed is decided here, and the claim is the reason: a provider that
+// redelivers an event finds a row already there, and exactly one caller may take
+// it over. That is a compare-and-set, and only the write knows who won.
+type WebhookEventService struct {
+	DB *gorm.DB
+}
+
+func (s *WebhookEventService) db(ctx context.Context) *gorm.DB {
+	return s.DB.WithContext(ctx)
+}
+
+// webhookEventListConfig is what the admin's webhooks page may sort by, filtered
+// by provider and status. Whitelisted, because each name ends up in SQL.
+var webhookEventListConfig = paginate.Config{
+	Sortable:     map[string]bool{"created_at": true, "status": true, "provider": true, "event_type": true},
+	Filterable:   map[string]bool{"provider": true, "status": true},
+	DefaultSort:  "created_at",
+	DefaultOrder: "desc",
+}
+
+// List returns one page of events.
+func (s *WebhookEventService) List(ctx context.Context, p paginate.Params) (paginate.Result[models.WebhookEvent], error) {
+	return paginate.List[models.WebhookEvent](s.db(ctx).Model(&models.WebhookEvent{}), p, webhookEventListConfig)
+}
+
+// ByID reads one event.
+func (s *WebhookEventService) ByID(ctx context.Context, id string) (*models.WebhookEvent, error) {
+	var event models.WebhookEvent
+	if err := s.db(ctx).First(&event, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &event, nil
+}
+
+// Store records a delivery. The unique index on (provider, external_id) decides
+// a duplicate, so the caller reads the error rather than looking first.
+func (s *WebhookEventService) Store(ctx context.Context, event *models.WebhookEvent) error {
+	return s.db(ctx).Create(event).Error
+}
+
+// ByExternalID reads the event a redelivery collided with.
+func (s *WebhookEventService) ByExternalID(ctx context.Context, provider, externalID string) (*models.WebhookEvent, error) {
+	var event models.WebhookEvent
+	if err := s.db(ctx).Where("provider = ? AND external_id = ?", provider, externalID).
+		First(&event).Error; err != nil {
+		return nil, err
+	}
+	return &event, nil
+}
+
+// Claim takes over an event a provider has redelivered, and reports whether this
+// caller is the one that took it.
+//
+// A failed event may be taken immediately. A pending one may be taken only once
+// it is older than inFlight, because until then it is somebody's request still
+// running, and two handlers for one event is the thing worth avoiding. The
+// conditional update is what decides, so two redeliveries arriving together
+// cannot both win.
+func (s *WebhookEventService) Claim(ctx context.Context, event *models.WebhookEvent, inFlight time.Duration) (bool, error) {
+	claim := s.db(ctx).Model(&models.WebhookEvent{}).
+		Where("id = ? AND (status = ? OR (status = ? AND created_at < ?))",
+			event.ID, "failed", "pending", time.Now().Add(-inFlight)).
+		Updates(map[string]interface{}{
+			"status":      "pending",
+			"retry_count": gorm.Expr("retry_count + ?", 1),
+		})
+	if claim.Error != nil {
+		return false, claim.Error
+	}
+	return claim.RowsAffected == 1, nil
+}
+
+// RecordOutcome stores what a handler did with an event.
+//
+// handlerErr nil means processed, and clears any error from a previous attempt:
+// an event that failed, was fixed and ran again should not still carry the
+// message from the attempt that failed.
+func (s *WebhookEventService) RecordOutcome(ctx context.Context, event *models.WebhookEvent, handlerErr error) error {
+	now := time.Now()
+	updates := map[string]interface{}{"processed_at": &now}
+	if handlerErr == nil {
+		updates["status"] = "processed"
+		updates["handler_error"] = ""
+	} else {
+		updates["status"] = "failed"
+		updates["handler_error"] = handlerErr.Error()
+	}
+	return s.db(ctx).Model(event).Updates(updates).Error
+}
+
+// RecordReplay is RecordOutcome for a replay from the admin screen, which also
+// counts the attempt and returns the count as the database now holds it.
+//
+// The increment is in SQL, so two replays of one event each add 1 rather than
+// both reading the same number and writing the same result. The count has to be
+// read back for the same reason: the one the caller holds is stale the moment the
+// update lands.
+func (s *WebhookEventService) RecordReplay(ctx context.Context, event *models.WebhookEvent, handlerErr error) (int, error) {
+	now := time.Now()
+	updates := map[string]interface{}{
+		"retry_count":  gorm.Expr("retry_count + ?", 1),
+		"processed_at": &now,
+	}
+	if handlerErr == nil {
+		updates["status"] = "processed"
+		updates["handler_error"] = ""
+	} else {
+		updates["status"] = "failed"
+		updates["handler_error"] = handlerErr.Error()
+	}
+	if err := s.db(ctx).Model(event).Updates(updates).Error; err != nil {
+		return 0, err
+	}
+	var fresh models.WebhookEvent
+	if err := s.db(ctx).Select("retry_count").First(&fresh, "id = ?", event.ID).Error; err != nil {
+		return 0, err
+	}
+	return fresh.RetryCount, nil
+}

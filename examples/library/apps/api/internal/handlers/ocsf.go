@@ -1,0 +1,103 @@
+package handlers
+
+import (
+	"bufio"
+	"encoding/json"
+	"strconv"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"library/apps/api/internal/respond"
+	"library/apps/api/internal/services"
+)
+
+// OCSFHandler streams the semantic activity log as OCSF events for a SIEM to
+// ingest. Admin-only — an audit trail readable by the people it audits is not
+// an audit trail.
+type OCSFHandler struct {
+	DB          *gorm.DB
+	ProductName string
+}
+
+func NewOCSFHandler(db *gorm.DB, productName string) *OCSFHandler {
+	if productName == "" {
+		productName = "grit-app"
+	}
+	return &OCSFHandler{DB: db, ProductName: productName}
+}
+
+// activity is the service the reads below go through: which columns a client may
+// sort or filter by is a decision about data, because each name ends up in SQL.
+// See internal/services/activity_reads.go.
+func (h *OCSFHandler) activity() *services.ActivityService {
+	return &services.ActivityService{DB: h.DB}
+}
+
+const (
+	ocsfDefaultLimit = 500
+	ocsfMaxLimit     = 5000
+)
+
+// Export streams OCSF events as newline-delimited JSON (application/x-ndjson),
+// oldest first, so a collector ingests chronologically and never has to hold
+// the whole response in memory.
+//
+//	GET /api/audit/ocsf?since=2026-07-01T00:00:00Z&after=<id>&limit=1000
+//
+// Pagination is a cursor, not an offset: pass the response's X-Grit-Next-Since
+// and X-Grit-Next-After headers back on the next poll to resume exactly where
+// this response stopped. When fewer than limit rows come back, the collector is
+// caught up.
+func (h *OCSFHandler) Export(c *gin.Context) {
+	limit := ocsfDefaultLimit
+	if v := c.Query("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			limit = n
+		}
+	}
+	if limit > ocsfMaxLimit {
+		limit = ocsfMaxLimit
+	}
+
+	// since is a wall-clock floor, which is a collector's first poll; after is the
+	// exact cursor for every poll thereafter. Both may be present, and what they
+	// mean to the query is the service's: see ActivityService.Export.
+	var since time.Time
+	if v := c.Query("since"); v != "" {
+		t, err := time.Parse(time.RFC3339, v)
+		if err != nil {
+			respond.Fail(c, respond.CodeValidationError, "since must be RFC3339, e.g. 2026-07-01T00:00:00Z")
+			return
+		}
+		since = t
+	}
+
+	rows, err := h.activity().Export(c.Request.Context(), since, c.Query("after"), limit)
+	if err != nil {
+		respond.Fail(c, respond.CodeInternalError, "failed to read audit log")
+		return
+	}
+
+	c.Header("Content-Type", "application/x-ndjson")
+	// Advertise where the next poll should resume. Empty when this page was
+	// empty — the collector then just retries the same cursor later.
+	if n := len(rows); n > 0 {
+		last := rows[n-1]
+		c.Header("X-Grit-Next-Since", last.CreatedAt.UTC().Format(time.RFC3339Nano))
+		c.Header("X-Grit-Next-After", last.ID)
+	}
+	c.Header("X-Grit-Count", strconv.Itoa(len(rows)))
+
+	w := bufio.NewWriter(c.Writer)
+	defer w.Flush()
+	enc := json.NewEncoder(w)
+	for i := range rows {
+		// json.Encoder writes a trailing newline per value, which is exactly the
+		// NDJSON record separator.
+		if err := enc.Encode(services.ToOCSF(rows[i], h.ProductName)); err != nil {
+			return
+		}
+	}
+}

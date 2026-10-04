@@ -1,0 +1,78 @@
+package routes
+
+import (
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"library/apps/api/internal/config"
+	"library/apps/api/internal/realtime"
+	"library/apps/api/internal/services"
+)
+
+// Mount is what a resource's route file receives: the router groups, already
+// built and already carrying their middleware, plus the things a handler needs
+// to construct itself.
+//
+// The groups are the same variables routes.go uses, so a route registered here
+// is indistinguishable from one written inline. Public is outside the auth
+// middleware and behind an API key; Protected takes a JWT or an API key; Admin
+// additionally requires the ADMIN role.
+type Mount struct {
+	Engine *gin.Engine
+	DB     *gorm.DB
+	Cfg    *config.Config
+	Svc    *Services
+
+	// Hub is the realtime fan-out hub, for a route that needs to push.
+	//
+	// It has to be handed over rather than built, because it cannot be built:
+	// realtime.NewHub() returns a different registry holding no connections,
+	// so a handler that makes its own pushes into nothing and fails silently.
+	// There is exactly one live Hub per process and this is it.
+	Hub *realtime.Hub
+
+	// Auth issues and validates tokens, for a route that signs someone in or
+	// mints a token pair (device pairing, magic links, invite acceptance).
+	Auth *services.AuthService
+
+	// V1 is the /api/v1 group, for a route that fits none of the three below.
+	V1        *gin.RouterGroup
+	Public    *gin.RouterGroup
+	Protected *gin.RouterGroup
+	Admin     *gin.RouterGroup
+
+	// Staff admits anyone holding a permission, and a route on it names the one
+	// it needs: middleware.RequireRole("ADMIN", "perm:<key>"). A routes.go from
+	// before it existed leaves it nil; mountResources then hands such routes the
+	// Admin group, so they stay ADMIN-only rather than failing.
+	Staff *gin.RouterGroup
+}
+
+// mounts is every resource route file that has registered itself.
+var mounts []func(*Mount)
+
+// RegisterRoutes adds a resource's routes to the application.
+//
+// Generated resource files call this from an init(), which is why creating
+// <resource>_routes.go is all it takes to mount a resource and deleting the
+// file is all it takes to unmount one. Nothing else in the package refers to
+// it by name.
+//
+// Go runs init() functions in a file-name order fixed by the compiler, so the
+// registration order is deterministic. It does not matter in practice: Gin
+// routes on a tree, not a list, and prefers a static segment over a parameter
+// however the two were added.
+func RegisterRoutes(fn func(*Mount)) {
+	mounts = append(mounts, fn)
+}
+
+// mountResources runs every registered resource file. Called once from Setup,
+// after the groups exist and before the legacy alias fallback.
+func mountResources(m *Mount) {
+	if m.Staff == nil {
+		m.Staff = m.Admin
+	}
+	for _, mount := range mounts {
+		mount(m)
+	}
+}

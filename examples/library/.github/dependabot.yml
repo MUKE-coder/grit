@@ -1,0 +1,48 @@
+# Dependabot: automated dependency updates.
+# Surfaces vulnerable and outdated dependencies as pull requests you can review
+# and merge (OWASP Top 10:2025 A03, Software Supply Chain Failures).
+
+version: 2
+
+updates:
+  # Go modules, where the API's go.mod is.
+  - package-ecosystem: gomod
+    directory: "/apps/api"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - go
+
+  # JavaScript packages. From the pnpm workspace, which covers every app and
+  # package in it.
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - javascript
+
+  # Base images in the Dockerfiles.
+  - package-ecosystem: docker
+    directories:
+      - "/apps/api"
+      - "/apps/web"
+      - "/apps/admin"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - docker
+
+  # GitHub Actions workflows
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - ci

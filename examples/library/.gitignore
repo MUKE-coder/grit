@@ -1,0 +1,73 @@
+# Grit local state.
+# .grit/manifest.json is deliberately NOT ignored: it records which files Grit
+# generated and what it wrote, which is how grit upgrade knows to leave your
+# edits alone. Commit it so the whole team gets that. The rest is local.
+.grit/backups/
+.grit/slots.json
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+.next/
+out/
+dist/
+build/
+tmp/
+# TypeScript, Next.js and Expo write these on every build or dev run.
+*.tsbuildinfo
+next-env.d.ts
+.expo/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+migrate.exe
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+postgres-data/
+redis-data/
+minio-data/
+
+# Turborepo
+.turbo/
+
+# Local databases. SQLite files hold real data: users with their password
+# hashes, sessions and API keys, as well as Sentinel's WAF log.
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Testing
+e2e/test-results/
+e2e/playwright-report/
+coverage/
+
+# Debug
+*.log
+npm-debug.log*
+pnpm-debug.log*

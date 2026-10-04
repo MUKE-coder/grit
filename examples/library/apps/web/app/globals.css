@@ -1,0 +1,429 @@
+@import "tailwindcss";
+/* Successor to tailwindcss-animate for v4. */
+@import "tw-animate-css";
+
+/* The same token mapping the admin uses, so a single THEME=<name> still paints
+ * both surfaces.
+ *
+ * Regular @theme, NOT @theme inline: the utilities compile to var(--color-*)
+ * whose values are var(--bg-*) indirections that re-resolve per element, which
+ * is what makes [data-theme] switching repaint at runtime. @theme inline would
+ * bake the values at build time and the theme switcher would quietly stop
+ * working. */
+@theme {
+  --color-background: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-hover: var(--bg-hover);
+  --color-border: var(--border);
+  --color-foreground: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+
+  --font-sans: var(--font-display), system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+  --font-serif: var(--font-serif), Georgia, serif;
+}
+
+/* v3 parity: v4 defaults the border color to currentColor, and the site relies
+ * on the themed border. */
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--border);
+  }
+}
+
+/* v3.28.1 — theme-aware CSS variables. Web mirrors admin's variable
+ * system so a single THEME=<name> in .env paints both surfaces. */
+
+/* atlas (default) */
+:root,
+[data-theme="atlas"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f1f5f9;
+  --border: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-fg: #ffffff;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #0ea5e9;
+}
+
+/* aurora — friendly, pastel, consumer SaaS */
+/* aurora — Apple-inspired. Monochrome: near-black text and CTAs on white and
+ * Apple's warm greys. Blue is reserved for links/info only, so the accent that
+ * drives buttons stays black like iCloud's sign-in pill. */
+[data-theme="aurora"] {
+  --bg-primary: #fbfbfd;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f5f5f7;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f5f5f7;
+  --border: #d2d2d7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #424245;
+  --text-muted: #86868b;
+  --accent: #1d1d1f;
+  --accent-hover: #000000;
+  --accent-fg: #ffffff;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #0071e3;
+}
+
+/* pulse — Cloudflare-inspired. Premium blue CTAs on a cool grey-blue canvas
+ * with white elevated cards; Cloudflare orange is the single warm accent. */
+[data-theme="pulse"] {
+  --bg-primary: #f6f7f9;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #eef1f5;
+  --bg-elevated: #ffffff;
+  --bg-hover: #eef1f5;
+  --border: #e0e4e9;
+  --text-primary: #1d1f26;
+  --text-secondary: #4b5563;
+  --text-muted: #8a94a6;
+  --accent: #0051c3;
+  --accent-hover: #003d99;
+  --accent-fg: #ffffff;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #f6821f;
+  --info: #0051c3;
+}
+
+/* coral - rose, warm neutrals. The marketplace palette: the accent is a
+ * statement colour, so the greys around it stay very plain. */
+[data-theme="coral"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f7f7;
+  --bg-tertiary: #f0f0f0;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f0f0f0;
+  --border: #dddddd;
+  --text-primary: #222222;
+  --text-secondary: #494949;
+  --text-muted: #717171;
+  --accent: #e11d48;
+  --accent-hover: #be123c;
+  --accent-fg: #ffffff;
+  --success: #059669;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --info: #2563eb;
+}
+
+/* amber - the storefront palette. Dark text on the accent rather than white:
+ * amber is too light to carry white text at AA. */
+[data-theme="amber"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f8f8;
+  --bg-tertiary: #eff1f1;
+  --bg-elevated: #ffffff;
+  --bg-hover: #eff1f1;
+  --border: #d5d9d9;
+  --text-primary: #0f1111;
+  --text-secondary: #3f4545;
+  --text-muted: #565959;
+  --accent: #f59e0b;
+  --accent-hover: #d97706;
+  --accent-fg: #0f1111;
+  --success: #047857;
+  --danger: #b91c1c;
+  --warning: #b45309;
+  --info: #0369a1;
+}
+
+/* sky - crisp blue on cool greys. */
+[data-theme="sky"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #eef4f9;
+  --bg-elevated: #ffffff;
+  --bg-hover: #eef4f9;
+  --border: #dbe3ec;
+  --text-primary: #0b1521;
+  --text-secondary: #3a4a5e;
+  --text-muted: #5b6b7f;
+  --accent: #0284c7;
+  --accent-hover: #0369a1;
+  --accent-fg: #ffffff;
+  --success: #059669;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --info: #0ea5e9;
+}
+
+/* mono - black and white. The accent is the text colour, which is the whole
+ * idea: nothing on the screen competes for attention with the content. */
+[data-theme="mono"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #f5f5f5;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f5f5f5;
+  --border: #e5e5e5;
+  --text-primary: #0a0a0a;
+  --text-secondary: #525252;
+  --text-muted: #737373;
+  --accent: #0a0a0a;
+  --accent-hover: #262626;
+  --accent-fg: #ffffff;
+  --success: #15803d;
+  --danger: #b91c1c;
+  --warning: #a16207;
+  --info: #1d4ed8;
+}
+
+/* emerald - green on neutral greys. */
+[data-theme="emerald"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f3f4f6;
+  --border: #e5e7eb;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --accent: #059669;
+  --accent-hover: #047857;
+  --accent-fg: #ffffff;
+  --success: #059669;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --info: #2563eb;
+}
+
+/* midnight — legacy v3.27 dark look. Opt in by setting THEME=midnight or
+ * adding data-theme="midnight" on a specific surface. */
+[data-theme="midnight"] {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #111118;
+  --bg-tertiary: #1a1a24;
+  --bg-elevated: #22222e;
+  --bg-hover: #2a2a38;
+  --border: #2a2a3a;
+  --text-primary: #e8e8f0;
+  --text-secondary: #9090a8;
+  --text-muted: #7c7c96;
+  --accent: #6c5ce7;
+  --accent-hover: #7c6cf7;
+  --accent-fg: #ffffff;
+  --success: #00b894;
+  --danger: #ff6b6b;
+  --warning: #fdcb6e;
+  --info: #74b9ff;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-display), system-ui, sans-serif;
+}
+
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-hover);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Blog prose styles for rendered HTML content */
+.prose-blog {
+  color: var(--text-primary);
+  font-size: 1.0625rem;
+  line-height: 1.8;
+}
+
+.prose-blog h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+
+.prose-blog h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+
+.prose-blog h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.prose-blog h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.prose-blog p {
+  margin-bottom: 1.25rem;
+  color: var(--text-secondary);
+}
+
+.prose-blog a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+.prose-blog a:hover {
+  color: var(--accent-hover);
+}
+
+.prose-blog strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.prose-blog em {
+  font-style: italic;
+}
+
+.prose-blog ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.prose-blog ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.prose-blog li {
+  margin-bottom: 0.375rem;
+  color: var(--text-secondary);
+}
+
+.prose-blog li::marker {
+  color: var(--text-muted);
+}
+
+.prose-blog blockquote {
+  border-left: 3px solid var(--accent);
+  margin: 1.5rem 0;
+  font-style: italic;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 1rem 1.25rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.prose-blog pre {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+.prose-blog code {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.875em;
+  background: var(--bg-elevated);
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+
+.prose-blog pre code {
+  background: transparent;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  font-size: inherit;
+  color: var(--text-primary);
+}
+
+.prose-blog img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 1.5rem 0;
+  border: 1px solid var(--border);
+}
+
+.prose-blog hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+.prose-blog table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+.prose-blog th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--border);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.prose-blog td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.prose-blog tr:last-child td {
+  border-bottom: none;
+}
