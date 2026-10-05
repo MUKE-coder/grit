@@ -134,6 +134,27 @@ func IsUnchanged(absPath string) bool {
 	return recording.manifest.StatusOf(recording.root, rel) == Unchanged
 }
 
+// StatusOfPath reports what has happened to an absolute path since Grit last
+// wrote it: Untracked when Grit never wrote it or nothing is recording,
+// Missing when it was written and has been deleted, and otherwise Unchanged
+// or Modified.
+//
+// IsUnchanged answers one of those questions and collapses the rest into
+// false, which is right for "may I edit this" and wrong for "has this been
+// deleted on purpose".
+func StatusOfPath(absPath string) Status {
+	recording.mu.Lock()
+	defer recording.mu.Unlock()
+	if !recording.active {
+		return Untracked
+	}
+	rel, inside := Rel(recording.root, absPath)
+	if !inside {
+		return Untracked
+	}
+	return recording.manifest.StatusOf(recording.root, rel)
+}
+
 // Drop removes a path from the recording, for a generator that deletes a file
 // it previously wrote.
 func Drop(absPath string) {

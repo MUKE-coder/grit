@@ -157,6 +157,12 @@ func storageOrigin() string {
 //
 // Only ever written when absent. Overwriting somebody's env file because a
 // seeder ran is the kind of helpfulness that loses an afternoon.
+//
+// It does say so when the file holds a key this database will not accept,
+// which is what grit migrate --fresh leaves behind: the keys table is dropped,
+// the seeder mints a new one, and the file still names the old one. Every
+// public request then answers INVALID_API_KEY with nothing to connect that to
+// a file the seeder decided not to touch.
 func writeClientEnv(publishable string) {
 	if publishable == "" {
 		return
@@ -168,8 +174,13 @@ func writeClientEnv(publishable string) {
 		if _, err := os.Stat(filepath.Dir(rel)); err != nil {
 			continue // that app is not part of this project
 		}
-		if _, err := os.Stat(rel); err == nil {
-			continue // already there
+		if existing, err := os.ReadFile(rel); err == nil {
+			if stale := storedKey(string(existing)); stale != "" && stale != publishable {
+				log.Printf("  ! %s still names a key this database does not have.", rel)
+				log.Printf("    Public requests will answer INVALID_API_KEY until you set")
+				log.Printf("    NEXT_PUBLIC_API_KEY=%s", publishable)
+			}
+			continue // never overwritten
 		}
 		body := "# Written by the seeder. Only ever created, never overwritten." + "\n" +
 			"\n" +
@@ -193,6 +204,22 @@ func writeClientEnv(publishable string) {
 			log.Printf("  Wrote %s", rel)
 		}
 	}
+}
+
+// storedKey pulls NEXT_PUBLIC_API_KEY out of an env file, or "" when it has
+// none. Written by hand rather than with a parser: one key, one line, and a
+// dependency for this would be absurd.
+func storedKey(body string) string {
+	for _, line := range strings.Split(body, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+		if value, ok := strings.CutPrefix(line, "NEXT_PUBLIC_API_KEY="); ok {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
 }
 `
 }

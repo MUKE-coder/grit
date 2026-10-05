@@ -25,7 +25,12 @@ const (
 // any server.
 const IMAGE_ORIGINS = ["https://lh3.googleusercontent.com", "https://avatars.githubusercontent.com"]
   .concat((process.env.NEXT_PUBLIC_IMAGE_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean).map((s) => toOrigin(s)))
-  .concat(isDev ? ["https://picsum.photos"] : [])
+  // picsum.photos answers every request with a 302 to fastly.picsum.photos,
+  // and a CSP is checked against the URL a redirect lands on, not the one the
+  // markup asked for. Allowing only picsum.photos therefore allowed nothing:
+  // every scaffolded project with seed data showed broken images and a console
+  // full of violations, including the one the generator writes itself.
+  .concat(isDev ? ["https://picsum.photos", "https://fastly.picsum.photos"] : [])
   .join(" ");
 `
 
@@ -35,7 +40,12 @@ const IMAGE_ORIGINS = ["https://lh3.googleusercontent.com", "https://avatars.git
 // origins). img-src used to allow every https: host.
 const IMAGE_ORIGINS = ['https://lh3.googleusercontent.com', 'https://avatars.githubusercontent.com']
   .concat((viteEnv.VITE_IMAGE_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean).map((s) => toOrigin(s)))
-  .concat(isDev ? ['https://picsum.photos'] : [])
+  // picsum.photos answers every request with a 302 to fastly.picsum.photos,
+  // and a CSP is checked against the URL a redirect lands on, not the one the
+  // markup asked for. Allowing only picsum.photos therefore allowed nothing:
+  // every scaffolded project with seed data showed broken images and a console
+  // full of violations, including the one the generator writes itself.
+  .concat(isDev ? ['https://picsum.photos', 'https://fastly.picsum.photos'] : [])
   .join(' ')
 `
 )

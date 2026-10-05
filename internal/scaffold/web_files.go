@@ -4,10 +4,15 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
 func writeWebFiles(root string, opts Options) error {
 	for path, content := range webFileMap(root, opts) {
+		if deletedRouteFile(path) {
+			continue
+		}
 		if err := writeFile(path, adminHref(content, opts)); err != nil {
 			return fmt.Errorf("writing %s: %w", path, err)
 		}
@@ -2709,4 +2714,31 @@ function Field({ field, value, onChange, inputType, hint }: FieldProps) {
   );
 }
 `
+}
+
+// deletedRouteFile reports whether path is a page Grit wrote and the project
+// has since deleted, in which case an upgrade must leave it deleted.
+//
+// A deleted page is a routing decision. A shop replaces the scaffold's
+// (marketing) group with its own, because the landing page and the shop
+// homepage are both "/" and only one of them can be; Next.js then refuses to
+// build two route groups that resolve to the same path, so putting the file
+// back does not add an unused page, it stops the project starting.
+//
+// Only under an app's app/ directory, and only for files the manifest says
+// Grit wrote and are now missing. Everything else an upgrade still restores: a
+// deleted lib/utils.ts is damage, and repairing damage is what an upgrade is
+// for. A file nobody has deleted takes this path not at all.
+func deletedRouteFile(path string) bool {
+	slashed := filepath.ToSlash(path)
+	if !strings.Contains(slashed, "/app/") {
+		return false
+	}
+	if fileExists(path) {
+		return false
+	}
+	// Missing, rather than merely absent: a project that never had the file,
+	// or one upgrading from before the manifest existed, is not a project that
+	// deleted it, and it should get the file.
+	return manifest.StatusOfPath(path) == manifest.Missing
 }

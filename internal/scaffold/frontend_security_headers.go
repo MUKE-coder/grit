@@ -102,8 +102,13 @@ const nextImageHosts = [
     port: storageURL.port,
     pathname: "/**",
   },
+  // Both hosts: picsum.photos 302s to fastly.picsum.photos, and next/image
+  // checks the host it is finally fetching from.
   ...(isDev
-    ? [{ protocol: "https" as const, hostname: "picsum.photos", pathname: "/**" }]
+    ? [
+        { protocol: "https" as const, hostname: "picsum.photos", pathname: "/**" },
+        { protocol: "https" as const, hostname: "fastly.picsum.photos", pathname: "/**" },
+      ]
     : []),
 ];
 

@@ -140,3 +140,72 @@ func TestEnsureXSync(t *testing.T) {
 		t.Errorf("a missing x/sync should be fetched: %v %v", err, fetched)
 	}
 }
+
+// A project already on the singleflight cache.go gets the per-caller guard,
+// and the result is byte-identical to a fresh generation.
+//
+// The guard exists because CacheResponse keys on the URL and nothing else,
+// which is right for a catalogue and wrong for anything that varies by who
+// asked, and it is mounted on the whole /public group. A GET /public/cart
+// added to that group would have served the first shopper's cart to the second,
+// with no way for the handler to opt out.
+func TestCacheRepairAddsThePerCallerGuard(t *testing.T) {
+	const module = "example.com/app"
+	fresh := strings.ReplaceAll(cacheMiddlewareNew, "{{MODULE}}", module)
+
+	// A project on the version before the guard: the same file without it.
+	before := strings.Replace(fresh, cacheShareableGuard, "", 1)
+	before = strings.Replace(before, cacheShareableFunc, "", 1)
+	before = strings.Replace(before, "\t\"strings\"\n", "", 1)
+	if before == fresh {
+		t.Fatal("the guard is not in the template, so this test is checking nothing")
+	}
+
+	out, changes, warnings := repairCacheMiddlewareSource(before)
+	if len(warnings) != 0 {
+		t.Fatalf("the repair refused a file Grit wrote: %v", warnings)
+	}
+	if out != fresh {
+		t.Errorf("the repaired cache.go is not byte-identical to a fresh one.\nchanges: %v", changes)
+		// Narrow it down to the first difference rather than printing 200 lines.
+		for i := 0; i < len(out) && i < len(fresh); i++ {
+			if out[i] != fresh[i] {
+				lo := i - 80
+				if lo < 0 {
+					lo = 0
+				}
+				t.Errorf("first difference at byte %d:\nrepaired: %q\nfresh:    %q",
+					i, out[lo:min(i+80, len(out))], fresh[lo:min(i+80, len(fresh))])
+				break
+			}
+		}
+	}
+	if len(changes) == 0 {
+		t.Error("the repair reported no change")
+	}
+	mustFormatGo(t, "the repaired middleware/cache.go", out)
+
+	if again, changes, _ := repairCacheMiddlewareSource(out); again != out || len(changes) != 0 {
+		t.Error("adding the guard is not idempotent")
+	}
+}
+
+// The guard itself: what must not be stored, and what still may be.
+func TestShareableResponseLogic(t *testing.T) {
+	// The template's own source is the thing under test, so assert on the text
+	// rather than re-implementing it: the behaviour belongs to generated code.
+	for _, want := range []string{
+		`case "private", "no-store", "no-cache":`,
+		`if len(h.Values("Set-Cookie")) > 0 {`,
+		`case "Accept-Encoding":`,
+		`func shareableResponse(h http.Header) bool {`,
+	} {
+		if !strings.Contains(cacheMiddlewareNew, want) {
+			t.Errorf("the cache middleware does not contain %q", want)
+		}
+	}
+	// And it has to be called, or it is decoration.
+	if !strings.Contains(cacheMiddlewareNew, "if !shareableResponse(writer.Header()) {") {
+		t.Error("captureAndStore does not consult shareableResponse")
+	}
+}

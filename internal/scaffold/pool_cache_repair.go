@@ -314,6 +314,7 @@ import (
 	"hash/fnv"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -391,6 +392,11 @@ func captureAndStore(ctx context.Context, c *gin.Context, cacheService *cache.Ca
 	if writer.Status() != http.StatusOK || writer.body.Len() == 0 {
 		return nil
 	}
+	// And not if the response says one caller's copy must not be given to
+	// another.
+	if !shareableResponse(writer.Header()) {
+		return nil
+	}
 	resp := &cachedResponse{
 		Status:      http.StatusOK,
 		ContentType: writer.Header().Get("Content-Type"),
@@ -399,6 +405,49 @@ func captureAndStore(ctx context.Context, c *gin.Context, cacheService *cache.Ca
 	// A failed write only costs the next request a miss.
 	_ = cacheService.Client().Set(ctx, key, resp.encode(), ttl).Err()
 	return resp
+}
+
+// shareableResponse reports whether one caller's response may be served to
+// another.
+//
+// The cache key is the URL and nothing else. That is exactly right for a
+// catalogue, where every caller gets the same answer and one stored copy
+// serves all of them. It is exactly wrong for anything that varies by who
+// asked, and this middleware is mounted on the public group, where a cart, a
+// recently-viewed list or a per-key quota is a reasonable thing to add later.
+// Added there without this, the first shopper's cart is served to the second.
+//
+// The standard HTTP signals rather than a list of paths, so a handler opts out
+// by saying what it is and does not have to know this middleware exists.
+func shareableResponse(h http.Header) bool {
+	for _, directive := range strings.Split(h.Get("Cache-Control"), ",") {
+		switch strings.ToLower(strings.TrimSpace(directive)) {
+		case "private", "no-store", "no-cache":
+			return false
+		}
+	}
+
+	// A response that sets a cookie is establishing or refreshing something
+	// that identifies this caller, and replaying it hands that to the next one.
+	if len(h.Values("Set-Cookie")) > 0 {
+		return false
+	}
+
+	// Vary names what the response depends on. Anything the key does not
+	// include cannot be cached under it, and "*" means never.
+	for _, field := range strings.Split(h.Get("Vary"), ",") {
+		switch http.CanonicalHeaderKey(strings.TrimSpace(field)) {
+		case "":
+			// No Vary header at all.
+		case "Accept-Encoding":
+			// Compression happens after this, per response, so a stored body
+			// is the uncompressed one either way.
+		default:
+			return false
+		}
+	}
+
+	return true
 }
 
 func serveCachedResponse(c *gin.Context, cached *cachedResponse) {
@@ -587,6 +636,94 @@ func repairEnvPoolSource(src string) (string, []string, []string) {
 	return strings.Replace(src, envPoolOld, envPoolNew, 1), []string{"documents DB_MAX_OPEN_CONNS and SENTINEL_DB_MAX_OPEN_CONNS for replicas"}, nil
 }
 
+// cacheShareableGuard is the check captureAndStore makes before storing, and
+// cacheShareableFunc is the function it calls. Both are the template's own text:
+// a repaired file has to come out byte-identical to a fresh one.
+const cacheShareableGuard = `	// And not if the response says one caller's copy must not be given to
+	// another.
+	if !shareableResponse(writer.Header()) {
+		return nil
+	}
+`
+
+const cacheShareableAnchor = `	if writer.Status() != http.StatusOK || writer.body.Len() == 0 {
+		return nil
+	}
+`
+
+const cacheShareableFunc = `// shareableResponse reports whether one caller's response may be served to
+// another.
+//
+// The cache key is the URL and nothing else. That is exactly right for a
+// catalogue, where every caller gets the same answer and one stored copy
+// serves all of them. It is exactly wrong for anything that varies by who
+// asked, and this middleware is mounted on the public group, where a cart, a
+// recently-viewed list or a per-key quota is a reasonable thing to add later.
+// Added there without this, the first shopper's cart is served to the second.
+//
+// The standard HTTP signals rather than a list of paths, so a handler opts out
+// by saying what it is and does not have to know this middleware exists.
+func shareableResponse(h http.Header) bool {
+	for _, directive := range strings.Split(h.Get("Cache-Control"), ",") {
+		switch strings.ToLower(strings.TrimSpace(directive)) {
+		case "private", "no-store", "no-cache":
+			return false
+		}
+	}
+
+	// A response that sets a cookie is establishing or refreshing something
+	// that identifies this caller, and replaying it hands that to the next one.
+	if len(h.Values("Set-Cookie")) > 0 {
+		return false
+	}
+
+	// Vary names what the response depends on. Anything the key does not
+	// include cannot be cached under it, and "*" means never.
+	for _, field := range strings.Split(h.Get("Vary"), ",") {
+		switch http.CanonicalHeaderKey(strings.TrimSpace(field)) {
+		case "":
+			// No Vary header at all.
+		case "Accept-Encoding":
+			// Compression happens after this, per response, so a stored body
+			// is the uncompressed one either way.
+		default:
+			return false
+		}
+	}
+
+	return true
+}
+
+`
+
+// addCacheShareableGuard inserts the per-caller guard into a cache.go that has
+// everything else. Returns the source unchanged when it is already there.
+func addCacheShareableGuard(src string) (string, []string, []string) {
+	if strings.Contains(src, "shareableResponse") {
+		return src, nil, nil
+	}
+	if strings.Count(src, cacheShareableAnchor) != 1 ||
+		strings.Count(src, cacheServeFuncAnchor) != 1 {
+		return src, nil, []string{"cache.go is not the file Grit wrote: refuse to store a " +
+			"response carrying Cache-Control: private, a Set-Cookie or a Vary the URL key " +
+			"does not cover, or a per-caller endpoint under /public serves one caller's " +
+			"response to the next"}
+	}
+	out := strings.Replace(src, cacheShareableAnchor, cacheShareableAnchor+cacheShareableGuard, 1)
+	out = strings.Replace(out, cacheServeFuncAnchor, cacheShareableFunc+cacheServeFuncAnchor, 1)
+	if !strings.Contains(out, "\n\t\"strings\"\n") {
+		if strings.Count(out, cacheStrconvImport) != 1 {
+			return src, nil, []string{"cache.go's imports are not the ones Grit wrote: add \"strings\""}
+		}
+		out = strings.Replace(out, cacheStrconvImport, cacheStrconvImport+"\t\"strings\"\n", 1)
+	}
+	return out, []string{"the response cache refuses to store a per-caller response"}, nil
+}
+
+const cacheServeFuncAnchor = "func serveCachedResponse(c *gin.Context, cached *cachedResponse) {"
+
+const cacheStrconvImport = "\t\"strconv\"\n"
+
 func repairCacheMiddlewareSource(src string) (string, []string, []string) {
 	if strings.Contains(src, "singleflight") {
 		// The first singleflight version took the context from c inside
@@ -599,11 +736,19 @@ func repairCacheMiddlewareSource(src string) (string, []string, []string) {
 			"_ = cacheService.Client().Set(c.Request.Context(), key, resp.encode(), ttl).Err()": "_ = cacheService.Client().Set(ctx, key, resp.encode(), ttl).Err()",
 		} {
 			if strings.Count(out, old) != 1 {
-				return src, nil, nil
+				// Already on the passed-in context, so only the guard below is
+				// left to do.
+				out = src
+				break
 			}
 			out = strings.Replace(out, old, updated, 1)
 		}
-		return out, []string{"cache.go passes the request context to captureAndStore"}, nil
+		var changes []string
+		if out != src {
+			changes = append(changes, "cache.go passes the request context to captureAndStore")
+		}
+		guarded, added, blocked := addCacheShareableGuard(out)
+		return guarded, append(changes, added...), blocked
 	}
 	mod := cacheImportModule.FindStringSubmatch(src)
 	if mod == nil || src != strings.ReplaceAll(cacheMiddlewareOld, "{{MODULE}}", mod[1]) {

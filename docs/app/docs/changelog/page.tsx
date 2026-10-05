@@ -67,6 +67,88 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.363.0 */}
+            <div className="mb-12" id="v3.367.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.367.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Four things a storefront found</h3>
+                <p>
+                  All four came out of building a real shop with Grit: a catalogue, a
+                  variant matrix, a basket and a set of static pages. None of them would have
+                  been found by a test, because each is about what happens when a generated
+                  project is used the way a real one is.
+                </p>
+
+                <h4>Seeded images were blocked by the scaffold&apos;s own policy</h4>
+                <p>
+                  The seeder writes{" "}
+                  <code>https://picsum.photos/seed/&lt;name&gt;/600/400</code> into every
+                  placeholder <code>FileRef</code>, and the Content-Security-Policy allowed{" "}
+                  <code>picsum.photos</code> in development for exactly that reason. picsum
+                  answers every request with a 302 to <code>fastly.picsum.photos</code>, and a
+                  CSP is checked against the host a redirect lands on, so allowing only the
+                  first allowed nothing.
+                </p>
+                <p>
+                  Every scaffolded project with seed data showed broken images on its first
+                  run, with a console full of violations, for images the generator had written
+                  itself. Both hosts are allowed now, in development only, in the CSP and in{" "}
+                  <code>next/image</code>&apos;s remote patterns.
+                </p>
+
+                <h4>The response cache could have served one shopper&apos;s basket to another</h4>
+                <p>
+                  <code>CacheResponse</code> keys on the URL and nothing else. That is exactly
+                  right for a catalogue, where every caller gets the same answer, and exactly
+                  wrong for anything that varies by who asked. It is mounted on the whole{" "}
+                  <code>/public</code> group, so a <code>GET /public/cart</code> added to that
+                  group would have been stored under one key and handed to everybody, and a
+                  handler had no way to say no: not <code>Cache-Control: private</code>, not a{" "}
+                  <code>Set-Cookie</code>, not <code>Vary</code>.
+                </p>
+                <p>
+                  It now refuses to store a response carrying any of those. Standard HTTP
+                  signals rather than a list of paths, so a handler opts out by saying what it
+                  is and does not have to know the middleware exists.
+                </p>
+
+                <h4><code>grit upgrade</code> put back a page the project had deleted</h4>
+                <p>
+                  A shop replaces the scaffold&apos;s <code>(marketing)</code> route group with
+                  its own, because the landing page and the shop homepage are both{" "}
+                  <code>/</code> and only one of them can be. The next upgrade wrote{" "}
+                  <code>(marketing)/page.tsx</code> back, and Next.js refuses to build two route
+                  groups that resolve to the same path, so the upgrade left the project unable
+                  to start.
+                </p>
+                <p>
+                  A deleted page is a routing decision, not damage. The manifest already knew
+                  the difference, reporting <code>Missing</code> for a tracked file that is
+                  gone; nothing consulted it. Narrow on purpose: only files under an app&apos;s{" "}
+                  <code>app/</code> directory, because a deleted page is harmless to leave
+                  deleted and a deleted <code>lib/utils.ts</code> is damage an upgrade should
+                  repair.
+                </p>
+
+                <h4>And a dead API key nobody mentioned</h4>
+                <p>
+                  <code>grit migrate --fresh</code> drops the keys table;{" "}
+                  <code>grit seed</code> mints a new publishable key and deliberately never
+                  overwrites <code>.env.local</code>, which is the right call. It just never
+                  said that the key in the file was now dead, so every public request answered{" "}
+                  <code>INVALID_API_KEY</code> with nothing to connect that to a file the
+                  seeder had decided not to touch. It still does not overwrite it. It says so,
+                  and prints the key to paste.
+                </p>
+              </div>
+            </div>
+
+            {/* v3.366.0 */}
             <div className="mb-12" id="v3.366.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
