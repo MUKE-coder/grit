@@ -104,6 +104,10 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "tracing", "tracing.go"):    apiTracingGo(),
 		filepath.Join(apiRoot, "internal", "tracing", "middleware.go"): apiTracingMiddlewareGo(),
 
+		// The SSE fallback for platforms that do not pass a WebSocket upgrade
+		// through. Framework-owned so an upgrade delivers it.
+		filepath.Join(apiRoot, "internal", "handlers", "realtime_sse.go"): apiRealtimeSSEGo(),
+
 		filepath.Join(apiRoot, "internal", "authz", "gate.go"):      apiGateGo(),
 		filepath.Join(apiRoot, "internal", "authz", "gate_test.go"): apiGateTestGo(),
 

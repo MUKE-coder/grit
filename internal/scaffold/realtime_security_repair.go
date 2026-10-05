@@ -60,6 +60,15 @@ func repairRealtimeSecurity(root string, opts Options) error {
 			return err
 		}
 	}
+
+	// #92 item 8: /api/events, the SSE fallback. Run after the route repair
+	// above, so a project being brought up to the gated block gets the stream
+	// inside it rather than beside it.
+	if fileExists(routes) {
+		if err := repairSourceFile(root, m, routes, repairRealtimeSSERoute); err != nil {
+			return err
+		}
+	}
 	if !fileContains(routes, "realtime.AllowedOrigins = ") {
 		return nil
 	}

@@ -66,6 +66,65 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.363.0 */}
+            <div className="mb-12" id="v3.363.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.363.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Live updates where the socket cannot upgrade</h3>
+                <p>
+                  Some platforms do not pass a WebSocket upgrade through to the application.
+                  Laravel Cloud strips <code>Connection: upgrade</code> before the container, and
+                  it is not alone: a corporate proxy, an older load balancer or an API gateway
+                  configured for plain HTTP all do the same. The handshake fails, the
+                  client&apos;s reconnect loop retries forever, and live updates silently never
+                  arrive. That is the worst shape a bug can take, because nothing is broken
+                  enough to report.
+                </p>
+                <p>
+                  <code>/api/events</code> streams the same events over Server-Sent Events, which
+                  is plain HTTP with a response that never ends and survives all of it. Same hub,
+                  same auth rules, same payloads. The realtime client falls back on its own:
+                  after two handshakes in a row that never open, it stays on the stream for the
+                  rest of the session rather than retrying something that will not succeed.
+                </p>
+                <p>
+                  Two in a row, not one, because a single failure is usually the network, and
+                  switching on it would leave a page that could have had a socket stuck on the
+                  transport that cannot send. A stream is one-way: channels are declared in the
+                  query string when it opens, and whispers need the socket.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  No change to the hub. <code>Client.Conn</code> was already allowed to be nil
+                  and delivery already went through the send channel, so SSE needed a reader and
+                  nothing else. <code>grit upgrade</code> mounts the route in an existing
+                  project.
+                </p>
+
+                <h4>And a fix for an upgrade that could not compile</h4>
+                <p>
+                  v3.361.0 put <code>internal/tracing</code> into the framework-owned set and
+                  added the four OpenTelemetry modules to the scaffold&apos;s{" "}
+                  <code>go.mod</code>. An upgraded project got the package and not the modules,
+                  so <code>go build ./...</code> failed on imports no module provided. A fresh
+                  scaffold could not have caught it, because a fresh scaffold writes its own{" "}
+                  <code>go.mod</code>; it took upgrading a real project from v3.355.1 to see it.
+                </p>
+                <p>
+                  The upgrade now adds a module when the framework file that imports it is
+                  present and the module is not. That is kept separate from the version floors,
+                  which are deliberately never added to a project that does not already have
+                  them: a floor says &quot;do not run this below that version&quot;, and a
+                  requirement says &quot;a file this upgrade just wrote imports this&quot;.
+                </p>
+              </div>
+            </div>
+
             {/* v3.362.0 */}
             <div className="mb-12" id="v3.362.0">
               <div className="flex items-center gap-3 mb-4">

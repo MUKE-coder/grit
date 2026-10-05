@@ -1,5 +1,7 @@
 package scaffold
 
+import "strings"
+
 // The realtime socket's origin rule and connection caps.
 //
 // CheckOrigin returned true for every origin while the handshake authenticates
@@ -374,5 +376,49 @@ const routesRealtimeRouteNew = `	// WebSocket: realtime hub. Browsers authentica
 	// path answers 404.
 	if cfg.Modules.Realtime {
 		r.GET("/api/ws", realtimeHandler.Connect)
+		// The same events over Server-Sent Events, for platforms that do not
+		// pass a WebSocket upgrade through to the application. Laravel Cloud
+		// strips Connection: upgrade before the container, and a corporate
+		// proxy or an older load balancer will do the same. Without this the
+		// handshake fails, the client retries forever, and live updates
+		// silently never arrive.
+		r.GET("/api/events", realtimeHandler.Events)
 	}
 `
+
+// ─── #92 item 8: the SSE fallback ────────────────────────────────────────────
+
+// repairRealtimeSSERoute mounts /api/events beside /api/ws.
+//
+// An insert rather than a block replacement, because the socket route exists in
+// two shapes in the wild: the original unconditional line and the
+// MODULE_REALTIME-gated block. Matching the line itself covers both, and a
+// project that already has the stream is left alone.
+func repairRealtimeSSERoute(src string) (string, []string, []string) {
+	const anchor = "\t\tr.GET(\"/api/ws\", realtimeHandler.Connect)\n"
+	const bare = "\tr.GET(\"/api/ws\", realtimeHandler.Connect)\n"
+
+	if strings.Contains(src, "realtimeHandler.Events") {
+		return src, nil, nil
+	}
+
+	const note = "/api/events streams the same realtime events over SSE, for platforms that do " +
+		"not pass a WebSocket upgrade through (Laravel Cloud strips it)"
+
+	// The gated block first: its line is indented one level deeper, so testing
+	// for the bare form first would match inside it and insert at the wrong
+	// indentation.
+	if strings.Count(src, anchor) == 1 {
+		return strings.Replace(src, anchor, anchor+
+			"\t\t// The same events over Server-Sent Events, for platforms that do\n"+
+			"\t\t// not pass a WebSocket upgrade through to the application.\n"+
+			"\t\tr.GET(\"/api/events\", realtimeHandler.Events)\n", 1), []string{note}, nil
+	}
+	if strings.Count(src, bare) == 1 {
+		return strings.Replace(src, bare, bare+
+			"\t// The same events over Server-Sent Events, for platforms that do not\n"+
+			"\t// pass a WebSocket upgrade through to the application.\n"+
+			"\tr.GET(\"/api/events\", realtimeHandler.Events)\n", 1), []string{note}, nil
+	}
+	return src, nil, nil
+}

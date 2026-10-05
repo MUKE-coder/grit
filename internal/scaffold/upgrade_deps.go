@@ -38,6 +38,58 @@ var frameworkDeps = []FrameworkDep{
 	{"github.com/gorilla/mux", "v1.8.1", "goth's gothic links it in and still asks for v1.6.2, from 2018"},
 }
 
+// frameworkRequires are modules a framework-owned file imports, which an
+// upgrade therefore has to put in go.mod.
+//
+// Separate from frameworkDeps because the two answer different questions. A
+// floor says "if you have this, do not run it below this version", and adding
+// one a project never had would pull in a library it does not use. A
+// requirement says "a file this upgrade just wrote imports this", and leaving
+// it out produces a project that does not compile.
+//
+// NeededBy is the file, relative to the API root, whose presence means the
+// module is wanted. Checked rather than assumed, so a shape that does not get
+// that file does not get the dependency either.
+var frameworkRequires = []struct {
+	Path, Version, NeededBy, Why string
+}{
+	{"go.opentelemetry.io/otel", "v1.45.0", "internal/tracing/tracing.go",
+		"internal/tracing imports it; inert until OTEL_EXPORTER_OTLP_ENDPOINT is set"},
+	{"go.opentelemetry.io/otel/sdk", "v1.45.0", "internal/tracing/tracing.go", "the tracer provider"},
+	{"go.opentelemetry.io/otel/trace", "v1.45.0", "internal/tracing/tracing.go", "the span API"},
+	{"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp", "v1.45.0",
+		"internal/tracing/tracing.go", "the OTLP/HTTP exporter"},
+}
+
+// addFrameworkRequires puts a module in go.mod when the framework file that
+// imports it is present and the module is not.
+func addFrameworkRequires(apiRoot string) ([]string, error) {
+	data, err := os.ReadFile(filepath.Join(apiRoot, "go.mod"))
+	if err != nil {
+		return nil, nil // no go.mod, so no API to add to
+	}
+
+	var specs, added []string
+	for _, r := range frameworkRequires {
+		if _, err := os.Stat(filepath.Join(apiRoot, r.NeededBy)); err != nil {
+			continue // this project does not have the file that needs it
+		}
+		if regexp.MustCompile(`(?m)^\s*(?:require\s+)?` + regexp.QuoteMeta(r.Path) + `\s+v`).Match(data) {
+			continue // already required, and raiseFrameworkDeps owns the version
+		}
+		specs = append(specs, r.Path+"@"+r.Version)
+		added = append(added, fmt.Sprintf("%s %s: %s", r.Path, r.Version, r.Why))
+	}
+	if len(specs) == 0 {
+		return nil, nil
+	}
+	if err := goGet(apiRoot, specs...); err != nil {
+		return nil, fmt.Errorf("could not add %s, so run `go get %s` in %s: %v",
+			strings.Join(specs, ", "), strings.Join(specs, " "), apiRoot, err)
+	}
+	return added, nil
+}
+
 // goGet runs go get in dir. A variable, so a test can see what would be fetched
 // without the network.
 var goGet = func(dir string, specs ...string) error {

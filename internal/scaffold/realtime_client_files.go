@@ -321,18 +321,137 @@ function scheduleReconnect() {
   }, delay);
 }
 
+/**
+ * Hand one raw frame to whoever is listening.
+ *
+ * Shared by both transports: a WebSocket message and an SSE data line carry the
+ * same JSON, and the only difference is how it arrived.
+ */
+function deliver(raw: string): void {
+  let evt: RealtimeEvent;
+  try {
+    evt = JSON.parse(raw);
+  } catch {
+    return; // not ours, or truncated
+  }
+  if (!evt || typeof evt.type !== "string") return;
+  if (typeof evt.channel === "string" && evt.channel !== "") {
+    // Channel traffic, replies included, goes to that channel's subscribers
+    // only, never to the event-type handlers below. Presence is tracked
+    // first, so a handler that reads presenceMembers sees this event applied.
+    trackPresence(evt.channel, evt);
+    dispatchChannel(evt.channel, evt);
+    return;
+  }
+  handlers.get(evt.type)?.forEach((fn) => {
+    try {
+      fn(evt.payload, evt);
+    } catch (err) {
+      // One bad subscriber must not stop the others, or a render error in
+      // an unrelated component silently kills every live update on the page.
+      console.error("[realtime] handler for " + evt.type + " threw", err);
+    }
+  });
+  handlers.get("*")?.forEach((fn) => {
+    fn(evt.payload, evt);
+  });
+}
+
+/**
+ * How many failed handshakes in a row before giving up on the socket.
+ *
+ * Two, not one. A single failure is usually the network, and switching away on
+ * it would leave a page that could have had a socket stuck on the transport
+ * that cannot send. Two in a row, with no open in between, is the platform.
+ */
+const SSE_AFTER_FAILURES = 2;
+
+let handshakeFailures = 0;
+let stream: EventSource | null = null;
+
+/**
+ * The SSE endpoint, derived from the socket URL rather than configured
+ * separately, so one of them cannot be pointed somewhere the other is not.
+ */
+function sseURL(): string {
+  return WS_URL.replace(/^ws/, "http").replace(/\/api\/ws$/, "/api/events");
+}
+
+/**
+ * Open the Server-Sent Events stream.
+ *
+ * The fallback for platforms that do not pass a WebSocket upgrade through to
+ * the application. Laravel Cloud strips Connection: upgrade before the
+ * container, and a corporate proxy or an older load balancer does the same. The
+ * handshake fails, this reconnect loop would retry forever, and live updates
+ * would silently never arrive.
+ *
+ * One thing is given up: a stream is one-way, so channel subscriptions are
+ * declared in the query string when it opens rather than sent afterwards, and
+ * whispers are not available at all. Anything needing to send has to be on the
+ * socket.
+ */
+async function connectStream(): Promise<void> {
+  if (typeof EventSource === "undefined") return; // SSR, a test runner, or React Native
+  if (stream) return;
+
+  setStatus("connecting");
+
+  const names = [...channels.keys()];
+  const query = ` + awaitKw + `authQuery();
+  const url = sseURL() + query +
+    (names.length ? (query ? "&" : "?") + "channels=" + encodeURIComponent(names.join(",")) : "");
+
+  const es = new EventSource(url, { withCredentials: true });
+  stream = es;
+
+  es.onopen = () => {
+    attempt = 0;
+    setStatus("open");
+  };
+
+  es.onmessage = (e) => {
+    deliver(typeof e.data === "string" ? e.data : "");
+  };
+
+  es.onerror = () => {
+    // EventSource reconnects on its own and reports every retry through here,
+    // so this closes the stream and lets the same backoff the socket uses take
+    // over. Two reconnect loops racing is how you get a thundering herd from
+    // one tab.
+    if (stream === es) stream = null;
+    es.close();
+    presence.clear();
+    setStatus("closed");
+    scheduleReconnect();
+  };
+}
+
 export async function connect(): Promise<void> {
   if (typeof WebSocket === "undefined") return; // SSR, or a test runner
   if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
     return;
   }
   closedByUs = false;
+
+  // The socket could not be upgraded twice running, so this platform does not
+  // pass upgrades through. Stay on the stream for the rest of the session
+  // rather than retrying a handshake that will not succeed.
+  if (handshakeFailures >= SSE_AFTER_FAILURES) {
+    await connectStream();
+    return;
+  }
+
   setStatus("connecting");
 
   const ws = new WebSocket(WS_URL + ` + awaitKw + `authQuery());
   socket = ws;
 
+  let opened = false;
+
   ws.onopen = () => {
+    opened = true;
+    handshakeFailures = 0;
     attempt = 0;
     setStatus("open");
     // A new socket holds no subscriptions: the old one's ended with it. Ask
@@ -344,36 +463,15 @@ export async function connect(): Promise<void> {
   };
 
   ws.onmessage = (e) => {
-    let evt: RealtimeEvent;
-    try {
-      evt = JSON.parse(typeof e.data === "string" ? e.data : "");
-    } catch {
-      return; // not ours, or truncated
-    }
-    if (!evt || typeof evt.type !== "string") return;
-    if (typeof evt.channel === "string" && evt.channel !== "") {
-      // Channel traffic, replies included, goes to that channel's subscribers
-      // only, never to the event-type handlers below. Presence is tracked
-      // first, so a handler that reads presenceMembers sees this event applied.
-      trackPresence(evt.channel, evt);
-      dispatchChannel(evt.channel, evt);
-      return;
-    }
-    handlers.get(evt.type)?.forEach((fn) => {
-      try {
-        fn(evt.payload, evt);
-      } catch (err) {
-        // One bad subscriber must not stop the others, or a render error in
-        // an unrelated component silently kills every live update on the page.
-        console.error("[realtime] handler for " + evt.type + " threw", err);
-      }
-    });
-    handlers.get("*")?.forEach((fn) => {
-      fn(evt.payload, evt);
-    });
+    deliver(typeof e.data === "string" ? e.data : "");
   };
 
   ws.onclose = () => {
+    // A close with no open before it is a handshake that never completed,
+    // which is what a platform that strips the upgrade looks like from here.
+    // A close after an open is an ordinary disconnect and says nothing about
+    // whether the socket is available.
+    if (!opened) handshakeFailures += 1;
     if (socket === ws) socket = null;
     presence.clear();
     setStatus("closed");
@@ -398,6 +496,8 @@ export function disconnect() {
   }
   socket?.close();
   socket = null;
+  stream?.close();
+  stream = null;
   attempt = 0;
   presence.clear();
   setStatus("closed");

@@ -707,6 +707,16 @@ func Upgrade(uOpts UpgradeOptions) error {
 				green.Printf("  ✓ Raised %s\n", r)
 			}
 		}
+		// And the modules a framework-owned file imports but the project has
+		// never required. An upgrade that writes internal/tracing and leaves
+		// go.mod alone produces a project that does not compile.
+		if added, err := addFrameworkRequires(opts.APIRoot(root)); err != nil {
+			fmt.Printf("  ⚠ %v\n", err)
+		} else {
+			for _, a := range added {
+				green.Printf("  ✓ Added %s\n", a)
+			}
+		}
 		green.Printf("  ✓ Media pipeline updated\n")
 		green.Printf("    Then run: cd apps/api && go mod tidy\n")
 		updated += 3
