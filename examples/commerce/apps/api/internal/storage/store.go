@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -116,6 +117,15 @@ func DetectContentType(r io.ReadSeeker, declared string) (string, error) {
 		return "", fmt.Errorf("rewinding the file: %w", err)
 	}
 	detected := bareType(http.DetectContentType(head[:n]))
+	if detected == "application/octet-stream" {
+		// Go's sniffer implements the WHATWG standard, which has no AVIF or
+		// HEIC matcher, so both arrive here as octet-stream and the check
+		// below rejects them for not being images. A phone camera produces
+		// one or the other.
+		if t := isobmffImageType(head[:n]); t != "" {
+			detected = t
+		}
+	}
 	declared = bareType(declared)
 
 	if detected == "text/html" || detected == "image/svg+xml" {
@@ -128,6 +138,57 @@ func DetectContentType(r io.ReadSeeker, declared string) (string, error) {
 		return detected, nil
 	}
 	return declared, nil
+}
+
+// isobmffImageType names an ISO base media image from its brands, or returns
+// "" for anything else.
+//
+// AVIF and HEIC are both ISOBMFF, the container MP4 uses, and the WHATWG
+// sniffing standard that http.DetectContentType implements covers neither.
+// Without this, an .avif uploaded through the admin was refused as "content
+// does not match its declared type", while image/avif sat in the upload
+// allowlist: the form offered a file the server would not take.
+//
+// The layout is a box: a four-byte big-endian length, the type "ftyp", the
+// major brand, a four-byte version, then a list of compatible brands. Reading
+// the major brand and that list is what every other sniffer does.
+//
+// The brands are checked in priority order rather than in the order they
+// appear, because an AVIF commonly lists "mif1" before "avif" and matching the
+// first recognised brand would call it HEIF.
+func isobmffImageType(head []byte) string {
+	if len(head) < 12 || string(head[4:8]) != "ftyp" {
+		return ""
+	}
+
+	// The declared box length, clamped to what was actually read. A length
+	// longer than the buffer is not an error here: 512 bytes holds far more
+	// brands than any real file declares.
+	size := int(binary.BigEndian.Uint32(head[0:4]))
+	if size < 16 || size > len(head) {
+		size = len(head)
+	}
+
+	brands := map[string]bool{string(head[8:12]): true}
+	for i := 16; i+4 <= size; i += 4 {
+		brands[string(head[i:i+4])] = true
+	}
+
+	for _, candidate := range []struct {
+		mime   string
+		brands []string
+	}{
+		{"image/avif", []string{"avif", "avis", "avio"}},
+		{"image/heic", []string{"heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs"}},
+		{"image/heif", []string{"mif1", "msf1"}},
+	} {
+		for _, b := range candidate.brands {
+			if brands[b] {
+				return candidate.mime
+			}
+		}
+	}
+	return ""
 }
 
 func bareType(contentType string) string {

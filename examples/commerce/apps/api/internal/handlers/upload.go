@@ -31,10 +31,25 @@ import (
 // with accepts narrows it; UPLOAD_ALLOWED_MIME adds to it, through
 // UploadMIMEAllowlist. Nothing writes to this map after startup.
 var defaultAllowedMIME = map[string]bool{
-	"image/jpeg":      true,
-	"image/png":       true,
-	"image/gif":       true,
-	"image/webp":      true,
+	"image/jpeg": true,
+	"image/png":  true,
+	"image/gif":  true,
+	"image/webp": true,
+	// AVIF, because the "image" accept group in internal/files lists it and
+	// so does the admin's file picker: without it here, a field declared
+	// file:image offered an .avif and the server refused the upload. That is
+	// the same trap the audio block below was added to close.
+	//
+	// Nothing decodes it, so it is stored as it arrived rather than
+	// optimised, which is the right answer for AVIF anyway: re-encoding one
+	// to JPEG makes it bigger.
+	//
+	// HEIC is deliberately not here, because no picker offers it, but a shop
+	// taking photographs straight off an iPhone wants
+	// UPLOAD_ALLOWED_MIME=image/heic and that now works: the sniffer in
+	// internal/storage names it, where before it saw octet-stream and
+	// refused the file for not being the image it said it was.
+	"image/avif":      true,
 	"video/mp4":       true,
 	"video/webm":      true,
 	"video/quicktime": true,

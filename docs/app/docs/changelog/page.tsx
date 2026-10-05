@@ -67,6 +67,74 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.363.0 */}
+            <div className="mb-12" id="v3.371.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.371.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An AVIF uploads</h3>
+                <p>
+                  Reported from the admin&apos;s image field: choosing an{' '}
+                  <code>.avif</code> answered <strong>File content does not match its declared
+                  type</strong>. Two faults, one behind the other.
+                </p>
+                <p>
+                  Uploads are sniffed from their bytes rather than trusted from the form,
+                  which is right: a declared type is trivially spoofed, and an HTML file
+                  claiming to be a PNG runs script when served from your own origin. The
+                  sniffing is <code>http.DetectContentType</code>, which implements the WHATWG
+                  standard, and that standard has no AVIF or HEIC matcher. Both arrive as{' '}
+                  <code>application/octet-stream</code>, and the &quot;declared an image, is
+                  not one&quot; check then rejects them.
+                </p>
+                <p>
+                  Behind that, the upload baseline did not list <code>image/avif</code> at all,
+                  while the <code>image</code> accept group in <code>internal/files</code> does
+                  and so does the admin&apos;s file picker. The form offered a file the server
+                  would not take, which is the same trap the audio types were added to close,
+                  with the same comment sitting beside it.
+                </p>
+                <p>
+                  Both are fixed. AVIF and HEIC are now identified from their ISOBMFF brands,
+                  checked in priority order because an AVIF commonly lists <code>mif1</code>
+                  {' '}among its compatible brands and matching the first recognised one would
+                  call it HEIF. <code>image/avif</code> is in the baseline, stored as it
+                  arrived rather than re-encoded, which is the right answer anyway: turning an
+                  AVIF into a JPEG makes it bigger.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  HEIC is deliberately not in the baseline, because no picker offers it, but a
+                  shop photographing stock on an iPhone wants{' '}
+                  <code>UPLOAD_ALLOWED_MIME=image/heic</code> and that now works: before, the
+                  sniffer saw octet-stream and refused the file for not being the image it said
+                  it was, whatever the allowlist said. A test now fails if the{' '}
+                  <code>image</code> accept group ever again offers a type the baseline
+                  refuses.
+                </p>
+
+                <h4>And the commerce tutorial gives you the code</h4>
+                <p>
+                  <code>examples/commerce/TUTORIAL.md</code> described its files and gave line
+                  counts instead of contents, so a reader following it reached the cart and
+                  stopped. It now contains <strong>all 25 hand-written files in full</strong>,
+                  each under a heading naming the exact path to create, and opens with a
+                  clone-and-run section for anyone who wants it working in five minutes rather
+                  than built from nothing.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The code is spliced in from the real files by{' '}
+                  <code>scripts/tutorial-build.py</code>, and CI runs it with{' '}
+                  <code>--check</code>: a change to the example that is not reflected in the
+                  tutorial now fails the build instead of going quietly stale.
+                </p>
+              </div>
+            </div>
+
+            {/* v3.370.0 */}
             <div className="mb-12" id="v3.370.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">

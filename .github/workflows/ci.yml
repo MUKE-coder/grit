@@ -124,6 +124,13 @@ jobs:
           pnpm install --frozen-lockfile=false
           cd apps/web && npx tsc --noEmit
 
+      # TUTORIAL.md embeds every hand-written file whole, spliced from the real
+      # ones by scripts/tutorial-build.py. A tutorial that paraphrases its code
+      # goes stale without anyone noticing, and a reader following it stops at
+      # the first file that no longer matches. This fails instead.
+      - name: The tutorial matches the code it teaches
+        run: python scripts/tutorial-build.py --check
+
   demo:
     name: Grit Motors, the live demo
     runs-on: ubuntu-latest
