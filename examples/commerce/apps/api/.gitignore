@@ -1,0 +1,18 @@
+# Binary
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+tmp/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# Files kept by STORAGE_DRIVER=local (STORAGE_LOCAL_ROOT)
+/storage/

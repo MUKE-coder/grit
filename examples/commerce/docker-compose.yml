@@ -1,0 +1,91 @@
+# Local development infrastructure.
+#
+# Every port is bound to 127.0.0.1 — that means these services are
+# reachable from YOUR machine only, not from your LAN, not from the
+# wider internet. Public binding (the Docker default) on a laptop on
+# a coffee-shop wifi exposes Postgres with grit:grit credentials to
+# the room. Don't do that.
+#
+# If you need to share infra with a teammate, use a VPN (Tailscale,
+# Wireguard) and forward 127.0.0.1:5432 from your machine — never
+# rebind to 0.0.0.0.
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      # Host port 5434 (not the Postgres-default 5432) avoids two common
+      # collisions: a Postgres service installed on the host, and Windows
+      # WinNAT reserving 5432 inside its dynamic Hyper-V port range
+      # ("An attempt was made to access a socket in a way forbidden..."
+      # — see `netsh int ipv4 show excludedportrange protocol=tcp`).
+      # The container still listens on 5432 inside the Docker network.
+      - "127.0.0.1:${POSTGRES_PORT:-5434}:5432"
+    # Credentials come from .env (POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB).
+    # Edit them ONLY in .env — never duplicate them here. The :- syntax
+    # provides a fallback so 'docker compose up' still works if the env
+    # var is somehow missing.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-grit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-grit}
+      POSTGRES_DB: ${POSTGRES_DB:-commerce}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-grit}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      # Host 6380 (not the Redis-default 6379) avoids native Redis installs
+      # — Memurai on Windows, brew/apt Redis on macOS/Linux, WSL Redis.
+      # Container still listens on 6379 inside the Docker network.
+      - "127.0.0.1:${REDIS_PORT:-6380}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    restart: unless-stopped
+    ports:
+      # Host 9002 / 9003 (not the MinIO-default 9000 / 9001) avoids
+      # collisions with Portainer (9000) and a handful of monitoring
+      # stacks that grab 9000/9001. Container still listens on 9000/9001
+      # inside the Docker network.
+      #
+      # 127.0.0.1 like every other port here, unless MINIO_BIND_ADDRESS in .env
+      # says otherwise. A phone or emulator on your LAN loads uploaded images from
+      # this port (the Expo app rewrites "localhost" to your dev IP), so an Expo
+      # project sets MINIO_BIND_ADDRESS=0.0.0.0. The console stays on this machine.
+      - "${MINIO_BIND_ADDRESS:-127.0.0.1}:${MINIO_PORT:-9002}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9003}:9001"
+    # The root credentials are generated per project into .env. They were
+    # minioadmin/minioadmin, on a port bound to every interface, so anyone on the
+    # same network owned the bucket.
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?set MINIO_ACCESS_KEY in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?set MINIO_SECRET_KEY in .env}
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+
+  mailhog:
+    image: mailhog/mailhog
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MAILHOG_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILHOG_UI_PORT:-8025}:8025"
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:

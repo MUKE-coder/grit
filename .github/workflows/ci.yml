@@ -88,6 +88,42 @@ jobs:
         working-directory: examples/library/apps/api
         run: go test ./internal/handlers/ -run 'TestAReturnedLoan|TestDeletingIsJudged' -v
 
+      # examples/commerce is the second one: a shop, with a hand-written cart on
+      # top of generated models. It is here for a reason library cannot cover,
+      # which is that its hand-written half calls into generated code rather than
+      # sitting beside it. The cart service asks the variant service to resolve a
+      # price and reads the option-value association to build a label, so a
+      # change to either signature fails here rather than in somebody's shop.
+      - name: Build, vet and test the shop
+        working-directory: examples/commerce/apps/api
+        run: |
+          set -o pipefail
+          gofmt -l . | tee /tmp/unformatted-shop
+          test ! -s /tmp/unformatted-shop
+          go build ./...
+          go vet ./...
+          go test ./... 2>&1 | tail -40
+
+      # The storefront type-checks against the Go side's published shapes. A
+      # price typed as a string, or a field dropped from the public allowlist,
+      # is a type error here and nothing at all at runtime until a page renders
+      # "[object Object]".
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.4
+
+      - name: The storefront type-checks
+        working-directory: examples/commerce
+        run: |
+          pnpm install --frozen-lockfile=false
+          cd apps/web && npx tsc --noEmit
+
   demo:
     name: Grit Motors, the live demo
     runs-on: ubuntu-latest

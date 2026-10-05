@@ -1,0 +1,414 @@
+package handlers
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"commerce/apps/api/internal/models"
+	"commerce/apps/api/internal/money"
+	"commerce/apps/api/internal/respond"
+	"commerce/apps/api/internal/services"
+)
+
+// ProductVariantHandler serves the option library and one product's
+// variant matrix.
+//
+// Options are shop-wide, so they are managed on their own endpoints rather than
+// nested under a product. Nesting them would suggest each product owns
+// its colours, which is the per-product-options mistake the schema exists to
+// avoid.
+type ProductVariantHandler struct {
+	DB       *gorm.DB
+	Variants *services.ProductVariantService
+}
+
+func NewProductVariantHandler(db *gorm.DB) *ProductVariantHandler {
+	return &ProductVariantHandler{DB: db, Variants: services.NewProductVariantService(db)}
+}
+
+// ListOptions handles GET /api/v1/options: the whole library with its values.
+func (h *ProductVariantHandler) ListOptions(c *gin.Context) {
+	var options []models.Option
+	err := h.DB.WithContext(c.Request.Context()).Preload("Values", func(db *gorm.DB) *gorm.DB {
+		return db.Order("position asc, label asc")
+	}).Order("position asc, name asc").Find(&options).Error
+	if err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to load options")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": options})
+}
+
+// CreateOption handles POST /api/v1/options.
+func (h *ProductVariantHandler) CreateOption(c *gin.Context) {
+	var req struct {
+		Name         string `json:"name" binding:"required"`
+		Kind         string `json:"kind"`
+		AffectsPrice bool   `json:"affects_price"`
+		Position     int    `json:"position"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+	if req.Kind == "" {
+		req.Kind = "select"
+	}
+
+	option := models.Option{
+		Name: req.Name, Kind: req.Kind,
+		AffectsPrice: req.AffectsPrice, Position: req.Position,
+	}
+	if err := h.DB.WithContext(c.Request.Context()).Create(&option).Error; err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to create the option")
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"data": option, "message": "Option created"})
+}
+
+// DeleteOption handles DELETE /api/v1/options/:id, taking its values with it.
+//
+// Refuses while anything is built on it. Two checks, because an option can be
+// spoken for in two different ways: a variant somewhere in the shop is defined
+// by one of its values, or a product offers the axis without having
+// generated the combinations yet. Either way, deleting it leaves a row that
+// describes a choice nobody can make.
+//
+// The first check spans every resource, because variant_option_values is one
+// table for the whole shop. Colour being safe to delete is not a question one
+// product can answer.
+func (h *ProductVariantHandler) DeleteOption(c *gin.Context) {
+	optionID := c.Param("id")
+
+	var inVariants int64
+	h.DB.WithContext(c.Request.Context()).Table("variant_option_values").
+		Joins("JOIN option_values ON option_values.id = variant_option_values.option_value_id").
+		Where("option_values.option_id = ?", optionID).
+		Count(&inVariants)
+	if inVariants > 0 {
+		respond.Fail(c, respond.CodeOptionInUse, "Variants are built on this option. Clear their combinations first.")
+		return
+	}
+
+	var offered int64
+	h.DB.WithContext(c.Request.Context()).Model(&models.ProductOption{}).Where("option_id = ?", optionID).Count(&offered)
+	if offered > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": gin.H{
+			"code":    "OPTION_IN_USE",
+			"message": "Some products still offer this option. Remove it from them first.",
+		}})
+		return
+	}
+
+	err := h.DB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		// The values go too. An option value whose option is gone is a row
+		// nothing can reach and nothing can mean.
+		if err := tx.Where("option_id = ?", optionID).
+			Delete(&models.OptionValue{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&models.Option{}, "id = ?", optionID).Error
+	})
+	if err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to delete the option")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Option deleted"})
+}
+
+// CreateOptionValue handles POST /api/v1/options/:id/values.
+func (h *ProductVariantHandler) CreateOptionValue(c *gin.Context) {
+	var req struct {
+		Label      string  `json:"label" binding:"required"`
+		Swatch     string  `json:"swatch"`
+		PriceDelta float64 `json:"price_delta"`
+		Position   int     `json:"position"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+
+	value := models.OptionValue{
+		OptionID: c.Param("id"), Label: req.Label, Swatch: req.Swatch,
+		PriceDelta: req.PriceDelta, Position: req.Position,
+	}
+	if err := h.DB.WithContext(c.Request.Context()).Create(&value).Error; err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to add the value")
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"data": value, "message": "Value added"})
+}
+
+// DeleteOptionValue handles DELETE /api/v1/option-values/:id.
+//
+// Refuses while any variant still uses it. Deleting the value out from under a
+// combination leaves a variant that means "Red, and something", which is not a
+// thing anybody can buy or ship.
+func (h *ProductVariantHandler) DeleteOptionValue(c *gin.Context) {
+	var used int64
+	h.DB.WithContext(c.Request.Context()).Table("variant_option_values").
+		Where("option_value_id = ?", c.Param("id")).
+		Count(&used)
+	if used > 0 {
+		respond.Fail(c, respond.CodeValueInUse, "That value is part of existing variants. Delete those first.")
+		return
+	}
+
+	if err := h.DB.WithContext(c.Request.Context()).Delete(&models.OptionValue{}, "id = ?", c.Param("id")).Error; err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to delete the value")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Value deleted"})
+}
+
+// SetOptions handles PUT /api/v1/products/:id/options: which options this
+// product offers, in order, and which of their values.
+//
+// value_ids is how a shirt offers Colour in ecru and navy while a tee offers it
+// in black, sand and olive. Leaving an option out of it offers that whole axis,
+// which is what every product did before the field existed.
+func (h *ProductVariantHandler) SetOptions(c *gin.Context) {
+	var req struct {
+		OptionIDs []string `json:"option_ids"`
+		ValueIDs  []string `json:"value_ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+
+	productID := c.Param("id")
+
+	// What it offers now. Compared before anything is written, because saving
+	// the same set again is the commonest thing this endpoint is asked to do
+	// and it must not cost anybody their matrix.
+	var current []models.ProductOption
+	err := h.DB.WithContext(c.Request.Context()).Where("product_id = ?", productID).
+		Order("position asc").Find(&current).Error
+	if err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to read the current options")
+		return
+	}
+	// The values it offers now, and the ones this edit asks for, both in the
+	// form they are stored in: an axis offered whole stores nothing, so the two
+	// are only comparable after the same normalisation.
+	currentValues, err := h.Variants.OfferedValueIDs(productID)
+	if err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to read the current values")
+		return
+	}
+	wantedValues, err := services.OfferedProductValues(h.DB, productID, req.OptionIDs, req.ValueIDs)
+	if err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to read the chosen values")
+		return
+	}
+
+	if sameProductOptionOrder(current, req.OptionIDs) && sameProductValueSet(currentValues, wantedValues) {
+		c.JSON(http.StatusOK, gin.H{
+			"data":    gin.H{"variants_cleared": 0},
+			"message": "Options unchanged",
+		})
+		return
+	}
+
+	cleared := 0
+	err = h.DB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		// A variant is a combination of the options the product offered
+		// when it was generated. Change that set and every existing row
+		// describes a choice the product no longer has, which is not
+		// something anybody can buy or ship, so the matrix goes with it.
+		var stale []models.ProductVariant
+		if err := tx.Where("product_id = ?", productID).Find(&stale).Error; err != nil {
+			return err
+		}
+		for i := range stale {
+			if err := tx.Model(&stale[i]).Association("OptionValues").Clear(); err != nil {
+				return err
+			}
+		}
+		cleared = len(stale)
+
+		// Unscoped, here and below. A soft-deleted variant is invisible to the
+		// generator's duplicate check and still holds the sku the replacement
+		// wants, and a soft-deleted link still occupies the unique index on
+		// (product_id, option_id), so re-adding the same option a second
+		// time fails on a row nobody can see.
+		if err := tx.Unscoped().Where("product_id = ?", productID).
+			Delete(&models.ProductVariant{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Unscoped().Where("product_id = ?", productID).
+			Delete(&models.ProductOption{}).Error; err != nil {
+			return err
+		}
+
+		for i, optionID := range req.OptionIDs {
+			link := models.ProductOption{ProductID: productID, OptionID: optionID, Position: i}
+			if err := tx.Create(&link).Error; err != nil {
+				return err
+			}
+		}
+		// And which of their values, in the same transaction: a product
+		// offering an axis whose narrowing failed to save would generate a
+		// matrix nobody asked for.
+		return services.WriteProductOfferedValues(tx, productID, wantedValues)
+	})
+	if err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to set the options")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data":    gin.H{"variants_cleared": cleared},
+		"message": "Options set",
+	})
+}
+
+// sameProductValueSet compares two sorted id lists. Named after the
+// resource, because a second resource with variants declares its own copy in
+// this same package.
+func sameProductValueSet(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// sameProductOptionOrder reports whether a product already offers exactly these
+// options, in this order.
+//
+// Order counts, because it is the order the storefront draws them in and
+// somebody dragging Size above Colour means it.
+func sameProductOptionOrder(current []models.ProductOption, wanted []string) bool {
+	if len(current) != len(wanted) {
+		return false
+	}
+	for i := range current {
+		if current[i].OptionID != wanted[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// List handles GET /api/v1/products/:id/variants, with prices resolved.
+//
+// The resolved price is included rather than left to the caller, because every
+// caller computing it themselves is every caller getting a chance to compute it
+// differently.
+func (h *ProductVariantHandler) List(c *gin.Context) {
+	productID := c.Param("id")
+
+	var product models.Product
+	if err := h.DB.WithContext(c.Request.Context()).Where("id = ?", productID).First(&product).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{
+			"code": "NOT_FOUND", "message": "Product not found",
+		}})
+		return
+	}
+
+	options, err := h.Variants.OptionsFor(productID)
+	if err != nil {
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
+		return
+	}
+	byID := make(map[string]models.Option, len(options))
+	for _, option := range options {
+		byID[option.ID] = option
+	}
+
+	variants, err := h.Variants.VariantsFor(productID)
+	if err != nil {
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
+		return
+	}
+
+	type row struct {
+		models.ProductVariant
+		Price money.Money `json:"price"`
+	}
+	out := make([]row, 0, len(variants))
+	for _, variant := range variants {
+		out = append(out, row{
+			ProductVariant: variant,
+			Price:          h.Variants.ResolvePrice(product.Price, variant, byID),
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"options": options, "variants": out}})
+}
+
+// GenerateMatrix handles POST /api/v1/products/:id/variants/generate.
+func (h *ProductVariantHandler) GenerateMatrix(c *gin.Context) {
+	var req struct {
+		Limit int `json:"limit"`
+	}
+	_ = c.ShouldBindJSON(&req)
+
+	created, err := h.Variants.Generate(c.Param("id"), req.Limit)
+	if err != nil {
+		// The caller asked for something that cannot be done rather than the
+		// server failing, and the message says which.
+		respond.Fail(c, respond.CodeCannotGenerate, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data":    gin.H{"created": created},
+		"message": "Matrix generated",
+	})
+}
+
+// Update handles PATCH /api/v1/variants/:id: sku, stock, price and images.
+func (h *ProductVariantHandler) Update(c *gin.Context) {
+	var req struct {
+		SKU           *string  `json:"sku"`
+		Stock         *int     `json:"stock"`
+		PriceOverride *float64 `json:"price_override"`
+		Active        *bool    `json:"active"`
+		// ClearPrice removes an override. A nil price_override cannot mean
+		// "clear it", because nil is also what a partial update sends for a
+		// field it is not touching.
+		ClearPrice bool `json:"clear_price"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+
+	updates := map[string]any{}
+	if req.SKU != nil {
+		updates["sku"] = *req.SKU
+	}
+	if req.Stock != nil {
+		updates["stock"] = *req.Stock
+	}
+	if req.Active != nil {
+		updates["active"] = *req.Active
+	}
+	if req.ClearPrice {
+		updates["price_override"] = nil
+	} else if req.PriceOverride != nil {
+		updates["price_override"] = *req.PriceOverride
+	}
+
+	if len(updates) == 0 {
+		c.JSON(http.StatusOK, gin.H{"message": "Nothing to update"})
+		return
+	}
+
+	err := h.DB.WithContext(c.Request.Context()).Model(&models.ProductVariant{}).
+		Where("id = ?", c.Param("id")).
+		Updates(updates).Error
+	if err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to update the variant")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Variant updated"})
+}

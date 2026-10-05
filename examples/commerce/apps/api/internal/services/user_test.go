@@ -1,0 +1,105 @@
+package services
+
+import (
+	"context"
+	"testing"
+
+	"github.com/glebarez/sqlite"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	"commerce/apps/api/internal/authz"
+	"commerce/apps/api/internal/models"
+)
+
+func userServiceDB(t *testing.T) (*gorm.DB, *UserService) {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	require.NoError(t, err)
+	require.NoError(t, db.AutoMigrate(&models.User{}, &models.Role{}, &models.UserRole{}))
+	require.NoError(t, models.SeedRoles(db))
+	return db, &UserService{DB: db}
+}
+
+// Changing the role dropdown must actually change what the user can do, even
+// when they already hold an explicit assignment. Grant resolution prefers
+// user_roles, so without the sync this update is a silent no-op: the string
+// changes and the permissions do not.
+func TestSyncRoleAssignmentChangesEffectivePermissions(t *testing.T) {
+	db, users := userServiceDB(t)
+	ctx := context.Background()
+	u := models.User{ID: "u1", Email: "u1@x.com", FirstName: "U", LastName: "1", Role: models.RoleAdmin}
+	require.NoError(t, db.Create(&u).Error)
+
+	// Start as ADMIN via an explicit assignment.
+	require.NoError(t, users.SyncRoleAssignment(ctx, u.ID, models.RoleAdmin))
+	g, _ := authz.GrantsFor(db, u.ID)
+	require.True(t, authz.Granted(g, "users.delete"), "admin should hold users.delete")
+
+	// Demote to USER: the effective permissions must follow.
+	require.NoError(t, users.SyncRoleAssignment(ctx, u.ID, models.RoleUser))
+	g, _ = authz.GrantsFor(db, u.ID)
+	assert.False(t, authz.Granted(g, "users.delete"), "demotion did not take effect")
+
+	// Exactly one assignment, not an accumulation.
+	var n int64
+	db.Model(&models.UserRole{}).Where("user_id = ?", u.ID).Count(&n)
+	assert.Equal(t, int64(1), n)
+}
+
+// An unrecognised legacy role name must not fail the update; resolution falls
+// back to the users.role string.
+func TestSyncRoleAssignmentToleratesAnUnknownName(t *testing.T) {
+	db, users := userServiceDB(t)
+	u := models.User{ID: "u2", Email: "u2@x.com", FirstName: "U", LastName: "2", Role: "LEGACY_THING"}
+	require.NoError(t, db.Create(&u).Error)
+
+	require.NoError(t, users.SyncRoleAssignment(context.Background(), u.ID, "LEGACY_THING"))
+
+	var n int64
+	db.Model(&models.UserRole{}).Where("user_id = ?", u.ID).Count(&n)
+	assert.Equal(t, int64(0), n, "unknown role should leave no assignment")
+}
+
+// Update writes the row and the role assignment together, or neither.
+//
+// They used to be two writes with the assignment first, so a failed Updates
+// left the user holding the permissions of the new role while users.role still
+// read as the old one. Nothing anywhere said so, which is why this test forces
+// the second write to fail and then looks at the assignment.
+func TestUpdateRollsBackTheRoleAssignmentWhenTheRowFails(t *testing.T) {
+	db, users := userServiceDB(t)
+	ctx := context.Background()
+	u := models.User{ID: "u3", Email: "u3@x.com", FirstName: "U", LastName: "3", Role: models.RoleUser}
+	require.NoError(t, db.Create(&u).Error)
+	require.NoError(t, users.SyncRoleAssignment(ctx, u.ID, models.RoleUser))
+
+	// A column that is not there: the role write succeeds, this one does not.
+	err := users.Update(ctx, &u, map[string]interface{}{"no_such_column": 1}, models.RoleAdmin)
+	require.Error(t, err, "an update to a column that does not exist reported success")
+
+	g, _ := authz.GrantsFor(db, u.ID)
+	assert.False(t, authz.Granted(g, "users.delete"),
+		"the promotion to ADMIN survived a failed update, so the two writes are not one transaction")
+}
+
+// The address check is case-insensitive and ignores the account doing the
+// changing, which is the whole question the profile form asks.
+func TestEmailTakenByAnother(t *testing.T) {
+	db, users := userServiceDB(t)
+	ctx := context.Background()
+	mine := models.User{ID: "u4", Email: "Mine@Example.com", FirstName: "M", LastName: "E", Role: models.RoleUser}
+	theirs := models.User{ID: "u5", Email: "theirs@example.com", FirstName: "T", LastName: "S", Role: models.RoleUser}
+	require.NoError(t, db.Create(&mine).Error)
+	require.NoError(t, db.Create(&theirs).Error)
+
+	taken, err := users.EmailTakenByAnother(ctx, "THEIRS@example.com", mine.ID)
+	require.NoError(t, err)
+	assert.True(t, taken, "a different case of somebody else's address read as free")
+
+	taken, err = users.EmailTakenByAnother(ctx, "mine@example.com", mine.ID)
+	require.NoError(t, err)
+	assert.False(t, taken, "your own address read as taken, so nobody could fix their own capitalisation")
+}

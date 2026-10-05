@@ -1,0 +1,771 @@
+package handlers
+
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"commerce/apps/api/internal/authz"
+	"commerce/apps/api/internal/files"
+	"commerce/apps/api/internal/jobs"
+	"commerce/apps/api/internal/media"
+	"commerce/apps/api/internal/models"
+	"commerce/apps/api/internal/paginate"
+	"commerce/apps/api/internal/respond"
+	"commerce/apps/api/internal/services"
+	"commerce/apps/api/internal/storage"
+)
+
+// defaultAllowedMIME is the upload allowlist every project starts from. A field
+// with accepts narrows it; UPLOAD_ALLOWED_MIME adds to it, through
+// UploadMIMEAllowlist. Nothing writes to this map after startup.
+var defaultAllowedMIME = map[string]bool{
+	"image/jpeg":      true,
+	"image/png":       true,
+	"image/gif":       true,
+	"image/webp":      true,
+	"video/mp4":       true,
+	"video/webm":      true,
+	"video/quicktime": true,
+	// Audio, mirroring the "audio" accept group in the admin's file-accepts
+	// lib. Without these a field declared accepts:"audio" offers an audio
+	// picker and then fails the upload against this fallback, which is the
+	// same trap the archive types above were added to close. Browsers record
+	// as "audio/webm;codecs=opus"; parameters are stripped before the lookup,
+	// so the bare type is what has to be listed.
+	"audio/webm":       true,
+	"audio/ogg":        true,
+	"audio/mpeg":       true,
+	"audio/mp4":        true,
+	"audio/aac":        true,
+	"audio/wav":        true,
+	"audio/x-wav":      true,
+	"audio/x-m4a":      true,
+	"application/pdf":  true,
+	"text/plain":       true,
+	"text/csv":         true,
+	"application/json": true,
+	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":       true,
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": true,
+	// Legacy Office, still what "doc"/"excel" resolve to for older files.
+	"application/msword":       true,
+	"application/vnd.ms-excel": true,
+	// Archives. The accept-aliases "zip" and "archive" have always resolved to
+	// these; leaving them out of the fallback made those fields impossible to
+	// upload through the admin, which presigns before it knows the field.
+	"application/zip":              true,
+	"application/x-zip-compressed": true,
+	"application/gzip":             true,
+	"application/x-tar":            true,
+	"application/x-rar-compressed": true,
+	"application/x-7z-compressed":  true,
+}
+
+// UploadMIMEAllowlist is the allowlist an UploadHandler checks: the baseline
+// above plus extra, which is config.UploadAllowedMIME, from UPLOAD_ALLOWED_MIME
+// (comma separated):
+//
+//	UPLOAD_ALLOWED_MIME=audio/flac,image/avif,model/gltf+json
+//
+// It extends rather than replaces, because the list above is a safety baseline
+// and the request people actually have is for one more type, not for a smaller
+// set. Narrow a particular field with its accepts instead.
+//
+// It exists so a type nobody anticipated does not require editing framework
+// code inside a scaffolded project, which is an edit the manifest guard may
+// hold back the next time you upgrade. It is built once, at startup, into a new
+// map: the environment is read by config.Load, not when this package loads.
+func UploadMIMEAllowlist(extra []string) map[string]bool {
+	allowed := make(map[string]bool, len(defaultAllowedMIME)+len(extra))
+	for m := range defaultAllowedMIME {
+		allowed[m] = true
+	}
+	for _, m := range extra {
+		if m = strings.ToLower(strings.TrimSpace(m)); m != "" {
+			allowed[m] = true
+		}
+	}
+	return allowed
+}
+
+// mimeAllowed reports whether the allowlist takes contentType. A handler built
+// without AllowedMIME checks the baseline.
+func (h *UploadHandler) mimeAllowed(contentType string) bool {
+	if h.AllowedMIME == nil {
+		return defaultAllowedMIME[contentType]
+	}
+	return h.AllowedMIME[contentType]
+}
+
+// uploads is the service every method below reads and writes through. The bucket
+// stays here: a row and an object are two systems, and only this knows which
+// order to fail in.
+func (h *UploadHandler) uploads() *services.UploadService {
+	return &services.UploadService{DB: h.DB}
+}
+
+// uploadOwner is whose uploads a caller may reach: an empty string means
+// everybody's.
+//
+// A holder of uploads.<action>, or ADMIN, reaches every upload; anybody else
+// reaches only their own. Before this scoping existed, GET and DELETE
+// /uploads/:id handed the path segment to GORM as a raw SQL condition (First with
+// a string argument is a WHERE clause, not a primary key), and List and Stats
+// covered every user's files.
+//
+// Reading the request is the handler's job, which is why the decision is here and
+// the query is the service's.
+func (h *UploadHandler) uploadOwner(c *gin.Context, action string) string {
+	if role, _ := c.Get("user_role"); role == "ADMIN" {
+		return ""
+	}
+	if grants, ok := c.Get("user_grants"); ok {
+		if list, ok := grants.([]string); ok && authz.Granted(list, "uploads."+action) {
+			return ""
+		}
+	}
+	return c.GetString("user_id")
+}
+
+// MaxUploadSize is the maximum file size (50 MB).
+const MaxUploadSize = 50 << 20
+
+// MaxVideoUploadSize is the ceiling for a video, which a minute of phone video
+// passes long before 50 MB: the same 300 MB the multipart path allows a field
+// that accepts video.
+const MaxVideoUploadSize = 300 << 20
+
+// maxUploadFor is the size ceiling for a file of this type. The presigned path
+// used MaxUploadSize for everything, so a video that uploaded fine as a form
+// field was refused, or deleted after it landed, when it went straight to the
+// bucket.
+func maxUploadFor(mimeType string) int64 {
+	if strings.HasPrefix(strings.ToLower(mimeType), "video/") {
+		return MaxVideoUploadSize
+	}
+	return MaxUploadSize
+}
+
+// UploadHandler handles file upload endpoints.
+type UploadHandler struct {
+	DB      *gorm.DB
+	Storage *storage.Storage
+	Jobs    *jobs.Client
+	// AllowedMIME is the allowlist for an upload whose field sent no accepts.
+	// routes.go builds it with UploadMIMEAllowlist(cfg.UploadAllowedMIME).
+	AllowedMIME map[string]bool
+}
+
+// Create handles file upload via multipart form.
+//
+// Query params (v3.31.30):
+//
+//	accepts   — comma-separated list of CLI accept aliases
+//	            (image, video, pdf, doc, excel, csv, zip, archive, all).
+//	            When present, validates the upload's MIME against the
+//	            alias set. Absent = fall back to the global allowlist.
+//	max_size  — per-field byte cap. Overrides MaxUploadSize when set
+//	            (e.g. video fields raise it to 300MB).
+//
+// Response: a files.FileRef directly under data so the frontend can
+// store it verbatim in form state, no shape massaging needed.
+func (h *UploadHandler) Create(c *gin.Context) {
+	if h.Storage == nil {
+		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured")
+		return
+	}
+
+	// Read before the body is. The route is behind the auth middleware, and a
+	// handler that assumed so, rather than checking, panicked on every request
+	// the day it was mounted anywhere else.
+	userID := authz.CurrentUserID(c)
+	if userID == "" {
+		respond.Fail(c, respond.CodeUnauthorized, "Not signed in")
+		return
+	}
+
+	// Cap the request body before multipart parsing so a malicious huge upload
+	// isn't fully spooled to temp disk before the per-field size check rejects
+	// it. 512MB comfortably clears the largest legitimate accept (video).
+	const absoluteMaxUpload = 512 << 20
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, absoluteMaxUpload)
+
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		// Fall back to the first file part under ANY field name — some clients
+		// name the field differently. ParseMultipartForm is cheap once gin has
+		// already touched the body.
+		if perr := c.Request.ParseMultipartForm(32 << 20); perr == nil && c.Request.MultipartForm != nil {
+			for _, fhs := range c.Request.MultipartForm.File {
+				if len(fhs) > 0 {
+					if f, oerr := fhs[0].Open(); oerr == nil {
+						file, header, err = f, fhs[0], nil
+					}
+					break
+				}
+			}
+		}
+	}
+	if err != nil || file == nil {
+		// Log what actually arrived so a client-side multipart problem — e.g. a
+		// manually-set Content-Type that drops the boundary, or an empty body
+		// from a broken native uploader — is diagnosable from the server log.
+		fields := []string{}
+		if c.Request.MultipartForm != nil {
+			for k := range c.Request.MultipartForm.File {
+				fields = append(fields, k)
+			}
+		}
+		log.Printf("[uploads] no file part: content-type=%q file-fields=%v content-length=%d",
+			c.ContentType(), fields, c.Request.ContentLength)
+		respond.Fail(c, respond.CodeInvalidFile, "No file provided")
+		return
+	}
+	defer file.Close()
+
+	// Per-field accept list. Comma-separated aliases.
+	var acceptsList []string
+	if a := c.Query("accepts"); a != "" {
+		for _, s := range strings.Split(a, ",") {
+			s = strings.TrimSpace(s)
+			if s != "" {
+				acceptsList = append(acceptsList, s)
+			}
+		}
+	}
+
+	// Per-field max size override. Bytes.
+	maxSize := int64(MaxUploadSize)
+	if m := c.Query("max_size"); m != "" {
+		if parsed, perr := strconv.ParseInt(m, 10, 64); perr == nil && parsed > 0 {
+			maxSize = parsed
+		}
+	} else if len(acceptsList) > 0 {
+		// No explicit max_size, but field type is known — use the
+		// default-for-accepts (5MB for most, 300MB for video).
+		maxSize = files.DefaultMaxSizeBytes(acceptsList)
+	}
+
+	if header.Size > maxSize {
+		respond.Fail(c, respond.CodeFileTooLarge, fmt.Sprintf("File size exceeds maximum of %d MB", maxSize/(1<<20)))
+		return
+	}
+
+	// The declared Content-Type is trivially spoofed, so the real type is sniffed
+	// from the bytes and reconciled with it: HTML and SVG are refused whatever
+	// they claim, and a claimed image must be one.
+	mimeType, err := storage.DetectContentType(file, header.Header.Get("Content-Type"))
+	switch {
+	case errors.Is(err, storage.ErrContentMismatch):
+		respond.Fail(c, respond.CodeInvalidFileType, "File content does not match its declared type")
+		return
+	case errors.Is(err, storage.ErrFileTypeNotAllowed):
+		respond.Fail(c, respond.CodeInvalidFileType, "File type not allowed")
+		return
+	case err != nil:
+		respond.Fail(c, respond.CodeUploadFailed, "Could not read the uploaded file")
+		return
+	}
+
+	// If accepts was provided, validate against the per-field allow set.
+	// Otherwise fall back to the global allowlist (backwards-compat).
+	allowed := func(contentType string) bool {
+		if len(acceptsList) > 0 {
+			return files.AllowsMIME(acceptsList, contentType)
+		}
+		return h.mimeAllowed(contentType)
+	}
+	if !allowed(mimeType) {
+		respond.Fail(c, respond.CodeInvalidFileType, "File type not allowed")
+		return
+	}
+
+	// Every key is generated, <yyyy>/<mm>/<uuid><ext>: the name the file
+	// arrived with is kept on the row and never reaches storage.
+	var key string
+	disk := h.Storage.Disk()
+
+	// The optimisation profile this field asked for. An unknown or absent name
+	// resolves to the default profile rather than failing, so a stale name in a
+	// client build degrades to sensible behaviour instead of a broken upload.
+	profileName := c.Query("profile")
+	profile := media.Get(profileName)
+
+	storedMIME := mimeType
+	storedSize := header.Size
+	ref := files.FileRef{
+		Name:    header.Filename,
+		Profile: profileName,
+	}
+
+	// Optimise before storing, not after.
+	//
+	// The version this replaces uploaded the original, queued a job, and
+	// returned a ref whose ThumbnailURL was still empty because the worker had
+	// not run yet. That ref is what got written into the record, so every
+	// thumbnail Grit generated for a resource field was orphaned: produced,
+	// paid for, and referenced by nothing. Doing the primary transform inline
+	// means the row is only ever written with final URLs, and the 5 MB original
+	// never lands in the public prefix at all.
+	optimised := false
+	if media.IsOptimisable(mimeType) {
+		res, terr := media.Transform(file, profile)
+		if terr != nil {
+			// A file nobody can decode is not necessarily a lost cause: the
+			// profile decides whether to refuse it or keep it as it came.
+			if profile.OnError == media.Reject {
+				respond.Fail(c, respond.CodeInvalidFileType, "That image could not be processed")
+				return
+			}
+			log.Printf("media: keeping %s unoptimised: %v", header.Filename, terr)
+		} else {
+			optimised = true
+			key = storage.NewKey("uploads", res.Primary.Ext)
+			stem := strings.TrimSuffix(key, res.Primary.Ext)
+
+			// The original, under a prefix of its own. Private, because it is
+			// kept for reprocessing rather than for serving, and a 5 MB file
+			// reachable by anyone who guesses the key defeats the exercise.
+			if !profile.DiscardOriginal {
+				if _, serr := file.Seek(0, io.SeekStart); serr == nil {
+					origKey := "originals/" + strings.TrimPrefix(stem, "uploads/") + storage.Extension(header.Filename, mimeType)
+					if err := disk.Put(c.Request.Context(), origKey, file, storage.PutOptions{ContentType: mimeType, Visibility: storage.VisibilityPrivate}); err == nil {
+						ref.OriginalKey = origKey
+						ref.OriginalSize = header.Size
+					} else {
+						// Not fatal. Losing the ability to reprocess later is
+						// worth less than the upload the user is waiting on.
+						log.Printf("media: could not keep the original for %s: %v", header.Filename, err)
+					}
+				}
+			}
+
+			storedMIME = res.Primary.MIME
+			storedSize = int64(len(res.Primary.Bytes))
+			if err := disk.Put(c.Request.Context(), key, bytes.NewReader(res.Primary.Bytes), storage.PutOptions{ContentType: storedMIME}); err != nil {
+				respond.Fail(c, respond.CodeUploadFailed, "Failed to upload file")
+				return
+			}
+
+			w, hgt := res.Primary.Width, res.Primary.Height
+			ref.Width, ref.Height = &w, &hgt
+			ref.Format = strings.TrimPrefix(res.Primary.MIME, "image/")
+
+			// Renditions upload side by side, four at a time. One after another,
+			// an image with several sizes kept the request waiting on each.
+			var (
+				renditionsMu sync.Mutex
+				renditionsWG sync.WaitGroup
+				uploadSlots  = make(chan struct{}, 4)
+			)
+			for _, r := range res.Extra {
+				renditionsWG.Add(1)
+				uploadSlots <- struct{}{}
+				go func() {
+					defer func() {
+						<-uploadSlots
+						renditionsWG.Done()
+					}()
+					rk := stem + "-" + r.Name + r.Ext
+					if err := disk.Put(c.Request.Context(), rk, bytes.NewReader(r.Bytes), storage.PutOptions{ContentType: r.MIME}); err != nil {
+						// A missing rendition is a smaller problem than a failed
+						// upload: the primary is already stored and usable.
+						log.Printf("media: rendition %q failed for %s: %v", r.Name, header.Filename, err)
+						return
+					}
+					renditionsMu.Lock()
+					defer renditionsMu.Unlock()
+					if ref.Renditions == nil {
+						ref.Renditions = map[string]files.Rendition{}
+					}
+					ref.Renditions[r.Name] = files.Rendition{
+						URL: h.Storage.GetURL(rk), Key: rk,
+						Width: r.Width, Height: r.Height,
+						Size: int64(len(r.Bytes)), MIME: r.MIME,
+					}
+					// The thumb doubles as the ref's thumbnail, which is what the
+					// admin table and the dropzone preview read.
+					if r.Name == "thumb" {
+						ref.ThumbnailURL = h.Storage.GetURL(rk)
+					}
+				}()
+			}
+			renditionsWG.Wait()
+
+			log.Printf("media[%s]: %s %.1fKB %dx%d -> %.1fKB %s %dx%d",
+				media.Backend(), header.Filename, float64(header.Size)/1024,
+				res.OriginalWidth, res.OriginalHeight,
+				float64(storedSize)/1024, ref.Format, w, hgt)
+		}
+	}
+
+	// Not optimisable, or optimisation was declined: store what arrived.
+	if !optimised {
+		stored, err := storage.Store(c.Request.Context(), disk, "uploads", header, storage.StoreOptions{MaxSize: maxSize, Allow: allowed})
+		if err != nil {
+			log.Printf("[uploads] storing %s: %v", header.Filename, err)
+			respond.Fail(c, respond.CodeUploadFailed, "Failed to upload file")
+			return
+		}
+		key = stored
+	}
+	ref.Optimised = optimised
+
+	upload := models.Upload{
+		Filename:     filepath.Base(key),
+		OriginalName: header.Filename,
+		// The stored file, not the file that arrived. Recording the source
+		// type and size here would make every storage total in the admin a
+		// report of bytes the bucket does not hold.
+		MimeType:     storedMIME,
+		Size:         storedSize,
+		Path:         key,
+		URL:          h.Storage.GetURL(key),
+		ThumbnailURL: ref.ThumbnailURL,
+		UserID:       userID,
+	}
+
+	if err := h.uploads().Record(c.Request.Context(), &upload); err != nil {
+		_ = h.Storage.Delete(c.Request.Context(), key)
+		respond.Fail(c, respond.CodeInternalError, "Failed to save upload record")
+		return
+	}
+
+	// Only images the pipeline declined reach the worker now. Anything it
+	// handled already has its renditions, and enqueueing here would generate a
+	// second thumbnail that nothing reads.
+	if h.Jobs != nil && !optimised && storage.IsImageMimeType(storedMIME) {
+		_ = h.Jobs.EnqueueProcessImage(c.Request.Context(), upload.ID, key, storedMIME, jobs.EnqueueOption{
+			IdempotencyKey: "image:process:" + upload.ID,
+		})
+	}
+
+	// Filled in above by the pipeline; everything the caller needs is here, so
+	// there is nothing to re-fetch later.
+	ref.URL = upload.URL
+	ref.Key = upload.Path
+	ref.MIME = upload.MimeType
+	ref.Size = upload.Size
+
+	c.JSON(http.StatusCreated, gin.H{
+		"data":    ref,
+		"message": "File uploaded successfully",
+	})
+}
+
+// Stats returns aggregate storage usage across the uploads table.
+// Surfaces total count, total bytes, and a per-kind breakdown
+// (image / video / audio / document / other) so the storage admin
+// page can show usage at a glance. v3.31.32.
+func (h *UploadHandler) Stats(c *gin.Context) {
+	// All three counts report their errors now. Two of them used to discard
+	// theirs, so a storage page of zeros meant either an empty bucket or a
+	// question the database did not answer, with no way to tell which.
+	stats, err := h.uploads().Stats(c.Request.Context(), h.uploadOwner(c, "view"))
+	if err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to compute stats")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"total_count": stats.TotalCount,
+			"total_size":  stats.TotalSize,
+			"by_kind":     stats.ByKind,
+		},
+	})
+}
+
+// List returns a paginated list of uploads.
+func (h *UploadHandler) List(c *gin.Context) {
+	// Through paginate, like every other list in the framework. This one clamped
+	// the page and did the offset arithmetic itself, which is why it answered none
+	// of the search, sort or counts parameters the rest of the API does. The
+	// envelope is the same one it already returned.
+	params := paginate.Bind(c).With("mime_type", c.Query("mime_type"))
+	res, err := h.uploads().List(c.Request.Context(), params, h.uploadOwner(c, "view"))
+	if err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to fetch uploads")
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// GetByID returns a single upload by ID.
+func (h *UploadHandler) GetByID(c *gin.Context) {
+	upload, err := h.uploads().ByID(c.Request.Context(), c.Param("id"), h.uploadOwner(c, "view"))
+	if err != nil {
+		respond.Fail(c, respond.CodeNotFound, "Upload not found")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": upload,
+	})
+}
+
+// Download streams one stored file through the API under the name it was
+// uploaded with, as an attachment, or inline with ?inline=true.
+//
+// The caller must be able to see the upload, and the bytes never need a public
+// URL, so this serves private files on every driver, R2 and B2 included, where
+// the bucket rather than the key decides what is public. Range requests work,
+// so a video seeks and a large download resumes.
+func (h *UploadHandler) Download(c *gin.Context) {
+	if h.Storage == nil {
+		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured")
+		return
+	}
+	upload, err := h.uploads().ByID(c.Request.Context(), c.Param("id"), h.uploadOwner(c, "view"))
+	if err != nil {
+		respond.Fail(c, respond.CodeNotFound, "Upload not found")
+		return
+	}
+	disposition := storage.Attachment
+	if c.Query("inline") == "true" {
+		disposition = storage.Inline
+	}
+	storage.ServeFileAs(c, h.Storage.Disk(), upload.Path, disposition, upload.OriginalName)
+}
+
+// Delete removes an upload and its stored file.
+func (h *UploadHandler) Delete(c *gin.Context) {
+	id := c.Param("id")
+
+	upload, err := h.uploads().ByID(c.Request.Context(), id, h.uploadOwner(c, "delete"))
+	if err != nil {
+		respond.Fail(c, respond.CodeNotFound, "Upload not found")
+		return
+	}
+
+	// Delete from storage
+	if h.Storage != nil {
+		_ = h.Storage.Delete(c.Request.Context(), upload.Path)
+		// Also delete thumbnail if it exists
+		if upload.ThumbnailURL != "" {
+			thumbKey := strings.Replace(upload.Path, "uploads/", "thumbnails/", 1)
+			_ = h.Storage.Delete(c.Request.Context(), thumbKey)
+		}
+	}
+
+	if err := h.uploads().Delete(c.Request.Context(), upload); err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to delete upload")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Upload deleted successfully",
+	})
+}
+
+// What the browser intends to upload.
+type PresignRequest struct {
+	Filename    string   `json:"filename" binding:"required"`
+	ContentType string   `json:"content_type" binding:"required"`
+	FileSize    int64    `json:"file_size" binding:"required"`
+	Accepts     []string `json:"accepts"`
+}
+
+// Presign generates a presigned PUT URL for direct browser-to-storage upload.
+
+func (h *UploadHandler) Presign(c *gin.Context) {
+	if h.Storage == nil {
+		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured")
+		return
+	}
+
+	var req PresignRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+
+	// Mirror the multipart path: when the caller names the field's accept
+	// aliases, honour them; otherwise fall back to the global allow-list.
+	allowed := h.mimeAllowed(req.ContentType)
+	if len(req.Accepts) > 0 {
+		allowed = files.AllowsMIME(req.Accepts, req.ContentType)
+	}
+	if !allowed {
+		respond.Fail(c, respond.CodeInvalidFileType, "File type not allowed")
+		return
+	}
+
+	if limit := maxUploadFor(req.ContentType); req.FileSize > limit {
+		respond.Fail(c, respond.CodeFileTooLarge, fmt.Sprintf("File size exceeds maximum of %d MB", limit/(1<<20)))
+		return
+	}
+
+	ext := filepath.Ext(req.Filename)
+	filename := fmt.Sprintf("%d-%s%s", time.Now().UnixNano(), strings.TrimSuffix(filepath.Base(req.Filename), ext), ext)
+	// Every presigned key sits under the caller's own prefix, and CompleteUpload
+	// records nothing else. That is what stops a user filing a row for an object
+	// that is not theirs, and then deleting the object through that row.
+	userID := c.GetString("user_id")
+	if userID == "" {
+		respond.Fail(c, respond.CodeUnauthorized, "Sign in to upload")
+		return
+	}
+	key := fmt.Sprintf("uploads/%s/%s/%s", userID, time.Now().Format("2006/01"), filename)
+
+	presignedURL, err := h.Storage.PresignPutURL(c.Request.Context(), key, req.ContentType, req.FileSize)
+	if errors.Is(err, storage.ErrPresignUnsupported) {
+		// This driver takes uploads through the API (STORAGE_DRIVER=local), so
+		// the client sends the file to POST /uploads as a multipart form.
+		c.JSON(http.StatusOK, gin.H{
+			"data":    gin.H{"method": "multipart"},
+			"message": "Send the file to POST /uploads",
+		})
+		return
+	}
+	if err != nil {
+		respond.Fail(c, respond.CodePresignFailed, "Failed to generate upload URL")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"presigned_url": presignedURL,
+			"key":           key,
+			"public_url":    h.Storage.GetURL(key),
+		},
+	})
+}
+
+// Profiles publishes the image optimisation profiles.
+//
+// The client optimises before uploading, because a presigned PUT goes straight
+// to storage and never passes through here. Serving the profiles keeps one set
+// of numbers: without this the browser would carry its own copy of every size
+// and quality, and the two would drift the first time one changed.
+func (h *UploadHandler) Profiles(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"profiles": media.AllPublic(),
+			// What the server would do with a file that reaches it, so a client
+			// can tell whether it is expected to do the work itself.
+			"backend":          media.Backend(),
+			"max_upload":       MaxUploadSize,
+			"max_video_upload": MaxVideoUploadSize,
+			"lossy_webp":       media.SupportsLossyWebP(),
+		},
+	})
+}
+
+// A file that was PUT straight to storage.
+type CompleteUploadRequest struct {
+	Key         string   `json:"key" binding:"required"`
+	Filename    string   `json:"filename" binding:"required"`
+	ContentType string   `json:"content_type" binding:"required"`
+	Size        int64    `json:"size" binding:"required"`
+	Accepts     []string `json:"accepts"`
+}
+
+// CompleteUpload records a file that was uploaded directly to storage via presigned URL.
+
+func (h *UploadHandler) CompleteUpload(c *gin.Context) {
+	var req CompleteUploadRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+
+	// The presign gated the PUT; this call decides what gets recorded. Check
+	// the type again so a client cannot presign a PDF and then file the row as
+	// something else.
+	allowed := h.mimeAllowed(req.ContentType)
+	if len(req.Accepts) > 0 {
+		allowed = files.AllowsMIME(req.Accepts, req.ContentType)
+	}
+	if !allowed {
+		respond.Fail(c, respond.CodeInvalidFileType, "File type not allowed")
+		return
+	}
+
+	// Only a key this server presigned for this user. Presign puts every key
+	// under uploads/<user_id>/ and nothing else writes there, so a key outside
+	// it is another user's file, a backup, or a guess. It used to be recorded
+	// for whoever asked, and deleting that row deleted the object. Checked
+	// before the bucket is asked, so the answer says nothing about whether a
+	// key exists.
+	userID := c.GetString("user_id")
+	if userID == "" || !strings.HasPrefix(req.Key, "uploads/"+userID+"/") || strings.Contains(req.Key, "..") {
+		respond.Fail(c, respond.CodeUploadKeyForbidden, "That upload was not issued to you")
+		return
+	}
+	// Once per key. A second row for the same object would let one delete remove
+	// a file another row still points at.
+	recorded, err := h.uploads().PathRecorded(c.Request.Context(), req.Key)
+	if err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to check the upload")
+		return
+	}
+	if recorded {
+		respond.Fail(c, respond.CodeUploadAlreadyRecorded, "That upload has already been recorded")
+		return
+	}
+
+	// Ask the bucket what it actually received.
+	//
+	// The bytes never came through this server, so every number in the request
+	// is a claim. Believing req.Size means a client can upload anything and
+	// report two kilobytes, which makes every storage total in the admin
+	// fiction and removes the only size ceiling there is. The signed
+	// Content-Length already makes a mismatch hard; this makes it pointless.
+	storedSize, storedType, err := h.Storage.Stat(c.Request.Context(), req.Key)
+	if err != nil {
+		respond.Fail(c, respond.CodeUploadNotFound, "No file was uploaded to that key")
+		return
+	}
+	if limit := maxUploadFor(storedType); storedSize > limit {
+		// It got past the presign somehow. Do not keep it.
+		_ = h.Storage.Delete(c.Request.Context(), req.Key)
+		respond.Fail(c, respond.CodeFileTooLarge, fmt.Sprintf("File size exceeds maximum of %d MB", limit/(1<<20)))
+		return
+	}
+	// The stored type is what S3 recorded from the signed presign, so prefer it
+	// over the one repeated in this request.
+	if storedType != "" {
+		req.ContentType = storedType
+	}
+
+	upload := models.Upload{
+		Filename:     filepath.Base(req.Key),
+		OriginalName: req.Filename,
+		MimeType:     req.ContentType,
+		Size:         storedSize,
+		Path:         req.Key,
+		URL:          h.Storage.GetURL(req.Key),
+		UserID:       userID,
+	}
+
+	if err := h.uploads().Record(c.Request.Context(), &upload); err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to save upload record")
+		return
+	}
+
+	// Enqueue image processing job if it's an image.
+	// IdempotencyKey = upload.ID so a client retry of the same upload
+	// (rare but possible after a network drop) doesn't re-process.
+	if h.Jobs != nil && storage.IsImageMimeType(req.ContentType) {
+		_ = h.Jobs.EnqueueProcessImage(c.Request.Context(), upload.ID, req.Key, req.ContentType, jobs.EnqueueOption{
+			IdempotencyKey: "image:process:" + upload.ID,
+		})
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"data":    upload,
+		"message": "Upload recorded successfully",
+	})
+}

@@ -1,0 +1,13 @@
+# The API image's build context is apps/api. Keep local state out of it: a dev
+# database, the air build output, local .env files and binaries.
+tmp
+**/*.exe
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/*.sqlite
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+coverage.out

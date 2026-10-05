@@ -1,0 +1,115 @@
+package services
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"gorm.io/gorm"
+
+	"commerce/apps/api/internal/models"
+	"commerce/apps/api/internal/paginate"
+)
+
+// SagaService owns the saga_runs and saga_steps tables.
+//
+// The engine in internal/saga writes them as it works. This is the read side,
+// plus the one write an operator needs: putting a stuck run back in front of the
+// runner after the thing that was broken has been fixed.
+type SagaService struct {
+	DB *gorm.DB
+}
+
+// sagaListConfig is what the sagas screen may search, sort and filter by.
+// Whitelisted, because each name ends up in SQL.
+var sagaListConfig = paginate.Config{
+	Searchable:   []string{"id", "name", "key", "last_error"},
+	Sortable:     map[string]bool{"created_at": true, "updated_at": true, "name": true, "status": true},
+	Filterable:   map[string]bool{"status": true, "name": true},
+	DefaultSort:  "created_at",
+	DefaultOrder: "desc",
+}
+
+// List returns one page of runs.
+func (s *SagaService) List(ctx context.Context, p paginate.Params) (paginate.Result[models.SagaRun], error) {
+	return paginate.List[models.SagaRun](s.DB.WithContext(ctx).Model(&models.SagaRun{}), p, sagaListConfig)
+}
+
+// ByID reads one run with its steps, in the order they run.
+func (s *SagaService) ByID(ctx context.Context, id string) (*models.SagaRun, error) {
+	var run models.SagaRun
+	err := s.DB.WithContext(ctx).
+		Preload("Steps", func(db *gorm.DB) *gorm.DB { return db.Order("idx asc") }).
+		Where("id = ?", id).First(&run).Error
+	if err != nil {
+		return nil, err
+	}
+	return &run, nil
+}
+
+// Counts is how many runs are in each status, for the chips above the list.
+//
+// One grouped query rather than one count per status. The same page used to be
+// drawn with five counts, and a page that costs five queries to say "nothing is
+// wrong" is one people stop opening.
+func (s *SagaService) Counts(ctx context.Context) (map[string]int64, error) {
+	var rows []struct {
+		Status string
+		Total  int64
+	}
+	err := s.DB.WithContext(ctx).Model(&models.SagaRun{}).
+		Select("status, count(*) as total").Group("status").Scan(&rows).Error
+	if err != nil {
+		return nil, fmt.Errorf("counting saga runs: %w", err)
+	}
+	// Every status is present even at zero, so the screen can draw a chip for
+	// each without deciding what a missing key means.
+	out := map[string]int64{
+		models.SagaRunning: 0, models.SagaCompensating: 0, models.SagaDone: 0,
+		models.SagaCompensated: 0, models.SagaStuck: 0,
+	}
+	for _, r := range rows {
+		out[r.Status] = r.Total
+	}
+	return out, nil
+}
+
+// Retry puts a stuck run back in front of the runner.
+//
+// Only a stuck run: that is one whose compensation failed past its attempts and
+// which will not move again on its own, and it is the only state where a person
+// pressing a button is the right answer. A run that is still going does not need
+// help, and a finished one has nothing left to do.
+//
+// It resumes compensating, from the step it stopped on, because that is where it
+// was: the thing that could not be undone is still not undone, and whoever fixed
+// the refund API wants that same undo attempted again.
+func (s *SagaService) Retry(ctx context.Context, id string) (*models.SagaRun, error) {
+	run, err := s.ByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if run.Status != models.SagaStuck {
+		return nil, fmt.Errorf("run %s is %s, and only a stuck run can be retried: a running one needs no help and a finished one has nothing left to do", id, run.Status)
+	}
+
+	err = s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// The step that could not be undone goes back to compensating, so the
+		// engine sees a step that still needs taking back rather than one it has
+		// already given up on.
+		if err := tx.Model(&models.SagaStep{}).
+			Where("run_id = ? AND status = ?", id, models.SagaStepStuck).
+			Updates(map[string]any{"status": models.SagaStepCompensating, "finished_at": nil}).Error; err != nil {
+			return err
+		}
+		return tx.Model(&models.SagaRun{}).Where("id = ?", id).Updates(map[string]any{
+			"status": models.SagaCompensating, "attempts": 0, "last_error": "",
+			"available_at": time.Now(), "finished_at": nil,
+			"claimed_by": "", "claimed_at": nil,
+		}).Error
+	})
+	if err != nil {
+		return nil, fmt.Errorf("retrying saga run %s: %w", id, err)
+	}
+	return s.ByID(ctx, id)
+}
