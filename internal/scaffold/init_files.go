@@ -75,6 +75,7 @@ func agentsDocContent() string {
 - Field modifiers: ` + "`:optional`" + ` makes a field optional in the request schema. Default is required for string fields.
 - Belongs-to: ` + "`owner_id:belongs_to:User`" + ` produces both the FK column and the association struct. Returns ` + "`*string`" + ` UUIDs, not numeric IDs.
 - The auto-emitted ` + "`Export(c)`" + ` handler streams CSV (default) or XLSX at ` + "`GET /api/<plural>/export?format=csv|xlsx`" + ` — re-uses the searchable column set.
+- Entering many rows at once is already there: every admin list page has **Bulk Create** and **Bulk Edit**, both spreadsheet-shaped grids over the same resource definition. Do not build an import screen or a repeating form. Hide the button with ` + "`table: { bulkCreate: false }`" + `.
 
 ## Money
 

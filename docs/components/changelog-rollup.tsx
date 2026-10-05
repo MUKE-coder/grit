@@ -10,9 +10,10 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 5 to 11, 2026",
-    count: 9,
+    count: 10,
     entries: [
-      { version: "3.363.0", title: "An AVIF uploads" },
+      { version: "3.372.0", title: "Enter many rows at once" },
+      { version: "3.371.0", title: "An AVIF uploads" },
       { version: "3.370.0", title: "A new project takes an upload without Docker" },
       { version: "3.369.0", title: "grit migrate --fresh works on SQLite and MySQL" },
       { version: "3.368.0", title: "Every code block in the agent reference, and three subjects it never covered" },

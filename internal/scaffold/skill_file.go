@@ -632,6 +632,21 @@ export const postsResource = defineResource({
 
 %[1]sformView%[1]s: %[1]smodal%[1]s (default), %[1]spage%[1]s, %[1]smodal-steps%[1]s, %[1]spage-steps%[1]s
 
+### Entering Many Rows
+
+Do not build a screen for this. Every list page already has it:
+
+- **Bulk Create** opens a grid of blank rows, created in one transaction.
+- **Bulk Edit** opens the selected rows as a grid and sends only changed cells.
+
+Both come from the resource definition, need no code, and follow the create and
+update permissions. Hide the button with %[1]stable: { bulkCreate: false }%[1]s.
+
+The grid holds a cell per field, so %[1]srichtext%[1]s, %[1]sline-items%[1]s,
+%[1]sjson%[1]s and %[1]smulti-relationship-select%[1]s stay in the form. The API
+validates each row against the model's %[1]sbinding:%[1]s tags, so a required
+column left empty is refused per row rather than written.
+
 ---
 `, bt)
 	}

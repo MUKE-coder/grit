@@ -236,6 +236,7 @@ before you write:
 | Receiving webhooks | [webhooks](https://gritframework.dev/docs/backend/webhooks) |
 | Outgoing events, exactly once | [outbox](https://gritframework.dev/docs/backend/outbox) |
 | Audit trail | [append-only](https://gritframework.dev/docs/backend/append-only) |
+| Entering twenty rows at once | Bulk Create and Bulk Edit, on every list page: [grid data entry](https://gritframework.dev/docs/admin/datatable#grid-data-entry) |
 | Feature flags | [feature flags](https://gritframework.dev/docs/backend/feature-flags) |
 | Money, tax, invoices | [money](https://gritframework.dev/docs/concepts/money) · [invoices](https://gritframework.dev/docs/backend/invoices) |
 | Offline-capable clients | [offline sync](https://gritframework.dev/docs/concepts/offline-sync) |

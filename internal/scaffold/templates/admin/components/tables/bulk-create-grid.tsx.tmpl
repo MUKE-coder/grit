@@ -1,0 +1,218 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import type { FieldDefinition, ResourceDefinition } from "@/lib/resource";
+import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/api-core";
+import { DataGrid, GridDialog, griddableFields, type GridRow } from "./data-grid";
+import { rowErrorsFrom } from "./bulk-edit-grid";
+
+/*
+ * Enter many rows at once.
+ *
+ * Between Import and New. Import is for a file somebody already has, and New is
+ * for one record; the gap between them is "I have twelve of these in my head or
+ * on a bit of paper", which until now meant opening the form twelve times.
+ *
+ * Starts at five blank rows because an empty grid gives you nothing to type
+ * into and one row makes you click Add before you have begun. Five is enough
+ * to see that more can be added and few enough not to look like a form to
+ * fill in.
+ */
+
+const STARTING_ROWS = 5;
+
+export interface BulkCreateGridProps {
+  resource: ResourceDefinition;
+  onCreated: (count: number) => void;
+  onClose: () => void;
+}
+
+export function BulkCreateGrid({ resource, onCreated, onClose }: BulkCreateGridProps) {
+  const fields = useMemo(() => griddableFields(resource.form.fields), [resource.form.fields]);
+
+  // A column this grid cannot show but the API requires would make every save
+  // fail with nothing on screen to fix. Say so instead, and let the operator
+  // use the form for those.
+  const missing = useMemo(
+    () =>
+      resource.form.fields.filter(
+        (f) => f.required && !fields.some((g) => g.key === f.key),
+      ),
+    [resource.form.fields, fields],
+  );
+
+  const [grid, setGrid] = useState<GridRow[]>(() => blankRows(fields, STARTING_ROWS));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
+
+  function change(rowKey: string, fieldKey: string, value: unknown) {
+    setGrid((prev) =>
+      prev.map((row) => (row.key === rowKey ? { ...row, values: { ...row.values, [fieldKey]: value } } : row)),
+    );
+  }
+
+  /*
+   * A row with nothing in it is not a row.
+   *
+   * The grid starts with five and most of the time somebody wants three, so
+   * blank rows are dropped rather than refused. Refusing them would mean
+   * deleting the two you did not use before you are allowed to save, which is
+   * a chore the tool can do itself.
+   */
+  const filled = useMemo(() => grid.filter((row) => hasAnything(row.values)), [grid]);
+
+  async function save() {
+    if (filled.length === 0) {
+      setError("Nothing to create: every row is empty.");
+      return;
+    }
+
+    /*
+     * A row missing a required cell, caught here rather than by the API.
+     *
+     * The API refuses it too, and that refusal is the one that counts. This is
+     * so the operator is told which row and which column before the round
+     * trip, instead of reading "category_id: This field is required" against a
+     * row number. Both exist on purpose: the client points at the cell, the
+     * server is the rule.
+     */
+    const incomplete: Record<string, string> = {};
+    for (const row of filled) {
+      const empty = fields
+        .filter((field) => field.required && isBlank(row.values[field.key]))
+        .map((field) => field.label);
+      if (empty.length > 0) {
+        incomplete[row.key] = empty.join(" and ") + (empty.length === 1 ? " is needed" : " are needed");
+      }
+    }
+    if (Object.keys(incomplete).length > 0) {
+      setRowErrors(incomplete);
+      setError(
+        Object.keys(incomplete).length === 1
+          ? "One row is missing something required. Nothing was sent."
+          : Object.keys(incomplete).length + " rows are missing something required. Nothing was sent.",
+      );
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    setRowErrors({});
+    try {
+      const items = filled.map((row) => pruneEmpty(row.values));
+      const res = await apiClient.post(resource.endpoint + "/bulk-create", { items });
+      onCreated(Array.isArray(res.data?.data) ? res.data.data.length : filled.length);
+    } catch (err) {
+      const rows = rowErrorsFrom(err);
+      if (rows) {
+        const byKey: Record<string, string> = {};
+        for (const row of rows) {
+          const source = filled[row.index];
+          if (source) byKey[source.key] = row.message;
+        }
+        setRowErrors(byKey);
+        setError("Some rows could not be created. Nothing was written.");
+      } else {
+        setError(getApiErrorMessage(err, "Could not create the rows"));
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const plural = resource.label?.plural ?? resource.slug;
+  const singular = resource.label?.singular ?? resource.name;
+
+  return (
+    <GridDialog
+      title={"New " + plural}
+      description={
+        filled.length === 0
+          ? "Type into the grid. Empty rows are ignored."
+          : filled.length + (filled.length === 1 ? " row" : " rows") + " will be created, in one go: if any row is rejected, none are."
+      }
+      saving={saving}
+      error={error}
+      saveLabel={
+        saving
+          ? "Creating…"
+          : "Create " + (filled.length || "") + " " + (filled.length === 1 ? singular : plural)
+      }
+      onSave={() => void save()}
+      onClose={onClose}
+    >
+      {missing.length > 0 && (
+        <p className="mb-3 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-text-secondary">
+          {missing.map((f) => f.label).join(", ")}{" "}
+          {missing.length === 1 ? "is required and cannot be" : "are required and cannot be"} edited in a
+          grid, so these rows will be rejected. Use New for {missing.length === 1 ? "that one" : "those"}.
+        </p>
+      )}
+
+      <DataGrid
+        fields={fields}
+        rows={grid}
+        onChange={change}
+        onAddRow={() => setGrid((prev) => [...prev, ...blankRows(fields, 1, prev.length)])}
+        onRemoveRow={(key) => setGrid((prev) => prev.filter((row) => row.key !== key))}
+        rowErrors={rowErrors}
+        disabled={saving}
+      />
+    </GridDialog>
+  );
+}
+
+/** n empty rows, each starting at the field defaults the form would use. */
+function blankRows(fields: FieldDefinition[], n: number, offset = 0): GridRow[] {
+  return Array.from({ length: n }, (_, i) => {
+    const values: Record<string, unknown> = {};
+    for (const field of fields) {
+      if (field.defaultValue !== undefined) values[field.key] = field.defaultValue;
+    }
+    return { key: "new-" + (offset + i) + "-" + Math.random().toString(36).slice(2, 8), values };
+  });
+}
+
+/*
+ * One rule for "there is nothing in this cell", for the two questions this
+ * file asks about one: whether the row is worth creating at all, and whether a
+ * required column was left out.
+ *
+ * An unchecked checkbox counts as empty, which is what hasAnything wants: a
+ * row where the operator did nothing but leave a default-off switch off is not
+ * a row. It also matches what the API does with a required boolean, since the
+ * validator's required means non-zero and false is the zero value, so a column
+ * that is both required and false is refused there too.
+ *
+ * pruneEmpty deliberately does not use this: false is a value worth sending.
+ */
+function isBlank(value: unknown): boolean {
+  if (value === null || value === undefined || value === "") return true;
+  if (Array.isArray(value)) return value.length === 0;
+  if (typeof value === "boolean") return !value;
+  return false;
+}
+
+/** Whether the operator put anything in this row. */
+function hasAnything(values: Record<string, unknown>): boolean {
+  return Object.values(values).some((value) => !isBlank(value));
+}
+
+/*
+ * Empty cells are left out of the request rather than sent as "".
+ *
+ * A column the operator did not fill should take the database's default, and
+ * an empty string is not that: it is an empty string, which for a nullable
+ * date or a number is a decode error rather than a default.
+ */
+function pruneEmpty(values: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(values)) {
+    if (value === null || value === undefined || value === "") continue;
+    if (Array.isArray(value) && value.length === 0) continue;
+    out[key] = value;
+  }
+  return out;
+}

@@ -150,6 +150,8 @@ func (g *Generator) resourceRoutesSource(names Names) (string, error) {
 			`g.PATCH("/:id", h.Patch)`,
 			`g.DELETE("/:id", h.Delete)`,
 			`g.POST("/bulk", h.Bulk)`,
+			`g.POST("/bulk-create", h.BulkCreate)`,
+			`g.POST("/bulk-edit", h.BulkEdit)`,
 		}
 		if g.Definition.WorkflowField() != nil {
 			routes = append(routes, `g.GET("/workflow", h.Workflow)`,
@@ -161,7 +163,10 @@ func (g *Generator) resourceRoutesSource(names Names) (string, error) {
 	} else {
 		routes := append(readCreateRoutes(),
 			gatedRoute{"PUT", "/:id", "edit", "Update"},
-			gatedRoute{"PATCH", "/:id", "edit", "Patch"})
+			gatedRoute{"PATCH", "/:id", "edit", "Patch"},
+			// The bulk-edit grid, with the other edits: it writes a patch per
+			// row, so a resource with no edit has no bulk edit either.
+			gatedRoute{"POST", "/bulk-edit", "edit", "BulkEdit"})
 		if g.Definition.WorkflowField() != nil {
 			// The service also checks each transition's own permission.
 			routes = append(routes,
@@ -202,6 +207,10 @@ func readCreateRoutes() []gatedRoute {
 		{"GET", "/:id", "view", "GetByID"},
 		{"GET", "/:id/pdf", "view", "PDF"},
 		{"POST", "", "create", "Create"},
+		// The admin's bulk-create grid. A create, so it sits with Create and an
+		// append-only resource gets it: entering many rows at once is still
+		// only entering rows. bulk-edit is NOT here, because it is an edit.
+		{"POST", "/bulk-create", "create", "BulkCreate"},
 	}
 }
 

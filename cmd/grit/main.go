@@ -33,7 +33,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.371.0"
+var version = "3.372.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -1518,6 +1518,24 @@ func upgradeCmd() *cobra.Command {
 				Version:  version,
 			}); err != nil {
 				return err
+			}
+
+			// The generated services, which scaffold.Upgrade deliberately does
+			// not touch: they are the project's code. A fix that only the
+			// generator carries reaches new resources and leaves every
+			// existing one broken, and "a record with a price cannot be
+			// saved" is not something to leave broken.
+			if changed, blocked, err := generate.RepairMoneyUpdates(filepath.Join("apps", "api")); err != nil {
+				return err
+			} else {
+				green := color.New(color.FgGreen)
+				yellow := color.New(color.FgYellow)
+				for _, line := range changed {
+					green.Printf("  ✓ %s\n", line)
+				}
+				for _, line := range blocked {
+					yellow.Printf("  ⚠ %s\n", line)
+				}
 			}
 
 			// Plugins are part of the project too. Left to a command of its

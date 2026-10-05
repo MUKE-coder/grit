@@ -500,6 +500,56 @@ Response:
             </div>
 
             <div className="prose-grit">
+              {/* Grid data entry */}
+              <h2 id="grid-data-entry">Grid Data Entry</h2>
+              <p>
+                Between Import and New there is a gap: Import wants a file somebody already
+                has, New takes one record at a time, and neither suits &quot;I have twelve of
+                these on a bit of paper&quot;. Two buttons fill it, both opening the same
+                spreadsheet-shaped grid at 80% of the viewport.
+              </p>
+              <p>
+                <strong>Bulk Create</strong> opens five blank rows. Type across them, add rows
+                as needed, and every row is created in one transaction: if any row is rejected,
+                none are written. Empty rows are ignored rather than refused, and a cell left
+                blank is left out of the request entirely so the column&apos;s database default
+                applies.
+              </p>
+              <p>
+                <strong>Bulk Edit</strong> opens the rows you selected, at their current values.
+                Only the cells you change are sent, so two people editing different columns of
+                the same row do not overwrite each other, and the save button counts what will
+                actually be written (&quot;Save 2 changed&quot;).
+              </p>
+              <p>
+                Every cell is a real input in tab order, so <code>Tab</code> and{' '}
+                <code>Shift+Tab</code> walk the grid, <code>Enter</code> moves down a column,
+                and <code>Ctrl+Enter</code> saves. Pasting a block of tab-separated cells from a
+                spreadsheet fills the grid from the cursor, and each column header has a
+                fill-down button that copies the first row&apos;s value down the rest.
+              </p>
+              <p>
+                A column the grid cannot hold stays in the form: rich text, line items, JSON and
+                many-to-many pickers are left out, and if one of them is required the grid says
+                so at the top instead of letting every save fail. Required columns are marked
+                with an asterisk, a row missing one is flagged before anything is sent, and the
+                API validates each row against the model&apos;s own binding tags, so a grid
+                cannot create a row the edit form would then refuse to save.
+              </p>
+              <p>
+                Bulk Create follows the resource&apos;s create permission and is on by default.
+                Hide it with <code>table.bulkCreate</code>:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="Grid configuration" code={`table: {
+  bulkCreate: false,   // hide the Bulk Create button
+  columns: [ ... ],
+}`} />
+            </div>
+
+            <div className="prose-grit">
               {/* Date Filter */}
               <h2>Date Filter</h2>
               <p>

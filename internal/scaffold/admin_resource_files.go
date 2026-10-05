@@ -237,6 +237,15 @@ export interface TableDefinition {
     excel?: boolean;
     fields?: string[];
   };
+  // Bulk Create: a spreadsheet for entering many rows at once, between Import
+  // (a file you already have) and New (one record). Defaults to enabled; set
+  // false where creating in bulk is not appropriate, such as a resource whose
+  // rows are made by the system rather than typed.
+  //
+  // The grid only shows fields a cell can hold. A rich text body, a line-items
+  // table or a JSON column stays in the form, and the grid says so rather than
+  // pretending the column is not there.
+  bulkCreate?: boolean;
 }
 
 // ─── Form Field Definitions ─────────────────────────────────────────
@@ -1062,7 +1071,8 @@ import { TablePagination } from "@/components/tables/table-pagination";
 import { TableFilters } from "@/components/tables/table-filters";
 import { TableTabs } from "@/components/tables/table-tabs";
 import { BulkActionBar } from "@/components/tables/bulk-action-bar";
-import { BulkEditModal } from "@/components/tables/bulk-edit-modal";
+import { BulkEditGrid } from "@/components/tables/bulk-edit-grid";
+import { BulkCreateGrid } from "@/components/tables/bulk-create-grid";
 import { exportToFile } from "@/lib/excel-utils";
 // grit:resource:imports
 import { buttonClasses } from "@/components/ui/button";
@@ -1260,6 +1270,7 @@ function ResourceListView({ resource }: ResourcePageProps) {
           onDateRangeChange={c.setDateRange}
           apiSearchParams={c.apiSearchParams}
           onImport={resource.table.import !== false ? () => c.importer.setOpen(true) : undefined}
+          onBulkCreate={c.can("create") ? () => c.bulkCreator.setOpen(true) : undefined}
         />
 
         {/* grit:table:toolbar */}
@@ -1452,12 +1463,28 @@ function ResourceListView({ resource }: ResourcePageProps) {
       )}
 
       {c.bulkEditor.open && (
-        <BulkEditModal
+        <BulkEditGrid
           resource={resource}
-          count={c.selection.length}
-          pending={c.isBulkPending}
-          onApply={c.applyBulkEdit}
+          rows={c.selectedRows as Record<string, unknown>[]}
+          onSaved={(count) => {
+            c.bulkEditor.close();
+            c.clearSelection();
+            c.refresh();
+            c.announce(count + " updated.");
+          }}
           onClose={c.bulkEditor.close}
+        />
+      )}
+
+      {c.bulkCreator.open && (
+        <BulkCreateGrid
+          resource={resource}
+          onCreated={(count) => {
+            c.bulkCreator.setOpen(false);
+            c.refresh();
+            c.announce(count + " created.");
+          }}
+          onClose={() => c.bulkCreator.setOpen(false)}
         />
       )}
 
@@ -1650,6 +1677,8 @@ export interface ResourceController<T = Record<string, unknown>> {
     cancel: () => void;
   };
   importer: { open: boolean; setOpen: (open: boolean) => void };
+  /** The bulk-create grid: many rows at once, in a spreadsheet. */
+  bulkCreator: { open: boolean; setOpen: (open: boolean) => void };
 
   // ── odds and ends the default page needs ────────────────────────────
   /** Same query the table ran, for an export that matches what is on screen. */
@@ -2080,6 +2109,7 @@ export function useResourceController<T = Record<string, unknown>>(
       cancel: () => setPendingCustom(null),
     },
     importer: { open: dialogs.importOpen, setOpen: dialogs.setImportOpen },
+    bulkCreator: { open: dialogs.bulkCreateOpen, setOpen: dialogs.setBulkCreateOpen },
 
     apiSearchParams: url.apiSearchParams,
     stats,
@@ -2952,6 +2982,17 @@ export function BulkActionBar({
 }
 `
 }
+
+// The admin's spreadsheet editors.
+//
+// adminDataGrid is the grid itself: cells, keyboard movement, paste and the
+// dialog they sit in. The two beside it are what it is used for, and both are
+// thin: the hard parts are shared.
+func adminDataGrid() string { return tmpl("admin/components/tables/data-grid.tsx") }
+
+func adminBulkEditGrid() string { return tmpl("admin/components/tables/bulk-edit-grid.tsx") }
+
+func adminBulkCreateGrid() string { return tmpl("admin/components/tables/bulk-create-grid.tsx") }
 
 // adminBulkEditModal emits components/tables/bulk-edit-modal.tsx.
 func adminBulkEditModal() string {

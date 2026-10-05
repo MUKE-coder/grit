@@ -1,0 +1,855 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { FieldDefinition } from "@/lib/resource";
+import { useRelationshipOptions } from "@/hooks/use-resource";
+import { uploadFile } from "@/lib/api-client";
+import { ChevronDown, Image as ImageIcon, Loader2, Trash2, X } from "@/lib/icons";
+
+/*
+ * A spreadsheet, for entering or correcting many rows at once.
+ *
+ * The admin already has a form, and a form is the right shape for one record
+ * with twenty fields. It is the wrong shape for twenty records with four
+ * fields: that is a morning of opening a drawer, typing, saving, waiting,
+ * opening the next one. This is the other shape.
+ *
+ * Every cell is a real focusable input in DOM order, which is the whole design.
+ * Tab and Shift+Tab then move between cells with no code at all, a screen
+ * reader announces each cell's column from its own label, and the browser's
+ * own focus ring is the selection. A grid built from divs and a keydown handler
+ * has to reimplement all of that, and reimplements it worse.
+ *
+ * What this adds on top of the browser:
+ *
+ *   Enter        down one row, same column, like Excel
+ *   Shift+Enter  up one row
+ *   Ctrl+Enter   save
+ *   Fill down    the top cell's value copied to every row below it
+ *   Paste        TSV from a spreadsheet, spread across cells and rows
+ *
+ * Fill down is here because it is what the one-field bulk edit modal used to
+ * do, and that was a reasonable thing to want: set the status of forty rows.
+ * Without it this would be a worse tool for that job than the thing it
+ * replaced.
+ */
+
+/** One row being edited. `key` is stable and local; `id` exists only for an
+ *  existing row, and is absent for one being created. */
+export interface GridRow {
+  key: string;
+  id?: string;
+  values: Record<string, unknown>;
+}
+
+export interface DataGridProps {
+  fields: FieldDefinition[];
+  rows: GridRow[];
+  onChange: (rowKey: string, fieldKey: string, value: unknown) => void;
+  /** Absent for bulk edit, where the row set is the selection. */
+  onAddRow?: () => void;
+  onRemoveRow?: (rowKey: string) => void;
+  /** Keyed by row key: the message the server gave for that row. */
+  rowErrors?: Record<string, string>;
+  disabled?: boolean;
+}
+
+/*
+ * Field types a cell cannot hold.
+ *
+ * Not a judgement about importance: a rich text body and a line-items table are
+ * documents, and a document in a 200px cell is a worse editor than the form
+ * already offers. They stay editable in the form, and the grid says so rather
+ * than pretending the column is not there.
+ */
+const NOT_IN_A_CELL: FieldDefinition["type"][] = [
+  "richtext",
+  "line-items",
+  "json",
+  "multi-relationship-select",
+];
+
+export function griddableFields(fields: FieldDefinition[]): FieldDefinition[] {
+  return fields.filter((f) => !NOT_IN_A_CELL.includes(f.type));
+}
+
+/** The width a column gets, by what it holds. */
+function widthFor(field: FieldDefinition): string {
+  switch (field.type) {
+    case "toggle":
+    case "checkbox":
+      return "w-20";
+    case "rating":
+    case "percent":
+    case "color":
+      return "w-28";
+    case "number":
+    case "money":
+    case "date":
+    case "time":
+      return "w-36";
+    case "image":
+    case "file":
+    case "images":
+    case "files":
+    case "video":
+    case "videos":
+      return "w-28";
+    case "textarea":
+      return "w-72";
+    default:
+      return "w-48";
+  }
+}
+
+export function DataGrid({
+  fields,
+  rows,
+  onChange,
+  onAddRow,
+  onRemoveRow,
+  rowErrors,
+  disabled,
+}: DataGridProps) {
+  const columns = useMemo(() => griddableFields(fields), [fields]);
+  const body = useRef<HTMLTableSectionElement>(null);
+
+  /*
+   * Enter moves down, Shift+Enter up.
+   *
+   * Found by position rather than by a ref map: the inputs carry data-row and
+   * data-col, so this keeps working when a row is added or removed without any
+   * bookkeeping to go stale. A grid of 500 cells is not a query worth caching.
+   */
+  const move = useCallback((row: number, col: number, by: number) => {
+    const next = body.current?.querySelector<HTMLElement>(
+      '[data-row="' + (row + by) + '"][data-col="' + col + '"]',
+    );
+    next?.focus();
+    if (next instanceof HTMLInputElement && next.type !== "checkbox") next.select();
+  }, []);
+
+  function onKeyDown(event: React.KeyboardEvent<HTMLTableSectionElement>) {
+    if (event.key !== "Enter") return;
+    const target = event.target as HTMLElement;
+    const row = Number(target.dataset.row);
+    const col = Number(target.dataset.col);
+    if (Number.isNaN(row) || Number.isNaN(col)) return;
+    // Ctrl+Enter belongs to the dialog's save button, which is listening above.
+    if (event.ctrlKey || event.metaKey) return;
+    event.preventDefault();
+    move(row, col, event.shiftKey ? -1 : 1);
+  }
+
+  /*
+   * Paste a block of cells from a spreadsheet.
+   *
+   * Excel and Sheets both put TSV on the clipboard, so a selection of 3 columns
+   * by 10 rows arrives as ten lines of three tab-separated values. Spreading it
+   * from the cell that was focused is what every spreadsheet does, and it is
+   * the difference between this being useful for a real import and being a
+   * nicer-looking form.
+   *
+   * A single value with no tab or newline is left to the browser: that is an
+   * ordinary paste into one field and must behave like one.
+   */
+  function onPaste(event: React.ClipboardEvent<HTMLTableSectionElement>) {
+    const text = event.clipboardData.getData("text/plain");
+    if (!text || (!text.includes("\t") && !text.includes("\n"))) return;
+
+    const target = event.target as HTMLElement;
+    const startRow = Number(target.dataset.row);
+    const startCol = Number(target.dataset.col);
+    if (Number.isNaN(startRow) || Number.isNaN(startCol)) return;
+
+    event.preventDefault();
+    const lines = text.replace(/\r\n/g, "\n").replace(/\n$/, "").split("\n");
+    lines.forEach((line, r) => {
+      const row = rows[startRow + r];
+      if (!row) return; // Past the last row: the extra lines are dropped.
+      line.split("\t").forEach((cell, c) => {
+        const column = columns[startCol + c];
+        if (!column) return;
+        onChange(row.key, column.key, parseCell(column, cell));
+      });
+    });
+  }
+
+  /** The top cell's value, copied to every row below. */
+  function fillDown(column: FieldDefinition) {
+    const first = rows[0];
+    if (!first) return;
+    const value = first.values[column.key];
+    for (const row of rows.slice(1)) onChange(row.key, column.key, value);
+  }
+
+  return (
+    <div className="overflow-auto rounded-lg border border-border">
+      <table className="w-full border-collapse text-sm">
+        <thead className="sticky top-0 z-10 bg-bg-tertiary">
+          <tr>
+            <th scope="col" className="w-10 border-b border-r border-border px-2 py-2 text-xs font-medium text-text-muted">
+              <span className="sr-only">Row</span>
+              #
+            </th>
+            {columns.map((column) => (
+              <th
+                key={column.key}
+                scope="col"
+                className={
+                  widthFor(column) +
+                  " border-b border-r border-border px-2 py-2 text-left text-xs font-medium text-text-secondary"
+                }
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span>
+                    {column.label}
+                    {column.required && <span className="ml-0.5 text-danger">*</span>}
+                  </span>
+                  {rows.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => fillDown(column)}
+                      disabled={disabled}
+                      title={"Copy the first row's " + column.label + " down every row"}
+                      aria-label={"Copy the first row's " + column.label + " down every row"}
+                      className="rounded p-0.5 text-text-muted transition-colors hover:bg-bg-hover hover:text-foreground disabled:opacity-40"
+                    >
+                      <ChevronDown className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  )}
+                </span>
+              </th>
+            ))}
+            {onRemoveRow && <th scope="col" className="w-10 border-b border-border px-2 py-2" />}
+          </tr>
+        </thead>
+
+        <tbody ref={body} onKeyDown={onKeyDown} onPaste={onPaste}>
+          {rows.map((row, rowIndex) => {
+            const error = rowErrors?.[row.key];
+            return (
+              <tr key={row.key} className={error ? "bg-danger/5" : undefined}>
+                <th
+                  scope="row"
+                  className="border-b border-r border-border px-2 py-1 text-center font-mono text-xs font-normal text-text-muted"
+                >
+                  {rowIndex + 1}
+                </th>
+
+                {columns.map((column, colIndex) => (
+                  <td key={column.key} className="border-b border-r border-border p-0">
+                    <GridCell
+                      field={column}
+                      value={row.values[column.key]}
+                      onChange={(next) => onChange(row.key, column.key, next)}
+                      disabled={disabled}
+                      row={rowIndex}
+                      col={colIndex}
+                      invalid={Boolean(error)}
+                    />
+                  </td>
+                ))}
+
+                {onRemoveRow && (
+                  <td className="border-b border-border p-0 text-center">
+                    <button
+                      type="button"
+                      onClick={() => onRemoveRow(row.key)}
+                      disabled={disabled || rows.length === 1}
+                      aria-label={"Remove row " + (rowIndex + 1)}
+                      className="rounded p-1.5 text-text-muted transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-30"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
+                  </td>
+                )}
+              </tr>
+            );
+          })}
+
+          {/* The server's message for a row, under the row it belongs to, so
+              the operator reads it next to the thing that is wrong rather than
+              counting down from a banner. */}
+          {rows.map((row, rowIndex) =>
+            rowErrors?.[row.key] ? (
+              <tr key={row.key + "-error"}>
+                <td />
+                <td colSpan={columns.length + (onRemoveRow ? 1 : 0)} className="border-b border-border px-2 py-1">
+                  <p role="alert" className="text-xs text-danger">
+                    Row {rowIndex + 1}: {rowErrors[row.key]}
+                  </p>
+                </td>
+              </tr>
+            ) : null,
+          )}
+        </tbody>
+      </table>
+
+      {onAddRow && (
+        <div className="border-t border-border p-2">
+          <button
+            type="button"
+            onClick={onAddRow}
+            disabled={disabled}
+            className="rounded-lg border border-border px-3 py-1.5 text-sm text-text-secondary transition-colors hover:bg-bg-hover hover:text-foreground disabled:opacity-50"
+          >
+            + Add row
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── One cell ──────────────────────────────────────────────────────────── */
+
+interface GridCellProps {
+  field: FieldDefinition;
+  value: unknown;
+  onChange: (value: unknown) => void;
+  disabled?: boolean;
+  row: number;
+  col: number;
+  invalid?: boolean;
+}
+
+/** The classes every cell editor shares: no border of its own, because the
+ *  table's cell borders are the grid, and a focus ring that sits inside the
+ *  cell rather than being clipped by it. */
+const CELL =
+  "w-full bg-transparent px-2 py-1.5 text-sm text-foreground outline-none " +
+  "focus:bg-accent/5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent " +
+  "disabled:opacity-50";
+
+function GridCell({ field, value, onChange, disabled, row, col, invalid }: GridCellProps) {
+  // Every editor carries these: the position for Enter and paste, and a name a
+  // screen reader can read, since a grid has no room for a visible label on
+  // each cell.
+  const anchor = {
+    "data-row": row,
+    "data-col": col,
+    disabled,
+    "aria-label": field.label + ", row " + (row + 1),
+    "aria-invalid": invalid || undefined,
+  };
+
+  switch (field.type) {
+    case "toggle":
+    case "checkbox":
+      return (
+        <div className="flex items-center justify-center py-1.5">
+          <input
+            {...anchor}
+            type="checkbox"
+            checked={Boolean(value)}
+            onChange={(e) => onChange(e.target.checked)}
+            className="h-4 w-4 accent-accent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+          />
+        </div>
+      );
+
+    case "select":
+    case "radio":
+    case "country":
+      return (
+        <select
+          {...anchor}
+          value={String(value ?? "")}
+          onChange={(e) => onChange(e.target.value)}
+          className={CELL}
+        >
+          <option value="">{field.placeholder ?? "—"}</option>
+          {(field.options ?? []).map((option) => (
+            <option key={String(option.value)} value={String(option.value)}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      );
+
+    case "relationship-select":
+      return <RelationshipCell field={field} value={value} onChange={onChange} anchor={anchor} />;
+
+    case "money":
+      return <MoneyCell value={value} onChange={onChange} anchor={anchor} />;
+
+    case "number":
+    case "percent":
+    case "rating":
+      return (
+        <input
+          {...anchor}
+          type="number"
+          value={value === null || value === undefined ? "" : String(value)}
+          min={field.min}
+          max={field.max}
+          step={field.step}
+          onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
+          className={CELL + " text-right font-mono"}
+        />
+      );
+
+    case "date":
+    case "datetime":
+    case "time":
+      return (
+        <input
+          {...anchor}
+          type={field.type === "date" ? "date" : field.type === "time" ? "time" : "datetime-local"}
+          value={toDateInput(value, field.type)}
+          onChange={(e) => onChange(e.target.value || null)}
+          className={CELL + " font-mono"}
+        />
+      );
+
+    case "color":
+      return (
+        <input
+          {...anchor}
+          type="color"
+          value={String(value ?? "#000000")}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-8 w-full cursor-pointer bg-transparent px-1 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+        />
+      );
+
+    case "image":
+    case "file":
+    case "video":
+      return <UploadCell field={field} value={value} onChange={onChange} anchor={anchor} />;
+
+    case "images":
+    case "files":
+    case "videos":
+      return <UploadCell field={field} value={value} onChange={onChange} anchor={anchor} multiple />;
+
+    case "email":
+    case "url":
+    case "tel":
+    case "domain":
+      return (
+        <input
+          {...anchor}
+          type={field.type === "email" ? "email" : field.type === "url" ? "url" : field.type === "tel" ? "tel" : "text"}
+          value={String(value ?? "")}
+          placeholder={field.placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className={CELL}
+        />
+      );
+
+    default:
+      return (
+        <input
+          {...anchor}
+          type="text"
+          value={String(value ?? "")}
+          placeholder={field.placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className={CELL}
+        />
+      );
+  }
+}
+
+/* ── The cells that need their own state ───────────────────────────────── */
+
+type Anchor = Record<string, unknown>;
+
+/*
+ * Money, typed the way a person types it.
+ *
+ * The column holds { amount, currency } with the amount in minor units, and
+ * nobody types 2800 meaning $28.00. The cell shows and accepts major units and
+ * converts at the edge, which is the same bargain the money form field makes.
+ */
+function MoneyCell({
+  value,
+  onChange,
+  anchor,
+}: {
+  value: unknown;
+  onChange: (value: unknown) => void;
+  anchor: Anchor;
+}) {
+  const money = (value ?? {}) as { amount?: number; currency?: string };
+  const currency = money.currency || "USD";
+  const major = typeof money.amount === "number" ? money.amount / 100 : "";
+
+  return (
+    <div className="flex items-center">
+      <input
+        {...anchor}
+        type="number"
+        step="0.01"
+        value={major === "" ? "" : String(major)}
+        onChange={(e) =>
+          onChange(
+            e.target.value === ""
+              ? null
+              : { amount: Math.round(Number(e.target.value) * 100), currency },
+          )
+        }
+        className={CELL + " text-right font-mono"}
+      />
+      <span className="pr-2 font-mono text-xs text-text-muted">{currency}</span>
+    </div>
+  );
+}
+
+/** A foreign key, as a select of the related rows. */
+function RelationshipCell({
+  field,
+  value,
+  onChange,
+  anchor,
+}: {
+  field: FieldDefinition;
+  value: unknown;
+  onChange: (value: unknown) => void;
+  anchor: Anchor;
+}) {
+  const endpoint = field.relatedEndpoint ?? "";
+  const labelKey = field.displayField || "name";
+  const { data, isLoading } = useRelationshipOptions(endpoint, { enabled: Boolean(endpoint) });
+
+  return (
+    <select
+      {...anchor}
+      value={String(value ?? "")}
+      onChange={(e) => onChange(e.target.value || null)}
+      className={CELL}
+    >
+      <option value="">{isLoading ? "Loading…" : "—"}</option>
+      {(data ?? []).map((row) => (
+        <option key={String(row.id)} value={String(row.id)}>
+          {relationshipLabel(row, labelKey)}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/*
+ * An upload, in a cell.
+ *
+ * A thumbnail and a button, because a dropzone is 200px tall and a row is 32.
+ * The upload is the same one the form's dropzone makes, so the file goes
+ * through the same optimisation, renditions and storage: this is a smaller
+ * control, not a second path into the bucket.
+ */
+function UploadCell({
+  field,
+  value,
+  onChange,
+  anchor,
+  multiple,
+}: {
+  field: FieldDefinition;
+  value: unknown;
+  onChange: (value: unknown) => void;
+  anchor: Anchor;
+  multiple?: boolean;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
+
+  const refs = useMemo(() => {
+    if (!value) return [] as { url: string }[];
+    if (Array.isArray(value)) return value as { url: string }[];
+    if (typeof value === "string") return [{ url: value }];
+    return [value as { url: string }];
+  }, [value]);
+
+  async function choose(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setBusy(true);
+    setFailed(null);
+    try {
+      const uploaded = [];
+      for (const file of Array.from(files)) {
+        const res = await uploadFile(file, "/api/uploads");
+        uploaded.push(res.data);
+      }
+      onChange(multiple ? [...refs, ...uploaded] : uploaded[0]);
+    } catch (err) {
+      setFailed(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setBusy(false);
+      // So choosing the same file twice in a row fires change again.
+      if (input.current) input.current.value = "";
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-1 px-1.5 py-1">
+      <input
+        ref={input}
+        type="file"
+        multiple={multiple}
+        accept={field.accept ?? acceptFor(field)}
+        onChange={(e) => void choose(e.target.files)}
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+
+      {refs.length > 0 && (
+        <img
+          src={refs[0].url}
+          alt=""
+          width={24}
+          height={24}
+          loading="lazy"
+          className="h-6 w-6 shrink-0 rounded border border-border object-cover"
+        />
+      )}
+
+      <button
+        {...anchor}
+        type="button"
+        onClick={() => input.current?.click()}
+        className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-1 text-xs text-text-secondary transition-colors hover:bg-bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+      >
+        {busy ? (
+          <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden="true" />
+        ) : (
+          <ImageIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
+        )}
+        <span className="truncate">
+          {busy ? "…" : refs.length === 0 ? "Choose" : multiple ? refs.length + " file(s)" : "Replace"}
+        </span>
+      </button>
+
+      {refs.length > 0 && !busy && (
+        <button
+          type="button"
+          onClick={() => onChange(multiple ? [] : null)}
+          aria-label={"Remove the " + field.label}
+          className="shrink-0 rounded p-0.5 text-text-muted transition-colors hover:text-danger"
+        >
+          <X className="h-3 w-3" aria-hidden="true" />
+        </button>
+      )}
+
+      {failed && (
+        <span role="alert" className="sr-only">
+          {failed}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/*
+ * What to call a related row.
+ *
+ * The same chain the relationship form field uses, and for the same reason: the
+ * generator writes displayField: "name" for every relation without looking at
+ * what the related resource calls its label, so a Collection whose label is
+ * `title` has no `name` to read. Falling through to the id put raw UUIDs in the
+ * dropdown, which is no way to pick a collection.
+ */
+function relationshipLabel(row: Record<string, unknown>, displayField: string): string {
+  return String(row[displayField] || row.name || row.title || row.label || row.id || "");
+}
+
+/* ── Value helpers ─────────────────────────────────────────────────────── */
+
+/** What the file picker offers, when the field does not say. */
+function acceptFor(field: FieldDefinition): string {
+  switch (field.type) {
+    case "image":
+    case "images":
+      return "image/*";
+    case "video":
+    case "videos":
+      return "video/*";
+    default:
+      return "";
+  }
+}
+
+/** A pasted string, turned into the type the column holds. */
+function parseCell(field: FieldDefinition, text: string): unknown {
+  const trimmed = text.trim();
+  switch (field.type) {
+    case "number":
+    case "percent":
+    case "rating":
+      return trimmed === "" ? null : Number(trimmed);
+    case "money": {
+      const major = Number(trimmed.replace(/[^0-9.-]/g, ""));
+      return Number.isNaN(major) ? null : { amount: Math.round(major * 100), currency: "USD" };
+    }
+    case "toggle":
+    case "checkbox":
+      return ["true", "yes", "1", "y"].includes(trimmed.toLowerCase());
+    default:
+      return text;
+  }
+}
+
+/** A stored value, in the shape an <input type=date|time|datetime-local> wants. */
+function toDateInput(value: unknown, type: FieldDefinition["type"]): string {
+  if (!value) return "";
+  const text = String(value);
+  if (type === "time") return text.slice(0, 5);
+  if (type === "date") return text.slice(0, 10);
+  // datetime-local wants YYYY-MM-DDTHH:MM and no zone.
+  return text.slice(0, 16).replace(" ", "T");
+}
+
+/* ── The shell both grids sit in ───────────────────────────────────────── */
+
+export interface GridDialogProps {
+  title: string;
+  description?: string;
+  saving: boolean;
+  error?: string | null;
+  saveLabel: string;
+  onSave: () => void;
+  onClose: () => void;
+  children: React.ReactNode;
+}
+
+/**
+ * The dialog the grids open in: wide, because the point is to see many columns
+ * and many rows at once, and a 448px modal shows neither.
+ *
+ * Escape closes, focus moves in and back, and Tab cannot leave: the same three
+ * things every dialog in this admin does for itself, written out rather than
+ * taken from a library.
+ */
+export function GridDialog({
+  title,
+  description,
+  saving,
+  error,
+  saveLabel,
+  onSave,
+  onClose,
+  children,
+}: GridDialogProps) {
+  const panel = useRef<HTMLDivElement>(null);
+  const closeButton = useRef<HTMLButtonElement>(null);
+  const returnTo = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    returnTo.current = document.activeElement as HTMLElement | null;
+    closeButton.current?.focus();
+    return () => returnTo.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      // Ctrl+Enter saves from anywhere in the grid, because reaching the save
+      // button by Tab from the middle of 200 cells is not a thing to ask.
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        if (!saving) onSave();
+        return;
+      }
+      if (event.key !== "Tab" || !panel.current) return;
+      const focusable = panel.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previous;
+    };
+  }, [onClose, onSave, saving]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button
+        type="button"
+        aria-hidden="true"
+        tabIndex={-1}
+        onClick={onClose}
+        className="absolute inset-0 cursor-default bg-black/50 backdrop-blur-sm"
+      />
+
+      <div
+        ref={panel}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="grid-dialog-title"
+        className="relative z-10 flex h-[85vh] w-[80vw] flex-col rounded-2xl border border-border bg-bg-secondary shadow-2xl"
+      >
+        <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+          <div>
+            <h2 id="grid-dialog-title" className="text-base font-semibold text-foreground">
+              {title}
+            </h2>
+            {description && <p className="mt-0.5 text-sm text-text-secondary">{description}</p>}
+          </div>
+          <button
+            ref={closeButton}
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-lg p-1.5 text-text-secondary transition-colors hover:bg-bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </header>
+
+        {error && (
+          <p role="alert" className="border-b border-danger/30 bg-danger/10 px-5 py-2.5 text-sm text-danger">
+            {error}
+          </p>
+        )}
+
+        <div className="min-h-0 flex-1 overflow-auto p-5">{children}</div>
+
+        <footer className="flex items-center justify-between gap-4 border-t border-border px-5 py-3">
+          <p className="text-xs text-text-muted">
+            Tab moves across, Enter moves down, Ctrl+Enter saves. Paste a block from a spreadsheet
+            to fill many cells at once.
+          </p>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              className="rounded-lg border border-border px-4 py-2 text-sm text-text-secondary transition-colors hover:bg-bg-hover disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={saving}
+              className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-colors hover:bg-accent-hover disabled:opacity-60"
+            >
+              {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+              {saveLabel}
+            </button>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+}

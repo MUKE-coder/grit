@@ -1115,8 +1115,8 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 			if f.RelatedModelName() == toPascalCase(g.Definition.Name) {
 				required = ""
 			}
-			formFields += fmt.Sprintf("\n    { key: \"%s\", label: \"%s\", type: \"relationship-select\", %srelatedEndpoint: \"/api/%s\", displayField: \"name\" },",
-				fkKey, fieldLabel, required, relPlural)
+			formFields += fmt.Sprintf("\n    { key: \"%s\", label: \"%s\", type: \"relationship-select\", %srelatedEndpoint: \"/api/%s\", displayField: \"%s\" },",
+				fkKey, fieldLabel, required, relPlural, g.displayFieldFor(f.RelatedModelName()))
 			continue
 		}
 
@@ -1127,8 +1127,8 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 			relSnake := toSnakeCase(f.RelatedModelName())
 			relPlural := Pluralize(relSnake)
 			assocKey := toSnakeCase(f.Name)
-			formFields += fmt.Sprintf("\n    { key: \"%s\", label: \"%s\", type: \"multi-relationship-select\", relatedEndpoint: \"/api/%s\", displayField: \"name\", relationshipKey: \"%s\" },",
-				idsKey, fieldLabel, relPlural, assocKey)
+			formFields += fmt.Sprintf("\n    { key: \"%s\", label: \"%s\", type: \"multi-relationship-select\", relatedEndpoint: \"/api/%s\", displayField: \"%s\", relationshipKey: \"%s\" },",
+				idsKey, fieldLabel, relPlural, g.displayFieldFor(f.RelatedModelName()), assocKey)
 			continue
 		}
 
@@ -1230,7 +1230,7 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 			label := strings.Join(splitPascal(toPascalCase(strings.TrimSuffix(cf.Name, "_id"))), " ")
 			if cf.IsBelongsTo() {
 				relKebab := replaceAll(Pluralize(toSnakeCase(cf.RelatedModelName())), "_", "-")
-				itemCols += fmt.Sprintf("\n        { key: %q, label: %q, type: \"relationship-select\", relatedEndpoint: \"/api/%s\", displayField: \"name\" },", cf.FKColumnName(), label, relKebab)
+				itemCols += fmt.Sprintf("\n        { key: %q, label: %q, type: \"relationship-select\", relatedEndpoint: \"/api/%s\", displayField: %q },", cf.FKColumnName(), label, relKebab, g.displayFieldFor(cf.RelatedModelName()))
 				continue
 			}
 			// The same mapping the resource's own form uses.

@@ -27,6 +27,11 @@ func writeRespondFiles(root string, opts Options) error {
 		// one always carries, and respond.Fail, which takes the status from the
 		// catalogue so a handler cannot pair a code with the wrong one.
 		filepath.Join(apiRoot, "internal", "respond", "codes.go"): apiRespondCodesGo(),
+		// The binding: tags, runnable from code that did not bind a request
+		// body. Bulk create decodes its rows itself, so without this the
+		// model's own required and min never fired on that path.
+		filepath.Join(apiRoot, "internal", "respond", "validation.go"):      tmpl("api/respond/validation.go"),
+		filepath.Join(apiRoot, "internal", "respond", "validation_test.go"): tmpl("api/respond/validation_test.go"),
 	}
 	for path, content := range files {
 		content = strings.ReplaceAll(content, "{{MODULE}}", module)

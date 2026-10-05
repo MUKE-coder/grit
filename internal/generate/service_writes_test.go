@@ -100,6 +100,15 @@ func TestGeneratedWritesDoNotReadTheRowBack(t *testing.T) {
 			t.Fatalf("%s did not get the policy check", tc.service)
 		}
 
+		// And the money expander, which an upgrade runs after the scaffold's
+		// own repairs. Every path that updates through a map calls it, so a
+		// service without it is not what the generator writes.
+		repaired, note := RepairMoneyUpdatesIn(out, model)
+		if note != "" {
+			t.Fatalf("%s: the money repair refused it: %s", tc.service, note)
+		}
+		out = repaired
+
 		if got := codefmt.Go(out); got != tc.want {
 			t.Errorf("repairing %s did not produce the generated service.\n--- repaired\n%s\n--- generated\n%s", tc.service, got, tc.want)
 		}

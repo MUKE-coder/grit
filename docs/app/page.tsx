@@ -321,6 +321,7 @@ export default function HomePage() {
               { icon: Layers, label: 'Transactional workflow hooks', href: '/docs/backend/workflows#hooks' },
               { icon: Database, label: 'Durable events (outbox)', href: '/docs/backend/workflows#durable' },
               { icon: Layers, label: 'Translated admin panel', href: '/docs/frontend/i18n#admin' },
+              { icon: LayoutDashboard, label: 'Enter many rows in a grid', href: '/docs/admin/datatable#grid-data-entry' },
               { icon: Layers, label: 'Flags by business unit', href: '/docs/backend/feature-flags#attributes' },
               { icon: Database, label: 'Services own every query', href: '/docs/backend/services' },
               { icon: FileCheck, label: 'grit doctor project audit', href: '/docs/security/doctor' },

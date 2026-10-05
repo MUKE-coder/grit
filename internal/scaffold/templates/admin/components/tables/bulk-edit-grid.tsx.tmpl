@@ -1,0 +1,169 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import type { ResourceDefinition } from "@/lib/resource";
+import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/api-core";
+import { DataGrid, GridDialog, griddableFields, type GridRow } from "./data-grid";
+
+/*
+ * Edit the selected rows in a grid, each with its own values.
+ *
+ * This replaced a modal that wrote ONE value to every selected row. That modal
+ * was right about the thing it was careful about: bulk editing a whole form at
+ * once means deciding what an empty input means, and neither answer is good.
+ * A grid sidesteps it differently, by starting every cell at the row's current
+ * value, so an empty cell means empty because somebody emptied it.
+ *
+ * What the old modal was good at is kept: the column headers have a fill-down
+ * button, which copies the top row's value down the column. That is "set the
+ * status of these forty" in two clicks, which is what it did.
+ *
+ * Only changed cells are sent. A grid that posted every column of every row
+ * would overwrite a column this operator never looked at with the value it had
+ * when the dialog opened, which is how a concurrent edit disappears.
+ */
+
+export interface BulkEditGridProps {
+  resource: ResourceDefinition;
+  /** The selected rows, as the table has them. */
+  rows: Record<string, unknown>[];
+  onSaved: (count: number) => void;
+  onClose: () => void;
+}
+
+export function BulkEditGrid({ resource, rows, onSaved, onClose }: BulkEditGridProps) {
+  const fields = useMemo(
+    // A unique column is left out for the same reason the old modal left it
+    // out: forty rows and one SKU is either a constraint violation or, worse,
+    // not one.
+    () => griddableFields(resource.form.fields).filter((f) => !f.unique),
+    [resource.form.fields],
+  );
+
+  // The values as they were when the dialog opened, so a cell can be compared
+  // against where it started rather than against whatever is in the table now.
+  const original = useMemo(() => {
+    const map: Record<string, Record<string, unknown>> = {};
+    for (const row of rows) {
+      const id = String(row.id);
+      map[id] = {};
+      for (const field of fields) map[id][field.key] = row[field.key];
+    }
+    return map;
+  }, [rows, fields]);
+
+  const [grid, setGrid] = useState<GridRow[]>(() =>
+    rows.map((row) => ({
+      key: String(row.id),
+      id: String(row.id),
+      values: { ...original[String(row.id)] },
+    })),
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
+
+  function change(rowKey: string, fieldKey: string, value: unknown) {
+    setGrid((prev) =>
+      prev.map((row) => (row.key === rowKey ? { ...row, values: { ...row.values, [fieldKey]: value } } : row)),
+    );
+  }
+
+  /** Only the cells that differ from where they started. */
+  const edits = useMemo(
+    () =>
+      grid
+        .map((row) => {
+          const patch: Record<string, unknown> = {};
+          for (const field of fields) {
+            const before = original[row.key]?.[field.key];
+            const after = row.values[field.key];
+            if (!same(before, after)) patch[field.key] = after;
+          }
+          return { id: row.id as string, patch };
+        })
+        .filter((edit) => Object.keys(edit.patch).length > 0),
+    [grid, fields, original],
+  );
+
+  async function save() {
+    if (edits.length === 0) {
+      onClose();
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    setRowErrors({});
+    try {
+      const res = await apiClient.post(resource.endpoint + "/bulk-edit", { items: edits });
+      onSaved(res.data?.data?.affected ?? edits.length);
+    } catch (err) {
+      // The server reports a bad row by its index in what was sent, which is
+      // the index in `edits` and not in the grid, so it is mapped back to the
+      // row the operator is looking at.
+      const rows = rowErrorsFrom(err);
+      if (rows) {
+        const byKey: Record<string, string> = {};
+        for (const row of rows) {
+          const edit = edits[row.index];
+          if (edit) byKey[edit.id] = row.message;
+        }
+        setRowErrors(byKey);
+        setError("Some rows could not be saved. Nothing was written.");
+      } else {
+        setError(getApiErrorMessage(err, "Could not save the changes"));
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const noun =
+    rows.length === 1
+      ? resource.label?.singular ?? resource.name
+      : resource.label?.plural ?? resource.slug;
+
+  return (
+    <GridDialog
+      title={"Edit " + rows.length + " " + noun}
+      description={
+        edits.length === 0
+          ? "Nothing changed yet. Every cell starts at its current value."
+          : edits.length + (edits.length === 1 ? " row" : " rows") + " changed. Only the cells you edited are saved."
+      }
+      saving={saving}
+      error={error}
+      saveLabel={saving ? "Saving…" : "Save " + edits.length + " changed"}
+      onSave={() => void save()}
+      onClose={onClose}
+    >
+      <DataGrid
+        fields={fields}
+        rows={grid}
+        onChange={change}
+        rowErrors={rowErrors}
+        disabled={saving}
+      />
+    </GridDialog>
+  );
+}
+
+/** Two cell values, compared the way a grid needs: by content, not identity. */
+function same(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
+  if (typeof a === "object" || typeof b === "object") {
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
+  return String(a) === String(b);
+}
+
+/** The per-row messages out of a 422, or null for any other failure. */
+export function rowErrorsFrom(err: unknown): { index: number; message: string }[] | null {
+  const details = (
+    err as { response?: { data?: { error?: { details?: { rows?: { index: number; message: string }[] } } } } }
+  )?.response?.data?.error?.details?.rows;
+  return Array.isArray(details) ? details : null;
+}

@@ -66,7 +66,117 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v3.363.0 */}
+            {/* v3.372.0 */}
+            <div className="mb-12" id="v3.372.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.372.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Enter many rows at once</h3>
+                <p>
+                  The admin had Import, for a file somebody already has, and New, for one
+                  record. The gap between them is &quot;I have twelve of these on a bit of
+                  paper&quot;, which until now meant opening the form twelve times. Two
+                  buttons close it, both opening the same spreadsheet-shaped grid.
+                </p>
+                <p>
+                  <strong>Bulk Create</strong> sits between Import and New and opens five blank
+                  rows. Type across them, add rows as you need them, and the lot is created in
+                  one transaction: if any row is rejected, none are written. Empty rows are
+                  ignored rather than refused, because the grid starts with five and most of
+                  the time you want three.
+                </p>
+                <p>
+                  <strong>Bulk Edit</strong> now opens the rows you selected as a grid at their
+                  current values, instead of applying one value to all of them. Only the cells
+                  you change are sent, so two people editing different columns of the same row
+                  do not overwrite each other, and the button counts what will actually be
+                  written: <strong>Save 2 changed</strong>.
+                </p>
+                <p>
+                  Every cell is a real input in tab order, so the keyboard works without the
+                  grid reimplementing it: <code>Tab</code> and <code>Shift+Tab</code> walk the
+                  cells, <code>Enter</code> moves down a column, <code>Ctrl+Enter</code> saves.
+                  Paste a block of cells from a spreadsheet and it fills from the cursor. Each
+                  column header has a fill-down button for copying the first row down the rest.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  A column a cell cannot hold stays in the form: rich text, line items, JSON
+                  and many-to-many pickers are left out, and if one of them is required the
+                  grid says so at the top rather than letting every save fail. Hide the button
+                  for a resource with <code>table.bulkCreate: false</code>; it already follows
+                  the resource&apos;s create permission.
+                </p>
+
+                <h4>A grid could create a row the form then refused to save</h4>
+                <p>
+                  Found by using it. Bulk create decodes each row with{' '}
+                  <code>encoding/json</code>, which knows nothing about <code>binding:</code>
+                  {' '}tags, so the model&apos;s own <code>required</code> never fired on that
+                  path: a gadget with no category went into a table whose model requires one,
+                  and opening that row in the edit form answered <strong>Category is
+                  required</strong> with no way to get at it. A row you can create and cannot
+                  edit is the worst of both, and it looks to whoever hits it like the edit form
+                  is broken.
+                </p>
+                <p>
+                  <code>respond.ValidateStruct</code> runs the same rules gin runs on a bound
+                  request body, and bulk create now runs it per row: the grid is refused whole,
+                  with the message against the row it belongs to. It returns an error
+                  implementing the <code>FieldErrors</code> interface this package already had,
+                  so any handler that calls <code>WriteError</code> answers 422 with a sentence
+                  per input, keyed by the name the client sent rather than the Go field. The
+                  grid also flags a row missing a required cell before sending anything, so you
+                  are told which row and which column instead of reading{' '}
+                  <code>category_id</code> against a row number.
+                </p>
+
+                <h4>A relationship dropdown showed ids instead of names</h4>
+                <p>
+                  The generator wrote <code>displayField: &quot;name&quot;</code> for every
+                  relationship without looking at the related model, and plenty of models have
+                  no <code>name</code>: a Collection has a <code>title</code>, an Invoice has a{' '}
+                  <code>number</code>. The form survived it on a fallback chain, so the mistake
+                  stayed invisible until the grid&apos;s dropdown rendered raw UUIDs. It now
+                  reads the related model and picks the column that model actually calls its
+                  label.
+                </p>
+
+                <h4>The rich text editor did not open on an update</h4>
+                <p>
+                  The product editor stuck on <strong>Loading editor</strong> when opened from
+                  Edit. It subscribed to the editor with <code>useEditorState</code>, which
+                  does not resubscribe when the editor instance it was given arrives later, as
+                  it does on an update form that waits for the record. The toolbar now
+                  subscribes to the editor&apos;s own <code>transaction</code> and{' '}
+                  <code>selectionUpdate</code> events.
+                </p>
+
+                <h4>And a money column could not be updated through a patch</h4>
+                <p>
+                  <code>money.Money</code> is embedded, so the table holds{' '}
+                  <code>price_amount</code> and <code>price_currency</code> rather than{' '}
+                  <code>price</code>. GORM expands an embedded struct when it writes a model
+                  and not when it writes a map, so every map-shaped write, patch, bulk and now
+                  the grid, sent a column that does not exist and came back 500. The generated
+                  service expands it before writing on all four paths.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  This one is in generated resource code, which <code>grit upgrade</code>{' '}
+                  deliberately preserves, so the upgrade repairs it in place: it reads the
+                  money columns from your model, adds the expander and its call sites, and
+                  mirrors the existing route lines to add the two grid endpoints so whatever
+                  guard your routes use is carried over. Verified byte-identical to a freshly
+                  generated service.
+                </p>
+              </div>
+            </div>
+
+            {/* v3.371.0 */}
             <div className="mb-12" id="v3.371.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">

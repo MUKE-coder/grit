@@ -44,10 +44,15 @@ func TestAppendOnlyRoutesAreReadAndCreate(t *testing.T) {
 			t.Errorf("missing %s", want)
 		}
 	}
-	for _, verb := range []string{"h.Update", "h.Patch", "h.Delete", "h.Bulk"} {
+	for _, verb := range []string{"h.Update)", "h.Patch)", "h.Delete)", "h.Bulk)", "h.BulkEdit)"} {
 		if strings.Contains(src, verb) {
-			t.Errorf("an append-only resource still routes %s", verb)
+			t.Errorf("an append-only resource still routes %s", strings.TrimSuffix(verb, ")"))
 		}
+	}
+	// It does get the bulk-create grid: entering many rows at once is still
+	// only entering rows, which is what append-only allows.
+	if !strings.Contains(src, "h.BulkCreate)") {
+		t.Error("an append-only resource has no bulk-create route")
 	}
 }
 

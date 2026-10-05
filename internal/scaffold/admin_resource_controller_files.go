@@ -279,6 +279,7 @@ export function useResourceDialogs<T>() {
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [pendingCustom, setPendingCustom] = useState<CustomBulkAction<T> | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [bulkCreateOpen, setBulkCreateOpen] = useState(false);
 
   const openForm = useCallback((item: T | null, defaults?: Record<string, unknown>) => {
     setFormDefaults(defaults);
@@ -310,6 +311,8 @@ export function useResourceDialogs<T>() {
     setPendingCustom,
     importOpen,
     setImportOpen,
+    bulkCreateOpen,
+    setBulkCreateOpen,
   };
 }
 `

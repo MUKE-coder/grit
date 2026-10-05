@@ -3,6 +3,7 @@ package generate
 import (
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
@@ -44,23 +45,24 @@ type crudParts struct {
 	datatypesImport string
 
 	// Service: the queries.
-	preloads     string
-	searchCols   string
-	sortCols     string
-	filterCols   string
-	writable     string // body of the writable-columns map, one tab in
-	linksType    string
-	linksParam   string
-	linksApply   string // inside a transaction on tx
-	itemsParam   string
-	itemsReplace string // inside a transaction on tx
-	patchM2M     string
-	single       bool // one statement: RETURNING, no transaction
-	hasFiles     bool
-	owned        bool
-	ownerCol     string
-	ownerField   string
-	ownerName    string
+	preloads       string
+	searchCols     string
+	sortCols       string
+	filterCols     string
+	writable       string // body of the writable-columns map, one tab in
+	expandEmbedded string // the whole expand<Name>Embedded helper, or a no-op
+	linksType      string
+	linksParam     string
+	linksApply     string // inside a transaction on tx
+	itemsParam     string
+	itemsReplace   string // inside a transaction on tx
+	patchM2M       string
+	single         bool // one statement: RETURNING, no transaction
+	hasFiles       bool
+	owned          bool
+	ownerCol       string
+	ownerField     string
+	ownerName      string
 
 	// relations are the belongs_to rows a write reads after RETURNING, when
 	// they are all the resource has. Empty otherwise.
@@ -71,6 +73,7 @@ type crudParts struct {
 func (g *Generator) crud(names Names) crudParts {
 	var p crudParts
 	patchAllowed := ""
+	var moneyFields []string
 	var preloads []string
 	var relations []scaffold.ServiceRelation
 
@@ -179,6 +182,11 @@ func (g *Generator) crud(names Names) crudParts {
 		p.createFields += fmt.Sprintf("\t\t%s %s `json:\"%s\"%s`\n", goName, goType, jsonTag, bindingTag)
 		p.createAssign += fmt.Sprintf("\t\t%s: req.%s,\n", goName, goName)
 		patchAllowed += fmt.Sprintf("\t\t\"%s\": true,\n", jsonTag)
+		// Embedded, so a map update writes its two columns rather than the
+		// field. See expand<Name>Embedded in the service.
+		if FieldType(f.Type) == FieldMoney {
+			moneyFields = append(moneyFields, jsonTag)
+		}
 
 		// Update uses pointers, so "sent" and "not sent" can be told apart.
 		switch goType {
@@ -277,6 +285,7 @@ type %sLinks struct {
 		p.preloads += fmt.Sprintf(".Preload(%q)", pl)
 	}
 	p.writable = dedentOneTab(patchAllowed)
+	p.expandEmbedded = expandEmbeddedSource(names.Pascal, moneyFields)
 
 	// One statement needs neither the reload nor the transaction GORM wraps
 	// writes in: RETURNING brings back what the database filled in. Not when
@@ -536,6 +545,393 @@ func (g *Generator) writeGoService(names Names) error {
 }
 
 // serviceSource renders the service.
+// gridHandlerMethodsSource writes the handler's BulkEdit and BulkCreate: the
+// HTTP edge of the admin's spreadsheet editors.
+//
+// Rendered rather than inlined for the same reason the service methods are:
+// grit upgrade adds them to a handler generated before they existed, and the
+// two must come out identical.
+func gridHandlerMethodsSource(pascal, lower, plural string) string {
+	r := strings.NewReplacer(
+		"{{Pascal}}", pascal,
+		"{{lower}}", lower,
+		"{{plural}}", plural,
+	)
+	return r.Replace(`// The two grid endpoints, for the admin's spreadsheet editors.
+//
+// Separate from Bulk rather than actions on it, because the request shapes are
+// genuinely different: Bulk takes ids and ONE patch for all of them, and these
+// take a row each. Folding them in would mean a required ids field that two of
+// the five actions ignore.
+
+// BulkEdit{{Pascal}}Request is the grid's save: one patch per row.
+type BulkEdit{{Pascal}}Request struct {
+	// Capped for the same reason Bulk's ids are: a transaction holding five
+	// hundred row locks is a transaction other writers wait behind.
+	Items []services.{{Pascal}}GridEdit ` + "`" + `json:"items" binding:"required,min=1,max=500"` + "`" + `
+}
+
+// BulkEdit saves a grid of edits, one patch per row, in one transaction.
+func (h *{{Pascal}}Handler) BulkEdit(c *gin.Context) {
+	var req BulkEdit{{Pascal}}Request
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+
+	saved, rowErrors, err := h.service().BulkEdit(h.ctx(c), req.Items)
+	if err != nil {
+		h.fail(c, err, "Failed to save the {{plural}}")
+		return
+	}
+	// Row errors are a 422 with the rows in it, so the grid can put each
+	// message back on the line it belongs to rather than showing one banner.
+	if len(rowErrors) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
+			"code":    "VALIDATION_ERROR",
+			"message": "Some rows could not be saved",
+			"details": gin.H{"rows": rowErrors},
+		}})
+		return
+	}
+	if len(saved) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"data":    gin.H{"affected": 0, "requested": len(req.Items)},
+			"message": "Nothing to do",
+		})
+		return
+	}
+
+	noun := "{{plural}}"
+	if len(saved) == 1 {
+		noun = "{{lower}}"
+	}
+	summary := "edited " + strconv.Itoa(len(saved)) + " " + noun + " in the grid"
+	events.Emitted(c, "{{plural}}", "{{Pascal}}", "bulk", saved[0], summary, summary, nil, nil)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":    gin.H{"affected": len(saved), "requested": len(req.Items)},
+		"message": strconv.Itoa(len(saved)) + " " + noun + " updated",
+	})
+}
+
+// BulkCreate{{Pascal}}Request is the grid's insert: whole rows, no ids.
+type BulkCreate{{Pascal}}Request struct {
+	Items []map[string]interface{} ` + "`" + `json:"items" binding:"required,min=1,max=500"` + "`" + `
+}
+
+// BulkCreate inserts a grid of new {{plural}} in one transaction.
+func (h *{{Pascal}}Handler) BulkCreate(c *gin.Context) {
+	var req BulkCreate{{Pascal}}Request
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+
+	created, rowErrors, err := h.service().BulkCreate(h.ctx(c), req.Items)
+	if err != nil {
+		h.fail(c, err, "Failed to create the {{plural}}")
+		return
+	}
+	if len(rowErrors) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": gin.H{
+			"code":    "VALIDATION_ERROR",
+			"message": "Some rows could not be created",
+			"details": gin.H{"rows": rowErrors},
+		}})
+		return
+	}
+	if len(created) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"data":    gin.H{"affected": 0, "requested": len(req.Items)},
+			"message": "Nothing to do",
+		})
+		return
+	}
+
+	noun := "{{plural}}"
+	if len(created) == 1 {
+		noun = "{{lower}}"
+	}
+	summary := "created " + strconv.Itoa(len(created)) + " " + noun + " in the grid"
+	events.Emitted(c, "{{plural}}", "{{Pascal}}", "bulk", created[0].ID, summary, summary, nil, nil)
+
+	// The rows as stored, so the grid can show the ids, the generated slugs and
+	// anything else a hook filled in rather than guessing at them.
+	c.JSON(http.StatusCreated, gin.H{
+		"data":    created,
+		"message": strconv.Itoa(len(created)) + " " + noun + " created",
+	})
+}
+`)
+}
+
+// gridServiceMethodsSource writes BulkEdit and BulkCreate: what the admin's
+// spreadsheet editors call.
+//
+// Rendered rather than inlined in the template because grit upgrade has to add
+// them to a service generated before they existed, and an upgraded service that
+// differs from a generated one by so much as a comment is a service nobody can
+// reason about. One text, two callers.
+func gridServiceMethodsSource(pascal, lower, plural string) string {
+	r := strings.NewReplacer(
+		"{{Pascal}}", pascal,
+		"{{lower}}", lower,
+		"{{plural}}", plural,
+	)
+	return r.Replace(`// {{Pascal}}RowError is one row of a grid that could not be saved, and why.
+//
+// The index is the row's position in the request, not its id: a create has no
+// id yet, and the grid needs to put the message back on the line the operator
+// is looking at.
+type {{Pascal}}RowError struct {
+	Index   int    ` + "`" + `json:"index"` + "`" + `
+	Message string ` + "`" + `json:"message"` + "`" + `
+}
+
+// {{Pascal}}GridEdit is one row's changes: the id, and only the columns that
+// changed. Sending the whole row would make every save a write to every column,
+// which loses a concurrent edit to a column this operator never touched.
+type {{Pascal}}GridEdit struct {
+	ID    string                 ` + "`" + `json:"id"` + "`" + `
+	Patch map[string]interface{} ` + "`" + `json:"patch"` + "`" + `
+}
+
+// BulkEdit writes a different patch to each row, in one transaction.
+//
+// Bulk(action: "patch") writes ONE set of values to every selected row, which
+// is the right shape for "set the status of these forty" and the wrong one for
+// a spreadsheet, where the point is that each row differs. Hence two methods
+// rather than one with a mode.
+//
+// All of it lands or none of it does. A grid where rows 1 to 9 saved and row 10
+// did not is one the operator has to reconcile by hand against a list of
+// indexes, and they will not.
+func (s *{{Pascal}}Service) BulkEdit(ctx context.Context, edits []{{Pascal}}GridEdit) ([]string, []{{Pascal}}RowError, error) {
+	var rowErrors []{{Pascal}}RowError
+	type write struct {
+		id      string
+		updates map[string]interface{}
+	}
+	writes := make([]write, 0, len(edits))
+
+	for i, edit := range edits {
+		if edit.ID == "" {
+			rowErrors = append(rowErrors, {{Pascal}}RowError{Index: i, Message: "no id"})
+			continue
+		}
+		// The same whitelist Patch uses. Framework-owned columns are dropped
+		// rather than refused, so a grid sending a whole row is not wrong.
+		updates := map[string]interface{}{}
+		for k, v := range edit.Patch {
+			if writable{{Pascal}}[k] {
+				updates[k] = v
+			}
+		}
+		if len(updates) == 0 {
+			// Nothing writable changed. Not an error: a grid sends every row
+			// the operator touched, and touching a cell and putting it back is
+			// a thing people do.
+			continue
+		}
+		expand{{Pascal}}Embedded(updates)
+		writes = append(writes, write{id: edit.ID, updates: updates})
+	}
+	if len(rowErrors) > 0 {
+		return nil, rowErrors, nil
+	}
+	if len(writes) == 0 {
+		return nil, nil, nil
+	}
+
+	// Only rows this caller may touch. An owned resource scopes to the caller,
+	// so a guessed id in the grid changes nothing rather than somebody else's
+	// row.
+	ids := make([]string, 0, len(writes))
+	for _, w := range writes {
+		ids = append(ids, w.id)
+	}
+	var allowed []models.{{Pascal}}
+	if err := s.db(ctx).Model(&models.{{Pascal}}{}).Where("id IN ?", ids).Find(&allowed).Error; err != nil {
+		return nil, nil, fmt.Errorf("loading {{plural}} to edit: %w", err)
+	}
+	exists := make(map[string]bool, len(allowed))
+	for _, row := range allowed {
+		exists[row.ID] = true
+	}
+	for i, w := range writes {
+		if !exists[w.id] {
+			rowErrors = append(rowErrors, {{Pascal}}RowError{Index: i, Message: "no such {{lower}}"})
+		}
+	}
+	if len(rowErrors) > 0 {
+		return nil, rowErrors, nil
+	}
+
+	saved := make([]string, 0, len(writes))
+	err := s.db(ctx).Transaction(func(tx *gorm.DB) error {
+		for _, w := range writes {
+			// Row by row, because each has its own values. One statement per
+			// row inside one transaction: the round trips are the cost of the
+			// feature, and the atomicity is the point of it.
+			if err := tx.Model(&models.{{Pascal}}{}).Where("id = ?", w.id).Updates(w.updates).Error; err != nil {
+				return err
+			}
+			saved = append(saved, w.id)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	return saved, nil, nil
+}
+
+// BulkCreate inserts many {{plural}} in one transaction.
+//
+// Every row is decoded before anything is written, so a spreadsheet with a
+// mistake on row 7 is refused whole and reported against row 7, rather than
+// creating six rows and stopping.
+func (s *{{Pascal}}Service) BulkCreate(ctx context.Context, rows []map[string]interface{}) ([]models.{{Pascal}}, []{{Pascal}}RowError, error) {
+	var rowErrors []{{Pascal}}RowError
+	items := make([]models.{{Pascal}}, 0, len(rows))
+
+	for i, row := range rows {
+		// Through the same JSON path a single create takes, so the model's own
+		// tags and hooks apply identically. A second way into the table is a
+		// second set of rules to keep in step.
+		encoded, err := json.Marshal(row)
+		if err != nil {
+			rowErrors = append(rowErrors, {{Pascal}}RowError{Index: i, Message: "could not be read"})
+			continue
+		}
+		var item models.{{Pascal}}
+		if err := json.Unmarshal(encoded, &item); err != nil {
+			rowErrors = append(rowErrors, {{Pascal}}RowError{Index: i, Message: err.Error()})
+			continue
+		}
+		// Never from the request: these are the database's to set.
+		item.ID = ""
+		item.CreatedAt = time.Time{}
+		item.UpdatedAt = time.Time{}
+		// The binding: tags, which encoding/json does not know about.
+		//
+		// A single create is bound by gin, so required and min are enforced
+		// before the handler runs. This path decodes the row itself, and
+		// without this line the grid could insert a row the form would then
+		// refuse to save: a {{lower}} with no category went in, and editing it
+		// answered "Category is required" with no way to get at the row.
+		if err := respond.ValidateStruct(&item); err != nil {
+			rowErrors = append(rowErrors, {{Pascal}}RowError{Index: i, Message: err.Error()})
+			continue
+		}
+		items = append(items, item)
+	}
+	if len(rowErrors) > 0 {
+		return nil, rowErrors, nil
+	}
+	if len(items) == 0 {
+		return nil, nil, nil
+	}
+
+	err := s.db(ctx).Transaction(func(tx *gorm.DB) error {
+		// One at a time rather than CreateInBatches, because the model's
+		// BeforeCreate hooks (the uuid, the slug, a sequence number) have to
+		// run per row, and a batch insert of rows whose slugs collide is a
+		// constraint violation with no row number in it.
+		for i := range items {
+			if err := tx.Create(&items[i]).Error; err != nil {
+				return fmt.Errorf("row %d: %w", i+1, err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	return items, nil, nil
+}
+`)
+}
+
+// expandEmbeddedSource writes expand<Name>Embedded: the helper every path that
+// updates through a map calls before it writes.
+//
+// money.Money is embedded, so the table holds <field>_amount and
+// <field>_currency rather than <field>. GORM expands an embedded struct when it
+// writes a MODEL, which is why Create always worked, and does not when it
+// writes a MAP: there a key is a column name and its value is one bind
+// argument, and a struct is not one. Updating a row with a price answered
+//
+//	sql: converting argument $N type: unsupported type money.Money, a struct
+//
+// A resource with no money field gets an empty helper rather than no helper, so
+// the four call sites need no condition of their own and a money field added
+// later changes one function instead of five.
+func expandEmbeddedSource(pascal string, moneyFields []string) string {
+	if len(moneyFields) == 0 {
+		return "// expand" + pascal + "Embedded rewrites the columns a map update cannot carry.\n" +
+			"//\n" +
+			"// Nothing to do: " + pascal + " has no embedded column. It exists so that every\n" +
+			"// path writing through a map calls the same thing, and adding a money field\n" +
+			"// later is a change here rather than at each of them.\n" +
+			"func expand" + pascal + "Embedded(updates map[string]interface{}) {}\n\n"
+	}
+
+	quoted := make([]string, len(moneyFields))
+	for i, name := range moneyFields {
+		quoted[i] = strconv.Quote(name)
+	}
+
+	return "// moneyFields" + pascal + " are the columns held as an embedded money.Money, by\n" +
+		"// their JSON name.\n" +
+		"var moneyFields" + pascal + " = []string{" + strings.Join(quoted, ", ") + "}\n\n" +
+		"// expand" + pascal + "Embedded rewrites the columns a map update cannot carry.\n" +
+		"//\n" +
+		"// money.Money is embedded, so the table holds <field>_amount and\n" +
+		"// <field>_currency rather than <field>. GORM expands an embedded struct when it\n" +
+		"// writes a MODEL, which is why Create always worked, and does not when it writes\n" +
+		"// a MAP: there a key is a column name and its value is one bind argument, and a\n" +
+		"// struct is not one. Updating a row with a price answered\n" +
+		"//\n" +
+		"//\tsql: converting argument $N type: unsupported type money.Money, a struct\n" +
+		"//\n" +
+		"// Called by every path that writes a map (Update, Patch, Bulk and BulkEdit), so\n" +
+		"// a fifth cannot reintroduce it. The value arrives as a money.Money from Update,\n" +
+		"// which binds a typed request, and as a map from Patch, Bulk and BulkEdit, which\n" +
+		"// bind raw JSON. Both are handled; anything else is left for the database to\n" +
+		"// reject rather than silently dropped.\n" +
+		"func expand" + pascal + "Embedded(updates map[string]interface{}) {\n" +
+		"\tfor _, field := range moneyFields" + pascal + " {\n" +
+		"\t\tvalue, ok := updates[field]\n" +
+		"\t\tif !ok {\n" +
+		"\t\t\tcontinue\n" +
+		"\t\t}\n" +
+		"\t\tswitch v := value.(type) {\n" +
+		"\t\tcase money.Money:\n" +
+		"\t\t\tdelete(updates, field)\n" +
+		"\t\t\tupdates[field+\"_amount\"] = v.Amount\n" +
+		"\t\t\tupdates[field+\"_currency\"] = v.Currency\n" +
+		"\t\tcase *money.Money:\n" +
+		"\t\t\tif v == nil {\n" +
+		"\t\t\t\tcontinue\n" +
+		"\t\t\t}\n" +
+		"\t\t\tdelete(updates, field)\n" +
+		"\t\t\tupdates[field+\"_amount\"] = v.Amount\n" +
+		"\t\t\tupdates[field+\"_currency\"] = v.Currency\n" +
+		"\t\tcase map[string]interface{}:\n" +
+		"\t\t\tdelete(updates, field)\n" +
+		"\t\t\tif amount, ok := v[\"amount\"]; ok {\n" +
+		"\t\t\t\tupdates[field+\"_amount\"] = amount\n" +
+		"\t\t\t}\n" +
+		"\t\t\tif currency, ok := v[\"currency\"]; ok {\n" +
+		"\t\t\t\tupdates[field+\"_currency\"] = currency\n" +
+		"\t\t\t}\n" +
+		"\t\t}\n" +
+		"\t}\n" +
+		"}\n\n"
+}
+
 func (g *Generator) serviceSource(names Names) string {
 	p := g.crud(names)
 
@@ -547,6 +943,10 @@ func (g *Generator) serviceSource(names Names) string {
 		imports += "\n\t\"" + g.Module + "/internal/files\""
 	}
 	imports += "\n\t\"" + g.Module + "/internal/models\"\n\t\"" + g.Module + "/internal/paginate\"\n\t\"" + g.Module + "/internal/respond\""
+	// The expander names money.Money, so a resource with a price imports it.
+	if strings.Contains(p.expandEmbedded, "money.Money") {
+		imports += "\n\t\"" + g.Module + "/internal/money\""
+	}
 	if p.hasFiles {
 		imports += "\n\t\"" + g.Module + "/internal/storage\""
 	}
@@ -671,6 +1071,8 @@ func (g *Generator) serviceSource(names Names) string {
 		"{{SORT_COLS}}", p.sortCols,
 		"{{FILTER_COLS}}", p.filterCols,
 		"{{WRITABLE}}", p.writable,
+		"{{EXPAND_EMBEDDED}}", p.expandEmbedded,
+		"{{GRID_METHODS}}", gridServiceMethodsSource(names.Pascal, names.Lower, names.Plural),
 		"{{LINKS_TYPE}}", p.linksType,
 		"{{LINKS_PARAM}}", p.linksParam,
 		"{{ITEMS_PARAM}}", p.itemsParam,
@@ -699,6 +1101,9 @@ func (g *Generator) serviceSource(names Names) string {
 
 import (
 	"context"
+	// Grid rows arrive as maps and are decoded into the model here, through
+	// the same JSON path a single create takes.
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -729,7 +1134,7 @@ var {{camel}}ListConfig = paginate.Config{
 	Filterable: map[string]bool{{{FILTER_COLS}}},
 }
 
-// writable{{Pascal}} is every column Patch and Bulk may write. id, the
+{{EXPAND_EMBEDDED}}// writable{{Pascal}} is every column Patch and Bulk may write. id, the
 // timestamps and the version are the framework's, and are dropped.
 var writable{{Pascal}} = map[string]bool{
 {{WRITABLE}}}
@@ -852,7 +1257,8 @@ func (s *{{Pascal}}Service) Update(ctx context.Context, id string, updates map[s
 	if err != nil {
 		return nil, err
 	}
-	db := s.db(ctx){{UPDATE_SNAPSHOT}}
+	db := s.db(ctx)
+	expand{{Pascal}}Embedded(updates){{UPDATE_SNAPSHOT}}
 {{UPDATE_BODY}}{{UPDATE_CLEANUP}}	return item, nil
 }
 
@@ -876,6 +1282,7 @@ func (s *{{Pascal}}Service) Patch(ctx context.Context, id string, body map[strin
 		return nil, nil, respond.Rule("No writable fields in request body")
 	}
 
+	expand{{Pascal}}Embedded(updates)
 	if len(updates) > 0 {
 		written := {{PATCH_DB}}.Model(item).Scopes(pre.Scope).Updates(updates)
 		if err := written.Error; err != nil {
@@ -959,6 +1366,7 @@ func (s *{{Pascal}}Service) Bulk(ctx context.Context, action string, ids []strin
 			return tx.Model(&models.{{Pascal}}{}).Where("id IN ?", result.IDs).
 				Update("archived_at", nil).Error
 		case "patch":
+			expand{{Pascal}}Embedded(result.Updates)
 			return tx.Model(&models.{{Pascal}}{}).Where("id IN ?", result.IDs).
 				Updates(result.Updates).Error
 		}
@@ -969,7 +1377,8 @@ func (s *{{Pascal}}Service) Bulk(ctx context.Context, action string, ids []strin
 	}
 	return result, nil
 }
-{{PUBLIC_METHODS}}`)
+
+{{GRID_METHODS}}{{PUBLIC_METHODS}}`)
 }
 
 // writeGoHandler writes handlers/<resource>.go: the HTTP edge of the resource,
@@ -991,6 +1400,7 @@ func (g *Generator) handlerSource(names Names) string {
 	}
 
 	r := strings.NewReplacer(
+		"{{GRID_HANDLERS}}", gridHandlerMethodsSource(names.Pascal, names.Lower, names.Plural),
 		"{{AUDIT_IMPORT}}", ar.Import,
 		"{{AUDIT_READ_LIST}}", ar.List,
 		"{{AUDIT_READ_ONE}}", ar.One,
@@ -1410,7 +1820,8 @@ func (h *{{Pascal}}Handler) Bulk(c *gin.Context) {
 		"message": strconv.Itoa(len(ids)) + " " + noun + " " + past,
 	})
 }
-`)
+
+{{GRID_HANDLERS}}`)
 
 	// The transition endpoint, only for a resource whose status field is a
 	// state machine.

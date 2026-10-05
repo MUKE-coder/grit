@@ -17,7 +17,13 @@ func TestOneEditorOnOneTiptap3Schema(t *testing.T) {
 	editor := adminWordEditor()
 	for _, want := range []string{
 		`import { richTextExtensions } from "@/lib/tiptap-extensions";`,
-		"useEditorState(",
+		// Not useEditorState: it subscribes once, with the editor it is first
+		// handed, and immediatelyRender: false means that one is null. It never
+		// resubscribed, so the toolbar state stayed undefined and the editor
+		// sat behind "Loading editor..." forever. The toolbar subscribes to the
+		// editor it actually has.
+		"editor.on(\"transaction\", refreshToolbar)",
+		"editor.off(\"transaction\", refreshToolbar)",
 		"setContent(value || \"\", { emitUpdate: false })",
 		"immediatelyRender: false",
 	} {
@@ -25,6 +31,16 @@ func TestOneEditorOnOneTiptap3Schema(t *testing.T) {
 			t.Errorf("word-editor.tsx is missing %q", want)
 		}
 	}
+	// And nothing gates the render on a value that may never arrive: the
+	// placeholder lifts when there is an editor, which is the only thing it
+	// was ever waiting for.
+	if strings.Contains(editor, "if (!editor || !state) {") {
+		t.Error("word-editor.tsx still gates its render on the toolbar state")
+	}
+	if !strings.Contains(editor, "if (!editor) {") {
+		t.Error("word-editor.tsx does not show its placeholder until the editor mounts")
+	}
+
 	field := adminRichTextField()
 	if !strings.Contains(field, "<WordEditor") || strings.Contains(field, "@tiptap/") {
 		t.Error("the rich text field should render the Word-style editor, not build a Tiptap editor of its own")

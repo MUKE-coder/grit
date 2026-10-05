@@ -1019,7 +1019,7 @@ func adminTableToolbar() string {
 import { useT } from "@/lib/i18n";
 import { useState } from "react";
 import type { ResourceDefinition, ColumnDefinition } from "@/lib/resource";
-import { Search, Plus, Upload, Columns3 } from "@/lib/icons";
+import { Search, Plus, Upload, Columns3, LayoutGrid } from "@/lib/icons";
 import { DateFilter, type DateRange } from "./date-filter";
 import { ExportMenu } from "./export-menu";
 import { buttonClasses } from "@/components/ui/button";
@@ -1047,6 +1047,10 @@ interface TableToolbarProps {
   // v3.31.35 — opens the Excel import modal. Hidden when the
   // resource opts out via table.import = false.
   onImport?: () => void;
+  // Opens the bulk-create grid: many rows at once, between Import (a file you
+  // already have) and New (one record). Hidden when the resource opts out via
+  // table.bulkCreate = false, or when the caller cannot create.
+  onBulkCreate?: () => void;
 }
 
 export function TableToolbar({
@@ -1054,6 +1058,7 @@ export function TableToolbar({
   search,
   onSearch,
   onCreate,
+  onBulkCreate,
   allColumns,
   hiddenColumns,
   onToggleColumn,
@@ -1167,6 +1172,20 @@ export function TableToolbar({
           currentPageData={data}
           apiSearchParams={apiSearchParams}
         />
+      )}
+
+      {/* Many at once, in a spreadsheet. Beside New rather than inside it: a
+          button that sometimes opens a form and sometimes a grid is a button
+          nobody can predict. */}
+      {onBulkCreate && resource.table.bulkCreate !== false && (
+        <button
+          onClick={onBulkCreate}
+          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-hover transition-colors"
+          title={"Add several " + (resource.label?.plural ?? resource.slug) + " in a grid"}
+        >
+          <LayoutGrid className="h-3.5 w-3.5" />
+          {t("table.bulkCreate", "Bulk Create")}
+        </button>
       )}
 
       {/* Create button */}
