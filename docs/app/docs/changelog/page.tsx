@@ -66,6 +66,35 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.372.1 */}
+            <div className="mb-12" id="v3.372.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.372.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The admin builds again</h3>
+                <p>
+                  The editor fix in v3.372.0 computed the toolbar&apos;s state above the
+                  &quot;Loading editor&quot; gate, where the editor can still be null, and then
+                  read eighteen fields off it in the markup below the gate. TypeScript cannot
+                  narrow a value computed before the narrowing, so{' '}
+                  <code>npx next build</code> failed with eighteen{' '}
+                  <code>&apos;state&apos; is possibly null</code> errors in any project that
+                  upgraded. It is computed after the gate now.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Worth saying how it got out: the fix was verified by driving the editor in a
+                  browser, and <code>next dev</code> does not type-check, so the running admin
+                  proved the behaviour and nothing about the build. A change to admin TypeScript
+                  needs <code>next build</code>, not a page that loads.
+                </p>
+              </div>
+            </div>
+
             {/* v3.372.0 */}
             <div className="mb-12" id="v3.372.0">
               <div className="flex items-center gap-3 mb-4">

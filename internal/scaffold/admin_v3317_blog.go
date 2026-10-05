@@ -42,8 +42,7 @@ interface WordEditorProps {
 
 // What the toolbar shows. Tiptap 3 no longer re-renders on every transaction,
 // so the toolbar subscribes to exactly these and re-renders when one changes.
-function toolbarState(editor: Editor | null) {
-  if (!editor) return null;
+function toolbarState(editor: Editor) {
   return {
     canUndo: editor.can().undo(),
     canRedo: editor.can().redo(),
@@ -140,8 +139,6 @@ export function WordEditor({ value, onChange, placeholder, onBlur, minHeight, la
       editor.off("selectionUpdate", refreshToolbar);
     };
   }, [editor]);
-  const state = toolbarState(editor);
-
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
       // emitUpdate: false suppresses the onUpdate echo.
@@ -187,6 +184,11 @@ export function WordEditor({ value, onChange, placeholder, onBlur, minHeight, la
       </div>
     );
   }
+
+  // Below the gate, so the editor is an Editor and not Editor | null. Computed
+  // above it, every read of it in the toolbar is a possibly-null error that
+  // next dev does not report and next build does.
+  const state = toolbarState(editor);
 
   return (
     <div className={"rounded-xl border bg-bg-elevated shadow-sm overflow-hidden " + (invalid ? "border-danger" : "border-border")}>
