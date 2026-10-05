@@ -113,20 +113,22 @@ func ensureOption(db *gorm.DB, option models.Option, values []models.OptionValue
 
 // APIVariantSeederGo emits internal/database/<snake>_variants_seeder.go.
 //
-// hasSlug decides where the generated SKUs get their prefix. A resource with a
+// slugField decides where the generated SKUs get their prefix. A resource with a
 // slug gives readable ones (AURA-TEE-BLACK-XL); without one the prefix falls
 // back to a slice of the id, which is ugly and still unique, and unique is the
 // part that matters to a warehouse.
-func APIVariantSeederGo(module, pascal, snake, plural string, hasSlug bool) string {
-	return perResource(apiVariantSeederGo(module, pascal, snake, plural, hasSlug), pascal, "shortID", "skuPrefix", "valueSuffix")
+func APIVariantSeederGo(module, pascal, snake, plural, slugField string) string {
+	return perResource(apiVariantSeederGo(module, pascal, snake, plural, slugField), pascal, "shortID", "skuPrefix", "valueSuffix")
 }
 
-func apiVariantSeederGo(module, pascal, snake, plural string, hasSlug bool) string {
+func apiVariantSeederGo(module, pascal, snake, plural, slugField string) string {
 	lower := strings.ToLower(pascal)
 
+	// row.Handle on a shop, not row.Slug: the field is whatever the resource
+	// named it, and naming it here produced a seeder that did not compile.
 	prefix := "shortID(row.ID)"
-	if hasSlug {
-		prefix = "skuPrefix(row.Slug, row.ID)"
+	if slugField != "" {
+		prefix = "skuPrefix(row." + slugField + ", row.ID)"
 	}
 
 	return `package database
@@ -248,7 +250,7 @@ func valueSuffix(values []models.OptionValue) string {
 	}
 	return strings.Join(parts, "-")
 }
-` + skuPrefixHelpers(hasSlug)
+` + skuPrefixHelpers(slugField != "")
 }
 
 // skuPrefixHelpers emits whichever prefix helper the seeder above referenced.

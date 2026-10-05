@@ -76,7 +76,7 @@ func AddVariants(resource string) error {
 	}
 	defer func() { _ = release() }()
 
-	hasSlug, hasArchivedAt := modelShape(modelPath)
+	slugField, hasArchivedAt := modelShape(modelPath)
 
 	// The shared half, written once however many resources have variants.
 	//
@@ -103,8 +103,8 @@ func AddVariants(resource string) error {
 
 	// The per-resource half.
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_variant_public.go"):  scaffold.APIVariantPublicGo(module, names.Pascal, names.Snake, names.Plural, hasSlug, hasArchivedAt, moneyPrice),
-		filepath.Join(apiRoot, "internal", "database", names.Snake+"_variants_seeder.go"): scaffold.APIVariantSeederGo(module, names.Pascal, names.Snake, names.Plural, hasSlug),
+		filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_variant_public.go"):  scaffold.APIVariantPublicGo(module, names.Pascal, names.Snake, names.Plural, slugField, hasArchivedAt, moneyPrice),
+		filepath.Join(apiRoot, "internal", "database", names.Snake+"_variants_seeder.go"): scaffold.APIVariantSeederGo(module, names.Pascal, names.Snake, names.Plural, slugField),
 		filepath.Join(apiRoot, "internal", "models", names.Snake+"_variant.go"):           scaffold.APIVariantModelGo(module, names.Pascal, names.Snake),
 		filepath.Join(apiRoot, "internal", "services", names.Snake+"_variants.go"):        scaffold.APIVariantServiceGo(module, names.Pascal, names.Snake, names.Plural, moneyPrice),
 		filepath.Join(apiRoot, "internal", "services", names.Snake+"_variants_test.go"):   scaffold.APIVariantServiceTestGo(module, names.Pascal, names.Snake, moneyPrice),
@@ -243,19 +243,40 @@ func variantNames(resource string) variantNameSet {
 }
 
 // modelShape reports the two columns the public endpoint and the seeder have to
-// know about before they can be written.
+// know about before they can be written: the slug field's Go name, empty when
+// the resource has none, and whether it can be archived.
 //
 // Read off the model rather than assumed. A resource generated without a slug
 // has no such column, and a public lookup on it would be a SQL error rather
 // than the 404 the caller deserves.
-func modelShape(modelPath string) (hasSlug, hasArchivedAt bool) {
+//
+// The name matters as much as the presence of one. This looked for a field
+// literally called Slug, so a shop whose Product has a handle, which is what
+// every shop calls it, got a public variants endpoint that looked up by id
+// while its sibling /public/<plural>/:key looks up by handle: the same :key
+// placeholder meaning two different things, and a 404 on the detail page.
+//
+// The marker is the slugify call the model generator writes into
+// BeforeCreate for exactly this field, whatever it was named. A plain string
+// column with a unique index is indistinguishable from a slug in the struct
+// alone, so the struct alone is not what this reads.
+func modelShape(modelPath string) (slugField string, hasArchivedAt bool) {
 	data, err := os.ReadFile(modelPath)
 	if err != nil {
-		return false, false
+		return "", false
 	}
 	content := string(data)
-	return strings.Contains(content, "Slug "), strings.Contains(content, "ArchivedAt ")
+	if m := slugAssignment.FindStringSubmatch(content); m != nil {
+		slugField = m[1]
+	} else if strings.Contains(content, "Slug ") {
+		// A model written before the hook existed, or edited by hand.
+		slugField = "Slug"
+	}
+	return slugField, strings.Contains(content, "ArchivedAt ")
 }
+
+// m.Handle = slugify(... in the generated BeforeCreate.
+var slugAssignment = regexp.MustCompile(`(?m)^\s*m\.([A-Za-z0-9_]+)\s*=\s*slugify\(`)
 
 // registerVariantModels adds the new models to AutoMigrate and GORM Studio.
 //

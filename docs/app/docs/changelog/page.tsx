@@ -67,6 +67,50 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.363.0 */}
+            <div className="mb-12" id="v3.366.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.366.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The slug column is whatever you called it</h3>
+                <p>
+                  <code>grit add variants</code> generates a public endpoint that returns the
+                  options to draw and the variants to match a selection against. It looks the
+                  resource up by slug or id, which is right, and it looked for a field literally
+                  called <code>Slug</code>, which is not.
+                </p>
+                <p>
+                  A shop calls it <code>handle</code>. So a <code>Product</code> with{' '}
+                  <code>handle:slug</code> read as having no slug at all, and the endpoint was
+                  generated to look up by id only, while its sibling{' '}
+                  <code>/api/v1/public/products/:key</code> looks up by handle. The same{' '}
+                  <code>:key</code> placeholder in the same route tree meant two different
+                  things, so a detail page routed on <code>/product/[handle]</code> loaded the
+                  product and then got a 404 for its variants: the busiest page in the shop,
+                  broken in the one shape anybody would actually build.
+                </p>
+                <p>
+                  The generated seeder had the same assumption in a different place. It writes
+                  readable SKUs from the slug (<code>AURA-TEE-BLACK-XL</code>) and named{' '}
+                  <code>row.Slug</code> to do it, which would not have compiled; it was only
+                  saved by the detection failing first and falling back to a slice of the id.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  A plain string column with a unique index is indistinguishable from a slug in
+                  the struct alone, so the struct alone is not what the detection reads. It reads
+                  the <code>slugify</code> call the model generator writes into{' '}
+                  <code>BeforeCreate</code> for exactly this field, whatever it was named, and
+                  falls back to a field called <code>Slug</code> for a model written before that
+                  hook existed or edited by hand.
+                </p>
+              </div>
+            </div>
+
+            {/* v3.365.0 */}
             <div className="mb-12" id="v3.365.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">

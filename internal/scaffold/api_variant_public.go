@@ -124,14 +124,14 @@ func deltaWhenPriced(option models.Option, value models.OptionValue) float64 {
 // hasSlug and hasArchivedAt are read off the resource's model rather than
 // assumed. A resource generated without a slug has no such column, and a lookup
 // on it would be a SQL error rather than a 404.
-func APIVariantPublicGo(module, pascal, snake, plural string, hasSlug, hasArchivedAt, moneyPrice bool) string {
+func APIVariantPublicGo(module, pascal, snake, plural, slugField string, hasArchivedAt, moneyPrice bool) string {
 	// Database calls follow the request's context, as grit upgrade makes
 	// them in a handler written before they did.
-	out, _ := bindRequestContext(apiVariantPublicGo(module, pascal, snake, plural, hasSlug, hasArchivedAt, moneyPrice))
+	out, _ := bindRequestContext(apiVariantPublicGo(module, pascal, snake, plural, slugField, hasArchivedAt, moneyPrice))
 	return out
 }
 
-func apiVariantPublicGo(module, pascal, snake, plural string, hasSlug, hasArchivedAt, moneyPrice bool) string {
+func apiVariantPublicGo(module, pascal, snake, plural, slugField string, hasArchivedAt, moneyPrice bool) string {
 	// The public rows carry whatever ResolvePrice returns.
 	priceType, moneyImport := "float64", ""
 	if moneyPrice {
@@ -143,11 +143,16 @@ func apiVariantPublicGo(module, pascal, snake, plural string, hasSlug, hasArchiv
 
 	// A slug is what a public URL should carry, and an id is what a client has
 	// when it followed a relation, so both work where both exist.
+	//
+	// Whatever the slug column is actually called. It is "handle" on a shop,
+	// and this used to hardcode "slug", which meant the detail page of every
+	// shop asked for its variants by handle and got a 404.
 	lookup := `h.DB.Where("id = ?", c.Param("key"))`
 	lookupNote := "Looked up by id."
-	if hasSlug {
-		lookup = `h.DB.Where("slug = ? OR id = ?", c.Param("key"), c.Param("key"))`
-		lookupNote = "Looked up by slug or id, so one URL works from a catalogue\n" +
+	if slugField != "" {
+		col := toSnake(slugField)
+		lookup = `h.DB.Where("` + col + ` = ? OR id = ?", c.Param("key"), c.Param("key"))`
+		lookupNote = "Looked up by " + col + " or id, so one URL works from a catalogue\n" +
 			"// link and from a relation the client had already resolved."
 	}
 	if hasArchivedAt {
