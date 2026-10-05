@@ -30,8 +30,16 @@ jobs:
       - name: Check test coverage
         run: go test ./... -coverprofile=coverage.out -covermode=atomic
 
+      # Coverage is informational, so a bad upload must not fail the build.
+      #
+      # fail_ci_if_error: false covers codecov rejecting the report. It does not
+      # cover the action itself erroring before it gets that far, which is what
+      # happened on v3.363.0: an SSL handshake failure against codecov turned a
+      # green test run red and made the release look broken. continue-on-error
+      # is the one that holds for both.
       - name: Upload coverage
         uses: codecov/codecov-action@v4
+        continue-on-error: true
         with:
           file: coverage.out
           fail_ci_if_error: false
