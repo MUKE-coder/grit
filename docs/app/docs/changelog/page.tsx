@@ -67,6 +67,50 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.363.0 */}
+            <div className="mb-12" id="v3.369.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.369.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3><code>grit migrate --fresh</code> works on SQLite and MySQL</h3>
+                <p>
+                  <code>DropAll</code> listed tables with{" "}
+                  <code>SELECT tablename FROM pg_tables</code> and dropped them with{" "}
+                  <code>CASCADE</code>. Both are Postgres only, so{" "}
+                  <code>grit migrate --fresh</code> failed outright on a SQLite project
+                  (&quot;no such table: pg_tables&quot;) and on MySQL, which rejects the
+                  keyword. A project can be any of the three.
+                </p>
+                <p>
+                  It now asks each dialect its own question, turns foreign keys off before
+                  dropping on MySQL and SQLite (where dropping in an arbitrary order hits a
+                  table another one still references), quotes names the way each dialect
+                  expects, keeps <code>CASCADE</code> for Postgres alone, and says so rather
+                  than silently dropping nothing on a dialect it does not know. It also uses{" "}
+                  <code>current_schema()</code> instead of a hardcoded <code>public</code>, so
+                  a project with its own search path drops its own tables.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The same mistake had already been made and fixed once, in{" "}
+                  <code>TableCount</code>, two functions away in the same generated package,
+                  with a comment saying asking the Postgres question everywhere logged a red
+                  SQL error on every health poll of a SQLite project. There is now a test, and
+                  it fails against the old version.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  This was written for v3.367.0 and left out of that commit: the file was not
+                  in the <code>git add</code> list, so the four fixes that release describes
+                  shipped and this one did not. <code>database/migrate.go</code> travels on
+                  upgrade, so <code>grit upgrade</code> delivers it to an existing project.
+                </p>
+              </div>
+            </div>
+
+            {/* v3.368.0 */}
             <div className="mb-12" id="v3.368.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
