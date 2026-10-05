@@ -182,7 +182,7 @@ type UploadHandler struct {
 // store it verbatim in form state, no shape massaging needed.
 func (h *UploadHandler) Create(c *gin.Context) {
 	if h.Storage == nil {
-		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured")
+		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured. Set STORAGE_DRIVER=local in .env to keep uploads in a folder on this server, or point the bucket settings at a running object store.")
 		return
 	}
 
@@ -524,7 +524,7 @@ func (h *UploadHandler) GetByID(c *gin.Context) {
 // so a video seeks and a large download resumes.
 func (h *UploadHandler) Download(c *gin.Context) {
 	if h.Storage == nil {
-		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured")
+		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured. Set STORAGE_DRIVER=local in .env to keep uploads in a folder on this server, or point the bucket settings at a running object store.")
 		return
 	}
 	upload, err := h.uploads().ByID(c.Request.Context(), c.Param("id"), h.uploadOwner(c, "view"))
@@ -581,7 +581,7 @@ type PresignRequest struct {
 
 func (h *UploadHandler) Presign(c *gin.Context) {
 	if h.Storage == nil {
-		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured")
+		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured. Set STORAGE_DRIVER=local in .env to keep uploads in a folder on this server, or point the bucket settings at a running object store.")
 		return
 	}
 

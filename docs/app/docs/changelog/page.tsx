@@ -67,6 +67,78 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.363.0 */}
+            <div className="mb-12" id="v3.370.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.370.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A new project takes an upload without Docker</h3>
+                <p>
+                  Reported by somebody building a shop: adding a product and choosing a
+                  picture answered <code>File storage is not configured</code>. There was
+                  nothing wrong with their project. Every new Grit project did this on a
+                  machine without Docker running, and had done for a long time.
+                </p>
+                <p>
+                  The local disk driver exists and always has. <code>STORAGE_DRIVER=local</code>
+                  {' '}keeps files in a folder, optimises them, makes thumbnails, signs
+                  temporary URLs and serves them from <code>/files</code>. The problem was
+                  that nothing reached it.
+                </p>
+                <p>
+                  <code>resolveStorageDriver</code> falls back to the local disk outside
+                  production so that, in its own words, &quot;a new project stores uploads
+                  before Docker is running instead of answering each one with
+                  STORAGE_UNAVAILABLE&quot;. It tested whether <code>MINIO_ACCESS_KEY</code>
+                  {' '}was empty. <code>grit</code> writes that key into <code>.env</code> when it
+                  creates the project, so the condition could never be true and the fallback
+                  never fired once. The scaffold pointed every new project at a MinIO that
+                  was not running, with credentials for it, and disabled uploads when it did
+                  not answer.
+                </p>
+                <p>
+                  Whether the key is set was never the question. It now asks whether MinIO
+                  answers, with a 300ms TCP dial while the config is being read, and says
+                  what it did:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`MinIO at http://localhost:9000 is not answering, so files are being kept on the
+local disk at storage/app and uploads work. Start it with docker compose up -d
+minio, or set STORAGE_DRIVER=local to choose the disk deliberately.`}
+                />
+                <p>
+                  Production never falls back, and nothing but <code>minio</code> does: an s3,
+                  r2 or b2 endpoint that is briefly unreachable is not a reason to start
+                  writing to a local disk. The error message, for the cases that still fail,
+                  now names the fix instead of only the symptom.
+                </p>
+
+                <h4>And an APP_URL that quietly points nowhere</h4>
+                <p>
+                  Found while verifying the above. <code>APP_URL</code> is what every
+                  generated link is built from, uploaded files included, and changing{' '}
+                  <code>APP_PORT</code> without changing it leaves every stored file&apos;s URL
+                  pointing at a port where nothing is listening. Behind a proxy a different
+                  port is correct and normal, so the check is confined to localhost, where a
+                  mismatch is always a mistake and never anything else.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Both fixes reach an existing project through <code>grit upgrade</code>:{' '}
+                  <code>config.go</code> is repaired rather than rewritten, so each needed a
+                  repair of its own, and both are tested to produce the template byte for
+                  byte. The scaffold&apos;s <code>.gitignore</code> now also excludes{' '}
+                  <code>apps/api/storage/app/</code>, which is real files somebody uploaded
+                  and not something to commit.
+                </p>
+              </div>
+            </div>
+
+            {/* v3.369.0 */}
             <div className="mb-12" id="v3.369.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">

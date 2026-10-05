@@ -23,7 +23,7 @@ func NewVideoHandler(videos *video.Service) *VideoHandler {
 
 func (h *VideoHandler) ready(c *gin.Context) bool {
 	if h.Videos == nil {
-		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured")
+		respond.Fail(c, respond.CodeStorageUnavailable, "File storage is not configured. Set STORAGE_DRIVER=local in .env to keep uploads in a folder on this server, or point the bucket settings at a running object store.")
 		return false
 	}
 	return true

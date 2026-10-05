@@ -245,7 +245,7 @@ func Load() (*Config, error) {
 		// APP_PORT stays the one you set yourself, and wins locally because a
 		// platform is not the thing setting PORT there.
 		Port:               firstNonEmpty(os.Getenv("PORT"), os.Getenv("APP_PORT"), "8080"),
-		AppURL:             getEnv("APP_URL", "http://localhost:8080"),
+		AppURL:             resolveAppURL(firstNonEmpty(os.Getenv("PORT"), os.Getenv("APP_PORT"), "8080")),
 		DatabaseURL:        resolveDatabaseURL(),
 		JWTSecret:          getEnv("JWT_SECRET", ""),
 		FieldEncryptionKey: getEnv("FIELD_ENCRYPTION_KEY", ""),
@@ -595,6 +595,35 @@ func warnPortMismatch(urlVar, raw, portVar string) {
 	}
 }
 
+// resolveAppURL reads APP_URL and says so when it names a different port from
+// the one the server is about to listen on.
+//
+// APP_URL is where the outside world reaches this app, so behind a proxy it is
+// https://shop.example.com while the server listens on 8080, and that is
+// correct. On localhost it is not: a local APP_URL whose port disagrees with
+// APP_PORT is always a mistake, and a silent one. Every URL built from it is
+// wrong, which with STORAGE_DRIVER=local means every uploaded file's URL points
+// at a port where nothing is listening, and the symptom is an image that does
+// not load rather than anything that mentions APP_URL.
+func resolveAppURL(port string) string {
+	appURL := getEnv("APP_URL", "http://localhost:8080")
+	u, err := url.Parse(appURL)
+	if err != nil || u.Host == "" {
+		return appURL
+	}
+	host, urlPort, err := net.SplitHostPort(u.Host)
+	if err != nil || urlPort == port {
+		return appURL
+	}
+	if host != "localhost" && host != "127.0.0.1" && host != "[::1]" {
+		// A real hostname: a proxy in front, which is the normal case.
+		return appURL
+	}
+	log.Printf("WARNING: APP_URL is %s but this server listens on port %s. Every URL the app builds, uploaded files included, will point at port %s where nothing is answering. Set APP_URL=http://%s:%s",
+		appURL, port, urlPort, host, port)
+	return appURL
+}
+
 // resolveDatabaseURL builds the DSN from DB_PROVIDER and that provider's parts.
 //
 // DATABASE_URL still wins: it is the escape hatch for a managed database whose
@@ -681,17 +710,55 @@ func warnProviderMismatch(provider, dsn string) {
 
 // resolveStorageDriver picks the storage driver from STORAGE_DRIVER.
 //
-// Outside production, minio with no MINIO_ACCESS_KEY becomes local, so a new
+// Outside production, minio that is not answering becomes local, so a new
 // project stores uploads before Docker is running instead of answering each
 // one with STORAGE_UNAVAILABLE. Production never falls back: a server that
-// lost its credentials should say so, not start writing to its own disk.
+// lost its bucket should say so, not start writing to a disk that is not
+// backed up and that the next container will not have.
+//
+// This used to test for a missing MINIO_ACCESS_KEY, and grit writes that key
+// into .env, so the condition could never be true and the fallback never
+// fired. Every new project on a machine without Docker answered every upload
+// with "File storage is not configured" until somebody found STORAGE_DRIVER
+// for themselves. Whether the key is set was never the question; whether
+// MinIO answers is.
 func resolveStorageDriver() string {
 	driver := getEnv("STORAGE_DRIVER", "minio")
-	if driver == "minio" && getEnv("MINIO_ACCESS_KEY", "") == "" && getEnv("APP_ENV", "production") != "production" {
+	if driver != "minio" || getEnv("APP_ENV", "production") == "production" {
+		return driver
+	}
+	if getEnv("MINIO_ACCESS_KEY", "") == "" {
 		log.Println("MinIO has no credentials (MINIO_ACCESS_KEY), so files are kept on the local disk. Set STORAGE_DRIVER=local to make that the choice, or set the MinIO credentials to use MinIO")
 		return "local"
 	}
-	return driver
+	endpoint := getEnv("MINIO_ENDPOINT", "http://localhost:9000")
+	if minioAnswers(endpoint) {
+		return driver
+	}
+	log.Printf("MinIO at %s is not answering, so files are being kept on the local disk at %s and uploads work. Start it with docker compose up -d minio, or set STORAGE_DRIVER=local to choose the disk deliberately.", endpoint, getEnv("STORAGE_LOCAL_ROOT", "storage/app"))
+	return "local"
+}
+
+// minioAnswers reports whether something is listening on the endpoint.
+//
+// A TCP dial, not a bucket call: this runs while the config is being read,
+// before there is a client to ask, and the question is only whether the
+// container is up. 300ms because the answer is immediate either way on a
+// local machine, and a slow boot would be worse than one wrong guess.
+func minioAnswers(endpoint string) bool {
+	host := endpoint
+	if u, err := url.Parse(endpoint); err == nil && u.Host != "" {
+		host = u.Host
+	}
+	if !strings.Contains(host, ":") {
+		host += ":80"
+	}
+	conn, err := net.DialTimeout("tcp", host, 300*time.Millisecond)
+	if err != nil {
+		return false
+	}
+	_ = conn.Close()
+	return true
 }
 
 // StorageDisk is one named disk from STORAGE_DISKS.

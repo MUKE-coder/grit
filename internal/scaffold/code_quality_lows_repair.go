@@ -32,12 +32,22 @@ const (
 	dashboardUserIDOld = "\tuserID, ok := c.Get(\"user_id\")\n\tif !ok {\n"
 	dashboardUserIDNew = "\tuserID := authz.CurrentUserID(c)\n\tif userID == \"\" {\n"
 
+	// The anchor that finds an old project: its message is the one that was
+	// written before the storage error named the fix.
 	uploadCreateGuardOld = "func (h *UploadHandler) Create(c *gin.Context) {\n" +
 		"\tif h.Storage == nil {\n" +
 		"\t\trespond.Fail(c, respond.CodeStorageUnavailable, \"File storage is not configured\")\n" +
 		"\t\treturn\n" +
 		"\t}\n"
-	uploadCreateGuardNew = uploadCreateGuardOld + `
+	// What the template holds now. Repairing an old file updates the message
+	// too, which is the point: a developer whose edited copy kept the new
+	// file out is exactly the one who needs to be told about
+	// STORAGE_DRIVER=local.
+	uploadCreateGuardNew = "func (h *UploadHandler) Create(c *gin.Context) {\n" +
+		"\tif h.Storage == nil {\n" +
+		"\t\trespond.Fail(c, respond.CodeStorageUnavailable, \"File storage is not configured. Set STORAGE_DRIVER=local in .env to keep uploads in a folder on this server, or point the bucket settings at a running object store.\")\n" +
+		"\t\treturn\n" +
+		"\t}\n" + `
 	// Read before the body is. The route is behind the auth middleware, and a
 	// handler that assumed so, rather than checking, panicked on every request
 	// the day it was mounted anywhere else.

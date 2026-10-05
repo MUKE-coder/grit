@@ -81,7 +81,7 @@ That writes about 680 files. Most of them you will never open: authentication,
 sessions, API keys, file storage, background jobs, mail, rate limiting, audit
 logging, health checks, OpenAPI, an admin panel, and the tests for all of it.
 
-### Point it at SQLite
+### Point it at SQLite, and at a folder on disk
 
 Create the environment file:
 
@@ -89,26 +89,87 @@ Create the environment file:
 grit env
 ```
 
-Then edit `.env` and change four lines:
+Then edit `.env` and change two lines:
 
 ```ini
 DB_PROVIDER=sqlite
-APP_PORT=8099
-STORAGE_DRIVER=local
 REDIS_URL=
 ```
 
 `REDIS_URL=` set to nothing means "run without Redis": the cache, background
-jobs and cron are skipped rather than failing to connect. `STORAGE_DRIVER=local`
-puts uploads on disk instead of in MinIO. Both can be turned on later by
-changing these lines back.
-
-Add one more at the end, so password-reset mails are printed to the log instead
-of being sent:
+jobs and cron are skipped rather than failing to connect. Add two more lines at
+the end:
 
 ```ini
 MAIL_MAILER=log
+STORAGE_DRIVER=local
 ```
+
+`MAIL_MAILER=log` prints password-reset mails to the log instead of sending
+them. The second line is the one worth understanding, because it is where a
+shop meets its first wall.
+
+#### Where the pictures go
+
+A shop is photographs. The moment you add a product in the admin, something has
+to store a JPEG, make a thumbnail, and hand back a URL.
+
+Grit can put those in four places, and `STORAGE_DRIVER` picks which:
+
+| | |
+|---|---|
+| `local` | a folder on this machine, served by the API from `/files`. No bucket, no Docker, nothing else to run. |
+| `minio` | the MinIO container in `docker-compose.yml`, which is S3 in a box for local development. The default. |
+| `s3`, `r2`, `b2` | AWS S3, Cloudflare R2, Backblaze B2. What a deployed shop uses. |
+
+**`local` is the one to pick if you have no object storage.** Files land in
+`apps/api/storage/app/`, a directory you can open and look inside:
+
+```
+apps/api/storage/app/
+├── originals/2026/10/<uuid>.png      the file as it was uploaded
+└── uploads/2026/10/<uuid>.jpg        the optimised version
+    └── <uuid>-thumb.jpg              and its thumbnail
+```
+
+Everything else works the same: the API optimises the image, makes the
+renditions, signs temporary URLs for private files, and serves public ones from
+`APP_URL/files/...`. A `FileRef` from the local disk and one from an S3 bucket
+are the same shape, which is why moving to a bucket later changes one line of
+`.env` and nothing in your code.
+
+Keep the directory out of git:
+
+```bash
+echo "apps/api/storage/app/" >> .gitignore
+```
+
+> **You may not need the line at all.** Outside production, a `minio` that is
+> not answering falls back to the local disk by itself and says so in the log:
+>
+> ```
+> MinIO at http://localhost:9000 is not answering, so files are being kept on
+> the local disk at storage/app and uploads work.
+> ```
+>
+> Setting `STORAGE_DRIVER=local` makes it your decision rather than a fallback,
+> which is worth doing if you have no intention of running Docker. Production
+> never falls back: a server that has lost its bucket says so rather than
+> quietly writing to a disk nobody is backing up.
+
+> **If an upload says `File storage is not configured`**, you are on a version
+> before v3.370.0. The fallback above tested for a missing `MINIO_ACCESS_KEY`,
+> and `grit` writes that key into `.env`, so it could never fire. Either
+> `grit upgrade`, or set `STORAGE_DRIVER=local` by hand, which works on every
+> version.
+
+#### One thing not to change
+
+Leave `APP_PORT` alone. `APP_URL` is written into `.env` as
+`http://localhost:8080`, and the two have to agree: `APP_URL` is what every
+generated link is built from, uploaded files included, so a server listening on
+one port while `APP_URL` names another serves images from an address where
+nothing is answering. If you do need a different port, change both.
 
 ---
 
@@ -241,9 +302,9 @@ grit start
 
 | | |
 |---|---|
-| API | http://localhost:8099 |
-| API docs | http://localhost:8099/docs |
-| Database browser | http://localhost:8099/studio |
+| API | http://localhost:8080 |
+| API docs | http://localhost:8080/docs |
+| Database browser | http://localhost:8080/studio |
 | Storefront | http://localhost:3000 |
 | Admin | http://localhost:3001 |
 
@@ -324,7 +385,7 @@ Check the public API has what the storefront will need:
 
 ```bash
 KEY=$(grep NEXT_PUBLIC_API_KEY apps/web/.env.local | cut -d= -f2)
-curl -s -H "X-API-Key: $KEY" "http://localhost:8099/api/v1/public/products?sort_by=price_amount&sort_order=asc" | head -40
+curl -s -H "X-API-Key: $KEY" "http://localhost:8080/api/v1/public/products?sort_by=price_amount&sort_order=asc" | head -40
 ```
 
 Note `sort_by=price_amount`, not `price`. A money column is stored as two
@@ -488,7 +549,7 @@ And exercise it. Adding the same variant twice should raise the quantity rather
 than make a second line, and another shopper's token must not reach your line:
 
 ```bash
-B=http://localhost:8099/api/v1
+B=http://localhost:8080/api/v1
 T=$(curl -s -H "X-API-Key: $KEY" "$B/shop/cart" | jq -r .data.token)
 P=$(curl -s -H "X-API-Key: $KEY" "$B/public/products/stoneware-mug" | jq -r .data.id)
 curl -s -X POST -H "X-API-Key: $KEY" -H "X-Cart-Token: $T" \

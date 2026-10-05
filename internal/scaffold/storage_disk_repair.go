@@ -43,18 +43,57 @@ const (
 	configResolveStorageAnchor     = "// resolveStorage returns the StorageConfig for the active driver.\n"
 	configResolveStorageDriverFunc = "// resolveStorageDriver picks the storage driver from STORAGE_DRIVER.\n" +
 		"//\n" +
-		"// Outside production, minio with no MINIO_ACCESS_KEY becomes local, so a new\n" +
+		"// Outside production, minio that is not answering becomes local, so a new\n" +
 		"// project stores uploads before Docker is running instead of answering each\n" +
 		"// one with STORAGE_UNAVAILABLE. Production never falls back: a server that\n" +
-		"// lost its credentials should say so, not start writing to its own disk.\n" +
+		"// lost its bucket should say so, not start writing to a disk that is not\n" +
+		"// backed up and that the next container will not have.\n" +
+		"//\n" +
+		"// This used to test for a missing MINIO_ACCESS_KEY, and grit writes that key\n" +
+		"// into .env, so the condition could never be true and the fallback never\n" +
+		"// fired. Every new project on a machine without Docker answered every upload\n" +
+		"// with \"File storage is not configured\" until somebody found STORAGE_DRIVER\n" +
+		"// for themselves. Whether the key is set was never the question; whether\n" +
+		"// MinIO answers is.\n" +
 		"func resolveStorageDriver() string {\n" +
-		"\tdriver := getEnv(\"STORAGE_DRIVER\", \"minio\")\n" +
-		"\tif driver == \"minio\" && getEnv(\"MINIO_ACCESS_KEY\", \"\") == \"\" && getEnv(\"APP_ENV\", \"production\") != \"production\" {\n" +
-		"\t\tlog.Println(\"MinIO has no credentials (MINIO_ACCESS_KEY), so files are kept on the local disk. Set STORAGE_DRIVER=local to make that the choice, or set the MinIO credentials to use MinIO\")\n" +
-		"\t\treturn \"local\"\n" +
-		"\t}\n" +
-		"\treturn driver\n" +
-		"}\n\n"
+		"	driver := getEnv(\"STORAGE_DRIVER\", \"minio\")\n" +
+		"	if driver != \"minio\" || getEnv(\"APP_ENV\", \"production\") == \"production\" {\n" +
+		"		return driver\n" +
+		"	}\n" +
+		"	if getEnv(\"MINIO_ACCESS_KEY\", \"\") == \"\" {\n" +
+		"		log.Println(\"MinIO has no credentials (MINIO_ACCESS_KEY), so files are kept on the local disk. Set STORAGE_DRIVER=local to make that the choice, or set the MinIO credentials to use MinIO\")\n" +
+		"		return \"local\"\n" +
+		"	}\n" +
+		"	endpoint := getEnv(\"MINIO_ENDPOINT\", \"http://localhost:9000\")\n" +
+		"	if minioAnswers(endpoint) {\n" +
+		"		return driver\n" +
+		"	}\n" +
+		"	log.Printf(\"MinIO at %s is not answering, so files are being kept on the local disk at %s and uploads work. Start it with docker compose up -d minio, or set STORAGE_DRIVER=local to choose the disk deliberately.\", endpoint, getEnv(\"STORAGE_LOCAL_ROOT\", \"storage/app\"))\n" +
+		"	return \"local\"\n" +
+		"}\n" +
+		"\n" +
+		"// minioAnswers reports whether something is listening on the endpoint.\n" +
+		"//\n" +
+		"// A TCP dial, not a bucket call: this runs while the config is being read,\n" +
+		"// before there is a client to ask, and the question is only whether the\n" +
+		"// container is up. 300ms because the answer is immediate either way on a\n" +
+		"// local machine, and a slow boot would be worse than one wrong guess.\n" +
+		"func minioAnswers(endpoint string) bool {\n" +
+		"	host := endpoint\n" +
+		"	if u, err := url.Parse(endpoint); err == nil && u.Host != \"\" {\n" +
+		"		host = u.Host\n" +
+		"	}\n" +
+		"	if !strings.Contains(host, \":\") {\n" +
+		"		host += \":80\"\n" +
+		"	}\n" +
+		"	conn, err := net.DialTimeout(\"tcp\", host, 300*time.Millisecond)\n" +
+		"	if err != nil {\n" +
+		"		return false\n" +
+		"	}\n" +
+		"	_ = conn.Close()\n" +
+		"	return true\n" +
+		"}\n" +
+		"\n"
 
 	configLocalCaseAnchor = "\tdefault: // minio\n"
 	configLocalCase       = "\tcase \"local\":\n" +
@@ -245,7 +284,21 @@ const (
 		"# STORAGE_LOCAL_ROOT=storage/app\n" +
 		"# Signs local temporary URLs. Unset, JWT_SECRET is used.\n" +
 		"# STORAGE_URL_SECRET=\n"
-	envStorageHeadNew = envStorageHeadC1 +
+	envStorageHeadNew = "# Storage: which provider to use: local, minio, s3, r2, b2\n" +
+		"STORAGE_DRIVER=minio\n" +
+		"# local keeps files in STORAGE_LOCAL_ROOT and the API serves them from\n" +
+		"# APP_URL/files. No bucket, no Docker and nothing else to run, so it is the\n" +
+		"# one to pick if you have no object storage: the files sit in a folder you\n" +
+		"# can open, and uploads, thumbnails and signed links all work.\n" +
+		"#\n" +
+		"# You may not need to pick it. Outside production, minio that is not\n" +
+		"# answering falls back to local on its own and says so in the log, so a new\n" +
+		"# project takes uploads before Docker is running. Production never falls\n" +
+		"# back, and refuses local unless ALLOW_LOCAL_STORAGE_IN_PRODUCTION=true (one\n" +
+		"# server, with the directory on a volume that is backed up).\n" +
+		"# STORAGE_LOCAL_ROOT=storage/app\n" +
+		"# Signs local temporary URLs. Unset, JWT_SECRET is used.\n" +
+		"# STORAGE_URL_SECRET=\n" +
 		"# Key prefixes anyone may read without a signed link, comma separated. Every\n" +
 		"# other key, backups included, is private: S3 and MinIO enforce it with the\n" +
 		"# bucket policy, the local driver with its file route. R2 and B2 have no bucket\n" +
@@ -279,9 +332,112 @@ const (
 	cspImgSrcNew = "\"img-src 'self' data: blob: https: \" + API_ORIGIN + \" \" + STORAGE_ORIGIN,"
 )
 
+// repairStorageFallbackSource brings an existing resolveStorageDriver to the
+// version that falls back when MinIO is not answering.
+//
+// The old one fell back when MINIO_ACCESS_KEY was empty, and grit writes that
+// key into .env, so it could never fire: a project on a machine without Docker
+// answered every upload with "File storage is not configured". The project that
+// needs this most is an existing one, so it cannot be a new-projects-only fix.
+func repairStorageFallbackSource(src string) (string, []string, []string) {
+	if strings.Contains(src, "func minioAnswers(") {
+		return src, nil, nil
+	}
+	start := strings.Index(src, storageDriverFuncHead)
+	if start < 0 {
+		return src, nil, []string{"config.go's resolveStorageDriver is not the one Grit wrote: " +
+			"fall back to the local disk when MinIO is not answering, not when MINIO_ACCESS_KEY " +
+			"is empty, or a project without Docker refuses every upload"}
+	}
+	// To the end of the function: the first line that is a closing brace in
+	// column zero, which in generated Go is always the function's own.
+	end := strings.Index(src[start:], "\n}\n")
+	if end < 0 {
+		return src, nil, []string{"config.go's resolveStorageDriver does not end where expected"}
+	}
+	end += start + len("\n}\n")
+
+	out := src[:start] + configResolveStorageDriverFunc + src[end:]
+	out, ok := withImports(out, "log", "net", "net/url", "strings", "time")
+	if !ok {
+		return src, nil, []string{"could not add imports to config.go"}
+	}
+	return out, []string{"uploads fall back to the local disk when MinIO is not answering, " +
+		"so a project without Docker takes uploads instead of refusing them"}, nil
+}
+
+const (
+	appURLFunc = "// resolveAppURL reads APP_URL and says so when it names a different port from\n" +
+		"// the one the server is about to listen on.\n" +
+		"//\n" +
+		"// APP_URL is where the outside world reaches this app, so behind a proxy it is\n" +
+		"// https://shop.example.com while the server listens on 8080, and that is\n" +
+		"// correct. On localhost it is not: a local APP_URL whose port disagrees with\n" +
+		"// APP_PORT is always a mistake, and a silent one. Every URL built from it is\n" +
+		"// wrong, which with STORAGE_DRIVER=local means every uploaded file's URL points\n" +
+		"// at a port where nothing is listening, and the symptom is an image that does\n" +
+		"// not load rather than anything that mentions APP_URL.\n" +
+		"func resolveAppURL(port string) string {\n" +
+		"	appURL := getEnv(\"APP_URL\", \"http://localhost:8080\")\n" +
+		"	u, err := url.Parse(appURL)\n" +
+		"	if err != nil || u.Host == \"\" {\n" +
+		"		return appURL\n" +
+		"	}\n" +
+		"	host, urlPort, err := net.SplitHostPort(u.Host)\n" +
+		"	if err != nil || urlPort == port {\n" +
+		"		return appURL\n" +
+		"	}\n" +
+		"	if host != \"localhost\" && host != \"127.0.0.1\" && host != \"[::1]\" {\n" +
+		"		// A real hostname: a proxy in front, which is the normal case.\n" +
+		"		return appURL\n" +
+		"	}\n" +
+		"	log.Printf(\"WARNING: APP_URL is %s but this server listens on port %s. Every URL the app builds, uploaded files included, will point at port %s where nothing is answering. Set APP_URL=http://%s:%s\",\n" +
+		"		appURL, port, urlPort, host, port)\n" +
+		"	return appURL\n" +
+		"}\n" +
+		"\n"
+	appURLFuncAnchor = "// warnProviderMismatch says so when DATABASE_URL names a different engine from"
+	appURLLoadOld    = "AppURL:             getEnv(\"APP_URL\", \"http://localhost:8080\"),"
+	appURLLoadNew    = "AppURL:             resolveAppURL(firstNonEmpty(os.Getenv(\"PORT\"), os.Getenv(\"APP_PORT\"), \"8080\")),"
+)
+
+// storageDriverFuncHead is where the old resolveStorageDriver starts, comment
+// and all, so the replacement takes its documentation with it.
+const storageDriverFuncHead = "// resolveStorageDriver picks the storage driver from STORAGE_DRIVER."
+
+// repairAppURLPortSource routes APP_URL through resolveAppURL, which says when
+// it names a different port from the one the server listens on.
+//
+// Silent until it is not: every URL the app builds comes from APP_URL, so with
+// STORAGE_DRIVER=local every uploaded file's URL points at a port where nothing
+// is answering, and the symptom is an image that does not load rather than
+// anything mentioning APP_URL.
+func repairAppURLPortSource(src string) (string, []string, []string) {
+	if strings.Contains(src, "func resolveAppURL(") {
+		return src, nil, nil
+	}
+	if strings.Count(src, appURLLoadOld) != 1 || strings.Count(src, appURLFuncAnchor) != 1 {
+		return src, nil, []string{"config.go is not the file Grit wrote: read APP_URL through a " +
+			"resolveAppURL that compares its port with the one the server listens on, or a " +
+			"mismatch serves every uploaded file from an address nothing answers"}
+	}
+	out := strings.Replace(src, appURLLoadOld, appURLLoadNew, 1)
+	out = strings.Replace(out, appURLFuncAnchor, appURLFunc+appURLFuncAnchor, 1)
+	out, ok := withImports(out, "log", "net", "net/url")
+	if !ok {
+		return src, nil, []string{"could not add imports to config.go"}
+	}
+	return out, []string{"an APP_URL whose port disagrees with the one the server listens on is reported at boot"}, nil
+}
+
 // repairStorageConfigSource adds the local driver to config.go.
 func repairStorageConfigSource(src string) (string, []string, []string) {
-	if strings.Contains(src, "func resolveStorageDriver()") || !strings.Contains(src, "func resolveStorage(driver string) StorageConfig") {
+	if strings.Contains(src, "func resolveStorageDriver()") {
+		// Already has one, which is every project since the local driver was
+		// added. It may still be the version that could never fall back.
+		return repairStorageFallbackSource(src)
+	}
+	if !strings.Contains(src, "func resolveStorage(driver string) StorageConfig") {
 		return src, nil, nil
 	}
 	warn := []string{"config.go is not the file Grit wrote: add STORAGE_DRIVER=local (LocalRoot and URLSecret on StorageConfig, a \"local\" case in resolveStorage) to keep files on the local disk"}
@@ -445,6 +601,11 @@ func repairStorageDisk(root string, opts Options) error {
 		}
 		// Named disks and public prefixes (C3, C4), on top of the local driver.
 		if err := repairSourceFile(root, m, configPath, repairStorageDisksConfigSource); err != nil {
+			return err
+		}
+		// An APP_URL that disagrees with the listening port serves every
+		// uploaded file from an address nothing answers.
+		if err := repairSourceFile(root, m, configPath, repairAppURLPortSource); err != nil {
 			return err
 		}
 	}

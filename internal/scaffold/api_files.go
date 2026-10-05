@@ -954,7 +954,7 @@ func Load() (*Config, error) {
 		// APP_PORT stays the one you set yourself, and wins locally because a
 		// platform is not the thing setting PORT there.
 		Port:        firstNonEmpty(os.Getenv("PORT"), os.Getenv("APP_PORT"), "8080"),
-		AppURL:      getEnv("APP_URL", "http://localhost:8080"),
+		AppURL:      resolveAppURL(firstNonEmpty(os.Getenv("PORT"), os.Getenv("APP_PORT"), "8080")),
 		DatabaseURL: resolveDatabaseURL(),
 		JWTSecret:   getEnv("JWT_SECRET", ""),
 		FieldEncryptionKey: getEnv("FIELD_ENCRYPTION_KEY", ""),
@@ -1274,6 +1274,35 @@ func resolveDatabaseURL() string {
 		log.Fatalf("DB_PROVIDER=%q is not one this app knows. Use postgres, mysql, sqlite or memory, or set DATABASE_URL directly.", provider)
 		return ""
 	}
+}
+
+// resolveAppURL reads APP_URL and says so when it names a different port from
+// the one the server is about to listen on.
+//
+// APP_URL is where the outside world reaches this app, so behind a proxy it is
+// https://shop.example.com while the server listens on 8080, and that is
+// correct. On localhost it is not: a local APP_URL whose port disagrees with
+// APP_PORT is always a mistake, and a silent one. Every URL built from it is
+// wrong, which with STORAGE_DRIVER=local means every uploaded file's URL points
+// at a port where nothing is listening, and the symptom is an image that does
+// not load rather than anything that mentions APP_URL.
+func resolveAppURL(port string) string {
+	appURL := getEnv("APP_URL", "http://localhost:8080")
+	u, err := url.Parse(appURL)
+	if err != nil || u.Host == "" {
+		return appURL
+	}
+	host, urlPort, err := net.SplitHostPort(u.Host)
+	if err != nil || urlPort == port {
+		return appURL
+	}
+	if host != "localhost" && host != "127.0.0.1" && host != "[::1]" {
+		// A real hostname: a proxy in front, which is the normal case.
+		return appURL
+	}
+	log.Printf("WARNING: APP_URL is %s but this server listens on port %s. Every URL the app builds, uploaded files included, will point at port %s where nothing is answering. Set APP_URL=http://%s:%s",
+		appURL, port, urlPort, host, port)
+	return appURL
 }
 
 // warnProviderMismatch says so when DATABASE_URL names a different engine from

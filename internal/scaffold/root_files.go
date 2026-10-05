@@ -664,6 +664,12 @@ postgres-data/
 redis-data/
 minio-data/
 
+# Uploads kept on this machine (STORAGE_DRIVER=local). Real files somebody
+# chose: photographs, invoices, whatever the app takes. They belong in storage,
+# not in the history of the repository.
+apps/api/storage/app/
+storage/app/
+
 # Turborepo
 .turbo/
 

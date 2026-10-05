@@ -33,7 +33,7 @@ import type { User } from "@repo/shared/types";
 // Surfaced in the sidebar footer so the user can quickly see what Grit
 // release their dashboard was built from. Update by re-scaffolding or
 // hand-bumping if you carry framework patches locally.
-const GRIT_CLI_VERSION = "v3.366.0";
+const GRIT_CLI_VERSION = "v3.369.0";
 
 // Internal nav block — pages that exist for every Grit app regardless of
 // which resources were generated. Kept out of the resources registry so

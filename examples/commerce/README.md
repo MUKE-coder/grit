@@ -82,11 +82,19 @@ No Docker, no Postgres, no Redis. It runs on SQLite with nothing else:
 ```bash
 pnpm install
 grit env
-# then in .env: DB_PROVIDER=sqlite, STORAGE_DRIVER=local, REDIS_URL=, MAIL_MAILER=log
+# then in .env: DB_PROVIDER=sqlite, REDIS_URL=
+# and at the end:  MAIL_MAILER=log, STORAGE_DRIVER=local
 grit migrate
 grit seed      # prints the admin password and the API keys, once
 grit start
 ```
+
+`STORAGE_DRIVER=local` keeps uploaded pictures in `apps/api/storage/app/`, a
+folder you can open, with the optimised version and its thumbnail beside the
+original. Everything a bucket does still happens: a `FileRef` from the disk and
+one from S3 are the same shape, so moving to a bucket later is one line of
+`.env`. Since v3.370.0 you can leave the line out and a MinIO that is not
+running falls back to the disk by itself.
 
 | | |
 |---|---|
@@ -107,6 +115,7 @@ shop takes:
 | v3.365.0 | the `--public` allowlist dropped `money` entirely, so a shop published no price, and typed a `date` as `time.Time` where the model says `*jsontime.Date`, which does not compile |
 | v3.366.0 | `grit add variants` looked for a field called `Slug`, and a shop calls it `handle`, so the variants endpoint 404ed on the detail page of every shop |
 | v3.367.0 | seeded images blocked by the scaffold's own CSP; the response cache could have served one shopper's basket to another; `grit upgrade` put back a route group the project had deleted, and the project stopped building |
+| v3.370.0 | every new project refused uploads on a machine without Docker. The fallback meant to prevent that tested for a missing `MINIO_ACCESS_KEY`, which `grit` writes into `.env`, so it had never once fired |
 
 None of those would have been found by a test. Each is about what happens when a
 generated project is used the way a real one is.
