@@ -67,6 +67,66 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.363.0 */}
+            <div className="mb-12" id="v3.368.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.368.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Every code block in the agent reference, and three subjects it never covered</h3>
+                <p>
+                  <code>.claude/skills/grit/reference.md</code> and{" "}
+                  <code>SKILL.md</code> ship into every scaffolded project, and they are what
+                  an AI agent reads before it touches the code. Their code fences were written
+                  with <em>one</em> backtick instead of three, so not one of their forty-four
+                  examples was a code block: each rendered as an unterminated inline span that
+                  swallowed the text after it. Three fences also said <code>ash</code> where
+                  they meant <code>bash</code>.
+                </p>
+                <p>
+                  That is fixed, and the fences are now correct in the generated markdown
+                  rather than correct-looking in the Go template that writes it.
+                </p>
+
+                <h4>And the three subjects that cost the most time</h4>
+                <p>
+                  Building a real shop with Grit (now checked in at{" "}
+                  <code>examples/commerce</code>) made it obvious that the agent documents
+                  covered none of money, the public API or variants. All three are now in the
+                  project reference, in <code>AGENTS.md</code> from <code>grit init</code>, and
+                  in the published skill:
+                </p>
+                <ul>
+                  <li>
+                    A <code>money</code> field is two columns, so the sortable and filterable
+                    one is <code>price_amount</code> and not <code>price</code>. Every
+                    storefront gets this wrong once.
+                  </li>
+                  <li>
+                    <code>--public</code> is read-only by design, its response is an allowlist
+                    that regeneration never overwrites, and a public endpoint that{" "}
+                    <em>writes</em> must not go on the cached <code>publicAPI</code> group.
+                  </li>
+                  <li>
+                    The variant endpoint answers in one request, and the price in it is the
+                    server&apos;s: re-applying option deltas in the browser is a second answer
+                    to &quot;what does this cost&quot;.
+                  </li>
+                </ul>
+                <p className="text-sm text-muted-foreground">
+                  The MCP server&apos;s <code>grit_describe_models</code> now says that the
+                  model is what the <em>authenticated</em> endpoints return, and points at the
+                  public allowlist for the other shape. An agent asking it what{" "}
+                  <code>GET /public/products</code> returns was getting a confident, wrong
+                  answer.
+                </p>
+              </div>
+            </div>
+
+            {/* v3.367.0 */}
             <div className="mb-12" id="v3.367.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">

@@ -186,17 +186,17 @@ Navigation: import { useRouter } from 'next/navigation', import Link from 'next/
 		tsMarkers := ""
 		if opts.Architecture != ArchSingle || opts.Frontend != "" {
 			tsMarkers = fmt.Sprintf(`
-%[1]stypescript
+%[1]s%[1]s%[1]stypescript
 // grit:schemas         — schemas/index.ts
 // grit:types           — types/index.ts
 // grit:api-routes      — constants/index.ts
-%[1]s`, bt)
+%[1]s%[1]s%[1]s`, bt)
 			if opts.ShouldIncludeAdmin() {
 				tsMarkers += fmt.Sprintf(`
-%[1]stypescript
+%[1]s%[1]s%[1]stypescript
 // grit:resources       — resources/index.ts (imports)
 // grit:resource-list   — resources/index.ts (registry array)
-%[1]s`, bt)
+%[1]s%[1]s%[1]s`, bt)
 			}
 		}
 
@@ -205,12 +205,12 @@ Navigation: import { useRouter } from 'next/navigation', import Link from 'next/
 
 Grit uses marker comments to inject generated code. **Never delete these:**
 
-%[1]sgo
+%[1]s%[1]s%[1]sgo
 // grit:models          — models/user.go (AutoMigrate list)
 // grit:handlers        — routes/routes.go (handler initialization)
 // grit:routes:protected — routes/routes.go (protected route group)
 // grit:routes:admin    — routes/routes.go (admin route group)
-%[1]s
+%[1]s%[1]s%[1]s
 %[2]s
 ---
 `, bt, tsMarkers)
@@ -220,12 +220,12 @@ Grit uses marker comments to inject generated code. **Never delete these:**
 
 Grit uses marker comments to inject generated code. **Never delete these:**
 
-%[1]sgo
+%[1]s%[1]s%[1]sgo
 // grit:models          — models/user.go (AutoMigrate list)
 // grit:handlers        — routes/routes.go (handler initialization)
 // grit:routes:protected — routes/routes.go (protected route group)
 // grit:routes:admin    — routes/routes.go (admin route group)
-%[1]s
+%[1]s%[1]s%[1]s
 
 ---
 `, bt)
@@ -239,21 +239,21 @@ Grit uses marker comments to inject generated code. **Never delete these:**
 
 This project uses %[1]sgo:embed%[1]s to embed the frontend build output into the Go binary:
 
-%[1]sgo
+%[1]s%[1]s%[1]sgo
 //go:embed frontend/dist/*
 var frontendFS embed.FS
-%[1]s
+%[1]s%[1]s%[1]s
 
 In **development**, run Go and Vite separately — Vite proxies API calls to Go:
 - Go API: %[1]sgo run main.go%[1]s (port 8080)
 - Vite dev: %[1]scd frontend && pnpm dev%[1]s (port 5173, proxies /api → 8080)
 
 For **production**, build the frontend first, then the Go binary:
-%[1]sash
+%[1]s%[1]s%[1]sbash
 cd frontend && pnpm build    # Outputs to frontend/dist/
 go build -o myapp main.go   # Embeds frontend/dist/ into binary
 ./myapp                      # Serves API + frontend on port 8080
-%[1]s
+%[1]s%[1]s%[1]s
 
 ---
 `, bt)
@@ -303,7 +303,7 @@ For detailed API conventions, code patterns, and service documentation, see [ref
 
 ## CLI Commands
 
-%[1]sash
+%[1]s%[1]s%[1]sbash
 # Code generation
 grit generate resource Post --fields "title:string,content:text,published:bool"
 grit generate resource Post --from post.yaml
@@ -325,15 +325,15 @@ grit deploy --host user@server --domain myapp.com  # Production deploy
 # Updates
 grit upgrade                          # Update project to latest templates
 grit update                           # Update Grit CLI itself
-%[1]s
+%[1]s%[1]s%[1]s
 
 ---
 
 ## Project Structure
 
-%[1]s
+%[1]s%[1]s%[1]s
 %[7]s
-%[1]s
+%[1]s%[1]s%[1]s
 
 **Mounted dashboards** (auto-configured in routes.go):
 - %[1]s/docs%[1]s — API documentation (gin-docs, OpenAPI 3.1)
@@ -345,9 +345,9 @@ grit update                           # Update Grit CLI itself
 
 ## Generating Resources
 
-%[1]sash
+%[1]s%[1]s%[1]sbash
 grit generate resource Post --fields "title:string,content:text,published:bool,views:int"
-%[1]s
+%[1]s%[1]s%[1]s
 
 Creates model, service, handler, schema, types, hooks, and injects into existing files via marker comments.
 
@@ -396,13 +396,13 @@ Creates model, service, handler, schema, types, hooks, and injects into existing
 
 ### Add a relationship
 
-%[1]sgo
+%[1]s%[1]s%[1]sgo
 type Post struct {
     CategoryID uint     // json:"category_id"
     Category   Category // gorm:"foreignKey:CategoryID" json:"category,omitempty"
 }
 // In handler: query.Preload("Category").Find(&posts)
-%[1]s
+%[1]s%[1]s%[1]s
 
 ---
 
@@ -577,7 +577,7 @@ func gritSkillReference(opts Options) string {
 		adminSection = fmt.Sprintf(`
 ## Admin Panel — Resource Definitions
 
-%[1]stypescript
+%[1]s%[1]s%[1]stypescript
 import { defineResource } from "@/lib/resource";
 
 export const postsResource = defineResource({
@@ -611,7 +611,7 @@ export const postsResource = defineResource({
     layout: "single",
   },
 });
-%[1]s
+%[1]s%[1]s%[1]s
 
 ### Form Field Types
 
@@ -644,7 +644,7 @@ export const postsResource = defineResource({
 
 ### React Query Hooks
 
-%[1]stypescript
+%[1]s%[1]s%[1]stypescript
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 
@@ -662,7 +662,7 @@ export function usePosts({ page = 1, pageSize = 20, search = "" } = {}) {
     },
   });
 }
-%[1]s
+%[1]s%[1]s%[1]s
 
 ---
 `, bt)
@@ -674,7 +674,7 @@ export function usePosts({ page = 1, pageSize = 20, search = "" } = {}) {
 
 ### Response Format
 
-%[1]sgo
+%[1]s%[1]s%[1]sgo
 // Success (single item)
 c.JSON(http.StatusOK, gin.H{
     "data":    item,
@@ -695,7 +695,7 @@ c.JSON(http.StatusOK, gin.H{
 // Error. respond.Fail takes the status from the error catalogue, so a code
 // cannot be paired with two different statuses in two different handlers.
 respond.Fail(c, respond.CodeValidationError, "Email is required")
-%[1]s
+%[1]s%[1]s%[1]s
 
 ### Error Codes
 
@@ -710,13 +710,13 @@ respond.Fail(c, respond.CodeValidationError, "Email is required")
 
 ### Authentication
 
-%[1]s
+%[1]s%[1]s%[1]s
 POST /api/auth/register  → { access_token, refresh_token }
 POST /api/auth/login     → { access_token, refresh_token } or { totp_required, pending_token }
 POST /api/auth/refresh   → New access_token from refresh_token
 POST /api/auth/logout    → Invalidates refresh token
 GET  /api/auth/me        → Current user (requires auth)
-%[1]s
+%[1]s%[1]s%[1]s
 
 Access tokens: 15 minutes. Refresh tokens: 7 days.
 
@@ -725,33 +725,124 @@ Access tokens: 15 minutes. Refresh tokens: 7 days.
 If user has 2FA enabled and no trusted device cookie, login returns %[1]s{ totp_required: true, pending_token: "..." }%[1]s.
 Client redirects to TOTP page, user enters 6-digit code from authenticator app.
 
-%[1]s
+%[1]s%[1]s%[1]s
 POST /api/auth/totp/setup              → { secret, uri } (JWT required)
 POST /api/auth/totp/enable             → { enabled, backup_codes } (JWT required)
 POST /api/auth/totp/verify             → { user, tokens } (public, uses pending_token)
 POST /api/auth/totp/backup-codes/verify → { user, tokens } (public, uses pending_token)
 POST /api/auth/totp/disable            → Disable 2FA (JWT + password required)
 GET  /api/auth/totp/status             → { enabled, backup_codes_remaining, trusted_devices }
-%[1]s
+%[1]s%[1]s%[1]s
 
 TOTP: RFC 6238, HMAC-SHA1, 6 digits, 30s period. Backup codes: 10 bcrypt-hashed one-time codes.
 Trusted devices: HttpOnly cookie, SHA-256 hashed token, 30-day sliding expiry.
 
 ### Route Groups
 
-%[1]sgo
+%[1]s%[1]s%[1]sgo
 public := router.Group("/api/auth")          // No auth
 protected := router.Group("/api")            // Requires JWT
 protected.Use(middleware.Auth(cfg.JWTSecret))
 admin := protected.Group("/admin")           // Requires JWT + admin role
 admin.Use(middleware.RequireRole("admin"))
-%[1]s
+%[1]s%[1]s%[1]s
 
 ---
 
+## Money
+
+A %[1]sprice:money%[1]s field is %[1]smoney.Money%[1]s, never a float:
+
+%[1]s%[1]s%[1]sgo
+type Money struct {
+    Amount   int64  // MINOR units: 2800 is $28.00
+    Currency string
+}
+%[1]s%[1]s%[1]s
+
+- %[1]smoney.New(2800, "USD")%[1]s to build one, %[1]smoney.FromMajor(28.00, "USD")%[1]s when the figure came from a person typing it.
+- %[1]sa.Add(b)%[1]s returns %[1]s(Money, error)%[1]s and errors on mixed currencies.
+  Check it even in a one-currency app: the day it has two, an ignored error
+  is a silently wrong total.
+- %[1]sm.MulInt(n)%[1]s for a line total. %[1]sm.Major()%[1]s for display only.
+
+GORM embeds it as two columns with the field name as prefix, so the column
+is %[1]sprice_amount%[1]s and NOT %[1]sprice%[1]s. That is what you sort and filter on:
+
+%[1]s%[1]s%[1]s
+GET /api/v1/public/products?sort_by=price_amount&sort_order=asc
+GET /api/v1/public/products?price_amount_min=5000
+%[1]s%[1]s%[1]s
+
+On the frontend, %[1]sformatMoney(m)%[1]s from %[1]s@repo/shared/types%[1]s. It knows UGX
+and JPY have no minor unit; a hardcoded %[1]samount / 100%[1]s shows a 50,000
+shilling price as 500, and nobody notices until the first Ugandan customer
+complains.
+
+## The public API (--public)
+
+%[1]sgrit generate resource X --public%[1]s adds a read-only surface for callers with
+no logged-in user: a storefront, a mobile app, a public directory.
+
+%[1]s%[1]s%[1]s
+GET /api/v1/public/<plural>               list, search, sort, filter
+GET /api/v1/public/<plural>/:key          by slug, or by id when there is none
+GET /api/v1/public/<plural>/:key/related  same collection, newest first
+%[1]s%[1]s%[1]s
+
+- Guarded by a publishable API key. Not secrecy, since the key ships inside
+  your app: identification, a rate-limit bucket per key, per-endpoint and
+  per-origin narrowing, and the ability to turn one client off without a
+  deploy.
+- The response is an allowlist in %[1]sinternal/handlers/<x>_public.go%[1]s, not the
+  model. That file is NEVER overwritten when the resource is regenerated, so
+  a column you want published goes in the struct and in %[1]stoPublicX%[1]s by hand.
+- Relations are held back on purpose: publishing one publishes a whole
+  related record nobody vetted. Filter by the foreign key id instead, which
+  the handler already allows.
+
+### A public endpoint that writes
+
+There is no generator for one. When you write it (a cart, a sign-up, a
+review), three rules:
+
+- Do NOT mount it on the %[1]spublicAPI%[1]s group. That group has a response cache
+  keyed on the URL and nothing else, so one caller's answer is served to
+  every caller. Use your own group with the same %[1]smiddleware.RequireAPIKey%[1]s.
+- Set %[1]sCache-Control: private%[1]s on the response anyway, so moving the route
+  later cannot make it wrong.
+- Never take a price, a total or a discount from the request body. Take an id
+  and a quantity, and read every figure from the database.
+
+## Variants
+
+%[1]sgrit add variants --resource Product%[1]s installs options, option values, the
+per-product offered options, the variants and the join between them, plus a
+matrix editor on the product's admin page and one public endpoint:
+
+%[1]s%[1]s%[1]s
+GET /api/v1/public/products/:key/variants
+%[1]s%[1]s%[1]s
+
+One response, with everything a picker needs: the options to draw (values,
+swatches, price deltas), every combination (id, sku, price, in_stock,
+option_value_ids), and the price range.
+
+- One request, not three. Fetching options, then variants, then a price per
+  swatch click is three round trips per interaction on your busiest page.
+- The price in it is the server's. Do not re-apply option deltas in the
+  browser: a second implementation of that arithmetic is a second answer to
+  "what does this cost".
+- A product with no variants gets empty lists and a range of its own price,
+  so one component renders both cases. Most of a real catalogue has no
+  options at all.
+- Match a selection to a variant by comparing the set of %[1]soption_value_ids%[1]s.
+  The values are not nested on each variant because they are already in the
+  options list, and nesting them would send the same objects twice.
+
 ## Go Model Pattern
 
-%[1]sgo
+%[1]s%[1]s%[1]sgo
 type Post struct {
     ID        uint           // gorm:"primarykey" json:"id"
     Title     string         // gorm:"size:255;not null" json:"title" binding:"required"
@@ -764,7 +855,7 @@ type Post struct {
     UpdatedAt time.Time      // json:"updated_at"
     DeletedAt gorm.DeletedAt // gorm:"index" json:"-"
 }
-%[1]s
+%[1]s%[1]s%[1]s
 
 Rules:
 - Always include ID, CreatedAt, UpdatedAt, DeletedAt
@@ -777,17 +868,17 @@ Rules:
 
 ### File Storage
 
-%[1]sgo
+%[1]s%[1]s%[1]sgo
 storage.Upload(ctx, "uploads/2024/01/photo.jpg", reader, "image/jpeg")
 url := storage.GetURL("uploads/2024/01/photo.jpg")
 url, err := storage.GetSignedURL(ctx, key, 1*time.Hour)
-%[1]s
+%[1]s%[1]s%[1]s
 
 ### Email
 
 MAIL_MAILER picks the driver (smtp, resend, mailgun, postmark, sendgrid, ses, log, failover); development sends to Mailhog.
 
-%[1]sgo
+%[1]s%[1]s%[1]sgo
 // A built-in template, sent now
 mailer.Send(ctx, mail.SendOptions{
     To: "user@example.com", Subject: "Welcome!",
@@ -799,13 +890,13 @@ mailer.SendMessage(ctx, &mail.Message{To: []string{"a@example.com"}, Subject: "H
 
 // Queued: the worker sends it and retries. Attachments over 256 KB are refused.
 mail.Queue(ctx, svc.Jobs, &mail.Message{To: []string{"a@example.com"}, Subject: "Hi", HTML: "<p>Hi</p>"})
-%[1]s
+%[1]s%[1]s%[1]s
 
 Templates: %[1]swelcome%[1]s, %[1]spassword-reset%[1]s, %[1]semail-verification%[1]s, %[1]snotification%[1]s. Add your own with %[1]sgrit generate mail OrderShipped%[1]s (internal/mail/templates/order_shipped.go: typed OrderShippedData, SendOrderShipped, QueueOrderShipped, listed in the admin Mail Preview). In tests, %[1]smailtest.New()%[1]s records mail: %[1]sfake.AssertSent(t, to, subject)%[1]s.
 
 ### Background Jobs
 
-%[1]sgo
+%[1]s%[1]s%[1]sgo
 // Fire-and-forget enqueue (uses framework defaults: 5 max retries,
 // exponential backoff 1s/2s/4s.../5min cap, 5min per-attempt timeout).
 svc.Jobs.EnqueueSendEmail(ctx, "user@example.com", "Welcome", "welcome", data)
@@ -817,22 +908,22 @@ svc.Jobs.EnqueueSendEmail(ctx, user.Email, "Your account", "notification", data,
 })
 
 svc.Jobs.EnqueueProcessImage(ctx, uploadID, key, mimeType)
-%[1]s
+%[1]s%[1]s%[1]s
 
 ### Redis Cache
 
-%[1]sgo
+%[1]s%[1]s%[1]sgo
 cache.Set(ctx, "user:123", userData, 5*time.Minute)
 cache.Get(ctx, "user:123", &user)
 cache.Delete(ctx, "user:123")
-%[1]s
+%[1]s%[1]s%[1]s
 
 ### AI Integration (Vercel AI Gateway)
 
-%[1]sgo
+%[1]s%[1]s%[1]sgo
 result, err := ai.Complete(ctx, ai.CompletionRequest{Prompt: "Summarize..."})
 ai.Stream(ctx, req, func(chunk string) { /* SSE */ })
-%[1]s
+%[1]s%[1]s%[1]s
 
 One key, hundreds of models. Config: %[1]sAI_GATEWAY_API_KEY%[1]s, %[1]sAI_GATEWAY_MODEL%[1]s (e.g. %[1]santhropic/claude-sonnet-4-6%[1]s).
 

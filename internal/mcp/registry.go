@@ -70,7 +70,13 @@ func allTools() []tool {
 			name: "grit_describe_models",
 			description: "List the GORM models with their fields, Go types, JSON names, and GORM " +
 				"tags. Use this to learn the exact shape of a request or response body, the column " +
-				"constraints, and the relationships between tables. Parsed from internal/models.",
+				"constraints, and the relationships between tables. Parsed from internal/models. " +
+				"Note: this is the model, which is what the authenticated endpoints return. The " +
+				"public endpoints a resource generated with --public serves return an allowlist " +
+				"held in internal/handlers/<name>_public.go instead, which is deliberately " +
+				"narrower and is edited by hand; read that file for the public shape. A money " +
+				"field is two columns, <name>_amount and <name>_currency, and the sortable and " +
+				"filterable one is <name>_amount.",
 			schema: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{

@@ -63,6 +63,19 @@ export default function TutorialEcommercePage() {
               </p>
             </div>
 
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-10">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">Want the code rather than the commands?</strong>{' '}
+                <a href="https://github.com/MUKE-coder/grit/tree/main/examples/commerce" className="text-primary hover:underline">examples/commerce</a>{' '}
+                is a checked-in storefront, built and tested by CI on every push: twelve products, a
+                Colour &times; Size variant matrix with ninety-six combinations, and a server-side
+                basket. It is modelled on vercel/commerce, which is a storefront with no backend,
+                and adds the part that one leaves to Shopify. Its{' '}
+                <a href="https://github.com/MUKE-coder/grit/blob/main/examples/commerce/TUTORIAL.md" className="text-primary hover:underline">TUTORIAL.md</a>{' '}
+                reproduces it from an empty directory, with every hand-written file in full.
+              </p>
+            </div>
+
             {/* Prerequisites */}
             <div className="mb-12">
               <h2 className="text-2xl font-semibold tracking-tight mb-4">

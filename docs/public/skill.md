@@ -295,6 +295,59 @@ https://gritframework.dev/docs/concepts/naming-conventions
 
 ---
 
+## Money, the public API, and variants
+
+Three subjects that cost the most time when they are learned by trial.
+
+### Money
+
+`price:money` is `money.Money`: `{ Amount int64, Currency string }` with the
+amount in **minor** units. `money.New(2800, "USD")` is $28.00.
+
+- `a.Add(b)` returns `(Money, error)` and errors on mixed currencies. Check it
+  even in a one-currency app.
+- GORM embeds it as two columns prefixed with the field name, so the sortable
+  and filterable column is **`price_amount`, not `price`**:
+  `?sort_by=price_amount&sort_order=asc`, `?price_amount_min=5000`.
+- On the frontend, `formatMoney(m)` from `@repo/shared/types`. A hardcoded
+  `amount / 100` shows a 50,000 shilling price as 500, because UGX has no minor
+  unit.
+
+### The public API
+
+`--public` adds a read-only surface for callers with no logged-in user: a list,
+a get by slug, and a related strip, guarded by a publishable API key.
+
+- The response is an **allowlist** in `internal/handlers/<x>_public.go`, built
+  from the field types rather than from the model. **That file is never
+  overwritten on regeneration**, so a column you want published goes in by hand.
+- Relations are held back on purpose. Filter by the foreign key id instead.
+- A **public endpoint that writes** (a cart, a sign-up, a review) is
+  hand-written, and must not go on the `publicAPI` group: that group caches by
+  URL alone, so one caller's answer would be served to every caller. Give it its
+  own group with the same `RequireAPIKey`, and set `Cache-Control: private`.
+- Never take a price, a total or a discount from a request body. Take an id and
+  a quantity; read every figure from the database.
+
+### Variants
+
+`grit add variants --resource Product` installs the option and variant tables, a
+matrix editor in the admin, and one public endpoint:
+
+```
+GET /api/v1/public/products/:key/variants
+```
+
+It returns the options to draw, every combination with its resolved price and
+stock, and the price range, **in one response**. Do not fetch options, then
+variants, then a price per swatch click, and do not re-apply option deltas in
+the browser: the price in that payload is the server's.
+
+A product with no variants gets empty lists and a range of its own price, so one
+component renders both cases.
+
+---
+
 ## Mistakes that cost the most time
 
 1. **Hand-writing a resource** instead of running the generator. The files are
@@ -311,6 +364,12 @@ https://gritframework.dev/docs/concepts/naming-conventions
    leaves project-owned files (`routes.go`, your models) alone and reports what
    it could not do. Read its output.
 9. **Reporting success without building.** Step 5.
+10. **Sorting on `price`** when the column is `price_amount`. A money field is
+    two columns.
+11. **Adding a per-caller endpoint to the `/public` group.** It is cached by URL
+    alone.
+12. **Raw SQL against a generated join table.** The column names are the
+    generator's, and the association is already loaded. Preload it.
 
 ---
 
@@ -329,6 +388,13 @@ Each of these is a complete application, start to finish:
 - [Plugins: what they are and how to build one](https://gritframework.dev/blog/grit-plugins-what-they-are-and-how-to-build-one)
 - [GDPR and access reviews](https://gritframework.dev/blog/gdpr-and-access-reviews)
 - [Why I built Grit](https://gritframework.dev/blog/why-i-built-grit)
+
+Two of them are checked-in code rather than prose, built and tested by CI:
+[`examples/commerce`](https://github.com/MUKE-coder/grit/tree/main/examples/commerce)
+(a shop: catalogue, variant matrix, server-side basket, with a
+[TUTORIAL.md](https://github.com/MUKE-coder/grit/blob/main/examples/commerce/TUTORIAL.md)
+that builds it from an empty directory) and
+[`examples/library`](https://github.com/MUKE-coder/grit/tree/main/examples/library).
 
 Tutorials: [blog](https://gritframework.dev/docs/tutorials/blog) ·
 [contact app](https://gritframework.dev/docs/tutorials/contact-app) ·
