@@ -67,8 +67,17 @@ func publishableByDefault(f Field) bool {
 	// A raw count is a business fact competitors enjoy, and a page almost
 	// always wants "in stock" rather than "we have four left". Publish a
 	// derived boolean instead, or add this back if you want the urgency.
+	//
+	// Only the count, though. A bool named available IS the derived boolean
+	// this recommends, and holding it back left a storefront unable to say
+	// whether anything was in stock, by the rule that told it to publish a
+	// boolean in the first place.
 	case "stock", "quantity", "inventory", "on_hand", "available":
-		return false
+		switch FieldType(f.Type) {
+		case FieldBool, FieldToggle:
+		default:
+			return false
+		}
 	// The endpoint already filters on these, so the value is the same on every
 	// row it will ever return. Publishing it is noise that reads like meaning.
 	case "active", "published", "visible", "enabled", "archived", "is_active",
@@ -78,10 +87,21 @@ func publishableByDefault(f Field) bool {
 
 	switch FieldType(f.Type) {
 	case FieldString, FieldText, FieldSlug, FieldRichtext,
-		FieldFloat, FieldInt, FieldBool, FieldSelect,
+		FieldFloat, FieldInt, FieldUint, FieldBool, FieldSelect,
 		FieldFile, FieldFiles, FieldDate, FieldDatetime, FieldStringArray:
 		return true
-	case FieldBelongsTo, FieldManyToMany:
+	// A price is the most public thing a product has, and money was missing
+	// from this list entirely, so a shop that priced itself correctly got a
+	// catalogue endpoint with no price in it.
+	case FieldMoney:
+		return true
+	// These three are a bool, a select and a string list wearing different
+	// admin widgets. Two of them were already named in the filter lists
+	// below, which could never fire, because a field has to be published
+	// before it can be filtered on.
+	case FieldToggle, FieldRadio, FieldCheck:
+		return true
+	case FieldBelongsTo, FieldManyToMany, FieldOneToOne:
 		// A relation would publish the whole related record, including columns
 		// nobody vetted. Expose a name or a slug from it deliberately instead.
 		return false
@@ -220,8 +240,13 @@ func (g *Generator) publicHandlerSource(names Names, included []Field) string {
 		case FieldString, FieldText, FieldSlug:
 			searchable = append(searchable, strconvQuote(jsonName))
 			sortable = append(sortable, strconvQuote(jsonName)+": true")
-		case FieldFloat, FieldInt, FieldDate, FieldDatetime, FieldPercent, FieldRating, FieldTime, FieldCountry:
+		case FieldFloat, FieldInt, FieldUint, FieldDate, FieldDatetime, FieldPercent, FieldRating, FieldTime, FieldCountry:
 			sortable = append(sortable, strconvQuote(jsonName)+": true")
+		case FieldMoney:
+			// Price low to high is the sort every catalogue page offers, and it
+			// sorts on the amount: the column is embedded, so the orderable
+			// column is the prefix plus _amount and not the field name.
+			sortable = append(sortable, strconvQuote(jsonName+"_amount")+": true")
 		}
 	}
 	sortable = append(sortable, strconvQuote("created_at")+": true")
@@ -239,10 +264,15 @@ func (g *Generator) publicHandlerSource(names Names, included []Field) string {
 		switch FieldType(f.Type) {
 		case FieldString, FieldSlug, FieldBool, FieldToggle, FieldSelect, FieldRadio, FieldCountry, FieldColor:
 			filterable = append(filterable, col)
-		case FieldInt, FieldFloat, FieldPercent, FieldRating:
+		case FieldInt, FieldUint, FieldFloat, FieldPercent, FieldRating:
 			// Both: ?year=2024 is an equality question, ?price_min=50 a window.
 			filterable = append(filterable, col)
 			rangeFilterable = append(rangeFilterable, col)
+		case FieldMoney:
+			// A price window only, on the embedded amount column. Equality on a
+			// price is not a question anyone asks, and the amount is in minor
+			// units, so ?price_amount_min=5000 is fifty of whatever it is in.
+			rangeFilterable = append(rangeFilterable, strconvQuote(toSnakeCase(f.Name)+"_amount")+": true")
 		}
 	}
 
@@ -638,17 +668,27 @@ func publicGoType(f Field) string {
 	switch FieldType(f.Type) {
 	case FieldInt, FieldRating:
 		return "int"
+	case FieldUint:
+		return "uint"
 	case FieldFloat, FieldPercent:
 		return "float64"
-	case FieldBool:
+	case FieldBool, FieldToggle:
 		return "bool"
-	case FieldDate, FieldDatetime:
-		return "time.Time"
+	// Not time.Time. The model declares the jsontime wrappers, which marshal
+	// a date as 2026-10-05 and a datetime as an RFC 3339 instant, and
+	// assigning one to a time.Time field is a build failure: the public
+	// handler did not compile for any resource with a date on it.
+	case FieldDate:
+		return "*jsontime.Date"
+	case FieldDatetime:
+		return "*jsontime.DateTime"
+	case FieldMoney:
+		return "money.Money"
 	case FieldFile:
 		return "*files.FileRef"
 	case FieldFiles:
 		return "files.FileRefs"
-	case FieldStringArray:
+	case FieldStringArray, FieldCheck:
 		return "datatypes.JSONSlice[string]"
 	}
 	return "string"
@@ -663,24 +703,29 @@ func publicGoType(f Field) string {
 // a line between them, so a local import emitted next to "net/http" stays
 // there, wrong, forever.
 func publicImports(module string, included []Field) (string, string, string) {
-	var needTime, needFiles, needDatatypes bool
+	var needJSONTime, needMoney, needFiles, needDatatypes bool
 	for _, f := range included {
 		switch FieldType(f.Type) {
 		case FieldDate, FieldDatetime:
-			needTime = true
+			needJSONTime = true
+		case FieldMoney:
+			needMoney = true
 		case FieldFile, FieldFiles:
 			needFiles = true
-		case FieldStringArray:
+		case FieldStringArray, FieldCheck:
 			needDatatypes = true
 		}
 	}
 
 	var std, third, local []string
-	if needTime {
-		std = append(std, "	\"time\"")
-	}
 	if needDatatypes {
 		third = append(third, "	\"gorm.io/datatypes\"")
+	}
+	if needJSONTime {
+		local = append(local, "	\""+module+"/internal/jsontime\"")
+	}
+	if needMoney {
+		local = append(local, "	\""+module+"/internal/money\"")
 	}
 	if needFiles {
 		local = append(local, "	\""+module+"/internal/files\"")

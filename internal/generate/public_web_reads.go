@@ -93,8 +93,14 @@ func publicTSType(f Field) string {
 		return "number"
 	case FieldBool, FieldToggle:
 		return "boolean"
-	case FieldStringArray:
+	case FieldStringArray, FieldCheck:
 		return "string[]"
+	// An amount in minor units and its currency, which is what the Go view
+	// struct carries. Typed as a string, a price rendered straight into JSX
+	// prints [object Object], which is the same failure the FileRef comment
+	// above describes.
+	case FieldMoney:
+		return "Money"
 	case FieldFile:
 		return "FileRef | null"
 	case FieldFiles:
@@ -102,6 +108,16 @@ func publicTSType(f Field) string {
 	default:
 		return "string"
 	}
+}
+
+// publicNeedsMoney reports whether the published shape carries a price.
+func publicNeedsMoney(included []Field) bool {
+	for _, f := range included {
+		if FieldType(f.Type) == FieldMoney {
+			return true
+		}
+	}
+	return false
 }
 
 // publicNeedsFileRef reports whether the published shape carries an upload.
@@ -151,10 +167,17 @@ const REVALIDATE_SECONDS = 60;
 		cacheOpen, cacheClose = "cache(", ")"
 	}
 
-	sharedTypes := "PaginatedResponse"
+	// Built as a list and sorted the way the import is written, because two
+	// optional names in one string is how a second one gets forgotten.
+	shared := []string{}
 	if publicNeedsFileRef(included) {
-		sharedTypes = "FileRef, PaginatedResponse"
+		shared = append(shared, "FileRef")
 	}
+	if publicNeedsMoney(included) {
+		shared = append(shared, "Money")
+	}
+	shared = append(shared, "PaginatedResponse")
+	sharedTypes := strings.Join(shared, ", ")
 
 	src := imports + `import type { ` + sharedTypes + ` } from "@repo/shared/types";
 

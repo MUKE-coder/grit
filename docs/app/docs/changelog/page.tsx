@@ -67,6 +67,70 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.363.0 */}
+            <div className="mb-12" id="v3.365.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.365.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The public API publishes the price, and compiles for a resource with a date</h3>
+                <p>
+                  <code>--public</code> generates a read-only catalogue endpoint from an
+                  allowlist. The allowlist is built from the field types, and it had never been
+                  checked against the list of field types that exist, so six of them were wrong
+                  at once.
+                </p>
+                <p>
+                  <code>money</code> was missing from the publishable switch entirely, and that
+                  switch defaults to no. A <code>Product</code> with a <code>price:money</code>
+                  {' '}field published <em>no price at all</em>: a catalogue endpoint a storefront
+                  cannot render a product card from. <code>uint</code>,{' '}
+                  <code>toggle</code>, <code>radio</code> and <code>check</code> were missing the
+                  same way. Two of those were already named in the generated filter lists, which
+                  could never have fired, because a field has to be published before it can be
+                  filtered on: the file contradicted itself and nothing noticed.
+                </p>
+                <p>
+                  Worse, the view struct typed a <code>date</code> as <code>time.Time</code>
+                  {' '}while the model declares <code>*jsontime.Date</code>. That is not a missing
+                  field, it is a build failure, so <code>--public</code> on any resource with a
+                  date or datetime on it produced a project that did not compile.
+                </p>
+                <p>
+                  Prices are now sortable and range-filterable on the embedded amount column, so
+                  the sort every catalogue page offers works:{' '}
+                  <code>?sort_by=price_amount&amp;sort_order=asc</code>, and{' '}
+                  <code>?price_amount_min=5000</code> for a window. The generated TypeScript
+                  client carries <code>Money</code> from the shared package rather than a string,
+                  for the same reason it carries <code>FileRef</code>: typed as a string, a price
+                  rendered straight into JSX prints <code>[object Object]</code>.
+                </p>
+                <p>
+                  A <code>bool</code> named <code>available</code> is published now too. The name
+                  rule that holds back <code>stock</code>, <code>quantity</code> and{' '}
+                  <code>available</code> exists because a raw count is a business fact
+                  competitors enjoy, and its own comment says to publish a derived boolean
+                  instead. It then held back the derived boolean, so a storefront could not say
+                  whether anything was in stock by following the advice the rule gave it. The
+                  rule now applies to the count and not to the flag.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The test that was missing is the point. Every existing test passed through all
+                  six faults, because each asserted something about a field type somebody had
+                  remembered to handle. There is now a table of all thirty field types with the
+                  decision and the declared Go type for each, and a test that reads{' '}
+                  <code>field.go</code> and fails if a field type exists that the table does not
+                  mention. <code>internal/handlers/*_public.go</code> is never overwritten on
+                  regeneration, so an existing project keeps its allowlist: add the column by
+                  hand, or delete the file and regenerate.
+                </p>
+              </div>
+            </div>
+
+            {/* v3.364.0 */}
             <div className="mb-12" id="v3.364.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
