@@ -7,7 +7,21 @@ import "strings"
 // Everything a variant system needs that is not CRUD: resolving a price,
 // building the option payload a storefront renders, and generating the
 // combinations so nobody types twelve rows by hand.
-func apiVariantServiceGo(module, pascal, snake, plural string) string {
+func apiVariantServiceGo(module, pascal, snake, plural string, moneyPrice bool) string {
+	// The deltas and the override stay float64 whatever the base is: a
+	// shopkeeper types "2.50" into the matrix, not "250". They are converted at
+	// the boundary, which is the only place that knows the currency.
+	priceType, overrideExpr, sumExpr := "float64", "*variant.PriceOverride", "base + delta"
+	lessExpr, moreExpr := "price < low", "price > high"
+	moneyImport := ""
+	if moneyPrice {
+		priceType = "money.Money"
+		overrideExpr = "money.FromMajor(*variant.PriceOverride, base.Currency)"
+		sumExpr = "money.FromMajor(base.Major()+delta, base.Currency)"
+		lessExpr, moreExpr = "price.Amount < low.Amount", "price.Amount > high.Amount"
+		moneyImport = "\n\t\"" + module + "/internal/money\""
+	}
+
 	lower := strings.ToLower(pascal)
 	fp := strings.ToLower(pascal[:1]) + pascal[1:] + "Fingerprint"
 	return `package services
@@ -18,7 +32,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"` + module + `/internal/models"
+	"` + module + `/internal/models"` + moneyImport + `
 )
 
 // ` + pascal + `VariantService owns the questions a variant system is for.
@@ -44,19 +58,22 @@ func New` + pascal + `VariantService(db *gorm.DB) *` + pascal + `VariantService 
 // whose OPTION declares AffectsPrice. Reading the flag from the option rather
 // than the value is what stops a half-configured shop charging extra for a
 // colour because somebody typed a delta on one swatch.
-func (s *` + pascal + `VariantService) ResolvePrice(base float64, variant models.` + pascal + `Variant, optionsByID map[string]models.Option) float64 {
+func (s *` + pascal + `VariantService) ResolvePrice(base ` + priceType + `, variant models.` + pascal + `Variant, optionsByID map[string]models.Option) ` + priceType + ` {
 	if variant.PriceOverride != nil {
-		return *variant.PriceOverride
+		return ` + overrideExpr + `
 	}
-	price := base
+	delta := 0.0
 	for _, value := range variant.OptionValues {
 		option, ok := optionsByID[value.OptionID]
 		if !ok || !option.AffectsPrice {
 			continue
 		}
-		price += value.PriceDelta
+		delta += value.PriceDelta
 	}
-	return price
+	if delta == 0 {
+		return base
+	}
+	return ` + sumExpr + `
 }
 
 // OptionsFor returns the options a ` + lower + ` offers, each with its values,
@@ -295,7 +312,7 @@ func (s *` + pascal + `VariantService) FindByValues(` + snake + `ID string, valu
 // Out-of-stock variants are excluded, because a "from 49" that can only be had
 // by buying something unavailable is a lie the customer discovers at the last
 // step.
-func (s *` + pascal + `VariantService) PriceRange(base float64, variants []models.` + pascal + `Variant, optionsByID map[string]models.Option) (low, high float64) {
+func (s *` + pascal + `VariantService) PriceRange(base ` + priceType + `, variants []models.` + pascal + `Variant, optionsByID map[string]models.Option) (low, high ` + priceType + `) {
 	first := true
 	for _, variant := range variants {
 		if !variant.InStock() {
@@ -306,10 +323,10 @@ func (s *` + pascal + `VariantService) PriceRange(base float64, variants []model
 			low, high, first = price, price, false
 			continue
 		}
-		if price < low {
+		if ` + lessExpr + ` {
 			low = price
 		}
-		if price > high {
+		if ` + moreExpr + ` {
 			high = price
 		}
 	}
@@ -416,6 +433,6 @@ func ` + fp + `(values []models.OptionValue) string {
 }
 
 // APIVariantServiceGo is exported for grit add variants.
-func APIVariantServiceGo(module, pascal, snake, plural string) string {
-	return apiVariantServiceGo(module, pascal, snake, plural)
+func APIVariantServiceGo(module, pascal, snake, plural string, moneyPrice bool) string {
+	return apiVariantServiceGo(module, pascal, snake, plural, moneyPrice)
 }

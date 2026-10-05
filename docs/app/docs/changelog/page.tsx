@@ -67,6 +67,60 @@ export default function ChangelogPage() {
             </div>
 
             {/* v3.363.0 */}
+            <div className="mb-12" id="v3.364.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.364.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A shop that prices in money now generates a project that compiles</h3>
+                <p>
+                  Building a real storefront found five faults, and every one of them had the
+                  same cause: a generator that assumed a field type instead of reading the one
+                  the model actually declares. A <code>Product</code> with{' '}
+                  <code>price:money</code> and <code>title</code> rather than <code>name</code>
+                  {' '}is the ordinary shape for a shop, and it was the shape nothing had been
+                  generated in.
+                </p>
+                <p>
+                  The seeder wrote <code>Price: &quot;Sample Price&quot;</code> into a{' '}
+                  <code>money.Money</code> field, because it had no case for money and fell
+                  through to the string default. The same fall-through hit three more types:{' '}
+                  <code>toggle</code> got a string where a bool belongs, <code>date</code> and{' '}
+                  <code>datetime</code> got one where a <code>*jsontime.Date</code> belongs, and{' '}
+                  <code>check</code> got one where a <code>datatypes.JSONSlice[string]</code>
+                  {' '}belongs. A faker seeder for a resource with a date also emitted an unused{' '}
+                  <code>time</code> import.
+                </p>
+                <p>
+                  <code>grit add variants</code> was written against <code>float64</code>
+                  {' '}throughout, so a money-priced resource got a <code>ResolvePrice</code> that
+                  took a float and was handed a struct. It now reads the model and generates the
+                  service, handler, public endpoint and test in whichever type it finds. Price
+                  overrides and per-option deltas stay in major units on purpose: a shopkeeper
+                  types 2.50 into the matrix, not 250.
+                </p>
+                <p>
+                  The generated variant test had hardcoded <code>Name: &quot;Cotton
+                  shirt&quot;</code> in its fixture. Its own comment already said it cannot know
+                  the model&apos;s shape, which is exactly the reason it should not name a field
+                  it did not generate; the tests are about the option and variant graph and the
+                  row only has to exist.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The lesson is the one v3.358.1 taught about factories and did not generalise:
+                  a generator that writes a Go literal has to know the declared type, and the
+                  only way to find out that it does not is to generate a resource using every
+                  field type and compile it. Both price shapes are now generated and compiled on
+                  every run.
+                </p>
+              </div>
+            </div>
+
+            {/* v3.363.0 */}
             <div className="mb-12" id="v3.363.0">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">

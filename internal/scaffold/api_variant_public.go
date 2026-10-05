@@ -124,14 +124,21 @@ func deltaWhenPriced(option models.Option, value models.OptionValue) float64 {
 // hasSlug and hasArchivedAt are read off the resource's model rather than
 // assumed. A resource generated without a slug has no such column, and a lookup
 // on it would be a SQL error rather than a 404.
-func APIVariantPublicGo(module, pascal, snake, plural string, hasSlug, hasArchivedAt bool) string {
+func APIVariantPublicGo(module, pascal, snake, plural string, hasSlug, hasArchivedAt, moneyPrice bool) string {
 	// Database calls follow the request's context, as grit upgrade makes
 	// them in a handler written before they did.
-	out, _ := bindRequestContext(apiVariantPublicGo(module, pascal, snake, plural, hasSlug, hasArchivedAt))
+	out, _ := bindRequestContext(apiVariantPublicGo(module, pascal, snake, plural, hasSlug, hasArchivedAt, moneyPrice))
 	return out
 }
 
-func apiVariantPublicGo(module, pascal, snake, plural string, hasSlug, hasArchivedAt bool) string {
+func apiVariantPublicGo(module, pascal, snake, plural string, hasSlug, hasArchivedAt, moneyPrice bool) string {
+	// The public rows carry whatever ResolvePrice returns.
+	priceType, moneyImport := "float64", ""
+	if moneyPrice {
+		priceType = "money.Money"
+		moneyImport = "\n\t\"" + module + "/internal/money\""
+	}
+
 	lower := strings.ToLower(pascal)
 
 	// A slug is what a public URL should carry, and an id is what a client has
@@ -155,7 +162,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"` + module + `/internal/files"
-	"` + module + `/internal/models"
+	"` + module + `/internal/models"` + moneyImport + `
 	"` + module + `/internal/respond"
 )
 
@@ -178,7 +185,7 @@ import (
 type public` + pascal + `Variant struct {
 	ID             string         ` + "`" + `json:"id"` + "`" + `
 	SKU            string         ` + "`" + `json:"sku,omitempty"` + "`" + `
-	Price          float64        ` + "`" + `json:"price"` + "`" + `
+	Price          ` + priceType + `        ` + "`" + `json:"price"` + "`" + `
 	InStock        bool           ` + "`" + `json:"in_stock"` + "`" + `
 	Images         files.FileRefs ` + "`" + `json:"images,omitempty"` + "`" + `
 	OptionValueIDs []string       ` + "`" + `json:"option_value_ids"` + "`" + `

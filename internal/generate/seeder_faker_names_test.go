@@ -20,7 +20,7 @@ func TestFakerNamesFitTheResource(t *testing.T) {
 			},
 		},
 	}
-	lines, _, _, _, _ := product.seederFieldLines("faker")
+	lines, _, _, _, _, _, _, _ := product.seederFieldLines("faker")
 	for _, want := range []string{
 		"gofakeit.ProductName()",
 		"Price: gofakeit.Number(1000, 500000)",
@@ -40,7 +40,7 @@ func TestFakerNamesFitTheResource(t *testing.T) {
 			Fields: []Field{{Name: "name", Type: "string"}},
 		},
 	}
-	lines, _, _, _, _ = customer.seederFieldLines("faker")
+	lines, _, _, _, _, _, _, _ = customer.seederFieldLines("faker")
 	if !strings.Contains(lines, "gofakeit.Name()") {
 		t.Errorf("a customer is a person and should get a person's name, got:\n%s", lines)
 	}
@@ -55,7 +55,7 @@ func TestFakerTitlesReadAsTitles(t *testing.T) {
 			Fields: []Field{{Name: "title", Type: "string"}},
 		},
 	}
-	lines, _, _, _, _ := post.seederFieldLines("faker")
+	lines, _, _, _, _, _, _, _ := post.seederFieldLines("faker")
 	if !strings.Contains(lines, "gofakeit.Sentence(6)") {
 		t.Errorf("a title should read as one, got:\n%s", lines)
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/fatih/color"
@@ -47,6 +48,19 @@ func AddVariants(resource string) error {
 			names.Pascal, names.Snake, names.Pascal)
 	}
 
+	// Does this resource price itself in money.Money or a bare float64?
+	//
+	// The variant system was written against float64, so a resource with a
+	// money price produced a project that did not compile: ResolvePrice took
+	// a float64 and was handed a struct. money is the better choice and the
+	// one an actual shop makes, so the generator reads the model rather than
+	// assuming either.
+	modelSrc, err := os.ReadFile(modelPath)
+	if err != nil {
+		return fmt.Errorf("reading %s: %w", modelPath, err)
+	}
+	moneyPrice := regexp.MustCompile(`(?m)^\s*Price\s+money\.Money\b`).Match(modelSrc)
+
 	module, err := readModulePath(root, "")
 	if err != nil {
 		return err
@@ -89,12 +103,12 @@ func AddVariants(resource string) error {
 
 	// The per-resource half.
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_variant_public.go"):  scaffold.APIVariantPublicGo(module, names.Pascal, names.Snake, names.Plural, hasSlug, hasArchivedAt),
+		filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_variant_public.go"):  scaffold.APIVariantPublicGo(module, names.Pascal, names.Snake, names.Plural, hasSlug, hasArchivedAt, moneyPrice),
 		filepath.Join(apiRoot, "internal", "database", names.Snake+"_variants_seeder.go"): scaffold.APIVariantSeederGo(module, names.Pascal, names.Snake, names.Plural, hasSlug),
 		filepath.Join(apiRoot, "internal", "models", names.Snake+"_variant.go"):           scaffold.APIVariantModelGo(module, names.Pascal, names.Snake),
-		filepath.Join(apiRoot, "internal", "services", names.Snake+"_variants.go"):        scaffold.APIVariantServiceGo(module, names.Pascal, names.Snake, names.Plural),
-		filepath.Join(apiRoot, "internal", "services", names.Snake+"_variants_test.go"):   scaffold.APIVariantServiceTestGo(module, names.Pascal, names.Snake),
-		filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_variant.go"):         scaffold.APIVariantHandlerGo(module, names.Pascal, names.Snake, names.Plural),
+		filepath.Join(apiRoot, "internal", "services", names.Snake+"_variants.go"):        scaffold.APIVariantServiceGo(module, names.Pascal, names.Snake, names.Plural, moneyPrice),
+		filepath.Join(apiRoot, "internal", "services", names.Snake+"_variants_test.go"):   scaffold.APIVariantServiceTestGo(module, names.Pascal, names.Snake, moneyPrice),
+		filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_variant.go"):         scaffold.APIVariantHandlerGo(module, names.Pascal, names.Snake, names.Plural, moneyPrice),
 	}
 	for path, body := range files {
 		if err := writeFileWithDirs(path, body); err != nil {

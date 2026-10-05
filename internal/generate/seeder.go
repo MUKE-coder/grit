@@ -53,7 +53,7 @@ func (g *Generator) seederContent(names Names, opts SeederOptions) string {
 	if opts.Faker {
 		mode = "faker"
 	}
-	fieldLines, relPreamble, needsTime, needsFiles, needsStrings := g.seederFieldLines(mode)
+	fieldLines, relPreamble, needsTime, needsFiles, needsStrings, needsMoney, needsJSONTime, needsDatatypesSlice := g.seederFieldLines(mode)
 	if relPreamble != "" {
 		relPreamble = "\t// Link each row to an existing parent (loaded once).\n" + relPreamble + "\n"
 	}
@@ -80,6 +80,7 @@ func (g *Generator) seederContent(names Names, opts SeederOptions) string {
 	imports.WriteString("\n")
 	// The formatted fields' samples, and datatypes for a static json example.
 	needsFieldTypes, needsPhone, needsDatatypes := false, false, false
+	needsDatatypes = needsDatatypes || needsDatatypesSlice
 	for _, f := range g.Definition.Fields {
 		switch {
 		case f.IsTel():
@@ -102,6 +103,12 @@ func (g *Generator) seederContent(names Names, opts SeederOptions) string {
 	}
 	if needsPhone {
 		imports.WriteString("\t\"" + g.Module + "/internal/phone\"\n")
+	}
+	if needsMoney {
+		imports.WriteString("\t\"" + g.Module + "/internal/money\"\n")
+	}
+	if needsJSONTime {
+		imports.WriteString("\t\"" + g.Module + "/internal/jsontime\"\n")
 	}
 	if needsDatatypes {
 		imports.WriteString("\t\"gorm.io/datatypes\"\n")
@@ -381,7 +388,7 @@ func (g *Generator) seedsPeople() bool {
 // row links to a real parent), and whether the time/files packages are needed.
 // Slug (auto), m2m and string-array fields are skipped — the user wires those
 // up by hand.
-func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needsTime, needsFiles, needsStrings bool) {
+func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needsTime, needsFiles, needsStrings, needsMoney, needsJSONTime, needsDatatypesSlice bool) {
 	var b, pre strings.Builder
 	seenRel := map[string]bool{}
 	for _, f := range g.Definition.Fields {
@@ -476,18 +483,45 @@ func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needs
 			} else {
 				val = "9.99"
 			}
-		case ft == FieldBool:
+		// money.Money is two columns, an amount in minor units and a
+		// currency. Falling through to the string default below wrote
+		// Price: "Sample Price" into a struct field, and the project did
+		// not compile.
+		case ft == FieldMoney:
+			needsMoney = true
+			if faker {
+				val = `money.New(int64(gofakeit.Number(500, 50000)), "USD")`
+			} else {
+				val = `money.New(1999, "USD")`
+			}
+		// A toggle is a bool with a different control on the form, so it
+		// seeds the same way. Matching only FieldBool sent it to the string
+		// default below.
+		case ft == FieldBool || ft == FieldToggle:
 			if faker {
 				val = "gofakeit.Bool()"
 			} else {
 				val = "true"
 			}
-		case ft == FieldDate || ft == FieldDatetime:
-			needsTime = true
+		// A date column is a *jsontime.Date and a datetime a
+		// *jsontime.DateTime, not a time.Time: the admin sends
+		// "2001-08-06" and "2001-08-06T14:30", and time.Time parses
+		// neither. See internal/jsontime.
+		case ft == FieldDate:
+			needsJSONTime = true
 			if faker {
-				val = "gofakeit.Date()"
+				val = "&jsontime.Date{Time: gofakeit.Date()}"
 			} else {
-				val = "time.Now()"
+				needsTime = true
+				val = "&jsontime.Date{Time: time.Now()}"
+			}
+		case ft == FieldDatetime:
+			needsJSONTime = true
+			if faker {
+				val = "&jsontime.DateTime{Time: gofakeit.Date()}"
+			} else {
+				needsTime = true
+				val = "&jsontime.DateTime{Time: time.Now()}"
 			}
 		// A choice field has to be seeded from its own choices. Falling through
 		// to the string branch below put gofakeit.Word() in a status column, so
@@ -495,6 +529,12 @@ func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needs
 		// values the form's own dropdown cannot offer and the API's validation
 		// would reject. Anything rendering a status badge then has to cope with
 		// a value that is not in the union its own generated type declares.
+		// A check field holds several of its own values, so it is a JSON
+		// slice rather than a string. Falling through to the default wrote
+		// a sentence into it.
+		case ft == FieldCheck && len(f.Options) > 0:
+			needsDatatypesSlice = true
+			val = `datatypes.JSONSlice[string]{"` + f.Options[0].Value + `"}`
 		case (ft == FieldSelect || ft == FieldRadio) && len(f.Options) > 0:
 			values := make([]string, 0, len(f.Options))
 			for _, o := range f.Options {
@@ -578,7 +618,7 @@ func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needs
 		}
 		b.WriteString("\t\t\t" + goField + ": " + val + ",\n")
 	}
-	return b.String(), pre.String(), needsTime, needsFiles, needsStrings
+	return b.String(), pre.String(), needsTime, needsFiles, needsStrings, needsMoney, needsJSONTime, needsDatatypesSlice
 }
 
 // seederFormattedValue is the Go expression a seeder assigns to a formatted

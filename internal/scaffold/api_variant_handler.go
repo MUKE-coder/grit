@@ -3,14 +3,21 @@ package scaffold
 import "strings"
 
 // APIVariantHandlerGo emits the admin endpoints for options and variants.
-func APIVariantHandlerGo(module, pascal, snake, plural string) string {
+func APIVariantHandlerGo(module, pascal, snake, plural string, moneyPrice bool) string {
 	// Database calls follow the request's context, as grit upgrade makes
 	// them in a handler written before they did.
-	out, _ := bindRequestContext(apiVariantHandlerGo(module, pascal, snake, plural))
+	out, _ := bindRequestContext(apiVariantHandlerGo(module, pascal, snake, plural, moneyPrice))
 	return out
 }
 
-func apiVariantHandlerGo(module, pascal, snake, plural string) string {
+func apiVariantHandlerGo(module, pascal, snake, plural string, moneyPrice bool) string {
+	// The row carries whatever ResolvePrice returns.
+	priceType, moneyImport := "float64", ""
+	if moneyPrice {
+		priceType = "money.Money"
+		moneyImport = "\n\t\"" + module + "/internal/money\""
+	}
+
 	lower := strings.ToLower(pascal)
 	return `package handlers
 
@@ -20,7 +27,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"` + module + `/internal/models"
+	"` + module + `/internal/models"` + moneyImport + `
 	"` + module + `/internal/respond"
 	"` + module + `/internal/services"
 )
@@ -345,7 +352,7 @@ func (h *` + pascal + `VariantHandler) List(c *gin.Context) {
 
 	type row struct {
 		models.` + pascal + `Variant
-		Price float64 ` + "`" + `json:"price"` + "`" + `
+		Price ` + priceType + ` ` + "`" + `json:"price"` + "`" + `
 	}
 	out := make([]row, 0, len(variants))
 	for _, variant := range variants {

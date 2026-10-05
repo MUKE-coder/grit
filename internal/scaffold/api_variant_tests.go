@@ -6,12 +6,32 @@ import "strings"
 //
 // Price resolution is the thing worth testing, because every failure mode is
 // silent: a wrong price does not crash, it renders, and the customer pays it.
-func APIVariantServiceTestGo(module, pascal, snake string) string {
-	return perResource(apiVariantServiceTestGo(module, pascal, snake), pascal, "buildShirt", "loadOptionsByID", "variantTestDB")
+func APIVariantServiceTestGo(module, pascal, snake string, moneyPrice bool) string {
+	return perResource(apiVariantServiceTestGo(module, pascal, snake, moneyPrice), pascal, "buildShirt", "loadOptionsByID", "variantTestDB")
 }
 
-func apiVariantServiceTestGo(module, pascal, snake string) string {
+func apiVariantServiceTestGo(module, pascal, snake string, moneyPrice bool) string {
 	lower := strings.ToLower(pascal)
+	// Every price in this file is written in the resource's own type, so a
+	// shop that prices in money.Money gets a test that compiles against it.
+	base40, base50, want40, want1234 := "40", "50", "40.0", "12.34"
+	// 40 plus the XXL delta of 5.
+	want45, override1234, priceVerb := "45.0", "12.34", "%.2f"
+	riseExpr, riseWant := "after-before", "10"
+	moneyImport := ""
+	if moneyPrice {
+		base40 = `money.New(4000, "USD")`
+		base50 = `money.New(5000, "USD")`
+		want40 = `money.New(4000, "USD")`
+		want1234 = `money.New(1234, "USD")`
+		want45 = `money.New(4500, "USD")`
+		override1234 = "12.34" // the override is typed by a person, in major units
+		// money has a String method; %.2f on a struct prints Go syntax.
+		priceVerb = "%v"
+		riseExpr, riseWant = "after.Amount-before.Amount", "1000"
+		moneyImport = "\n\t\"" + module + "/internal/money\""
+	}
+
 	return `package services_test
 
 import (
@@ -21,7 +41,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"` + module + `/internal/models"
+	"` + module + `/internal/models"` + moneyImport + `
 	"` + module + `/internal/services"
 )
 
@@ -66,7 +86,11 @@ func buildShirt(t *testing.T, db *gorm.DB) (` + snake + `ID string, colours, siz
 	// a reason that is not about pricing. What these tests are actually about,
 	// the option and variant graph, is written with the constraints on.
 	db.Exec("PRAGMA foreign_keys = OFF")
-	` + snake + ` := models.` + pascal + `{Name: "Cotton shirt", Price: 40}
+	// No field of the resource is named here. This file did not generate the
+	// model and does not know whether it has a Name, a Title or neither; the
+	// tests below are about the option and variant graph, and the row only
+	// has to exist.
+	` + snake + ` := models.` + pascal + `{Price: ` + base40 + `}
 	createErr := db.Create(&` + snake + `).Error
 	db.Exec("PRAGMA foreign_keys = ON")
 	if createErr != nil {
@@ -119,23 +143,23 @@ func Test` + pascal + `VariantPriceUsesOnlyPriceAffectingOptions(t *testing.T) {
 	}
 
 	for _, variant := range variants {
-		price := svc.ResolvePrice(40, variant, byID)
+		price := svc.ResolvePrice(` + base40 + `, variant, byID)
 		isXXL := false
 		for _, value := range variant.OptionValues {
 			if value.Label == "XXL" {
 				isXXL = true
 			}
 		}
-		want := 40.0
+		want := ` + want40 + `
 		if isXXL {
-			want = 45.0
+			want = ` + want45 + `
 		}
 		if price != want {
 			labels := []string{}
 			for _, v := range variant.OptionValues {
 				labels = append(labels, v.Label)
 			}
-			t.Errorf("%v priced at %.2f, want %.2f. Colour must not move the price and size must",
+			t.Errorf("%v priced at ` + priceVerb + `, want ` + priceVerb + `. Colour must not move the price and size must",
 				labels, price, want)
 		}
 	}
@@ -149,11 +173,11 @@ func Test` + pascal + `VariantOverrideWins(t *testing.T) {
 	byID := loadOptionsByID(t, db)
 
 	variants, _ := svc.VariantsFor(id)
-	override := 12.34
+	override := ` + override1234 + `
 	variants[0].PriceOverride = &override
 
-	if got := svc.ResolvePrice(40, variants[0], byID); got != 12.34 {
-		t.Errorf("an override must win outright, got %.2f", got)
+	if got := svc.ResolvePrice(` + base40 + `, variants[0], byID); got != ` + want1234 + ` {
+		t.Errorf("an override must win outright, got ` + priceVerb + `", got)
 	}
 }
 
@@ -167,11 +191,11 @@ func Test` + pascal + `VariantPriceFollowsTheBasePrice(t *testing.T) {
 	byID := loadOptionsByID(t, db)
 
 	variants, _ := svc.VariantsFor(id)
-	before := svc.ResolvePrice(40, variants[0], byID)
-	after := svc.ResolvePrice(50, variants[0], byID)
+	before := svc.ResolvePrice(` + base40 + `, variants[0], byID)
+	after := svc.ResolvePrice(` + base50 + `, variants[0], byID)
 
-	if after-before != 10 {
-		t.Errorf("a base price rise of 10 moved the variant by %.2f", after-before)
+	if ` + riseExpr + ` != ` + riseWant + ` {
+		t.Errorf("a base price rise of 10 moved the variant by ` + priceVerb + `", ` + riseExpr + `)
 	}
 }
 
@@ -256,9 +280,9 @@ func Test` + pascal + `VariantPriceRangeSkipsOutOfStock(t *testing.T) {
 	}
 
 	variants, _ = svc.VariantsFor(id)
-	low, high := svc.PriceRange(40, variants, byID)
-	if low != 45 || high != 45 {
-		t.Errorf("only the XXL variants are in stock, so the range is 45 to 45, got %.2f to %.2f", low, high)
+	low, high := svc.PriceRange(` + base40 + `, variants, byID)
+	if low != ` + want45 + ` || high != ` + want45 + ` {
+		t.Errorf("only the XXL variants are in stock, so the range is 45 to 45, got ` + priceVerb + ` to ` + priceVerb + `", low, high)
 	}
 }
 

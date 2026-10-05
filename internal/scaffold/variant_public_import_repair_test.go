@@ -54,11 +54,11 @@ func assertImportsWhatItUses(t *testing.T, name, src string) {
 func TestVariantTemplatesImportWhatTheyUse(t *testing.T) {
 	const module = "shop/apps/api"
 	for name, src := range map[string]string{
-		"handler":         APIVariantHandlerGo(module, "Product", "product", "products"),
-		"public":          APIVariantPublicGo(module, "Product", "product", "products", true, true),
-		"public, no slug": APIVariantPublicGo(module, "Product", "product", "products", false, false),
+		"handler":         APIVariantHandlerGo(module, "Product", "product", "products", false),
+		"public":          APIVariantPublicGo(module, "Product", "product", "products", true, true, false),
+		"public, no slug": APIVariantPublicGo(module, "Product", "product", "products", false, false, false),
 		"option public":   APIOptionPublicGo(module),
-		"service":         APIVariantServiceGo(module, "Product", "product", "products"),
+		"service":         APIVariantServiceGo(module, "Product", "product", "products", false),
 		"models":          APIVariantModelGo(module, "Product", "product"),
 		"option models":   APIOptionModelGo(module),
 		"seeder":          APIVariantSeederGo(module, "Product", "product", "products", true),
@@ -68,7 +68,7 @@ func TestVariantTemplatesImportWhatTheyUse(t *testing.T) {
 }
 
 func TestVariantPublicImportRepair(t *testing.T) {
-	current := APIVariantPublicGo("shop/apps/api", "Product", "product", "products", true, true)
+	current := APIVariantPublicGo("shop/apps/api", "Product", "product", "products", true, true, false)
 	if out, changes, _ := repairVariantPublicImportSource(current); out != current || len(changes) != 0 {
 		t.Error("a current handler was changed")
 	}
@@ -115,9 +115,9 @@ func TestTwoResourcesWithVariantsDeclareNothingTwice(t *testing.T) {
 	const module = "shop/apps/api"
 	perPackage := func(pascal, snake, plural string) map[string][]string {
 		return map[string][]string{
-			"services": {APIVariantServiceGo(module, pascal, snake, plural), APIVariantServiceTestGo(module, pascal, snake)},
+			"services": {APIVariantServiceGo(module, pascal, snake, plural, false), APIVariantServiceTestGo(module, pascal, snake, false)},
 			"database": {APIVariantSeederGo(module, pascal, snake, plural, true)},
-			"handlers": {APIVariantHandlerGo(module, pascal, snake, plural), APIVariantPublicGo(module, pascal, snake, plural, true, true)},
+			"handlers": {APIVariantHandlerGo(module, pascal, snake, plural, false), APIVariantPublicGo(module, pascal, snake, plural, true, true, false)},
 			"models":   {APIVariantModelGo(module, pascal, snake)},
 		}
 	}
