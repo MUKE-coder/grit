@@ -131,6 +131,7 @@ const searchIndex: SearchItem[] = [
   { title: 'Resource Definitions', href: '/docs/admin/resources', section: 'Admin Panel', keywords: 'resource define crud table form config columns fields' },
   { title: 'DataTable', href: '/docs/admin/datatable', section: 'Admin Panel', keywords: 'admin table list sort filter search pagination columns rows bulk actions' },
   { title: 'Grid Data Entry (Bulk Create)', href: '/docs/admin/datatable#grid-data-entry', section: 'Admin Panel', keywords: 'bulk create bulk edit grid spreadsheet excel many rows at once paste fill down tab data entry' },
+  { title: 'Stats and Insights', href: '/docs/admin/datatable#stats-and-insights', section: 'Admin Panel', keywords: 'stat cards charts insights breakdown series count by status active graph collapsed panel analytics' },
   { title: 'Form Builder', href: '/docs/admin/forms', section: 'Admin Panel', keywords: 'form create edit fields input select toggle checkbox' },
   { title: 'Relationships', href: '/docs/admin/relationships', section: 'Admin Panel', keywords: 'relationship belongs_to many_to_many foreign key association preload select' },
   { title: 'Dashboard & Widgets', href: '/docs/admin/widgets', section: 'Admin Panel', keywords: 'dashboard stats chart widget cards analytics' },

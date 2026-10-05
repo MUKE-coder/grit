@@ -38,6 +38,11 @@ func writeCodegenRuntimeFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "paginate", "paginate_test.go"): apiPaginateTestGo(),
 		filepath.Join(apiRoot, "internal", "paginate", "counts_test.go"):   apiPaginateCountsTestGo(),
 		filepath.Join(apiRoot, "internal", "paginate", "count.go"):         paginateCountGo(),
+		// The insights panel's chart data: a count per period and a count per
+		// value, over the list's own query so the chart describes the rows the
+		// table is showing.
+		filepath.Join(apiRoot, "internal", "paginate", "insights.go"):      tmpl("api/paginate/insights.go"),
+		filepath.Join(apiRoot, "internal", "paginate", "insights_test.go"): tmpl("api/paginate/insights_test.go"),
 		filepath.Join(apiRoot, "internal", "paginate", "count_test.go"):    paginateCountTestGo(),
 		filepath.Join(apiRoot, "internal", "paginate", "search_index.go"):  paginateSearchIndexGo(),
 		filepath.Join(apiRoot, "internal", "imports", "limit.go"):          importsLimitGo(),

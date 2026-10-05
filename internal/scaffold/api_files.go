@@ -2651,6 +2651,19 @@ type Params struct {
 	// Total. The admin's stat cards ask for theirs on the list request rather
 	// than sending a request per card.
 	Counts []string
+
+	// Series asks for a count per period, from ?series=: created_at:month:12
+	// is the last twelve months by the month a row was created. The column is
+	// created_at or updated_at, the unit is day, week or month.
+	//
+	// Raw as it arrived, because what is allowed depends on Config, which
+	// ParamsFrom does not have. List parses it.
+	Series string
+
+	// Breakdown asks for a count per value of a column, from ?breakdown=:
+	// status,role is how many rows hold each status and each role. Only
+	// columns in Config.Filterable are answered.
+	Breakdown string
 }
 
 // With returns a copy of Params with an additional filter applied.
@@ -2763,6 +2776,14 @@ type Meta struct {
 
 	// Counts answers ?counts=, keyed by the names asked for. See Params.Counts.
 	Counts map[string]int64 ` + "`" + `json:"counts,omitempty"` + "`" + `
+
+	// Series answers ?series=: one entry per period that has rows, oldest
+	// first. Absent when the request did not ask.
+	Series []Bucket ` + "`" + `json:"series,omitempty"` + "`" + `
+
+	// Breakdown answers ?breakdown=: the values of each column asked for, with
+	// how many rows hold each, largest first.
+	Breakdown map[string][]Slice ` + "`" + `json:"breakdown,omitempty"` + "`" + `
 }
 
 // Result wraps the paginated data in the canonical { data, meta } envelope.
@@ -2836,6 +2857,8 @@ func Bind(c *gin.Context) Params {
 		DateTo:       dateTo,
 		QueryFilters: collectQueryFilters(c),
 		Counts:       parseCounts(c.Query("counts")),
+		Series:       c.Query("series"),
+		Breakdown:    c.Query("breakdown"),
 	}
 }
 
@@ -2849,7 +2872,7 @@ var reservedParams = map[string]bool{
 	"mode": true,
 	"created_since": true, "created_from": true, "created_to": true,
 	"updated_since": true, "archived": true, "format": true,
-	"counts": true,
+	"counts": true, "series": true, "breakdown": true,
 }
 
 func collectQueryFilters(c *gin.Context) map[string]string {
@@ -3102,6 +3125,24 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 			return result, err
 		}
 		result.Meta.Counts = counts
+	}
+
+	// The insights panel's chart, over this same query: the rows the table is
+	// showing, not the whole table. Collapsed by default in the admin, so the
+	// GROUP BY runs when somebody opens the panel and not before.
+	if spec, ok := parseSeries(p.Series); ok {
+		series, err := seriesBuckets(query, spec)
+		if err != nil {
+			return result, err
+		}
+		result.Meta.Series = series
+	}
+	if columns := parseBreakdown(p.Breakdown, cfg.Filterable); len(columns) > 0 {
+		breakdown, err := breakdownSlices(query, columns)
+		if err != nil {
+			return result, err
+		}
+		result.Meta.Breakdown = breakdown
 	}
 
 	// Then fetch the page.

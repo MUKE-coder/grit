@@ -66,6 +66,71 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.373.0 */}
+            <div className="mb-12" id="v3.373.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.373.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A list page that says something about itself</h3>
+                <p>
+                  Every resource page showed the same four cards: the total, and three date
+                  windows. They are the only questions that can be asked of a table whose
+                  columns are unknown, and the columns are not unknown: the generator knows
+                  which are booleans and which are a short list of options, and those are
+                  exactly the ones worth counting.
+                </p>
+                <p>
+                  So it writes them. A new resource with a <code>status</code> and an{' '}
+                  <code>urgent</code> column gets a card per status and one for each side of the
+                  boolean, with no configuration, and the Users page now opens on{' '}
+                  <strong>Admins, Editors, Users, Active, Inactive</strong> beside the totals.
+                  The counts ride along with the list request rather than costing a round trip
+                  each, so they describe the rows the table is matching, filters included.
+                </p>
+
+                <h4>And the charts, collapsed until you want them</h4>
+                <p>
+                  Under the cards there is now an <strong>Insights</strong> panel. Opening it
+                  draws how many rows were created per day, week or month, and a bar chart for
+                  each counted column. It stays closed until you open it, and then remembers:
+                  the two queries behind it are a GROUP BY each, so an ordinary visit to a list
+                  costs exactly what it did before and the expensive answer is computed when
+                  somebody asks the question. recharts, 400 KB of it, loads at the same moment
+                  rather than riding in every list page.
+                </p>
+                <p>
+                  The charts are drawn over the list&apos;s own query, so narrowing to one
+                  category redraws them for that category. A whole-table chart above a filtered
+                  table would be a lie told in a prominent place.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Two query parameters answer it on any list endpoint built on{' '}
+                  <code>paginate.List</code>, so this is not an admin-only feature:{' '}
+                  <code>?series=created_at:month:12</code> returns a count per period and{' '}
+                  <code>?breakdown=status,role</code> a count per value. The series column is
+                  one of two literals and a breakdown column must already be filterable, because
+                  both reach the SQL where a bind parameter cannot go. A week is labelled by the
+                  date of its Monday on all three databases: Postgres and MySQL count ISO weeks
+                  and SQLite does not, so a week number would mean three different things.
+                </p>
+
+                <h4>The filter row stopped taking three rows</h4>
+                <p>
+                  Three filters on the Users page rendered as three full-width controls stacked
+                  down the screen, pushing the table below the fold. The row was already a
+                  wrapping flex row; what made each control claim a whole line is that every
+                  input in the admin carries <code>w-full</code>, which is right in a form column
+                  and wrong in a toolbar. Width is a choice now, the filters opt out of it, and
+                  each active filter also shows as a chip that removes itself on click.
+                </p>
+              </div>
+            </div>
+
             {/* v3.372.1 */}
             <div className="mb-12" id="v3.372.1">
               <div className="flex items-center gap-3 mb-4">

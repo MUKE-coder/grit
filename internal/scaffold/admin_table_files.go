@@ -877,6 +877,7 @@ func adminTableFilters() string {
 
 import type { FilterDefinition } from "@/lib/resource";
 import { inputClasses } from "@/components/ui/input";
+import { X } from "@/lib/icons";
 
 interface TableFiltersProps {
   filters: FilterDefinition[];
@@ -888,7 +889,7 @@ export function TableFilters({ filters, values, onChange }: TableFiltersProps) {
   const hasActiveFilters = Object.values(values).some((v) => v);
 
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
+    <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2.5">
       {filters.map((filter) => (
         <FilterControl
           key={filter.key}
@@ -899,17 +900,49 @@ export function TableFilters({ filters, values, onChange }: TableFiltersProps) {
       ))}
 
       {hasActiveFilters && (
-        <button
-          onClick={() => {
-            for (const f of filters) onChange(f.key, "");
-          }}
-          className="text-xs text-text-secondary hover:text-foreground transition-colors"
-        >
-          Clear all
-        </button>
+        <>
+          {/* What is actually on, as chips that remove themselves.
+              A select showing "Admin" says which filter is set only if you
+              know what the control is; a chip reading "Role: Admin" says it
+              on its own, and a row of them says how many are on at a glance. */}
+          {filters
+            .filter((filter) => values[filter.key])
+            .map((filter) => (
+              <button
+                key={"chip-" + filter.key}
+                type="button"
+                onClick={() => onChange(filter.key, "")}
+                className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 py-1 pl-2.5 pr-2 text-xs text-accent transition-colors hover:bg-accent/20"
+              >
+                <span>
+                  {filter.label}: {activeLabel(filter, values[filter.key] ?? "")}
+                </span>
+                <X className="h-3 w-3" aria-hidden="true" />
+                <span className="sr-only">Remove the {filter.label} filter</span>
+              </button>
+            ))}
+
+          <button
+            type="button"
+            onClick={() => {
+              for (const f of filters) onChange(f.key, "");
+            }}
+            className="ml-auto text-xs text-text-secondary transition-colors hover:text-foreground"
+          >
+            Clear all
+          </button>
+        </>
       )}
     </div>
   );
+}
+
+/** The chosen value as the filter itself words it. */
+function activeLabel(filter: FilterDefinition, value: string): string {
+  const option = filter.options?.find((o) => o.value === value);
+  if (option) return option.label;
+  if (filter.type === "boolean") return value === "true" ? "Yes" : "No";
+  return value;
 }
 
 function FilterControl({
@@ -927,7 +960,7 @@ function FilterControl({
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={inputClasses({ inputSize: "sm" })}
+          className={inputClasses({ inputSize: "sm", fullWidth: false })}
         >
           <option value="">{filter.placeholder ?? ` + "`" + `All ${filter.label}` + "`" + `}</option>
           {filter.options?.map((opt) => (
@@ -943,7 +976,7 @@ function FilterControl({
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={inputClasses({ inputSize: "sm" })}
+          className={inputClasses({ inputSize: "sm", fullWidth: false })}
         >
           <option value="">{filter.placeholder ?? ` + "`" + `All ${filter.label}` + "`" + `}</option>
           <option value="true">Yes</option>
@@ -990,7 +1023,7 @@ function FilterControl({
               const end = value.split(",")[1] ?? "";
               onChange([e.target.value, end].join(","));
             }}
-            className={inputClasses({ inputSize: "sm" })}
+            className={inputClasses({ inputSize: "sm", fullWidth: false })}
           />
           <span className="text-text-muted">to</span>
           <input
@@ -1000,7 +1033,7 @@ function FilterControl({
               const start = value.split(",")[0] ?? "";
               onChange([start, e.target.value].join(","));
             }}
-            className={inputClasses({ inputSize: "sm" })}
+            className={inputClasses({ inputSize: "sm", fullWidth: false })}
           />
         </div>
       );

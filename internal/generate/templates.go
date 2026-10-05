@@ -1288,6 +1288,8 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 		stackedCellImport = "\nimport { StackedCell } from \"@/components/tables/stacked-cell\";"
 	}
 
+	statsBlock, insightsBlock := g.insightsBlocks()
+
 	content := fmt.Sprintf(`import { defineResource } from "@/lib/resource";%s
 import custom from "./%s.custom";
 
@@ -1327,7 +1329,7 @@ export const %sResource = defineResource({
         color: "accent",
       },
     ],
-  },
+  },%s%s
 }, custom);
 `,
 		stackedCellImport,
@@ -1347,6 +1349,8 @@ export const %sResource = defineResource({
 		names.PluralPascal,
 		names.Plural,
 		icon,
+		statsBlock,
+		insightsBlock,
 	)
 
 	return content

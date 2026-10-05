@@ -770,7 +770,7 @@ const MULTILINE_SIZES: Record<InputSize, string> = {
 };
 
 const BASE =
-  "w-full border bg-bg-tertiary text-foreground transition-colors " +
+  "border bg-bg-tertiary text-foreground transition-colors " +
   "placeholder:text-text-muted " +
   "focus:outline-none focus:ring-1 " +
   "disabled:cursor-not-allowed disabled:opacity-60";
@@ -785,6 +785,20 @@ export function inputClasses(opts?: {
   invalid?: boolean;
   /** Drops the fixed height, for <textarea>. */
   multiline?: boolean;
+  /**
+   * Width. Full by default, which is what a field in a form column wants.
+   *
+   * A control in a toolbar wants the opposite: three full-width selects in a
+   * wrapping row become three stacked rows, which is what the Users page's
+   * filters looked like until this existed. Passing false sizes the control to
+   * its content instead, within a sensible range so a long option cannot
+   * stretch the row.
+   *
+   * It is an option rather than a className override because the two would be
+   * w-full and w-auto in the same class attribute, and which of those wins is
+   * decided by their order in the generated stylesheet rather than here.
+   */
+  fullWidth?: boolean;
   className?: string;
 }): string {
   const table = opts?.multiline ? MULTILINE_SIZES : SIZES;
@@ -792,7 +806,8 @@ export function inputClasses(opts?: {
   const state = opts?.invalid
     ? "border-danger focus:border-danger focus:ring-danger"
     : "border-border focus:border-accent focus:ring-accent";
-  return [BASE, size, state, opts?.className ?? ""].filter(Boolean).join(" ");
+  const width = opts?.fullWidth === false ? "w-auto min-w-[7rem] max-w-[14rem]" : "w-full";
+  return [BASE, width, size, state, opts?.className ?? ""].filter(Boolean).join(" ");
 }
 
 export interface InputProps

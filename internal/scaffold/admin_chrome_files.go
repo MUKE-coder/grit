@@ -474,6 +474,13 @@ interface PageHeaderProps {
   backLabel?: string;
   /** Stat cards shown under the header, e.g. a resource page's totals. */
   stats?: StatCard[];
+  /**
+   * The collapsible insights panel, under the cards.
+   *
+   * A slot rather than a prop of its own, because the panel needs the page's
+   * filters and the header has no business knowing what those are.
+   */
+  insights?: ReactNode;
 }
 
 /**
@@ -495,6 +502,7 @@ export function PageHeader({
   backHref,
   backLabel,
   stats,
+  insights,
 }: PageHeaderProps) {
   const queryClient = useQueryClient();
   const pathname = usePathname();
@@ -592,6 +600,7 @@ export function PageHeader({
     </header>
     {/* The cards are content, not chrome: they scroll away under the header. */}
     {stats && stats.length > 0 && <StatCards stats={stats} />}
+    {insights}
     </>
   );
 }

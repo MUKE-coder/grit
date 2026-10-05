@@ -500,6 +500,89 @@ Response:
             </div>
 
             <div className="prose-grit">
+              {/* Stats and insights */}
+              <h2 id="stats-and-insights">Stats and Insights</h2>
+              <p>
+                Every list page carries four cards above the table: the total, and how many
+                rows were created this week, created this month and updated recently. They read
+                the list response rather than fetching anything of their own, so they describe
+                the rows the table is matching, search and filters included.
+              </p>
+              <p>
+                <code>grit generate resource</code> adds more, worked out from your model. A
+                boolean column becomes two cards, a <code>select</code> becomes one per option,
+                and the counts come back in the same list request:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="Generated from name:string,status:select:open|closed,urgent:bool" code={`stats: {
+  countBy: [
+    {
+      field: "status",
+      label: "Status",
+      labels: { open: "Open", closed: "Closed" },
+      only: ["open", "closed"],
+    },
+    {
+      field: "urgent",
+      labels: { "true": "Urgent", "1": "Urgent", "false": "Not Urgent", "0": "Not Urgent" },
+      only: ["true", "false"],
+    },
+  ],
+}`} />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                Each boolean carries both spellings because the databases disagree: Postgres
+                answers <code>true</code>, SQLite and MySQL answer <code>1</code>, and the same
+                definition has to work on all three. Set <code>stats: {'{'} countBy: [] {'}'}</code>{' '}
+                to keep only the four defaults, or <code>stats: false</code> to drop the cards
+                entirely.
+              </p>
+
+              <h3>The Insights panel</h3>
+              <p>
+                Under the cards sits <strong>Insights</strong>, collapsed. Opening it draws how
+                many rows were created per day, week or month, and a bar chart per counted
+                column. It is collapsed by default for a reason beyond space: the charts are a
+                GROUP BY each, so a list page costs exactly what it did before until somebody
+                asks the question, and the panel remembers whether you left it open.
+              </p>
+              <p>
+                The charts are drawn over the list&apos;s own query. Filtering to one category
+                redraws them for that category, which is the point: a whole-table chart above a
+                filtered table is a lie told in a prominent place. The dashboard&apos;s
+                per-resource card is where an unfiltered view lives.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="Insights configuration" code={`insights: {
+  field: "created_at",      // or updated_at
+  unit: "month",            // day | week | month, the viewer can switch
+  buckets: 12,              // capped at 60
+  breakdown: ["status", "urgent"],   // up to 3 filterable columns
+  labels: { status: { open: "Open", closed: "Closed" } },
+}
+
+// insights: false removes the panel.`} />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                It is answered by two query parameters on any list endpoint built on{' '}
+                <code>paginate.List</code>, so a client outside the admin can ask the same
+                questions: <code>?series=created_at:month:12</code> returns a count per period,
+                and <code>?breakdown=status,role</code> a count per value. The series column is
+                restricted to <code>created_at</code> and <code>updated_at</code>, and a
+                breakdown column must be in <code>Config.Filterable</code>: both names reach the
+                SQL, where a bind parameter cannot go.
+              </p>
+            </div>
+
+            <div className="prose-grit">
               {/* Grid data entry */}
               <h2 id="grid-data-entry">Grid Data Entry</h2>
               <p>

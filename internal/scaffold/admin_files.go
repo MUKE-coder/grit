@@ -362,11 +362,13 @@ func adminFileMap(root string, opts Options) map[string]string {
 		// The spreadsheet editors: one grid core, and the two things it is
 		// used for. Bulk edit opens the selection in it; Bulk Create opens
 		// blank rows.
-		filepath.Join(adminRoot, "components", "tables", "data-grid.tsx"):        adminDataGrid(),
-		filepath.Join(adminRoot, "components", "tables", "bulk-edit-grid.tsx"):   adminBulkEditGrid(),
-		filepath.Join(adminRoot, "components", "tables", "bulk-create-grid.tsx"): adminBulkCreateGrid(),
-		filepath.Join(adminRoot, "components", "tables", "table-toolbar.tsx"):    adminTableToolbar(),
-		filepath.Join(adminRoot, "components", "tables", "date-filter.tsx"):      adminDateFilter(),
+		filepath.Join(adminRoot, "components", "tables", "data-grid.tsx"):         adminDataGrid(),
+		filepath.Join(adminRoot, "components", "insights", "insights-panel.tsx"):  adminInsightsPanel(),
+		filepath.Join(adminRoot, "components", "insights", "insights-charts.tsx"): adminInsightsCharts(),
+		filepath.Join(adminRoot, "components", "tables", "bulk-edit-grid.tsx"):    adminBulkEditGrid(),
+		filepath.Join(adminRoot, "components", "tables", "bulk-create-grid.tsx"):  adminBulkCreateGrid(),
+		filepath.Join(adminRoot, "components", "tables", "table-toolbar.tsx"):     adminTableToolbar(),
+		filepath.Join(adminRoot, "components", "tables", "date-filter.tsx"):       adminDateFilter(),
 		// v3.31.35 — export menu (CSV/Excel/JSON dropdown with
 		// all-pages fetch) + import modal (drop file -> preview ->
 		// batched POST). Both client-side via SheetJS.

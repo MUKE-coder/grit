@@ -675,6 +675,9 @@ export interface ResourceDefinition {
   form: FormDefinition;
   dashboard?: DashboardDefinition;
   stats?: StatsConfig | boolean;
+  // The collapsible charts above the table. On by default, collapsed by
+  // default, and insights: false removes the panel entirely.
+  insights?: InsightsConfig | boolean;
   // Optional sidebar nav grouping. Resources sharing the same group key
   // render under a collapsible group header in the sidebar.
   group?: string;
@@ -701,6 +704,52 @@ export interface ResourceDefinition {
 export interface StatsConfig {
   enabled?: boolean;
   cards?: StatCardConfig[];
+  // Columns to turn into one card per value: a boolean becomes two cards, a
+  // status with four values becomes four.
+  //
+  // "grit generate resource" fills this in from the model, because the columns
+  // worth counting are the ones it already knows are booleans or short
+  // enumerations. Set countBy: [] to keep the four defaults and nothing else.
+  countBy?: CountByConfig[];
+}
+
+// The charts in the collapsible panel above the table.
+//
+// They are drawn over the list's own query, so they describe the rows the table
+// is showing rather than the whole table. Nothing is requested until somebody
+// opens the panel.
+export interface InsightsConfig {
+  // false removes the panel. Omitted means on.
+  enabled?: boolean;
+  // The timestamp the time series counts by: created_at or updated_at.
+  field?: "created_at" | "updated_at";
+  // Which period to start on. The viewer can switch.
+  unit?: "day" | "week" | "month";
+  // How many periods. Defaults to a sensible number per unit, capped at 60.
+  buckets?: number;
+  // Columns to chart by value, up to three. They must be filterable on the
+  // API, which is the whitelist ?breakdown= is checked against.
+  breakdown?: string[];
+  // What to call each value, per column: { status: { "1": "Active" } }.
+  labels?: Record<string, Record<string, string>>;
+}
+
+// One column counted by value.
+export interface CountByConfig {
+  // The column, which must be filterable on the API: that is the whitelist
+  // ?breakdown= is checked against.
+  field: string;
+  // Shown before the value when the value alone would not read: "Role: Admin".
+  // Omitted for a boolean, where "Active" and "Inactive" say it themselves.
+  label?: string;
+  // What to call each value. Databases disagree about booleans (true on
+  // Postgres, 1 on SQLite and MySQL), so both spellings map to the same card.
+  labels?: Record<string, string>;
+  // Only these values get a card, in this order. Without it every value the
+  // API returned gets one, largest first.
+  only?: string[];
+  icon?: string;
+  color?: "default" | "success" | "warning" | "danger" | "info";
 }
 
 export interface StatCardConfig {
@@ -945,6 +994,36 @@ export const usersResource = defineResource({
     pageSize: 20,
   },
 
+  // Who they are, beside how many. The four default cards count rows and date
+  // windows, which is the same answer on every page; these are the questions
+  // somebody actually opens the Users page to ask.
+  stats: {
+    countBy: [
+      {
+        field: "role",
+        label: "Role",
+        labels: { ADMIN: "Admins", EDITOR: "Editors", USER: "Users" },
+        only: ["ADMIN", "EDITOR", "USER"],
+        icon: "ShieldCheck",
+      },
+      {
+        field: "active",
+        labels: { "true": "Active", "1": "Active", "false": "Inactive", "0": "Inactive" },
+        only: ["true", "false"],
+        icon: "UserCheck",
+      },
+    ],
+  },
+
+  insights: {
+    breakdown: ["role", "provider", "active"],
+    labels: {
+      role: { ADMIN: "Admin", EDITOR: "Editor", USER: "User" },
+      provider: { local: "Email", google: "Google", github: "GitHub" },
+      active: { "true": "Active", "1": "Active", "false": "Inactive", "0": "Inactive" },
+    },
+  },
+
   form: {
     layout: "two-column",
     fields: [
@@ -1060,6 +1139,7 @@ import type { ResourceDefinition } from "@/lib/resource";
 import { useResourceController } from "@/hooks/use-resource-controller";
 import type { ResourceController } from "@/hooks/use-resource-controller";
 import { PageHeader } from "@/components/chrome/PageHeader";
+import { InsightsPanel } from "@/components/insights/insights-panel";
 import { DataTable } from "@/components/tables/data-table";
 // Lazy: only resources declaring tree: true ever render this, and an eager
 // import would put the drag-and-drop tree in every admin page's bundle.
@@ -1214,6 +1294,14 @@ function ResourceListView({ resource }: ResourcePageProps) {
         subtitle={` + "`" + `Manage ${c.pluralName.toLowerCase()}` + "`" + `}
         actions={headerActions}
         stats={c.stats}
+        insights={
+          <InsightsPanel
+            resource={c.resource}
+            filters={c.queryFilters}
+            search={c.search}
+            dateParams={c.dateParams}
+          />
+        }
       />
 
       {/* Bulk actions change the table without moving focus, so every one of
@@ -1541,6 +1629,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type {
   BulkAction,
   ColumnDefinition,
+  CountByConfig,
   CustomBulkAction,
   ResourceDefinition,
   TableAction,
@@ -1556,6 +1645,45 @@ import type { DateRange } from "@/components/tables/date-filter";
 // The windows the default stat cards show beside the total. The list request
 // asks for them (?counts=), so the cards cost no requests of their own.
 const DEFAULT_STAT_COUNTS = ["created_7d", "created_30d", "updated_7d"];
+
+/*
+ * What to call the card for one value of a counted column.
+ *
+ * The labels map comes first, and carries both spellings of a boolean because
+ * the databases disagree: Postgres returns "true", SQLite and MySQL return
+ * "1", and the same admin has to read all three. An empty value is a row where
+ * nobody filled the column in, which reads better as "None" than as a blank
+ * card with a number under it.
+ */
+/*
+ * A boolean has two spellings and the database picks one.
+ *
+ * Postgres answers a counted boolean as "true" and "false"; SQLite and MySQL
+ * answer "1" and "0". The resource definition names one pair, and the same
+ * definition has to work on all three, so a lookup that misses tries the other
+ * spelling before giving up. Without this, every Active/Inactive card read 0 on
+ * SQLite while the role cards beside it were right.
+ */
+const BOOLEAN_SPELLINGS: Record<string, string> = {
+  true: "1",
+  "1": "true",
+  false: "0",
+  "0": "false",
+};
+
+function countFor(found: Map<string, number>, value: string): number {
+  const direct = found.get(value);
+  if (direct !== undefined) return direct;
+  const other = BOOLEAN_SPELLINGS[value];
+  return (other === undefined ? undefined : found.get(other)) ?? 0;
+}
+
+function cardLabel(column: CountByConfig, value: string): string {
+  const named = column.labels?.[value];
+  if (named) return named;
+  const shown = value === "" ? "None" : value;
+  return column.label ? column.label + ": " + shown : shown;
+}
 
 export interface ResourceControllerOptions {
   /** Start on a page other than 1. */
@@ -1585,6 +1713,10 @@ export interface ResourceController<T = Record<string, unknown>> {
   sortBy: string;
   sortOrder: "asc" | "desc";
   filters: Record<string, string>;
+  /** Exactly what the list request sent: the tab, the filters and archived. */
+  queryFilters: Record<string, string>;
+  /** The date window as query params, for anything asking the same question. */
+  dateParams: Record<string, string>;
   dateRange: DateRange;
   setPage: (page: number) => void;
   setPageSize: (size: number) => void;
@@ -1725,23 +1857,44 @@ export function useResourceController<T = Record<string, unknown>>(
     Array.isArray(statsConfig.cards) &&
     statsConfig.cards.length > 0;
 
+  // The columns to count by value. Capped at three because each is a GROUP BY
+  // on the list's query, and the API drops any beyond that anyway.
+  const countBy = useMemo(
+    () =>
+      statsEnabled && typeof statsConfig === "object" && statsConfig !== null && Array.isArray(statsConfig.countBy)
+        ? statsConfig.countBy.slice(0, 3)
+        : [],
+    [statsEnabled, statsConfig],
+  );
+  const countByFields = useMemo(() => countBy.map((c) => c.field), [countBy]);
+
+  // Tab filters, then the operator's own, then the archived flag. The
+  // operator's win: picking "Unpaid" and then filtering by customer should
+  // narrow the tab, not silently leave it.
+  //
+  // Computed here rather than inline in the request because the insights panel
+  // sends it too, and a panel charting a different set of rows than the table
+  // is showing would be two authoritative numbers that disagree.
+  const queryFilters = useMemo(
+    () => ({
+      ...(url.tabs.find((t) => t.key === url.activeTab)?.filters ?? {}),
+      ...url.filters,
+      ...(url.showArchived ? { archived: "true" } : {}),
+    }),
+    [url.tabs, url.activeTab, url.filters, url.showArchived],
+  );
+
   const { data, isLoading, isFetching } = useResource<T>(resource.endpoint, {
     page: url.page,
     pageSize: url.pageSize,
     search: url.debouncedSearch,
     sortBy: url.sortBy,
     sortOrder: url.sortOrder,
-    // Tab filters, then the operator's own, then the archived flag. The
-    // operator's win: picking "Unpaid" and then filtering by customer should
-    // narrow the tab, not silently leave it.
-    filters: {
-      ...(url.tabs.find((t) => t.key === url.activeTab)?.filters ?? {}),
-      ...url.filters,
-      ...(url.showArchived ? { archived: "true" } : {}),
-    },
+    filters: queryFilters,
     dateParams: url.dateParams,
     dateField: resource.table.dateFilter?.field,
     counts: statsEnabled && !customStatCards ? DEFAULT_STAT_COUNTS : undefined,
+    breakdown: countByFields.length > 0 ? countByFields : undefined,
   });
 
   const rows = useMemo(() => data?.data ?? [], [data]);
@@ -2007,8 +2160,30 @@ export function useResourceController<T = Record<string, unknown>>(
       { label: "This Month", value: count("created_30d"), loading, icon: "Calendar", color: "info" },
       { label: "Updated Recently", value: count("updated_7d"), loading, icon: "RefreshCw" },
     ];
+
+    // Then one card per value of each counted column, from the same response.
+    //
+    // A value with no rows still gets a card when the resource named it in
+    // "only": "Inactive 0" is an answer, and a card that disappears when it
+    // reaches nought is a row of cards that reflows as the data changes.
+    const breakdown = data?.meta?.breakdown;
+    for (const column of countBy) {
+      const slices = breakdown?.[column.field];
+      if (!slices && !column.only) continue;
+      const found = new Map((slices ?? []).map((slice) => [slice.value, slice.count]));
+      const values = column.only ?? (slices ?? []).map((slice) => slice.value);
+      for (const value of values) {
+        defaults.push({
+          label: cardLabel(column, value),
+          value: slices ? countFor(found, value) : "—",
+          loading,
+          icon: column.icon,
+          color: column.color,
+        });
+      }
+    }
     return defaults;
-  }, [statsEnabled, customStatCards, statsConfig, resource.icon, dateParams, showArchived, data, isLoading]);
+  }, [statsEnabled, customStatCards, statsConfig, resource.icon, dateParams, showArchived, data, isLoading, countBy]);
 
   return {
     resource,
@@ -2026,6 +2201,8 @@ export function useResourceController<T = Record<string, unknown>>(
     sortBy: url.sortBy,
     sortOrder: url.sortOrder,
     filters: url.filters,
+    queryFilters,
+    dateParams: url.dateParams,
     dateRange: url.dateRange,
     setPage: url.setPage,
     setPageSize: url.setPageSize,
@@ -2195,6 +2372,9 @@ interface ResourceQueryParams {
   // Extra totals to return beside the page, such as created_7d: the default
   // stat cards read theirs from the list response instead of a request each.
   counts?: string[];
+  // Columns to count by value, such as status: one GROUP BY each, answered
+  // beside the page for the same reason the counts are.
+  breakdown?: string[];
 }
 
 interface PaginatedResponse<T = Record<string, unknown>> {
@@ -2206,6 +2386,9 @@ interface PaginatedResponse<T = Record<string, unknown>> {
     pages: number;
     // Answers ?counts=. Absent when the API does not support it.
     counts?: Record<string, number> | null;
+    // Answers ?breakdown=: per column, the values and how many rows hold each,
+    // largest first. An empty value means the column is null or blank.
+    breakdown?: Record<string, { value: string; count: number }[]> | null;
   };
 }
 
@@ -2213,12 +2396,12 @@ export function useResource<T = Record<string, unknown>>(
   endpoint: string,
   params: ResourceQueryParams = {}
 ) {
-  const { page = 1, pageSize = 20, search, sortBy, sortOrder, filters, dateParams, dateField, counts } = params;
+  const { page = 1, pageSize = 20, search, sortBy, sortOrder, filters, dateParams, dateField, counts, breakdown } = params;
 
   return useQuery<PaginatedResponse<T>>({
     // v3.31.34: dateParams + dateField included in key so a date
     // filter change invalidates the cache and the list refetches.
-    queryKey: resourceKeys.list(endpoint, { page, pageSize, search, sortBy, sortOrder, filters, dateParams, dateField, counts }),
+    queryKey: resourceKeys.list(endpoint, { page, pageSize, search, sortBy, sortOrder, filters, dateParams, dateField, counts, breakdown }),
     // The signal cancels a request the next keystroke or page has replaced, so
     // a slow answer to an old search cannot land on top of a newer one.
     queryFn: async ({ signal }) => {
@@ -2247,6 +2430,9 @@ export function useResource<T = Record<string, unknown>>(
       }
       if (counts && counts.length > 0) {
         searchParams.set("counts", counts.join(","));
+      }
+      if (breakdown && breakdown.length > 0) {
+        searchParams.set("breakdown", breakdown.join(","));
       }
 
       const { data } = await apiClient.get(` + "`" + `${endpoint}?${searchParams}` + "`" + `, { signal });
@@ -2993,6 +3179,14 @@ func adminDataGrid() string { return tmpl("admin/components/tables/data-grid.tsx
 func adminBulkEditGrid() string { return tmpl("admin/components/tables/bulk-edit-grid.tsx") }
 
 func adminBulkCreateGrid() string { return tmpl("admin/components/tables/bulk-create-grid.tsx") }
+
+// The collapsible charts above a list.
+//
+// Split in two because recharts is about 400 KB: the panel is what every list
+// page loads, and the charts module is what opening it fetches.
+func adminInsightsPanel() string { return tmpl("admin/components/insights/insights-panel.tsx") }
+
+func adminInsightsCharts() string { return tmpl("admin/components/insights/insights-charts.tsx") }
 
 // adminBulkEditModal emits components/tables/bulk-edit-modal.tsx.
 func adminBulkEditModal() string {

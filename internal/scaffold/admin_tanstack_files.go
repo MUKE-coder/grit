@@ -508,6 +508,8 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "components", "tables", "bulk-action-bar.tsx"):   nextToTanStack(adminBulkActionBar()),
 		filepath.Join(adminRoot, "src", "components", "tables", "bulk-edit-modal.tsx"):   nextToTanStack(adminBulkEditModal()),
 		filepath.Join(adminRoot, "src", "components", "tables", "data-grid.tsx"):         nextToTanStack(adminDataGrid()),
+		filepath.Join(adminRoot, "src", "components", "insights", "insights-panel.tsx"):  nextToTanStack(adminInsightsPanel()),
+		filepath.Join(adminRoot, "src", "components", "insights", "insights-charts.tsx"): nextToTanStack(adminInsightsCharts()),
 		filepath.Join(adminRoot, "src", "components", "tables", "bulk-edit-grid.tsx"):    nextToTanStack(adminBulkEditGrid()),
 		filepath.Join(adminRoot, "src", "components", "tables", "bulk-create-grid.tsx"):  nextToTanStack(adminBulkCreateGrid()),
 		filepath.Join(adminRoot, "src", "components", "tables", "date-filter.tsx"):       nextToTanStack(adminDateFilter()),
