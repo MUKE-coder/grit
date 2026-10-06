@@ -1,5 +1,7 @@
 package scaffold
 
+import "regexp"
+
 // nextSecurityHeaders returns the shared security-header block injected into
 // every scaffolded Next.js config (web, admin, docs).
 //
@@ -27,6 +29,41 @@ package scaffold
 //
 // Emitted as plain string concatenation (no JS template literals) because this
 // lives inside a Go raw string literal, which cannot contain backticks.
+// toPlainJavaScript removes the TypeScript from a config that is not TypeScript.
+//
+// The docs app's config is next.config.mjs, which fumadocs expects and which is
+// plain JavaScript. Every shared block spliced into it is written for the .ts
+// configs apps/web and apps/admin have, and one annotation in a .mjs file is a
+// syntax error that stops Next loading the config at all: the documentation site
+// in a --full project had never built.
+//
+// A transform rather than a second copy of each block, so the two cannot drift
+// apart on a policy they are both meant to enforce. Patterns rather than a list
+// of exact strings, because the exact-string version was wrong three times in a
+// row: each fix revealed the next construct, and the fourth was found by a
+// syntax checker rather than by reading.
+func toPlainJavaScript(config string) string {
+	// "value: string): string {" and the like, in a function signature.
+	config = tsParamType.ReplaceAllString(config, "($1)")
+	config = tsReturnType.ReplaceAllString(config, ") {")
+	// "const pluginOrigins: [string, string][] = ["
+	config = tsConstType.ReplaceAllString(config, "$1 =")
+	// "as const", and assertions onto a type or a union of them.
+	config = tsAssertion.ReplaceAllString(config, "")
+	return config
+}
+
+var (
+	// (value: string) -> (value)
+	tsParamType = regexp.MustCompile(`\((\w+): [\w\[\]|" ]+\)`)
+	// ): string { -> ) {
+	tsReturnType = regexp.MustCompile(`\): [\w\[\]|" ]+ \{`)
+	// const x: T = -> const x =
+	tsConstType = regexp.MustCompile(`(const \w+): [^=\n]+ =`)
+	// " as const", ` as "http" | "https"`, " as SomeType"
+	tsAssertion = regexp.MustCompile(` as (?:const|[\w"]+(?: \| [\w"]+)*)`)
+)
+
 func nextSecurityHeaders() string {
 	return `
 // --- Security headers -------------------------------------------------------

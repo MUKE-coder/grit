@@ -52,6 +52,20 @@ func DetectProjectFrom(startDir string) (*ProjectInfo, error) {
 			return &ProjectInfo{Root: dir, Type: ProjectWeb, Module: mod}, nil
 		}
 
+		// Any other Grit project: grit.json is the file every one of them has,
+		// and the two tests above cover only the two shapes with a second marker.
+		// An --api project has no turbo.json, because it has no frontends to
+		// orchestrate, and a --single project has neither: both fell through to
+		// "not inside a Grit project", so `grit start` printed its own help and
+		// started nothing, in the projects whose tutorials say to run it.
+		if IsGritProject(dir) {
+			mod, err := readModule(moduleFileIn(dir))
+			if err != nil {
+				return nil, fmt.Errorf("reading module in Grit project: %w", err)
+			}
+			return &ProjectInfo{Root: dir, Type: ProjectWeb, Module: mod}, nil
+		}
+
 		parent := filepath.Dir(dir)
 		if parent == dir {
 			break
@@ -59,7 +73,7 @@ func DetectProjectFrom(startDir string) (*ProjectInfo, error) {
 		dir = parent
 	}
 
-	return nil, fmt.Errorf("not inside a Grit project (no wails.json or turbo.json found)\n\nRun this command from inside a Grit project directory")
+	return nil, fmt.Errorf("not inside a Grit project (no grit.json, wails.json or turbo.json found)\n\nRun this command from inside a Grit project directory")
 }
 
 // IsDesktop returns true if the directory contains a wails.json file.
@@ -76,6 +90,34 @@ func IsWeb(dir string) bool {
 	}
 	api, err := os.Stat(filepath.Join(dir, "apps", "api"))
 	return err == nil && api.IsDir()
+}
+
+// IsGritProject reports whether a directory is the root of any Grit project.
+//
+// grit.json is written by every scaffold, whatever its architecture, which is
+// what makes it the right marker: turbo.json is absent from an API-only
+// project and from a single, and wails.json only ever appears in a standalone
+// desktop one.
+func IsGritProject(dir string) bool {
+	info, err := os.Stat(filepath.Join(dir, "grit.json"))
+	return err == nil && !info.IsDir()
+}
+
+// moduleFileIn is the go.mod of whichever layout this project uses: apps/api
+// in a monorepo, api/ in a single, the project root in a single scaffolded
+// before that layout existed.
+func moduleFileIn(dir string) string {
+	for _, candidate := range [][]string{
+		{"apps", "api", "go.mod"},
+		{"api", "go.mod"},
+		{"go.mod"},
+	} {
+		path := filepath.Join(append([]string{dir}, candidate...)...)
+		if info, err := os.Stat(path); err == nil && !info.IsDir() {
+			return path
+		}
+	}
+	return filepath.Join(dir, "go.mod")
 }
 
 func readModule(goModPath string) (string, error) {

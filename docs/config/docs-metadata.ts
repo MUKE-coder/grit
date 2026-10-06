@@ -710,6 +710,36 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Step-by-step tutorial: build a contact manager with Grit. Create Group and Contact resources, explore the admin panel, GORM Studio, and API docs.',
   },
+  '/docs/tutorials/contacts/web': {
+    title: 'Contacts: web app',
+    description:
+      'Build the contacts app as a Next.js site, an admin panel and a Go API, from grit new to a deployed server.',
+  },
+  '/docs/tutorials/contacts/desktop': {
+    title: 'Contacts: desktop app',
+    description:
+      'Build the contacts app with a Wails desktop client beside the web apps, and ship it as an installable binary.',
+  },
+  '/docs/tutorials/contacts/mobile': {
+    title: 'Contacts: mobile app',
+    description:
+      'Build the contacts app with an Expo client sharing the API and types, from grit new to the app stores.',
+  },
+  '/docs/tutorials/contacts/api': {
+    title: 'Contacts: API only',
+    description:
+      'Build the contacts API alone: Go, auth, migrations and generated reference docs, with no frontend at all.',
+  },
+  '/docs/tutorials/contacts/single': {
+    title: 'Contacts: one binary',
+    description:
+      'Build the contacts app as a single executable with the frontend embedded, and deploy it by copying one file.',
+  },
+  '/docs/tutorials/contacts/full': {
+    title: 'Contacts: everything',
+    description:
+      'Build the contacts app with every client Grit scaffolds: web, admin, desktop, mobile and docs, against one API.',
+  },
   '/docs/tutorials/blog': {
     title: 'Build a Blog Tutorial',
     description:

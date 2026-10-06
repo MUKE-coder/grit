@@ -66,6 +66,87 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.381.0 */}
+            <div className="mb-12" id="v3.381.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.381.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 7, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>One tutorial per tier: the same contacts app, shipped six ways</h3>
+                <p>
+                  A page each for the <Link href="/docs/tutorials/contacts/web">web app</Link>,{' '}
+                  <Link href="/docs/tutorials/contacts/desktop">desktop app</Link>,{' '}
+                  <Link href="/docs/tutorials/contacts/mobile">mobile app</Link>,{' '}
+                  <Link href="/docs/tutorials/contacts/api">API on its own</Link>,{' '}
+                  <Link href="/docs/tutorials/contacts/single">one binary</Link> and{' '}
+                  <Link href="/docs/tutorials/contacts/full">everything at once</Link>, each from{' '}
+                  <code>grit new</code> to a deployed server.
+                </p>
+                <p>
+                  Every tier builds the same two resources with the same two commands, which is
+                  the point being made: what changes between a web app, a desktop app, a phone
+                  app and an API is what you run and where it goes, not what you write. The
+                  deployment section is where they genuinely differ, so each page ends somewhere
+                  different: a server, <code>wails build</code>, <code>eas submit</code>, or one{' '}
+                  <code>scp</code> of a single file.
+                </p>
+                <p>
+                  They are generated from one table by{' '}
+                  <code>scripts/tier-tutorials.py</code> and checked in CI, so a correction to a
+                  shared step cannot land on five pages and miss the sixth.
+                </p>
+
+                <h4>Testing them found four things that did not work</h4>
+                <p>
+                  Every page ends on <code>grit deploy</code>, and that command could not build
+                  from a project root: it ran <code>go build ./cmd/server</code> in whatever
+                  directory you were standing in, which in a monorepo is a directory with no
+                  go.mod. It printed &quot;Deploying...&quot; and then failed on &quot;go.mod file
+                  not found&quot;. It now finds the module and builds the right package.
+                </p>
+                <p>
+                  <code>--dry-run</code> reached the Railway path only. On the SSH path the flag
+                  was accepted and ignored, so a command whose help reads &quot;print every
+                  command that would run, and run none of them&quot; built the binary, opened an
+                  SSH connection, and printed &quot;Deployment successful!&quot; when that failed.
+                  It now prints the plan and does nothing.
+                </p>
+                <p>
+                  The deployed app was called <code>api</code>, because the name came from the
+                  last segment of the module path and a monorepo&apos;s is{' '}
+                  <code>contacts/apps/api</code>. The systemd unit, the remote directory and the
+                  binary were all called that, so two Grit projects on one server would have
+                  overwritten each other.
+                </p>
+                <p>
+                  And <code>grit start</code> did nothing at all in an API-only or single
+                  project. Project detection looked for <code>turbo.json</code>, which neither
+                  has: both fell through to &quot;not inside a Grit project&quot;, so the command
+                  printed its own help and started no server. It is the command the home page
+                  prints and the one every tutorial reaches at step four.
+                </p>
+                <p>
+                  And the documentation site in a <code>--full</code> project had never built.
+                  Its config is <code>next.config.mjs</code>, which fumadocs expects and which is
+                  plain JavaScript, and the security-header block shared with the two TypeScript
+                  configs carries type annotations. Next refused to load the file at all:
+                  &quot;Unexpected token &apos;:&apos;&quot;, from a line nobody had written by
+                  hand. The shared block is now put through one transform on its way into that
+                  file, rather than maintained as a second copy that could say something
+                  different about the policy both are enforcing.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Each tier was run end to end before its page was written: scaffold, generate
+                  both resources, migrate, seed, build every app it ships, start the API, call the
+                  endpoints the resources were supposed to create, and dry-run the deploy.
+                </p>
+              </div>
+            </div>
+
             {/* v3.380.0 */}
             <div className="mb-12" id="v3.380.0">
               <div className="flex items-center gap-3 mb-4">

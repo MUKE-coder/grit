@@ -33,7 +33,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.380.0"
+var version = "3.381.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -1480,6 +1480,13 @@ func apiHotReloadArgv() (bin string, args []string, note string) {
 		"API hot-reload via air (bundled — first run downloads it, then cached)."
 }
 
+// statOK reports whether a path exists, which is the only question the deploy
+// command asks about a layout.
+func statOK(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
 func findAPIDir() (string, error) {
 	root, err := scaffold.FindProjectRoot()
 	if err != nil {
@@ -1886,15 +1893,22 @@ func runDevPair(projectRoot, apiDir string) error {
 	apiCmd.Dir = apiDir
 	apiCmd.Stdin = nil // child shouldn't fight for the terminal
 
-	clientCmd := exec.CommandContext(ctx, "pnpm", "dev")
-	clientCmd.Dir = projectRoot
-	clientCmd.Stdin = nil
-
-	// Prefix each line of output so a developer can tell which process said
-	// what. ANSI colours mark the source even after copy-paste.
+	// The frontends, when this project has any. An --api project has no
+	// package.json at its root, and pnpm in a directory without one exits
+	// immediately: runDevProcs shuts the others down when any of them leaves,
+	// so the API came up and was killed a second later. `grit start` is the
+	// command the home page and every tutorial print.
 	procs := []devProc{
 		{prefix: color.New(color.FgHiGreen).Sprint("[api] "), cmd: apiCmd},
-		{prefix: color.New(color.FgHiCyan).Sprint("[web] "), cmd: clientCmd},
+	}
+	hasFrontend := false
+	if _, err := os.Stat(filepath.Join(projectRoot, "package.json")); err == nil {
+		hasFrontend = true
+		clientCmd := exec.CommandContext(ctx, "pnpm", "dev")
+		clientCmd.Dir = projectRoot
+		clientCmd.Stdin = nil
+		procs = append(procs,
+			devProc{prefix: color.New(color.FgHiCyan).Sprint("[web] "), cmd: clientCmd})
 	}
 
 	// If the monorepo includes the Wails desktop client, launch it too — so a
@@ -1916,10 +1930,13 @@ func runDevPair(projectRoot, apiDir string) error {
 		}
 	}
 
-	if desktopIncluded {
+	switch {
+	case desktopIncluded:
 		purple.Println("\n  Starting API + web + desktop in parallel...")
-	} else {
+	case hasFrontend:
 		purple.Println("\n  Starting API + client apps in parallel...")
+	default:
+		purple.Println("\n  Starting the API...")
 	}
 	color.New(color.FgHiBlack).Println("  " + apiNote)
 	color.New(color.FgHiBlack).Println("  Press Ctrl+C to stop everything.")
@@ -2492,13 +2509,28 @@ func deployCmd() *cobra.Command {
 			}
 
 			// Try to detect app name from go.mod or grit.config
+			// Where the Go module is, which is not where the user is standing in
+			// any layout but the oldest single. Deploy read go.mod from the working
+			// directory: from a monorepo root that is a file which does not exist,
+			// so the app was named "grit-app" and the build then failed on "go.mod
+			// file not found" after announcing the deploy.
+			apiDir, err := findAPIDir()
+			if err != nil {
+				return err
+			}
+
 			appName := "grit-app"
-			if data, err := os.ReadFile("go.mod"); err == nil {
+			if data, err := os.ReadFile(filepath.Join(apiDir, "go.mod")); err == nil {
 				for _, line := range strings.Split(string(data), "\n") {
 					if strings.HasPrefix(line, "module ") {
 						parts := strings.Fields(line)
 						if len(parts) >= 2 {
-							appName = filepath.Base(parts[1])
+							// A monorepo's module is "<project>/apps/api", whose base
+							// is "api": the systemd unit, the remote directory and the
+							// binary were all called that, so two Grit projects on one
+							// server would have overwritten each other.
+							module := strings.TrimSuffix(parts[1], "/apps/api")
+							appName = filepath.Base(module)
 						}
 						break
 					}
@@ -2516,6 +2548,21 @@ func deployCmd() *cobra.Command {
 				domain = os.Getenv("DEPLOY_DOMAIN")
 			}
 
+			// The frontend to build before the binary, for a project whose binary
+			// embeds one. Only a single project does: a monorepo's frontends are
+			// Next.js apps with their own hosting, and building them here would do
+			// nothing for the binary being uploaded.
+			webDir := ""
+			if projectRoot, rootErr := scaffold.FindProjectRoot(); rootErr == nil {
+				switch {
+				case statOK(filepath.Join(apiDir, "web", "index.html")):
+					webDir = projectRoot
+				case statOK(filepath.Join(projectRoot, "frontend", "package.json")) &&
+					!statOK(filepath.Join(projectRoot, "apps")):
+					webDir = filepath.Join(projectRoot, "frontend")
+				}
+			}
+
 			cfg := deploy.Config{
 				Host:    host,
 				Port:    port,
@@ -2523,6 +2570,9 @@ func deployCmd() *cobra.Command {
 				AppName: appName,
 				Domain:  domain,
 				AppPort: appPort,
+				APIDir:  apiDir,
+				WebDir:  webDir,
+				DryRun:  dryRun,
 			}
 
 			purple := color.New(color.FgHiMagenta, color.Bold)
@@ -2531,6 +2581,13 @@ func deployCmd() *cobra.Command {
 			if err := deploy.Run(cfg); err != nil {
 				color.Red("\n  Deploy failed: %v\n", err)
 				return err
+			}
+
+			// A dry run deployed nothing, and saying otherwise is the one thing a
+			// dry run must not do: it printed "Deployment successful! Live at:
+			// https://..." directly under a plan that had just said nothing was run.
+			if dryRun {
+				return nil
 			}
 
 			green := color.New(color.FgHiGreen, color.Bold)

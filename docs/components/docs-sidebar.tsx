@@ -319,6 +319,12 @@ const navItems: NavItem[] = [
     icon: <BookOpen className="h-3.5 w-3.5" />,
     items: [
       { title: 'Your First App', href: '/docs/tutorials/contact-app' },
+      { title: 'Contacts: web app', href: '/docs/tutorials/contacts/web' },
+      { title: 'Contacts: desktop app', href: '/docs/tutorials/contacts/desktop' },
+      { title: 'Contacts: mobile app', href: '/docs/tutorials/contacts/mobile' },
+      { title: 'Contacts: API only', href: '/docs/tutorials/contacts/api' },
+      { title: 'Contacts: one binary', href: '/docs/tutorials/contacts/single' },
+      { title: 'Contacts: everything', href: '/docs/tutorials/contacts/full' },
       { title: 'Learn Grit Step by Step', href: '/docs/tutorials/learn' },
       { title: 'Build a Blog', href: '/docs/tutorials/blog' },
       { title: 'Build a SaaS', href: '/docs/tutorials/saas' },

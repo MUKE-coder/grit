@@ -18,6 +18,28 @@ type Config struct {
 	RemotePath string // Remote deployment directory (default: /opt/{app-name})
 	Domain     string // Domain name for Caddy reverse proxy
 	AppPort    string // Port the app runs on (default: 8080)
+
+	// APIDir is the directory holding the Go module, which is not the directory
+	// deploy is run from in any layout but the oldest. apps/api in a monorepo,
+	// api/ in a single, the project root in a single scaffolded before that.
+	//
+	// Without it, `go build` ran wherever the user happened to be standing: from
+	// a monorepo root that is a directory with no go.mod, and the deploy failed
+	// on "go.mod file not found" after printing that it was deploying.
+	APIDir string
+
+	// WebDir is the frontend to build before the binary, for a project whose
+	// binary embeds one. Empty when the frontend deploys separately, which is
+	// every monorepo: those are Next.js apps with their own hosting.
+	WebDir string
+
+	// DryRun prints what each step would do and does none of it.
+	//
+	// The flag existed and reached the Railway path only. On this one it was
+	// accepted and ignored: a command whose help says it "runs none of them"
+	// built the binary and opened an SSH connection to the host, which is the
+	// opposite of what somebody asking what would happen is asking for.
+	DryRun bool
 }
 
 // Run executes the full deployment pipeline.
@@ -34,6 +56,10 @@ func Run(cfg Config) error {
 	}
 	if cfg.AppPort == "" {
 		cfg.AppPort = "8080"
+	}
+
+	if cfg.DryRun {
+		return printPlan(cfg)
 	}
 
 	steps := []struct {
@@ -64,16 +90,47 @@ func Run(cfg Config) error {
 	return nil
 }
 
+// printPlan says what a deploy would do, and does none of it.
+func printPlan(cfg Config) error {
+	pkg := "./cmd/server"
+	if _, err := os.Stat(filepath.Join(cfg.APIDir, "cmd", "server")); err != nil {
+		pkg = "."
+	}
+
+	fmt.Println("  Nothing below has been run.")
+	fmt.Println()
+	if cfg.WebDir != "" {
+		fmt.Printf("  cd %s && pnpm build\n", cfg.WebDir)
+	}
+	fmt.Printf("  cd %s && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bin/%s %s\n",
+		cfg.APIDir, cfg.AppName, pkg)
+	fmt.Printf("  ssh %s 'mkdir -p %s'\n", cfg.Host, cfg.RemotePath)
+	fmt.Printf("  scp bin/%s %s:%s/\n", cfg.AppName, cfg.Host, cfg.RemotePath)
+	fmt.Printf("  ssh %s 'write /etc/systemd/system/%s.service, then systemctl enable --now %s'\n",
+		cfg.Host, cfg.AppName, cfg.AppName)
+	if cfg.Domain != "" {
+		fmt.Printf("  ssh %s 'write /etc/caddy/Caddyfile for %s -> :%s, then systemctl reload caddy'\n",
+			cfg.Host, cfg.Domain, cfg.AppPort)
+	}
+	fmt.Println()
+	fmt.Println("  Run it without --dry-run to do all of that.")
+	return nil
+}
+
 // buildBinary cross-compiles the Go binary for Linux.
 func buildBinary(cfg Config) error {
 	binaryName := cfg.AppName
-	outputPath := filepath.Join("bin", binaryName)
+	outputPath, err := filepath.Abs(filepath.Join("bin", binaryName))
+	if err != nil {
+		return err
+	}
 
-	// Check if frontend exists and build it first
-	if _, err := os.Stat("frontend"); err == nil {
+	// The frontend first, for a binary that carries one: the build has to be in
+	// place before //go:embed reads it, or the binary ships the placeholder.
+	if cfg.WebDir != "" {
 		fmt.Println("    Building frontend...")
 		feCmd := exec.Command("pnpm", "build")
-		feCmd.Dir = "frontend"
+		feCmd.Dir = cfg.WebDir
 		feCmd.Stdout = os.Stdout
 		feCmd.Stderr = os.Stderr
 		if err := feCmd.Run(); err != nil {
@@ -81,8 +138,15 @@ func buildBinary(cfg Config) error {
 		}
 	}
 
-	// Cross-compile for Linux
-	cmd := exec.Command("go", "build", "-o", outputPath, "./cmd/server")
+	// The main package, which is cmd/server in a monorepo and the top of the
+	// module in a single.
+	pkg := "./cmd/server"
+	if _, err := os.Stat(filepath.Join(cfg.APIDir, "cmd", "server")); err != nil {
+		pkg = "."
+	}
+
+	cmd := exec.Command("go", "build", "-o", outputPath, pkg)
+	cmd.Dir = cfg.APIDir
 	cmd.Env = append(os.Environ(), "GOOS=linux", "GOARCH=amd64", "CGO_ENABLED=0")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

@@ -122,7 +122,7 @@ func docsTSConfig() string {
 }
 
 func docsNextConfig() string {
-	return `import { createMDX } from "fumadocs-mdx/next";
+	return toPlainJavaScript(`import { createMDX } from "fumadocs-mdx/next";
 
 const withMDX = createMDX();
 ` + nextSecurityHeaders() + `
@@ -132,7 +132,7 @@ const config = {
 ` + nextSecurityHeadersConfig() + `};
 
 export default withMDX(config);
-`
+`)
 }
 
 func docsSourceConfig() string {

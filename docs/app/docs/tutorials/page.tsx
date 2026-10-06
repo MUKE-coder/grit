@@ -90,6 +90,12 @@ const TUTORIALS: {
   cmd: string
   duration: string
 }[] = [
+  { title: 'Contacts: web app', outline: 'The same app as a Next.js site, admin and Go API', href: '/docs/tutorials/contacts/web', icon: Globe, cmd: '$ grit new contacts --triple --next', duration: '20 min' },
+  { title: 'Contacts: desktop app', outline: 'The same app in a native window, with Wails', href: '/docs/tutorials/contacts/desktop', icon: Monitor, cmd: '$ grit new contacts --triple --desktop', duration: '20 min' },
+  { title: 'Contacts: mobile app', outline: 'The same app on a phone, with Expo', href: '/docs/tutorials/contacts/mobile', icon: Smartphone, cmd: '$ grit new contacts --triple --expo', duration: '20 min' },
+  { title: 'Contacts: API only', outline: 'The same app as a Go service, no frontend', href: '/docs/tutorials/contacts/api', icon: Server, cmd: '$ grit new contacts --api', duration: '20 min' },
+  { title: 'Contacts: one binary', outline: 'The same app in a single executable', href: '/docs/tutorials/contacts/single', icon: Zap, cmd: '$ grit new contacts --single', duration: '20 min' },
+  { title: 'Contacts: everything', outline: 'The same app with every client at once', href: '/docs/tutorials/contacts/full', icon: Layers, cmd: '$ grit new contacts --full', duration: '20 min' },
   { title: 'Offline-First Desktop', outline: 'Local SQLite + outbox + Git-style sync', href: '/docs/desktop/offline', icon: Wifi, cmd: '$ grit new app --desktop', duration: '30 min' },
   { title: 'Audit Log + Hash Chain', outline: 'Tamper-evident activity tracking for SOC2', href: '/courses/audit-log', icon: ShieldCheck, cmd: 'GET /admin/audit-log', duration: '30 min' },
   { title: 'Feature Flags & A/B Testing', outline: 'Sticky bucketing, percentage rollouts, realtime push', href: '/courses/feature-flags', icon: Flag, cmd: 'flags.IsEnabled("beta")', duration: '30 min' },

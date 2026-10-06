@@ -131,6 +131,13 @@ jobs:
       - name: The tutorial matches the code it teaches
         run: python scripts/tutorial-build.py --check
 
+      # The six tier tutorials are one table rendered six ways, so a correction
+      # to a shared step cannot land on five pages and miss the sixth. Editing a
+      # generated page by hand would be silently undone by the next run; this
+      # fails the build instead of letting the two drift.
+      - name: The tier tutorials match their source
+        run: python scripts/tier-tutorials.py --check
+
   demo:
     name: Grit Motors, the live demo
     runs-on: ubuntu-latest
