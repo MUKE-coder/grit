@@ -28,11 +28,12 @@ type FrameworkDep struct {
 func FrameworkDepFloors() []FrameworkDep { return frameworkDeps }
 
 var frameworkDeps = []FrameworkDep{
-	{"github.com/MUKE-coder/sentinel/v2", "v2.5.0",
-		"security fixes from v2.2.2 (client-IP spoofing behind a proxy, a sort_by SQL injection, SSRF bypasses)"},
-	{"github.com/MUKE-coder/gorm-studio", "v1.1.0",
-		"read-only SQL enforced on the read path, fail-closed imports, composite keys matched in full"},
-	{"github.com/MUKE-coder/pulse", "v1.0.0", "the tagged release"},
+	{"github.com/MUKE-coder/sentinel/v2", "v2.6.0",
+		"rate limits and lockouts counted in Redis rather than per process (v2.5.0), whitelisted IPs and dashboard settings surviving a restart and reaching every replica (v2.5.1, v2.6.0)"},
+	{"github.com/MUKE-coder/gorm-studio", "v1.1.1",
+		"a table in TablePolicy.Hidden is refused by the raw SQL editor too, and a crafted XLSX import returns an error instead of panicking the request"},
+	{"github.com/MUKE-coder/pulse", "v1.2.0",
+		"the request body reaches the handler whole: before v1.0.1 the error middleware restored only the 4 KB snippet it captured, which truncated every upload carrying a Content-Length"},
 	{"golang.org/x/crypto", "v0.57.0", "govulncheck flags releases before v0.56.0"},
 	{"filippo.io/edwards25519", "v1.2.0", "govulncheck flags releases before v1.1.1"},
 	{"github.com/gorilla/mux", "v1.8.1", "goth's gothic links it in and still asks for v1.6.2, from 2018"},
@@ -125,8 +126,13 @@ func raiseFrameworkDeps(apiRoot string) ([]string, error) {
 		return nil, nil
 	}
 	if err := goGet(apiRoot, specs...); err != nil {
-		return nil, fmt.Errorf("could not raise %s, so run `go get %s` in %s: %v",
-			strings.Join(specs, ", "), strings.Join(specs, " "), apiRoot, err)
+		// Name what is lost, not just what failed. The upgrade carries on after
+		// this warning, and framework-owned files have already been written on
+		// the assumption that the floor was reached: the Pulse mount stopped
+		// disabling request-body capture once v1.2.0 made it safe, so a project
+		// left on v1.0.0 by a failed raise truncates every upload again.
+		return nil, fmt.Errorf("could not raise %s, so run `go get %s` in %s and do it before the next deploy, because this upgrade has already written code that expects those versions (%s): %v",
+			strings.Join(specs, ", "), strings.Join(specs, " "), apiRoot, strings.Join(raised, "; "), err)
 	}
 	return raised, nil
 }

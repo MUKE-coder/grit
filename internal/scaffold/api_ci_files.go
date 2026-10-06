@@ -161,7 +161,6 @@ func govulncheckAllowTXT() string {
 #   <OSV id> | <why it is accepted> | <issue tracking the real fix>
 # Each prints as a warning on every run. Remove a line as soon as a fix ships;
 # anything not listed fails the scan.
-GO-2026-6452 | excelize has no fixed release; reached only through GORM Studio's Excel import, behind the Studio login, and a panic is contained to that request | https://github.com/MUKE-coder/gorm-studio/issues/8
 `
 }
 

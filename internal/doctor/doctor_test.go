@@ -28,9 +28,9 @@ REDIS_HOST=localhost
 go 1.25.0
 
 require (
-	github.com/MUKE-coder/gorm-studio v1.1.0
-	github.com/MUKE-coder/pulse v1.0.0
-	github.com/MUKE-coder/sentinel/v2 v2.5.0
+	github.com/MUKE-coder/gorm-studio v1.1.1
+	github.com/MUKE-coder/pulse v1.2.0
+	github.com/MUKE-coder/sentinel/v2 v2.6.0
 )
 `,
 		"apps/api/internal/models/invoice.go": "package models\n\n" +
@@ -362,7 +362,7 @@ func TestDefaultCredentialsAndAWeakJWTSecret(t *testing.T) {
 
 func TestFrameworkLibraryBehindItsFloor(t *testing.T) {
 	report := run(t, map[string]string{"apps/api/go.mod": strings.Replace(cleanProject()["apps/api/go.mod"],
-		"github.com/MUKE-coder/sentinel/v2 v2.5.0", "github.com/MUKE-coder/sentinel/v2 v2.2.1", 1)})
+		"github.com/MUKE-coder/sentinel/v2 v2.6.0", "github.com/MUKE-coder/sentinel/v2 v2.2.1", 1)})
 	found := fired(report, "framework-library-behind")
 	if len(found) != 1 || !strings.Contains(found[0].Fix, "grit upgrade") {
 		t.Fatalf("want one finding pointing at grit upgrade, got %+v", found)

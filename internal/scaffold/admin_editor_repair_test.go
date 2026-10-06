@@ -355,9 +355,12 @@ func TestAdminImportsSharedModelTypes(t *testing.T) {
 			t.Errorf("%s still declares its own model type", name)
 		}
 	}
-	profile := adminCaptivatingProfile()
-	if strings.Contains(profile, "z.object(") || !strings.Contains(profile, `} from "@repo/shared/schemas";`) {
-		t.Error("the profile page still declares its own Zod schemas")
+	// The profile page is a redirect to /account now, and the page it became
+	// is the one to check: it carries the forms, so it is the one that could
+	// declare a schema of its own instead of importing the shared ones.
+	account := adminAccountPageTSX()
+	if strings.Contains(account, "z.object(") || !strings.Contains(account, `} from "@repo/shared/schemas";`) {
+		t.Error("the account page still declares its own Zod schemas")
 	}
 	index := sharedTypesIndex()
 	for _, typ := range SharedModelTypes {

@@ -35,7 +35,7 @@ func TestPasskeyLoginIsWiredUp(t *testing.T) {
 	}
 	// Same landing as a password sign-in: the server issues the same tokens
 	// and records the same session row, so nothing downstream should branch.
-	if !strings.Contains(hooks, `router.push(data.data.user.role === "USER" ? "/profile" : "/dashboard")`) {
+	if !strings.Contains(hooks, `router.push(data.data.user.role === "USER" ? "/account" : "/dashboard")`) {
 		t.Error("a passkey sign-in does not land where a password sign-in lands")
 	}
 }

@@ -60,12 +60,20 @@ func TestPasswordRulesAreEnforcedOnEveryPath(t *testing.T) {
 }
 
 // The page is an assembly of what already existed, not a second copy of it.
+//
+// It is the profile page's design, which is the one that reads well: a hero
+// card with the avatar, then a column of cards each with an icon chip and a
+// sentence. Its forms are written in the page, as they were there, and the
+// components that used to serve the old account page have been removed rather
+// than left beside them: two implementations of "change your password" in one
+// project is the thing this test exists to prevent, whichever one is rendered.
 func TestAccountPageComposesTheExistingCards(t *testing.T) {
 	page := adminAccountPageTSX()
 
 	for _, part := range []string{
 		`import { TwoFactorCard } from "@/components/profile/two-factor-card"`,
 		`import { PasskeysCard } from "@/components/security/passkeys"`,
+		`import { SignInLinksCard } from "@/components/account/sign-in-links"`,
 		`import { ActiveSessions } from "@/components/profile/active-sessions"`,
 	} {
 		if !strings.Contains(page, part) {
@@ -74,12 +82,27 @@ func TestAccountPageComposesTheExistingCards(t *testing.T) {
 	}
 
 	for _, card := range []string{
-		"<ProfileForm />", "<PasswordForm />", "<TwoFactorCard />",
-		"<PasskeysCard />", "<SignInLinksCard />", "<ActiveSessions />",
-		"<CloseAccountCard />",
+		"<PasswordForm />", "<TwoFactorCard />", "<PasskeysCard />", "<SignInLinksCard />", "<ActiveSessions />",
 	} {
 		if !strings.Contains(page, card) {
 			t.Errorf("the account page does not render %s", card)
+		}
+	}
+
+	// The forms the page carries itself, which is what made profile-form.tsx a
+	// duplicate rather than a dependency. The password form is not among them:
+	// it stays a component because it carries the checklist the server's rules
+	// are compared against.
+	for _, form := range []string{"Personal information", "Professional information"} {
+		if !strings.Contains(page, form) {
+			t.Errorf("the account page has no %q card", form)
+		}
+	}
+
+	// And nothing writes the superseded ones any more.
+	for _, gone := range []string{"<ProfileForm />", "<CloseAccountCard />"} {
+		if strings.Contains(page, gone) {
+			t.Errorf("the account page still renders %s, which is no longer scaffolded", gone)
 		}
 	}
 }
@@ -110,7 +133,7 @@ func TestAccountPageIsOneColumn(t *testing.T) {
 	}
 	// Destructive last. It used to sit in the middle of the page because it
 	// lived inside the component that draws the first card.
-	if strings.Index(page, "<CloseAccountCard />") < strings.Index(page, "<ActiveSessions />") {
+	if strings.Index(page, "Delete account") < strings.Index(page, "<ActiveSessions />") {
 		t.Error("closing the account is drawn before the other cards")
 	}
 }
@@ -146,38 +169,60 @@ func TestAccountPageUsesTheSharedHeader(t *testing.T) {
 	}
 }
 
-// Every field on the page names itself, which is the defect this admin has
-// shipped more than once.
+// Every field names itself, which is the defect this admin has shipped more
+// than once: twelve of thirteen form fields with a label attached to nothing.
+//
+// There are two correct ways to do it and this allows both. An explicit label
+// carries htmlFor and the field carries the matching id; an implicit one wraps
+// the field in the label element, which needs no id at all. What is never
+// allowed is an htmlFor pointing at an id nothing has, because that reads as
+// labelled and is not.
 func TestAccountFormsAreLabelled(t *testing.T) {
 	for name, form := range map[string]string{
-		"password": adminAccountPasswordFormTSX(),
-		"profile":  adminAccountProfileFormTSX(),
+		"password form": adminAccountPasswordFormTSX(),
+		"account page":  adminAccountPageTSX(),
 	} {
 		labels := regexp.MustCompile(`htmlFor="([a-z-]+)"`).FindAllStringSubmatch(form, -1)
 		ids := regexp.MustCompile(`\bid="([a-z-]+)"`).FindAllStringSubmatch(form, -1)
-		if len(labels) == 0 {
-			t.Errorf("the %s form has no associated labels", name)
-			continue
-		}
+
 		have := map[string]bool{}
 		for _, id := range ids {
 			have[id[1]] = true
 		}
 		for _, label := range labels {
 			if !have[label[1]] {
-				t.Errorf("the %s form labels %q, which no field has as its id", name, label[1])
+				t.Errorf("the %s labels %q, which no field has as its id", name, label[1])
 			}
+		}
+
+		// And it labels its fields one way or the other.
+		wraps := strings.Contains(form, `<label className="block">`)
+		if len(labels) == 0 && !wraps {
+			t.Errorf("the %s has no associated labels, neither htmlFor nor a wrapping <label>", name)
 		}
 	}
 }
 
-// The hub is where somebody goes looking for it.
+// The hub is where somebody goes looking for it, and the rail is where they
+// find it without looking.
+//
+// The href is /account rather than /system/account: the dashboard layout
+// confines a user with no grants to /profile and /account, so the account page
+// under /system bounced exactly the people whose account it is.
 func TestAccountIsOnTheSystemHub(t *testing.T) {
 	hub := adminSystemHubPageV2()
-	if !strings.Contains(hub, `href: "/system/account"`) {
+	if !strings.Contains(hub, `href: "/account"`) {
 		t.Error("the account page is not on the System hub, so nothing links to it")
 	}
-	if !strings.Contains(hub, `{ href: "/system/account",        category: "Security & Access"`) {
+	if !strings.Contains(hub, `{ href: "/account",               category: "Security & Access"`) {
 		t.Error("the account tile is not under Security & Access")
+	}
+	if strings.Contains(hub, `href: "/system/account"`) {
+		t.Error("the hub still points at the path a plain user is redirected away from")
+	}
+
+	rail := adminCollapsibleSidebarComponent(Options{})
+	if !strings.Contains(rail, `{ href: "/account", label: "Account"`) {
+		t.Error("the account page is not in the sidebar")
 	}
 }

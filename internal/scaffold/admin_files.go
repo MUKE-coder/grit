@@ -174,7 +174,7 @@ function CallbackInner() {
       .then(({ data }) => {
         const user = data.data;
         queryClient.setQueryData(["me"], user);
-        router.push(user.role === "USER" ? "/profile" : "/dashboard");
+        router.push(user.role === "USER" ? "/account" : "/dashboard");
       })
       .catch(() => {
         // /me failed even though we just landed here — either the
@@ -1289,7 +1289,7 @@ export function useLogin() {
       // showing the code prompt.
       if (isChallenge(data.data)) return;
       queryClient.setQueryData(["me"], data.data.user);
-      router.push(data.data.user.role === "USER" ? "/profile" : "/dashboard");
+      router.push(data.data.user.role === "USER" ? "/account" : "/dashboard");
     },
   });
 }
@@ -1330,7 +1330,7 @@ export function usePasskeyLogin() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["me"], data.data.user);
-      router.push(data.data.user.role === "USER" ? "/profile" : "/dashboard");
+      router.push(data.data.user.role === "USER" ? "/account" : "/dashboard");
     },
   });
 }
@@ -1361,7 +1361,7 @@ export function useVerifyTOTP() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["me"], data.data.user);
-      router.push(data.data.user.role === "USER" ? "/profile" : "/dashboard");
+      router.push(data.data.user.role === "USER" ? "/account" : "/dashboard");
     },
   });
 }
@@ -1492,7 +1492,7 @@ export function useRegister() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["me"], data.data.user);
-      router.push(data.data.user.role === "USER" ? "/profile" : "/dashboard");
+      router.push(data.data.user.role === "USER" ? "/account" : "/dashboard");
     },
   });
 }

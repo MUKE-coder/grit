@@ -1,0 +1,429 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  PersonalInfoSchema,
+  ProfessionalInfoSchema,
+  ChangePasswordSchema,
+  type PersonalInfoInput as PersonalInfoValues,
+  type ProfessionalInfoInput as ProfessionalInfoValues,
+  type ChangePasswordInput as ChangePasswordValues,
+} from "@repo/shared/schemas";
+import { useMe } from "@/hooks/use-auth";
+import { useUpdateProfile, useChangePassword } from "@/hooks/use-profile";
+import { PageHeader } from "@/components/chrome/PageHeader";
+import { AvatarCropper } from "@/components/account/avatar-cropper";
+import { DeleteAccountDialog } from "@/components/profile/delete-account-dialog";
+import { ActiveSessions } from "@/components/profile/active-sessions";
+import { PasswordForm } from "@/components/account/password-form";
+import { TwoFactorCard } from "@/components/profile/two-factor-card";
+import { PasskeysCard } from "@/components/security/passkeys";
+import { SignInLinksCard } from "@/components/account/sign-in-links";
+import { uploadFile } from "@/lib/api-client";
+import { buttonClasses } from "@/components/ui/button";
+import {
+  User as UserIcon, Briefcase, Lock, Trash2, Save, Loader2, Upload, ShieldCheck,
+} from "@/lib/icons";
+
+const inputClass =
+  "w-full rounded-lg border border-border bg-bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
+const errorInputClass =
+  "w-full rounded-lg border border-danger/50 bg-bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:border-danger focus:outline-none focus:ring-1 focus:ring-danger";
+
+/*
+ * Your account: one page, where there were two.
+ *
+ * /profile and /system/account had grown into the same thing from different
+ * directions. The profile page had the avatar, your name and your job title;
+ * the account page had the same material plus passkeys and sign-in links, so it
+ * was a superset most people never found, because it sat behind the System Hub.
+ * Worse, a plain USER is confined by the dashboard layout to /profile and
+ * /account, so /system/account bounced them straight back out and
+ * /account/security redirected them to a page they are not allowed to open.
+ *
+ * This is the profile page's design, which is the one that reads well, with the
+ * two cards it lacked folded in. It lives at /account, the path a USER can
+ * reach and the name the sidebar uses; /profile and /system/account redirect
+ * here.
+ *
+ * Deliberately not /system/security, which is the operator's threat dashboard:
+ * blocked addresses, rate-limit pressure, recent attacks. That page is about
+ * other people. This one is about you, and putting "change your password" next
+ * to a list of intrusion attempts helps nobody.
+ */
+export default function AccountPage() {
+  const { data: user } = useMe();
+  const updateProfile = useUpdateProfile();
+  const changePassword = useChangePassword();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+  // The picked file waits here while it is positioned.
+  const [pickedAvatar, setPickedAvatar] = useState<File | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const personalForm = useForm<PersonalInfoValues>({
+    resolver: zodResolver(PersonalInfoSchema),
+    defaultValues: { first_name: "", last_name: "", email: "" },
+  });
+  const professionalForm = useForm<ProfessionalInfoValues>({
+    resolver: zodResolver(ProfessionalInfoSchema),
+    defaultValues: { job_title: "", bio: "" },
+  });
+  const passwordForm = useForm<ChangePasswordValues>({
+    resolver: zodResolver(ChangePasswordSchema),
+    defaultValues: { password: "", confirm_password: "" },
+  });
+
+  // Whether the email box differs from the address on the account, which is
+  // the one condition the server attaches the password requirement to.
+  const watchedEmail = personalForm.watch("email");
+  const emailChanged =
+    Boolean(user?.email) && Boolean(watchedEmail) && watchedEmail.trim().toLowerCase() !== user!.email.toLowerCase();
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: form.reset is stable; the forms refill when the user loads.
+  useEffect(() => {
+    if (user) {
+      personalForm.reset({
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+      });
+      professionalForm.reset({
+        job_title: user.job_title || "",
+        bio: user.bio || "",
+      });
+    }
+  }, [user]);
+
+  // Pick, position, then upload. The file waits in state while the cropper is
+  // open, so cancelling sends nothing.
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Cleared so picking the same file twice reopens the cropper.
+    e.target.value = "";
+    if (!file) return;
+    setAvatarError("");
+    setPickedAvatar(file);
+  };
+
+  const handleAvatarCropped = async (file: File) => {
+    setAvatarUploading(true);
+    setAvatarError("");
+    try {
+      const result = await uploadFile(file);
+      const url = (result.data as Record<string, unknown>)?.url as string;
+      if (url) {
+        updateProfile.mutate({ avatar: url });
+      } else {
+        setAvatarError("That upload came back without a URL. Try again.");
+      }
+    } catch {
+      // Said out loud rather than swallowed: a picture that silently does not
+      // change is a bug report nobody can describe.
+      setAvatarError("That picture did not upload. Try again.");
+    } finally {
+      setAvatarUploading(false);
+      setPickedAvatar(null);
+    }
+  };
+
+  const onPersonalSubmit = (data: PersonalInfoValues) => updateProfile.mutate(data);
+  const onProfessionalSubmit = (data: ProfessionalInfoValues) => updateProfile.mutate(data);
+  const onPasswordSubmit = (data: ChangePasswordValues) =>
+    changePassword.mutate(
+      { password: data.password, current_password: data.current_password },
+      { onSuccess: () => passwordForm.reset() },
+    );
+
+  if (!user) return null;
+
+  const initials = ((user.first_name?.[0] || "") + (user.last_name?.[0] || "")).toUpperCase() || "U";
+  const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ");
+
+  return (
+    <div>
+      <PageHeader title="Account" subtitle="Your details, how you sign in, and where you are signed in." />
+
+      {/* Hero card — Profile Picture section with explicit header so the
+          user knows what the Upload New button replaces. Layout: gradient
+          banner up top, avatar floating half-out, name/email/role next to
+          it, prominent Upload New CTA on the right. */}
+      <section className="mb-6 overflow-hidden rounded-2xl border border-border bg-bg-elevated">
+        <header className="border-b border-border px-6 py-4">
+          <p className="text-sm font-semibold text-foreground">Profile Picture</p>
+          <p className="mt-0.5 text-xs text-text-muted">
+            Replace the image teammates and customers see on your profile.
+          </p>
+        </header>
+        <div className="h-20 bg-gradient-to-r from-accent/30 via-accent/15 to-transparent" />
+        <div className="-mt-12 flex flex-col items-start gap-4 px-6 pb-6 sm:flex-row sm:items-end">
+          <div className="relative">
+            <span className="block h-24 w-24 overflow-hidden rounded-2xl ring-4 ring-bg-elevated bg-bg-secondary">
+              {user.avatar ? (
+                <img src={user.avatar} alt={fullName || "Avatar"} className="h-full w-full object-cover" />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center text-2xl font-bold text-foreground">
+                  {initials}
+                </span>
+              )}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-lg font-bold text-foreground truncate">{fullName || "Anonymous"}</p>
+            <p className="text-sm text-text-muted truncate">{user.email}</p>
+            <span className="mt-1 inline-flex items-center gap-1 rounded-md bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+              {user.role}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={avatarUploading}
+              className={buttonClasses({ className: "shadow-sm" })}
+            >
+              {avatarUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              Upload new
+            </button>
+            {avatarError && (
+              <p role="alert" className="w-full text-xs text-danger">
+                {avatarError}
+              </p>
+            )}
+            <AvatarCropper
+              file={pickedAvatar}
+              saving={avatarUploading}
+              onCancel={() => setPickedAvatar(null)}
+              onCropped={handleAvatarCropped}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Personal Information — full-width card, grid form */}
+      <ProfileCard
+        icon={<UserIcon className="h-4 w-4" />}
+        title="Personal information"
+        description="Your name and primary email address."
+        message={updateProfile.isSuccess ? "Saved" : undefined}
+      >
+        <form onSubmit={personalForm.handleSubmit(onPersonalSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Field label="First name" error={personalForm.formState.errors.first_name?.message}>
+              <input
+                {...personalForm.register("first_name")}
+                className={personalForm.formState.errors.first_name ? errorInputClass : inputClass}
+                placeholder="Jane"
+              />
+            </Field>
+            <Field label="Last name" error={personalForm.formState.errors.last_name?.message}>
+              <input
+                {...personalForm.register("last_name")}
+                className={personalForm.formState.errors.last_name ? errorInputClass : inputClass}
+                placeholder="Doe"
+              />
+            </Field>
+          </div>
+          <Field label="Email" error={personalForm.formState.errors.email?.message}>
+            <input
+              type="email"
+              {...personalForm.register("email")}
+              className={personalForm.formState.errors.email ? errorInputClass : inputClass}
+              placeholder="you@example.com"
+            />
+          </Field>
+          {/* Only once the email has actually been edited.
+              The server asks for the current password when the email changes,
+              and not otherwise: an email address is where a password reset is
+              sent, so changing it without re-authenticating would turn a
+              borrowed session into a permanent one. Showing the box on every
+              visit put a password prompt on a form about somebody's name. */}
+          {emailChanged && (
+            <Field
+              label="Current password"
+              error={personalForm.formState.errors.current_password?.message}
+            >
+              <input
+                type="password"
+                autoComplete="current-password"
+                {...personalForm.register("current_password")}
+                className={inputClass}
+              />
+              <p className="mt-1.5 text-xs text-text-muted">
+                Changing your email needs your password, because that address is where a
+                password reset is sent.
+              </p>
+            </Field>
+          )}
+          {updateProfile.isError && (
+            <p className="text-sm text-danger">{(updateProfile.error as { response?: { data?: { error?: { message?: string } } } } | null)?.response?.data?.error?.message ?? "That did not save. Try again."}</p>
+          )}
+          <div className="flex justify-end">
+            <SubmitButton pending={updateProfile.isPending}>
+              <Save className="h-4 w-4" />
+              Save changes
+            </SubmitButton>
+          </div>
+        </form>
+      </ProfileCard>
+
+      {/* Professional Information */}
+      <ProfileCard
+        icon={<Briefcase className="h-4 w-4" />}
+        title="Professional information"
+        description="What you do, and a short bio teammates and customers can see."
+      >
+        <form onSubmit={professionalForm.handleSubmit(onProfessionalSubmit)} className="space-y-4">
+          <Field label="Job title">
+            <input
+              {...professionalForm.register("job_title")}
+              className={inputClass}
+              placeholder="Software Engineer"
+            />
+          </Field>
+          <Field label="Bio">
+            <textarea
+              {...professionalForm.register("bio")}
+              rows={4}
+              className={inputClass}
+              placeholder="A short bio about yourself..."
+            />
+          </Field>
+          <div className="flex justify-end">
+            <SubmitButton pending={updateProfile.isPending}>
+              <Save className="h-4 w-4" />
+              Save changes
+            </SubmitButton>
+          </div>
+        </form>
+      </ProfileCard>
+
+      {/* The password form, from its own component rather than written here.
+          It carries the live checklist that mirrors the server's rules one for
+          one, and a test compares the two lists so they cannot drift. The card
+          it draws has the same icon chip and heading as ProfileCard, so it sits
+          in the column without looking borrowed. */}
+      <div className="mt-6">
+        <PasswordForm />
+      </div>
+
+      {/* Everything about proving it is you, under one anchor.
+          /account/security redirects to #security, and so do links in the
+          System Hub and in older release notes, so the id has to stay whatever
+          the layout around it does. scroll-mt keeps the heading clear of the
+          sticky page header when a link lands here.
+
+          All three render their own card chrome, built the same way as
+          ProfileCard, so they sit in the column rather than inside one.
+          Two-factor comes first because turning it on is what makes the
+          sessions below harder to steal, and passkeys hides itself where the
+          browser has no authenticator. */}
+      <section id="security" className="scroll-mt-24">
+        <div className="mt-6">
+          <TwoFactorCard />
+        </div>
+
+        <div className="mt-6">
+          <PasskeysCard />
+        </div>
+
+        {/* The sign-in link form answers the same to every address so it cannot
+            enumerate accounts, which also means it can never warn anybody: this
+            is the only place a request you did not make becomes visible. */}
+        <div className="mt-6">
+          <SignInLinksCard />
+        </div>
+      </section>
+
+      <section id="devices" className="mt-6 scroll-mt-24">
+        <ProfileCard
+          icon={<ShieldCheck className="h-4 w-4" />}
+          title="Active sessions"
+          description="Every device signed in to your account. Changing your password signs the others out automatically."
+        >
+          <ActiveSessions />
+        </ProfileCard>
+      </section>
+
+      {/* Danger zone */}
+      <section className="mt-6 rounded-2xl border border-danger/30 bg-danger/5 p-6">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Delete account</p>
+            <p className="mt-1 text-sm text-text-secondary">
+              Permanently remove your account and all associated data. This action cannot be undone.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowDeleteDialog(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-danger/40 bg-danger/10 px-4 py-2 text-sm font-semibold text-danger hover:bg-danger/20"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete account
+          </button>
+        </div>
+      </section>
+
+      <DeleteAccountDialog open={showDeleteDialog} onClose={() => setShowDeleteDialog(false)} />
+    </div>
+  );
+}
+
+function ProfileCard({
+  icon, title, description, message, children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  message?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mb-6 rounded-2xl border border-border bg-bg-elevated">
+      <header className="flex items-start justify-between gap-3 border-b border-border px-6 py-4">
+        <div className="flex items-start gap-3 min-w-0">
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+            {icon}
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">{title}</p>
+            <p className="mt-0.5 text-xs text-text-muted">{description}</p>
+          </div>
+        </div>
+        {message && (
+          <span className="shrink-0 rounded-md bg-success/10 px-2 py-1 text-xs font-medium text-success">
+            {message}
+          </span>
+        )}
+      </header>
+      <div className="px-6 py-5">{children}</div>
+    </section>
+  );
+}
+
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-text-muted">{label}</span>
+      {children}
+      {error && <p className="mt-1 text-xs text-danger">{error}</p>}
+    </label>
+  );
+}
+
+function SubmitButton({ pending, children }: { pending: boolean; children: React.ReactNode }) {
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className={buttonClasses()}
+    >
+      {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : children}
+    </button>
+  );
+}

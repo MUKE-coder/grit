@@ -67,7 +67,7 @@ require (
 	if err != nil {
 		t.Fatalf("raise: %v", err)
 	}
-	want := []string{"github.com/MUKE-coder/gorm-studio@v1.1.0", "github.com/MUKE-coder/pulse@v1.0.0"}
+	want := []string{"github.com/MUKE-coder/gorm-studio@v1.1.1", "github.com/MUKE-coder/pulse@v1.2.0"}
 	if !reflect.DeepEqual(fetched, want) {
 		t.Errorf("fetched %v, want %v (and never a lower Sentinel than the project has)", fetched, want)
 	}
@@ -82,9 +82,9 @@ require (
 go 1.24
 
 require (
-	github.com/MUKE-coder/gorm-studio v1.1.0
-	github.com/MUKE-coder/pulse v1.0.0
-	github.com/MUKE-coder/sentinel/v2 v2.5.0
+	github.com/MUKE-coder/gorm-studio v1.1.1
+	github.com/MUKE-coder/pulse v1.2.0
+	github.com/MUKE-coder/sentinel/v2 v2.6.0
 )
 `)
 	if raised, err := raiseFrameworkDeps(dir); err != nil || raised != nil || calls != 0 {

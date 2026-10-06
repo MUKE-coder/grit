@@ -148,6 +148,11 @@ func i18nMessagesEN() string {
     "settings": "Settings",
     "system": "System",
     "systemHub": "System Hub",
+    "content": "Content",
+    "operations": "Operations",
+    "security": "Security",
+    "backups": "Backups",
+    "account": "Account",
     "signOut": "Sign out"
   },
   "table": {
@@ -216,6 +221,11 @@ func i18nMessagesFR() string {
     "settings": "Paramètres",
     "system": "Système",
     "systemHub": "Centre système",
+    "content": "Contenu",
+    "operations": "Exploitation",
+    "security": "Sécurité",
+    "backups": "Sauvegardes",
+    "account": "Compte",
     "signOut": "Se déconnecter"
   },
   "table": {

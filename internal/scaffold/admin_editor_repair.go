@@ -300,7 +300,36 @@ const (
 // imports it, if Grit wrote it and it has not been edited. resource-page.tsx
 // was its only user, and now renders components/chrome/PageHeader.tsx.
 func pruneLegacyPageHeader(root string, shape adminPanelShape, pristine func(string) bool) {
-	path := filepath.Join(shape.code, filepath.FromSlash(legacyPageHeaderRel))
+	pruneSupersededComponent(root, shape, pristine, legacyPageHeaderRel, legacyPageHeaderImport,
+		"removed, since components/chrome/PageHeader.tsx is the one page header")
+}
+
+// The components the merged account page superseded.
+//
+// /account is built from the profile page's own forms, which is the design that
+// reads best, and that left components/account/profile-form.tsx as a second
+// implementation of the name and avatar fields. Nothing renders it now.
+//
+// password-form.tsx is deliberately NOT in this list: the page renders it,
+// because it carries the password checklist that mirrors the server's rules.
+var supersededAccountForms = []struct{ rel, imp, why string }{
+	{"components/account/profile-form.tsx", `/components/account/profile-form"`,
+		"removed, since /account carries these forms itself"},
+}
+
+// pruneSupersededAccountForms deletes them, under the same three guards.
+func pruneSupersededAccountForms(root string, shape adminPanelShape, pristine func(string) bool) {
+	for _, f := range supersededAccountForms {
+		pruneSupersededComponent(root, shape, pristine, f.rel, f.imp, f.why)
+	}
+}
+
+// pruneSupersededComponent deletes one file Grit no longer writes, and only
+// when all three of these hold: Grit wrote it, nobody has edited it since, and
+// nothing in the panel still imports it. A project that reached for the
+// component keeps it, which is the point of the import scan.
+func pruneSupersededComponent(root string, shape adminPanelShape, pristine func(string) bool, rel, importMarker, why string) {
+	path := filepath.Join(shape.code, filepath.FromSlash(rel))
 	if !fileExists(path) || !pristine(path) {
 		return
 	}
@@ -319,7 +348,7 @@ func pruneLegacyPageHeader(root string, shape adminPanelShape, pristine func(str
 			if ext := filepath.Ext(p); ext != ".ts" && ext != ".tsx" {
 				return nil
 			}
-			if fileContains(p, legacyPageHeaderImport) {
+			if fileContains(p, importMarker) {
 				importer = p
 			}
 			return nil
@@ -336,7 +365,7 @@ func pruneLegacyPageHeader(root string, shape adminPanelShape, pristine func(str
 	if rel, err := filepath.Rel(root, path); err == nil {
 		shown = filepath.ToSlash(rel)
 	}
-	fmt.Printf("  ✓ %s: removed, since components/chrome/PageHeader.tsx is the one page header\n", shown)
+	fmt.Printf("  ✓ %s: %s\n", shown, why)
 }
 
 // repairAdminScreens applies M41 to M44 and Tiptap 3 to a project's panels.
@@ -363,6 +392,7 @@ func repairAdminScreens(root string, opts Options) error {
 			return err
 		}
 		pruneLegacyPageHeader(root, shape, pristine)
+		pruneSupersededAccountForms(root, shape, pristine)
 	}
 	return repairTiptap(root, m)
 }

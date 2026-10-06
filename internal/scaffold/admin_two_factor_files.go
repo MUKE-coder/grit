@@ -277,7 +277,7 @@ export function TwoFactorCard() {
               Set up an authenticator app
             </Button>
             <Button variant="outline" onClick={startEmailSetup} loading={sendEmailCode.isPending}>
-              Use codes by email
+              Use OTP code via email
             </Button>
           </div>
         )}

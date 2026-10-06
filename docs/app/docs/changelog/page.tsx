@@ -66,6 +66,95 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.376.0 */}
+            <div className="mb-12" id="v3.376.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.376.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Pulse, Sentinel and GORM Studio move up, and a workaround comes out</h3>
+                <p>
+                  All three shipped releases that close something Grit was carrying:
+                </p>
+                <ul>
+                  <li>
+                    <strong>Pulse v1.2.0</strong> fixes request-body capture. The error
+                    middleware used to read the body and restore only the first 4 KB, so every
+                    request carrying a <code>Content-Length</code> reached the handler
+                    truncated: uploads from mobile and curl failed while browsers, which send
+                    chunked, did not. It wraps the body now and passes it through whole, so the
+                    scaffold has stopped mounting Pulse with{' '}
+                    <code>WithRequestBodyCaptureDisabled()</code> and error reports can say what
+                    the request carried again, for the first time since v3.31.71.
+                  </li>
+                  <li>
+                    <strong>GORM Studio v1.1.1</strong> enforces <code>TablePolicy.Hidden</code>{' '}
+                    on the raw SQL editor, which could previously <code>SELECT</code> from a
+                    table the policy hid, and contains a crafted XLSX import that could panic
+                    the request.
+                  </li>
+                  <li>
+                    <strong>Sentinel v2.6.0</strong> brings the Redis-backed counters from
+                    v2.5.0, so rate limits and lockouts are counted once across replicas rather
+                    than once per process, plus whitelisted IPs and dashboard settings that
+                    survive a restart and reach every replica.
+                  </li>
+                </ul>
+                <p className="text-sm text-muted-foreground">
+                  The govulncheck allowlist is empty again. GO-2026-6452 was accepted because
+                  excelize had no fixed release; the advisory now records one, at the v2.11.0
+                  Grit already pins, and a fresh project scans clean. An allowlist that outlives
+                  its reason is a suppression waiting to hide the next finding.
+                </p>
+
+                <h4>One account page, on the profile page&apos;s design</h4>
+                <p>
+                  <code>/profile</code> and <code>/system/account</code> were the same page
+                  reached from two directions. Profile had the avatar, your name and your job
+                  title; Account had the same material plus passkeys and sign-in links, so it
+                  was a superset most people never found, because it sat behind the System Hub.
+                </p>
+                <p>
+                  They are one page at <code>/account</code>, using the profile page&apos;s
+                  layout, with passkeys and sign-in links folded in. Both old paths redirect.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  <code>/account</code> and not <code>/system/account</code> for a reason worth
+                  naming: the dashboard layout confines a user with no grants to{' '}
+                  <code>/profile</code> and <code>/account</code>, so the account page under{' '}
+                  <code>/system</code> bounced exactly the people whose account it is, and{' '}
+                  <code>/account/security</code> redirected them to a page they are not allowed
+                  to open. Sign-in now lands a plain user on <code>/account</code>.
+                </p>
+
+                <p className="text-sm text-muted-foreground">
+                  Four details on that page while it was being rebuilt. The current-password box
+                  no longer sits on the form about your name: the server asks for it only when
+                  the email changes, because that address is where a password reset is sent, so
+                  the field now appears when the email is edited and not before. The second
+                  factor&apos;s email option says <strong>Use OTP code via email</strong>, which
+                  names what arrives. The password card is the component with the live strength
+                  meter and the checklist, whose rules a test compares against the server&apos;s
+                  one for one. And the sign-in links and active sessions cards no longer touch.
+                </p>
+
+                <h4>And the sidebar is grouped</h4>
+                <p>
+                  The rail was Dashboard, every resource, and one System Hub link, so anything
+                  operational was two clicks from anywhere. It now has a <strong>Content</strong>{' '}
+                  heading over the resources and a <strong>System</strong> group holding
+                  Operations, Security, Backups and Account beside the hub, open by default.
+                  Four, not thirty: the test is whether you open it while working rather than
+                  while configuring. Everything else stays one click further on, in the hub,
+                  which is what a hub is for.
+                </p>
+              </div>
+            </div>
+
             {/* v3.375.1 */}
             <div className="mb-12" id="v3.375.1">
               <div className="flex items-center gap-3 mb-4">

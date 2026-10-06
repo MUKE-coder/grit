@@ -440,7 +440,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     if (!user || user.role !== "USER" || permsLoading || isSuper || permissions.length > 0) return;
     const path = window.location.pathname;
     if (path.startsWith("/profile") || path.startsWith("/account")) return;
-    router.replace("/profile");
+    router.replace("/account");
   }, [user, router, permsLoading, isSuper, permissions]);
 
   const toggleSidebar = () => {

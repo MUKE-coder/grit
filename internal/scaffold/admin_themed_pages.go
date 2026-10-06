@@ -117,7 +117,7 @@ export default function LoginPage() {
   // login form — bounce straight to the dashboard.
   useEffect(() => {
     if (!meLoading && existingUser) {
-      router.replace(existingUser.role === "USER" ? "/profile" : "/dashboard");
+      router.replace(existingUser.role === "USER" ? "/account" : "/dashboard");
     }
   }, [meLoading, existingUser, router]);
 

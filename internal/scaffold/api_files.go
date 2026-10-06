@@ -253,8 +253,8 @@ go 1.26.6
 
 require (
 	github.com/MUKE-coder/gin-docs v0.0.0-20260222113017-4d647cb4e7aa
-	github.com/MUKE-coder/gorm-studio v1.1.0
-	github.com/MUKE-coder/pulse v1.0.0
+	github.com/MUKE-coder/gorm-studio v1.1.1
+	github.com/MUKE-coder/pulse v1.2.0
 	github.com/aws/aws-sdk-go-v2 v1.43.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.31
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.30
@@ -332,7 +332,7 @@ require (
 	// v2.2.2 is a security release (client-IP spoofing behind a proxy, a
 	// sort_by SQL injection, SSRF bypasses), and v2.5.0 keeps rate limits and
 	// lockouts in Redis, so every replica counts against the same numbers.
-	github.com/MUKE-coder/sentinel/v2 v2.5.0
+	github.com/MUKE-coder/sentinel/v2 v2.6.0
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
@@ -7334,14 +7334,14 @@ func mountPulse(r *gin.Engine, db *gorm.DB, cfg *config.Config, svc *Services) {
 			pulse.WithCredentials(cfg.PulseUsername, cfg.PulsePassword),
 			pulse.WithExcludePaths("/studio/*", "/sentinel/*", "/docs/*", "/pulse/*"),
 			pulse.WithPrometheus(),
-			// CRITICAL: Pulse's error middleware captures a request-body snippet
-			// (MaxBodySize, default 4096) for error context, but restores ONLY
-			// that snippet to the request — it discards everything past 4096
-			// bytes. That truncates EVERY request carrying a Content-Length
-			// (mobile / native / curl clients; browsers dodge it by sending
-			// chunked), silently breaking file uploads and any large JSON POST.
-			// Disable body capture so the full body always reaches the handler.
-			pulse.WithRequestBodyCaptureDisabled(),
+			// Request-body capture is left on, which needs pulse v1.0.1 or
+			// later. Before that the error middleware read the body and put
+			// back only the first 4 KB, so every request carrying a
+			// Content-Length reached the handler truncated: uploads from
+			// mobile and curl failed while browsers, which send chunked,
+			// did not. v1.2.0 wraps the body instead and passes it through
+			// whole. Pin below v1.0.1 and you want
+			// pulse.WithRequestBodyCaptureDisabled() back.
 		}
 		if cfg.IsDevelopment() {
 			pulseOpts = append(pulseOpts, pulse.WithDevMode())
