@@ -187,6 +187,52 @@ func TestRepairCSRFMatchesVersionedPaths(t *testing.T) {
 
 // A fresh project and an upgraded one must end up with the same code, so the
 // templates must need no repair at all.
+// config.go as the v3.243.0 repair left it: the production block is there, and
+// the line turning off the SQL editor is not.
+const alreadyRepairedConfig = `package config
+
+func Load() (*Config, error) {
+	cfg := &Config{}
+	if cfg.AppEnv == "production" {
+		cfg.GORMStudioEnabled = getEnv("GORM_STUDIO_IN_PRODUCTION", "false") == "true"
+		cfg.GORMStudioReadOnly = true
+	}
+	return cfg, nil
+}
+
+func checkSecrets(cfg *Config) error { return nil }
+`
+
+// Read-only was never the whole answer.
+//
+// It stops GORM Studio's SQL endpoint running a write; it does not take the
+// endpoint away, so a production Studio answered SELECT * FROM users with every
+// password hash and token in the table. The repair has to reach a project that
+// already has the production block, which is every project upgraded since
+// v3.243.0 and so every project actually running.
+func TestRepairTurnsOffStudiosSQLEditorInProduction(t *testing.T) {
+	out, fixed, warn := repairConfigProductionSource(alreadyRepairedConfig)
+	if len(warn) > 0 {
+		t.Fatalf("warnings: %v", warn)
+	}
+	if !strings.Contains(out, "cfg.GORMStudioDisableSQL = true") {
+		t.Fatal("production still runs the SQL editor")
+	}
+	if len(fixed) != 1 {
+		t.Errorf("fixed %v, want the one change", fixed)
+	}
+	if strings.Index(out, "GORMStudioDisableSQL") < strings.Index(out, "GORMStudioReadOnly") {
+		t.Error("the SQL line landed above the read-only line it follows")
+	}
+
+	// A second pass changes nothing: a repair that keeps repairing grows the
+	// file on every upgrade.
+	again, fixedAgain, _ := repairConfigProductionSource(out)
+	if again != out || len(fixedAgain) > 0 {
+		t.Errorf("a second upgrade changed it again: %v", fixedAgain)
+	}
+}
+
 func TestFreshTemplatesNeedNoProductionRepair(t *testing.T) {
 	for name, c := range map[string]struct {
 		src string

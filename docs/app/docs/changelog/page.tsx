@@ -66,6 +66,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.374.0 */}
+            <div className="mb-12" id="v3.374.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.374.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Production stops serving a SQL console</h3>
+                <p>
+                  GORM Studio is off in production unless you set{' '}
+                  <code>GORM_STUDIO_IN_PRODUCTION=true</code>, and read-only even then. The
+                  comment beside that code said &quot;read-only with no SQL editor even
+                  then&quot;, and the second half was never true: the code set{' '}
+                  <code>ReadOnly</code> and not <code>DisableSQL</code>.
+                </p>
+                <p>
+                  Read-only stops Studio&apos;s SQL endpoint running a write. It does not take
+                  the endpoint away. So a production Studio, for anyone who had turned it on,
+                  answered <code>SELECT * FROM users</code> with every password hash, session
+                  token and encrypted column in the table, behind basic auth alone. Read-only is
+                  about the database surviving; disabling the editor is about the data not
+                  leaving, and only the first one was being done.
+                </p>
+                <p>
+                  Production now sets both. <code>grit upgrade</code> carries the line into
+                  projects that already have the production block, which is every project
+                  generated or upgraded since v3.243.0 and so every project actually running:
+                  the existing repair only fired when the whole block was missing, so a fix
+                  written into the template alone would have reached new projects and nothing
+                  else.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Found while writing up improvements for the libraries Grit mounts. There is a
+                  related hole upstream, reported as{' '}
+                  <a href="https://github.com/MUKE-coder/gorm-studio/issues/9" className="underline">
+                    gorm-studio#9
+                  </a>
+                  : a table listed in <code>TablePolicy.Hidden</code>, whose documented purpose
+                  is &quot;tables holding secrets&quot;, is still readable through the same SQL
+                  endpoint. Disabling the editor closes that for Grit apps whatever upstream
+                  decides.
+                </p>
+              </div>
+            </div>
+
             {/* v3.373.0 */}
             <div className="mb-12" id="v3.373.0">
               <div className="flex items-center gap-3 mb-4">
