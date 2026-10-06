@@ -206,7 +206,7 @@ export default function OperationsPage() {
           loading={isPending}
         />
         <Tile
-          label="Error rate"
+          label="Responses 4xx / 5xx"
           value={fmt(latest?.errorRate, 2)}
           unit="%"
           icon={AlertTriangle}
@@ -234,7 +234,10 @@ export default function OperationsPage() {
         }
         pill={
           data?.errors?.rate != null
-            ? { tone: data.errors.rate > 1 ? "danger" : "success", label: fmt(data.errors.rate, 2) + "% errors" }
+            ? {
+                tone: data.errors.rate > 1 ? "danger" : "success",
+                label: fmt(data.errors.rate, 2) + "% of responses 4xx / 5xx",
+              }
             : undefined
         }
       />
@@ -263,7 +266,7 @@ export default function OperationsPage() {
           <Kvs
             rows={[
               ["Requests seen", fmtInt(data?.traffic?.total)],
-              ["Open errors", fmtInt(data?.errors?.active_open)],
+              ["Responses 4xx / 5xx", fmtInt(data?.errors?.active_open)],
             ]}
           />
         </Panel>
@@ -283,7 +286,7 @@ export default function OperationsPage() {
                     <th className="px-1 py-2 text-right font-medium">avg</th>
                     <th className="px-1 py-2 text-right font-medium">p95</th>
                     <th className="px-1 py-2 text-right font-medium">p99</th>
-                    <th className="px-1 py-2 text-right font-medium">errors</th>
+                    <th className="px-1 py-2 text-right font-medium" title="Share of this route\u2019s responses with a status of 400 or more">4xx+</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -380,7 +383,14 @@ export default function OperationsPage() {
         pill={
           (data?.n1_detections?.length ?? 0) + (data?.recent_errors?.length ?? 0) === 0
             ? { tone: "success", label: "nothing outstanding" }
-            : { tone: "warning", label: (data?.n1_detections?.length ?? 0) + " N+1, " + (data?.recent_errors?.length ?? 0) + " errors" }
+            : {
+                tone: "warning",
+                label:
+                  (data?.n1_detections?.length ?? 0) +
+                  " N+1, " +
+                  (data?.recent_errors?.length ?? 0) +
+                  " exceptions",
+              }
         }
       />
       <div className="grid gap-3 lg:grid-cols-2">
@@ -401,9 +411,20 @@ export default function OperationsPage() {
           )}
         </Panel>
 
-        <Panel title="Recent errors">
+        <Panel title="Recorded exceptions">
           {(data?.recent_errors ?? []).length === 0 ? (
-            <Empty>Nothing has thrown since Pulse last reset.</Empty>
+            <Empty>
+              Nothing has thrown.
+              {(data?.errors?.rate ?? 0) > 0 && (
+                <>
+                  {" "}
+                  The {fmt(data?.errors?.rate, 2)}% above is a different measurement: it counts
+                  every response with a status of 400 or more, and an expired token answered
+                  401 is one of those. This panel is exceptions Pulse recorded, and an app can
+                  refuse a great many requests correctly without throwing once.
+                </>
+              )}
+            </Empty>
           ) : (
             <ul className="divide-y divide-border">
               {(data?.recent_errors ?? []).slice(0, 8).map((e) => (

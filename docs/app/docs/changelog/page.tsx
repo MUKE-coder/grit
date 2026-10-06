@@ -66,6 +66,33 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.375.1 */}
+            <div className="mb-12" id="v3.375.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.375.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Two things were both called errors</h3>
+                <p>
+                  Reported within the hour: the Operations page showed an error rate of 5.6% and,
+                  below it, &quot;nothing has thrown&quot;. Both were right. Pulse counts a
+                  request as an error when its status is 400 or more, so an expired token
+                  answered 401 is in that rate, while its errors table holds recorded exceptions,
+                  which on an app that is merely refusing requests correctly is empty.
+                </p>
+                <p>
+                  The numbers were never wrong; one word was doing two jobs on one screen. The
+                  tile reads <strong>Responses 4xx / 5xx</strong>, the panel reads{' '}
+                  <strong>Recorded exceptions</strong>, and when the rate is above zero with an
+                  empty panel, the empty state says why rather than leaving the two to argue.
+                </p>
+              </div>
+            </div>
+
             {/* v3.375.0 */}
             <div className="mb-12" id="v3.375.0">
               <div className="flex items-center gap-3 mb-4">
