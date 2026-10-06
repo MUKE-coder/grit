@@ -141,6 +141,7 @@ export default function AccountPage() {
   if (!user) return null;
 
   const initials = ((user.first_name?.[0] || "") + (user.last_name?.[0] || "")).toUpperCase() || "U";
+  const isAdmin = user?.role === "ADMIN";
   const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ");
 
   return (
@@ -349,23 +350,33 @@ export default function AccountPage() {
         </ProfileCard>
       </section>
 
-      {/* Danger zone */}
+      {/* Danger zone.
+
+          An administrator cannot close their own account: that is how an
+          organisation locks itself out of its own admin panel, and the account
+          that did it is the one that could have undone it. The API refuses it,
+          and this says so rather than offering a button that returns 403 after
+          somebody has typed their password into the dialog behind it. */}
       <section className="mt-6 rounded-2xl border border-danger/30 bg-danger/5 p-6">
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-foreground">Delete account</p>
+            <p className="text-sm font-semibold text-foreground">Close account</p>
             <p className="mt-1 text-sm text-text-secondary">
-              Permanently remove your account and all associated data. This action cannot be undone.
+              {isAdmin
+                ? "An administrator cannot close their own account. Ask another administrator to remove it from the Users screen, or change this account's role first."
+                : "You will be signed out and will not be able to sign in again. An administrator can restore the account from Deleted accounts; erasing what you left behind elsewhere is a separate request."}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowDeleteDialog(true)}
-            className="inline-flex items-center gap-2 rounded-lg border border-danger/40 bg-danger/10 px-4 py-2 text-sm font-semibold text-danger hover:bg-danger/20"
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete account
-          </button>
+          {!isAdmin && (
+            <button
+              type="button"
+              onClick={() => setShowDeleteDialog(true)}
+              className="inline-flex items-center gap-2 rounded-lg border border-danger/40 bg-danger/10 px-4 py-2 text-sm font-semibold text-danger hover:bg-danger/20"
+            >
+              <Trash2 className="h-4 w-4" />
+              Close account
+            </button>
+          )}
         </div>
       </section>
 

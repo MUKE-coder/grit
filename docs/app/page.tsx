@@ -342,6 +342,7 @@ export default function HomePage() {
               { icon: TrendingUp, label: 'Exact multi-currency money', href: '/docs/concepts/money' },
               { icon: Building2, label: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
               { icon: Webhook, label: 'Webhooks', href: '/docs/backend/webhooks' },
+              { icon: Eye, label: 'Undelete a record from the bin', href: '/docs/admin/trash' },
               { icon: Flag, label: 'Feature flags', href: '/docs/backend/feature-flags' },
               { icon: TestTube2, label: 'Generated tests', href: '/docs/testing' },
               { icon: HardDrive, label: 'Backups & restore', href: '/docs/deployment/checklist' },

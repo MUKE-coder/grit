@@ -66,6 +66,86 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.378.0 */}
+            <div className="mb-12" id="v3.378.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.378.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A deleted record is somewhere you can get it back from</h3>
+                <p>
+                  Every generated resource soft-deletes. The row stayed on disk and left every
+                  list at once, which meant &quot;I deleted the wrong one&quot; had no answer
+                  short of a SQL console, and the rows accumulated forever with nothing
+                  counting them.
+                </p>
+                <p>
+                  <strong>System, Trash</strong> lists them, grouped by resource, newest first,
+                  each with a label taken from the model&apos;s own display column, when it was
+                  deleted and when it goes. Restore puts one back. Delete forever removes it
+                  now. Empty takes a whole resource, and refuses without an explicit confirm on
+                  the request. Retention is thirty days, and a nightly task at 03:40 purges what
+                  is past it, so the table does not grow without bound whether or not anybody
+                  visits the page.
+                </p>
+                <p>
+                  It reads the sync registry the generator already populates, so a resource
+                  generated tomorrow appears in the bin with no extra step. Users are
+                  deliberately not in that registry: a row that carries its own role is not
+                  something a generic restore should write.
+                </p>
+
+                <h4>And a closed account is not a gone account</h4>
+                <p>
+                  Which is why closing one needed its own screen. <strong>System, Deleted
+                  accounts</strong> lists who closed theirs, with the role they had and the date,
+                  and restores one to signing in with the password it already had, or removes the
+                  row for good. Erasing what a person left behind across every other table stays
+                  where it was, on the GDPR page, because it is a different operation with
+                  different law attached to it.
+                </p>
+                <p>
+                  An administrator can no longer close their own account. It is how an
+                  organisation locks itself out of its own admin panel, and the account that did
+                  it is the one that could have undone it. The API refuses it with a message that
+                  says what to do instead, and the page states it rather than offering a button
+                  that returns 403 after somebody has typed their password into the dialog behind
+                  it.
+                </p>
+
+                <h4>The account page, finished</h4>
+                <p>
+                  Personal information no longer asks for your current password to change your
+                  name: it asks only when the email is the thing being changed, which is the only
+                  case where it is a credential change. The password form now shows strength as
+                  you type, against length, case, digits and symbols, so the rule the API will
+                  enforce is visible before the submit rather than after it. Two-factor says{' '}
+                  <strong>Use OTP Code Via email</strong>, which is what it does. The avatar
+                  uploads, crops and persists. Sign-in links and active sessions are two blocks
+                  with space between them instead of one wall.
+                </p>
+
+                <h4>Fewer cards on the users page</h4>
+                <p>
+                  The redesign put a counted breakdown both in cards across the top and in the
+                  Insights panel below. Same numbers, twice, pushing the table itself below the
+                  fold. The cards are gone; the breakdown stays where it has a chart beside it.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Both pages reach existing projects on <code>grit upgrade</code>. The routes go
+                  into <code>internal/routes/routes.go</code>, which is your file, so each block
+                  is checked for on its own: a project that got the bin from a half-finished run
+                  still gets the closed accounts, which a single &quot;has this repair run&quot;
+                  guard would have skipped forever. Verified on a running project, deleting a
+                  record and getting it back, closing an account and signing in with it again.
+                </p>
+              </div>
+            </div>
+
             {/* v3.377.0 */}
             <div className="mb-12" id="v3.377.0">
               <div className="flex items-center gap-3 mb-4">

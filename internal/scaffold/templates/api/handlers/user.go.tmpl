@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -12,6 +13,7 @@ import (
 
 	"{{MODULE}}/internal/authz"
 	"{{MODULE}}/internal/crypto"
+	"{{MODULE}}/internal/events"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
 	"{{MODULE}}/internal/password"
@@ -484,12 +486,105 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 }
 
 // DeleteProfile soft-deletes the currently authenticated user's account.
+// DeletedAccounts answers GET /admin/deleted-accounts.
+//
+// A closed account is a soft delete like any other row, and until this nothing
+// could see it: "I deleted my account by mistake" had no answer short of a SQL
+// console. Users are deliberately not in the sync registry the bin reads, so
+// they get their own three endpoints rather than a table name in that one.
+func (h *UserHandler) DeletedAccounts(c *gin.Context) {
+	// Selected into a shape of its own rather than returned as models.User.
+	// The model tags DeletedAt as json:"-", which is right everywhere else and
+	// wrong here: it is the one column this page is about, and without it the
+	// "Closed" column shows a dash for every row.
+	type deletedAccount struct {
+		ID        string     `json:"id"`
+		FirstName string     `json:"first_name"`
+		LastName  string     `json:"last_name"`
+		Email     string     `json:"email"`
+		Role      string     `json:"role"`
+		DeletedAt *time.Time `json:"deleted_at"`
+	}
+
+	var accounts []deletedAccount
+	if err := h.DB.WithContext(c.Request.Context()).
+		Model(&models.User{}).
+		Unscoped().
+		Select("id", "first_name", "last_name", "email", "role", "deleted_at").
+		Where("deleted_at IS NOT NULL").
+		Order("deleted_at DESC").
+		Limit(200).
+		Find(&accounts).Error; err != nil {
+		respond.WriteError(c, err, "Failed to list deleted accounts")
+		return
+	}
+	respond.OK(c, accounts)
+}
+
+// RestoreAccount answers POST /admin/deleted-accounts/:id/restore.
+func (h *UserHandler) RestoreAccount(c *gin.Context) {
+	id := c.Param("id")
+	res := h.DB.WithContext(c.Request.Context()).
+		Unscoped().
+		Model(&models.User{}).
+		Where("id = ? AND deleted_at IS NOT NULL", id).
+		Update("deleted_at", nil)
+	if res.Error != nil {
+		respond.WriteError(c, res.Error, "Failed to restore the account")
+		return
+	}
+	if res.RowsAffected == 0 {
+		respond.NotFound(c, "No deleted account with that id")
+		return
+	}
+	events.Emitted(c, "users", "User", "restore", id, "restored a deleted account", "the account can sign in again", nil, nil)
+	respond.OK(c, gin.H{"id": id}, "Account restored")
+}
+
+// PurgeAccount answers DELETE /admin/deleted-accounts/:id.
+//
+// The row and nothing else. Erasing what a person left behind across every
+// table is a different operation with different law attached to it, and it
+// already exists at /system/gdpr.
+func (h *UserHandler) PurgeAccount(c *gin.Context) {
+	id := c.Param("id")
+	if id == c.GetString("user_id") {
+		respond.Forbidden(c, "That is the account you are signed in with")
+		return
+	}
+	res := h.DB.WithContext(c.Request.Context()).
+		Unscoped().
+		Where("id = ? AND deleted_at IS NOT NULL", id).
+		Delete(&models.User{})
+	if res.Error != nil {
+		respond.WriteError(c, res.Error, "Failed to delete the account")
+		return
+	}
+	if res.RowsAffected == 0 {
+		respond.NotFound(c, "No deleted account with that id")
+		return
+	}
+	events.Emitted(c, "users", "User", "purge", id, "permanently deleted an account", "the row is gone; a GDPR erasure covers the rest", nil, nil)
+	respond.OK(c, gin.H{"id": id}, "Account deleted for good")
+}
+
 func (h *UserHandler) DeleteProfile(c *gin.Context) {
 	userID := c.GetString("user_id")
 
 	user, err := h.users().GetByID(c.Request.Context(), userID)
 	if err != nil {
 		respond.Fail(c, respond.CodeNotFound, "User not found")
+		return
+	}
+
+	// An administrator cannot close their own account.
+	//
+	// This is how an organisation locks itself out of its own admin panel, and
+	// the account that did it is the one that could have undone it. Another
+	// administrator can still remove this one from the Users screen, which
+	// reaches the same end with somebody left holding the keys.
+	if user.Role == "ADMIN" {
+		respond.Forbidden(c, "An administrator cannot close their own account. Ask another administrator to remove it, or change this account's role first.")
 		return
 	}
 

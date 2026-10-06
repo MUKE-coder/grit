@@ -161,6 +161,7 @@ const navItems: NavItem[] = [
       { title: 'Relationships & Trees', href: '/docs/admin/relationships' },
       { title: 'Dashboard & Widgets', href: '/docs/admin/widgets' },
       { title: 'Roles & Permissions UI', href: '/docs/admin/roles' },
+      { title: 'Trash & Deleted Accounts', href: '/docs/admin/trash' },
     ],
   },
   {

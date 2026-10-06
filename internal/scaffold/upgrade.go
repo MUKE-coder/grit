@@ -698,6 +698,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairSagaWiring(root, opts); err != nil {
 			fmt.Printf("  ⚠ wiring the saga engine: %v\n", err)
 		}
+		// The bin's routes, for the same reason: routes.go is the developer's
+		// file and an upgrade never rewrites it, so the handler written above
+		// would serve nothing without this.
+		if err := repairTrashRoutes(root, opts); err != nil {
+			fmt.Printf("  ⚠ wiring the trash routes: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {

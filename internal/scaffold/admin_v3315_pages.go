@@ -29,7 +29,7 @@ import { SYSTEM_NAV, INTERNAL_ICON } from "@/components/chrome/CollapsibleSideba
 import {
   Activity, Bell, Calendar, Database, FileText, Mail,
   MessageSquare, Shield, ShieldCheck, TrendingUp, Upload, Link as LinkIcon,
-  UserCheck, Settings, LayoutGrid, KeyRound, Workflow, Server,
+  UserCheck, Settings, LayoutGrid, KeyRound, Workflow, Server, Trash2,
 } from "@/lib/icons";
 
 // Every operational surface is grouped under one of these tabs. The whole
@@ -67,6 +67,8 @@ interface SystemTile {
 const TILES: SystemTile[] = [
   // ── Operations ──────────────────────────────────────────────────────────
   { href: "/system/health",        category: "Operations", title: "System Health",   description: "Real-time infrastructure status — Postgres, Redis, API, jobs, email.",    icon: <Activity className="h-5 w-5" /> },
+  { href: "/system/deleted-accounts", category: "Security & Access", title: "Deleted accounts",  description: "Accounts somebody closed. Restore one, or remove it for good.", icon: <UserCheck className="h-5 w-5" /> },
+  { href: "/system/trash",         category: "Data & Files", title: "Trash",                description: "Deleted records, restorable for 30 days before they go for good.", icon: <Trash2 className="h-5 w-5" /> },
   { href: "/system/performance",   category: "Operations", title: "Operations",      description: "Latency, traffic, errors, saturation, slow routes and scaling readiness.", icon: <TrendingUp className="h-5 w-5" /> },
   { href: "/system/jobs",          category: "Operations", title: "Background Jobs",  description: "Queue depth, in-flight workers, dead-letter queue.",                      icon: <Database className="h-5 w-5" /> , module: "jobs" },
   { href: "/system/sagas",         category: "Operations", title: "Sagas",           description: "Multi-step processes, and the ones whose undo could not be completed.", icon: <Workflow className="h-5 w-5" /> },
@@ -714,6 +716,15 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
 // layout. Latency p50/p95/p99/avg, traffic throughput, error rate +
 // active errors, saturation by goroutines/heap/gc/cpu, slowest routes
 // table, N+1 query detections, recent errors. "Open full Pulse" deep-link.
+// adminTrashPage emits app/(dashboard)/system/trash/page.tsx: what a soft
+// delete left behind, and the two buttons that resolve it.
+func adminTrashPage() string { return tmpl("admin/app/system/trash-page.tsx") }
+
+// adminDeletedAccountsPage emits app/(dashboard)/system/deleted-accounts/page.tsx.
+// Separate from the bin because users are not resources: they are kept out of
+// the sync registry the bin reads, deliberately.
+func adminDeletedAccountsPage() string { return tmpl("admin/app/system/deleted-accounts-page.tsx") }
+
 // adminPerformancePageV2 emits app/(dashboard)/system/performance/page.tsx:
 // the operations page, which /system/observability now redirects to.
 func adminPerformancePageV2() string { return tmpl("admin/app/system/operations-page.tsx") }

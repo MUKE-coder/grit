@@ -545,6 +545,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'The Grit admin permission editor at /system/roles: tri-state CRUD matrix, wildcard-preserving saves, locked built-in roles, and gating your own UI with usePermissions().',
   },
+  '/docs/admin/trash': {
+    title: 'Trash & Deleted Accounts',
+    description:
+      'The recycle bin at /system/trash and the closed accounts at /system/deleted-accounts: thirty-day retention with a nightly purge, restore and delete-forever, and why an administrator cannot close their own account.',
+  },
   '/docs/admin/standalone-usage': {
     title: 'Standalone Usage',
     description:

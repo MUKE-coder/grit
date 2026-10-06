@@ -36,6 +36,18 @@ func writeAdminAccountFiles(root string, opts Options) error {
 			return fmt.Errorf("writing %s: %w", path, err)
 		}
 	}
+	// Closed accounts, beside the bin and separate from it.
+	for path, content := range adminPageFiles(root, opts, "system/deleted-accounts", "system-deleted-accounts", adminDeletedAccountsPage()) {
+		if err := writeFile(path, content); err != nil {
+			return fmt.Errorf("writing %s: %w", path, err)
+		}
+	}
+	// The bin, which is a system page like the others.
+	for path, content := range adminPageFiles(root, opts, "system/trash", "system-trash", adminTrashPage()) {
+		if err := writeFile(path, content); err != nil {
+			return fmt.Errorf("writing %s: %w", path, err)
+		}
+	}
 	// And a redirect where it used to be, for the System Hub card and anything
 	// else that still points at the old path.
 	for path, content := range adminPageFiles(root, opts, "system/account", "system-account",

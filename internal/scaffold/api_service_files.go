@@ -57,6 +57,12 @@ func apiSSOServiceTestGo() string { return tmpl("api/services/sso_connections_te
 // which is the one thing a service cannot know.
 func apiFeatureFlagServiceGo() string { return tmpl("api/services/feature_flag.go") }
 
+// The bin: what a soft delete left behind, and the four things worth doing
+// to it. Built on the sync registry, which already names every resource.
+func apiTrashServiceGo() string { return tmpl("api/services/trash.go") }
+
+func apiTrashHandlerGo() string { return tmpl("api/handlers/trash.go") }
+
 // apiFeatureFlagServiceTestGo emits internal/services/feature_flag_test.go.
 func apiFeatureFlagServiceTestGo() string { return tmpl("api/services/feature_flag_test.go") }
 

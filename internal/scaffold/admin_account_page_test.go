@@ -133,7 +133,10 @@ func TestAccountPageIsOneColumn(t *testing.T) {
 	}
 	// Destructive last. It used to sit in the middle of the page because it
 	// lived inside the component that draws the first card.
-	if strings.Index(page, "Delete account") < strings.Index(page, "<ActiveSessions />") {
+	// The heading of the section, not the dialog's import, which sits at the
+	// top of the file and made this pass for the wrong reason the moment the
+	// section was renamed.
+	if strings.Index(page, `>Close account<`) < strings.Index(page, "<ActiveSessions />") {
 		t.Error("closing the account is drawn before the other cards")
 	}
 }

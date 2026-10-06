@@ -994,27 +994,6 @@ export const usersResource = defineResource({
     pageSize: 20,
   },
 
-  // Who they are, beside how many. The four default cards count rows and date
-  // windows, which is the same answer on every page; these are the questions
-  // somebody actually opens the Users page to ask.
-  stats: {
-    countBy: [
-      {
-        field: "role",
-        label: "Role",
-        labels: { ADMIN: "Admins", EDITOR: "Editors", USER: "Users" },
-        only: ["ADMIN", "EDITOR", "USER"],
-        icon: "ShieldCheck",
-      },
-      {
-        field: "active",
-        labels: { "true": "Active", "1": "Active", "false": "Inactive", "0": "Inactive" },
-        only: ["true", "false"],
-        icon: "UserCheck",
-      },
-    ],
-  },
-
   insights: {
     breakdown: ["role", "provider", "active"],
     labels: {

@@ -47,6 +47,7 @@ const (
 	TypeImageProcess          = "image:process"
 	TypeTokensCleanup         = "tokens:cleanup"
 	TypeUploadsOrphanCleanup  = "uploads:cleanup_orphans" // v3.31.33
+	TypeTrashPurgeExpired     = "trash:purge_expired"
 	TypeBackupWeekly          = "backup:weekly"           // v3.31.77 (legacy)
 	TypeBackupScheduled       = "backup:scheduled"        // settings-driven auto backup
 	TypeAuditPrune            = "audit:prune"             // activity-log retention
@@ -290,7 +291,11 @@ import (
 	"{{MODULE}}/internal/mail"
 	"{{MODULE}}/internal/files"
 	"{{MODULE}}/internal/models"
+	// The retention sweep builds a TrashService over the registry the API
+	// populated. Neither package imports jobs, so this adds no cycle.
+	"{{MODULE}}/internal/services"
 	"{{MODULE}}/internal/storage"
+	"{{MODULE}}/internal/sync"
 )
 
 // WorkerDeps holds dependencies needed by job handlers.
@@ -350,6 +355,7 @@ func StartWorker(redisURL string, deps WorkerDeps) (func(), error) {
 	mux.HandleFunc(TypeTokensCleanup, handleTokensCleanup(deps))
 	mux.HandleFunc(TypeAuditPrune, handleAuditPrune(deps))
 	mux.HandleFunc(TypeUploadsOrphanCleanup, handleUploadsOrphanCleanup(deps))
+	mux.HandleFunc(TypeTrashPurgeExpired, handleTrashPurgeExpired(deps))
 	mux.HandleFunc(TypeBackupWeekly, handleBackupWeekly(deps))
 	mux.HandleFunc(TypeBackupScheduled, handleBackupScheduled(deps))
 	// grit:jobs
@@ -484,6 +490,38 @@ func handleUploadsOrphanCleanup(deps WorkerDeps) func(ctx context.Context, task 
 			return fmt.Errorf("orphan cleanup: %w", err)
 		}
 		log.Printf("Orphan upload cleanup complete, removed %d uploads", deleted)
+		return nil
+	}
+}
+
+// handleTrashPurgeExpired removes what the retention window has run out on.
+//
+// Deleted rows are kept for services.TrashRetentionDays so somebody can undo a
+// mistake. After that they are removed for good, which is the half of a bin that
+// makes it a bin rather than a second table that only grows.
+func handleTrashPurgeExpired(deps WorkerDeps) func(ctx context.Context, task *asynq.Task) error {
+	return func(ctx context.Context, task *asynq.Task) error {
+		if deps.DB == nil {
+			return fmt.Errorf("database not configured")
+		}
+		if sync.Shared == nil {
+			// Nothing has built a registry, so there is nothing to sweep. Not
+			// an error: a worker can start before the API in some deployments.
+			log.Println("Trash sweep: no resource registry yet, nothing to do")
+			return nil
+		}
+		svc := &services.TrashService{DB: deps.DB, Registry: sync.Shared}
+		removed, err := svc.PurgeExpired(ctx)
+		if err != nil {
+			return fmt.Errorf("purging expired trash: %w", err)
+		}
+		if len(removed) == 0 {
+			log.Println("Trash sweep: nothing past its retention window")
+			return nil
+		}
+		for table, n := range removed {
+			log.Printf("Trash sweep: removed %d %s row(s) for good", n, table)
+		}
 		return nil
 	}
 }

@@ -165,6 +165,8 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "services", "access_review.go"):      apiAccessReviewServiceGo(),
 		filepath.Join(apiRoot, "internal", "services", "access_review_test.go"): apiAccessReviewTestGo(),
 		filepath.Join(apiRoot, "internal", "services", "feature_flag.go"):       apiFeatureFlagServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "trash.go"):              apiTrashServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "trash.go"):              apiTrashHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "feature_flag_test.go"):  apiFeatureFlagServiceTestGo(),
 
 		// The one insert of a user row, which registration and the admin's

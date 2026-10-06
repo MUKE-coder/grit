@@ -93,6 +93,19 @@ func New(redisURL string) (*Scheduler, error) {
 		Type:     "uploads:cleanup_orphans",
 	})
 
+	// The bin's retention sweep, daily at 03:40. Deleted rows are restorable
+	// for services.TrashRetentionDays and then removed for good; without this
+	// the bin is a table that only grows, and "deleted" never becomes deleted.
+	_, err = scheduler.Register("40 3 * * *", asynq.NewTask("trash:purge_expired", nil), asynq.MaxRetry(3), asynq.Timeout(time.Hour))
+	if err != nil {
+		return nil, fmt.Errorf("registering trash retention sweep: %w", err)
+	}
+	RegisteredTasks = append(RegisteredTasks, Task{
+		Name:     "Empty the bin past its retention window",
+		Schedule: "40 3 * * *",
+		Type:     "trash:purge_expired",
+	})
+
 	// Activity-log retention — weekly, Sunday 04:00. The model has always
 	// carried a comment saying to add this; without it the tamper-evident log
 	// grows forever. Pruning re-anchors the hash chain so what remains still

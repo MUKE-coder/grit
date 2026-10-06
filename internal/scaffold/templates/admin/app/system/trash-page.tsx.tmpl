@@ -1,0 +1,258 @@
+"use client";
+
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PageHeader } from "@/components/chrome/PageHeader";
+import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage } from "@/lib/api-core";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { AlertTriangle, RotateCcw, Trash2 } from "@/lib/icons";
+
+/*
+ * The bin.
+ *
+ * Every generated model soft-deletes, which until now was a database detail
+ * rather than a feature: the row stayed on disk and left every list, every
+ * export and every count, and the only way to see it again was a SQL console.
+ * "Deleted" and "gone" meant the same thing to anybody using the app.
+ *
+ * So: what was deleted, how long is left to change your mind, and the two
+ * buttons. Restoring and purging are ADMIN, because undoing somebody else's
+ * delete, or making one permanent, is not the same permission as being allowed
+ * to delete a row of your own.
+ */
+
+interface Bucket {
+  table: string;
+  count: number;
+}
+
+interface TrashItem {
+  table: string;
+  id: string;
+  label: string;
+  deleted_at: string;
+  expires_at: string;
+  fields?: Record<string, string>;
+}
+
+interface BucketsResponse {
+  data: { buckets: Bucket[]; total: number; retention_days: number };
+}
+
+interface ListResponse {
+  data: TrashItem[];
+  meta: { total: number; retention_days: number };
+}
+
+export default function TrashPage() {
+  const queryClient = useQueryClient();
+  const [table, setTable] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<{ kind: "purge" | "empty"; item?: TrashItem } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const buckets = useQuery<BucketsResponse>({
+    queryKey: ["admin", "trash", "buckets"],
+    queryFn: async () => (await apiClient.get<BucketsResponse>("/api/admin/trash")).data,
+  });
+
+  // The first resource that has anything in it, so the page opens on something
+  // rather than on a prompt to choose.
+  const withRows = (buckets.data?.data.buckets ?? []).filter((b) => b.count > 0);
+  const active = table ?? withRows[0]?.table ?? null;
+  const retention = buckets.data?.data.retention_days ?? 30;
+
+  const items = useQuery<ListResponse>({
+    queryKey: ["admin", "trash", active],
+    queryFn: async () => (await apiClient.get<ListResponse>("/api/admin/trash/" + active)).data,
+    enabled: Boolean(active),
+  });
+
+  function refresh() {
+    void queryClient.invalidateQueries({ queryKey: ["admin", "trash"] });
+    // The row is going back into a list somewhere, so that list is stale too.
+    void queryClient.invalidateQueries({ queryKey: ["resource"] });
+  }
+
+  const restore = useMutation({
+    mutationFn: (item: TrashItem) =>
+      apiClient.post("/api/admin/trash/" + item.table + "/" + item.id + "/restore"),
+    onSuccess: refresh,
+    onError: (e) => setError(getApiErrorMessage(e, "Could not restore that")),
+  });
+
+  const purge = useMutation({
+    mutationFn: (item: TrashItem) => apiClient.delete("/api/admin/trash/" + item.table + "/" + item.id),
+    onSuccess: refresh,
+    onError: (e) => setError(getApiErrorMessage(e, "Could not delete that")),
+  });
+
+  const empty = useMutation({
+    mutationFn: () => apiClient.delete("/api/admin/trash/" + active + "?confirm=true"),
+    onSuccess: refresh,
+    onError: (e) => setError(getApiErrorMessage(e, "Could not empty the bin")),
+  });
+
+  const rows = items.data?.data ?? [];
+
+  return (
+    <div>
+      <PageHeader
+        title="Trash"
+        subtitle={"Deleted records, restorable for " + retention + " days"}
+      />
+
+      {error && (
+        <div role="alert" className="mb-4 flex items-start gap-2 rounded-lg border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* One tab per resource, with its count. A single total would not tell
+          anybody where to look. */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {(buckets.data?.data.buckets ?? []).map((bucket) => {
+          const selected = bucket.table === active;
+          return (
+            <button
+              key={bucket.table}
+              type="button"
+              onClick={() => setTable(bucket.table)}
+              aria-pressed={selected}
+              disabled={bucket.count === 0}
+              className={
+                "inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-colors disabled:opacity-40 " +
+                (selected
+                  ? "border-accent/40 bg-accent/10 font-medium text-accent"
+                  : "border-border text-text-secondary hover:bg-bg-hover hover:text-foreground")
+              }
+            >
+              {humanise(bucket.table)}
+              <span className="rounded-full bg-bg-tertiary px-1.5 text-xs tabular-nums">{bucket.count}</span>
+            </button>
+          );
+        })}
+        {active && rows.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setConfirm({ kind: "empty" })}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-danger/30 px-3 py-1.5 text-sm text-danger transition-colors hover:bg-danger/10"
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+            Empty {humanise(active).toLowerCase()}
+          </button>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-border bg-bg-elevated">
+        {buckets.isPending ? (
+          <p className="py-16 text-center text-sm text-text-muted">Looking in the bin...</p>
+        ) : (buckets.data?.data.total ?? 0) === 0 ? (
+          <p className="py-16 text-center text-sm text-text-muted">
+            Nothing has been deleted. Anything you delete lands here for {retention} days first.
+          </p>
+        ) : items.isPending ? (
+          <p className="py-16 text-center text-sm text-text-muted">Loading...</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-xs text-text-muted">
+                <th className="px-5 py-3 font-medium">What</th>
+                <th className="px-5 py-3 font-medium">Deleted</th>
+                <th className="px-5 py-3 font-medium">Removed for good</th>
+                <th className="px-5 py-3 text-right font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((item) => (
+                <tr key={item.id} className="border-b border-border/60 last:border-0">
+                  <td className="px-5 py-3">
+                    <span className="font-medium text-foreground">{item.label}</span>
+                    {item.fields && (
+                      <span className="ml-2 text-xs text-text-muted">
+                        {Object.values(item.fields).join(" · ")}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3 text-text-secondary">{when(item.deleted_at)}</td>
+                  <td className="px-5 py-3">
+                    <Expiry at={item.expires_at} />
+                  </td>
+                  <td className="px-5 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => restore.mutate(item)}
+                        disabled={restore.isPending}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs text-text-secondary transition-colors hover:bg-bg-hover hover:text-foreground"
+                      >
+                        <RotateCcw className="h-3 w-3" aria-hidden="true" />
+                        Restore
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirm({ kind: "purge", item })}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-transparent px-2.5 py-1 text-xs text-danger transition-colors hover:bg-danger/10"
+                      >
+                        <Trash2 className="h-3 w-3" aria-hidden="true" />
+                        Delete forever
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <p className="mt-4 text-xs leading-relaxed text-text-muted">
+        A deleted record is kept for {retention} days and then removed for good by a daily job. That job
+        runs on the queue, so without Redis it does not run and nothing expires on its own: the records
+        stay here until somebody empties the bin.
+      </p>
+
+      <ConfirmModal
+        open={confirm !== null}
+        title={confirm?.kind === "empty" ? "Empty the bin?" : "Delete forever?"}
+        description={
+          confirm?.kind === "empty"
+            ? "Every deleted " + humanise(active ?? "").toLowerCase() + " record goes for good. This cannot be undone."
+            : "“" + (confirm?.item?.label ?? "") + "” goes for good. This cannot be undone."
+        }
+        confirmLabel="Delete forever"
+        variant="danger"
+        onConfirm={() => {
+          if (confirm?.kind === "empty") empty.mutate();
+          else if (confirm?.item) purge.mutate(confirm.item);
+          setConfirm(null);
+        }}
+        onCancel={() => setConfirm(null)}
+      />
+    </div>
+  );
+}
+
+/** How long is left, and a warning when it is nearly up. */
+function Expiry({ at }: { at: string }) {
+  const days = Math.ceil((new Date(at).getTime() - Date.now()) / 86_400_000);
+  if (Number.isNaN(days)) return <span className="text-text-muted">—</span>;
+  if (days <= 0) return <span className="text-danger">any time now</span>;
+  return (
+    <span className={days <= 3 ? "text-warning" : "text-text-secondary"}>
+      in {days} {days === 1 ? "day" : "days"}
+    </span>
+  );
+}
+
+function when(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { day: "numeric", month: "short" }) + ", " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+/** blog_posts -> Blog posts. */
+function humanise(table: string): string {
+  const words = table.split("_").join(" ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}

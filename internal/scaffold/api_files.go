@@ -3626,9 +3626,21 @@ type Registry struct {
 	models map[string]reflect.Type
 }
 
+// Shared is the registry the application built, for code that runs outside a
+// request and cannot be handed one.
+//
+// The background worker is the case this exists for: it runs in its own process
+// with no access to routes.Setup's local variable, and the retention sweep needs
+// the same list of resources the API has. It is the same pointer rather than a
+// second registry, which would be empty and would sweep nothing while reporting
+// success.
+var Shared *Registry
+
 // NewRegistry returns an empty Registry.
 func NewRegistry() *Registry {
-	return &Registry{models: make(map[string]reflect.Type)}
+	r := &Registry{models: make(map[string]reflect.Type)}
+	Shared = r
+	return r
 }
 
 // Register adds a model under its plural-snake table name. proto must be
@@ -7573,6 +7585,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	syncRegistry.Register("blogs", &models.Blog{})
 	// grit:sync
 	syncHandler := handlers.NewSyncHandler(db, syncRegistry)
+	// The bin reads the same registry: every resource that can be synced is a
+	// resource whose rows soft-delete, which is the same list.
+	trashHandler := handlers.NewTrashHandler(db, syncRegistry)
 	// v3.31.68 — shared background CSV import status endpoint
 	importJobHandler := &handlers.ImportJobHandler{DB: db}
 ` + sagaHandlerBlock + `` + routeExplorerHandlerBlock + `	// v3.31.77 — full-database backups (weekly cron + manual + download)
@@ -7895,6 +7910,16 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		staff.DELETE("/admin/jobs/queue/:queue", middleware.RequireRole("ADMIN", "perm:jobs.edit"), jobsHandler.ClearQueue)
 ` + sagaRoutesBlock + `` + routeExplorerRoutesBlock + `` + routesMailPreviewAnchor + routesMailPreview + `		staff.GET("/admin/security/summary", middleware.RequireRole("ADMIN", "perm:system.view"), securityHandler.Summary)
 		staff.GET("/admin/observability/summary", middleware.RequireRole("ADMIN", "perm:system.view"), observabilityHandler.Summary)
+
+		// The bin. Reading it is a system view; restoring somebody else's
+		// delete, or making one permanent, is ADMIN and nothing less: a
+		// resource's own delete permission says you may remove a row, not that
+		// you may undo another person's removal or put it beyond recovery.
+		staff.GET("/admin/trash", middleware.RequireRole("ADMIN", "perm:system.view"), trashHandler.Buckets)
+		staff.GET("/admin/trash/:table", middleware.RequireRole("ADMIN", "perm:system.view"), trashHandler.List)
+		staff.POST("/admin/trash/:table/:id/restore", middleware.RequireRole("ADMIN"), trashHandler.Restore)
+		staff.DELETE("/admin/trash/:table/:id", middleware.RequireRole("ADMIN"), trashHandler.Purge)
+		staff.DELETE("/admin/trash/:table", middleware.RequireRole("ADMIN"), trashHandler.Empty)
 		staff.GET("/admin/webhooks", middleware.RequireRole("ADMIN", "perm:system.view"), webhookHandler.List)
 		staff.GET("/admin/flags", middleware.RequireRole("ADMIN", "perm:system.view"), featureFlagHandler.List)
 		staff.GET("/admin/flags/:id/exposures", middleware.RequireRole("ADMIN", "perm:system.view"), featureFlagHandler.Exposures)
