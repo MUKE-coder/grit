@@ -584,10 +584,16 @@ func singleFrontendPackageJSON(opts Options) string {
 }
 
 func singleFrontendViteConfig() string {
-	return `import { defineConfig } from 'vite'
+	return `import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
 import path from 'node:path'
+
+// Where the Go API listens, from .env, so the dev proxy and the server agree.
+// loadEnv reads .env from the project root; APP_PORT is the same variable the Go
+// binary reads, so changing it in one place moves both.
+const env = loadEnv(process.env.NODE_ENV || 'development', process.cwd(), '')
+const apiTarget = 'http://localhost:' + (env.APP_PORT || '8080')
 
 export default defineConfig({
   plugins: [
@@ -624,11 +630,16 @@ export default defineConfig({
       // so these are all same-origin paths; in dev the SPA is on :5173 and they
       // have to be forwarded, or the admin panel's GORM Studio, Pulse and
       // Sentinel links land on the Vite dev server and 404.
-      '/api': { target: 'http://localhost:8080', changeOrigin: true },
-      '/studio': { target: 'http://localhost:8080', changeOrigin: true },
-      '/pulse': { target: 'http://localhost:8080', changeOrigin: true },
-      '/sentinel': { target: 'http://localhost:8080', changeOrigin: true },
-      '/docs': { target: 'http://localhost:8080', changeOrigin: true },
+      //
+      // The port is read from .env rather than written in, because APP_PORT is
+      // a thing people change: a proxy pinned to 8080 while the API listens
+      // elsewhere refuses every call with ECONNREFUSED, and the only visible
+      // symptom is a login that does nothing.
+      '/api': { target: apiTarget, changeOrigin: true },
+      '/studio': { target: apiTarget, changeOrigin: true },
+      '/pulse': { target: apiTarget, changeOrigin: true },
+      '/sentinel': { target: apiTarget, changeOrigin: true },
+      '/docs': { target: apiTarget, changeOrigin: true },
     },
   },
   build: {

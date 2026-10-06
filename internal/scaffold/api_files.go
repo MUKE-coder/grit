@@ -127,7 +127,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):    apiRoutesGo(),
 		filepath.Join(apiRoot, "internal", "routes", "resources.go"): apiRoutesRegistryGo(),
 		filepath.Join(apiRoot, "internal", "routes", "apidocs.go"):   apiDocsRoutesGo(),
-		filepath.Join(apiRoot, ".air.toml"):                          airConfig(),
+		filepath.Join(apiRoot, ".air.toml"):                          airConfig(opts),
 		// Test files — give the generated API a working test suite out of the box
 		filepath.Join(apiRoot, "internal", "handlers", "auth_test.go"):               apiAuthTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "sso_test.go"):                apiSSOTestGo(),
@@ -387,7 +387,22 @@ tmp/
 ` + apiGitignoreLocalStorage
 }
 
-func airConfig() string {
+// airMainPackage is the package air rebuilds on every change.
+//
+// A monorepo keeps its entry point in cmd/server. A single project keeps
+// main.go at the top of its module, so there is no cmd/server to build: air
+// failed with "directory not found", the API never came up, and `grit start`
+// shut the frontend down with it. What the user saw was a Vite dev server
+// proxying to nothing and a login that could not reach the API, with the real
+// error twenty lines up the log.
+func airMainPackage(opts Options) string {
+	if opts.Architecture == ArchSingle && !opts.LegacySingleFlat {
+		return "."
+	}
+	return "./cmd/server"
+}
+
+func airConfig(opts Options) string {
 	// air v1.64+ deprecated `build.bin` in favour of `build.entrypoint`.
 	// Both name the BUILT binary that air execs after each rebuild —
 	// not the Go source directory. Always use a .exe suffix so Windows
@@ -398,7 +413,7 @@ func airConfig() string {
 tmp_dir = "tmp"
 
 [build]
-  cmd = "go build -o ./tmp/server.exe ./cmd/server"
+  cmd = "go build -o ./tmp/server.exe ` + airMainPackage(opts) + `"
   entrypoint = "./tmp/server.exe"
   delay = 1000
   exclude_dir = ["tmp", "vendor", "node_modules"]

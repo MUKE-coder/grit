@@ -66,6 +66,46 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.381.1 */}
+            <div className="mb-12" id="v3.381.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.381.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 7, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A single project could not sign in, because its API never started</h3>
+                <p>
+                  <code>grit start</code> brought up the Vite dev server and no API. The hot
+                  reload config told air to build <code>./cmd/server</code>, which a monorepo has
+                  and a single does not: its <code>main.go</code> is at the top of its module.
+                  air failed with &quot;directory not found&quot;, and because{' '}
+                  <code>grit start</code> stops everything when any process leaves, the frontend
+                  went with it.
+                </p>
+                <p>
+                  What that looked like was a working app that could not log in: the page
+                  rendered, the form submitted, and the dev server reported{' '}
+                  <code>ECONNREFUSED</code> proxying to an API that was not there. The real error
+                  was twenty lines up a log nobody had reason to read.
+                </p>
+                <h4>And the dev proxy ignored APP_PORT</h4>
+                <p>
+                  It named <code>localhost:8080</code> outright while the Go binary reads{' '}
+                  <code>APP_PORT</code> from <code>.env</code>. Change that variable, which is an
+                  ordinary thing to do, and every call through the proxy was refused with the
+                  same symptom and no explanation. The config reads the same variable now, so
+                  moving the port moves both.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Verified by scaffolding a single project, running <code>grit start</code>, and
+                  signing in to the admin panel through the dev server.
+                </p>
+              </div>
+            </div>
+
             {/* v3.381.0 */}
             <div className="mb-12" id="v3.381.0">
               <div className="flex items-center gap-3 mb-4">
