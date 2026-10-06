@@ -66,6 +66,48 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.382.0 */}
+            <div className="mb-12" id="v3.382.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.382.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 7, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A theme meant two different things depending on the frontend</h3>
+                <p>
+                  <code>grit new app --single --theme emerald</code> produced an emerald dashboard
+                  behind an indigo sign-in screen. Vite exposes only{' '}
+                  <code>VITE_</code>-prefixed variables to client code, and the env file wrote{' '}
+                  <code>THEME</code>, which the Go binary and the Next.js apps read and a TanStack
+                  app cannot see. Its <code>import.meta.env.VITE_THEME</code> was undefined, so
+                  the colours came from the stylesheet baked at scaffold time and the sign-in
+                  layout came from the atlas fallback.
+                </p>
+                <p>
+                  The same flag and the same theme name gave two different answers depending on
+                  which frontend was asked. That is not the kind of thing anybody reports: they
+                  assume that is what the theme looks like. <code>.env</code> carries both
+                  variables now, and both frontends render the theme that was asked for.
+                </p>
+
+                <h4>And the tutorials offer the choice</h4>
+                <p>
+                  Each tier page now shows the same tier built with TanStack Router instead of
+                  Next.js, one flag apart, and a table of all eight themes with what each one
+                  looks like: the sign-in layout, the fonts and the palette. The commands use{' '}
+                  <code>--theme emerald</code>, which is a quote beside the form in green.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Both ends were looked at rather than built: the admin panel was rendered and
+                  signed into on Next.js and on TanStack, before and after, and the five
+                  alternative commands the pages now print were each run.
+                </p>
+              </div>
+            </div>
+
             {/* v3.381.1 */}
             <div className="mb-12" id="v3.381.1">
               <div className="flex items-center gap-3 mb-4">

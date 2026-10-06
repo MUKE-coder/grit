@@ -451,6 +451,16 @@ SENTINEL_AUDIT_KEY=%s
 # the right theme without a flash of unstyled content.
 THEME=%s
 
+# The same value, where a Vite app can see it.
+#
+# Vite exposes only VITE_-prefixed variables to client code, so a TanStack app
+# reading import.meta.env.VITE_THEME got undefined and fell back to atlas: the
+# dashboard took its colours from the stylesheet and the sign-in screen took its
+# layout from the fallback, so --theme emerald produced an emerald dashboard
+# behind an indigo atlas login. Same flag, same theme name, two different
+# answers. Next.js projects ignore this line.
+VITE_THEME=%s
+
 # Social login buttons (Google + GitHub). The OAuth API routes stay
 # registered server-side either way; this only changes what the UI renders.
 # NEXT_PUBLIC_SOCIAL_AUTH_ENABLED / EXPO_PUBLIC_SOCIAL_AUTH_ENABLED mirror
@@ -470,7 +480,7 @@ SOCIAL_AUTH_ENABLED=false
 		opts.ProjectName, opts.ProjectName, // MINIO_BUCKET + MAIL_FROM
 		studioPassword, opts.ProjectName, // GORM_STUDIO_PASSWORD + TOTP_ISSUER
 		pulsePassword, sentinelPassword, sentinelSecretKey, sentinelAuditKey,
-		opts.Theme, // THEME — picked by --theme at scaffold time, defaults to atlas
+		opts.Theme, opts.Theme, // THEME and VITE_THEME — picked by --theme, defaults to atlas
 	)
 
 	// Every project encrypts its two-factor secrets and encrypted columns from the

@@ -33,7 +33,8 @@ CONTACT_CMD = '''grit generate resource Contact \\
 
 class Tier:
     def __init__(self, key, title, nav, flags, blurb, lead, prereq, structure,
-                 run_cmd, run_note, ports, deploy, deploy_note, prev, nxt):
+                 run_cmd, run_note, ports, deploy, deploy_note, prev, nxt,
+                 vite_flags=None):
         self.key = key
         self.title = title
         self.nav = nav
@@ -49,11 +50,15 @@ class Tier:
         self.deploy_note = deploy_note
         self.prev = prev
         self.nxt = nxt
+        # The same tier built with TanStack Router instead of Next.js. None for
+        # the API tier, which has no frontend to choose and no theme to set.
+        self.vite_flags = vite_flags
 
 
 TIERS = [
     Tier(
         key='web',
+        vite_flags='--triple --vite',
         title='Contacts: the web app',
         nav='Contacts: web app',
         flags='--triple --next',
@@ -100,6 +105,7 @@ grit deploy --railway''',
     ),
     Tier(
         key='desktop',
+        vite_flags='--triple --desktop --vite',
         title='Contacts: the desktop app',
         nav='Contacts: desktop app',
         flags='--triple --desktop',
@@ -149,6 +155,7 @@ cd apps/desktop && wails build''',
     ),
     Tier(
         key='mobile',
+        vite_flags='--triple --expo --vite',
         title='Contacts: the mobile app',
         nav='Contacts: mobile app',
         flags='--triple --expo',
@@ -241,6 +248,7 @@ docker compose -f docker-compose.prod.yml up --build''',
     ),
     Tier(
         key='single',
+        vite_flags='--single --next',
         title='Contacts: one binary',
         nav='Contacts: one binary',
         flags='--single',
@@ -291,6 +299,7 @@ grit deploy --host user@server.com --domain contacts.example.com''',
     ),
     Tier(
         key='full',
+        vite_flags='--full --vite',
         title='Contacts: everything at once',
         nav='Contacts: everything',
         flags='--full',
@@ -342,6 +351,81 @@ cd apps/expo && npx eas build --platform all''',
         nxt=None,
     ),
 ]
+
+
+THEMES = [
+    ('atlas', 'Split-screen sign-in, Inter. The default: sharp and neutral, for a team tool.'),
+    ('aurora', 'Centered sign-in, Geist. Pastel and friendly, for consumer software.'),
+    ('pulse', 'Split-screen with a carousel, Onest and DM Serif. Warm and bold, for a brand.'),
+    ('coral', 'A sign-in modal over the page. Soft, close up.'),
+    ('amber', 'A boxed sign-in card. Warm neutrals.'),
+    ('sky', 'A banner above the form. Open and light.'),
+    ('mono', 'A showcase panel beside the form. Monochrome and typographic.'),
+    ('emerald', 'A quote beside the form. Green and calm: the one the commands above use.'),
+]
+
+FRONTEND_TEMPLATE = """              <h3>Next.js or TanStack</h3>
+              <p>
+                The command above builds the frontend with Next.js. The same tier with TanStack
+                Router and Vite instead is one flag:
+              </p>
+{command}
+              <p>
+                Everything after this point is identical. The resources, the API, the admin
+                screens and the deployment are the same; what changes is the router and the build
+                tool, and the admin panel is written in whichever dialect that app speaks.
+              </p>
+
+"""
+
+THEME_TEMPLATE = """              <h3>Pick a theme</h3>
+              <p>
+                <code>--theme</code> sets the sign-in layout, the dashboard tokens, the fonts and
+                the brand colours, and it applies to both frontends. Eight ship with Grit:
+              </p>
+
+              <table className="w-full text-sm my-6">
+                <thead>
+                  <tr className="border-b border-border/50 text-left">
+                    <th className="px-4 py-2.5 font-medium">Theme</th>
+                    <th className="px-4 py-2.5 font-medium">What it looks like</th>
+                  </tr>
+                </thead>
+                <tbody>
+{rows}
+                </tbody>
+              </table>
+
+              <p>
+                Nothing is baked in. <code>THEME</code> and <code>VITE_THEME</code> in{{' '}}
+                <code>.env</code> both carry the name, so changing it there repaints the app
+                without re-scaffolding.
+              </p>
+
+"""
+
+THEME_ROW = (
+    '                  <tr className="border-b border-border/30">\n'
+    '                    <td className="px-4 py-2.5 font-mono text-xs text-primary">{name}</td>\n'
+    '                    <td className="px-4 py-2.5 text-muted-foreground">{note}</td>\n'
+    '                  </tr>'
+)
+
+
+def frontend_section(tier, code_block):
+    """Next.js or TanStack, for a tier that offers both."""
+    if not tier.vite_flags:
+        return ''
+    cmd = code_block('grit new contacts %s --theme emerald --db sqlite' % tier.vite_flags)
+    return FRONTEND_TEMPLATE.format(command=cmd)
+
+
+def theme_section(tier):
+    """The themes, for a tier with a frontend to apply one to."""
+    if not tier.vite_flags:
+        return ''
+    rows = '\n'.join(THEME_ROW.format(name=name, note=note) for name, note in THEMES)
+    return THEME_TEMPLATE.format(rows=rows)
 
 
 def esc(text):
@@ -466,6 +550,7 @@ export default function %(component)s() {
                 up along with Redis, MinIO and a mail catcher.
               </p>
 
+%(frontend_section)s%(theme_section)s
               <table className="w-full text-sm my-6">
                 <thead>
                   <tr className="border-b border-border/50 text-left">
@@ -561,7 +646,9 @@ export default function %(component)s() {
         'prereq': prereq,
         'structure': structure,
         'ports': ports,
-        'new_cmd': code_block('grit new contacts %s --db sqlite\ncd contacts' % tier.flags),
+        'new_cmd': code_block('grit new contacts %s --theme emerald --db sqlite\ncd contacts' % tier.flags),
+        'frontend_section': frontend_section(tier, code_block),
+        'theme_section': theme_section(tier),
         'group_cmd': code_block(GROUP_CMD),
         'contact_cmd': code_block(CONTACT_CMD),
         'migrate_cmd': code_block('grit migrate\ngrit seed'),

@@ -47,7 +47,7 @@ export default function ContactsWebTutorialPage() {
               </p>
 
               <h2>1. Create the project</h2>
-              <CodeBlock terminal language="bash" code={`grit new contacts --triple --next --db sqlite
+              <CodeBlock terminal language="bash" code={`grit new contacts --triple --next --theme emerald --db sqlite
 cd contacts`} />
               <p>
                 Postgres is the default. <code>--db sqlite</code> above means the project runs
@@ -55,6 +55,74 @@ cd contacts`} />
                 the flag when you want Postgres, and <code>docker compose up -d</code> brings one
                 up along with Redis, MinIO and a mail catcher.
               </p>
+
+              <h3>Next.js or TanStack</h3>
+              <p>
+                The command above builds the frontend with Next.js. The same tier with TanStack
+                Router and Vite instead is one flag:
+              </p>
+              <CodeBlock terminal language="bash" code={`grit new contacts --triple --vite --theme emerald --db sqlite`} />
+              <p>
+                Everything after this point is identical. The resources, the API, the admin
+                screens and the deployment are the same; what changes is the router and the build
+                tool, and the admin panel is written in whichever dialect that app speaks.
+              </p>
+
+              <h3>Pick a theme</h3>
+              <p>
+                <code>--theme</code> sets the sign-in layout, the dashboard tokens, the fonts and
+                the brand colours, and it applies to both frontends. Eight ship with Grit:
+              </p>
+
+              <table className="w-full text-sm my-6">
+                <thead>
+                  <tr className="border-b border-border/50 text-left">
+                    <th className="px-4 py-2.5 font-medium">Theme</th>
+                    <th className="px-4 py-2.5 font-medium">What it looks like</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-border/30">
+                    <td className="px-4 py-2.5 font-mono text-xs text-primary">atlas</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">Split-screen sign-in, Inter. The default: sharp and neutral, for a team tool.</td>
+                  </tr>
+                  <tr className="border-b border-border/30">
+                    <td className="px-4 py-2.5 font-mono text-xs text-primary">aurora</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">Centered sign-in, Geist. Pastel and friendly, for consumer software.</td>
+                  </tr>
+                  <tr className="border-b border-border/30">
+                    <td className="px-4 py-2.5 font-mono text-xs text-primary">pulse</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">Split-screen with a carousel, Onest and DM Serif. Warm and bold, for a brand.</td>
+                  </tr>
+                  <tr className="border-b border-border/30">
+                    <td className="px-4 py-2.5 font-mono text-xs text-primary">coral</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">A sign-in modal over the page. Soft, close up.</td>
+                  </tr>
+                  <tr className="border-b border-border/30">
+                    <td className="px-4 py-2.5 font-mono text-xs text-primary">amber</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">A boxed sign-in card. Warm neutrals.</td>
+                  </tr>
+                  <tr className="border-b border-border/30">
+                    <td className="px-4 py-2.5 font-mono text-xs text-primary">sky</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">A banner above the form. Open and light.</td>
+                  </tr>
+                  <tr className="border-b border-border/30">
+                    <td className="px-4 py-2.5 font-mono text-xs text-primary">mono</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">A showcase panel beside the form. Monochrome and typographic.</td>
+                  </tr>
+                  <tr className="border-b border-border/30">
+                    <td className="px-4 py-2.5 font-mono text-xs text-primary">emerald</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">A quote beside the form. Green and calm: the one the commands above use.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p>
+                Nothing is baked in. <code>THEME</code> and <code>VITE_THEME</code> in{' '}
+                <code>.env</code> both carry the name, so changing it there repaints the app
+                without re-scaffolding.
+              </p>
+
 
               <table className="w-full text-sm my-6">
                 <thead>

@@ -44,7 +44,7 @@ export default function ContactsApiTutorialPage() {
               </p>
 
               <h2>1. Create the project</h2>
-              <CodeBlock terminal language="bash" code={`grit new contacts --api --db sqlite
+              <CodeBlock terminal language="bash" code={`grit new contacts --api --theme emerald --db sqlite
 cd contacts`} />
               <p>
                 Postgres is the default. <code>--db sqlite</code> above means the project runs
@@ -52,6 +52,7 @@ cd contacts`} />
                 the flag when you want Postgres, and <code>docker compose up -d</code> brings one
                 up along with Redis, MinIO and a mail catcher.
               </p>
+
 
               <table className="w-full text-sm my-6">
                 <thead>
