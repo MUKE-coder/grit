@@ -174,6 +174,7 @@ import { DataTable } from "@/components/tables/data-table";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { ArrowLeft, Pencil, Trash2, Loader2, Printer, Plus, FileText } from "@/lib/icons";
 import { useLocalizedResource } from "@/lib/i18n";
+import { detailHref } from "@/lib/detail-href";
 import { buttonClasses } from "@/components/ui/button";
 
 // The form stack loads when a record is edited or a related one created, the way
@@ -434,7 +435,7 @@ function RelatedTable({
           columns={columns}
           data={rows}
           isLoading={isLoading}
-          onView={slug ? (item) => router.push("/resources/" + slug + "/" + String(item.id)) : undefined}
+          onView={slug ? (item) => router.push(detailHref("/resources/" + slug, String(item.id))) : undefined}
         />
       </div>
       {creating && createResource && (
@@ -456,7 +457,82 @@ function RelatedTable({
 // adminResourceDetailRoute returns the thin per-resource [id] route wrapper that
 // renders <ResourceDetailPage> for a given resource. Emitted for every resource
 // so "view" always has a page to land on.
-func adminResourceDetailRoute(camelName, pluralKebab, pascalName string) string {
+// adminDetailHrefTS emits lib/detail-href.ts: the one place that knows how a
+// detail URL is spelled in this project.
+//
+// Three screens link to a record: the resource table's row click, the
+// relationship picker's jump to a related row, and the support ticket list.
+// They spelled the URL out, so the shape was repeated three times and a project
+// whose routes were a different shape had three places to fix.
+func adminDetailHrefTS(opts Options) string {
+	if opts.StaticExport() {
+		return `// Where a record's detail page lives.
+//
+// This app is a static export: there is no server to fill a dynamic segment,
+// and the ids are rows in a database the build never sees. So the detail page
+// is one file at <base>/view and the record arrives in the query string.
+export function detailHref(base: string, id: string | number): string {
+  return base + "/view?id=" + encodeURIComponent(String(id));
+}
+`
+	}
+	return `// Where a record's detail page lives.
+//
+// A dynamic segment, filled per request by the server (Next) or by the router
+// in the browser (TanStack).
+export function detailHref(base: string, id: string | number): string {
+  return base + "/" + encodeURIComponent(String(id));
+}
+`
+}
+
+// adminDetailSegment is the directory a resource's detail page lives in.
+//
+// "[id]" for a Next app with a server, which fills the segment per request.
+// "view" for a static export, which cannot: the id arrives as ?id= instead.
+// The TanStack admin keeps its own "$id" convention and does not come here.
+func adminDetailSegment(opts Options) string {
+	if opts.StaticExport() {
+		return "view"
+	}
+	return "[id]"
+}
+
+func adminResourceDetailRoute(camelName, pluralKebab, pascalName string, opts Options) string {
+	// A static export cannot build a dynamic segment, because its values are rows
+	// in a database and the build has no database. The id moves to the query
+	// string: one page, built once, that reads which record to show at runtime.
+	// Same component, same screen, a URL the build can produce.
+	if opts.StaticExport() {
+		src := `"use client";
+
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { ResourceDetailPage } from "@/components/resource/resource-detail-page";
+import { {{CAMEL}}Resource } from "@/resources/{{KEBAB}}/{{KEBAB}}";
+
+// useSearchParams cannot be read while prerendering: the params are not known
+// until a browser has a URL. Suspense gives React something to render until
+// then, and without it the export fails the whole build.
+export default function {{PASCAL}}DetailPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-sm text-text-muted">Loading...</div>}>
+      <{{PASCAL}}Detail />
+    </Suspense>
+  );
+}
+
+function {{PASCAL}}Detail() {
+  const id = useSearchParams().get("id") ?? "";
+  return <ResourceDetailPage resource={{{CAMEL}}Resource} id={id} />;
+}
+`
+		src = strings.ReplaceAll(src, "{{CAMEL}}", camelName)
+		src = strings.ReplaceAll(src, "{{KEBAB}}", pluralKebab)
+		src = strings.ReplaceAll(src, "{{PASCAL}}", pascalName)
+		return src
+	}
+
 	src := `"use client";
 
 import { use } from "react";

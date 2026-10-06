@@ -8,7 +8,7 @@ import (
 // A new config lets next/image read localhost in development; an old one gets
 // the same line, in the same place.
 func TestNextImageLocalRepairMatchesTheTemplate(t *testing.T) {
-	tmpl := nextSecurityHeadersConfig()
+	tmpl := nextSecurityHeadersConfig(Options{})
 	if !strings.Contains(tmpl, "dangerouslyAllowLocalIP: isDev") {
 		t.Fatal("the Next.js image config still refuses localhost")
 	}

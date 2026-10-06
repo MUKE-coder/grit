@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 5 to 11, 2026",
-    count: 26,
+    count: 27,
     entries: [
+      { version: "3.383.0", title: "--single --next is one binary too" },
       { version: "3.382.0", title: "A theme meant two different things depending on the frontend" },
       { version: "3.381.1", title: "A single project could not sign in, because its API never started" },
       { version: "3.381.0", title: "One tutorial per tier: the same contacts app, shipped six ways" },

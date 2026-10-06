@@ -19,29 +19,26 @@ import (
 func writeSingleMainGo(root string, opts Options) error {
 	// A Next single has nothing to embed.
 	//
-	// The embed exists because a Vite build is static files: the binary carries
-	// them and the project ships as one executable. Next.js is not static here,
-	// so this entry point is the API server and nothing else, and the frontend
-	// runs its own process beside it. Keeping the embed would mean a //go:embed
-	// of a directory Next never writes, which does not compile, and a NoRoute
-	// handler serving a placeholder over routes the API does not own.
+	// Both singles embed their frontend, so both get this entry point. A Vite
+	// build is static files; a Next build is too, with output: "export". What
+	// differs is only the shape of what lands in api/web: one index.html for the
+	// SPA, one HTML file per route for the export, and the handler in here reads
+	// both.
 	mainContent := singleMainGo(opts)
-	if opts.SingleUsesNext() {
-		mainContent = apiMainGo(opts)
-	}
 	api := opts.APIRoot(root)
 	mainContent = strings.ReplaceAll(mainContent, "{{MODULE}}", opts.Module())
 	if err := writeFile(filepath.Join(api, "main.go"), mainContent); err != nil {
 		return err
 	}
-	if !opts.SingleUsesNext() {
-		// The built SPA lands inside api/, because //go:embed cannot reach above
-		// the directory its source file is in: a main.go in api/ embedding
-		// ../dist does not compile. Vite is pointed at api/web for the same
-		// reason, so the one binary still carries the whole app.
-		if err := writeFile(filepath.Join(api, "web", "index.html"), singleFrontendDistPlaceholder()); err != nil {
-			return err
-		}
+	// A placeholder so `go build` works on a fresh clone, before anyone has built
+	// the frontend: //go:embed fails the build outright on a pattern that matches
+	// nothing. Both frontends overwrite it, Vite by building into api/web and
+	// Next by copying its export there.
+	//
+	// It lands inside api/ because //go:embed cannot reach above the directory
+	// its source file is in: a main.go in api/ embedding ../out does not compile.
+	if err := writeFile(filepath.Join(api, "web", "index.html"), singleFrontendDistPlaceholder()); err != nil {
+		return err
 	}
 	// writeAPIFiles seeds a multi-app cmd/server/main.go (sized for the
 	// monorepo). In --single mode the canonical entry point is the root
@@ -211,6 +208,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	gopath "path"
 	"os"
 	"os/signal"
 	"strings"
@@ -356,10 +354,20 @@ func main() {
 	// Setup router
 	router := routes.Setup(db, cfg, svc)
 
-	// Serve embedded frontend (SPA fallback).
-	// We pre-read index.html once and serve it via c.Data() to avoid the
-	// canonical-URL redirect rule in http.FileServer, which causes
-	// ERR_TOO_MANY_REDIRECTS behind reverse proxies (Traefik / Cloudflare).
+	// Serve the embedded frontend.
+	//
+	// Two shapes end up in here. A Vite build is a SPA: one index.html, and the
+	// router in the browser resolves every path. A Next export is one HTML file
+	// per route, so /admin/dashboard is admin/dashboard.html, and handing back
+	// the root index.html for it would serve the wrong page with a 200.
+	//
+	// The lookups are ordered, and the two HTML steps are misses for a SPA, which
+	// has no per-route files: it falls through to index.html exactly as it did
+	// before. One handler for both, rather than two that drift apart.
+	//
+	// index.html is pre-read and served with c.Data rather than through
+	// http.FileServer, whose canonical-URL redirect causes ERR_TOO_MANY_REDIRECTS
+	// behind Traefik and Cloudflare.
 	feFS, err := fs.Sub(frontendFS, "web")
 	if err != nil {
 		log.Printf("Warning: embedded frontend not available: %v", err)
@@ -369,17 +377,43 @@ func main() {
 			log.Printf("Warning: failed to read embedded index.html: %v", readErr)
 		}
 		fileServer := http.FileServer(http.FS(feFS))
+
+		serveFile := func(c *gin.Context, name string) bool {
+			data, readErr := fs.ReadFile(feFS, name)
+			if readErr != nil {
+				return false
+			}
+			c.Data(http.StatusOK, "text/html; charset=utf-8", data)
+			return true
+		}
+
 		router.NoRoute(func(c *gin.Context) {
-			path := c.Request.URL.Path
-			// Try to serve a real static asset first.
-			if path != "/" && path != "/index.html" {
-				if f, err := feFS.Open(path[1:]); err == nil {
-					f.Close()
+			if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead {
+				c.Status(http.StatusNotFound)
+				return
+			}
+			name := strings.TrimPrefix(gopath.Clean(c.Request.URL.Path), "/")
+
+			// A real asset: JS, CSS, an image. FileServer sets the headers and
+			// handles range requests.
+			if name != "" && name != "index.html" {
+				if st, statErr := fs.Stat(feFS, name); statErr == nil && !st.IsDir() {
 					fileServer.ServeHTTP(c.Writer, c.Request)
 					return
 				}
 			}
-			// SPA fallback: hand back the pre-read index.html.
+
+			// A clean URL, which a Next export has written as a file.
+			if name != "" && gopath.Ext(name) == "" {
+				if serveFile(c, name+".html") {
+					return
+				}
+				if serveFile(c, name+"/index.html") {
+					return
+				}
+			}
+
+			// The SPA, or the export's own root.
 			if indexHTML == nil {
 				c.Status(http.StatusNotFound)
 				return

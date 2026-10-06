@@ -66,6 +66,65 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.383.0 */}
+            <div className="mb-12" id="v3.383.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.383.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 7, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>--single --next is one binary too</h3>
+                <p>
+                  It ran as two processes, because a Next.js app needs a server and the panel
+                  alone has four <code>[id]</code> routes that{' '}
+                  <code>output: &quot;export&quot;</code> cannot build: their values are rows in a
+                  database the build never sees. That was the right diagnosis and the wrong
+                  conclusion. The pages that had a dynamic segment read an identifier from the
+                  query string instead, which is a URL the build can produce.
+                </p>
+                <p>
+                  So <code>/resources/users/view?id=...</code> rather than{' '}
+                  <code>/resources/users/123</code>: the same screen, the same component, one
+                  page built once. The blog and the public form moved the same way, and both
+                  became client components because a server component cannot exist in an export
+                  at all. <code>next build</code> now writes 368 static files, the build copies
+                  them into <code>api/web</code>, and the Go binary embeds them. One file to
+                  deploy, whichever frontend.
+                </p>
+
+                <h4>Three things that only a running binary showed</h4>
+                <p>
+                  The binary sent <code>script-src &apos;self&apos;</code>, which is right for an
+                  API serving JSON and wrong for one serving Next.js: the bootstrap is an inline
+                  script, so the browser blocked it, React never hydrated, and every page
+                  rendered perfectly and did nothing. The sign-in form then submitted natively
+                  and put the password in the URL. Nothing appeared in the console, because a
+                  blocked inline script is a violation report rather than an error. The Vite
+                  single is why it had gone unnoticed: its bundle loads from a src.
+                </p>
+                <p>
+                  The frontend also baked in <code>http://localhost:8080</code> while the binary
+                  reads <code>APP_PORT</code> at startup. In a single project they are the same
+                  origin, so there is nothing to configure: the app calls the origin it was
+                  served from, and a binary started on another port works.
+                </p>
+                <p>
+                  And the frontend handler only knew how to serve a SPA: one index.html for every
+                  path. An export is one HTML file per route, so it served the wrong page with a
+                  200. One handler reads both now, and the two extra lookups are simply misses
+                  for a SPA.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Verified by building the binary and signing in to the admin panel it serves,
+                  then opening a record through the query-param route. The pattern is the one{' '}
+                  <strong>invoice-generator-pro</strong> uses, which is where it came from.
+                </p>
+              </div>
+            </div>
+
             {/* v3.382.0 */}
             <div className="mb-12" id="v3.382.0">
               <div className="flex items-center gap-3 mb-4">

@@ -38,9 +38,9 @@ func adminHref(content string, opts Options) string {
 func webFileMap(root string, opts Options) map[string]string {
 	webRoot := webAppRoot(root, opts)
 
-	return map[string]string{
+	files := map[string]string{
 		filepath.Join(webRoot, "package.json"):       webPackageJSON(opts),
-		filepath.Join(webRoot, "next.config.ts"):     webNextConfig(),
+		filepath.Join(webRoot, "next.config.ts"):     webNextConfig(opts),
 		filepath.Join(webRoot, "postcss.config.js"):  postCSSConfigFor(webRoot),
 		filepath.Join(webRoot, "tsconfig.json"):      webTSConfig(),
 		filepath.Join(webRoot, "app", "globals.css"): webGlobalCSS(),
@@ -63,18 +63,83 @@ func webFileMap(root string, opts Options) map[string]string {
 		// UserMenu, web-session marker, auth pages, useAuth, auth shells, the
 		// auth-aware navbar and the customer area are opt-in via
 		// `grit add web-auth` -- see webAuthFiles() in web_auth.go.
-		filepath.Join(webRoot, "lib", "api-core.ts"):                               apiCoreTS(),
-		filepath.Join(webRoot, "lib", "api.ts"):                                    webAPIClient(),
-		filepath.Join(webRoot, "hooks", "use-blogs.ts"):                            webUseBlogsHook(),
-		filepath.Join(webRoot, "app", "(marketing)", "blog", "page.tsx"):           webBlogListPage(),
-		filepath.Join(webRoot, "app", "(marketing)", "blog", "[slug]", "page.tsx"): webBlogDetailPage(),
-		filepath.Join(webRoot, "lib", "blog-api.ts"):                               webBlogAPILib(),
+		filepath.Join(webRoot, "lib", "api-core.ts"):                     apiCoreTS(opts),
+		filepath.Join(webRoot, "lib", "api.ts"):                          webAPIClient(),
+		filepath.Join(webRoot, "hooks", "use-blogs.ts"):                  webUseBlogsHook(),
+		filepath.Join(webRoot, "app", "(marketing)", "blog", "page.tsx"): webBlogListPage(opts),
+		filepath.Join(webRoot, "lib", "blog-api.ts"):                     webBlogAPILib(),
 		// v3.31.20: public form-share page (Phase 2). The share is read in the
 		// server component; public-form.tsx is the interactive half.
-		filepath.Join(webRoot, "app", "forms", "[token]", "page.tsx"):        webPublicFormPage(),
-		filepath.Join(webRoot, "app", "forms", "[token]", "public-form.tsx"): webPublicFormClient(),
-		filepath.Join(webRoot, "public", ".gitkeep"):                         "",
+		filepath.Join(webRoot, "public", ".gitkeep"): "",
 	}
+
+	// The two public pages that had a dynamic segment.
+	//
+	// A static export has to have a file for every URL it serves, and these two
+	// are keyed by a blog slug and a form token: values that live in a database
+	// the build never sees. So there they are one page each, reading the
+	// identifier from the query string, and the blog's is a client component
+	// because a server component cannot exist in an export at all.
+	if opts.StaticExport() {
+		files[filepath.Join(webRoot, "app", "(marketing)", "blog", "view", "page.tsx")] = webBlogDetailPageStatic()
+		files[filepath.Join(webRoot, "app", "forms", "view", "page.tsx")] = webPublicFormPageStatic()
+		files[filepath.Join(webRoot, "app", "forms", "view", "public-form.tsx")] = webPublicFormClient()
+	} else {
+		files[filepath.Join(webRoot, "app", "(marketing)", "blog", "[slug]", "page.tsx")] = webBlogDetailPage()
+		files[filepath.Join(webRoot, "app", "forms", "[token]", "page.tsx")] = webPublicFormPage()
+		files[filepath.Join(webRoot, "app", "forms", "[token]", "public-form.tsx")] = webPublicFormClient()
+	}
+
+	// Only a single project, whose binary embeds the export. A monorepo deploys
+	// the Next server and has nothing to copy, so it would be a file that is
+	// never run sitting in the repository looking like it is.
+	if opts.StaticExport() {
+		files[filepath.Join(webRoot, "scripts", "embed-frontend.mjs")] = nextEmbedScript()
+	}
+
+	return files
+}
+
+// nextBuildScript is what `pnpm build` runs for this project's Next app.
+//
+// A monorepo stops at next build: the output is a server its own host runs. A
+// single project has no second process, so the export has to end up in api/web,
+// which is the directory //go:embed reads.
+//
+// The copy is a script file rather than an inline `node -e`, because the inline
+// form needs double quotes inside a JSON string inside a shell argument, and
+// the three layers of escaping produced a package.json that was not valid JSON.
+func nextBuildScript(opts Options) string {
+	if !opts.StaticExport() {
+		return "next build"
+	}
+	return "next build && node scripts/embed-frontend.mjs"
+}
+
+// nextEmbedScript copies the export into the directory the binary embeds.
+//
+// node rather than cp or xcopy: the three platforms spell those differently,
+// and a build script that works on one machine is not a build script. The
+// destination is emptied first because an export does not remove files from a
+// previous build, so a renamed chunk would stay behind and ship inside the
+// binary for ever.
+func nextEmbedScript() string {
+	return `// Put the Next export where the Go binary can embed it.
+//
+// next build with output: "export" writes ./out. //go:embed cannot read above
+// the directory its source file is in, and that file is api/main.go, so the
+// build has to end with the export inside api/.
+import { cpSync, existsSync, rmSync } from "node:fs";
+
+if (!existsSync("out")) {
+  console.error("No ./out directory: did next build run, and is output: \"export\" still set?");
+  process.exit(1);
+}
+
+rmSync("api/web", { recursive: true, force: true });
+cpSync("out", "api/web", { recursive: true });
+console.log("Embedded the frontend into api/web");
+`
 }
 
 func webPackageJSON(opts Options) string {
@@ -85,7 +150,7 @@ func webPackageJSON(opts Options) string {
   "scripts": {
     "//dev": "--webpack is a workaround for an upstream Turbopack bug: its Google-fonts loader fails to resolve its own @vercel/turbopack-next/internal/font/google/font module, and the app never renders (grit#77). It does not reproduce on every machine, which is why it survived so long. Remove the flag once Turbopack ships the fix and dev gets faster again.",
     "dev": "rm -rf .next && next dev --webpack --port 3000",
-    "build": "next build",
+    "build": "`+nextBuildScript(opts)+`",
     "start": "next start",
     "lint": "`+biomeLintScript+`",
     "format": "`+biomeFormatScript+`",
@@ -170,7 +235,28 @@ func embeddedWebDependencyLines(opts Options) []string {
 	return out
 }
 
-func webNextConfig() string {
+// nextOutputMode is how this project's Next app is built and served.
+//
+// A monorepo runs it: output "standalone" produces a server to deploy beside
+// the API. A single project does not have a second process to run, so it builds
+// to static files the Go binary embeds and serves itself, which is what makes a
+// single project one file.
+//
+// A static export has no server, so it has no image optimizer either: without
+// unoptimized, next/image renders URLs pointing at a route that does not exist
+// in the output and every image 404s.
+func nextOutputMode(opts Options) string {
+	if opts.StaticExport() {
+		return `  // Static HTML, CSS and JS, which api/main.go embeds. Every byte of data
+  // comes from the Go API the same binary serves, so there is nothing for a
+  // Node process to do.
+  output: "export",
+`
+	}
+	return "  output: \"standalone\",\n"
+}
+
+func webNextConfig(opts Options) string {
 	return `import type { NextConfig } from "next";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -190,8 +276,7 @@ if (existsSync(rootEnv)) {
 
 ` + nextSecurityHeaders() + `
 const nextConfig: NextConfig = {
-  output: "standalone",
-  reactStrictMode: true,
+` + nextOutputMode(opts) + `  reactStrictMode: true,
   // packages/shared ships TypeScript source rather than a built bundle,
   // so Next needs to run it through SWC. Otherwise imports of
   // @repo/shared/types fail with "Cannot find module" at build time.
@@ -203,7 +288,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_THEME: process.env.THEME || "atlas",
     NEXT_PUBLIC_SOCIAL_AUTH_ENABLED: process.env.SOCIAL_AUTH_ENABLED || "true",
   },
-` + nextSecurityHeadersConfig() + `};
+` + nextSecurityHeadersConfig(opts) + `};
 
 export default nextConfig;
 `
@@ -1287,7 +1372,7 @@ const webProvidersEmbeddedAdmin = `"use client";
 
 import { QueryClient, QueryClientContext } from "@tanstack/react-query";
 import { useSelectedLayoutSegment } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -2363,6 +2448,122 @@ export function useAuthContext() {
 // The form itself is whatever the resource's struct tags expose: the API builds
 // the field list in services.PublicFields, and the operator's custom title,
 // description and hidden-field list are applied there too.
+// webPublicFormPageStatic — app/forms/view/page.tsx for a static export.
+//
+// A share token is a value in a database, so an export cannot have a file per
+// token: one page, and the token in the query string. The fetch moves into the
+// browser for the same reason, which is also what it already was doing in
+// effect, because the page was force-dynamic and never cached.
+func webPublicFormPageStatic() string {
+	return `"use client";
+
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+
+import { apiUrl } from "@/lib/api-core";
+
+import { PublicForm, type ShareInfo } from "./public-form";
+
+// loadShare asks the API about the link. A 404 or a disabled share is a normal
+// answer here, not an exception: it renders the "link unavailable" card.
+async function loadShare(token: string): Promise<{ info?: ShareInfo; error?: string }> {
+  try {
+    const res = await fetch(
+      apiUrl("/api/public/forms/" + encodeURIComponent(token)),
+      { cache: "no-store", headers: { Accept: "application/json" } },
+    );
+    const body = await res.json().catch(() => null);
+    if (!res.ok) {
+      return { error: body?.error?.message ?? "Link not found or disabled" };
+    }
+    if (!body?.data) {
+      return { error: "Link not found or disabled" };
+    }
+    return { info: body.data as ShareInfo };
+  } catch {
+    // The API being unreachable is the operator's problem, not the visitor's,
+    // so they get a sentence rather than a stack.
+    return { error: "This form could not be loaded. Try again in a moment." };
+  }
+}
+
+// useSearchParams cannot be read while prerendering: the params are not
+// known until a browser has a URL. Suspense gives React something to render
+// until then, and without it the export fails the whole build.
+export default function PublicFormPage() {
+  return (
+    <Suspense fallback={<main className="flex min-h-screen items-center justify-center bg-slate-50 p-4"><p className="text-sm text-slate-500">Loading...</p></main>}>
+      <PublicFormView />
+    </Suspense>
+  );
+}
+
+function PublicFormView() {
+  const token = useSearchParams().get("token") ?? "";
+  const [state, setState] = useState<{ info?: ShareInfo; error?: string; loading: boolean }>({
+    loading: true,
+  });
+
+  useEffect(() => {
+    let live = true;
+    if (!token) {
+      setState({ error: "Link not found or disabled", loading: false });
+      return;
+    }
+    loadShare(token).then((r) => {
+      if (live) setState({ ...r, loading: false });
+    });
+    return () => {
+      live = false;
+    };
+  }, [token]);
+
+  if (state.loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+        <p className="text-sm text-slate-500">Loading...</p>
+      </main>
+    );
+  }
+
+  const info = state.info;
+  if (!info) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <h1 className="text-xl font-semibold text-slate-900">Link unavailable</h1>
+          <p className="mt-2 text-sm text-slate-500">{state.error ?? "Unknown error"}</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Title falls back through three sources:
+  //   1. operator-set custom_title (best)
+  //   2. operator-set label (legacy — pre-v3.31.50 shares)
+  //   3. resource name (worst — bare default)
+  const title =
+    info.custom_title?.trim() ||
+    info.label?.trim() ||
+    info.resource_name + " submission";
+  const description =
+    info.custom_description?.trim() ||
+    "Fill out the form below to submit a new " + info.resource_name + ".";
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+        <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
+        <p className="mt-1 text-sm text-slate-500">{description}</p>
+
+        <PublicForm token={token} info={info} />
+      </div>
+    </main>
+  );
+}
+`
+}
+
 func webPublicFormPage() string {
 	return `import type { Metadata } from "next";
 

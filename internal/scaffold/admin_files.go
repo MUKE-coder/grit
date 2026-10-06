@@ -227,7 +227,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 	files := map[string]string{
 		// Config files
 		filepath.Join(adminRoot, "package.json"):   adminPackageJSON(opts),
-		filepath.Join(adminRoot, "next.config.ts"): adminNextConfig(),
+		filepath.Join(adminRoot, "next.config.ts"): adminNextConfig(opts),
 
 		// i18n is NOT scaffolded here. `grit add i18n` writes these same six
 		// files and does the three things the scaffold cannot: add the
@@ -327,7 +327,8 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"): adminDashboardLayout(),
 
 		// Lib
-		filepath.Join(adminRoot, "lib", "api-core.ts"):          apiCoreTS(),
+		filepath.Join(adminRoot, "lib", "api-core.ts"):          apiCoreTS(opts),
+		filepath.Join(adminRoot, "lib", "detail-href.ts"): adminDetailHrefTS(opts),
 		filepath.Join(adminRoot, "lib", "api-client.ts"):        adminAPIClient(),
 		filepath.Join(adminRoot, "lib", "tiptap-extensions.ts"): adminTiptapExtensions(),
 		filepath.Join(adminRoot, "lib", "query-client.ts"):      adminQueryClient(),
@@ -456,12 +457,12 @@ func adminFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):                  adminDashboardPageForStyle(opts.Style),
 		filepath.Join(adminRoot, "app", "(dashboard)", "profile", "page.tsx"):                    adminCaptivatingProfile(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"):         adminUsersPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "[id]", "page.tsx"): adminResourceDetailRoute("users", "users", "Users"),
+		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", adminDetailSegment(opts), "page.tsx"): adminResourceDetailRoute("users", "users", "Users", opts),
 		// The Blog resource runs on <ResourcePage> like every other resource
 		// (contact-app review M42). Its content field is a richtext field, which
 		// renders the Word-style editor below.
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "page.tsx"):         adminBlogsPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "[id]", "page.tsx"): adminResourceDetailRoute("blogs", "blogs", "Blogs"),
+		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", adminDetailSegment(opts), "page.tsx"): adminResourceDetailRoute("blogs", "blogs", "Blogs", opts),
 		filepath.Join(adminRoot, "components", "forms", "word-editor.tsx"):                       adminWordEditor(),
 
 		// System pages — under (dashboard) route group
@@ -484,7 +485,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		// v3.30 — activity dashboard + ticket system pages
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "activity", "page.tsx"):        adminWalkieActivityPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "support", "page.tsx"):         adminSupportListPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "support", "[id]", "page.tsx"): adminTicketThreadPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "support", adminDetailSegment(opts), "page.tsx"): adminTicketThreadPage(opts),
 	}
 
 	if adminStyleUsesWidgets(opts.Style) {
@@ -597,7 +598,7 @@ func adminPackageJSON(opts Options) string {
 `, opts.ProjectName)
 }
 
-func adminNextConfig() string {
+func adminNextConfig(opts Options) string {
 	return `import type { NextConfig } from "next";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -633,7 +634,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_THEME: process.env.THEME || "atlas",
     NEXT_PUBLIC_SOCIAL_AUTH_ENABLED: process.env.SOCIAL_AUTH_ENABLED || "true",
   },
-` + nextSecurityHeadersConfig() + `  // Uncomment and run "ANALYZE=true pnpm build" to inspect the bundle
+` + nextSecurityHeadersConfig(opts) + `  // Uncomment and run "ANALYZE=true pnpm build" to inspect the bundle
   // ...(process.env.ANALYZE === "true"
   //   ? { ...require("@next/bundle-analyzer")({ enabled: true })(nextConfig) }
   //   : {}),

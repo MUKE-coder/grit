@@ -76,8 +76,8 @@ var nextPublicEnvPattern = regexp.MustCompile(`process\.env\.NEXT_PUBLIC_([A-Z0-
 
 // adminTanStackAPICore adapts lib/api-core.ts for Vite: it is the same module
 // the Next.js admin gets, with the one Next-only expression in it rewritten.
-func adminTanStackAPICore() string {
-	return strings.ReplaceAll(apiCoreTS(),
+func adminTanStackAPICore(opts Options) string {
+	return strings.ReplaceAll(apiCoreTS(opts),
 		`process.env.NEXT_PUBLIC_API_URL`,
 		`import.meta.env.VITE_API_URL`)
 }
@@ -343,7 +343,7 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "pages", "system", "sso.tsx"):            nextToTanStack(adminSSOPage()),
 		filepath.Join(adminRoot, "src", "pages", "system", "roles.tsx"):          nextToTanStack(adminRolesPage()),
 		filepath.Join(adminRoot, "src", "pages", "system", "support.tsx"):        nextToTanStack(adminSupportListPage()),
-		filepath.Join(adminRoot, "src", "pages", "system", "ticket.tsx"):         nextToTanStack(adminTicketThreadPage()),
+		filepath.Join(adminRoot, "src", "pages", "system", "ticket.tsx"):         nextToTanStack(adminTicketThreadPage(opts)),
 		filepath.Join(adminRoot, "src", "pages", "system", "jobs.tsx"):           nextToTanStack(adminJobsPage()),
 		filepath.Join(adminRoot, "src", "pages", "system", "files.tsx"):          nextToTanStack(adminFilesPage()),
 		filepath.Join(adminRoot, "src", "pages", "system", "cron.tsx"):           nextToTanStack(adminCronPage()),
@@ -395,7 +395,8 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "form-shares.tsx"):       adminTanStackPageRoute("/_dashboard/system/form-shares", "@/pages/system/form-shares"),
 
 		// Lib (same as Next.js versions)
-		filepath.Join(adminRoot, "src", "lib", "api-core.ts"):          adminTanStackAPICore(),
+		filepath.Join(adminRoot, "src", "lib", "api-core.ts"):          adminTanStackAPICore(opts),
+		filepath.Join(adminRoot, "src", "lib", "detail-href.ts"): nextToTanStack(adminDetailHrefTS(opts)),
 		filepath.Join(adminRoot, "src", "lib", "api-client.ts"):        adminTanStackAPIClient(),
 		filepath.Join(adminRoot, "src", "lib", "tiptap-extensions.ts"): adminTiptapExtensions(),
 		filepath.Join(adminRoot, "src", "lib", "query-client.ts"):      adminQueryClient(),

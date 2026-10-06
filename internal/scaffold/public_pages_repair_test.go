@@ -9,7 +9,7 @@ import (
 func TestPublicPagesRenderOnTheServer(t *testing.T) {
 	pages := map[string]string{
 		"home":      webLandingPage(Options{ProjectName: "demo", Architecture: ArchDouble, Frontend: FrontendNext}),
-		"blog list": webBlogListPage(),
+		"blog list": webBlogListPage(Options{ProjectName: "app", Architecture: ArchTriple, Frontend: FrontendNext}),
 		"blog post": webBlogDetailPage(),
 	}
 	for name, src := range pages {

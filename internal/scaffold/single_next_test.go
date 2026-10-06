@@ -155,36 +155,75 @@ func TestSingleNextHasAWorkspaceButNoTurborepo(t *testing.T) {
 	}
 }
 
-// The binary embeds a frontend only when there is a static one to embed.
+// Both singles ship as one binary with their frontend inside it.
 //
-// The Vite build is static files, so the binary carries them and the project
-// ships as one executable. Next is not static here: the panel alone has four
-// [id] routes and the web app two more, and `output: "export"` cannot build a
-// dynamic segment whose values are rows in a database. Keeping the embed would
-// mean a //go:embed of a directory Next never writes, which does not compile.
-func TestOnlyTheViteSingleEmbedsItsFrontend(t *testing.T) {
-	viteRoot := t.TempDir()
-	if err := writeSingleMainGo(viteRoot, Options{ProjectName: "app", Architecture: ArchSingle}); err != nil {
-		t.Fatal(err)
+// The Vite one always did. The Next one does now: it builds with
+// output: "export", which is static HTML, CSS and JS, and the export is copied
+// into api/web where //go:embed reads it.
+//
+// It did not, for a while, and the reason was a real constraint rather than an
+// oversight: a static export cannot build a dynamic segment, because the values
+// are rows in a database the build never sees. The pages that had one read an id
+// from the query string instead, which is what made the export possible.
+func TestBothSinglesEmbedTheirFrontend(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		opts Options
+	}{
+		{"vite", Options{ProjectName: "app", Architecture: ArchSingle}},
+		{"next", singleNextOptions()},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			if err := writeSingleMainGo(root, tc.opts); err != nil {
+				t.Fatal(err)
+			}
+
+			main := readTestFile(t, filepath.Join(root, "api", "main.go"))
+			if !strings.Contains(main, "//go:embed all:web") {
+				t.Error("the binary does not embed api/web, so it is not one file")
+			}
+
+			// The placeholder lets go build work on a fresh clone: //go:embed
+			// fails outright on a pattern that matches nothing.
+			if !fileExists(filepath.Join(root, "api", "web", "index.html")) {
+				t.Error("no placeholder, so go build fails before the frontend is built once")
+			}
+		})
 	}
-	vite := readTestFile(t, filepath.Join(viteRoot, "api", "main.go"))
-	if !strings.Contains(vite, "//go:embed all:web") {
-		t.Error("the Vite single stopped embedding its SPA, so it is no longer one binary")
+}
+
+// And the Next single really is exported rather than served by a Node process.
+func TestTheNextSingleIsAStaticExport(t *testing.T) {
+	opts := singleNextOptions()
+	if !opts.StaticExport() {
+		t.Fatal("a Next single is not marked as a static export, so nothing below it applies")
 	}
 
-	nextRoot := t.TempDir()
-	if err := writeSingleMainGo(nextRoot, singleNextOptions()); err != nil {
-		t.Fatal(err)
+	cfg := webNextConfig(opts)
+	if !strings.Contains(cfg, `output: "export"`) {
+		t.Error("the Next config does not export, so the build produces a server to run")
 	}
-	next := readTestFile(t, filepath.Join(nextRoot, "api", "main.go"))
-	if strings.Contains(next, "go:embed") {
-		t.Error("a Next single embeds frontend/dist, a directory Next never writes: the project does not compile")
+	if !strings.Contains(cfg, "unoptimized: true") {
+		t.Error("the image optimizer is left on, and an export has no server to run one: every image 404s")
 	}
-	if !fileExists(filepath.Join(viteRoot, "api", "web", "index.html")) {
-		t.Error("the Vite single lost the placeholder that lets go build work before the first pnpm build")
+	if strings.Contains(cfg, "async headers()") {
+		t.Error("headers() survives into an export, where Next warns it does nothing")
 	}
-	if fileExists(filepath.Join(nextRoot, "api", "web", "index.html")) {
-		t.Error("a Next single got an api/web placeholder it never serves")
+
+	// The build has to put the export where the binary reads it.
+	pkg := webPackageJSON(opts)
+	if !strings.Contains(pkg, "node scripts/embed-frontend.mjs") {
+		t.Error("the build does not copy the export into api/web, so the binary embeds the placeholder")
+	}
+
+	// A monorepo is untouched by all of it.
+	mono := Options{ProjectName: "app", Architecture: ArchTriple, Frontend: FrontendNext}
+	if mono.StaticExport() {
+		t.Error("a monorepo was marked as a static export")
+	}
+	if !strings.Contains(webNextConfig(mono), `output: "standalone"`) {
+		t.Error("a monorepo stopped building a server")
 	}
 }
 

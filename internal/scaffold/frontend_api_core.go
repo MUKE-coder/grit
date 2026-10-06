@@ -25,8 +25,32 @@ import "strings"
 // apiUrl(path) for code that cannot use the client, and createApiClient() for
 // the clients themselves.
 
+// apiBaseExpr is how this app works out where the API is.
+//
+// In a monorepo the frontend and the API are different origins and different
+// deployments, so the address is configuration: NEXT_PUBLIC_API_URL, baked in at
+// build time.
+//
+// In a single project they are the same origin, because one binary serves both.
+// Baking an address in there is not just unnecessary, it is wrong: the value is
+// fixed when the frontend is built and the port is chosen when the binary is
+// run, so a project built with the default and started on another port has a
+// frontend calling a server that is not there. The browser reports it as a
+// failed request with no message, which is a login button that does nothing.
+//
+// So a single reads the origin it was served from, and falls back to the
+// environment variable for a server-side render that has no window.
+func apiBaseExpr(opts Options) string {
+	if opts.Architecture == ArchSingle {
+		return `typeof window === "undefined"
+  ? process.env.NEXT_PUBLIC_API_URL || ""
+  : window.location.origin`
+	}
+	return `process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"`
+}
+
 // apiCoreTS is lib/api-core.ts, identical in the web app and the admin panel.
-func apiCoreTS() string {
+func apiCoreTS(opts Options) string {
 	src := `import axios, { type AxiosInstance, type CreateAxiosDefaults } from "axios";
 
 // The API's address, written down once.
@@ -35,7 +59,7 @@ func apiCoreTS() string {
 // environment-variable expression was copied into eleven files, so "where does
 // the frontend think the API is" had eleven answers and changing the fallback
 // changed one of them.
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+export const API_URL = ` + apiBaseExpr(opts) + `;
 
 // The API is served under a version prefix (/api/v1/...). Endpoints are written
 // as "/api/..." throughout the app and pinned to the version here, so moving to

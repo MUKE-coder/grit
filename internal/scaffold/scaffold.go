@@ -72,7 +72,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.382.0"
+const DefaultVersion = "3.383.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -276,6 +276,26 @@ func (o Options) UseTanStack() bool {
 // thing that made single worth having: no Turborepo, no workspace, one folder.
 func (o Options) SingleUsesNext() bool {
 	return o.Architecture == ArchSingle && o.Frontend == FrontendNext
+}
+
+// StaticExport reports whether this project's Next.js app is built to static
+// files the Go binary embeds, rather than served by a Node process.
+//
+// A Next single is: it builds with output: "export", which writes plain HTML,
+// JS and CSS, and every byte of data comes from the Go API the same binary
+// serves. That is what makes a single project one file.
+//
+// The cost is that a dynamic segment cannot be built without knowing its
+// values, and the values are rows in a database. So the pages that had one read
+// an id from the query string instead: /resources/users/view?id=... rather than
+// /resources/users/123. Same screen, same component, a URL the build can
+// produce.
+//
+// Not the Vite single, which is also static and does not have this problem: a
+// SPA serves index.html for every path and resolves the route in the browser,
+// so /resources/users/123 works there without a file to match it.
+func (o Options) StaticExport() bool {
+	return o.SingleUsesNext()
 }
 
 // AdminIsTanStack reports whether the admin panel is a TanStack Router app,
@@ -888,8 +908,15 @@ func RunSingle(opts Options) error {
 		if err := writeEmbeddedAdminFiles(root, opts); err != nil {
 			return fmt.Errorf("writing the embedded admin panel: %w", err)
 		}
-		if err := writeAdminEdgeGuard(root, opts); err != nil {
-			return err
+		// No middleware.ts. A static export has no server to run it, and Next
+		// fails the build outright rather than ignoring the file. The guard it
+		// provided was defence in depth: the panel's own auth already redirects a
+		// signed-out visitor, and every endpoint behind it is checked by the API,
+		// which is the check that actually matters.
+		if !opts.StaticExport() {
+			if err := writeAdminEdgeGuard(root, opts); err != nil {
+				return err
+			}
 		}
 		return nil
 	}

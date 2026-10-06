@@ -169,7 +169,7 @@ export default async function HomePage() {
               {blogs.map((blog) => (
                 <Link
                   key={blog.id}
-                  href={` + "`" + `/blog/${blog.slug}` + "`" + `}
+                  href={` + blogHref(opts) + `}
                   className="group rounded-xl border border-border bg-bg-elevated overflow-hidden hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300"
                 >
                   <div className="h-48 bg-bg-hover overflow-hidden">
@@ -228,32 +228,63 @@ export default async function HomePage() {
 }
 
 // webBlogListPage emits apps/web/app/(marketing)/blog/page.tsx.
-func webBlogListPage() string {
-	return `import type { Metadata } from "next";
+// blogHref is the JSX expression that links to one post.
+//
+// A path segment where a server (or a SPA router) can resolve it. A query
+// parameter in a static export, which has to have a file for every URL it
+// serves and cannot have one per post.
+func blogHref(opts Options) string {
+	if opts.StaticExport() {
+		return "`/blog/view?slug=${encodeURIComponent(blog.slug)}`"
+	}
+	return "`/blog/${blog.slug}`"
+}
+
+func webBlogListPage(opts Options) string {
+	// One set of markup, two ways of getting the data into it.
+	if opts.StaticExport() {
+		// No server to render on, so the page number is read from the URL in the
+		// browser and the posts are fetched there. Same markup, same API.
+		return `"use client";
+
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getPublishedBlogs } from "@/lib/blog-api";
 
-export const metadata: Metadata = {
-  title: "Blog",
-  description: "Insights, tutorials, and updates from the team.",
-};
-
 const PAGE_SIZE = 9;
 
-// Rendered on the server. Pages are links (?page=2), so each one is a URL a
-// crawler can follow and a reader can share.
-export default async function BlogListPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ page?: string }>;
-}) {
-  const requested = Number((await searchParams).page);
-  const page = Number.isInteger(requested) && requested > 0 ? requested : 1;
-  const { blogs, meta } = await getPublishedBlogs(page, PAGE_SIZE);
-  const pages = meta?.pages ?? 0;
-  const pageHref = (n: number) => (n <= 1 ? "/blog" : ` + "`" + `/blog?page=${n}` + "`" + `);
+// useSearchParams cannot be read while prerendering: the page number is not
+// known until a browser has a URL. Suspense gives React something to render
+// until then, and without it the export fails the whole build.
+export default function BlogListPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-5xl px-6 py-16 text-text-muted">Loading...</div>}>
+      <BlogList />
+    </Suspense>
+  );
+}
 
+function BlogList() {
+  const requested = Number(useSearchParams().get("page"));
+  const page = Number.isInteger(requested) && requested > 0 ? requested : 1;
+  const [blogs, setBlogs] = useState<Awaited<ReturnType<typeof getPublishedBlogs>>["blogs"]>([]);
+  const [pages, setPages] = useState(0);
+
+  useEffect(() => {
+    let live = true;
+    getPublishedBlogs(page, PAGE_SIZE).then(({ blogs: b, meta }) => {
+      if (!live) return;
+      setBlogs(b);
+      setPages(meta?.pages ?? 0);
+    });
+    return () => {
+      live = false;
+    };
+  }, [page]);
+
+  const pageHref = (n: number) => (n <= 1 ? "/blog" : ` + "`" + `/blog?page=${n}` + "`" + `);
   return (
     <div className="mx-auto max-w-5xl px-6 py-16">
       {/* Header */}
@@ -270,7 +301,160 @@ export default async function BlogListPage({
             {blogs.map((blog) => (
               <Link
                 key={blog.id}
-                href={` + "`" + `/blog/${blog.slug}` + "`" + `}
+                href={` + blogHref(opts) + `}
+                className="group rounded-xl border border-border bg-bg-elevated overflow-hidden hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300"
+              >
+                <div className="h-52 bg-bg-hover overflow-hidden">
+                  {blog.image ? (
+                    <img
+                      src={blog.image}
+                      alt={blog.title}
+                      width={640}
+                      height={416}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-accent/10 to-accent/5">
+                      <span className="text-5xl font-bold text-accent/20">
+                        {blog.title.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="p-5">
+                  <p className="text-xs text-text-muted mb-2.5">
+                    {new Date(blog.published_at || blog.created_at).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </p>
+                  <h2 className="font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2 text-lg leading-snug">
+                    {blog.title}
+                  </h2>
+                  {blog.excerpt && (
+                    <p className="mt-2.5 text-sm text-text-secondary line-clamp-3 leading-relaxed">
+                      {blog.excerpt}
+                    </p>
+                  )}
+                  <span className="mt-4 inline-block text-xs font-medium text-accent group-hover:text-accent-hover transition-colors">
+                    Read more &rarr;
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {pages > 1 && (
+            <nav aria-label="Blog pages" className="mt-12 flex items-center justify-center gap-2">
+              {page > 1 ? (
+                <Link
+                  href={pageHref(page - 1)}
+                  className="flex items-center gap-1 rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Link>
+              ) : (
+                <span aria-disabled="true" className="flex items-center gap-1 rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm text-text-secondary opacity-40">
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </span>
+              )}
+              <div className="flex items-center gap-1 px-3">
+                {Array.from({ length: pages }).map((_, i) => (
+                  <Link
+                    key={i + 1}
+                    href={pageHref(i + 1)}
+                    aria-current={page === i + 1 ? "page" : undefined}
+                    className={` + "`" + `flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                      page === i + 1
+                        ? "bg-accent text-accent-fg"
+                        : "text-text-secondary hover:bg-bg-hover hover:text-foreground"
+                    }` + "`" + `}
+                  >
+                    {i + 1}
+                  </Link>
+                ))}
+              </div>
+              {page < pages ? (
+                <Link
+                  href={pageHref(page + 1)}
+                  className="flex items-center gap-1 rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              ) : (
+                <span aria-disabled="true" className="flex items-center gap-1 rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm text-text-secondary opacity-40">
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </span>
+              )}
+            </nav>
+          )}
+        </>
+      ) : (
+        <div className="text-center py-20">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-bg-elevated border border-border">
+            <span className="text-2xl text-text-muted">&#9998;</span>
+          </div>
+          <h3 className="text-lg font-semibold text-foreground">No posts yet</h3>
+          <p className="mt-1 text-sm text-text-muted">
+            Blog posts will appear here once published from the admin panel.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+`
+	}
+
+	// A server component: it awaits searchParams and fetches during the render,
+	// so each page is HTML a crawler can read and a reader can share.
+	return `import type { Metadata } from "next";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { getPublishedBlogs } from "@/lib/blog-api";
+
+export const metadata: Metadata = {
+  title: "Blog",
+  description: "Insights, tutorials, and updates from the team.",
+};
+
+const PAGE_SIZE = 9;
+
+export default async function BlogListPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const requested = Number((await searchParams).page);
+  const page = Number.isInteger(requested) && requested > 0 ? requested : 1;
+  const { blogs, meta } = await getPublishedBlogs(page, PAGE_SIZE);
+  const pages = meta?.pages ?? 0;
+  const pageHref = (n: number) => (n <= 1 ? "/blog" : ` + "`" + `/blog?page=${n}` + "`" + `);
+  return (
+    <div className="mx-auto max-w-5xl px-6 py-16">
+      {/* Header */}
+      <div className="mb-12">
+        <h1 className="text-4xl font-bold tracking-tight">Blog</h1>
+        <p className="mt-2 text-text-secondary">
+          Insights, tutorials, and updates from the team.
+        </p>
+      </div>
+
+      {blogs.length > 0 ? (
+        <>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {blogs.map((blog) => (
+              <Link
+                key={blog.id}
+                href={` + blogHref(opts) + `}
                 className="group rounded-xl border border-border bg-bg-elevated overflow-hidden hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300"
               >
                 <div className="h-52 bg-bg-hover overflow-hidden">
@@ -384,6 +568,127 @@ export default async function BlogListPage({
 }
 
 // webBlogDetailPage emits apps/web/app/(marketing)/blog/[slug]/page.tsx.
+func webBlogDetailPageStatic() string {
+	return `"use client";
+
+import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { ArrowLeft, Calendar } from "lucide-react";
+import { getPublishedBlog } from "@/lib/blog-api";
+
+// The post arrives as ?slug=, not as a path segment.
+//
+// This app is a static export: there is no server to render a page per post,
+// and the posts are rows in a database the build never sees. So one page is
+// built and it reads which post to show at runtime, from the same API the
+// server component used to call.
+//
+// No generateMetadata for the same reason. The page title is the site's rather
+// than the post's, which is the one thing given up by not running a server.
+type Post = Awaited<ReturnType<typeof getPublishedBlog>>;
+
+// useSearchParams cannot be read while prerendering: the params are not
+// known until a browser has a URL. Suspense gives React something to render
+// until then, and without it the export fails the whole build.
+export default function BlogDetailPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-3xl px-6 py-16 text-text-muted">Loading...</div>}>
+      <BlogDetail />
+    </Suspense>
+  );
+}
+
+function BlogDetail() {
+  const slug = useSearchParams().get("slug") ?? "";
+  const [blog, setBlog] = useState<Post | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let live = true;
+    if (!slug) {
+      setLoading(false);
+      return;
+    }
+    getPublishedBlog(slug)
+      .then((p) => {
+        if (live) setBlog(p);
+      })
+      .finally(() => {
+        if (live) setLoading(false);
+      });
+    return () => {
+      live = false;
+    };
+  }, [slug]);
+
+  if (loading) {
+    return <div className="mx-auto max-w-3xl px-6 py-16 text-text-muted">Loading...</div>;
+  }
+  if (!blog) {
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-16">
+        <p className="text-text-secondary">That post does not exist, or is not published.</p>
+        <Link href="/blog" className="mt-4 inline-flex items-center gap-1.5 text-sm text-accent">
+          <ArrowLeft className="h-4 w-4" />
+          Back to Blog
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <article className="mx-auto max-w-3xl px-6 py-16">
+      <Link
+        href="/blog"
+        className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-foreground transition-colors mb-8"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Blog
+      </Link>
+
+      <header className="mb-10">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight leading-tight">
+          {blog.title}
+        </h1>
+        <div className="mt-4 flex items-center gap-2 text-sm text-text-muted">
+          <Calendar className="h-4 w-4" />
+          <time dateTime={blog.published_at || blog.created_at}>
+            {new Date(blog.published_at || blog.created_at).toLocaleDateString("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </time>
+        </div>
+      </header>
+
+      {blog.image && (
+        <div className="mb-12 rounded-xl overflow-hidden border border-border">
+          <img
+            src={blog.image}
+            alt={blog.title}
+            width={1200}
+            height={630}
+            fetchPriority="high"
+            className="w-full h-auto object-cover"
+          />
+        </div>
+      )}
+
+      {/* The API sanitises post HTML when it is stored and again when it serves
+          a public post (internal/sanitize), so what arrives here is safe. */}
+      <div
+        className="prose-blog"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: the API sanitises post HTML, see above.
+        dangerouslySetInnerHTML={{ __html: blog.content }}
+      />
+    </article>
+  );
+}
+`
+}
+
 func webBlogDetailPage() string {
 	return `import type { Metadata } from "next";
 import Link from "next/link";

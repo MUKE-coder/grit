@@ -231,6 +231,7 @@ import { PageHeader } from "@/components/chrome/PageHeader";
 import { ResponsiveSheet } from "@/components/ui/ResponsiveSheet";
 import { IconButton } from "@/components/ui/IconButton";
 import { Plus, MessageSquare, AlertCircle } from "@/lib/icons";
+import { detailHref } from "@/lib/detail-href";
 import { apiClient } from "@/lib/api-client";
 import { buttonClasses } from "@/components/ui/button";
 import { inputClasses } from "@/components/ui/input";
@@ -340,7 +341,7 @@ export default function SupportPage() {
           {tickets.map((t) => (
             <li key={t.id}>
               <Link
-                href={"/system/support/" + t.id}
+                href={detailHref("/system/support", t.id)}
                 className="block rounded-xl border border-border bg-bg-elevated p-4 transition-colors hover:bg-bg-hover"
               >
                 <div className="flex items-start justify-between gap-4">
@@ -493,11 +494,11 @@ function Field({ label, required, children }: { label: string; required?: boolea
 }
 
 // adminTicketThreadPage emits the per-ticket thread view with reply form.
-func adminTicketThreadPage() string {
+func adminTicketThreadPage(opts Options) string {
 	return `"use client";
 
 import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { IconButton } from "@/components/ui/IconButton";
@@ -529,36 +530,44 @@ const priorityClass: Record<Ticket["priority"], string> = {
 };
 
 export default function TicketThreadPage() {
+  // The ticket id, from whichever shape this app's routes take.
+  //
+  // A Next app with a server reads it from the path segment; a static export
+  // cannot have one, because the ids are rows in a database and the build has
+  // no database, so there the page is /system/support/view?id=... and the id
+  // arrives in the query string. One page reads both rather than two pages
+  // drifting apart.
   const params = useParams<{ id: string }>();
+  const ticketId = useSearchParams().get("id") ?? params.id;
   const router = useRouter();
   const queryClient = useQueryClient();
   const [reply, setReply] = useState("");
 
   const { data: ticket, isLoading } = useQuery<Ticket>({
-    queryKey: ["ticket", params.id],
+    queryKey: ["ticket", ticketId],
     queryFn: async () => {
-      const { data } = await apiClient.get<{ data: Ticket }>("/api/tickets/" + params.id);
+      const { data } = await apiClient.get<{ data: Ticket }>("/api/tickets/" + ticketId);
       return data.data;
     },
-    enabled: !!params.id,
+    enabled: !!ticketId,
   });
 
   const replyM = useMutation({
-    mutationFn: async () => apiClient.post("/api/tickets/" + params.id + "/reply", { body: reply }),
+    mutationFn: async () => apiClient.post("/api/tickets/" + ticketId + "/reply", { body: reply }),
     onSuccess: () => {
       setReply("");
-      queryClient.invalidateQueries({ queryKey: ["ticket", params.id] });
+      queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] });
     },
   });
 
   const close = useMutation({
-    mutationFn: async () => apiClient.patch("/api/tickets/" + params.id + "/close"),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ticket", params.id] }),
+    mutationFn: async () => apiClient.patch("/api/tickets/" + ticketId + "/close"),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] }),
   });
 
   const reopen = useMutation({
-    mutationFn: async () => apiClient.patch("/api/tickets/" + params.id + "/reopen"),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ticket", params.id] }),
+    mutationFn: async () => apiClient.patch("/api/tickets/" + ticketId + "/reopen"),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] }),
   });
 
   if (isLoading) {

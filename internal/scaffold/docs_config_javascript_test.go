@@ -64,10 +64,10 @@ func TestTheTransformHandlesEveryConstructItMeets(t *testing.T) {
 // apps/web and apps/admin have TypeScript configs, and stripping their
 // annotations would lose the checking they exist for.
 func TestTheTypeScriptConfigsKeepTheirTypes(t *testing.T) {
-	if !strings.Contains(webNextConfig(), "function toOrigin(value: string): string {") {
+	if !strings.Contains(webNextConfig(Options{ProjectName: "app", Architecture: ArchTriple, Frontend: FrontendNext}), "function toOrigin(value: string): string {") {
 		t.Error("the web app's config lost its typed helper")
 	}
-	if !strings.Contains(adminNextConfig(), "function toOrigin(value: string): string {") {
+	if !strings.Contains(adminNextConfig(Options{ProjectName: "app", Architecture: ArchTriple, Frontend: FrontendNext}), "function toOrigin(value: string): string {") {
 		t.Error("the admin's config lost its typed helper")
 	}
 

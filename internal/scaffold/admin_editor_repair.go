@@ -77,9 +77,13 @@ func blogPageRepairs(shape adminPanelShape) []blogPageRepair {
 			advice:  "this blog list is hand-written and fetches only the first 100 posts: replace it with <ResourcePage resource={blogsResource} />, as resources/users does",
 		},
 		{
-			path:    filepath.Join(dir, "[id]", "page.tsx"),
-			marker:  legacyBlogDetailMarker,
-			content: adminResourceDetailRoute("blogs", "blogs", "Blogs"),
+			path:   filepath.Join(dir, "[id]", "page.tsx"),
+			marker: legacyBlogDetailMarker,
+			// The path above is the [id] form, so this repair only ever matches a
+			// project that has one: a static export's detail page is at view/ and
+			// is skipped here, which is why the zero Options is the right answer
+			// rather than a layout this function has no way to know.
+			content: adminResourceDetailRoute("blogs", "blogs", "Blogs", Options{}),
 			fixed:   "the blog detail page is <ResourceDetailPage>, and posts are edited in the resource's own form",
 			advice:  "this blog page is hand-written: replace it with <ResourceDetailPage resource={blogsResource} id={id} />, as resources/users/[id] does; the rich text field is the same Word-style editor",
 		},

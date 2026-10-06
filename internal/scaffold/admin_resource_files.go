@@ -1605,6 +1605,7 @@ func adminUseResourceController() string {
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
+import { detailHref } from "@/lib/detail-href";
 import type {
   BulkAction,
   ColumnDefinition,
@@ -1919,7 +1920,7 @@ export function useResourceController<T = Record<string, unknown>>(
   const view = useCallback(
     (row: T) => {
       const id = String((row as Record<string, unknown>).id);
-      router.push("/resources/" + resource.slug + "/" + id);
+      router.push(detailHref("/resources/" + resource.slug, id));
     },
     [router, resource.slug],
   );

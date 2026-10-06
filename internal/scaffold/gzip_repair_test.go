@@ -10,7 +10,7 @@ const securityHeadersAnchor = "// SecurityHeaders adds production security heade
 
 func oldLoggerMiddleware(t *testing.T) string {
 	t.Helper()
-	fresh := apiLoggerMiddlewareGo()
+	fresh := apiLoggerMiddlewareGo(Options{ProjectName: "app", Architecture: ArchTriple, Frontend: FrontendNext})
 	old := strings.Replace(fresh, securityHeadersAnchor, oldGzipMiddleware+securityHeadersAnchor, 1)
 	old = strings.Replace(old, "import (\n\t\"fmt\"\n", "import (\n\t\"compress/gzip\"\n\t\"fmt\"\n", 1)
 	if old == fresh || !strings.Contains(old, "\"compress/gzip\"") || !strings.Contains(old, "func Gzip()") {
@@ -24,7 +24,7 @@ func TestRepairGzipLogger(t *testing.T) {
 	if len(warn) > 0 || len(fixed) != 1 {
 		t.Fatalf("fixed %v, warned %v", fixed, warn)
 	}
-	if out != apiLoggerMiddlewareGo() {
+	if out != apiLoggerMiddlewareGo(Options{ProjectName: "app", Architecture: ArchTriple, Frontend: FrontendNext}) {
 		t.Error("the repaired logger.go differs from a fresh one")
 	}
 	if again, fixed, _ := repairGzipLoggerSource(out); again != out || len(fixed) > 0 {
@@ -40,7 +40,7 @@ func TestRepairGzipLoggerWarnsOnAnEditedGzip(t *testing.T) {
 }
 
 func TestFreshTemplatesNeedNoGzipRepair(t *testing.T) {
-	logger := apiLoggerMiddlewareGo()
+	logger := apiLoggerMiddlewareGo(Options{ProjectName: "app", Architecture: ArchTriple, Frontend: FrontendNext})
 	if strings.Contains(logger, "func Gzip(") || strings.Contains(logger, "compress/gzip") {
 		t.Error("logger.go still carries a gzip middleware")
 	}

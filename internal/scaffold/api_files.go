@@ -39,7 +39,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "auth.go"):                   apiAuthHandlerGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "auth.go"):                 apiAuthMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "cors.go"):                 apiCorsMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "logger.go"):               apiLoggerMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "logger.go"):               apiLoggerMiddlewareGo(opts),
 		filepath.Join(apiRoot, "internal", "middleware", "limits.go"):               middlewareLimitsGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "limits_test.go"):          middlewareLimitsTestGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "gzip.go"):                 middlewareGzipGo(),
@@ -2434,7 +2434,7 @@ func CORSDynamic(resolve func() []string) gin.HandlerFunc {
 `
 }
 
-func apiLoggerMiddlewareGo() string {
+func apiLoggerMiddlewareGo(opts Options) string {
 	return `package middleware
 
 import (
@@ -2477,6 +2477,19 @@ func RequestID() gin.HandlerFunc {
 // from the same origin, so 'self' covers the normal case. Customise
 // CSPDirectives via config when adding a CDN / inline scripts.
 func SecurityHeaders() gin.HandlerFunc {
+	// What script-src allows, which depends on what this binary serves.
+	//
+	// An API serving JSON needs no inline script at all, and the strict value
+	// is right for it. A single project serves its own frontend from this same
+	// binary, and Next.js delivers its bootstrap as an inline <script>: under
+	// script-src 'self' the browser blocks it, React never starts, and what you
+	// get is a page that renders perfectly and does nothing. A form submits
+	// natively, which puts the password in the URL.
+	//
+	// The frontend's own config has carried this caveat in a comment for a long
+	// time; it was the Go side that did not know it had become a frontend host.
+	scriptSrc := ` + apiScriptSrc(opts) + `
+
 	return func(c *gin.Context) {
 		c.Header("X-Content-Type-Options", "nosniff")
 		c.Header("X-Frame-Options", "DENY")
@@ -2493,7 +2506,7 @@ func SecurityHeaders() gin.HandlerFunc {
 		if !strings.HasPrefix(path, "/docs") && !strings.HasPrefix(path, "/studio") && !strings.HasPrefix(path, "/sentinel") && !strings.HasPrefix(path, "/pulse") {
 			c.Header("Content-Security-Policy",
 				"default-src 'self'; "+
-					"script-src 'self'; "+
+					scriptSrc+
 					"style-src 'self' 'unsafe-inline'; "+
 					"img-src 'self' data: blob: https:; "+
 					"font-src 'self' data:; "+
@@ -8092,4 +8105,22 @@ func mountLegacyAPIAlias(r *gin.Engine) {
 	})
 }
 `
+}
+
+// apiScriptSrc is the CSP script-src this project's API should send.
+//
+// An API that serves JSON needs no inline script, and the strict value is the
+// right one. A single project's binary also serves its own frontend, and
+// Next.js delivers its bootstrap as an inline <script>: under script-src 'self'
+// the browser blocks it, React never starts, and the result is a page that
+// renders perfectly and does nothing. The sign-in form then submits natively,
+// which puts the password in the URL.
+//
+// The Vite single is unaffected, which is why this went unnoticed: its bundle
+// is loaded from a src, not inlined, so the strict policy was never in its way.
+func apiScriptSrc(opts Options) string {
+	if opts.Architecture == ArchSingle {
+		return `"script-src 'self' 'unsafe-inline'; "`
+	}
+	return `"script-src 'self'; "`
 }

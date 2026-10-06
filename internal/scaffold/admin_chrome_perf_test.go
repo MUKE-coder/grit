@@ -103,7 +103,7 @@ func TestThumbnailsLoadLazilyWithASize(t *testing.T) {
 	}
 	// A plain <img>, not next/image: covers can be any URL an editor pasted,
 	// and next/image throws on a host it was not configured for.
-	for name, src := range map[string]string{"blog list": webBlogListPage(), "home": webLandingPage(Options{ProjectName: "demo", Architecture: ArchDouble, Frontend: FrontendNext})} {
+	for name, src := range map[string]string{"blog list": webBlogListPage(Options{ProjectName: "app", Architecture: ArchTriple, Frontend: FrontendNext}), "home": webLandingPage(Options{ProjectName: "demo", Architecture: ArchDouble, Frontend: FrontendNext})} {
 		if strings.Contains(src, "next/image") {
 			t.Errorf("%s: covers moved to next/image", name)
 		}

@@ -88,27 +88,28 @@ export default function SingleArchitecturePage() {
               <h3 className="text-xl font-semibold mt-10 mb-3">Or the same thing with Next.js</h3>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--single --next</code>{' '}
-                keeps everything this page describes except the binary: one folder, the Go module
-                at its root, the frontend in{' '}
-                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">frontend/</code>,
-                the panel at <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/admin</code>,
-                and no Turborepo. What changes is that it runs as two processes rather than one,
-                the way every Next.js app runs.
+                gives you everything on this page with Next.js in place of Vite, and it is one
+                binary too. Next builds with{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">output: &quot;export&quot;</code>,
+                the export is copied into{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">api/web</code>,
+                and the binary embeds it exactly as it embeds the Vite build.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                That is forced rather than chosen. The embed works because a Vite build is static
-                files. Next.js is not static here: the panel alone has four{' '}
-                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">[id]</code>{' '}
-                routes and the web app two more, and{' '}
-                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">output: &quot;export&quot;</code>{' '}
-                cannot build a dynamic segment whose values are rows in a database. So the Go
-                binary serves the API and the Next server serves the app.
+                One thing differs, and it is visible in the URLs. An export has to have a file for
+                every address it serves, and a dynamic segment cannot be built: its values are
+                rows in a database the build never sees. So a record is at{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/resources/users/view?id=...</code>{' '}
+                rather than{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/resources/users/123</code>.
+                Same screen, same component, a URL the build can produce. The Vite single keeps
+                path segments, because a SPA resolves them in the browser.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                Take it when you want Next.js on a small project: server components, the App
-                Router, one folder to reason about. Take{' '}
-                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--single</code>{' '}
-                on its own when one deployable file matters more than the framework.
+                There is also no <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">middleware.ts</code>:
+                an export has no server to run one. The panel&apos;s own auth redirects a
+                signed-out visitor, and every endpoint behind it is checked by the API, which is
+                the check that matters.
               </p>
 
               <div className="rounded-lg border border-border/40 bg-accent/20 p-5 mb-6">

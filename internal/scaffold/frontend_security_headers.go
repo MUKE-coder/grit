@@ -170,7 +170,38 @@ const securityHeaders = [
 
 // nextSecurityHeadersConfig returns the NextConfig fields that apply the block
 // above. Inserted into each app's config object.
-func nextSecurityHeadersConfig() string {
+// staticExportConfig is the same block for an app with no server to run it.
+//
+// Two things cannot survive an export, and Next says so during the build rather
+// than at runtime:
+//
+//   - headers(). There is no server to set them. The Go binary that serves these
+//     files sets the same ones in middleware.SecurityHeaders, which is where they
+//     belonged anyway: a header set by the frontend host does not protect the API
+//     on the same origin.
+//   - The image optimizer, for the same reason. Without unoptimized, next/image
+//     emits URLs pointing at /_next/image, which the export does not contain, and
+//     every image 404s.
+func staticExportConfig() string {
+	return `  // Don't advertise the framework + version to attackers.
+  poweredByHeader: false,
+  // No optimizer in an export: there is no server to run one. next/image would
+  // otherwise emit /_next/image URLs that are not in the output, and every
+  // image on the site would 404.
+  images: {
+    remotePatterns: nextImageHosts,
+    unoptimized: true,
+  },
+  // No headers() either. The Go binary serving these files sets the same ones
+  // in middleware.SecurityHeaders, which is the only place that can set them
+  // for the API on the same origin.
+`
+}
+
+func nextSecurityHeadersConfig(opts Options) string {
+	if opts.StaticExport() {
+		return staticExportConfig()
+	}
 	return `  // Don't advertise the framework + version to attackers.
   poweredByHeader: false,
   // next/image refuses any remote host it was not told about, and it THROWS

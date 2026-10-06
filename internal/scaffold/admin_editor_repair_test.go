@@ -245,7 +245,7 @@ func TestRepairBlogPages(t *testing.T) {
 	if got, _ := os.ReadFile(list); string(got) != adminBlogsPage() {
 		t.Errorf("the blog list is not <ResourcePage>:\n%s", got)
 	}
-	if got, _ := os.ReadFile(detail); string(got) != adminResourceDetailRoute("blogs", "blogs", "Blogs") {
+	if got, _ := os.ReadFile(detail); string(got) != adminResourceDetailRoute("blogs", "blogs", "Blogs", Options{}) {
 		t.Errorf("the blog detail page is not <ResourceDetailPage>:\n%s", got)
 	}
 
@@ -345,7 +345,7 @@ func TestPruneLegacyPageHeader(t *testing.T) {
 func TestAdminImportsSharedModelTypes(t *testing.T) {
 	for name, src := range map[string]string{
 		"support list":      adminSupportListPage(),
-		"ticket thread":     adminTicketThreadPage(),
+		"ticket thread":     adminTicketThreadPage(Options{}),
 		"use-notifications": adminUseNotifications(),
 	} {
 		if !strings.Contains(src, `from "@repo/shared/types";`) {
