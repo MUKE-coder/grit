@@ -16,6 +16,22 @@ import (
 
 // writeAdminAccountFiles writes the account page and the two cards it owns.
 func writeAdminAccountFiles(root string, opts Options) error {
+	// No admin panel, nothing to write. The same guard writeAdminSecurityFiles
+	// carries, for the same reason: every file below is an admin screen or a
+	// component one of them renders.
+	//
+	// Without it, `grit new x --api` grew an apps/admin/ holding seven files and
+	// nothing to build them with: no package.json, no layout, no tsconfig. The
+	// home page offers that command as "the Go API alone", and it produced a
+	// frontend directory that never compiles, which reads as a scaffold that
+	// stopped halfway.
+	//
+	// The account, trash and deleted-account API endpoints are unaffected and
+	// still exist in every architecture.
+	if !opts.HasAdminPanel() {
+		return nil
+	}
+
 	files := map[string]string{
 		adminComponent(root, opts, "account", "password-form.tsx"):  adminAccountPasswordFormTSX(),
 		adminComponent(root, opts, "account", "avatar-cropper.tsx"): adminAvatarCropperTSX(),

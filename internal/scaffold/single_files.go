@@ -19,13 +19,26 @@ import (
 // `go build` works on a fresh clone before the frontend has been built.
 // `pnpm build` simply overwrites it.
 func writeSingleMainGo(root string, opts Options) error {
+	// A Next single has nothing to embed.
+	//
+	// The embed exists because a Vite build is static files: the binary carries
+	// them and the project ships as one executable. Next.js is not static here,
+	// so this entry point is the API server and nothing else, and the frontend
+	// runs its own process beside it. Keeping the embed would mean a //go:embed
+	// of a directory Next never writes, which does not compile, and a NoRoute
+	// handler serving a placeholder over routes the API does not own.
 	mainContent := singleMainGo(opts)
+	if opts.SingleUsesNext() {
+		mainContent = apiMainGo(opts)
+	}
 	mainContent = strings.ReplaceAll(mainContent, "{{MODULE}}", opts.Module())
 	if err := writeFile(filepath.Join(root, "main.go"), mainContent); err != nil {
 		return err
 	}
-	if err := writeFile(filepath.Join(root, "frontend", "dist", "index.html"), singleFrontendDistPlaceholder()); err != nil {
-		return err
+	if !opts.SingleUsesNext() {
+		if err := writeFile(filepath.Join(root, "frontend", "dist", "index.html"), singleFrontendDistPlaceholder()); err != nil {
+			return err
+		}
 	}
 	// writeAPIFiles seeds a multi-app cmd/server/main.go (sized for the
 	// monorepo). In --single mode the canonical entry point is the root

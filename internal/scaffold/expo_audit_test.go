@@ -16,7 +16,7 @@ func TestPnpmWorkspaceExpoAudit(t *testing.T) {
 			IgnoreGhsas []string `yaml:"ignoreGhsas"`
 		} `yaml:"auditConfig"`
 	}
-	if err := yaml.Unmarshal([]byte(pnpmWorkspace(true, true)), &ws); err != nil {
+	if err := yaml.Unmarshal([]byte(pnpmWorkspaceFor(false, true, true)), &ws); err != nil {
 		t.Fatalf("pnpm-workspace.yaml does not parse: %v", err)
 	}
 	if ws.Overrides["@expo/metro-config>postcss"] == "" {
@@ -25,7 +25,7 @@ func TestPnpmWorkspaceExpoAudit(t *testing.T) {
 	if len(ws.AuditConfig.IgnoreGhsas) != 2 {
 		t.Errorf("accepted advisories: %v, want the two image-size ones", ws.AuditConfig.IgnoreGhsas)
 	}
-	if plain := pnpmWorkspace(true, false); strings.Contains(plain, "overrides:") || strings.Contains(plain, "auditConfig:") {
+	if plain := pnpmWorkspaceFor(false, true, false); strings.Contains(plain, "overrides:") || strings.Contains(plain, "auditConfig:") {
 		t.Error("a project without Expo got Expo's audit settings")
 	}
 }

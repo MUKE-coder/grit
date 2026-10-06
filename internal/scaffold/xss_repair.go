@@ -60,7 +60,7 @@ func ensureRichTextSafety(root string, opts Options) error {
 		return err
 	}
 	for _, path := range []string{
-		filepath.Join(root, "apps", "web", "package.json"),
+		filepath.Join(webAppRoot(root, opts), "package.json"),
 		filepath.Join(root, "frontend", "package.json"),
 		filepath.Join(root, "package.json"),
 	} {

@@ -85,6 +85,37 @@ export default function SingleArchitecturePage() {
                 <CodeBlock language="bash" code={`grit new myapp --single --vite`} />
               </div>
 
+              <h3 className="text-xl font-semibold mt-10 mb-3">Or the same thing with Next.js</h3>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--single --next</code>{' '}
+                keeps everything this page describes except the binary: one folder, the Go module
+                at its root, the frontend in{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">frontend/</code>,
+                the panel at <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/admin</code>,
+                and no Turborepo. What changes is that it runs as two processes rather than one,
+                the way every Next.js app runs.
+              </p>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                That is forced rather than chosen. The embed works because a Vite build is static
+                files. Next.js is not static here: the panel alone has four{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">[id]</code>{' '}
+                routes and the web app two more, and{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">output: &quot;export&quot;</code>{' '}
+                cannot build a dynamic segment whose values are rows in a database. So the Go
+                binary serves the API and the Next server serves the app.
+              </p>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                Take it when you want Next.js on a small project: server components, the App
+                Router, one folder to reason about. Take{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--single</code>{' '}
+                on its own when one deployable file matters more than the framework.
+              </p>
+
+              <div className="rounded-lg border border-border/40 bg-accent/20 p-5 mb-6">
+                <h4 className="text-sm font-semibold text-foreground mb-3">Scaffold command</h4>
+                <CodeBlock language="bash" code={`grit new myapp --single --next`} />
+              </div>
+
               <LaneFlow
                 id="single-mode"
                 lanes={['Browser', 'myapp — one Go binary', 'Data']}

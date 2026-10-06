@@ -81,14 +81,22 @@ func adminRelativePaths(t *testing.T, files map[string]string, base string) map[
 
 // grit.json records the frontend that was built.
 //
-// A single project is a Go binary with a Vite SPA inside it by definition, so
-// --single --next silently ignores the flag. Writing "next" into grit.json there
-// left the file disagreeing with the directory beside it, and every tool that
-// reads it believed the file.
+// A single project had one answer for years, so Frontend was left empty and
+// --single --next accepted the flag and produced a Vite app anyway. There are
+// two answers now, and the file has to say which one is on disk: every tool that
+// reads it believes it.
 func TestGritJSONRecordsTheFrontendThatWasBuilt(t *testing.T) {
-	single := gritJSON(Options{ProjectName: "app", Architecture: ArchSingle, Frontend: FrontendNext, Version: "9.9.9"})
-	if !strings.Contains(single, `"frontend": "tanstack"`) {
-		t.Errorf("--single --next recorded something other than tanstack, which is the only frontend it builds:\n%s", single)
+	// --single on its own is still the Vite SPA, and says so rather than leaving
+	// the field empty for each reader to interpret.
+	viteSingle := gritJSON(Options{ProjectName: "app", Architecture: ArchSingle, Version: "9.9.9"})
+	if !strings.Contains(viteSingle, `"frontend": "tanstack"`) {
+		t.Errorf("--single did not record the frontend it built:\n%s", viteSingle)
+	}
+
+	// And --single --next is a Next app, not a flag that gets ignored.
+	nextSingle := gritJSON(Options{ProjectName: "app", Architecture: ArchSingle, Frontend: FrontendNext, Version: "9.9.9"})
+	if !strings.Contains(nextSingle, `"frontend": "next"`) {
+		t.Errorf("--single --next recorded something other than next, so the file disagrees with the directory beside it:\n%s", nextSingle)
 	}
 
 	// And it still reports the real choice where there is one to report.

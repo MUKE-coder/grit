@@ -33,7 +33,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.378.3"
+var version = "3.379.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -356,7 +356,7 @@ func newCmd() *cobra.Command {
 	}
 
 	// Shorthand architecture flags
-	cmd.Flags().Bool("single", false, "Shorthand for --arch=single")
+	cmd.Flags().Bool("single", false, "Shorthand for --arch=single: one folder, the Go module at its root, the frontend in frontend/, no Turborepo. Defaults to a Vite SPA the binary embeds, so the project ships as one file; add --next for a Next.js frontend, which runs as its own process")
 	cmd.Flags().Bool("double", false, "Shorthand for --arch=double")
 	cmd.Flags().Bool("triple", false, "Shorthand for --arch=triple")
 	cmd.Flags().BoolVar(&inPlace, "here", false, "Scaffold into the current directory instead of creating a new folder")

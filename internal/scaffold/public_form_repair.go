@@ -22,7 +22,7 @@ const publicFormUseEffectMarker = `axios.get(API_URL + "/api/public/forms/"`
 
 // repairPublicFormPage moves the share fetch onto the server.
 func repairPublicFormPage(root string, opts Options) error {
-	dir := filepath.Join(root, "apps", "web", "app", "forms", "[token]")
+	dir := filepath.Join(webAppRoot(root, opts), "app", "forms", "[token]")
 	page := filepath.Join(dir, "page.tsx")
 	if !fileExists(page) {
 		return nil

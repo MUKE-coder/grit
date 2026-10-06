@@ -113,9 +113,14 @@ func Upgrade(uOpts UpgradeOptions) error {
 	// --- Root config files ---
 	spinner.Printf("  → Updating root configuration...\n")
 	rootFiles := map[string]string{
-		filepath.Join(root, "turbo.json"):          turboJSON(),
-		filepath.Join(root, "pnpm-workspace.yaml"): pnpmWorkspace(dirExists(filepath.Join(root, "apps", "desktop", "frontend")), hasExpo),
-		filepath.Join(root, ".npmrc"):              rootNpmrc(),
+		filepath.Join(root, "turbo.json"): turboJSON(),
+		filepath.Join(root, "pnpm-workspace.yaml"): pnpmWorkspaceFor(
+			// A single project keeps its frontend beside the Go module, not under
+			// apps/, so listing "apps/*" for it installs a workspace with no
+			// frontend in it.
+			!dirExists(filepath.Join(root, "apps")) && dirExists(filepath.Join(root, "frontend")),
+			dirExists(filepath.Join(root, "apps", "desktop", "frontend")), hasExpo),
+		filepath.Join(root, ".npmrc"): rootNpmrc(),
 	}
 	n, err := writeUpgradeFiles(rootFiles, uOpts.Force)
 	if err != nil {
@@ -136,7 +141,15 @@ func Upgrade(uOpts UpgradeOptions) error {
 	updated += n
 
 	// --- API migrate/seed tools ---
-	hasAPI := dirExists(filepath.Join(root, "apps", "api"))
+	//
+	// Asked of the API root rather than of apps/api, because a single project
+	// keeps its Go module at the project root and has no apps/ at all. Probing
+	// the literal path meant every block below was skipped for both singles:
+	// `grit upgrade` on a single project printed "Upgrade complete" and had
+	// updated its root config and Docker files and nothing else, so no API fix
+	// has ever reached one. internal/routes is the marker because both layouts
+	// have it and a frontend-only project does not.
+	hasAPI := dirExists(filepath.Join(opts.APIRoot(root), "internal", "routes"))
 	if hasAPI {
 		spinner.Printf("  → Updating migration and seed tools...\n")
 		if err := writeMigrateSeedFiles(root, opts); err != nil {
@@ -1411,8 +1424,8 @@ func removeNextPanelFromViteApp(root string, opts Options, green *color.Color) {
 	}
 	removed := 0
 	for _, dead := range []string{
-		filepath.Join(root, "apps", "web", "app", "admin"),
-		filepath.Join(root, "apps", "web", "admin-panel"),
+		filepath.Join(webAppRoot(root, opts), "app", "admin"),
+		filepath.Join(webAppRoot(root, opts), "admin-panel"),
 	} {
 		if _, err := os.Stat(dead); err != nil {
 			continue

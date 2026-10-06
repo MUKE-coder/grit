@@ -68,7 +68,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.378.3"
+const DefaultVersion = "3.379.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -210,9 +210,21 @@ func (o Options) ShouldUseTurborepo() bool {
 		o.IncludeDesktop
 }
 
+// UsesPnpmWorkspace reports whether pnpm runs from a workspace root here.
+//
+// Every Turborepo project, and a Next single. The Next single has two JS
+// packages that have to see each other, frontend/ and packages/shared, and
+// nothing simpler than a workspace makes "@repo/shared" resolve from both the
+// type checker and the bundler. It gets no turbo.json: two packages do not need
+// a task graph, and Turborepo was the part of a monorepo that --single existed
+// to avoid.
+func (o Options) UsesPnpmWorkspace() bool {
+	return o.ShouldUseTurborepo() || o.SingleUsesNext()
+}
+
 // ShouldIncludeShared returns true if the shared package should be scaffolded.
 func (o Options) ShouldIncludeShared() bool {
-	return o.ShouldUseTurborepo()
+	return o.UsesPnpmWorkspace()
 }
 
 // ShouldIncludeFrontend returns true if any frontend (web, admin, or SPA) is included.
@@ -242,6 +254,24 @@ func (o Options) ShouldIncludeDocs() bool {
 // UseTanStack returns true if the frontend uses TanStack Router (Vite).
 func (o Options) UseTanStack() bool {
 	return o.Frontend == FrontendTanStack
+}
+
+// SingleUsesNext reports whether this is a single project built with Next.js.
+//
+// A single project is one folder with no monorepo tooling: the Go module at the
+// root, the frontend in frontend/. Which frontend was, until now, not a choice:
+// --single --next accepted the flag and produced a Vite app anyway, and the only
+// sign was grit.json claiming "next" beside a vite.config.ts.
+//
+// The two singles differ in one further way, and it is not cosmetic. The Vite
+// SPA is static, so the Go binary embeds it and a single project ships as one
+// file. Next.js is not static here: the admin alone has four [id] routes and the
+// web app two more, and `output: "export"` cannot build a dynamic segment whose
+// values are rows in a database. So a Next single runs the API and the Next
+// server as two processes, which is how every Next.js app runs, and keeps the
+// thing that made single worth having: no Turborepo, no workspace, one folder.
+func (o Options) SingleUsesNext() bool {
+	return o.Architecture == ArchSingle && o.Frontend == FrontendNext
 }
 
 // AdminIsTanStack reports whether the admin panel is a TanStack Router app,
@@ -809,7 +839,42 @@ func RunSingle(opts Options) error {
 		return fmt.Errorf("writing Docker files: %w", err)
 	}
 
-	// Write frontend
+	// Write frontend, in the framework the flags asked for.
+	//
+	// Both land in frontend/, which is what makes this a single project: one
+	// folder, one Go module at its root, no workspace and no Turborepo. They
+	// differ in how they are served, and that difference is forced rather than
+	// chosen. The Vite SPA is static files, so the binary embeds it and the whole
+	// project ships as one executable. Next.js is not static here: the panel
+	// alone has four [id] routes, so `output: "export"` cannot build it, and the
+	// app needs its own server like every other Next app.
+	if opts.SingleUsesNext() {
+		// The shared package, which the Vite single mirrors into its SPA and this
+		// one resolves as a workspace member. The frontend's package.json asks for
+		// "@repo/shared": "workspace:*", so without it pnpm install fails on a
+		// dependency that is not there, before anything is built.
+		spinner.Printf("  → Creating shared package...\n")
+		if err := writeSharedFiles(root, opts); err != nil {
+			return fmt.Errorf("writing shared files: %w", err)
+		}
+
+		spinner.Printf("  → Scaffolding Next.js frontend...\n")
+		if err := writeWebFiles(root, opts); err != nil {
+			return fmt.Errorf("writing frontend files: %w", err)
+		}
+
+		// The panel as a route group at /admin, which is the shape a double uses:
+		// the same screens, moved and repointed. See admin_embedded.go.
+		spinner.Printf("  → Scaffolding admin panel into the frontend at /admin...\n")
+		if err := writeEmbeddedAdminFiles(root, opts); err != nil {
+			return fmt.Errorf("writing the embedded admin panel: %w", err)
+		}
+		if err := writeAdminEdgeGuard(root, opts); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	spinner.Printf("  → Scaffolding React frontend (Vite + TanStack Router)...\n")
 	if err := writeSingleFrontendFiles(root, opts); err != nil {
 		return fmt.Errorf("writing frontend files: %w", err)
@@ -903,20 +968,20 @@ func createDirectories(root string, opts Options) error {
 	if opts.ShouldIncludeWeb() {
 		if opts.UseTanStack() {
 			dirs = append(dirs,
-				filepath.Join(root, "apps", "web", "src", "routes"),
-				filepath.Join(root, "apps", "web", "src", "components"),
-				filepath.Join(root, "apps", "web", "src", "hooks"),
-				filepath.Join(root, "apps", "web", "src", "lib"),
-				filepath.Join(root, "apps", "web", "public"),
+				filepath.Join(webAppRoot(root, opts), "src", "routes"),
+				filepath.Join(webAppRoot(root, opts), "src", "components"),
+				filepath.Join(webAppRoot(root, opts), "src", "hooks"),
+				filepath.Join(webAppRoot(root, opts), "src", "lib"),
+				filepath.Join(webAppRoot(root, opts), "public"),
 			)
 		} else {
 			dirs = append(dirs,
 				// No (auth) folders: the web app's sign-in pages come from
 				// grit add web-auth, which creates them with the pages. Created
 				// here they were five empty folders in every new project.
-				filepath.Join(root, "apps", "web", "app"),
-				filepath.Join(root, "apps", "web", "lib"),
-				filepath.Join(root, "apps", "web", "__tests__"),
+				filepath.Join(webAppRoot(root, opts), "app"),
+				filepath.Join(webAppRoot(root, opts), "lib"),
+				filepath.Join(webAppRoot(root, opts), "__tests__"),
 			)
 		}
 	}

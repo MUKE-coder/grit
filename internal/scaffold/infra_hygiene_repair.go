@@ -193,7 +193,7 @@ func repairInfraHygiene(root string, opts Options) error {
 	}{
 		{filepath.Join(apiRoot, "Dockerfile"), thenRepair(repairAPIDockerfileSource, repairRuntimePackagesMarkerSource)},
 		{filepath.Join(root, "Dockerfile"), thenRepair(repairSingleDockerfileSource, repairRuntimePackagesMarkerSource)},
-		{filepath.Join(root, "apps", "web", "Dockerfile"), repairFrontendDockerfileSource},
+		{filepath.Join(webAppRoot(root, opts), "Dockerfile"), repairFrontendDockerfileSource},
 		{filepath.Join(root, "apps", "admin", "Dockerfile"), repairFrontendDockerfileSource},
 		{filepath.Join(root, "apps", "docs", "Dockerfile"), repairFrontendDockerfileSource},
 		{filepath.Join(root, "package.json"), repairPackageManagerSource},

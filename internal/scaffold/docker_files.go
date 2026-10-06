@@ -40,10 +40,10 @@ func writeDockerFiles(root string, opts Options) error {
 		// which a Vite build produces.
 		if opts.ShouldIncludeWeb() {
 			if opts.UseTanStack() {
-				files[filepath.Join(root, "apps", "web", "Dockerfile")] = dockerfileVite("web")
-				files[filepath.Join(root, "apps", "web", "nginx.conf")] = viteNginxConf("web")
+				files[filepath.Join(webAppRoot(root, opts), "Dockerfile")] = dockerfileVite("web")
+				files[filepath.Join(webAppRoot(root, opts), "nginx.conf")] = viteNginxConf("web")
 			} else {
-				files[filepath.Join(root, "apps", "web", "Dockerfile")] = dockerfileNextJS("web")
+				files[filepath.Join(webAppRoot(root, opts), "Dockerfile")] = dockerfileNextJS("web")
 			}
 		}
 		if opts.ShouldIncludeAdmin() {

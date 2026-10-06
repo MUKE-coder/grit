@@ -164,7 +164,7 @@ func lintToolingLayout(root string, opts Options) (string, []string) {
 		return "", nil
 	}
 	return root, []string{
-		filepath.Join(root, "apps", "web"),
+		webAppRoot(root, opts),
 		filepath.Join(root, "apps", "admin"),
 		filepath.Join(root, "apps", "desktop", "frontend"),
 	}

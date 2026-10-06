@@ -27,7 +27,7 @@ func writeRealtimeClientFiles(root string, opts Options) error {
 		// A Vite web app keeps its code under src/. Writing to apps/web/hooks there
 		// created a directory nothing imports, and the resource generator then
 		// followed it: it looks for that directory to decide where hooks go.
-		webRoot := filepath.Join(root, "apps", "web")
+		webRoot := webAppRoot(root, opts)
 		if opts.UseTanStack() {
 			webRoot = filepath.Join(webRoot, "src")
 		}

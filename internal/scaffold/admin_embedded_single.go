@@ -35,16 +35,30 @@ import (
 // app/ directory a Vite app does not route, importing next/link, which it cannot
 // resolve. The panel was unreachable and would not have built.
 func (o Options) ShouldEmbedAdminInSPA() bool {
-	return o.Architecture == ArchSingle || (o.ShouldEmbedAdmin() && o.UseTanStack())
+	// Not every single: a Next single embeds the panel as a route group like a
+	// double does, because it has a Next router to put it in.
+	return (o.Architecture == ArchSingle && !o.SingleUsesNext()) ||
+		(o.ShouldEmbedAdmin() && o.UseTanStack())
 }
 
-// spaHostRoot is the Vite app the panel lives inside: a single project's frontend,
-// or a double's web app.
-func spaHostRoot(root string, opts Options) string {
+// webAppRoot is the frontend application the panel lives inside.
+//
+// A single project's is frontend/, whether that is the Vite SPA or a Next app;
+// everything else keeps apps/web. Writers that spelled out apps/web wrote into a
+// directory a single project does not have, and nothing failed: the file was
+// simply absent from the app, which is the same silence that shipped a Vite
+// admin with no security screen.
+func webAppRoot(root string, opts Options) string {
 	if opts.Architecture == ArchSingle {
 		return filepath.Join(root, "frontend")
 	}
 	return filepath.Join(root, "apps", "web")
+}
+
+// spaHostRoot is webAppRoot under its old name, kept for the SPA writers that
+// read as "the Vite app this panel is a section of".
+func spaHostRoot(root string, opts Options) string {
+	return webAppRoot(root, opts)
 }
 
 // singleAdminShellFiles are the Vite admin's own application scaffolding, which

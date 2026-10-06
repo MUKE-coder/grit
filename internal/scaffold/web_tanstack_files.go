@@ -6,7 +6,7 @@ import (
 )
 
 func writeWebTanStackFiles(root string, opts Options) error {
-	webRoot := filepath.Join(root, "apps", "web")
+	webRoot := webAppRoot(root, opts)
 
 	files := map[string]string{
 		filepath.Join(webRoot, "package.json"):   webTanStackPackageJSON(opts),

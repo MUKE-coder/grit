@@ -57,7 +57,7 @@ func restoreResourceRegistrations(root string, opts Options) ([]string, error) {
 	for _, index := range []string{
 		filepath.Join(root, "apps", "admin", "resources", "index.ts"),
 		filepath.Join(root, "apps", "admin", "src", "resources", "index.ts"),
-		filepath.Join(root, "apps", "web", "admin-panel", "resources", "index.ts"),
+		filepath.Join(webAppRoot(root, opts), "admin-panel", "resources", "index.ts"),
 		filepath.Join(spaHostRoot(root, opts), "src", "admin-panel", "resources", "index.ts"),
 	} {
 		if seen[index] || !fileExists(index) {

@@ -78,25 +78,28 @@ func writeRootFiles(root string, opts Options) error {
 
 	// Biome, the linter and formatter, sits where pnpm runs: the workspace
 	// root, or a single app's frontend/.
-	if opts.ShouldUseTurborepo() {
+	if opts.UsesPnpmWorkspace() {
 		files[filepath.Join(root, biomeConfigFile)] = biomeConfig(false)
 	} else if opts.Architecture == ArchSingle {
 		files[filepath.Join(root, "frontend", biomeConfigFile)] = biomeConfig(true)
 	}
 
-	if opts.ShouldUseTurborepo() {
-		files[filepath.Join(root, "pnpm-workspace.yaml")] = pnpmWorkspace(opts.ShouldIncludeDesktop(), opts.ShouldIncludeExpo())
-		files[filepath.Join(root, "turbo.json")] = turboJSON()
+	if opts.UsesPnpmWorkspace() {
+		files[filepath.Join(root, "pnpm-workspace.yaml")] = pnpmWorkspace(opts)
 		files[filepath.Join(root, "package.json")] = rootPackageJSON(opts)
 		files[filepath.Join(root, "grit.config.ts")] = gritConfig(opts)
 		files[filepath.Join(root, ".npmrc")] = rootNpmrc()
+	}
+	// The task graph, only where there are tasks to graph.
+	if opts.ShouldUseTurborepo() {
+		files[filepath.Join(root, "turbo.json")] = turboJSON()
 	}
 
 	// Single-binary apps keep their SPA in frontend/ and have no workspace root,
 	// so they never received an .npmrc. Without it `pnpm install` exits non-zero
 	// with ERR_PNPM_IGNORED_BUILDS on esbuild — a failed install on a freshly
 	// generated project.
-	if opts.Architecture == ArchSingle {
+	if opts.Architecture == ArchSingle && !opts.SingleUsesNext() {
 		files[filepath.Join(root, "frontend", ".npmrc")] = rootNpmrc()
 		files[filepath.Join(root, "frontend", "pnpm-workspace.yaml")] = pnpmAllowBuilds()
 	}
@@ -741,10 +744,24 @@ pnpm-lock.yaml
 `
 }
 
-func pnpmWorkspace(includeDesktop, includeExpo bool) string {
-	ws := `packages:
-  - "apps/*"
-  - "packages/*"
+func pnpmWorkspace(opts Options) string {
+	return pnpmWorkspaceFor(opts.Architecture == ArchSingle,
+		opts.ShouldIncludeDesktop(), opts.ShouldIncludeExpo())
+}
+
+// pnpmWorkspaceFor takes the three facts rather than the Options, because the
+// upgrade path has a directory on disk and no Options to describe it.
+func pnpmWorkspaceFor(isSingle, includeDesktop, includeExpo bool) string {
+	// A single project has no apps/: its one frontend is frontend/, beside the Go
+	// module at the root. Listing "apps/*" there matches nothing, and pnpm
+	// installs a workspace with one member and no frontend in it.
+	members := `  - "apps/*"
+`
+	if isSingle {
+		members = `  - "frontend"
+`
+	}
+	ws := "packages:\n" + members + `  - "packages/*"
 `
 	// The Wails desktop client keeps its React app in apps/desktop/frontend,
 	// which "apps/*" doesn't match. Add it so a single root ` + "`pnpm install`" + `
@@ -851,6 +868,16 @@ func rootPackageJSON(opts Options) string {
 	// VC++ runtime is missing), which would otherwise block `grit start` on a
 	// fresh machine. pnpm needs no native binary, so `dev` always works; turbo
 	// is kept for build/lint/test where its caching pays off.
+	// A Next single has one frontend and no Turborepo: its scripts name
+	// frontend/ directly, and call it rather than a task runner that is not
+	// installed. Without this it inherited the monorepo's scripts, which filter
+	// ./apps/* (nothing, so `grit start` brought up no frontend at all) and shell
+	// out to turbo (not a dependency here, so build, lint and test all failed on
+	// a command not found).
+	if opts.SingleUsesNext() {
+		return singleNextRootPackageJSON(opts)
+	}
+
 	scripts := fmt.Sprintf(`    "dev": "pnpm --parallel --filter \"./apps/*\" --if-present run dev",
     "build": "turbo build",
     "lint": "turbo lint",
@@ -1076,13 +1103,15 @@ No Docker needed — just your API keys and `+"``"+`go run`+"``"+`.
 }
 
 func gritJSON(opts Options) string {
-	// What was actually built, not what was asked for. A single project is a Go
-	// binary with a Vite SPA inside it by definition, so `--single --next` gets
-	// a TanStack frontend and the flag is ignored; recording "next" there left
-	// the file disagreeing with the directory beside it, which is worse than
-	// ignoring the flag, because every tool that reads this believes it.
+	// What was actually built, not what was asked for.
+	//
+	// A single project left its Frontend field empty for years, because it only
+	// had one answer. It has two now: --single --next builds a Next app in
+	// frontend/, --single on its own builds the Vite SPA the binary embeds. The
+	// default still has to be spelled out here, or the file says "" and every
+	// tool that reads it has to know the default to interpret the silence.
 	frontend := opts.Frontend
-	if opts.Architecture == ArchSingle {
+	if opts.Architecture == ArchSingle && !opts.SingleUsesNext() {
 		frontend = FrontendTanStack
 	}
 	return fmt.Sprintf(`{
@@ -1097,4 +1126,40 @@ func gritJSON(opts Options) string {
 }
 `, string(opts.Architecture), string(frontend), opts.Version,
 		opts.ShouldIncludeExpo(), opts.ShouldIncludeDesktop(), opts.ShouldIncludeDocs())
+}
+
+// singleNextRootPackageJSON is the workspace root of a Next single.
+//
+// One frontend and no Turborepo, so every script names frontend/ and runs it
+// directly. The monorepo's scripts filter ./apps/*, which a single project does
+// not have: `grit start` ran pnpm dev, pnpm matched no package, and the API came
+// up alone with nothing serving the admin. The build, lint, type-check and test
+// scripts called turbo, which is not a dependency here.
+func singleNextRootPackageJSON(opts Options) string {
+	return fmt.Sprintf(`{
+  "name": "%s",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter ./frontend dev",
+    "build": "pnpm --filter ./frontend build",
+    "start": "pnpm --filter ./frontend start",
+    "lint": "pnpm --filter ./frontend lint",
+    "format": "`+biomeFormatScript+`",
+    "type-check": "pnpm --filter ./frontend type-check",
+    "dev:api": "air",
+    "dev:web": "pnpm --filter ./frontend dev",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "test": "pnpm --filter ./frontend --if-present test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
+  },
+  "devDependencies": {
+    `+biomeDevDependency+`,
+    "@playwright/test": "^1.48.0"
+  },
+  `+packageManagerNew+`
+}
+`, opts.ProjectName)
 }

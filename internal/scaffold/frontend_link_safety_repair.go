@@ -204,7 +204,7 @@ func repairFrontendLinkSafety(root string, opts Options) error {
 	for _, lib := range []string{
 		filepath.Join(root, "apps", "admin", "lib"),
 		filepath.Join(root, "apps", "admin", "src", "lib"),
-		filepath.Join(root, "apps", "web", "admin-panel", "lib"),
+		filepath.Join(webAppRoot(root, opts), "admin-panel", "lib"),
 	} {
 		if err := repairSafeHrefPanel(root, m, lib); err != nil {
 			return err
@@ -215,8 +215,8 @@ func repairFrontendLinkSafety(root string, opts Options) error {
 	for _, path := range []string{
 		filepath.Join(root, "apps", "admin", "components", "auth", "SocialAuthButtons.tsx"),
 		filepath.Join(root, "apps", "admin", "src", "components", "auth", "SocialAuthButtons.tsx"),
-		filepath.Join(root, "apps", "web", "components", "auth", "SocialAuthButtons.tsx"),
-		filepath.Join(root, "apps", "web", "admin-panel", "components", "auth", "SocialAuthButtons.tsx"),
+		filepath.Join(webAppRoot(root, opts), "components", "auth", "SocialAuthButtons.tsx"),
+		filepath.Join(webAppRoot(root, opts), "admin-panel", "components", "auth", "SocialAuthButtons.tsx"),
 	} {
 		if fileExists(path) {
 			if err := repairTextFile(root, m, path, repairSSORedirectSource); err != nil {

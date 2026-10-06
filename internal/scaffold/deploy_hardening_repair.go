@@ -172,7 +172,7 @@ func writeAdminEdgeGuard(root string, opts Options) error {
 	if !opts.ShouldEmbedAdmin() || opts.UseTanStack() {
 		return nil
 	}
-	web := filepath.Join(root, "apps", "web")
+	web := webAppRoot(root, opts)
 	if !fileExists(filepath.Join(web, "package.json")) {
 		return nil
 	}

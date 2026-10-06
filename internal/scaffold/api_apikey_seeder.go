@@ -167,9 +167,19 @@ func writeClientEnv(publishable string) {
 	if publishable == "" {
 		return
 	}
+	// Every frontend this project might have, relative to where the seeder runs.
+	//
+	// In a monorepo that is apps/api, so the web and admin apps are one level up.
+	// In a single project the Go module is the root, so its one frontend is
+	// frontend/ right here. A single project got neither path and so got no
+	// .env.local at all: its frontend fell back to localhost:8080 whatever the
+	// API was actually listening on, and had no publishable key, so every public
+	// endpoint answered INVALID_API_KEY. A directory that is not part of this
+	// project is skipped below, so listing all three is safe in all of them.
 	for _, rel := range []string{
 		filepath.Join("..", "web", ".env.local"),
 		filepath.Join("..", "admin", ".env.local"),
+		filepath.Join("frontend", ".env.local"),
 	} {
 		if _, err := os.Stat(filepath.Dir(rel)); err != nil {
 			continue // that app is not part of this project

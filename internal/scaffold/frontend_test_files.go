@@ -6,7 +6,7 @@ import (
 )
 
 func writeFrontendTestFiles(root string, opts Options) error {
-	webRoot := filepath.Join(root, "apps", "web")
+	webRoot := webAppRoot(root, opts)
 	adminRoot := filepath.Join(root, "apps", "admin")
 
 	files := map[string]string{}

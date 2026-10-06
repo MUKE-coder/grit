@@ -50,7 +50,7 @@ func repairPublicPages(root string, opts Options) error {
 			return err
 		}
 	}
-	web := filepath.Join(root, "apps", "web")
+	web := webAppRoot(root, opts)
 	next := fileExists(filepath.Join(web, "next.config.ts")) || fileExists(filepath.Join(web, "next.config.js")) || fileExists(filepath.Join(web, "next.config.mjs"))
 	if prod := filepath.Join(root, "docker-compose.prod.yml"); next && fileExists(prod) {
 		if err := repairTextFile(root, m, prod, repairComposeWebAPIEnvSource); err != nil {

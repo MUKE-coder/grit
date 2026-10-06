@@ -66,6 +66,70 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.379.0 */}
+            <div className="mb-12" id="v3.379.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.379.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>--single --next builds a Next.js app, instead of ignoring the flag</h3>
+                <p>
+                  Architecture and frontend were one choice rather than two:{' '}
+                  <code>--single</code> always produced the Vite SPA, and <code>--next</code>{' '}
+                  beside it changed nothing. The only trace of the flag was grit.json claiming
+                  &quot;next&quot; next to a vite.config.ts.
+                </p>
+                <p>
+                  It now builds what it says. One folder, the Go module at its root, a Next.js
+                  app in <code>frontend/</code> with the admin panel as a route group at{' '}
+                  <code>/admin</code>, and no Turborepo. There is a pnpm workspace, because the
+                  frontend asks for <code>@repo/shared</code> and something has to resolve it,
+                  but no task runner: two packages do not need a task graph, and Turborepo was
+                  the part of a monorepo that <code>--single</code> exists to avoid.
+                </p>
+                <p>
+                  It runs as two processes. That is forced, not chosen. The Vite single is one
+                  binary because a Vite build is static files the binary can embed; Next.js is
+                  not static here, since the panel alone has four <code>[id]</code> routes and
+                  the web app two more, and <code>output: &quot;export&quot;</code> cannot build
+                  a dynamic segment whose values are rows in a database. So the Go binary serves
+                  the API and the Next server serves the app, which is how every Next app runs.
+                  Plain <code>--single</code> is unchanged: still one file to deploy.
+                </p>
+
+                <h4>grit upgrade had never updated a single project&apos;s API</h4>
+                <p>
+                  Found while testing the above. The upgrade gated every API writer on whether{' '}
+                  <code>apps/api</code> existed, a path neither single has, so an upgrade printed
+                  &quot;Upgrade complete&quot; after rewriting the root config and the Docker
+                  files and nothing else. No API fix had ever reached a single project. The first
+                  upgrade that looked in the right place moved 548 files.
+                </p>
+
+                <h4>And --api was not the Go API alone</h4>
+                <p>
+                  It wrote seven <code>.tsx</code> files into an <code>apps/admin</code> with no
+                  package.json, no tsconfig and no layout: an orphan tree that never compiles,
+                  which reads as a scaffold that stopped halfway. The guard for this already
+                  existed on one writer, with a comment describing the exact failure; the account
+                  writer was added later without it, and every screen added to it since inherited
+                  the gap.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  All five paths on the home page were then built from scratch with the commands
+                  that page prints, a Group and a Contact generated into each: the Go API builds
+                  and vets in all five, the eight Next apps build, and both Expo clients
+                  type-check. The seeder also learned to write an <code>.env.local</code> for a
+                  single project&apos;s frontend, which it had never had, so its app no longer
+                  falls back to port 8080 with no publishable key.
+                </p>
+              </div>
+            </div>
+
             {/* v3.378.3 */}
             <div className="mb-12" id="v3.378.3">
               <div className="flex items-center gap-3 mb-4">

@@ -29,12 +29,15 @@ import (
 // dark-mode tokens, its dependencies, a path alias) are merged into the web app's
 // own copies instead.
 
-// ShouldEmbedAdmin reports whether the admin panel lives inside the web app.
+// ShouldEmbedAdmin reports whether the admin panel lives inside the web app as
+// a Next.js route group.
 //
-// Double only for now. Single is a Vite SPA rather than Next, so it needs its own
-// port of the same idea and will get it separately.
+// A double, whose web app is the only frontend it has. And a single built with
+// --next, which has exactly the same problem and the same answer: one Next app,
+// the panel under /admin inside it. The difference is only where that app sits,
+// which is what webAppRoot answers.
 func (o Options) ShouldEmbedAdmin() bool {
-	return o.Architecture == ArchDouble
+	return o.Architecture == ArchDouble || o.SingleUsesNext()
 }
 
 // adminShellFiles are the standalone app's own scaffolding, which the web app
@@ -56,7 +59,7 @@ var adminShellFiles = map[string]bool{
 func embeddedAdminFileMap(root string, opts Options) map[string]string {
 	source := adminFileMap(root, opts)
 	adminRoot := filepath.Join(root, "apps", "admin")
-	webRoot := filepath.Join(root, "apps", "web")
+	webRoot := webAppRoot(root, opts)
 
 	out := map[string]string{}
 	for path, content := range source {
@@ -169,8 +172,18 @@ var adminRoutePrefixes = []string{
 // project and for every non-admin file.
 func embeddedAdminContent(path, content string) string {
 	slashed := filepath.ToSlash(path)
-	if !strings.Contains(slashed, "/apps/web/admin-panel/") &&
-		!strings.Contains(slashed, "/apps/web/app/admin/") {
+	// Both places a Next.js host app can be: apps/web in a double, frontend/ in
+	// a single built with --next. Keyed on the two segments the host does not
+	// change rather than on the host's own directory, so adding a third layout
+	// does not mean remembering this function: a file under admin-panel/ or
+	// app/admin/ is an admin file wherever the app around it lives.
+	//
+	// Matching only apps/web meant the single's panel kept the standalone app's
+	// "@/components/..." imports, which resolve to the host app's own components
+	// directory. 173 module-not-found errors, every one of them a real file
+	// sitting one directory away behind a different alias.
+	if !strings.Contains(slashed, "/admin-panel/") &&
+		!strings.Contains(slashed, "/app/admin/") {
 		return content
 	}
 	return embedAdminContent(content, adminRoutePrefixes)

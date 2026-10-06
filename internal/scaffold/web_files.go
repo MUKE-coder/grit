@@ -17,7 +17,7 @@ func writeWebFiles(root string, opts Options) error {
 			return fmt.Errorf("writing %s: %w", path, err)
 		}
 	}
-	return writeBrandLogo(filepath.Join(root, "apps", "web", "public"), "grit_logo.png")
+	return writeBrandLogo(filepath.Join(webAppRoot(root, opts), "public"), "grit_logo.png")
 }
 
 // adminHref fills in where the admin panel lives for this architecture.
@@ -36,7 +36,7 @@ func adminHref(content string, opts Options) string {
 // webFileMap is the web app's framework files, by path. Separate from the
 // writer so upgrade can compare a project's files with them before writing.
 func webFileMap(root string, opts Options) map[string]string {
-	webRoot := filepath.Join(root, "apps", "web")
+	webRoot := webAppRoot(root, opts)
 
 	return map[string]string{
 		filepath.Join(webRoot, "package.json"):       webPackageJSON(opts),

@@ -28,7 +28,7 @@ func adminCodeRoot(root string, opts Options) string {
 	case opts.ShouldEmbedAdminInSPA():
 		return filepath.Join(spaHostRoot(root, opts), "src", "admin-panel")
 	case opts.ShouldEmbedAdmin():
-		return filepath.Join(root, "apps", "web", "admin-panel")
+		return filepath.Join(webAppRoot(root, opts), "admin-panel")
 	default:
 		return filepath.Join(root, "apps", "admin")
 	}
@@ -82,7 +82,7 @@ func adminPath(root string, opts Options, parts ...string) string {
 	case opts.ShouldEmbedAdminInSPA():
 		base = filepath.Join(spaHostRoot(root, opts), "src", "admin-panel")
 	case opts.ShouldEmbedAdmin():
-		base = filepath.Join(root, "apps", "web", "admin-panel")
+		base = filepath.Join(webAppRoot(root, opts), "admin-panel")
 	case opts.UseTanStack():
 		base = filepath.Join(base, "src")
 	}
@@ -124,10 +124,10 @@ func adminPageFiles(root string, opts Options, routePath, name, body string) map
 // the URL is /admin/x, and the layout that draws the chrome still wraps it.
 func adminPathNext(root string, opts Options, parts ...string) string {
 	if opts.ShouldEmbedAdmin() && len(parts) > 0 && parts[0] == "app" {
-		return filepath.Join(append([]string{root, "apps", "web", "app", "admin"}, parts[1:]...)...)
+		return filepath.Join(append([]string{webAppRoot(root, opts), "app", "admin"}, parts[1:]...)...)
 	}
 	if opts.ShouldEmbedAdmin() {
-		return filepath.Join(append([]string{root, "apps", "web", "admin-panel"}, parts...)...)
+		return filepath.Join(append([]string{webAppRoot(root, opts), "admin-panel"}, parts...)...)
 	}
 	return filepath.Join(append([]string{root, "apps", "admin"}, parts...)...)
 }
