@@ -12,7 +12,7 @@ export const changelogRollup: RollupWeek[] = [
     label: "October 5 to 11, 2026",
     count: 13,
     entries: [
-      { version: "3.374.0", title: "Production stops serving a SQL console" },
+      { version: "3.374.1", title: "One line, not two" },
       { version: "3.373.0", title: "A list page that says something about itself" },
       { version: "3.372.1", title: "The admin builds again" },
       { version: "3.372.0", title: "Enter many rows at once" },
@@ -692,6 +692,13 @@ export const changelogRollup: RollupWeek[] = [
     count: 1,
     entries: [
       { version: "0.10.0", title: "Features" },
+    ],
+  },
+  {
+    label: "Undated releases",
+    count: 1,
+    entries: [
+      { version: "3.374.0", title: "Withdrawn: it fixed something that was not broken" },
     ],
   },
 ]
