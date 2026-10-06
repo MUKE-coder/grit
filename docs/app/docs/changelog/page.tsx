@@ -66,6 +66,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.375.0 */}
+            <div className="mb-12" id="v3.375.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.375.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>One Operations page, and the other one was empty</h3>
+                <p>
+                  The System Hub listed two pages over the same endpoint.{' '}
+                  <code>/system/performance</code> read the summary the API returns.{' '}
+                  <code>/system/observability</code> declared a different, richer shape, and the
+                  endpoint has never returned it: every figure on it read{' '}
+                  <code>data.overview.p95_ms</code> against a response with no{' '}
+                  <code>overview</code> key, so a page whose subtitle promised &quot;percentile
+                  latency, SLOs, USE grid, top N+1, errors, runtime&quot; rendered four dashes
+                  and three empty panels. The only live thing on it was the scaling readiness
+                  report, which comes from somewhere else.
+                </p>
+                <p>
+                  They are one page now, at <code>/system/performance</code>, called{' '}
+                  <strong>Operations</strong>, built on what the API actually answers with:
+                  four tiles over a live window, latency and throughput charts, the slowest
+                  routes with their percentiles and error rates, Go runtime, database and cache,
+                  N+1 detections, recent errors, and the readiness report folded away at the
+                  bottom. The old URL redirects rather than 404s.
+                </p>
+                <p>
+                  The charts cover this browser session. The summary endpoint answers with the
+                  numbers as they are now and keeps no series, so rather than draw a chart from
+                  one point or add a metrics store to every scaffolded app, the page keeps what
+                  it has seen since you opened it and says so under each chart. Pulse&apos;s own
+                  dashboard keeps the long window, and the header links to it.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Three numbers were wrong on the way here and are worth naming, because each
+                  one looked like a broken app rather than a display bug: a route&apos;s error
+                  rate was multiplied by a hundred twice and read 8571.4%; throughput rounded to
+                  0.0 req/s beside &quot;162 requests seen&quot;, because an admin panel on a
+                  quiet morning runs at a few requests a minute; and a flat series was drawn
+                  along the floor of its box rather than through the middle, which reads as a
+                  drop to nothing instead of something steady. No chart library was added: the
+                  lines are SVG polylines, and recharts stays on the pages with axes and
+                  tooltips.
+                </p>
+              </div>
+            </div>
+
             {/* v3.374.1 */}
             <div className="mb-12" id="v3.374.1">
               <div className="flex items-center gap-3 mb-4">

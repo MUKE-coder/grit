@@ -41,9 +41,9 @@ const FEATURE_TOURS: { icon: any; title: string; body: string; href: string }[] 
   },
   {
     icon: Activity,
-    title: 'In-app Observability dashboard',
-    body: "Pulse summary inside the admin: p95/p99 latency, SLO bars, USE method grid, top N+1 by impact, error feed. Same pattern as Security.",
-    href: '/system/observability',
+    title: 'In-app Operations dashboard',
+    body: "Pulse inside the admin: latency and throughput over the session, the slowest routes with their percentiles, Go runtime, N+1 detections, the error feed and the scaling readiness report.",
+    href: '/system/performance',
   },
 ]
 
@@ -204,7 +204,7 @@ go run .`} />
               <p>
                 Two of the most interesting things to study in this demo are{' '}
                 <Link href="/docs/security">/system/security</Link> and{' '}
-                <Link href="/docs/testing">/system/observability</Link> — the same pattern
+                <Link href="/docs/testing">/system/performance</Link> — the same pattern
                 every Grit project gets when scaffolded. They use a small
                 <code> SecObsBridge</code> that logs in to the locally-mounted Sentinel /
                 Pulse APIs over loopback, caches the JWT, and proxies the dashboard
