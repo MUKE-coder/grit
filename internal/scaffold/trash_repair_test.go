@@ -114,3 +114,44 @@ func TestTrashRepairLeavesAnUnfamiliarFileAlone(t *testing.T) {
 		t.Error("it edited nothing and said nothing, so the page will 404 with no explanation")
 	}
 }
+
+// The scaffold template and the upgrade repair deliver the same routes.
+//
+// They are two delivery lists, and v3.378.0 shipped with the closed-account
+// routes in the repair alone: a brand-new project got the page and the three
+// handlers behind it, and a 404 when it asked for them. An upgraded project
+// worked, which is the wrong way round for a bug to hide.
+func TestNewProjectAndUpgradeDeliverTheSameTrashRoutes(t *testing.T) {
+	template := apiRoutesGo()
+	upgraded, _, warnings := repairTrashRoutesSource(routesBeforeTrash)
+	if len(warnings) > 0 {
+		t.Fatalf("warnings: %v", warnings)
+	}
+
+	for _, route := range []string{
+		`staff.GET("/admin/trash"`,
+		`staff.GET("/admin/trash/:table"`,
+		`staff.POST("/admin/trash/:table/:id/restore"`,
+		`staff.DELETE("/admin/trash/:table/:id"`,
+		`staff.DELETE("/admin/trash/:table"`,
+		`staff.GET("/admin/deleted-accounts"`,
+		`staff.POST("/admin/deleted-accounts/:id/restore"`,
+		`staff.DELETE("/admin/deleted-accounts/:id"`,
+	} {
+		if !strings.Contains(template, route) {
+			t.Errorf("a new project has no %s, so the page it ships with returns 404", route)
+		}
+		if !strings.Contains(upgraded, route) {
+			t.Errorf("an upgraded project has no %s", route)
+		}
+	}
+
+	// And the handler the closed-account routes call has to exist in the
+	// handler the project is given, or it does not compile.
+	user := apiUserHandlerGo()
+	for _, method := range []string{"DeletedAccounts", "RestoreAccount", "PurgeAccount"} {
+		if !strings.Contains(user, "func (h *UserHandler) "+method+"(") {
+			t.Errorf("the routes call userHandler.%s, which the handler does not define", method)
+		}
+	}
+}

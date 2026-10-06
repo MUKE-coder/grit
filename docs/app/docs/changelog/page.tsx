@@ -66,6 +66,34 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.378.1 */}
+            <div className="mb-12" id="v3.378.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.378.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Deleted accounts worked on an upgraded project and 404d on a new one</h3>
+                <p>
+                  Which is the wrong way round for a bug to hide. A new project got the page, the
+                  sidebar entry, the System hub card and the three handlers behind them, and no
+                  routes pointing at any of it, because the routes had been written into the
+                  upgrade repair and not into the template a new project is built from. The bin
+                  was in both and was fine.
+                </p>
+                <p>
+                  Found by scaffolding a project with the released binary and grepping its{' '}
+                  <code>routes.go</code> for what the page calls, which is the check that should
+                  have run before the tag rather than after it. The template now carries both
+                  blocks, and a test asserts the two delivery paths hand over the same eight
+                  routes, failing with the name of each one that only one of them has.
+                </p>
+              </div>
+            </div>
+
             {/* v3.378.0 */}
             <div className="mb-12" id="v3.378.0">
               <div className="flex items-center gap-3 mb-4">

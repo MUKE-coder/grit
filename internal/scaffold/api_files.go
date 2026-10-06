@@ -7920,6 +7920,13 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		staff.POST("/admin/trash/:table/:id/restore", middleware.RequireRole("ADMIN"), trashHandler.Restore)
 		staff.DELETE("/admin/trash/:table/:id", middleware.RequireRole("ADMIN"), trashHandler.Purge)
 		staff.DELETE("/admin/trash/:table", middleware.RequireRole("ADMIN"), trashHandler.Empty)
+
+		// Closed accounts, which are a soft delete the bin cannot show: users
+		// are deliberately not in the sync registry it reads, because a row
+		// carrying its own role is not something a generic restore should write.
+		staff.GET("/admin/deleted-accounts", middleware.RequireRole("ADMIN"), userHandler.DeletedAccounts)
+		staff.POST("/admin/deleted-accounts/:id/restore", middleware.RequireRole("ADMIN"), userHandler.RestoreAccount)
+		staff.DELETE("/admin/deleted-accounts/:id", middleware.RequireRole("ADMIN"), userHandler.PurgeAccount)
 		staff.GET("/admin/webhooks", middleware.RequireRole("ADMIN", "perm:system.view"), webhookHandler.List)
 		staff.GET("/admin/flags", middleware.RequireRole("ADMIN", "perm:system.view"), featureFlagHandler.List)
 		staff.GET("/admin/flags/:id/exposures", middleware.RequireRole("ADMIN", "perm:system.view"), featureFlagHandler.Exposures)
