@@ -229,3 +229,31 @@ func TestAccountIsOnTheSystemHub(t *testing.T) {
 		t.Error("the account page is not in the sidebar")
 	}
 }
+
+// The links into the account page land on the card they name.
+//
+// /system/account is a redirect to /account, and router.replace("/account")
+// dropped the fragment: the dashboard's "Set it up" nudge, which points at the
+// two-factor card, landed at the top of a long page instead. The page was right
+// and the link was right, and the journey between them was broken, which is the
+// kind of fault that only a click finds.
+func TestAccountLinksLandOnTheCardTheyName(t *testing.T) {
+	redirect := adminSystemAccountRedirect()
+	if !strings.Contains(redirect, `router.replace("/account" + window.location.hash)`) {
+		t.Error("the /system/account redirect drops the fragment, so every deep link into the page lands at the top of it")
+	}
+
+	// And nothing in the app should be taking that bounce in the first place.
+	for name, source := range map[string]string{
+		"the dashboard's two-factor nudge": adminDashboardNudgesTSX(),
+		"the account menu":                 adminUserMenuComponent(),
+		"the old security page":            adminSecurityPageTSX(),
+	} {
+		if strings.Contains(source, "/system/account#") {
+			t.Errorf("%s still points at the old path: it works, through a redirect, which is a round trip for a link that could name the page directly", name)
+		}
+		if !strings.Contains(source, "/account#security") {
+			t.Errorf("%s no longer links to the security section at all", name)
+		}
+	}
+}

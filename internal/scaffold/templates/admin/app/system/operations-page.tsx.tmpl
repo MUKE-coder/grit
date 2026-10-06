@@ -725,13 +725,22 @@ function Empty({ children }: { children: React.ReactNode }) {
 
 /** A polyline for values, scaled to the box. A flat line sits in the middle. */
 function points(values: number[], width: number, height: number, ceiling?: number): string {
-  const top = ceiling ?? Math.max(...values);
-  const bottom = Math.min(...values);
+  if (values.length === 0) return "";
+  // One reading is a flat line across the box, not a dot at the origin.
+  //
+  // The x coordinate divides by values.length - 1, which is zero on the first
+  // poll of a fresh server: 0/0 is NaN, and the browser rejects the whole
+  // polyline with "Expected number, NaN,96.0" in the console. The y axis
+  // already had this guard for a span of zero; the x axis needed the same one,
+  // and nothing showed it until a chart was looked at with one point in it.
+  const series = values.length === 1 ? [values[0], values[0]] : values;
+  const top = ceiling ?? Math.max(...series);
+  const bottom = Math.min(...series);
   const span = top - bottom;
   const pad = 4;
-  return values
+  return series
     .map((v, i) => {
-      const x = (i / (values.length - 1)) * width;
+      const x = (i / (series.length - 1)) * width;
       // A series that has not moved draws across the middle. Dividing by a
       // span of zero put it on the floor of the box, which reads as "this
       // dropped to nothing" rather than "this is steady".

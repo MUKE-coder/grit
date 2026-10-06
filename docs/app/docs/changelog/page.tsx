@@ -66,6 +66,43 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.378.3 */}
+            <div className="mb-12" id="v3.378.3">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.378.3
+                </span>
+                <span className="text-sm text-muted-foreground">October 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Two things that only a click finds</h3>
+                <p>
+                  The Operations charts drew nothing on a server that had been polled
+                  once. They are hand-drawn SVG, and the x coordinate divides by the number of
+                  readings minus one, which is zero at the first sample: <code>0/0</code> is{' '}
+                  <code>NaN</code>, so the browser rejected the whole polyline and left an empty
+                  panel with an error in a console nobody has open. The y axis had been guarded
+                  against a span of zero since the page shipped. The x axis had not. One reading
+                  now draws a flat line across the box, which is what one reading means.
+                </p>
+                <p>
+                  And the dashboard&apos;s &quot;Set it up&quot; nudge, which points at the
+                  two-factor card, landed at the top of a long page instead. The old{' '}
+                  <code>/system/account</code> path redirects to <code>/account</code>, and the
+                  redirect dropped the <code>#security</code> fragment. It carries it now, and
+                  the three links inside the app name the new path directly rather than taking
+                  the round trip.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Both were found by opening the pages in a browser on a freshly generated
+                  project, which is the only thing that would have. A build type-checks the
+                  chart and says nothing about its arithmetic, and no test anywhere follows a
+                  link to see where it lands. There are tests for both now.
+                </p>
+              </div>
+            </div>
+
             {/* v3.378.2 */}
             <div className="mb-12" id="v3.378.2">
               <div className="flex items-center gap-3 mb-4">

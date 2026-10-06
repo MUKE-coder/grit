@@ -77,7 +77,10 @@ import { useRouter } from "next/navigation";
 export default function SystemAccountRedirect() {
 	const router = useRouter();
 	useEffect(() => {
-		router.replace("/account");
+		// With the fragment, or the dashboard's "Set it up" lands at the top of a
+		// long page instead of the two-factor card it was pointing at. A redirect
+		// that drops the anchor is a redirect that half worked.
+		router.replace("/account" + window.location.hash);
 	}, [router]);
 
 	return (
