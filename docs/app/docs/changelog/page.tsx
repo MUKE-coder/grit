@@ -66,6 +66,66 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.377.0 */}
+            <div className="mb-12" id="v3.377.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.377.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A full-stack app in under two minutes, on the page where people arrive</h3>
+                <p>
+                  <strong>Start here</strong> opened with prerequisites, a grid of primers and an
+                  architecture decision. All useful, none of it what somebody wants in their
+                  first thirty seconds. It now opens with the app itself: a contacts book,
+                  contacts in groups with a photo each, built by one block of commands. The
+                  seven-step path is still there, underneath, where it reads as the next thing
+                  rather than the first thing.
+                </p>
+                <p>
+                  Two paths, because the honest answer to &quot;what do I need installed&quot;
+                  has two branches. With Docker is the default. Without it is one flag,{' '}
+                  <code>--db sqlite</code>, and nothing to install at all.
+                </p>
+                <p>
+                  The photo is the point of the second path. There is no MinIO to write to, so
+                  the API notices and keeps the file on local disk: the original, a converted
+                  JPEG and a thumbnail under <code>storage/app</code>, served back and shown in
+                  the admin table. Verified by running exactly the commands on the page, in a
+                  project with no containers anywhere near it.
+                </p>
+
+                <h4>And the hero shows the commands, not a code sample</h4>
+                <p>
+                  The home page led with a generated handler, which answers &quot;what does the
+                  output look like&quot; for somebody already persuaded. The question a first
+                  visitor has is what to type. Five tabs answer it, for{' '}
+                  <strong>web, desktop, mobile, API and everything</strong>, each building the
+                  same contacts app in five steps, each step saying what it gave you.
+                </p>
+
+                <h4>--db sqlite now means no servers at all</h4>
+                <p>
+                  The flag&apos;s own help says sqlite and memory need no database server, and
+                  somebody taking one is not about to start a Redis for the cache. Redis pointed
+                  at localhost regardless, so the first boot dialled five times and logged a
+                  driver error before explaining itself. Those two choices now write{' '}
+                  <code>REDIS_URL=</code>, which the app already reads as &quot;run without
+                  Redis&quot;, so the first thing you see is one deliberate line rather than a
+                  connection failure.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Both pages were written from commands that were run first, in this order, on a
+                  fresh project: new, generate, migrate, seed, start. <code>grit seed</code> is
+                  in that list because without it the admin user the page tells you to sign in
+                  as does not exist, which the first draft got wrong and testing caught.
+                </p>
+              </div>
+            </div>
+
             {/* v3.376.0 */}
             <div className="mb-12" id="v3.376.0">
               <div className="flex items-center gap-3 mb-4">

@@ -4,6 +4,7 @@ import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CopyPromptButton } from '@/components/copy-prompt-button'
 import { CodeBlock } from '@/components/code-block'
+import { QuickStart } from '@/components/quick-start'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/start')
@@ -141,11 +142,24 @@ export default function StartPage() {
       <main className="lg:pl-64">
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
-            <div className="mb-10">
+            <div className="mb-8">
               <span className="tag-mono text-primary/80 mb-3 block">Start here</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
-                The path from nothing to deployed
+                Let&apos;s build a full-stack app in under two minutes
               </h1>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                One block of commands, and you have a Go API, a web app and an admin panel
+                running a contacts book: contacts in groups, each with a photo. Pick whether
+                you want Docker or not, paste, and read the rest of this page afterwards.
+              </p>
+            </div>
+
+            <QuickStart />
+
+            <div className="mb-10 mt-16 border-t border-border pt-10">
+              <h2 className="text-3xl font-bold tracking-tight mb-4">
+                The path from nothing to deployed
+              </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Seven steps, about ninety minutes end to end. Everything else in these docs is
                 reference you can reach for later — this is the part to read in order.

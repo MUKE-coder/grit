@@ -481,6 +481,22 @@ SOCIAL_AUTH_ENABLED=false
 	out = strings.Replace(out, "{{MINIO_BIND_ADDRESS}}", minioBindEnv(opts), 1)
 	out = strings.Replace(out, "{{TRUSTED_PROXIES}}", envTrustedProxies, 1)
 
+	// A project scaffolded to need no servers should not open by failing to
+	// reach one.
+	//
+	// --db sqlite and --db memory are the "nothing installed" choices: the
+	// flag's own help says they need no database server at all, and somebody
+	// taking one is not about to start a Redis for the cache. Redis pointed at
+	// localhost regardless, so the first boot dialled five times and logged a
+	// driver error before explaining itself, which is a poor first thing to
+	// see. The app already reads an empty REDIS_URL as "run without Redis".
+	if provider == "sqlite" || provider == "memory" {
+		out = strings.Replace(out, "# REDIS_URL=redis://localhost:6380",
+			"# No Redis, because --db "+provider+" scaffolds a project that needs no servers.\n"+
+				"# Delete this line and start one for caching, background jobs and cron.\n"+
+				"REDIS_URL=", 1)
+	}
+
 	// The admin panel's URL is not a URL in every shape: see adminURLEnv.
 	return strings.Replace(out, "{{ADMIN_URL_ENV}}", adminURLEnv(opts), 1)
 }

@@ -4,7 +4,8 @@ import { Activity, ArrowRight, Bot, Building2, Check, ChevronDown, Database, Eye
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { CodeBlock } from '@/components/code-block'
-import { HeroCodeTabs, InstallTabs } from '@/components/hero-code-tabs'
+import { InstallTabs } from '@/components/hero-code-tabs'
+import { HeroStepsTabs } from '@/components/hero-steps-tabs'
 import { GritInAction } from '@/components/grit-in-action'
 import { CopyPromptButton } from '@/components/copy-prompt-button'
 import { HomepageBenchmarks } from '@/components/homepage-benchmarks'
@@ -253,7 +254,7 @@ export default function HomePage() {
             {/* ── Right: four tabs, because "batteries included" is a claim
                    until someone sees the batteries ──────────────────── */}
             <FadeIn delay={0.34}>
-              <HeroCodeTabs />
+              <HeroStepsTabs />
             </FadeIn>
 
           </div>
