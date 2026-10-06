@@ -50,7 +50,14 @@ func (o Options) ShouldEmbedAdminInSPA() bool {
 // admin with no security screen.
 func webAppRoot(root string, opts Options) string {
 	if opts.Architecture == ArchSingle {
-		return filepath.Join(root, "frontend")
+		// The root. A single project is a web app with a Go API in api/, so its
+		// package.json, next.config.ts and app/ sit where anyone opening the
+		// repository expects to find them. A project from before that layout keeps
+		// its frontend where it was put.
+		if opts.LegacySingleFlat {
+			return filepath.Join(root, "frontend")
+		}
+		return root
 	}
 	return filepath.Join(root, "apps", "web")
 }
@@ -284,8 +291,18 @@ func ensureSPAAdminWiring(feRoot string, opts Options) ([]string, error) {
 	// so both files need telling, and the subpath entries go in ahead of the
 	// directory ones or the prefix match swallows them.
 	vite := filepath.Join(feRoot, "vite.config.ts")
-	// A single project sits one level above packages/; a monorepo web app two.
-	up := "../packages/upload/src"
+	// How far packages/ is from the file holding the alias.
+	//
+	// A single project's frontend is the project root, so packages/ is a child.
+	// A monorepo web app is two levels below it. And a single scaffolded before
+	// that layout keeps its frontend in frontend/, one level down, which is the
+	// case that only bites a project missing the alias entirely: the insert below
+	// skips one that is already there, so an upgraded project survived this by
+	// luck rather than by being right.
+	up := "./packages/upload/src"
+	if opts.LegacySingleFlat {
+		up = "../packages/upload/src"
+	}
 	aliases := []string{
 		`      '@admin': path.resolve(__dirname, './src/admin-panel'),`,
 		`      '@repo/shared/brand': path.resolve(__dirname, './src/shared/brand.config.ts'),`,

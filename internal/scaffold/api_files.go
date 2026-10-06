@@ -949,8 +949,18 @@ type Config struct {
 // Load reads configuration from environment variables.
 func Load() (*Config, error) {
 	// Load .env file (ignore error if not found — production uses real env vars)
+	// The project root holds one .env, and the binary runs from wherever its
+	// module is: the root itself, api/ one level down, or apps/api two. Each
+	// candidate is tried and the first that exists wins, because godotenv does
+	// not overwrite a variable that is already set.
+	//
+	// Without the one-level case, a single project's migrate and seed ran from
+	// api/, found no .env at all, and fell back to the built-in defaults: the
+	// first thing anybody saw was a refusal to start under APP_ENV=production,
+	// naming five secrets that were sitting in a file one directory up.
 	_ = godotenv.Load()
-	_ = godotenv.Load("../../.env") // Load from project root when running from apps/api
+	_ = godotenv.Load("../.env")
+	_ = godotenv.Load("../../.env")
 
 ` + configStorageDriverNew + `
 	cfg := &Config{

@@ -103,8 +103,37 @@ const authShellCommon = `  const { theme, mode, title, subtitle, children, error
 // authShell assembles one shell file: the shared preamble, the destructuring
 // every body starts with, then the layout's own JSX.
 func authShell(component, body string) string {
-	return authShellPreamble(component) + "\n" + authShellCommon + body
+	shell := authShellPreamble(component) + "\n" + authShellCommon + body
+
+	// BrandMark is in the preamble every shell shares, and the Mono layout does
+	// not render it: a function declared and never called. Nothing complains on
+	// the Next.js admin, whose build does not check unused locals, and the Vite
+	// admin's tsconfig does, so `pnpm build` on a single project failed on TS6133
+	// in a file nobody had touched.
+	if !strings.Contains(body, "BrandMark") {
+		shell = strings.Replace(shell, brandMarkComponent, "", 1)
+	}
+	return shell
 }
+
+// brandMarkComponent is the declaration authShell drops for a layout that never
+// renders it. One constant, so the preamble and this removal cannot drift: a
+// mismatch leaves the function in and the error with it.
+const brandMarkComponent = `function BrandMark({ color, fg, size = 40 }: { color: string; fg: string; size?: number }) {
+  if (brand.logo.image) {
+    return <img src={brand.logo.image} alt={brand.name} style={{ height: size, width: size }} />;
+  }
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded-xl font-bold"
+      style={{ background: color, color: fg, height: size, width: size, fontSize: size * 0.45 }}
+    >
+      {brand.logo.text}
+    </span>
+  );
+}
+
+`
 
 // adminCoralAuthShell: the modal layout.
 //

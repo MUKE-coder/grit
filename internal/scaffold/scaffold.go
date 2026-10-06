@@ -39,8 +39,12 @@ type Options struct {
 	ProjectName  string
 	Architecture Architecture
 	Frontend     Frontend
-	Style        string
-	Theme        string // Full theme: atlas (default), aurora, pulse — controls auth pages, dashboard tokens, fonts, brand colors
+	// LegacySingleFlat marks a single project whose Go code is at the root
+	// rather than in api/, which is every single project scaffolded before
+	// v3.380.0. Set by the upgrade from what is on disk, never by `grit new`.
+	LegacySingleFlat bool
+	Style            string
+	Theme            string // Full theme: atlas (default), aurora, pulse — controls auth pages, dashboard tokens, fonts, brand colors
 	// DBProvider is the database engine written into .env as DB_PROVIDER:
 	// postgres (the default), mysql, sqlite or memory. Connect has understood all
 	// of them for a long time; until v3.234.0 the only way to pick one was the
@@ -68,7 +72,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.379.0"
+const DefaultVersion = "3.380.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -288,10 +292,25 @@ func (o Options) AdminIsTanStack() bool {
 }
 
 // APIRoot returns the base directory for Go API files.
-// Single app: project root. Monorepo: apps/api/.
+//
+// A single project looks like the frontend it is: the app at the root, the way
+// a Next.js or Vite project is laid out everywhere else, and the Go API in
+// api/. Before this the Go module owned the root and the frontend was pushed
+// into frontend/, which reads as a Go repository that happens to contain a web
+// app. It is the other way round for the people who use it: they open the
+// project to work on a page, and the API is the part they reach for less often.
+//
+// Monorepo: apps/api, unchanged.
+//
+// LegacySingleFlat keeps an existing project working. A project scaffolded
+// before this has its Go code at the root, and an upgrade that started writing
+// into api/ would leave it with two halves of an API and compile neither.
 func (o Options) APIRoot(root string) string {
 	if o.Architecture == ArchSingle {
-		return root
+		if o.LegacySingleFlat {
+			return root
+		}
+		return filepath.Join(root, "api")
 	}
 	return filepath.Join(root, "apps", "api")
 }
@@ -696,7 +715,7 @@ func RunSingle(opts Options) error {
 
 	// Create directory structure
 	spinner.Printf("  → Creating directory structure...\n")
-	if err := createSingleDirectories(root); err != nil {
+	if err := createSingleDirectories(root, opts); err != nil {
 		return fmt.Errorf("creating directories: %w", err)
 	}
 
@@ -828,7 +847,7 @@ func RunSingle(opts Options) error {
 	// Run go mod tidy at project root
 	spinner.Printf("  → Resolving Go dependencies...\n")
 	tidyCmd := exec.Command("go", "mod", "tidy")
-	tidyCmd.Dir = root
+	tidyCmd.Dir = opts.APIRoot(root)
 	if out, err := tidyCmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("running go mod tidy: %w\n%s", err, string(out))
 	}
@@ -895,31 +914,41 @@ func RunSingle(opts Options) error {
 // Note: no cmd/server/ — the single-app main.go lives at the project root so
 // the //go:embed all:frontend/dist directive resolves correctly. cmd/migrate
 // and cmd/seed remain as separate binaries.
-func createSingleDirectories(root string) error {
+func createSingleDirectories(root string, opts Options) error {
+	api := opts.APIRoot(root)
+	web := webAppRoot(root, opts)
 	dirs := []string{
-		filepath.Join(root, "cmd", "migrate"),
-		filepath.Join(root, "cmd", "seed"),
-		filepath.Join(root, "internal", "config"),
-		filepath.Join(root, "internal", "database"),
-		filepath.Join(root, "internal", "models"),
-		filepath.Join(root, "internal", "handlers"),
-		filepath.Join(root, "internal", "middleware"),
-		filepath.Join(root, "internal", "services"),
-		filepath.Join(root, "internal", "routes"),
-		filepath.Join(root, "internal", "mail", "templates"),
-		filepath.Join(root, "internal", "storage"),
-		filepath.Join(root, "internal", "jobs"),
-		filepath.Join(root, "internal", "cron"),
-		filepath.Join(root, "internal", "cache"),
-		filepath.Join(root, "internal", "ai"),
-		filepath.Join(root, "internal", "totp"),
-		filepath.Join(root, "internal", "safefetch"),
-		filepath.Join(root, "internal", "authz"),
-		filepath.Join(root, "frontend", "src", "routes"),
-		filepath.Join(root, "frontend", "src", "components"),
-		filepath.Join(root, "frontend", "src", "hooks"),
-		filepath.Join(root, "frontend", "src", "lib"),
-		filepath.Join(root, "frontend", "public"),
+		filepath.Join(api, "cmd", "migrate"),
+		filepath.Join(api, "cmd", "seed"),
+		filepath.Join(api, "internal", "config"),
+		filepath.Join(api, "internal", "database"),
+		filepath.Join(api, "internal", "models"),
+		filepath.Join(api, "internal", "handlers"),
+		filepath.Join(api, "internal", "middleware"),
+		filepath.Join(api, "internal", "services"),
+		filepath.Join(api, "internal", "routes"),
+		filepath.Join(api, "internal", "mail", "templates"),
+		filepath.Join(api, "internal", "storage"),
+		filepath.Join(api, "internal", "jobs"),
+		filepath.Join(api, "internal", "cron"),
+		filepath.Join(api, "internal", "cache"),
+		filepath.Join(api, "internal", "ai"),
+		filepath.Join(api, "internal", "totp"),
+		filepath.Join(api, "internal", "safefetch"),
+		filepath.Join(api, "internal", "authz"),
+		filepath.Join(web, "public"),
+	}
+
+	// src/ is the Vite app's tree. A Next single keeps app/, components/, hooks/
+	// and lib/ at the top instead, and creating src/ for it leaves four empty
+	// directories that suggest a layout the project does not use.
+	if !opts.SingleUsesNext() {
+		dirs = append(dirs,
+			filepath.Join(web, "src", "routes"),
+			filepath.Join(web, "src", "components"),
+			filepath.Join(web, "src", "hooks"),
+			filepath.Join(web, "src", "lib"),
+		)
 	}
 
 	for _, dir := range dirs {

@@ -66,6 +66,77 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.380.0 */}
+            <div className="mb-12" id="v3.380.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.380.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A single project looks like the web app it is, with Go in api/</h3>
+                <p>
+                  It used to be the other way round. The Go module owned the project root and the
+                  frontend was pushed into <code>frontend/</code>, which reads as a Go repository
+                  that happens to contain a web app. It is not how the people using it see it:
+                  they open the project to work on a page.
+                </p>
+                <p>
+                  So the app is the project now. <code>app/</code>,{' '}
+                  <code>components/</code>, <code>lib/</code> and{' '}
+                  <code>next.config.ts</code> at the root for Next;{' '}
+                  <code>src/</code>, <code>index.html</code> and <code>vite.config.ts</code> for
+                  TanStack; the admin panel at <code>/admin</code> in both. The Go API is in{' '}
+                  <code>api/</code>, with its own go.mod, internal/ and cmd/. Open the folder and
+                  it is a Next.js or Vite project with a Go API beside it, which is what it has
+                  always been.
+                </p>
+                <p>
+                  The TanStack single is still one binary. Vite builds into{' '}
+                  <code>api/web</code> and the binary embeds it, which is forced rather than
+                  chosen: <code>//go:embed</code> cannot reach above the directory its source
+                  file is in, so the built app has to land inside the Go tree. Verified by
+                  building one and serving the API, the SPA and the whole admin panel out of a
+                  single executable.
+                </p>
+                <p>
+                  <strong>Existing projects keep the layout they were built with.</strong> The
+                  upgrade reads which shape is on disk and pins every path to it. Moving a
+                  project would have left two halves of an API, and neither would compile.
+                </p>
+
+                <h4>Four things that were quietly broken, found by building it</h4>
+                <p>
+                  <code>pnpm build</code> on a TanStack single had never worked, in the old
+                  layout either: five TypeScript errors, two of them dead code left behind when
+                  the password form moved into its own component. The Next.js admin&apos;s build
+                  does not check for unused locals and the Vite one does, so they were invisible
+                  on one side and fatal on the other.
+                </p>
+                <p>
+                  <code>grit migrate</code> found no <code>.env</code>: the binary runs from{' '}
+                  <code>api/</code> now, and the config tried the working directory and two
+                  levels up but not one. It fell back to the built-in defaults and refused to
+                  start under <code>APP_ENV=production</code>, naming five secrets that were
+                  sitting in a file one directory above it.
+                </p>
+                <p>
+                  The route parser did not know <code>api/</code>, so the access registry was
+                  never written and <code>internal/access</code> failed to compile on an
+                  undefined table. And a generated resource&apos;s types went to a{' '}
+                  <code>packages/shared</code> that a TanStack single does not have, so the
+                  resource&apos;s own page failed on a type the generator had reported writing.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Checked end to end on both frontends: scaffold, generate a resource, build the
+                  Go API, type-check and build the frontend, and for TanStack, build the binary
+                  and sign in to the admin panel it serves.
+                </p>
+              </div>
+            </div>
+
             {/* v3.379.0 */}
             <div className="mb-12" id="v3.379.0">
               <div className="flex items-center gap-3 mb-4">

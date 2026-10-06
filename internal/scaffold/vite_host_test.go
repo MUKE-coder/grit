@@ -37,7 +37,7 @@ func TestViteDoubleHostsThePanelLikeASingle(t *testing.T) {
 	if got := spaHostRoot(root, vite); got != filepath.Join(root, "apps", "web") {
 		t.Errorf("the host is %s", got)
 	}
-	if got := spaHostRoot(root, singleOptions()); got != filepath.Join(root, "frontend") {
+	if got := spaHostRoot(root, singleOptions()); got != webAppRoot(root, singleOptions()) {
 		t.Errorf("a single's host is %s", got)
 	}
 
@@ -188,10 +188,10 @@ func TestRealtimeClientFollowsTheAppLayout(t *testing.T) {
 	if err := writeRealtimeClientFiles(single, singleOptions()); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Join(single, "frontend", "src", "admin-panel", "hooks", "use-realtime.ts")); err != nil {
+	if _, err := os.Stat(filepath.Join(single, "src", "admin-panel", "hooks", "use-realtime.ts")); err != nil {
 		t.Errorf("the panel's copy is missing: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(single, "frontend", "src", "admin-panel", "src")); err == nil {
+	if _, err := os.Stat(filepath.Join(single, "src", "admin-panel", "src")); err == nil {
 		t.Error("the panel grew a second src/ directory")
 	}
 }

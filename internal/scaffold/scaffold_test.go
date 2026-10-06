@@ -393,24 +393,26 @@ func TestCreateDirectories_TanStackWeb(t *testing.T) {
 
 func TestCreateSingleDirectories(t *testing.T) {
 	root := t.TempDir()
+	opts := Options{ProjectName: "app", Architecture: ArchSingle}
 
-	if err := createSingleDirectories(root); err != nil {
+	if err := createSingleDirectories(root, opts); err != nil {
 		t.Fatalf("createSingleDirectories error: %v", err)
 	}
 
-	// Go internal dirs at root level (no apps/api/).
-	// Note: no cmd/server/ — main.go lives at the project root so the
-	// //go:embed all:frontend/dist directive resolves to <root>/frontend/dist.
+	// The Go module in api/ and the frontend at the project root: a single
+	// project looks like the web app it is, with its API beside it. No
+	// cmd/server/, because main.go sits at the top of api/ so //go:embed
+	// resolves to api/web, the directory Vite is told to build into.
 	for _, dir := range []string{
-		filepath.Join(root, "cmd", "migrate"),
-		filepath.Join(root, "cmd", "seed"),
-		filepath.Join(root, "internal", "config"),
-		filepath.Join(root, "internal", "models"),
-		filepath.Join(root, "internal", "handlers"),
-		filepath.Join(root, "internal", "routes"),
-		filepath.Join(root, "internal", "cache"),
-		filepath.Join(root, "frontend", "src", "routes"),
-		filepath.Join(root, "frontend", "src", "components"),
+		filepath.Join(root, "api", "cmd", "migrate"),
+		filepath.Join(root, "api", "cmd", "seed"),
+		filepath.Join(root, "api", "internal", "config"),
+		filepath.Join(root, "api", "internal", "models"),
+		filepath.Join(root, "api", "internal", "handlers"),
+		filepath.Join(root, "api", "internal", "routes"),
+		filepath.Join(root, "api", "internal", "cache"),
+		filepath.Join(root, "src", "routes"),
+		filepath.Join(root, "src", "components"),
 	} {
 		if _, err := os.Stat(dir); err != nil {
 			t.Errorf("expected directory %s was not created: %v", dir, err)
@@ -427,20 +429,21 @@ func TestSingleAppAPIFiles(t *testing.T) {
 	root := t.TempDir()
 	opts := Options{ProjectName: "my-single-app", Architecture: ArchSingle, Frontend: FrontendTanStack}
 
-	if err := createSingleDirectories(root); err != nil {
+	if err := createSingleDirectories(root, opts); err != nil {
 		t.Fatalf("createSingleDirectories: %v", err)
 	}
 	if err := writeAPIFiles(root, opts); err != nil {
 		t.Fatalf("writeAPIFiles: %v", err)
 	}
 
-	// Go files should be at root/internal/, not root/apps/api/internal/
+	// Go files in api/, not apps/api/ and not at the project root, which the
+	// frontend owns.
 	for _, f := range []string{
-		filepath.Join(root, "go.mod"),
-		filepath.Join(root, "internal", "config", "config.go"),
-		filepath.Join(root, "internal", "models", "user.go"),
-		filepath.Join(root, "internal", "handlers", "auth.go"),
-		filepath.Join(root, "internal", "routes", "routes.go"),
+		filepath.Join(root, "api", "go.mod"),
+		filepath.Join(root, "api", "internal", "config", "config.go"),
+		filepath.Join(root, "api", "internal", "models", "user.go"),
+		filepath.Join(root, "api", "internal", "handlers", "auth.go"),
+		filepath.Join(root, "api", "internal", "routes", "routes.go"),
 	} {
 		if _, err := os.Stat(f); err != nil {
 			t.Errorf("expected file %s was not created: %v", f, err)
@@ -453,7 +456,7 @@ func TestSingleAppAPIFiles(t *testing.T) {
 	}
 
 	// go.mod should use root module path (not project-name/apps/api)
-	data, _ := os.ReadFile(filepath.Join(root, "go.mod"))
+	data, _ := os.ReadFile(filepath.Join(root, "api", "go.mod"))
 	content := string(data)
 	if !strings.Contains(content, "module my-single-app") {
 		t.Error("go.mod should contain 'module my-single-app', not 'module my-single-app/apps/api'")
@@ -467,7 +470,7 @@ func TestSingleAppFrontendFiles(t *testing.T) {
 	root := t.TempDir()
 	opts := Options{ProjectName: "my-single-app", Architecture: ArchSingle, Frontend: FrontendTanStack}
 
-	if err := createSingleDirectories(root); err != nil {
+	if err := createSingleDirectories(root, opts); err != nil {
 		t.Fatalf("createSingleDirectories: %v", err)
 	}
 	if err := writeSingleFrontendFiles(root, opts); err != nil {
@@ -475,16 +478,16 @@ func TestSingleAppFrontendFiles(t *testing.T) {
 	}
 
 	for _, f := range []string{
-		filepath.Join(root, "frontend", "package.json"),
-		filepath.Join(root, "frontend", "vite.config.ts"),
-		filepath.Join(root, "frontend", "index.html"),
-		filepath.Join(root, "frontend", "src", "main.tsx"),
-		filepath.Join(root, "frontend", "src", "routes", "__root.tsx"),
+		filepath.Join(root, "package.json"),
+		filepath.Join(root, "vite.config.ts"),
+		filepath.Join(root, "index.html"),
+		filepath.Join(root, "src", "main.tsx"),
+		filepath.Join(root, "src", "routes", "__root.tsx"),
 		// The landing page lives in the public section now: routes/_site wraps it
 		// in the navbar and footer, so the panel and the customer area can have
 		// layouts of their own.
-		filepath.Join(root, "frontend", "src", "routes", "_site.tsx"),
-		filepath.Join(root, "frontend", "src", "routes", "_site", "index.tsx"),
+		filepath.Join(root, "src", "routes", "_site.tsx"),
+		filepath.Join(root, "src", "routes", "_site", "index.tsx"),
 	} {
 		if _, err := os.Stat(f); err != nil {
 			t.Errorf("expected file %s was not created: %v", f, err)
@@ -496,22 +499,24 @@ func TestSingleMainGoEmbed(t *testing.T) {
 	root := t.TempDir()
 	opts := Options{ProjectName: "my-single-app", Architecture: ArchSingle, Frontend: FrontendTanStack}
 
-	if err := createSingleDirectories(root); err != nil {
+	if err := createSingleDirectories(root, opts); err != nil {
 		t.Fatalf("createSingleDirectories: %v", err)
 	}
 	if err := writeSingleMainGo(root, opts); err != nil {
 		t.Fatalf("writeSingleMainGo: %v", err)
 	}
 
-	mainPath := filepath.Join(root, "main.go")
+	mainPath := filepath.Join(root, "api", "main.go")
 	data, err := os.ReadFile(mainPath)
 	if err != nil {
 		t.Fatalf("reading main.go: %v", err)
 	}
 
 	content := string(data)
-	if !strings.Contains(content, "go:embed all:frontend/dist") {
-		t.Error("single app main.go should contain //go:embed all:frontend/dist directive")
+	// api/web, not ../dist: //go:embed cannot reach above its own directory, so
+	// Vite is pointed into the Go tree and the one binary still carries the app.
+	if !strings.Contains(content, "go:embed all:web") {
+		t.Error("single app main.go should embed api/web")
 	}
 	if !strings.Contains(content, "my-single-app/internal") {
 		t.Error("single app main.go should use root module path imports")
@@ -522,15 +527,23 @@ func TestSingleMainGoEmbed(t *testing.T) {
 
 	// The placeholder dist/index.html should exist so `go build` works on
 	// a fresh clone before `pnpm build` has run.
-	if _, err := os.Stat(filepath.Join(root, "frontend", "dist", "index.html")); err != nil {
-		t.Errorf("expected placeholder frontend/dist/index.html: %v", err)
+	if _, err := os.Stat(filepath.Join(root, "api", "web", "index.html")); err != nil {
+		t.Errorf("expected placeholder api/web/index.html: %v", err)
 	}
 }
 
 func TestOptions_APIRoot(t *testing.T) {
 	single := Options{ProjectName: "app", Architecture: ArchSingle}
-	if got := single.APIRoot("/tmp/app"); got != "/tmp/app" {
-		t.Errorf("Single APIRoot = %s, want /tmp/app", got)
+	wantSingle := filepath.Join("/tmp/app", "api")
+	if got := single.APIRoot("/tmp/app"); got != wantSingle {
+		t.Errorf("Single APIRoot = %s, want %s", got, wantSingle)
+	}
+
+	// And a project from before that layout keeps its Go code where it is: an
+	// upgrade that started writing into api/ would leave two halves of an API.
+	legacy := Options{ProjectName: "app", Architecture: ArchSingle, LegacySingleFlat: true}
+	if got := legacy.APIRoot("/tmp/app"); got != "/tmp/app" {
+		t.Errorf("Legacy single APIRoot = %s, want /tmp/app", got)
 	}
 
 	triple := Options{ProjectName: "app", Architecture: ArchTriple}

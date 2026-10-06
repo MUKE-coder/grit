@@ -6,13 +6,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   PersonalInfoSchema,
   ProfessionalInfoSchema,
-  ChangePasswordSchema,
   type PersonalInfoInput as PersonalInfoValues,
   type ProfessionalInfoInput as ProfessionalInfoValues,
-  type ChangePasswordInput as ChangePasswordValues,
 } from "@repo/shared/schemas";
 import { useMe } from "@/hooks/use-auth";
-import { useUpdateProfile, useChangePassword } from "@/hooks/use-profile";
+import { useUpdateProfile } from "@/hooks/use-profile";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { AvatarCropper } from "@/components/account/avatar-cropper";
 import { DeleteAccountDialog } from "@/components/profile/delete-account-dialog";
@@ -24,7 +22,7 @@ import { SignInLinksCard } from "@/components/account/sign-in-links";
 import { uploadFile } from "@/lib/api-client";
 import { buttonClasses } from "@/components/ui/button";
 import {
-  User as UserIcon, Briefcase, Lock, Trash2, Save, Loader2, Upload, ShieldCheck,
+  User as UserIcon, Briefcase, Trash2, Save, Loader2, Upload, ShieldCheck,
 } from "@/lib/icons";
 
 const inputClass =
@@ -56,7 +54,6 @@ const errorInputClass =
 export default function AccountPage() {
   const { data: user } = useMe();
   const updateProfile = useUpdateProfile();
-  const changePassword = useChangePassword();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState("");
@@ -71,10 +68,6 @@ export default function AccountPage() {
   const professionalForm = useForm<ProfessionalInfoValues>({
     resolver: zodResolver(ProfessionalInfoSchema),
     defaultValues: { job_title: "", bio: "" },
-  });
-  const passwordForm = useForm<ChangePasswordValues>({
-    resolver: zodResolver(ChangePasswordSchema),
-    defaultValues: { password: "", confirm_password: "" },
   });
 
   // Whether the email box differs from the address on the account, which is
@@ -132,11 +125,6 @@ export default function AccountPage() {
 
   const onPersonalSubmit = (data: PersonalInfoValues) => updateProfile.mutate(data);
   const onProfessionalSubmit = (data: ProfessionalInfoValues) => updateProfile.mutate(data);
-  const onPasswordSubmit = (data: ChangePasswordValues) =>
-    changePassword.mutate(
-      { password: data.password, current_password: data.current_password },
-      { onSuccess: () => passwordForm.reset() },
-    );
 
   if (!user) return null;
 

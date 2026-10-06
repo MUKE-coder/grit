@@ -81,7 +81,7 @@ func writeRootFiles(root string, opts Options) error {
 	if opts.UsesPnpmWorkspace() {
 		files[filepath.Join(root, biomeConfigFile)] = biomeConfig(false)
 	} else if opts.Architecture == ArchSingle {
-		files[filepath.Join(root, "frontend", biomeConfigFile)] = biomeConfig(true)
+		files[filepath.Join(webAppRoot(root, opts), biomeConfigFile)] = biomeConfig(true)
 	}
 
 	if opts.UsesPnpmWorkspace() {
@@ -100,8 +100,9 @@ func writeRootFiles(root string, opts Options) error {
 	// with ERR_PNPM_IGNORED_BUILDS on esbuild — a failed install on a freshly
 	// generated project.
 	if opts.Architecture == ArchSingle && !opts.SingleUsesNext() {
-		files[filepath.Join(root, "frontend", ".npmrc")] = rootNpmrc()
-		files[filepath.Join(root, "frontend", "pnpm-workspace.yaml")] = pnpmAllowBuilds()
+		web := webAppRoot(root, opts)
+		files[filepath.Join(web, ".npmrc")] = rootNpmrc()
+		files[filepath.Join(web, "pnpm-workspace.yaml")] = pnpmAllowBuilds()
 	}
 
 	for path, content := range files {

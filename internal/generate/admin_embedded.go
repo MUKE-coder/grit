@@ -43,7 +43,15 @@ func (g *Generator) EmbedsAdminInSPA() bool {
 // spaHost is the Vite app hosting the panel.
 func (g *Generator) spaHost() string {
 	if g.Architecture == "single" {
-		return filepath.Join(g.Root, "frontend")
+		// The frontend owns the project root, with the Go module in api/ beside
+		// it. A project scaffolded before that keeps its app in frontend/, and
+		// `grit generate resource` has to keep working in it, so the directory on
+		// disk decides rather than the version that wrote it: a package.json in
+		// frontend/ is the old shape, and anything else is the new one.
+		if legacy := filepath.Join(g.Root, "frontend"); fileExists(filepath.Join(legacy, "package.json")) {
+			return legacy
+		}
+		return g.Root
 	}
 	return filepath.Join(g.Root, "apps", "web")
 }

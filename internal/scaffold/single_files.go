@@ -9,15 +9,13 @@ import (
 
 // writeSingleMainGo writes the single-app main.go at the project root.
 //
-// We deliberately put main.go at the root (not under cmd/server/) so that the
-// //go:embed all:frontend/dist directive resolves to <root>/frontend/dist —
-// the same path that "pnpm build" emits. Putting main.go under cmd/server/
-// makes go embed look for cmd/server/frontend/dist/* (relative to source
-// file) which doesn't exist on a fresh clone and breaks `go build`.
+// main.go sits at the top of api/ rather than under api/cmd/server/, because
+// //go:embed is resolved relative to the source file: from cmd/server it would
+// look for cmd/server/web/, which nothing writes. From api/ it finds api/web,
+// which is where Vite is told to build.
 //
-// We also drop a tiny placeholder index.html into frontend/dist so that
-// `go build` works on a fresh clone before the frontend has been built.
-// `pnpm build` simply overwrites it.
+// A placeholder index.html goes in first so `go build` works on a fresh clone,
+// before anyone has built the frontend. `pnpm build` overwrites it.
 func writeSingleMainGo(root string, opts Options) error {
 	// A Next single has nothing to embed.
 	//
@@ -31,12 +29,17 @@ func writeSingleMainGo(root string, opts Options) error {
 	if opts.SingleUsesNext() {
 		mainContent = apiMainGo(opts)
 	}
+	api := opts.APIRoot(root)
 	mainContent = strings.ReplaceAll(mainContent, "{{MODULE}}", opts.Module())
-	if err := writeFile(filepath.Join(root, "main.go"), mainContent); err != nil {
+	if err := writeFile(filepath.Join(api, "main.go"), mainContent); err != nil {
 		return err
 	}
 	if !opts.SingleUsesNext() {
-		if err := writeFile(filepath.Join(root, "frontend", "dist", "index.html"), singleFrontendDistPlaceholder()); err != nil {
+		// The built SPA lands inside api/, because //go:embed cannot reach above
+		// the directory its source file is in: a main.go in api/ embedding
+		// ../dist does not compile. Vite is pointed at api/web for the same
+		// reason, so the one binary still carries the whole app.
+		if err := writeFile(filepath.Join(api, "web", "index.html"), singleFrontendDistPlaceholder()); err != nil {
 			return err
 		}
 	}
@@ -44,12 +47,12 @@ func writeSingleMainGo(root string, opts Options) error {
 	// monorepo). In --single mode the canonical entry point is the root
 	// main.go, so the leftover under cmd/server/ is a duplicate `package
 	// main` that would break `go build ./...`. Remove it.
-	cmdServerMain := filepath.Join(root, "cmd", "server", "main.go")
+	cmdServerMain := filepath.Join(api, "cmd", "server", "main.go")
 	if err := os.Remove(cmdServerMain); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("removing duplicate cmd/server/main.go: %w", err)
 	}
 	// Drop the now-empty cmd/server directory if nothing else lives in it.
-	_ = os.Remove(filepath.Join(root, "cmd", "server"))
+	_ = os.Remove(filepath.Join(api, "cmd", "server"))
 	return nil
 }
 
@@ -64,7 +67,7 @@ func singleFrontendDistPlaceholder() string {
     <title>Frontend not built</title>
   </head>
   <body>
-    <p>Run <code>pnpm --filter ./frontend build</code> (or <code>make build</code>) to produce the real SPA bundle.</p>
+    <p>Run <code>pnpm build</code> (or <code>make build</code>) to produce the real SPA bundle.</p>
   </body>
 </html>
 `
@@ -89,7 +92,7 @@ func writeSingleFrontendFiles(root string, opts Options) error {
 		}
 	}
 
-	return writeBrandLogo(filepath.Join(filepath.Join(root, "frontend"), "public"), "grit_logo.png")
+	return writeBrandLogo(filepath.Join(webAppRoot(root, opts), "public"), "grit_logo.png")
 }
 
 // singleSharedMirrorFiles is the shared package, mirrored into the SPA.
@@ -98,7 +101,7 @@ func writeSingleFrontendFiles(root string, opts Options) error {
 // added to it: the panel imports Zod schemas from here as values, and a mirror
 // missing one of them is a build that fails on an import of "./money".
 func singleSharedMirrorFiles(root string, opts Options) map[string]string {
-	shared := filepath.Join(root, "frontend", "src", "shared")
+	shared := filepath.Join(webAppRoot(root, opts), "src", "shared")
 	files := map[string]string{
 		filepath.Join(shared, "schemas", "user.ts"):     sharedUserSchema(),
 		filepath.Join(shared, "schemas", "index.ts"):    sharedSchemasIndex(),
@@ -135,7 +138,7 @@ func singleSharedMirrorFiles(root string, opts Options) map[string]string {
 // singleFrontendOwnFiles is the SPA itself: its app shell, routes, components and
 // configuration.
 func singleFrontendOwnFiles(root string, opts Options) map[string]string {
-	feRoot := filepath.Join(root, "frontend")
+	feRoot := webAppRoot(root, opts)
 	return map[string]string{
 		filepath.Join(feRoot, "package.json"):   singleFrontendPackageJSON(opts),
 		filepath.Join(feRoot, "vite.config.ts"): singleFrontendViteConfig(),
@@ -235,7 +238,7 @@ import (
 	"{{MODULE}}/internal/storage"
 )
 
-//go:embed all:frontend/dist
+//go:embed all:web
 var frontendFS embed.FS
 
 func main() {
@@ -357,7 +360,7 @@ func main() {
 	// We pre-read index.html once and serve it via c.Data() to avoid the
 	// canonical-URL redirect rule in http.FileServer, which causes
 	// ERR_TOO_MANY_REDIRECTS behind reverse proxies (Traefik / Cloudflare).
-	feFS, err := fs.Sub(frontendFS, "frontend/dist")
+	feFS, err := fs.Sub(frontendFS, "web")
 	if err != nil {
 		log.Printf("Warning: embedded frontend not available: %v", err)
 	} else {
@@ -513,8 +516,8 @@ func singleFrontendTSConfig() string {
 		webTanStackTSConfig(Options{}),
 		`"@/*": ["./src/*"]`,
 		`"@/*": ["./src/*"],
-      "@repo/upload/web": ["../packages/upload/src/web.ts"],
-      "@repo/upload": ["../packages/upload/src/index.ts"],
+      "@repo/upload/web": ["./packages/upload/src/web.ts"],
+      "@repo/upload": ["./packages/upload/src/index.ts"],
       "@repo/shared/brand": ["./src/shared/brand.config.ts"],
       "@repo/shared/*": ["./src/shared/*"],
       "@admin/*": ["./src/admin-panel/*"]`,
@@ -529,7 +532,7 @@ func singleFrontendPackageJSON(opts Options) string {
 	// generated file isn't there. The Vite plugin keeps it regenerated
 	// during dev/build.
 	return fmt.Sprintf(`{
-  "name": "%s-frontend",
+  "name": "%s",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -610,8 +613,8 @@ export default defineConfig({
       // The upload package lives at the project root, outside the SPA, and is
       // raw TypeScript: Vite compiles it as source rather than resolving a build.
       // The admin panel's api-client builds its uploader from it.
-      '@repo/upload/web': path.resolve(__dirname, '../packages/upload/src/web.ts'),
-      '@repo/upload': path.resolve(__dirname, '../packages/upload/src/index.ts'),
+      '@repo/upload/web': path.resolve(__dirname, './packages/upload/src/web.ts'),
+      '@repo/upload': path.resolve(__dirname, './packages/upload/src/index.ts'),
     },
   },
   server: {
@@ -629,7 +632,10 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: 'dist',
+    // Into the Go tree, which is the only place //go:embed can read from: the
+    // directive sits in api/main.go and cannot reach above its own directory.
+    outDir: './api/web',
+    emptyOutDir: true,
   },
 })
 `
@@ -640,37 +646,36 @@ func singleMakefile(opts Options) string {
 
 .PHONY: dev build migrate seed run clean
 
-# Development: run Go API + Vite frontend in parallel.
+# Development: the Vite app at the root, the Go API in api/, in parallel.
 dev:
 	@echo "Starting development servers..."
-	@cd frontend && pnpm dev &
-	@air
+	@pnpm dev &
+	@cd api && air
 
-# Build production binary (embeds frontend/dist via //go:embed).
-# main.go lives at the project root so the embed path resolves correctly
-# without any pre-build copy step.
+# Build production binary. Vite writes into api/web and the binary embeds it,
+# so the result is one file with the whole app inside it.
 build:
 	@echo "Building frontend..."
-	@cd frontend && pnpm install && pnpm build
+	@pnpm install && pnpm build
 	@echo "Building Go binary..."
-	@go build -o bin/%s .
+	@cd api && go build -o ../bin/%s .
 	@echo "Done! Binary at bin/%s"
 
 # One-shot migrate + seed (handy for local resets).
 migrate:
-	@go run ./cmd/migrate
+	@cd api && go run ./cmd/migrate
 
 seed:
-	@go run ./cmd/seed
+	@cd api && go run ./cmd/seed
 
 # Run the built binary.
 run: build
 	@./bin/%s
 
-# Clean build artifacts (keeps the dist placeholder so go build still works).
+# Clean build artifacts (keeps the placeholder so go build still works).
 clean:
 	@rm -rf bin/
-	@rm -rf frontend/dist/assets
+	@rm -rf api/web/assets
 `, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
@@ -686,9 +691,14 @@ bin/
 *.out
 
 # Frontend
-frontend/node_modules/
-frontend/dist/
-frontend/.vite/
+node_modules/
+.vite/
+.next/
+
+# The built SPA, which lives in the Go tree so the binary can embed it.
+# The placeholder index.html beside it is checked in on purpose: without it
+# go build fails on a fresh clone.
+api/web/assets/
 
 # Environment
 .env

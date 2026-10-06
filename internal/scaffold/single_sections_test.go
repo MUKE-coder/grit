@@ -37,7 +37,7 @@ func TestSinglePublicPagesAreASection(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	layout := filepath.Join(root, "frontend", "src", "routes", "_site.tsx")
+	layout := filepath.Join(root, "src", "routes", "_site.tsx")
 	body, err := os.ReadFile(layout)
 	if err != nil {
 		t.Fatalf("the public section has no layout: %v", err)
@@ -52,7 +52,7 @@ func TestSinglePublicPagesAreASection(t *testing.T) {
 		"_site/blog/index.tsx": "/_site/blog/",
 		"_site/blog/$slug.tsx": "/_site/blog/$slug",
 	} {
-		path := filepath.Join(root, "frontend", "src", "routes", filepath.FromSlash(rel))
+		path := filepath.Join(root, "src", "routes", filepath.FromSlash(rel))
 		content, err := os.ReadFile(path)
 		if err != nil {
 			t.Errorf("%s is missing: %v", rel, err)
@@ -70,7 +70,7 @@ func TestSinglePublicPagesAreASection(t *testing.T) {
 
 	// The old flat pages must be gone, or two routes resolve to "/".
 	for _, gone := range []string{"index.tsx", "blog/index.tsx"} {
-		if _, err := os.Stat(filepath.Join(root, "frontend", "src", "routes", filepath.FromSlash(gone))); err == nil {
+		if _, err := os.Stat(filepath.Join(root, "src", "routes", filepath.FromSlash(gone))); err == nil {
 			t.Errorf("routes/%s is still written alongside its copy in _site", gone)
 		}
 	}
@@ -80,7 +80,7 @@ func TestSinglePublicPagesAreASection(t *testing.T) {
 // never had, in the dialect that app speaks.
 func TestSingleWebAuthWritesTheScreens(t *testing.T) {
 	root := t.TempDir()
-	feRoot := filepath.Join(root, "frontend")
+	feRoot := webAppRoot(root, singleOptions())
 	byPath := map[string]string{}
 	for _, f := range singleAuthFiles(feRoot, singleOptions()) {
 		rel, err := filepath.Rel(root, f.path)
@@ -91,16 +91,16 @@ func TestSingleWebAuthWritesTheScreens(t *testing.T) {
 	}
 
 	for _, want := range []string{
-		"frontend/src/hooks/use-auth.ts",
-		"frontend/src/components/user-menu.tsx",
-		"frontend/src/routes/_auth.tsx",
-		"frontend/src/routes/_auth/login.tsx",
-		"frontend/src/routes/_auth/register.tsx",
-		"frontend/src/routes/_auth/forgot-password.tsx",
-		"frontend/src/routes/_auth/reset-password.tsx",
-		"frontend/src/routes/account/route.tsx",
-		"frontend/src/routes/account/index.tsx",
-		"frontend/src/routes/account/profile.tsx",
+		"src/hooks/use-auth.ts",
+		"src/components/user-menu.tsx",
+		"src/routes/_auth.tsx",
+		"src/routes/_auth/login.tsx",
+		"src/routes/_auth/register.tsx",
+		"src/routes/_auth/forgot-password.tsx",
+		"src/routes/_auth/reset-password.tsx",
+		"src/routes/account/route.tsx",
+		"src/routes/account/index.tsx",
+		"src/routes/account/profile.tsx",
 	} {
 		if _, ok := byPath[want]; !ok {
 			t.Errorf("%s is missing", want)
@@ -110,12 +110,12 @@ func TestSingleWebAuthWritesTheScreens(t *testing.T) {
 	// Every route file's id has to equal its path.
 	routeID := regexp.MustCompile(`createFileRoute\('([^']*)'\)`)
 	for rel, want := range map[string]string{
-		"frontend/src/routes/_auth.tsx":           "/_auth",
-		"frontend/src/routes/_auth/login.tsx":     "/_auth/login",
-		"frontend/src/routes/_auth/register.tsx":  "/_auth/register",
-		"frontend/src/routes/account/route.tsx":   "/account",
-		"frontend/src/routes/account/index.tsx":   "/account/",
-		"frontend/src/routes/account/profile.tsx": "/account/profile",
+		"src/routes/_auth.tsx":           "/_auth",
+		"src/routes/_auth/login.tsx":     "/_auth/login",
+		"src/routes/_auth/register.tsx":  "/_auth/register",
+		"src/routes/account/route.tsx":   "/account",
+		"src/routes/account/index.tsx":   "/account/",
+		"src/routes/account/profile.tsx": "/account/profile",
 	} {
 		match := routeID.FindStringSubmatch(byPath[rel])
 		if match == nil {
@@ -128,7 +128,7 @@ func TestSingleWebAuthWritesTheScreens(t *testing.T) {
 	}
 
 	// The customer area is guarded before a screen renders, not after.
-	account := byPath["frontend/src/routes/account/route.tsx"]
+	account := byPath["src/routes/account/route.tsx"]
 	if !strings.Contains(account, "beforeLoad") || !strings.Contains(account, "redirect({ to: '/login' })") {
 		t.Error("the account section must turn away a visitor with no session")
 	}
@@ -146,7 +146,7 @@ func TestSingleWebAuthWritesTheScreens(t *testing.T) {
 	}
 
 	// The navbar gains the user menu and keeps everything else.
-	navbar := byPath["frontend/src/components/navbar.tsx"]
+	navbar := byPath["src/components/navbar.tsx"]
 	if !strings.Contains(navbar, "<UserMenu />") {
 		t.Error("the navbar has no way into the account area")
 	}
@@ -159,7 +159,7 @@ func TestSingleWebAuthWritesTheScreens(t *testing.T) {
 // id each one declares, or the router refuses them.
 func TestMigrateSPARouteSections(t *testing.T) {
 	root := t.TempDir()
-	routes := filepath.Join(root, "frontend", "src", "routes")
+	routes := filepath.Join(root, "src", "routes")
 	write := func(rel, body string) {
 		path := filepath.Join(routes, filepath.FromSlash(rel))
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -174,7 +174,7 @@ func TestMigrateSPARouteSections(t *testing.T) {
 	write("blog/$slug.tsx", "export const Route = createFileRoute('/blog/$slug')({})\n")
 
 	quiet := color.New()
-	migrateSPARouteSections(filepath.Join(root, "frontend"), quiet, quiet)
+	migrateSPARouteSections(webAppRoot(root, singleOptions()), quiet, quiet)
 
 	landing, err := os.ReadFile(filepath.Join(routes, "_site", "index.tsx"))
 	if err != nil {
@@ -198,7 +198,7 @@ func TestMigrateSPARouteSections(t *testing.T) {
 	}
 
 	// A second upgrade is a no-op.
-	migrateSPARouteSections(filepath.Join(root, "frontend"), quiet, quiet)
+	migrateSPARouteSections(webAppRoot(root, singleOptions()), quiet, quiet)
 	if _, err := os.Stat(filepath.Join(routes, "_site", "_site")); err == nil {
 		t.Error("the section was nested inside itself")
 	}

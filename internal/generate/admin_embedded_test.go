@@ -17,7 +17,7 @@ func TestAdminRootsPerArchitecture(t *testing.T) {
 	}{
 		{"triple", filepath.Join("apps", "admin")},
 		{"double", filepath.Join("apps", "web", "admin-panel")},
-		{"single", filepath.Join("frontend", "src", "admin-panel")},
+		{"single", filepath.Join("src", "admin-panel")},
 	} {
 		g := &Generator{Root: "r", Architecture: tc.arch}
 		if got := g.AdminCodeRoot(); got != filepath.Join("r", tc.code) {
@@ -32,6 +32,33 @@ func TestAdminRootsPerArchitecture(t *testing.T) {
 	}
 }
 
+// A project scaffolded before the app owned the project root keeps its frontend
+// in frontend/, and generating into it has to keep working. The directory on
+// disk decides, not the version that wrote the project.
+func TestGeneratorFollowsAnExistingSinglesFrontend(t *testing.T) {
+	root := t.TempDir()
+	legacy := filepath.Join(root, "frontend")
+	if err := os.MkdirAll(legacy, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(legacy, "package.json"), []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	g := &Generator{Root: root, Architecture: "single"}
+	want := filepath.Join(legacy, "src", "admin-panel")
+	if got := g.AdminCodeRoot(); got != want {
+		t.Errorf("code root is %s, want %s: a resource would be written where nothing compiles it", got, want)
+	}
+
+	// And a new project, which has no frontend/ at all.
+	fresh := t.TempDir()
+	g2 := &Generator{Root: fresh, Architecture: "single"}
+	if got := g2.AdminCodeRoot(); got != filepath.Join(fresh, "src", "admin-panel") {
+		t.Errorf("a new project's code root is %s", got)
+	}
+}
+
 // In the SPA the router is the SPA's, so a generated route file goes into its tree
 // and its id carries the /admin segment.
 func TestGeneratedSPARoutesAreUnderAdmin(t *testing.T) {
@@ -39,15 +66,15 @@ func TestGeneratedSPARoutesAreUnderAdmin(t *testing.T) {
 	if !g.AdminIsTanStack() {
 		t.Fatal("a single project's panel is a TanStack app")
 	}
-	want := filepath.Join("r", "frontend", "src", "routes", "admin")
+	want := filepath.Join("r", "src", "routes", "admin")
 	if got := g.adminTanStackRoutesRoot(); got != want {
 		t.Errorf("routes root is %s, want %s", got, want)
 	}
-	if got := g.tanStackResourcesRoot(); got != filepath.Join("r", "frontend", "src", "admin-panel", "resources") {
+	if got := g.tanStackResourcesRoot(); got != filepath.Join("r", "src", "admin-panel", "resources") {
 		t.Errorf("resources root is %s", got)
 	}
 
-	route := filepath.Join("r", "frontend", "src", "routes", "admin", "_dashboard", "resources", "invoices", "index.tsx")
+	route := filepath.Join("r", "src", "routes", "admin", "_dashboard", "resources", "invoices", "index.tsx")
 	content := `import { createFileRoute } from '@tanstack/react-router'
 import { ResourcePage } from '@/components/resource/resource-page'
 import { invoiceResource } from '@/resources/invoices/invoices'
@@ -65,13 +92,13 @@ export const Route = createFileRoute('/_dashboard/resources/invoices/')({
 	}
 
 	// A page written for the panel itself, reached through the same alias.
-	page := filepath.Join("r", "frontend", "src", "admin-panel", "pages", "reports.tsx")
+	page := filepath.Join("r", "src", "admin-panel", "pages", "reports.tsx")
 	if got := embeddedAdminFileContent(page, `import { Thing } from "@/components/thing";`); !strings.Contains(got, `"@admin/components/thing"`) {
 		t.Errorf("a panel page was not repointed: %s", got)
 	}
 
 	// And a file that is not the panel's is untouched, in every shape.
-	web := filepath.Join("r", "frontend", "src", "routes", "blog", "index.tsx")
+	web := filepath.Join("r", "src", "routes", "blog", "index.tsx")
 	plain := `import { Card } from "@/components/card";`
 	if got := embeddedAdminFileContent(web, plain); got != plain {
 		t.Errorf("a file outside the panel was rewritten: %s", got)

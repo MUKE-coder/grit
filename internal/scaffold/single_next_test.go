@@ -49,7 +49,10 @@ func TestSingleNextPicksTheNextShapeNotTheSPAShape(t *testing.T) {
 	}
 }
 
-// Both frontends live in frontend/, which is what makes a project "single".
+// A single project's frontend owns the project root: the app is the project,
+// with its Go API in api/. One scaffolded before that keeps its frontend where
+// it was put, because an upgrade that moved it would break every import path in
+// it at once.
 func TestSingleKeepsItsFrontendBesideTheGoModule(t *testing.T) {
 	root := filepath.FromSlash("/p")
 	for _, tc := range []struct {
@@ -57,8 +60,9 @@ func TestSingleKeepsItsFrontendBesideTheGoModule(t *testing.T) {
 		opts Options
 		want string
 	}{
-		{"single next", singleNextOptions(), filepath.Join(root, "frontend")},
-		{"single vite", Options{ProjectName: "a", Architecture: ArchSingle}, filepath.Join(root, "frontend")},
+		{"single next", singleNextOptions(), root},
+		{"single vite", Options{ProjectName: "a", Architecture: ArchSingle}, root},
+		{"legacy single", Options{ProjectName: "a", Architecture: ArchSingle, LegacySingleFlat: true}, filepath.Join(root, "frontend")},
 		{"double", Options{ProjectName: "a", Architecture: ArchDouble, Frontend: FrontendNext}, filepath.Join(root, "apps", "web")},
 		{"triple", Options{ProjectName: "a", Architecture: ArchTriple, Frontend: FrontendNext}, filepath.Join(root, "apps", "web")},
 	} {
@@ -83,7 +87,7 @@ func TestSingleNextPanelLandsInTheFrontendWithItsImportsRepointed(t *testing.T) 
 		t.Fatalf("the panel has only %d files", len(files))
 	}
 
-	frontend := filepath.Join(root, "frontend")
+	frontend := webAppRoot(root, opts)
 	for path := range files {
 		rel, err := filepath.Rel(frontend, path)
 		if err != nil || strings.HasPrefix(rel, "..") {
@@ -163,8 +167,8 @@ func TestOnlyTheViteSingleEmbedsItsFrontend(t *testing.T) {
 	if err := writeSingleMainGo(viteRoot, Options{ProjectName: "app", Architecture: ArchSingle}); err != nil {
 		t.Fatal(err)
 	}
-	vite := readTestFile(t, filepath.Join(viteRoot, "main.go"))
-	if !strings.Contains(vite, "//go:embed all:frontend/dist") {
+	vite := readTestFile(t, filepath.Join(viteRoot, "api", "main.go"))
+	if !strings.Contains(vite, "//go:embed all:web") {
 		t.Error("the Vite single stopped embedding its SPA, so it is no longer one binary")
 	}
 
@@ -172,15 +176,15 @@ func TestOnlyTheViteSingleEmbedsItsFrontend(t *testing.T) {
 	if err := writeSingleMainGo(nextRoot, singleNextOptions()); err != nil {
 		t.Fatal(err)
 	}
-	next := readTestFile(t, filepath.Join(nextRoot, "main.go"))
+	next := readTestFile(t, filepath.Join(nextRoot, "api", "main.go"))
 	if strings.Contains(next, "go:embed") {
 		t.Error("a Next single embeds frontend/dist, a directory Next never writes: the project does not compile")
 	}
-	if !fileExists(filepath.Join(viteRoot, "frontend", "dist", "index.html")) {
+	if !fileExists(filepath.Join(viteRoot, "api", "web", "index.html")) {
 		t.Error("the Vite single lost the placeholder that lets go build work before the first pnpm build")
 	}
-	if fileExists(filepath.Join(nextRoot, "frontend", "dist", "index.html")) {
-		t.Error("a Next single got a frontend/dist placeholder it never serves")
+	if fileExists(filepath.Join(nextRoot, "api", "web", "index.html")) {
+		t.Error("a Next single got an api/web placeholder it never serves")
 	}
 }
 
@@ -230,8 +234,9 @@ func TestUpgradeFindsTheAPIInBothLayouts(t *testing.T) {
 		opts   Options
 		apiDir []string
 	}{
-		{"single", Options{ProjectName: "a", Architecture: ArchSingle}, []string{"internal", "routes"}},
-		{"single next", singleNextOptions(), []string{"internal", "routes"}},
+		{"single", Options{ProjectName: "a", Architecture: ArchSingle}, []string{"api", "internal", "routes"}},
+		{"single next", singleNextOptions(), []string{"api", "internal", "routes"}},
+		{"legacy single", Options{ProjectName: "a", Architecture: ArchSingle, LegacySingleFlat: true}, []string{"internal", "routes"}},
 		{"triple", Options{ProjectName: "a", Architecture: ArchTriple, Frontend: FrontendNext}, []string{"apps", "api", "internal", "routes"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -252,5 +257,90 @@ func TestUpgradeFindsTheAPIInBothLayouts(t *testing.T) {
 	opts := Options{ProjectName: "a", Architecture: ArchSingle}
 	if dirExists(filepath.Join(opts.APIRoot(root), "internal", "routes")) {
 		t.Error("an empty directory was taken for a Go API")
+	}
+}
+
+// The Vite single builds into the Go tree, and into this project's.
+//
+// The binary embeds api/web, so that is where Vite has to write. The path is
+// relative to vite.config.ts, which sits at the project root: "../api/web"
+// resolves to the directory ABOVE the project, where the built app is read by
+// nothing. Vite reported success, the assets landed outside the repository, and
+// the binary embedded the placeholder index.html instead, so the one-file deploy
+// served an empty page and said nothing about it.
+func TestViteSingleBuildsIntoTheEmbeddedDirectory(t *testing.T) {
+	cfg := singleFrontendViteConfig()
+
+	if !strings.Contains(cfg, "outDir: './api/web'") {
+		t.Error("vite does not build into ./api/web, which is the directory the binary embeds")
+	}
+	if strings.Contains(cfg, "'../api/web'") {
+		t.Error("outDir escapes the project: relative to the config at the root, ../ is the directory above it")
+	}
+	// Emptied, or a rename leaves the previous build's assets behind and the
+	// binary carries both.
+	if !strings.Contains(cfg, "emptyOutDir: true") {
+		t.Error("outDir is never emptied, so stale assets accumulate inside the binary")
+	}
+
+	// And the directive reads the same directory.
+	main := singleMainGo(Options{ProjectName: "app", Architecture: ArchSingle})
+	if !strings.Contains(main, "//go:embed all:web") {
+		t.Error("main.go does not embed web/, so it cannot be serving what Vite builds")
+	}
+}
+
+// An existing single project keeps the layout it was built with.
+//
+// Moving the Go module into api/ and giving the project root to the frontend is
+// right for a new project and catastrophic for an old one: an upgrade that
+// started writing into api/ would leave two halves of an API, and neither would
+// compile. LegacySingleFlat is read from disk by the upgrade and pins every path
+// to where that project already has them.
+func TestAnExistingSingleKeepsItsOwnLayout(t *testing.T) {
+	root := filepath.FromSlash("/p")
+	legacy := Options{ProjectName: "a", Architecture: ArchSingle, LegacySingleFlat: true}
+	fresh := Options{ProjectName: "a", Architecture: ArchSingle}
+
+	if got := legacy.APIRoot(root); got != root {
+		t.Errorf("an existing project's Go code moved to %s", got)
+	}
+	if got := fresh.APIRoot(root); got != filepath.Join(root, "api") {
+		t.Errorf("a new project's Go code is at %s, not api/", got)
+	}
+
+	if got := webAppRoot(root, legacy); got != filepath.Join(root, "frontend") {
+		t.Errorf("an existing project's frontend moved to %s, which breaks every relative path in it", got)
+	}
+	if got := webAppRoot(root, fresh); got != root {
+		t.Errorf("a new project's frontend is at %s, not the project root", got)
+	}
+
+	// The CI workflows point at whichever module directory this project has.
+	if got := ciLayoutFor(legacy); got.apiDir != "." || got.jsDir != "frontend" {
+		t.Errorf("CI points at %s/%s for an existing project", got.apiDir, got.jsDir)
+	}
+	if got := ciLayoutFor(fresh); got.apiDir != "api" || got.jsDir != "." {
+		t.Errorf("CI points at %s/%s for a new project", got.apiDir, got.jsDir)
+	}
+}
+
+// And the generated config finds .env from wherever the binary runs.
+//
+// The project root holds one .env. The binary runs from the root in an existing
+// single, api/ in a new one, apps/api in a monorepo. Only two of those three
+// were tried, so `grit migrate` in a new single found no .env at all and refused
+// to start under APP_ENV=production, naming five secrets that were sitting one
+// directory above it.
+func TestGeneratedConfigFindsTheEnvFromEveryModuleDirectory(t *testing.T) {
+	cfg := apiConfigGo()
+	for _, want := range []string{
+		`godotenv.Load()`,
+		`godotenv.Load("../.env")`,
+		`godotenv.Load("../../.env")`,
+	} {
+		if !strings.Contains(cfg, want) {
+			t.Errorf("config does not try %s, so a binary run from that depth gets the built-in defaults", want)
+		}
 	}
 }

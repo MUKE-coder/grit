@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 5 to 11, 2026",
-    count: 22,
+    count: 23,
     entries: [
+      { version: "3.380.0", title: "A single project looks like the web app it is, with Go in api/" },
       { version: "3.379.0", title: "--single --next builds a Next.js app, instead of ignoring the flag" },
       { version: "3.378.3", title: "Two things that only a click finds" },
       { version: "3.378.2", title: "A single project did not build, over one missing file" },

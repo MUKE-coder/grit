@@ -33,7 +33,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.379.0"
+var version = "3.380.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -1485,14 +1485,23 @@ func findAPIDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	apiDir := filepath.Join(root, "apps", "api")
-	if _, err := os.Stat(apiDir); os.IsNotExist(err) {
-		// Single / api-only projects are flat: the Go API (and its cmd/migrate,
-		// cmd/seed entrypoints) lives at the project root. FindProjectRoot has
-		// already confirmed grit.json, so root is the API directory here.
-		return root, nil
+	// Three layouts, newest first.
+	//
+	// A monorepo keeps the API in apps/api. A single project keeps it in api/,
+	// beside a frontend that owns the project root. A single project scaffolded
+	// before that layout has it at the root itself, and still has to work:
+	// `grit migrate` on somebody's existing app is not allowed to stop finding
+	// it. FindProjectRoot has already confirmed grit.json, so the last case is
+	// the root.
+	for _, dir := range []string{
+		filepath.Join(root, "apps", "api"),
+		filepath.Join(root, "api"),
+	} {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir, nil
+		}
 	}
-	return apiDir, nil
+	return root, nil
 }
 
 func upgradeCmd() *cobra.Command {

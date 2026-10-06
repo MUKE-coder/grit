@@ -67,6 +67,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		// into an apps/admin this project does not have: files nothing compiles,
 		// plus a components.json for an application that is not there.
 		Architecture: detectArchitecture(root),
+		// Which single layout this is. A project scaffolded before v3.380.0 keeps
+		// its Go code at the root and its frontend in frontend/; writing the new
+		// layout into it would leave two halves of an API, neither of which
+		// compiles. Detected from the one file that only the old layout has there.
+		LegacySingleFlat: dirExists(filepath.Join(root, "internal", "routes")),
 	}
 	opts.Normalize()
 

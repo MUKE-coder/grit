@@ -51,7 +51,8 @@ func TestCIFilesFollowTheLayout(t *testing.T) {
 		parseYAML(t, shape.name+" dependabot.yml", dependabot)
 		wantGo := `directory: "/apps/api"`
 		if l.single {
-			wantGo = `directory: "/"`
+			// The Go module is in api/, beside the frontend that owns the root.
+			wantGo = `directory: "/api"`
 		}
 		if !strings.Contains(dependabot, "package-ecosystem: gomod\n    "+wantGo) {
 			t.Errorf("%s: Dependabot does not watch the Go module at %s:\n%s", shape.name, wantGo, dependabot)

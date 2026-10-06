@@ -197,65 +197,66 @@ export default function SingleArchitecturePage() {
               <p className="text-muted-foreground leading-relaxed mb-4">
                 The entire project is flat. Go code lives in{' '}
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">internal/</code>,
-                React code lives in{' '}
-                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">frontend/</code>,
-                and{' '}
-                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">main.go</code>{' '}
-                sits at the root.
+                The app owns the project root, the way a Vite or Next.js project is laid out
+                anywhere else, and the Go API sits in{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">api/</code>{' '}
+                with its own go.mod. Open the folder and it is a web project with a Go API beside
+                it, which is what it has always been.
               </p>
               <Files title="myapp/">
-                <File name="main.go" comment="Entry point with go:embed frontend/dist/*" />
-                <File name="go.mod" comment="Module: myapp (not myapp/apps/api)" />
-                <File name="go.sum" />
-                <File name=".env" />
+                <File name="package.json" comment="The app's own: pnpm dev, pnpm build" />
+                <File name="vite.config.ts" comment="Builds into api/web, which the binary embeds" />
+                <File name="index.html" />
+                <File name="tsconfig.json" />
+                <File name="biome.jsonc" comment="Lint and format rules" />
+                <File name=".env" comment="Read by the API from api/, one level up" />
                 <File name=".env.example" />
                 <File name=".gitignore" />
                 <File name="docker-compose.yml" comment="PostgreSQL, Redis, MinIO, Mailhog" />
-                <File name="docker-compose.prod.yml" />
                 <File name="grit.json" comment={'architecture: "single", frontend: "tanstack"'} />
                 <File name="Makefile" comment="make dev, make build, make deploy" />
+                <Folder name="src" comment="The app: this is a Vite project" defaultOpen>
+                  <File name="main.tsx" />
+                  <Folder name="routes" comment="TanStack Router file-based routes" defaultOpen>
+                    <File name="__root.tsx" comment="An outlet: every section owns its layout" />
+                    <Folder name="_site" comment="The public site: navbar + footer" />
+                    <Folder name="_auth" comment="Login and registration (grit add web-auth)" />
+                    <Folder name="account" comment="The signed-in customer area, guarded" />
+                    <Folder name="admin" comment="The panel's routes, at /admin/*" />
+                    <File name="..." icon={<span className="inline-block h-3.5 w-3.5 shrink-0" />} />
+                  </Folder>
+                  <Folder name="components" />
+                  <Folder name="hooks" />
+                  <Folder name="lib" />
+                  <Folder name="admin-panel" comment="The admin panel's pages, components and resources (@admin)" />
+                  <Folder name="shared" comment="Zod schemas + TS types (aliased as @repo/shared)" />
+                </Folder>
+                <Folder name="api" comment="The Go API, module myapp" defaultOpen>
+                  <File name="main.go" comment="Entry point, with go:embed all:web" />
+                  <File name="go.mod" comment="Module: myapp (not myapp/apps/api)" />
+                  <File name="go.sum" />
+                  <Folder name="web" comment="The built SPA. //go:embed cannot read above api/, so Vite writes here" />
+                  <Folder name="cmd" comment="migrate and seed entrypoints" />
+                  <Folder name="internal" comment="ALL Go backend code" defaultOpen>
+                    <File name="config/config.go" />
+                    <File name="database/db.go" />
+                    <Folder name="models" comment="// grit:models" />
+                    <Folder name="handlers" />
+                    <Folder name="services" />
+                    <Folder name="middleware" />
+                    <File name="routes/routes.go" comment="// grit:handlers, grit:routes:*" />
+                    <Folder name="mail" />
+                    <Folder name="storage" />
+                    <Folder name="jobs" />
+                    <Folder name="cache" />
+                    <Folder name="ai" />
+                    <File name="auth/totp.go" />
+                  </Folder>
+                </Folder>
+                <Folder name="packages/upload" comment="The shared upload client" />
                 <Folder name=".claude/skills/grit" defaultOpen>
                   <File name="SKILL.md" comment="Tailored to single architecture" />
                   <File name="reference.md" />
-                </Folder>
-                <Folder name="internal" comment="ALL Go backend code" defaultOpen>
-                  <File name="config/config.go" />
-                  <File name="database/db.go" />
-                  <Folder name="models" comment="// grit:models" />
-                  <Folder name="handlers" />
-                  <Folder name="services" />
-                  <Folder name="middleware" />
-                  <File name="routes/routes.go" comment="// grit:handlers, grit:routes:*" />
-                  <Folder name="mail" />
-                  <Folder name="storage" />
-                  <Folder name="jobs" />
-                  <Folder name="cache" />
-                  <Folder name="ai" />
-                  <File name="auth/totp.go" />
-                </Folder>
-                <Folder name="frontend" comment="React + Vite + TanStack Router" defaultOpen>
-                  <File name="package.json" comment="pnpm lint and pnpm format run Biome" />
-                  <File name="biome.jsonc" comment="Lint and format rules" />
-                  <File name="vite.config.ts" comment="Proxy /api → localhost:8080" />
-                  <File name="tailwind.config.ts" />
-                  <File name="tsconfig.json" />
-                  <File name="index.html" />
-                  <Folder name="src" defaultOpen>
-                    <File name="main.tsx" />
-                    <Folder name="routes" comment="TanStack Router file-based routes" defaultOpen>
-                      <File name="__root.tsx" comment="An outlet: every section owns its layout" />
-                      <Folder name="_site" comment="The public site: navbar + footer" />
-                      <Folder name="_auth" comment="Login and registration (grit add web-auth)" />
-                      <Folder name="account" comment="The signed-in customer area, guarded" />
-                      <Folder name="admin" comment="The panel's routes, at /admin/*" />
-                      <File name="..." icon={<span className="inline-block h-3.5 w-3.5 shrink-0" />} />
-                    </Folder>
-                    <Folder name="components" />
-                    <Folder name="hooks" />
-                    <Folder name="lib" />
-                    <Folder name="admin-panel" comment="The admin panel's pages, components and resources (@admin)" />
-                    <Folder name="shared" comment="Zod schemas + TS types (aliased as @repo/shared)" />
-                  </Folder>
                 </Folder>
               </Files>
             </div>

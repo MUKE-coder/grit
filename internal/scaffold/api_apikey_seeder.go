@@ -179,9 +179,18 @@ func writeClientEnv(publishable string) {
 	for _, rel := range []string{
 		filepath.Join("..", "web", ".env.local"),
 		filepath.Join("..", "admin", ".env.local"),
+		// A single project's frontend is the project root, and the seeder runs from
+		// api/ beside it. The old flat layout kept it in frontend/ from the root,
+		// which is the second path: an upgraded project still gets its file.
+		filepath.Join("..", ".env.local"),
 		filepath.Join("frontend", ".env.local"),
 	} {
-		if _, err := os.Stat(filepath.Dir(rel)); err != nil {
+		// A frontend, not merely a directory. "../" is the project root for a
+		// single project and the apps/ folder for a monorepo, and only one of
+		// those is somewhere an .env.local belongs: a package.json is what tells
+		// them apart. Before this the test was "does the directory exist", which
+		// "../" always satisfies.
+		if _, err := os.Stat(filepath.Join(filepath.Dir(rel), "package.json")); err != nil {
 			continue // that app is not part of this project
 		}
 		if existing, err := os.ReadFile(rel); err == nil {

@@ -29,9 +29,9 @@ func TestSingleAdminLandsInsideTheSPA(t *testing.T) {
 		}
 		rel = filepath.ToSlash(rel)
 		switch {
-		case strings.HasPrefix(rel, "frontend/src/routes/admin/"):
+		case strings.HasPrefix(rel, "src/routes/admin/"):
 			routes++
-		case strings.HasPrefix(rel, "frontend/src/admin-panel/"):
+		case strings.HasPrefix(rel, "src/admin-panel/"):
 			panel++
 		default:
 			t.Errorf("%s is outside the SPA's panel and its routes", rel)
@@ -46,13 +46,13 @@ func TestSingleAdminLandsInsideTheSPA(t *testing.T) {
 
 	for _, want := range []string{
 		// The section's own entry point, layout and stylesheet.
-		"frontend/src/routes/admin/index.tsx",
-		"frontend/src/routes/admin/route.tsx",
-		"frontend/src/admin-panel/admin.css",
-		"frontend/src/routes/admin/_dashboard/dashboard.tsx",
-		"frontend/src/admin-panel/pages/dashboard.tsx",
-		"frontend/src/admin-panel/lib/api-client.ts",
-		"frontend/src/admin-panel/resources/index.ts",
+		"src/routes/admin/index.tsx",
+		"src/routes/admin/route.tsx",
+		"src/admin-panel/admin.css",
+		"src/routes/admin/_dashboard/dashboard.tsx",
+		"src/admin-panel/pages/dashboard.tsx",
+		"src/admin-panel/lib/api-client.ts",
+		"src/admin-panel/resources/index.ts",
 	} {
 		if _, ok := files[filepath.Join(root, filepath.FromSlash(want))]; !ok {
 			t.Errorf("%s is missing from the SPA panel", want)
@@ -62,10 +62,10 @@ func TestSingleAdminLandsInsideTheSPA(t *testing.T) {
 	// The app shell the SPA already has. A second main.tsx or index.html inside it
 	// is either ignored or harmful, and a second root route is a routing conflict.
 	for _, unwanted := range []string{
-		"frontend/src/admin-panel/main.tsx",
-		"frontend/src/admin-panel/index.html",
-		"frontend/src/admin-panel/package.json",
-		"frontend/src/routes/admin/__root.tsx",
+		"src/admin-panel/main.tsx",
+		"src/admin-panel/index.html",
+		"src/admin-panel/package.json",
+		"src/routes/admin/__root.tsx",
 	} {
 		if _, ok := files[filepath.Join(root, filepath.FromSlash(unwanted))]; ok {
 			t.Errorf("%s should not be written: the SPA owns it", unwanted)
@@ -82,7 +82,7 @@ func TestSingleAdminRouteIDsMatchTheirPaths(t *testing.T) {
 
 	for path, content := range embeddedSingleAdminFileMap(root, singleOptions()) {
 		rel := filepath.ToSlash(strings.TrimPrefix(path, root))
-		marker := "/frontend/src/routes/"
+		marker := "/src/routes/"
 		at := strings.Index(rel, marker)
 		if at < 0 || !strings.HasSuffix(rel, ".tsx") {
 			continue
@@ -158,7 +158,7 @@ func TestSingleAdminContentIsRepointed(t *testing.T) {
 // API's address down; api-client.ts re-exports it.
 func TestSingleAdminTalksToItsOwnOrigin(t *testing.T) {
 	root := t.TempDir()
-	client := filepath.Join(root, "frontend", "src", "admin-panel", "lib", "api-core.ts")
+	client := filepath.Join(root, "src", "admin-panel", "lib", "api-core.ts")
 	content, ok := embeddedSingleAdminFileMap(root, singleOptions())[client]
 	if !ok {
 		t.Fatal("the panel has no api-core module")
@@ -188,14 +188,14 @@ func TestSingleAdminWritesTheFeatureScreensAndNothingElse(t *testing.T) {
 	}
 
 	for _, want := range []string{
-		"frontend/src/admin-panel/components/dashboard/ResourceWidgetsRow.tsx",
-		"frontend/src/admin-panel/components/dashboard/CustomChartCard.tsx",
+		"src/admin-panel/components/dashboard/ResourceWidgetsRow.tsx",
+		"src/admin-panel/components/dashboard/CustomChartCard.tsx",
 		// The security screen is a page plus a route shim in a TanStack app. A
 		// single project is one whatever Frontend says, which is what
 		// AdminIsTanStack exists to answer.
-		"frontend/src/admin-panel/pages/account-security.tsx",
-		"frontend/src/routes/admin/_dashboard/account/security.tsx",
-		"frontend/src/admin-panel/components/security/passkeys.tsx",
+		"src/admin-panel/pages/account-security.tsx",
+		"src/routes/admin/_dashboard/account/security.tsx",
+		"src/admin-panel/components/security/passkeys.tsx",
 	} {
 		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(want))); err != nil {
 			t.Errorf("%s was not written: %v", want, err)
@@ -216,7 +216,7 @@ func TestSingleSPAResolvesThePanel(t *testing.T) {
 	for _, want := range []string{
 		`"@admin/*": ["./src/admin-panel/*"]`,
 		`"@repo/shared/brand": ["./src/shared/brand.config.ts"]`,
-		`"@repo/upload": ["../packages/upload/src/index.ts"]`,
+		`"@repo/upload": ["./packages/upload/src/index.ts"]`,
 	} {
 		if !strings.Contains(ts, want) {
 			t.Errorf("the SPA tsconfig is missing %s", want)
@@ -259,10 +259,10 @@ func TestSinglePanelHasWhatItImports(t *testing.T) {
 	for _, want := range []string{
 		// Re-exported by the barrels, so a missing one fails the build on an
 		// import of "./money" rather than on anything the panel wrote.
-		"frontend/src/shared/schemas/money.ts",
-		"frontend/src/shared/types/money.ts",
-		"frontend/src/shared/types/errors.ts",
-		"frontend/src/shared/brand.config.ts",
+		"src/shared/schemas/money.ts",
+		"src/shared/types/money.ts",
+		"src/shared/types/errors.ts",
+		"src/shared/brand.config.ts",
 	} {
 		if _, ok := mirror[filepath.Join(root, filepath.FromSlash(want))]; !ok {
 			t.Errorf("%s is not mirrored into the SPA", want)
@@ -341,10 +341,10 @@ func TestSinglePanelPredicates(t *testing.T) {
 	if !single.AdminIsTanStack() {
 		t.Error("a single's SPA is a TanStack app whatever Frontend says")
 	}
-	if adminCodeRoot("r", single) != filepath.Join("r", "frontend", "src", "admin-panel") {
+	if adminCodeRoot("r", single) != filepath.Join("r", "src", "admin-panel") {
 		t.Errorf("the panel's code root is wrong: %s", adminCodeRoot("r", single))
 	}
-	if got := adminPath("r", single, "routes", "_dashboard", "x.tsx"); got != filepath.Join("r", "frontend", "src", "routes", "admin", "_dashboard", "x.tsx") {
+	if got := adminPath("r", single, "routes", "_dashboard", "x.tsx"); got != filepath.Join("r", "src", "routes", "admin", "_dashboard", "x.tsx") {
 		t.Errorf("a route file went to %s, where the SPA's router will not find it", got)
 	}
 }

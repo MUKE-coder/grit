@@ -41,18 +41,39 @@ func (g *Generator) SharedRoot() string {
 // sharedRootFrom answers the same question for the commands that have a root and
 // no Generator.
 func sharedRootFrom(root string) string {
-	if monorepo := filepath.Join(root, "packages", "shared"); dirExists(monorepo) {
-		return monorepo
-	}
-	if spa := filepath.Join(root, "frontend", "src", "shared"); dirExists(spa) {
-		return spa
+	// Every place a Grit project keeps its shared types.
+	//
+	// A monorepo and a Next single have packages/shared. A Vite single mirrors
+	// the package into its own source tree instead, because it has no workspace
+	// to resolve "@repo/shared" through: src/shared now that the app owns the
+	// project root, frontend/src/shared in a project scaffolded before it.
+	//
+	// Missing the first of those, a generated type was written to a
+	// packages/shared that does not exist, and the resource's own page failed to
+	// compile on a type the generator had reported writing.
+	for _, candidate := range [][]string{
+		{"packages", "shared"},
+		{"src", "shared"},
+		{"frontend", "src", "shared"},
+	} {
+		if dir := filepath.Join(append([]string{root}, candidate...)...); dirExists(dir) {
+			return dir
+		}
 	}
 	return filepath.Join(root, "packages", "shared")
 }
 
 // APIRoot returns the base directory for Go files.
+//
+// A single project keeps its Go module in api/ and gives the project root to
+// the frontend. One scaffolded before that layout has the module at the root,
+// and `grit generate resource` has to keep working in it: the go.mod is what
+// says which, because it is the one file the module cannot be without.
 func (g *Generator) APIRoot() string {
 	if g.Architecture == "single" {
+		if api := filepath.Join(g.Root, "api"); fileExists(filepath.Join(api, "go.mod")) {
+			return api
+		}
 		return g.Root
 	}
 	return filepath.Join(g.Root, "apps", "api")
@@ -728,26 +749,37 @@ func extractJSONValue(json, key string) string {
 }
 
 func readModulePath(root, arch string) (string, error) {
-	// Single app: go.mod at project root
-	// Monorepo: go.mod at apps/api/
-	var goModPath string
+	// Every place a Grit project has ever put its go.mod, in the order that
+	// answers soonest for the layout this project most likely is.
+	//
+	// api/ for a single, apps/api for a monorepo, the project root for a single
+	// scaffolded before api/ existed. The architecture only decides which to try
+	// first: the file itself decides the answer, so a project that disagrees with
+	// its own grit.json still resolves instead of failing on a path that was
+	// correct in the abstract.
+	candidates := []string{
+		filepath.Join(root, "apps", "api", "go.mod"),
+		filepath.Join(root, "api", "go.mod"),
+		filepath.Join(root, "go.mod"),
+	}
 	if arch == "single" {
-		goModPath = filepath.Join(root, "go.mod")
-	} else {
-		goModPath = filepath.Join(root, "apps", "api", "go.mod")
+		candidates = []string{
+			filepath.Join(root, "api", "go.mod"),
+			filepath.Join(root, "go.mod"),
+			filepath.Join(root, "apps", "api", "go.mod"),
+		}
 	}
 
-	data, err := os.ReadFile(goModPath)
+	var data []byte
+	var err error
+	for _, path := range candidates {
+		data, err = os.ReadFile(path)
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
-		// Try the other location as fallback
-		alt := filepath.Join(root, "go.mod")
-		if arch != "single" {
-			alt = filepath.Join(root, "apps", "api", "go.mod")
-		}
-		data, err = os.ReadFile(alt)
-		if err != nil {
-			return "", fmt.Errorf("reading go.mod: %w (checked %s)", err, goModPath)
-		}
+		return "", fmt.Errorf("reading go.mod: %w (checked %s)", err, strings.Join(candidates, ", "))
 	}
 
 	for _, line := range strings.Split(string(data), "\n") {

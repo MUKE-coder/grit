@@ -840,19 +840,28 @@ func resolveStringExpr(expr string, consts map[string]string) string {
 
 // FindRoutesFile locates the routes.go file in a Grit project.
 func FindRoutesFile(projectRoot string) (string, error) {
-	// Single app: internal/routes/routes.go
-	single := filepath.Join(projectRoot, "internal", "routes", "routes.go")
-	if _, err := os.Stat(single); err == nil {
-		return single, nil
+	// Three layouts, and every one of them has to be found here.
+	//
+	// A single project keeps its Go module in api/, beside a frontend that owns
+	// the project root. A monorepo keeps it in apps/api. A single project
+	// scaffolded before api/ existed keeps it at the root, and still works.
+	//
+	// Everything that reads a project's routes comes through here: the access
+	// registry, grit generate, grit doctor. A layout missing from this list is a
+	// project where the registry is never written, and internal/access then fails
+	// to compile on an undefined table.
+	for _, candidate := range [][]string{
+		{"api", "internal", "routes", "routes.go"},
+		{"apps", "api", "internal", "routes", "routes.go"},
+		{"internal", "routes", "routes.go"},
+	} {
+		path := filepath.Join(append([]string{projectRoot}, candidate...)...)
+		if _, err := os.Stat(path); err == nil {
+			return path, nil
+		}
 	}
 
-	// Monorepo: apps/api/internal/routes/routes.go
-	mono := filepath.Join(projectRoot, "apps", "api", "internal", "routes", "routes.go")
-	if _, err := os.Stat(mono); err == nil {
-		return mono, nil
-	}
-
-	return "", fmt.Errorf("routes.go not found (checked internal/routes/ and apps/api/internal/routes/)")
+	return "", fmt.Errorf("routes.go not found (checked api/internal/routes/, apps/api/internal/routes/ and internal/routes/)")
 }
 
 // FindResourceRouteFiles returns every per-resource route file beside routes.go.

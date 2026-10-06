@@ -23,7 +23,12 @@ type ciLayout struct {
 func ciLayoutFor(opts Options) ciLayout {
 	l := ciLayout{apiDir: "apps/api", jsDir: ".", hasFrontend: opts.Architecture != ArchAPI, desktop: opts.ShouldIncludeDesktop()}
 	if opts.Architecture == ArchSingle {
-		l.apiDir, l.jsDir, l.single = ".", "frontend", true
+		// The frontend owns the project root and the Go module sits in api/,
+		// which is the reverse of what it used to be.
+		l.apiDir, l.jsDir, l.single = "api", ".", true
+		if opts.LegacySingleFlat {
+			l.apiDir, l.jsDir = ".", "frontend"
+		}
 	}
 	return l
 }
@@ -37,12 +42,12 @@ func dependabotDir(dir string) string {
 }
 
 // ciEmbedPlaceholderStep lets a single-app project's Go compile in CI. The server
-// embeds frontend/dist, which .gitignore leaves out of the repository, and
-// //go:embed refuses a pattern that matches nothing.
-const ciEmbedPlaceholderStep = `      # The server embeds frontend/dist, which is built rather than committed.
+// embeds api/web, whose built assets .gitignore leaves out of the repository,
+// and //go:embed refuses a pattern that matches nothing.
+const ciEmbedPlaceholderStep = `      # The server embeds api/web, whose assets are built rather than committed.
       # A placeholder is enough for Go to compile.
       - name: Placeholder for the embedded frontend
-        run: mkdir -p frontend/dist && [ -e frontend/dist/index.html ] || echo '<!doctype html><title>Build the frontend</title>' > frontend/dist/index.html
+        run: mkdir -p api/web && [ -e api/web/index.html ] || echo '<!doctype html><title>Build the frontend</title>' > api/web/index.html
 `
 
 // dependabotDocker keeps the Dockerfiles' base images current. They are pinned
