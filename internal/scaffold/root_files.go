@@ -1076,6 +1076,15 @@ No Docker needed — just your API keys and `+"``"+`go run`+"``"+`.
 }
 
 func gritJSON(opts Options) string {
+	// What was actually built, not what was asked for. A single project is a Go
+	// binary with a Vite SPA inside it by definition, so `--single --next` gets
+	// a TanStack frontend and the flag is ignored; recording "next" there left
+	// the file disagreeing with the directory beside it, which is worse than
+	// ignoring the flag, because every tool that reads this believes it.
+	frontend := opts.Frontend
+	if opts.Architecture == ArchSingle {
+		frontend = FrontendTanStack
+	}
 	return fmt.Sprintf(`{
   "architecture": "%s",
   "frontend": "%s",
@@ -1086,6 +1095,6 @@ func gritJSON(opts Options) string {
     "docs": %t
   }
 }
-`, string(opts.Architecture), string(opts.Frontend), opts.Version,
+`, string(opts.Architecture), string(frontend), opts.Version,
 		opts.ShouldIncludeExpo(), opts.ShouldIncludeDesktop(), opts.ShouldIncludeDocs())
 }

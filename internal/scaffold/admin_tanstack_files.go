@@ -451,6 +451,10 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 		filepath.Join(adminRoot, "src", "components", "dashboard", "DashboardCharts.tsx"):     nextToTanStack(adminDashboardChartsTSX()),
 		filepath.Join(adminRoot, "src", "components", "dashboard", "CustomChartCard.tsx"):     nextToTanStack(adminCustomChartCardTSX()),
 		filepath.Join(adminRoot, "src", "components", "dashboard", "ChartBuilderForm.tsx"):    nextToTanStack(adminChartBuilderFormTSX()),
+		// The two nudges on the dashboard, asking once to verify an email and
+		// turn on two-factor. Every dashboard variant imports them, so a list
+		// without this line is a frontend that does not build at all.
+		filepath.Join(adminRoot, "src", "components", "dashboard", "security-nudges.tsx"): nextToTanStack(adminDashboardNudgesTSX()),
 
 		// Auth shells — the themed login/sign-up/forgot chrome. Without these the
 		// Vite admin's auth pages looked nothing like the Next.js admin's.

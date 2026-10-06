@@ -66,6 +66,51 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.378.2 */}
+            <div className="mb-12" id="v3.378.2">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.378.2
+                </span>
+                <span className="text-sm text-muted-foreground">October 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A single project did not build, over one missing file</h3>
+                <p>
+                  <code>grit new app --single</code> produced a frontend that failed{' '}
+                  <code>vite build</code> outright: <code>security-nudges.tsx</code>, the pair of
+                  prompts on the dashboard asking once to verify an email and turn on
+                  two-factor, was written for the Next.js admin and not the Vite one, and every
+                  dashboard variant imports it. Not a type error in a corner. The whole app
+                  refusing to compile, since the release that added the nudges.
+                </p>
+                <p>
+                  The two admin front-ends keep separate file lists and share most of their
+                  source, so a component added to one list and used in a shared page exists for
+                  one front-end only. This is the second time it has shipped: v3.119.0 did it
+                  with a two-factor card on the profile page. Nothing in the Go suite can see it,
+                  because the TSX lives inside Go string literals, and CI builds the Next.js
+                  admin.
+                </p>
+                <p>
+                  A test now compares the two lists over <code>components</code>, <code>lib</code>{' '}
+                  and <code>hooks</code> and names any file only one of them has. It is the whole
+                  class, not this instance: it found this file, and it fails if the next one is
+                  added the same way. Verified by building the generated SPA, which now
+                  completes.
+                </p>
+
+                <h4>And grit.json said next where it had built tanstack</h4>
+                <p>
+                  A single project is a Go binary with a Vite SPA inside it by definition, so{' '}
+                  <code>--single --next</code> ignores the flag. The config file recorded the
+                  flag anyway, which left it disagreeing with the directory next to it. It now
+                  records what was built, and every tool that reads it gets the truth.
+                </p>
+              </div>
+            </div>
+
             {/* v3.378.1 */}
             <div className="mb-12" id="v3.378.1">
               <div className="flex items-center gap-3 mb-4">
