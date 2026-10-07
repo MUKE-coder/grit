@@ -271,9 +271,21 @@ func TestSinglePanelHasWhatItImports(t *testing.T) {
 }
 
 // The navbar links to the panel, so it can be found without knowing the URL.
+//
+// The link moved into lib/nav-menu.ts when the navbar became a mega menu, so
+// this asserts against the entries rather than the markup that renders them.
 func TestSingleNavbarLinksToThePanel(t *testing.T) {
-	if !strings.Contains(singleViteNavbar(singleOptions()), `"/admin/dashboard"`) {
+	entries := webNavMenuConfig(singleOptions())
+	if !strings.Contains(entries, `"/admin/dashboard"`) {
 		t.Error("the SPA navbar has no link to the panel")
+	}
+	// A section of this same SPA, so it is a route and not a new tab.
+	if strings.Contains(entries, "external: true") {
+		t.Error("the embedded panel is linked as if it were another site")
+	}
+	// And the navbar still renders the entries.
+	if !strings.Contains(singleViteNavbar(singleOptions()), "<MegaMenu />") {
+		t.Error("the SPA navbar does not render the menu")
 	}
 }
 

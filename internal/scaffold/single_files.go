@@ -157,7 +157,11 @@ func singleFrontendOwnFiles(root string, opts Options) map[string]string {
 		filepath.Join(feRoot, "src", "routes", "_site", "blog", "$slug.tsx"): siteRouteID(webTanStackBlogDetailRoute()),
 		// Vite-flavoured navbar/footer (use TanStack Router's <Link> + useRouterState),
 		// not the Next.js variants from web_files.go which import next/link.
-		filepath.Join(feRoot, "src", "components", "navbar.tsx"):    singleViteNavbar(opts),
+		filepath.Join(feRoot, "src", "components", "navbar.tsx"): singleViteNavbar(opts),
+		// The navbar's entries and the menu, the same two files the Next
+		// frontends get, put through the compat rewrite.
+		filepath.Join(feRoot, "src", "lib", "nav-menu.ts"):          nextToTanStack(webNavMenuConfig(opts)),
+		filepath.Join(feRoot, "src", "components", "mega-menu.tsx"): nextToTanStack(webMegaMenu()),
 		filepath.Join(feRoot, "src", "components", "footer.tsx"):    singleViteFooter(opts),
 		filepath.Join(feRoot, "src", "components", "providers.tsx"): webTanStackProviders(),
 		filepath.Join(feRoot, "src", "lib", "utils.ts"):             webUtils(),

@@ -66,6 +66,82 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.386.0 */}
+            <div className="mb-12" id="v3.386.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.386.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 7, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Mega menu navbars</h3>
+                <p>
+                  The marketing navbar is a mega menu now, in every frontend Grit ships: the
+                  Next.js web app, the TanStack one, and the single&apos;s SPA. Columns of links
+                  with an icon, a title and a line of description, and an optional panel on the
+                  right for whatever people should see first.
+                </p>
+                <p>
+                  It is built on Base UI&apos;s <code>NavigationMenu</code>, which was already a
+                  dependency of all four frontends, so this adds a component and no package. That
+                  buys the behaviour a hand-rolled menu gets wrong: a portalled popup that
+                  survives the sticky header&apos;s stacking context, a viewport that animates
+                  between panels of different sizes, hover intent, Escape and click-outside, and
+                  arrow-key movement through the links.
+                </p>
+                <p>
+                  The contents are data, in <code>lib/nav-menu.ts</code>, declared once and
+                  rendered by every navbar and by the mobile drawer. Edit that file rather than
+                  the markup. The default names only pages a new project actually has.
+                </p>
+
+                <h3>A one-day-old Next.js, adopted automatically</h3>
+                <p>
+                  A project reported a blank page and{' '}
+                  <code>Cannot read properties of undefined (reading &apos;slots&apos;)</code>{' '}
+                  thrown from <code>OuterLayoutRouter</code>. It had installed Next 16.4.0,
+                  published about eighteen hours earlier, because the templates asked for{' '}
+                  <code>^16.1.6</code> and that means any 16.x.
+                </p>
+                <p>
+                  16.4.0 rewrote the App Router&apos;s layout-router to keep a render tree
+                  separate from the route tree, and reads{' '}
+                  <code>parentRenderTree.slots?.get(key)</code>, guarding <code>slots</code> and
+                  not <code>parentRenderTree</code>. 16.3.8 has no <code>parentRenderTree</code>{' '}
+                  at all, so the code that throws does not exist there. Next is pinned exactly
+                  now, like React and pnpm: moving it is a decision somebody makes after running
+                  the tiers, not something npm does overnight. pnpm&apos;s own supply-chain policy
+                  rejects 16.4.0 today for being inside the minimum-release-age cutoff, which is a
+                  second reason not to chase the newest release.
+                </p>
+
+                <h3>grit upgrade bricked every single --next project</h3>
+                <p>
+                  The project&apos;s name was read from the root <code>package.json</code>, with
+                  the scope stripped by taking the last path segment. A single&apos;s root
+                  package.json belongs to its frontend and is called{' '}
+                  <code>@&lt;project&gt;/web</code>, whose last segment is <strong>web</strong>.
+                </p>
+                <p>
+                  So the first <code>grit upgrade</code> of a <code>--single --next</code> project
+                  rewrote every generated import to <code>web/internal/...</code>, a module that
+                  does not exist, and the API stopped compiling with an error naming the Go
+                  standard library. The name comes from <code>go.mod</code> now, which is the
+                  record the Go code actually depends on. Running the upgrade again repairs a
+                  project this already happened to.
+                </p>
+                <p>
+                  While finding that: a <code>--single --next</code> project&apos;s frontend had
+                  never been upgraded at all. Every web update is gated on whether{' '}
+                  <code>apps/web</code> exists, and a single&apos;s frontend is the project root,
+                  so the answer was always no. The landing page, the 404, the error pages and the
+                  palette fixes all stopped at the project&apos;s birthday.
+                </p>
+              </div>
+            </div>
+
             {/* v3.385.0 */}
             <div className="mb-12" id="v3.385.0">
               <div className="flex items-center gap-3 mb-4">

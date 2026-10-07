@@ -28,6 +28,8 @@ func writeWebTanStackFiles(root string, opts Options) error {
 		filepath.Join(webRoot, "src", "routes", "_site", "blog", "index.tsx"): siteRouteID(webTanStackBlogListRoute()),
 		filepath.Join(webRoot, "src", "routes", "_site", "blog", "$slug.tsx"): siteRouteID(webTanStackBlogDetailRoute()),
 		filepath.Join(webRoot, "src", "components", "navbar.tsx"):             nextToTanStack(webNavbar(opts)),
+		filepath.Join(webRoot, "src", "lib", "nav-menu.ts"):                   nextToTanStack(webNavMenuConfig(opts)),
+		filepath.Join(webRoot, "src", "components", "mega-menu.tsx"):          nextToTanStack(webMegaMenu()),
 		filepath.Join(webRoot, "src", "components", "footer.tsx"):             nextToTanStack(webFooter(opts)),
 		filepath.Join(webRoot, "src", "components", "providers.tsx"):          webTanStackProviders(),
 		filepath.Join(webRoot, "src", "lib", "next-compat.tsx"):               adminNextCompatShim(),

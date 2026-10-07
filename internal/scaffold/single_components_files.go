@@ -22,13 +22,11 @@ func singleViteNavbar(opts Options) string {
 	// The panel is a section of this same SPA, so the link is a route. Without it
 	// the only way to the dashboard is typing the URL, which is how the first
 	// embedded panel shipped.
-	adminLink := ""
-	if opts.ShouldEmbedAdminInSPA() {
-		adminLink = "\n  { href: \"/admin/dashboard\", label: \"Admin\" },"
-	}
 	return `import { useState } from "react"
-import { Link, useRouterState } from "@tanstack/react-router"
+import { Link } from "@tanstack/react-router"
 import { Menu, X, Github } from "lucide-react"
+
+import { MegaMenu, MegaMenuMobile } from "@/components/mega-menu"
 
 const DOCS_URL = "https://gritframework.dev/docs"
 
@@ -37,14 +35,9 @@ const DOCS_URL = "https://gritframework.dev/docs"
 // process.env, hence MODE rather than NODE_ENV.
 const DEV = import.meta.env.MODE !== "production"
 
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/blog", label: "Blog" },` + adminLink + `
-]
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
@@ -57,20 +50,7 @@ export function Navbar() {
         </Link>
 
         <div className="hidden md:flex items-center gap-6">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              to={link.href}
-              className={
-                "text-sm transition-colors " +
-                (pathname === link.href
-                  ? "text-foreground font-medium"
-                  : "text-text-secondary hover:text-foreground")
-              }
-            >
-              {link.label}
-            </Link>
-          ))}
+          <MegaMenu />
           {DEV ? (
             <>
               <a
@@ -85,9 +65,10 @@ export function Navbar() {
                 href="https://github.com/MUKE-coder/grit"
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="Grit on GitHub (opens in a new tab)"
                 className="text-text-secondary hover:text-foreground transition-colors"
               >
-                <Github className="h-5 w-5" />
+                <Github className="h-5 w-5" aria-hidden="true" />
               </a>
             </>
           ) : null}
@@ -106,21 +87,7 @@ export function Navbar() {
       {mobileOpen ? (
         <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-lg">
           <div className="mx-auto max-w-5xl px-6 py-4 flex flex-col gap-3">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                onClick={() => setMobileOpen(false)}
-                className={
-                  "text-sm py-2 transition-colors " +
-                  (pathname === link.href
-                    ? "text-foreground font-medium"
-                    : "text-text-secondary hover:text-foreground")
-                }
-              >
-                {link.label}
-              </Link>
-            ))}
+            <MegaMenuMobile onNavigate={() => setMobileOpen(false)} />
             {DEV ? (
               <>
                 <a

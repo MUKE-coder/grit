@@ -564,7 +564,7 @@ func adminPackageJSON(opts Options) string {
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "lucide-react": "^0.468.0",
-    "next": "^16.1.6",
+    "next": "` + nextVersion + `",
     "react": "`+reactVersionFor(opts)+`",
     "react-dom": "`+reactVersionFor(opts)+`",
 `+tiptapDependencyLines("    ")+`    "react-dropzone": "^14.2.0",

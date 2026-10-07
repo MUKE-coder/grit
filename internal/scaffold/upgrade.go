@@ -830,6 +830,22 @@ func Upgrade(uOpts UpgradeOptions) error {
 		updated += 9
 	}
 
+	// --- A single's frontend ---
+	//
+	// The block above asks whether apps/web exists, which a single does not
+	// have: its frontend IS the project root. A --single --next project
+	// therefore took every web fix on the day it was created and none since.
+	// The Vite single is covered by the SPA block further down, which rewrites
+	// its navbar and routes; this is the Next one, which was covered nowhere.
+	if opts.SingleUsesNext() && dirExists(filepath.Join(webAppRoot(root, opts), "app")) {
+		spinner.Printf("  → Updating the frontend...\n")
+		if err := writeWebFiles(root, opts); err != nil {
+			return fmt.Errorf("updating the single's frontend: %w", err)
+		}
+		green.Printf("  ✓ Frontend updated\n")
+		updated += 9
+	}
+
 	// --- The admin panel inside the web app (a double) ---
 	//
 	// A web app and no admin app is a double, and before v3.235.0 that meant no
@@ -1720,7 +1736,58 @@ func FindProjectRoot() (string, error) {
 }
 
 // readProjectName reads the project name from the root package.json.
+// moduleProjectName reads the project's name out of the API's go.mod, or
+// returns "" when there is no API to read.
+//
+// The module is the name Grit generated the project with: a single's is the
+// project name, a monorepo's is "<project>/apps/api". It is the one record of
+// the name that the Go code itself depends on, which makes it the right one to
+// trust over a package.json somebody may have renamed.
+func moduleProjectName(root string) string {
+	for _, dir := range []string{
+		filepath.Join(root, "apps", "api"),
+		filepath.Join(root, "api"),
+		root,
+	} {
+		data, err := os.ReadFile(filepath.Join(dir, "go.mod"))
+		if err != nil {
+			continue
+		}
+		for _, line := range strings.Split(string(data), "\n") {
+			line = strings.TrimSpace(line)
+			if !strings.HasPrefix(line, "module ") {
+				continue
+			}
+			module := strings.TrimSpace(strings.TrimPrefix(line, "module "))
+			module = strings.TrimSuffix(module, "/apps/api")
+			if module == "" {
+				return ""
+			}
+			// A module path may be a URL (github.com/you/shop); the project's
+			// name is its last segment.
+			if i := strings.LastIndex(module, "/"); i >= 0 {
+				module = module[i+1:]
+			}
+			return module
+		}
+	}
+	return ""
+}
+
 func readProjectName(root string) (string, error) {
+	// go.mod first, because the module path is the thing that must not change.
+	// Get this wrong and every regenerated Go file imports a module that does
+	// not exist, and the API stops compiling with an error naming the standard
+	// library.
+	//
+	// A single's root package.json is its FRONTEND's, named "@<project>/web".
+	// The scope strip below takes the last segment of that, which is "web", so
+	// every --single --next project came out of its first upgrade with a module
+	// called web and a build that could not resolve a single internal package.
+	if name := moduleProjectName(root); name != "" {
+		return name, nil
+	}
+
 	data, err := os.ReadFile(filepath.Join(root, "package.json"))
 	if err != nil {
 		// Fall back to directory name

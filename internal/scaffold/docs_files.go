@@ -72,7 +72,7 @@ func docsPackageJSON(opts Options) string {
     "start": "next start --port 3002"
   },
   "dependencies": {
-    "next": "^16.1.6",
+    "next": "` + nextVersion + `",
     "react": "`+reactVersionFor(opts)+`",
     "react-dom": "`+reactVersionFor(opts)+`",
     "fumadocs-core": "^16.0.0",

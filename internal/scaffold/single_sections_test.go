@@ -150,8 +150,13 @@ func TestSingleWebAuthWritesTheScreens(t *testing.T) {
 	if !strings.Contains(navbar, "<UserMenu />") {
 		t.Error("the navbar has no way into the account area")
 	}
-	if !strings.Contains(navbar, `{ href: "/blog", label: "Blog" }`) {
+	// The site's own links moved into lib/nav-menu.ts when the navbar became a
+	// mega menu, so the navbar renders them rather than listing them.
+	if !strings.Contains(navbar, "<MegaMenu />") {
 		t.Error("the auth-aware navbar lost the site's own links")
+	}
+	if !strings.Contains(webNavMenuConfig(singleOptions()), `href: "/blog"`) {
+		t.Error("the entries the navbar renders have no link to the blog")
 	}
 }
 
