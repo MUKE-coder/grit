@@ -255,9 +255,10 @@ docker compose -f docker-compose.prod.yml up --build''',
         blurb='The API and the whole app in one executable.',
         lead=(
             'One folder that looks like the web project it is, with the Go API in '
-            '<code>api/</code> beside it. The frontend is a Vite app with the admin panel at '
-            '<code>/admin</code>, and the build puts it inside the binary: what you deploy is a '
-            'single file with no runtime to install next to it.'
+            '<code>api/</code> beside it and the admin panel at <code>/admin</code>. The build '
+            'puts the frontend inside the binary, so what you deploy is a single file with no '
+            'runtime to install next to it. Both frontends work this way: TanStack by default, '
+            'Next.js with <code>--next</code>, which builds a static export into the same place.'
         ),
         prereq=[
             ('Go 1.21 or newer', 'The API, and the binary that ends up carrying everything.'),
@@ -271,8 +272,9 @@ docker compose -f docker-compose.prod.yml up --build''',
         ],
         run_cmd='grit start',
         run_note=(
-            'The Go API and the Vite dev server, in parallel. In development they are two '
-            'processes; in production they are one file.'
+            'The Go API and the frontend dev server, in parallel. In development they are two '
+            'processes, because a dev server is what gives you hot reload; in production they '
+            'are one file.'
         ),
         ports=[
             ('http://localhost:5173', 'The app, with the admin panel at /admin'),
@@ -292,7 +294,12 @@ grit deploy --host user@server.com --domain contacts.example.com''',
             'The binary serves the API and the whole frontend, so there is nothing else to put '
             'on the server: no Node, no nginx in front of static files, no second process. Copy '
             'it beside a <code>.env</code> and run it. <code>grit deploy</code> does the same '
-            'thing and adds a systemd unit and a certificate.'
+            'thing and adds a systemd unit and a certificate. '
+            'One difference worth knowing with <code>--next</code>: a static export has to have '
+            'a file for every URL it serves, and the id of a record is not known at build time, '
+            'so '
+            'a detail page is <code>/resources/users/view?id=...</code> rather than '
+            '<code>/resources/users/123</code>.'
         ),
         prev=('api', 'The API on its own'),
         nxt=('full', 'Everything at once'),

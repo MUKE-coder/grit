@@ -66,6 +66,31 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.383.1 */}
+            <div className="mb-12" id="v3.383.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.383.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 7, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The one-binary tutorial said the frontend was Vite</h3>
+                <p>
+                  Written when it was, and left behind by v3.383.0: both frontends build into the
+                  binary now. The page offered <code>--single --next</code> as an alternative in
+                  one section and described a Vite app in the next, which is the kind of
+                  contradiction a reader resolves by assuming they have misread something.
+                </p>
+                <p>
+                  It now says both, and says the one thing that differs: a static export has to
+                  have a file for every URL, so with <code>--next</code> a record is at{' '}
+                  <code>/resources/users/view?id=...</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.383.0 */}
             <div className="mb-12" id="v3.383.0">
               <div className="flex items-center gap-3 mb-4">

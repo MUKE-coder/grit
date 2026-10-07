@@ -22,7 +22,7 @@ export default function ContactsSingleTutorialPage() {
             <div className="mb-10">
               <span className="tag-mono text-primary/80 mb-3 block">Tutorial</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">Contacts: one binary</h1>
-              <p className="text-lg text-muted-foreground leading-relaxed">One folder that looks like the web project it is, with the Go API in <code>api/</code> beside it. The frontend is a Vite app with the admin panel at <code>/admin</code>, and the build puts it inside the binary: what you deploy is a single file with no runtime to install next to it.</p>
+              <p className="text-lg text-muted-foreground leading-relaxed">One folder that looks like the web project it is, with the Go API in <code>api/</code> beside it and the admin panel at <code>/admin</code>. The build puts the frontend inside the binary, so what you deploy is a single file with no runtime to install next to it. Both frontends work this way: TanStack by default, Next.js with <code>--next</code>, which builds a static export into the same place.</p>
             </div>
 
             <div className="prose-grit">
@@ -180,7 +180,7 @@ grit seed`} />
 
               <h2>4. Run it</h2>
               <CodeBlock terminal language="bash" code={`grit start`} />
-              <p>The Go API and the Vite dev server, in parallel. In development they are two processes; in production they are one file.</p>
+              <p>The Go API and the frontend dev server, in parallel. In development they are two processes, because a dev server is what gives you hot reload; in production they are one file.</p>
 
               <table className="w-full text-sm my-6">
                 <thead>
@@ -229,7 +229,7 @@ scp bin/contacts user@server.com:/srv/contacts
 
 # Or let grit do the systemd and TLS part
 grit deploy --host user@server.com --domain contacts.example.com`} />
-              <p>The binary serves the API and the whole frontend, so there is nothing else to put on the server: no Node, no nginx in front of static files, no second process. Copy it beside a <code>.env</code> and run it. <code>grit deploy</code> does the same thing and adds a systemd unit and a certificate.</p>
+              <p>The binary serves the API and the whole frontend, so there is nothing else to put on the server: no Node, no nginx in front of static files, no second process. Copy it beside a <code>.env</code> and run it. <code>grit deploy</code> does the same thing and adds a systemd unit and a certificate. One difference worth knowing with <code>--next</code>: a static export has to have a file for every URL it serves, and the id of a record is not known at build time, so a detail page is <code>/resources/users/view?id=...</code> rather than <code>/resources/users/123</code>.</p>
               <p>
                 Before any of that, read the{' '}
                 <Link href="/docs/deployment/checklist">go-live checklist</Link>: it is the list of
