@@ -12,7 +12,7 @@ func writeExpoFiles(root string, opts Options) error {
 		filepath.Join(expoRoot, "package.json"):                                   expoPackageJSON(opts),
 		filepath.Join(expoRoot, "app.json"):                                       expoAppJSON(opts),
 		filepath.Join(expoRoot, "tsconfig.json"):                                  expoTSConfig(),
-		filepath.Join(expoRoot, "tailwind.config.js"):                             expoTailwindConfig(),
+		filepath.Join(expoRoot, "tailwind.config.js"):                             expoTailwindConfig(opts),
 		filepath.Join(expoRoot, "metro.config.js"):                                expoMetroConfig(),
 		filepath.Join(expoRoot, "babel.config.js"):                                expoBabelConfig(),
 		filepath.Join(expoRoot, "global.css"):                                     expoGlobalCSS(),
@@ -58,7 +58,7 @@ func writeExpoFiles(root string, opts Options) error {
 		filepath.Join(expoRoot, "lib", "secure-store.ts"):                         expoSecureStore(),
 		filepath.Join(expoRoot, "lib", "api.ts"):                                  expoAPIClient(),
 		filepath.Join(expoRoot, "lib", "auth.tsx"):                                expoAuthProvider(),
-		filepath.Join(expoRoot, "lib", "theme.tsx"):                               expoThemeProvider(),
+		filepath.Join(expoRoot, "lib", "theme.tsx"):                               expoThemeProvider(opts),
 		filepath.Join(expoRoot, "lib", "query-client.ts"):                         expoQueryClient(),
 	}
 
@@ -210,7 +210,11 @@ func expoTSConfig() string {
 `
 }
 
-func expoTailwindConfig() string {
+func expoTailwindConfig(opts Options) string {
+	// The brand colours come from the project's theme. NativeWind resolves
+	// classes at build time and has no CSS variables, so they are written in
+	// rather than referenced.
+	t := opts.Theme
 	return `/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}", "./lib/**/*.{js,jsx,ts,tsx}"],
@@ -231,13 +235,13 @@ module.exports = {
         },
         border: "#2a2a3a",
         accent: {
-          DEFAULT: "#6c5ce7",
-          hover: "#7c6cf7",
+          DEFAULT: "` + themeColor(t, "accent", "#6c5ce7") + `",
+          hover: "` + themeColor(t, "accent-hover", "#7c6cf7") + `",
         },
-        success: "#00b894",
-        danger: "#ff6b6b",
-        warning: "#fdcb6e",
-        info: "#74b9ff",
+        success: "` + themeColor(t, "success", "#00b894") + `",
+        danger: "` + themeColor(t, "danger", "#ff6b6b") + `",
+        warning: "` + themeColor(t, "warning", "#fdcb6e") + `",
+        info: "` + themeColor(t, "info", "#74b9ff") + `",
       },
     },
   },
@@ -2645,7 +2649,10 @@ export const useAuth = () => useContext(AuthContext);
 `
 }
 
-func expoThemeProvider() string {
+func expoThemeProvider(opts Options) string {
+	// The brand colour, for the handful of places a class cannot reach: the
+	// header gradient, the pull-to-refresh spinner, the logo's shadow.
+	accent := themeColor(opts.Theme, "accent", "#6c5ce7")
 	return `import { createContext, useContext, useEffect, useState } from "react";
 import { useColorScheme, colorScheme as nwColorScheme } from "nativewind";
 import * as SecureStore from "@/lib/secure-store";
@@ -2680,8 +2687,8 @@ export interface Palette {
 const LIGHT: Palette = {
   scheme: "light",
   statusBar: "dark",
-  headerGradient: ["#EFEBFF", "#F6F4FF", "#FFFFFF"],
-  logoShadow: "#6c5ce7",
+  headerGradient: ["` + rgba(accent, 0.1) + `", "` + rgba(accent, 0.04) + `", "#FFFFFF"],
+  logoShadow: "` + accent + `",
   gridLine: "#0f1018",
   gridOpacity: 0.04,
   inputIcon: "#9CA3AF",
@@ -2690,14 +2697,14 @@ const LIGHT: Palette = {
   tabBarBorder: "#E5E7EB",
   tabInactive: "#9CA3AF",
   blurTint: "light",
-  refresh: "#6c5ce7",
+  refresh: "` + accent + `",
 };
 
 const DARK: Palette = {
   scheme: "dark",
   statusBar: "light",
-  headerGradient: ["#1c1830", "#15121f", "#111118"],
-  logoShadow: "#6c5ce7",
+  headerGradient: ["` + rgba(accent, 0.18) + `", "` + rgba(accent, 0.07) + `", "#111118"],
+  logoShadow: "` + accent + `",
   gridLine: "#e8e8f0",
   gridOpacity: 0.06,
   inputIcon: "#606078",
@@ -2706,7 +2713,7 @@ const DARK: Palette = {
   tabBarBorder: "#22222e",
   tabInactive: "#606078",
   blurTint: "dark",
-  refresh: "#6c5ce7",
+  refresh: "` + accent + `",
 };
 
 interface ThemeContextType {

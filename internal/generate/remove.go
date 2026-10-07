@@ -444,6 +444,12 @@ func RemoveResource(name string) error {
 			if removeMarkedRegion(homePage, "grit:home:blog-hook-start", "grit:home:blog-hook-end") {
 				cut = true
 			}
+			// The hero's primary call to action is "Read the Blog", which after
+			// this is a link to a 404. Marked separately because it sits in the
+			// middle of the hero, not in the section below it.
+			if removeMarkedRegion(homePage, "grit:home:blog-cta-start", "grit:home:blog-cta-end") {
+				cut = true
+			}
 			if removeLinesContaining(homePage, "// grit:home:blog-import") == nil {
 				cut = true
 			}

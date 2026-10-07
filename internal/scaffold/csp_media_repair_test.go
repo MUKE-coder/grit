@@ -7,7 +7,7 @@ import (
 
 // New configs carry media-src; an old one gets it where a new one has it.
 func TestCSPMediaRepairMatchesTheTemplates(t *testing.T) {
-	for name, tmpl := range map[string]string{"next": nextSecurityHeaders(), "vite": viteSecurityHeaders()} {
+	for name, tmpl := range map[string]string{"next": nextSecurityHeaders(), "vite": viteSecurityHeaders("process.cwd()")} {
 		if !strings.Contains(tmpl, cspMediaSrc) {
 			t.Fatalf("%s CSP has no media-src", name)
 		}

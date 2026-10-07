@@ -287,6 +287,11 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_THEME: process.env.THEME || "atlas",
     NEXT_PUBLIC_SOCIAL_AUTH_ENABLED: process.env.SOCIAL_AUTH_ENABLED || "true",
+    // API_URL is where .env says the API is, and the docker build already
+    // passes it through under this name. Outside Docker nothing did, so a
+    // project whose API moved off 8080 built a frontend that called 8080.
+    NEXT_PUBLIC_API_URL:
+      process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "http://localhost:8080",
   },
 ` + nextSecurityHeadersConfig(opts) + `};
 
@@ -429,195 +434,7 @@ func webGlobalCSS() string {
 /* v3.28.1 — theme-aware CSS variables. Web mirrors admin's variable
  * system so a single THEME=<name> in .env paints both surfaces. */
 
-/* atlas (default) */
-:root,
-[data-theme="atlas"] {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  --bg-elevated: #ffffff;
-  --bg-hover: #f1f5f9;
-  --border: #e2e8f0;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-fg: #ffffff;
-  --success: #10b981;
-  --danger: #ef4444;
-  --warning: #f59e0b;
-  --info: #0ea5e9;
-}
-
-/* aurora — friendly, pastel, consumer SaaS */
-/* aurora — Apple-inspired. Monochrome: near-black text and CTAs on white and
- * Apple's warm greys. Blue is reserved for links/info only, so the accent that
- * drives buttons stays black like iCloud's sign-in pill. */
-[data-theme="aurora"] {
-  --bg-primary: #fbfbfd;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #f5f5f7;
-  --bg-elevated: #ffffff;
-  --bg-hover: #f5f5f7;
-  --border: #d2d2d7;
-  --text-primary: #1d1d1f;
-  --text-secondary: #424245;
-  --text-muted: #86868b;
-  --accent: #1d1d1f;
-  --accent-hover: #000000;
-  --accent-fg: #ffffff;
-  --success: #10b981;
-  --danger: #ef4444;
-  --warning: #f59e0b;
-  --info: #0071e3;
-}
-
-/* pulse — Cloudflare-inspired. Premium blue CTAs on a cool grey-blue canvas
- * with white elevated cards; Cloudflare orange is the single warm accent. */
-[data-theme="pulse"] {
-  --bg-primary: #f6f7f9;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #eef1f5;
-  --bg-elevated: #ffffff;
-  --bg-hover: #eef1f5;
-  --border: #e0e4e9;
-  --text-primary: #1d1f26;
-  --text-secondary: #4b5563;
-  --text-muted: #8a94a6;
-  --accent: #0051c3;
-  --accent-hover: #003d99;
-  --accent-fg: #ffffff;
-  --success: #16a34a;
-  --danger: #dc2626;
-  --warning: #f6821f;
-  --info: #0051c3;
-}
-
-/* coral - rose, warm neutrals. The marketplace palette: the accent is a
- * statement colour, so the greys around it stay very plain. */
-[data-theme="coral"] {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f7f7f7;
-  --bg-tertiary: #f0f0f0;
-  --bg-elevated: #ffffff;
-  --bg-hover: #f0f0f0;
-  --border: #dddddd;
-  --text-primary: #222222;
-  --text-secondary: #494949;
-  --text-muted: #717171;
-  --accent: #e11d48;
-  --accent-hover: #be123c;
-  --accent-fg: #ffffff;
-  --success: #059669;
-  --danger: #dc2626;
-  --warning: #d97706;
-  --info: #2563eb;
-}
-
-/* amber - the storefront palette. Dark text on the accent rather than white:
- * amber is too light to carry white text at AA. */
-[data-theme="amber"] {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f7f8f8;
-  --bg-tertiary: #eff1f1;
-  --bg-elevated: #ffffff;
-  --bg-hover: #eff1f1;
-  --border: #d5d9d9;
-  --text-primary: #0f1111;
-  --text-secondary: #3f4545;
-  --text-muted: #565959;
-  --accent: #f59e0b;
-  --accent-hover: #d97706;
-  --accent-fg: #0f1111;
-  --success: #047857;
-  --danger: #b91c1c;
-  --warning: #b45309;
-  --info: #0369a1;
-}
-
-/* sky - crisp blue on cool greys. */
-[data-theme="sky"] {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #eef4f9;
-  --bg-elevated: #ffffff;
-  --bg-hover: #eef4f9;
-  --border: #dbe3ec;
-  --text-primary: #0b1521;
-  --text-secondary: #3a4a5e;
-  --text-muted: #5b6b7f;
-  --accent: #0284c7;
-  --accent-hover: #0369a1;
-  --accent-fg: #ffffff;
-  --success: #059669;
-  --danger: #dc2626;
-  --warning: #d97706;
-  --info: #0ea5e9;
-}
-
-/* mono - black and white. The accent is the text colour, which is the whole
- * idea: nothing on the screen competes for attention with the content. */
-[data-theme="mono"] {
-  --bg-primary: #ffffff;
-  --bg-secondary: #fafafa;
-  --bg-tertiary: #f5f5f5;
-  --bg-elevated: #ffffff;
-  --bg-hover: #f5f5f5;
-  --border: #e5e5e5;
-  --text-primary: #0a0a0a;
-  --text-secondary: #525252;
-  --text-muted: #737373;
-  --accent: #0a0a0a;
-  --accent-hover: #262626;
-  --accent-fg: #ffffff;
-  --success: #15803d;
-  --danger: #b91c1c;
-  --warning: #a16207;
-  --info: #1d4ed8;
-}
-
-/* emerald - green on neutral greys. */
-[data-theme="emerald"] {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f9fafb;
-  --bg-tertiary: #f3f4f6;
-  --bg-elevated: #ffffff;
-  --bg-hover: #f3f4f6;
-  --border: #e5e7eb;
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-muted: #6b7280;
-  --accent: #059669;
-  --accent-hover: #047857;
-  --accent-fg: #ffffff;
-  --success: #059669;
-  --danger: #dc2626;
-  --warning: #d97706;
-  --info: #2563eb;
-}
-
-/* midnight — legacy v3.27 dark look. Opt in by setting THEME=midnight or
- * adding data-theme="midnight" on a specific surface. */
-[data-theme="midnight"] {
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #111118;
-  --bg-tertiary: #1a1a24;
-  --bg-elevated: #22222e;
-  --bg-hover: #2a2a38;
-  --border: #2a2a3a;
-  --text-primary: #e8e8f0;
-  --text-secondary: #9090a8;
-  --text-muted: #7c7c96;
-  --accent: #6c5ce7;
-  --accent-hover: #7c6cf7;
-  --accent-fg: #ffffff;
-  --success: #00b894;
-  --danger: #ff6b6b;
-  --warning: #fdcb6e;
-  --info: #74b9ff;
-}
-
+` + themePaletteCSS() + `
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
@@ -915,6 +732,11 @@ const DOCS_URL = "https://gritframework.dev/docs";
 // until v3.235.0. NEXT_PUBLIC_ADMIN_URL still overrides both.
 const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "{{ADMIN_HREF}}";
 
+// Grit's docs and repository. Links for whoever is building this app, not for
+// the people visiting it, so they render in development only -- the same rule
+// DevLinks follows on the landing page.
+const DEV = process.env.NODE_ENV !== "production";
+
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/blog", label: "Blog" },
@@ -930,7 +752,7 @@ export function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 border border-accent/20">
-            <span className="text-accent font-mono font-bold text-sm">G</span>
+            <span className="text-accent font-mono font-bold text-sm">` + projectInitial(opts) + `</span>
           </div>
           <span className="text-lg font-bold tracking-tight">` + opts.ProjectName + `</span>
         </Link>
@@ -950,22 +772,26 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
-          <a
-            href={DOCS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-text-secondary hover:text-foreground transition-colors"
-          >
-            Docs
-          </a>
-          <a
-            href="https://github.com/MUKE-coder/grit"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-text-secondary hover:text-foreground transition-colors"
-          >
-            <Github className="h-5 w-5" />
-          </a>
+          {DEV && (
+            <>
+              <a
+                href={DOCS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-text-secondary hover:text-foreground transition-colors"
+              >
+                Docs
+              </a>
+              <a
+                href="https://github.com/MUKE-coder/grit"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-text-secondary hover:text-foreground transition-colors"
+              >
+                <Github className="h-5 w-5" />
+              </a>
+            </>
+          )}
           {/* v3.31.49 -- Admin CTA. Operators land on the marketing
               site and shouldn't have to type the admin URL by hand;
               the admin app itself gates everything behind auth. */}
@@ -978,6 +804,7 @@ export function Navbar() {
             <Shield className="h-3.5 w-3.5" />
             Admin
           </a>
+          {/* grit:nav:account-desktop */}
         </div>
 
         {/* Mobile hamburger */}
@@ -1008,22 +835,26 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <a
-              href={DOCS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
-            >
-              Docs
-            </a>
-            <a
-              href="https://github.com/MUKE-coder/grit"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
-            >
-              GitHub
-            </a>
+            {DEV && (
+              <>
+                <a
+                  href={DOCS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
+                >
+                  Docs
+                </a>
+                <a
+                  href="https://github.com/MUKE-coder/grit"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
+                >
+                  GitHub
+                </a>
+              </>
+            )}
             <a
               href={ADMIN_URL}
               target="_blank"
@@ -1033,6 +864,7 @@ export function Navbar() {
               <Shield className="h-3.5 w-3.5" />
               Admin
             </a>
+            {/* grit:nav:account-mobile */}
           </div>
         </div>
       )}
@@ -1064,6 +896,11 @@ const DOCS_URL = "https://gritframework.dev/docs";
 // until v3.235.0. NEXT_PUBLIC_ADMIN_URL still overrides both.
 const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "{{ADMIN_HREF}}";
 
+// Grit's docs and repository. Links for whoever is building this app, not for
+// the people visiting it, so they render in development only -- the same rule
+// DevLinks follows on the landing page.
+const DEV = process.env.NODE_ENV !== "production";
+
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/blog", label: "Blog" },
@@ -1078,7 +915,7 @@ export function Navbar() {
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 border border-accent/20">
-            <span className="text-accent font-mono font-bold text-sm">G</span>
+            <span className="text-accent font-mono font-bold text-sm">` + projectInitial(opts) + `</span>
           </div>
           <span className="text-lg font-bold tracking-tight">` + opts.ProjectName + `</span>
         </Link>
@@ -1097,22 +934,26 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
-          <a
-            href={DOCS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-text-secondary hover:text-foreground transition-colors"
-          >
-            Docs
-          </a>
-          <a
-            href="https://github.com/MUKE-coder/grit"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-text-secondary hover:text-foreground transition-colors"
-          >
-            <Github className="h-5 w-5" />
-          </a>
+          {DEV && (
+            <>
+              <a
+                href={DOCS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-text-secondary hover:text-foreground transition-colors"
+              >
+                Docs
+              </a>
+              <a
+                href="https://github.com/MUKE-coder/grit"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-text-secondary hover:text-foreground transition-colors"
+              >
+                <Github className="h-5 w-5" />
+              </a>
+            </>
+          )}
           {/* v3.31.49 -- Admin CTA (always visible, even with auth). */}
           <a
             href={ADMIN_URL}
@@ -1123,6 +964,7 @@ export function Navbar() {
             <Shield className="h-3.5 w-3.5" />
             Admin
           </a>
+          {/* grit:nav:account-desktop */}
           <UserMenu />
         </div>
 
@@ -1152,22 +994,26 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <a
-              href={DOCS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
-            >
-              Docs
-            </a>
-            <a
-              href="https://github.com/MUKE-coder/grit"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
-            >
-              GitHub
-            </a>
+            {DEV && (
+              <>
+                <a
+                  href={DOCS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
+                >
+                  Docs
+                </a>
+                <a
+                  href="https://github.com/MUKE-coder/grit"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
+                >
+                  GitHub
+                </a>
+              </>
+            )}
             <a
               href={ADMIN_URL}
               target="_blank"
@@ -1177,6 +1023,7 @@ export function Navbar() {
               <Shield className="h-3.5 w-3.5" />
               Admin
             </a>
+            {/* grit:nav:account-mobile */}
             <div className="mt-2 border-t border-border/50 pt-3">
               <UserMenu />
             </div>

@@ -104,7 +104,7 @@ func webTanStackViteConfig(opts Options) string {
 import react from '@vitejs/plugin-react'
 import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
 import path from 'node:path'
-` + viteSecurityHeaders() + `
+` + viteSecurityHeaders("path.resolve(__dirname, '../..')") + `
 export default defineConfig({
   plugins: [
     TanStackRouterVite(),
@@ -123,7 +123,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: apiTarget,
         changeOrigin: true,
       },
     },
@@ -298,7 +298,7 @@ function HomePage() {
           </span>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
             <span className="text-foreground">Build faster with</span>{' '}
-            <span className="bg-gradient-to-r from-accent to-purple-400 bg-clip-text text-transparent">
+            <span className="text-accent">
               %s
             </span>
           </h1>

@@ -662,7 +662,7 @@ import react from '@vitejs/plugin-react'
 import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
-` + viteSecurityHeaders() + `
+` + viteSecurityHeaders("path.resolve(__dirname, '../..')") + `
 export default defineConfig({
   plugins: [
     TanStackRouterVite(),
@@ -693,7 +693,7 @@ export default defineConfig({
     port: 3001,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: apiTarget,
         changeOrigin: true,
       },
     },

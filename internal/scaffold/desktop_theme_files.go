@@ -197,14 +197,17 @@ export function authVars(theme: typeof activeTheme): Record<string, string> {
 func desktopClientBrandMark() string {
 	return `import { brand } from "@repo/shared/brand.config";
 
-export function BrandMark({ tint }: { tint?: string }) {
+// tint is the brand colour and fg the letter on it. Defaulting to a wash of
+// white made the mark invisible on the six themes whose hero panel is light,
+// which is where the shell with no tint used it.
+export function BrandMark({ tint, fg }: { tint: string; fg: string }) {
   if (brand.logo.image) {
     return <img src={brand.logo.image} alt={brand.name} className="h-8 w-8" />;
   }
   return (
     <span
-      className="inline-flex h-8 w-8 items-center justify-center rounded-md font-bold text-white"
-      style={{ background: tint || "rgba(255,255,255,0.15)" }}
+      className="inline-flex h-8 w-8 items-center justify-center rounded-md font-bold"
+      style={{ background: tint, color: fg }}
     >
       {brand.logo.text}
     </span>
@@ -273,7 +276,7 @@ export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMe
         style={{ background: t.heroBg, color: t.heroFg }}
       >
         <div className="flex items-center gap-2 text-2xl font-bold">
-          <BrandMark />
+          <BrandMark tint={t.primary} fg={t.primaryFg} />
           <span style={{ fontFamily: f.display }}>{brand.name}</span>
         </div>
 
@@ -294,7 +297,7 @@ export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMe
       <div className="flex flex-1 items-center justify-center px-6 py-12" style={{ background: t.bg }}>
         <div className="w-full max-w-md space-y-8">
           <div className="lg:hidden flex items-center justify-center gap-2 text-2xl font-bold" style={{ color: t.primary }}>
-            <BrandMark tint={t.primary} />
+            <BrandMark tint={t.primary} fg={t.primaryFg} />
             <span style={{ fontFamily: f.display }}>{brand.name}</span>
           </div>
 
@@ -362,7 +365,7 @@ export function AuroraAuthShell({ theme, mode, title, subtitle, children, errorM
         style={{ background: t.card, borderColor: t.border }}
       >
         <div className="flex flex-col items-center text-center space-y-3">
-          <BrandMark tint={t.primary} />
+          <BrandMark tint={t.primary} fg={t.primaryFg} />
           <div>
             <h2 className="text-2xl font-bold" style={{ fontFamily: f.display }}>{title}</h2>
             {subtitle && <p className="mt-1 text-sm" style={{ color: t.muted }}>{subtitle}</p>}
@@ -419,7 +422,7 @@ export function PulseAuthShell({ theme, mode, title, subtitle, children, errorMe
       <div className="flex flex-1 items-center justify-center px-6 py-12 lg:px-12">
         <div className="w-full max-w-md space-y-8">
           <div className="flex items-center gap-2 text-xl font-bold" style={{ color: t.fg }}>
-            <BrandMark tint={t.primary} />
+            <BrandMark tint={t.primary} fg={t.primaryFg} />
             <span style={{ fontFamily: f.display }}>{brand.name}</span>
           </div>
 

@@ -51,6 +51,7 @@ const VARIANTS: Variant[] = [
     steps: [
       { command: 'grit new contacts --triple --next', result: 'API, web app and admin panel, with auth already working' },
       { command: 'cd contacts', result: '' },
+      { command: 'pnpm install', result: 'The workspace, once' },
       { command: GROUP, result: 'Model, migration, API, types and an admin screen' },
       { command: CONTACT, result: 'A photo upload and a group picker, wired to the Group above' },
       { command: 'grit start', result: 'Everything, in parallel' },
@@ -65,6 +66,7 @@ const VARIANTS: Variant[] = [
     steps: [
       { command: 'grit new contacts --triple --desktop', result: 'Adds a Wails app that shares the monorepo API' },
       { command: 'cd contacts', result: '' },
+      { command: 'pnpm install', result: 'The workspace, once' },
       { command: GROUP, result: 'Model, migration, API, types and an admin screen' },
       { command: CONTACT, result: 'A photo upload and a group picker, wired to the Group above' },
       { command: 'grit start desktop', result: 'wails dev, with hot reload' },
@@ -79,6 +81,7 @@ const VARIANTS: Variant[] = [
     steps: [
       { command: 'grit new contacts --triple --expo', result: 'Adds apps/expo, sharing the Zod schemas and types' },
       { command: 'cd contacts', result: '' },
+      { command: 'pnpm install', result: 'The workspace, once' },
       { command: GROUP, result: 'Model, migration, API, types and an admin screen' },
       { command: CONTACT, result: 'A photo upload and a group picker, wired to the Group above' },
       { command: 'grit start expo', result: 'Metro, for a simulator or your phone' },
@@ -107,6 +110,7 @@ const VARIANTS: Variant[] = [
     steps: [
       { command: 'grit new contacts --full', result: 'Every app Grit can scaffold, sharing one API and one set of types' },
       { command: 'cd contacts', result: '' },
+      { command: 'pnpm install', result: 'The workspace, once' },
       { command: GROUP, result: 'Model, migration, API, types and an admin screen' },
       { command: CONTACT, result: 'A photo upload and a group picker, wired to the Group above' },
       { command: 'grit start', result: 'API, web and admin together; add expo or desktop for those' },

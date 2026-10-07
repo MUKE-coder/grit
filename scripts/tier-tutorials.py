@@ -24,6 +24,13 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(ROOT, 'docs', 'app', 'docs', 'tutorials', 'contacts')
 
+INSTALL_NOTE = """
+              <p>
+                <code>pnpm install</code> is a one-time step and nothing runs it for you: the
+                frontends are a pnpm workspace, and <code>grit start</code> has nothing to start
+                without it.
+              </p>"""
+
 GROUP_CMD = '''grit generate resource Group \\
   --fields "name:string,description:text"'''
 
@@ -555,7 +562,7 @@ export default function %(component)s() {
                 with no database server at all, which is the shortest path to seeing it work; drop
                 the flag when you want Postgres, and <code>docker compose up -d</code> brings one
                 up along with Redis, MinIO and a mail catcher.
-              </p>
+              </p>%(install_note)s
 
 %(frontend_section)s%(theme_section)s
               <table className="w-full text-sm my-6">
@@ -653,7 +660,9 @@ export default function %(component)s() {
         'prereq': prereq,
         'structure': structure,
         'ports': ports,
-        'new_cmd': code_block('grit new contacts %s --theme emerald --db sqlite\ncd contacts' % tier.flags),
+        'new_cmd': code_block('grit new contacts %s --theme emerald --db sqlite\ncd contacts%s'
+                              % (tier.flags, '' if not tier.vite_flags else '\npnpm install')),
+        'install_note': '' if not tier.vite_flags else INSTALL_NOTE,
         'frontend_section': frontend_section(tier, code_block),
         'theme_section': theme_section(tier),
         'group_cmd': code_block(GROUP_CMD),

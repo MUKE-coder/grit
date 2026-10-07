@@ -236,7 +236,9 @@ func nextSecurityHeadersConfig(opts Options) string {
 //     the Next.js admin. (The web app doesn't use them today — allowing the
 //     origin anyway keeps one policy for both instead of two that drift.)
 //   - connect-src must include the API origin or every fetch is blocked.
-func viteSecurityHeaders() string {
+// envDir is the JavaScript expression for the directory holding .env: the
+// project root in a single, two levels up in a monorepo app.
+func viteSecurityHeaders(envDir string) string {
 	return `
 // Security headers — mirrors the Next.js apps and the Go API's
 // middleware.SecurityHeaders. Applied by the dev + preview servers below;
@@ -252,8 +254,15 @@ func viteSecurityHeaders() string {
 // .env files into process.env for the config file itself, so reading it
 // directly always saw undefined and pinned the CSP to localhost:8080 — which
 // then blocked every request for anyone who moved the API.
+//
+// envDir, not cwd: in a monorepo the app runs from apps/web or apps/admin and
+// there is no .env there, so every value read here came back undefined and the
+// defaults below were all anyone ever got.
 const viteMode = process.env.NODE_ENV || 'development'
-const viteEnv = loadEnv(viteMode, process.cwd(), '')
+const viteEnv = loadEnv(viteMode, ` + envDir + `, '')
+// Where the Go API listens. APP_PORT is the same variable the binary reads, so
+// moving it moves the dev proxy with it.
+const apiTarget = viteEnv.VITE_API_URL || 'http://localhost:' + (viteEnv.APP_PORT || '8080')
 // A CSP source expression matches paths EXACTLY unless it ends in '/', so a
 // value carrying a path ('http://host/api/v1') allows that one path and blocks
 // every route under it, silently, as a console violation rather than an HTTP
@@ -267,7 +276,7 @@ function toOrigin(value: string): string {
   }
 }
 
-const API_ORIGIN = toOrigin(viteEnv.VITE_API_URL || 'http://localhost:8080')
+const API_ORIGIN = toOrigin(apiTarget)
 // Browser-facing storage origin — presigned uploads PUT here directly and
 // stored images load from it. Defaults to local MinIO; set VITE_STORAGE_URL
 // to your S3/R2/B2 public origin in production.

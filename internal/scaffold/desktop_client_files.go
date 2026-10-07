@@ -2625,7 +2625,7 @@ export function TitleBar({ showSidebarControls: _ = true }: TitleBarProps) {
         ) : (
           <div className="flex items-center gap-2 pl-2">
             <div className="h-6 w-6 rounded-md bg-accent flex items-center justify-center">
-              <span className="text-[11px] font-bold text-white">G</span>
+              <span className="text-[11px] font-bold text-white">` + projectInitial(opts) + `</span>
             </div>
             <span className="text-[13px] font-medium text-foreground">` + opts.ProjectName + `</span>
           </div>

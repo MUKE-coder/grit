@@ -8,7 +8,7 @@ import (
 const safeHrefImport = `import { safeHref } from "@/lib/safe-href";` + "\n"
 
 func TestFrontendCSPNamesImageOrigins(t *testing.T) {
-	for name, src := range map[string]string{"next": nextSecurityHeaders(), "vite": viteSecurityHeaders()} {
+	for name, src := range map[string]string{"next": nextSecurityHeaders(), "vite": viteSecurityHeaders("process.cwd()")} {
 		if strings.Contains(src, "blob: https:") {
 			t.Errorf("%s: img-src still allows every https: host", name)
 		}
@@ -30,7 +30,7 @@ func TestCSPImageOriginsRepair(t *testing.T) {
 	// Before the storage repair added API_ORIGIN.
 	checkRepair(t, "next.config (pre-storage)", repairCSPImageOriginsSource, strings.Replace(oldNext, cspImgSrcTight, cspImgSrcOld, 1), next)
 
-	vite := viteSecurityHeaders()
+	vite := viteSecurityHeaders("process.cwd()")
 	oldVite := strings.Replace(strings.Replace(vite, viteImageOrigins, "", 1), cspImgSrcTight, cspImgSrcNew, 1)
 	checkRepair(t, "vite.config", repairCSPImageOriginsSource, oldVite, vite)
 

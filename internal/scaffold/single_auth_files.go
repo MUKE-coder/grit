@@ -981,21 +981,14 @@ func singleViteNavbarWithAuth(opts Options) string {
 
 import { Menu, X, Github`, 1)
 
-	// The account menu goes at the end of the desktop row, which is the div the
-	// mobile hamburger follows. Anchoring on the last link in that row would mean
-	// knowing which link it is, and the two navbars disagree.
-	nav = strings.Replace(nav, `        </div>
-
-        <button`, `          <UserMenu />
-        </div>
-
-        <button`, 1)
-
-	// The same in the mobile drawer, where the row is a column.
-	nav = strings.Replace(nav, `              GitHub
-            </a>`, `              GitHub
-            </a>
-            <div className="pt-2 border-t border-border/50">
+	// The account menu goes at the end of the desktop row and at the end of the
+	// mobile drawer's column. Both navbars name those two places with a marker,
+	// because this used to anchor on the surrounding markup instead: the mobile
+	// insertion hung off the GitHub link's indentation, and indenting that link
+	// by two spaces turned the replace into a silent no-op. The navbar came out
+	// with the import and no menu.
+	nav = strings.Replace(nav, `{/* grit:nav:account-desktop */}`, `<UserMenu />`, 1)
+	nav = strings.Replace(nav, `{/* grit:nav:account-mobile */}`, `<div className="pt-2 border-t border-border/50">
               <UserMenu />
             </div>`, 1)
 	return nav

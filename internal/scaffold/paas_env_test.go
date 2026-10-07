@@ -74,7 +74,7 @@ func TestNextCSPAdmitsASeparateUploadHost(t *testing.T) {
 }
 
 func TestViteCSPAdmitsASeparateUploadHost(t *testing.T) {
-	src := viteSecurityHeaders()
+	src := viteSecurityHeaders("process.cwd()")
 	if !strings.Contains(src, "VITE_STORAGE_UPLOAD_URL") {
 		t.Error("the Vite CSP has no upload origin")
 	}
@@ -107,7 +107,7 @@ func TestRepairCSPUploadOriginNext(t *testing.T) {
 }
 
 func TestRepairCSPUploadOriginVite(t *testing.T) {
-	fresh := viteSecurityHeaders()
+	fresh := viteSecurityHeaders("process.cwd()")
 	old := strings.Replace(fresh, viteUploadOriginBlock, "", 1)
 	old = strings.Replace(old, viteConnectSrcNew, viteConnectSrcOld, 1)
 	if old == fresh {

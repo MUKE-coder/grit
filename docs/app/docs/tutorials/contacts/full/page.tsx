@@ -54,12 +54,18 @@ export default function ContactsFullTutorialPage() {
 
               <h2>1. Create the project</h2>
               <CodeBlock terminal language="bash" code={`grit new contacts --full --theme emerald --db sqlite
-cd contacts`} />
+cd contacts
+pnpm install`} />
               <p>
                 Postgres is the default. <code>--db sqlite</code> above means the project runs
                 with no database server at all, which is the shortest path to seeing it work; drop
                 the flag when you want Postgres, and <code>docker compose up -d</code> brings one
                 up along with Redis, MinIO and a mail catcher.
+              </p>
+              <p>
+                <code>pnpm install</code> is a one-time step and nothing runs it for you: the
+                frontends are a pnpm workspace, and <code>grit start</code> has nothing to start
+                without it.
               </p>
 
               <h3>Next.js or TanStack</h3>

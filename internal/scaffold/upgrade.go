@@ -60,8 +60,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 	opts := Options{
 		ProjectName: projectName,
 		Style:       readProjectStyle(root),
-		Version:     uOpts.Version,
-		Frontend:    readProjectFrontend(root),
+		// The theme the project was scaffolded with. Upgrade wrote files that
+		// bake colour values in -- the mobile app's Tailwind config is one --
+		// and with no theme here they all came out atlas, which quietly
+		// repainted an emerald project blue on its next upgrade.
+		Theme:    readProjectTheme(root),
+		Version:  uOpts.Version,
+		Frontend: readProjectFrontend(root),
 		// Read from the project rather than assumed. Normalize defaults to triple,
 		// and upgrading a double with that assumption wrote thirteen admin files
 		// into an apps/admin this project does not have: files nothing compiles,
@@ -100,6 +105,7 @@ func Upgrade(uOpts UpgradeOptions) error {
 	hasWeb := dirExists(filepath.Join(root, "apps", "web"))
 	hasAdmin := dirExists(filepath.Join(root, "apps", "admin"))
 	hasExpo := dirExists(filepath.Join(root, "apps", "expo"))
+	hasDesktop := dirExists(filepath.Join(root, "apps", "desktop", "frontend"))
 	hasDocs := dirExists(filepath.Join(root, "apps", "docs"))
 	hasShared := dirExists(filepath.Join(root, "packages", "shared"))
 	// Known from the start, not only at the Expo step: the web and admin
@@ -124,7 +130,7 @@ func Upgrade(uOpts UpgradeOptions) error {
 			// apps/, so listing "apps/*" for it installs a workspace with no
 			// frontend in it.
 			!dirExists(filepath.Join(root, "apps")) && dirExists(filepath.Join(root, "frontend")),
-			dirExists(filepath.Join(root, "apps", "desktop", "frontend")), hasExpo),
+			hasDesktop, hasExpo),
 		filepath.Join(root, ".npmrc"): rootNpmrc(),
 	}
 	n, err := writeUpgradeFiles(rootFiles, uOpts.Force)
@@ -1008,6 +1014,22 @@ func Upgrade(uOpts UpgradeOptions) error {
 		updated += 15
 	}
 
+	// --- Desktop (if exists) ---
+	//
+	// It had none. The desktop client took targeted repairs and never the file
+	// map, so every fix written into its templates reached new projects only:
+	// an existing one kept whatever it was scaffolded with, for as many
+	// releases as it took somebody to notice. The Expo app below is the shape
+	// this follows.
+	if hasDesktop {
+		spinner.Printf("  → Updating desktop app...\n")
+		if err := writeDesktopClientFiles(root, opts); err != nil {
+			return fmt.Errorf("updating desktop files: %w", err)
+		}
+		green.Printf("  ✓ Desktop app updated\n")
+		updated += 10
+	}
+
 	// --- Expo (if exists) ---
 	if hasExpo {
 		spinner.Printf("  → Updating Expo app...\n")
@@ -1732,6 +1754,33 @@ func readProjectStyle(root string) string {
 	}
 
 	return "default"
+}
+
+// readProjectTheme returns the theme this project uses.
+//
+// THEME in .env is the one place it is written for every surface: the two Next
+// apps mirror it into NEXT_PUBLIC_THEME, a Vite app reads VITE_THEME beside it,
+// and the API renders its emails with it. Reading the same variable here means
+// an upgrade repaints nothing.
+func readProjectTheme(root string) string {
+	data, err := os.ReadFile(filepath.Join(root, ".env"))
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		name, value, ok := strings.Cut(line, "=")
+		if !ok || strings.TrimSpace(name) != "THEME" {
+			continue
+		}
+		theme := strings.ToLower(strings.TrimSpace(value))
+		for _, valid := range ValidThemes {
+			if theme == valid {
+				return theme
+			}
+		}
+	}
+	return ""
 }
 
 // fileExists returns true if a file exists.

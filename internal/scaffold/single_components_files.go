@@ -32,6 +32,11 @@ import { Menu, X, Github } from "lucide-react"
 
 const DOCS_URL = "https://gritframework.dev/docs"
 
+// Grit's docs and repository. Links for whoever is building this app, not for
+// the people visiting it, so they render in development only. Vite has no
+// process.env, hence MODE rather than NODE_ENV.
+const DEV = import.meta.env.MODE !== "production"
+
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/blog", label: "Blog" },` + adminLink + `
@@ -46,7 +51,7 @@ export function Navbar() {
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 border border-accent/20">
-            <span className="text-accent font-mono font-bold text-sm">G</span>
+            <span className="text-accent font-mono font-bold text-sm">` + projectInitial(opts) + `</span>
           </div>
           <span className="text-lg font-bold tracking-tight">` + opts.ProjectName + `</span>
         </Link>
@@ -66,22 +71,27 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
-          <a
-            href={DOCS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-text-secondary hover:text-foreground transition-colors"
-          >
-            Docs
-          </a>
-          <a
-            href="https://github.com/MUKE-coder/grit"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-text-secondary hover:text-foreground transition-colors"
-          >
-            <Github className="h-5 w-5" />
-          </a>
+          {DEV ? (
+            <>
+              <a
+                href={DOCS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-text-secondary hover:text-foreground transition-colors"
+              >
+                Docs
+              </a>
+              <a
+                href="https://github.com/MUKE-coder/grit"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-text-secondary hover:text-foreground transition-colors"
+              >
+                <Github className="h-5 w-5" />
+              </a>
+            </>
+          ) : null}
+          {/* grit:nav:account-desktop */}
         </div>
 
         <button
@@ -111,22 +121,27 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <a
-              href={DOCS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
-            >
-              Docs
-            </a>
-            <a
-              href="https://github.com/MUKE-coder/grit"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
-            >
-              GitHub
-            </a>
+            {DEV ? (
+              <>
+                <a
+                  href={DOCS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
+                >
+                  Docs
+                </a>
+                <a
+                  href="https://github.com/MUKE-coder/grit"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
+                >
+                  GitHub
+                </a>
+              </>
+            ) : null}
+            {/* grit:nav:account-mobile */}
           </div>
         </div>
       ) : null}

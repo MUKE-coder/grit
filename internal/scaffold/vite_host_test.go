@@ -226,10 +226,29 @@ func TestWebAuthTargetsTheViteApp(t *testing.T) {
 	if !strings.Contains(web, "ADMIN_URL") {
 		t.Error("a double's auth navbar should be the web app's navbar, which links to the panel")
 	}
-	if !strings.Contains(singleViteNavbarWithAuth(viteDoubleOptions()), "<UserMenu />") {
-		t.Error("the account menu was not injected into the web app's navbar")
+	// Both places, in both navbars. One replace used to anchor on the GitHub
+	// link's indentation; changing that indentation made it a no-op, and a
+	// no-op strings.Replace says nothing. Counting the menus is what notices.
+	for name, withAuth := range map[string]string{
+		"the web app's navbar": singleViteNavbarWithAuth(viteDoubleOptions()),
+		"the single's":         singleViteNavbarWithAuth(singleOptions()),
+	} {
+		if got := strings.Count(withAuth, "<UserMenu />"); got != 2 {
+			t.Errorf("%s has %d account menus, want 2 (desktop row + mobile drawer)", name, got)
+		}
+		if strings.Contains(withAuth, "grit:nav:account-") {
+			t.Errorf("%s kept an account marker, so one injection missed", name)
+		}
 	}
-	if !strings.Contains(singleViteNavbarWithAuth(singleOptions()), "<UserMenu />") {
-		t.Error("nor into the single's")
+	// And the markers are there to be replaced in the first place.
+	for name, base := range map[string]string{
+		"the web app's navbar": viteHostNavbar(viteDoubleOptions()),
+		"the single's":         viteHostNavbar(singleOptions()),
+	} {
+		for _, marker := range []string{"{/* grit:nav:account-desktop */}", "{/* grit:nav:account-mobile */}"} {
+			if !strings.Contains(base, marker) {
+				t.Errorf("%s has no %s", name, marker)
+			}
+		}
 	}
 }

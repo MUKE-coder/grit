@@ -66,6 +66,99 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.384.0 */}
+            <div className="mb-12" id="v3.384.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.384.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 7, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Your project&apos;s app, not Grit&apos;s</h3>
+                <p>
+                  Standing all six tiers up side by side and looking at them turned up a set of
+                  faults with one shape: a generated project was wearing the framework&apos;s
+                  identity instead of its own.
+                </p>
+                <p>
+                  The web app&apos;s home page read <strong>Grit</strong> in the headline,
+                  described the meta-framework underneath it, and sent &ldquo;Get Started&rdquo; to
+                  gritframework.dev. Every <code>--double</code>, <code>--triple</code> and{' '}
+                  <code>--full</code> project opened by advertising somebody else&apos;s product.
+                  It now says <em>Build faster with &lt;your project&gt;</em>, the same hero the
+                  TanStack frontend already had, and its buttons point into the project. The
+                  navbar keeps its links to Grit&apos;s docs and repository in development only,
+                  which is the rule DevLinks on the same page already followed. The logo mark
+                  beside the project&apos;s name was the letter G, in the web navbar, the
+                  single&apos;s navbar and the desktop title bar; it is the project&apos;s letter.
+                </p>
+
+                <h3>The docs site ignored THEME</h3>
+                <p>
+                  A <code>--full</code> project has three frontends. Two read{' '}
+                  <code>THEME</code> from <code>.env</code>; the third forced fumadocs&apos;
+                  neutral palette and a hardcoded dark class. Generated with{' '}
+                  <code>--theme emerald</code>, it shipped a green web app, a green admin panel
+                  and a black-and-white docs site that opened with &ldquo;Everything you need to
+                  build with Grit&rdquo;.
+                </p>
+                <p>
+                  The docs site now reads the same variable, maps the nine palettes onto
+                  fumadocs&apos; own tokens, and is about the project. The nine palettes
+                  themselves were two identical copies, in the admin&apos;s stylesheet and the web
+                  app&apos;s; they are one function now, which is what the docs site and the
+                  mobile app read.
+                </p>
+
+                <h3>The mobile app was purple whatever you chose</h3>
+                <p>
+                  The Expo app carried <code>#6c5ce7</code> as a literal in its Tailwind config
+                  and its JavaScript palette, so a green project shipped a purple phone app.
+                  NativeWind has no CSS variables, so the values are written at generation time
+                  now, out of the same palette.
+                </p>
+                <p>
+                  <code>grit upgrade</code> was reading the style, the frontend and the
+                  architecture off the project and not the theme, so files that bake colour in
+                  came back as atlas: an emerald project quietly turned blue on its next upgrade.
+                  It reads <code>THEME</code> now. The desktop app had no upgrade step at all,
+                  only targeted repairs, so every fix written into its templates reached new
+                  projects only. It has one.
+                </p>
+
+                <h3>An invisible logo on six of the eight themes</h3>
+                <p>
+                  The mark on the auth screens painted white text on fifteen percent white, which
+                  works on a dark hero panel. Six themes have a light one: aurora, coral, amber,
+                  sky, mono and emerald all showed an empty square where the letter was. Each mark
+                  now takes the brand colour and the letter&apos;s colour together.
+                </p>
+
+                <h3>A Vite app in a monorepo never found .env</h3>
+                <p>
+                  The single&apos;s config was fixed for this in v3.381.1. The monorepo&apos;s two
+                  kept the old shape: <code>loadEnv</code> against the app&apos;s own directory,
+                  where there is no <code>.env</code>. Every value came back undefined, so the dev
+                  proxy stayed on 8080 and the CSP&apos;s <code>connect-src</code> with it, and
+                  moving <code>APP_PORT</code> broke the login and the fetches at once, silently.
+                  Both read the project root now, and derive the proxy target from{' '}
+                  <code>APP_PORT</code> the way the single does.
+                </p>
+                <p>
+                  <code>API_URL</code> in <code>.env</code> says it is baked into the Next
+                  bundles, and only the Docker build ever passed it. The two Next configs mirror
+                  it into <code>NEXT_PUBLIC_API_URL</code> now, so a project whose API moved off
+                  8080 stops building a frontend that calls 8080.
+                </p>
+                <p>
+                  Also: the generated documentation lost its seventy-odd em dashes, which the
+                  house standard bans in anything a reader sees.
+                </p>
+              </div>
+            </div>
+
             {/* v3.383.1 */}
             <div className="mb-12" id="v3.383.1">
               <div className="flex items-center gap-3 mb-4">

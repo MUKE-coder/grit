@@ -20,7 +20,7 @@ func writeDocsFiles(root string, opts Options) error {
 		filepath.Join(docsRoot, "app", "source.ts"):                       docsAppSource(),
 		filepath.Join(docsRoot, "app", "global.css"):                      docsGlobalCSS(),
 		filepath.Join(docsRoot, "app", "layout.tsx"):                      docsRootLayout(opts),
-		filepath.Join(docsRoot, "app", "page.tsx"):                        docsHomePage(),
+		filepath.Join(docsRoot, "app", "page.tsx"):                        docsHomePage(opts),
 		filepath.Join(docsRoot, "app", "api", "search", "route.ts"):       docsSearchRoute(),
 		filepath.Join(docsRoot, "app", "docs", "layout.tsx"):              docsDocsLayout(opts),
 		filepath.Join(docsRoot, "app", "docs", "[[...slug]]", "page.tsx"): docsSlugPage(),
@@ -123,12 +123,31 @@ func docsTSConfig() string {
 
 func docsNextConfig() string {
 	return toPlainJavaScript(`import { createMDX } from "fumadocs-mdx/next";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+// Hoist the monorepo's root .env, the same way the web app and the admin do:
+// Next auto-loads .env from the package's own directory only, so THEME set at
+// the root is invisible here. Shell env wins; this only fills in unset keys.
+const rootEnv = resolve(process.cwd(), "..", "..", ".env");
+if (existsSync(rootEnv)) {
+  for (const line of readFileSync(rootEnv, "utf8").split(/\r?\n/)) {
+    const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/i);
+    if (!m) continue;
+    if (process.env[m[1]] === undefined) process.env[m[1]] = m[2].trim();
+  }
+}
 
 const withMDX = createMDX();
 ` + nextSecurityHeaders() + `
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
+  // THEME is read on the server (the layout) and baked into the client bundle,
+  // so the docs are painted before the first byte reaches the browser.
+  env: {
+    NEXT_PUBLIC_THEME: process.env.THEME || "atlas",
+  },
 ` + nextSecurityHeadersConfig(Options{}) + `};
 
 export default withMDX(config);
@@ -178,6 +197,42 @@ func docsGlobalCSS() string {
 	return `@import 'tailwindcss';
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
+
+/* The project's theme, the same nine palettes the web app and the admin panel
+ * read, selected by data-theme on <html> from THEME in .env. */
+` + themePaletteCSS() + `
+
+/* fumadocs names its own tokens --color-fd-*. Mapping them onto the palette is
+ * what makes THEME=<name> paint the docs as well: without it the docs site was
+ * neutral grey whatever the rest of the project looked like.
+ *
+ * These come after the fumadocs imports on purpose. Its defaults land in :root
+ * and .dark from those files, and equal specificity means the last declaration
+ * wins. */
+:root,
+.dark {
+  --color-fd-background: var(--bg-primary);
+  --color-fd-foreground: var(--text-primary);
+  --color-fd-muted: var(--bg-secondary);
+  --color-fd-muted-foreground: var(--text-muted);
+  --color-fd-popover: var(--bg-elevated);
+  --color-fd-popover-foreground: var(--text-primary);
+  --color-fd-card: var(--bg-secondary);
+  --color-fd-card-foreground: var(--text-primary);
+  --color-fd-border: var(--border);
+  --color-fd-primary: var(--accent);
+  --color-fd-primary-foreground: var(--accent-fg);
+  --color-fd-secondary: var(--bg-secondary);
+  --color-fd-secondary-foreground: var(--text-primary);
+  --color-fd-accent: var(--bg-hover);
+  --color-fd-accent-foreground: var(--text-primary);
+  --color-fd-ring: var(--accent);
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
 `
 }
 
@@ -199,13 +254,23 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // The project's theme decides how the docs look, as it does for the web app
+  // and the admin panel, so fumadocs' own light/dark switch is off: it would
+  // change half the tokens and leave the palette where it was. midnight is the
+  // one dark palette, and fumadocs styles some of its own chrome through .dark.
+  const theme = process.env.NEXT_PUBLIC_THEME || "atlas";
+
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html
+      lang="en"
+      data-theme={theme}
+      className={theme === "midnight" ? "dark" : undefined}
+      suppressHydrationWarning
+    >
       <body>
         <RootProvider
           theme={{
-            enabled: true,
-            defaultTheme: "dark",
+            enabled: false,
           }}
         >
           {children}
@@ -217,7 +282,7 @@ export default function RootLayout({
 `, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
-func docsHomePage() string {
+func docsHomePage(opts Options) string {
 	return `import Link from "next/link";
 
 export default function HomePage() {
@@ -228,7 +293,7 @@ export default function HomePage() {
           Documentation
         </h1>
         <p className="text-lg text-fd-muted-foreground mb-8">
-          Everything you need to build with Grit — the full-stack Go + React framework.
+          Guides, references and API documentation for ` + opts.ProjectName + `.
         </p>
         <Link
           href="/docs"
@@ -252,13 +317,14 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <DocsLayout
       tree={source.getPageTree()}
+      // The project's THEME decides how this looks, so fumadocs' own light/dark
+      // toggle is off. Leaving it on left a switch in the sidebar that changed
+      // nothing, because the palette does not come from the .dark class.
+      themeSwitch={{ enabled: false }}
       nav={{
         title: (
           <span className="flex items-center gap-2 font-bold">
-            Grit Docs
-            <span className="rounded-md bg-fd-primary/10 px-1.5 py-0.5 text-xs font-medium text-fd-primary">
-              v%s
-            </span>
+            %s Docs
           </span>
         ),
       }}
@@ -267,7 +333,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     </DocsLayout>
   );
 }
-`, opts.Version)
+`, opts.ProjectName)
 }
 
 func docsSlugPage() string {
@@ -326,22 +392,24 @@ title: Introduction
 description: Welcome to the %s documentation. Learn how to build full-stack applications with Go and React.
 ---
 
-## What is Grit?
+## About this project
 
-Grit is a full-stack meta-framework that fuses **Go** (Gin + GORM) with **Next.js** (React + TypeScript) in a monorepo. One command to scaffold a complete project with authentication, admin panel, database browser, and Docker setup.
+%s is a full-stack application built with [Grit](https://gritframework.dev): **Go** (Gin + GORM) on the API side, **Next.js** (React + TypeScript) on the front, in one monorepo.
+
+These pages document what the project ships with and how to work on it. Replace them with your own as the project grows: they live in `+"`apps/docs/content/docs`"+` as MDX.
 
 ## Features
 
-- **JWT Authentication** — Register, login, refresh tokens, role-based access
-- **Admin Panel** — Full auth (login, sign-up, forgot-password), resource CRUD with DataTable, FormBuilder, ViewModal, toast notifications
-- **Code Generator** — `+"`grit generate resource`"+` creates Go model, handler, service, Zod schemas, TypeScript types, React hooks, and admin page
-- **Landing Page** — SaaS marketing page with Framer Motion animations
-- **GORM Studio** — Visual database browser at `+"`/studio`"+`
-- **Batteries Included** — Redis cache, S3 storage, email (Resend), background jobs (asynq), cron scheduler, AI integration (Claude + OpenAI)
-- **Shared Types** — Zod schemas + TypeScript types shared between apps
-- **Docker Ready** — Dev and production Docker Compose setups
-- **Upgrade Command** — `+"`grit upgrade`"+` updates existing projects to the latest scaffold templates
-- **Self-Update** — `+"`grit update`"+` updates the CLI itself to the latest release
+- **JWT Authentication**: Register, login, refresh tokens, role-based access
+- **Admin Panel**: Full auth (login, sign-up, forgot-password), resource CRUD with DataTable, FormBuilder, ViewModal, toast notifications
+- **Code Generator**: `+"`grit generate resource`"+` creates Go model, handler, service, Zod schemas, TypeScript types, React hooks, and admin page
+- **Landing Page**: SaaS marketing page with Framer Motion animations
+- **GORM Studio**: Visual database browser at `+"`/studio`"+`
+- **Batteries Included**: Redis cache, S3 storage, email (Resend), background jobs (asynq), cron scheduler, AI integration (Claude + OpenAI)
+- **Shared Types**: Zod schemas + TypeScript types shared between apps
+- **Docker Ready**: Dev and production Docker Compose setups
+- **Upgrade Command**: `+"`grit upgrade`"+` updates existing projects to the latest scaffold templates
+- **Self-Update**: `+"`grit update`"+` updates the CLI itself to the latest release
 
 ## Tech Stack
 
@@ -361,12 +429,12 @@ Grit is a full-stack meta-framework that fuses **Go** (Gin + GORM) with **Next.j
 
 ## Next Steps
 
-- [Getting Started](/docs/getting-started) — Install Grit and create your first project
-- [CLI Commands](/docs/cli/commands) — All available CLI commands
-- [Admin Panel](/docs/admin/overview) — Dashboard, auth, and resource management
-- [Authentication](/docs/api/authentication) — How the JWT auth system works
-- [Batteries](/docs/batteries/overview) — Cache, storage, email, jobs, cron, and AI
-`, opts.ProjectName)
+- [Getting Started](/docs/getting-started): Install Grit and create your first project
+- [CLI Commands](/docs/cli/commands): All available CLI commands
+- [Admin Panel](/docs/admin/overview): Dashboard, auth, and resource management
+- [Authentication](/docs/api/authentication): How the JWT auth system works
+- [Batteries](/docs/batteries/overview): Cache, storage, email, jobs, cron, and AI
+`, opts.ProjectName, opts.ProjectName)
 }
 
 func docsContentGettingStarted(opts Options) string {
@@ -410,11 +478,11 @@ grit new %s
 
 This creates a full monorepo with:
 
-- **Go API** — JWT auth, user management, GORM Studio, and batteries (cache, storage, email, jobs, cron, AI)
-- **Web app** — SaaS marketing landing page with Framer Motion animations, linking to the admin panel for login/sign-up
-- **Admin panel** — Full authentication (login, sign-up, forgot-password), dashboard, resource management with DataTable, FormBuilder, ViewModal, toast notifications
-- **Shared package** — Zod schemas and TypeScript types shared between apps
-- **Docker Compose** — PostgreSQL, Redis, MinIO, and Mailhog
+- **Go API**: JWT auth, user management, GORM Studio, and batteries (cache, storage, email, jobs, cron, AI)
+- **Web app**: SaaS marketing landing page with Framer Motion animations, linking to the admin panel for login/sign-up
+- **Admin panel**: Full authentication (login, sign-up, forgot-password), dashboard, resource management with DataTable, FormBuilder, ViewModal, toast notifications
+- **Shared package**: Zod schemas and TypeScript types shared between apps
+- **Docker Compose**: PostgreSQL, Redis, MinIO, and Mailhog
 
 ## Start Development
 
@@ -476,7 +544,7 @@ Once your project is set up, generate full-stack CRUD resources:
 grit generate resource Post --fields "title:string,content:text,published:bool"
 `+"```"+`
 
-This creates: Go model, handler, service, Zod schemas, TypeScript types, React Query hooks, and an admin resource page — all wired up automatically.
+This creates: Go model, handler, service, Zod schemas, TypeScript types, React Query hooks, and an admin resource page, all wired up automatically.
 
 ## Upgrade an Existing Project
 
@@ -523,8 +591,8 @@ description: JWT-based authentication with access and refresh tokens.
 
 Grit uses **JWT (JSON Web Tokens)** for authentication with a dual-token system:
 
-- **Access Token** — Short-lived (15 minutes), sent with every request
-- **Refresh Token** — Long-lived (7 days), used to obtain new access tokens
+- **Access Token**: Short-lived (15 minutes), sent with every request
+- **Refresh Token**: Long-lived (7 days), used to obtain new access tokens
 
 ## Endpoints
 
@@ -817,7 +885,7 @@ grit migrate            # Run migrations
 grit migrate --fresh    # Drop all tables and re-migrate
 ` + "```" + `
 
-The migrate command connects to the database (using DATABASE_URL from .env) and runs GORM AutoMigrate for all registered models. Use --fresh to drop all tables first — useful for resetting during development.
+The migrate command connects to the database (using DATABASE_URL from .env) and runs GORM AutoMigrate for all registered models. Use --fresh to drop all tables first, which is useful for resetting during development.
 
 ## grit seed
 
@@ -829,12 +897,12 @@ grit seed
 
 Seeds the database with:
 
-- **Admin user** — admin@example.com / admin123 (role: ADMIN)
-- **Demo users** — jane@example.com, robert@example.com, emily@example.com, michael@example.com (all admin123)
+- **Admin user**: admin@example.com / admin123 (role: ADMIN)
+- **Demo users**: jane@example.com, robert@example.com, emily@example.com, michael@example.com (all admin123)
 
 These accounts are seeded with APP_ENV=development only. Any other APP_ENV needs SEED_ADMIN_PASSWORD (12 characters or more) for the admin and skips the demo users.
 
-The seeder is idempotent — it skips records that already exist. Add your own seeders in apps/api/internal/database/seed.go.
+The seeder is idempotent: it skips records that already exist. Add your own seeders in apps/api/internal/database/seed.go.
 
 ## grit update
 
@@ -872,7 +940,7 @@ Grit uses **GORM AutoMigrate** for database schema management. Migrations run au
 
 ### How It Works
 
-GORM AutoMigrate creates tables, adds missing columns, and creates indexes based on your Go model definitions. It does **not** delete columns or drop tables — it's additive only.
+GORM AutoMigrate creates tables, adds missing columns, and creates indexes based on your Go model definitions. It does **not** delete columns or drop tables: it is additive only.
 
 All models are registered in apps/api/internal/models/user.go via the AutoMigrate function:
 
@@ -1075,9 +1143,9 @@ apps/admin/app/
 
 The admin panel includes split-screen auth pages with a branded left panel and form on the right:
 
-- **Login** (/login) — Email/password with password visibility toggle
-- **Sign Up** (/sign-up) — Name, email, password, confirm password
-- **Forgot Password** (/forgot-password) — Email-based password reset
+- **Login** (/login): Email/password with password visibility toggle
+- **Sign Up** (/sign-up): Name, email, password, confirm password
+- **Forgot Password** (/forgot-password): Email-based password reset
 
 Auth pages use the (auth) route group and do NOT include the sidebar/navbar layout.
 
@@ -1093,34 +1161,34 @@ The dashboard page (/dashboard) displays:
 
 The admin layout includes:
 
-- **Sidebar** — Collapsible with Lucide icons, dashboard link, dynamic resource navigation (read from the resource registry), system pages section
-- **Navbar** — Breadcrumbs, theme toggle (dark/light), user menu with logout
-- **Theme** — Dark mode by default with a premium design system
+- **Sidebar**: Collapsible with Lucide icons, dashboard link, dynamic resource navigation (read from the resource registry), system pages section
+- **Navbar**: Breadcrumbs, theme toggle (dark/light), user menu with logout
+- **Theme**: Dark mode by default with a premium design system
 
 ## Toast Notifications
 
 All CRUD operations display toast notifications via Sonner:
 
-- **Create** — "Created successfully"
-- **Update** — "Updated successfully"
-- **Delete** — "Deleted successfully"
-- **Error** — "Something went wrong"
+- **Create**: "Created successfully"
+- **Update**: "Updated successfully"
+- **Delete**: "Deleted successfully"
+- **Error**: "Something went wrong"
 
 ## System Pages
 
 Under /system/*, the admin includes:
 
-- **Jobs** — Background job dashboard (asynq)
-- **Files** — S3/MinIO file browser
-- **Cron** — Scheduled task viewer
-- **Mail** — Email template preview
+- **Jobs**: Background job dashboard (asynq)
+- **Files**: S3/MinIO file browser
+- **Cron**: Scheduled task viewer
+- **Mail**: Email template preview
 `
 }
 
 func docsContentAdminResources() string {
 	return `---
 title: Resource Management
-description: How resources work in the Grit admin panel — DataTable, FormBuilder, ViewModal, and more.
+description: How resources work in the admin panel: DataTable, FormBuilder, ViewModal, and more.
 ---
 
 ## Overview
@@ -1177,12 +1245,12 @@ The ResourcePage component handles everything: DataTable, search, filters, pagin
 
 The DataTable component supports:
 
-- **Sorting** — Click column headers to sort
-- **Search** — Full-text search across searchable columns
-- **Filters** — Column-specific filters
-- **Selection** — Checkbox selection with bulk actions (bulk delete)
-- **Pagination** — Page size selector and page navigation
-- **Actions** — View (eye icon), Edit (pencil icon), Delete (trash icon) per row
+- **Sorting**: Click column headers to sort
+- **Search**: Full-text search across searchable columns
+- **Filters**: Column-specific filters
+- **Selection**: Checkbox selection with bulk actions (bulk delete)
+- **Pagination**: Page size selector and page navigation
+- **Actions**: View (eye icon), Edit (pencil icon), Delete (trash icon) per row
 
 ## FormBuilder and FormModal
 
@@ -1244,7 +1312,7 @@ Use the CLI to generate a complete resource:
 grit generate resource Post --fields "title:string,content:text,status:select:draft,published"
 ` + "```" + `
 
-This creates all Go backend code, shared types, React hooks, resource definition, and admin page — fully wired up and ready to use.
+This creates all Go backend code, shared types, React hooks, resource definition, and admin page: fully wired up and ready to use.
 `
 }
 
@@ -1256,7 +1324,7 @@ description: Built-in services for cache, storage, email, background jobs, cron,
 
 ## Overview
 
-Grit comes with "batteries included" — production-ready services that are scaffolded with every project. All services follow a graceful degradation pattern: if the backing service (Redis, MinIO, etc.) is unavailable, the app logs a warning but continues running.
+Grit comes with "batteries included": production-ready services that are scaffolded with every project. All services follow a graceful degradation pattern: if the backing service (Redis, MinIO, etc.) is unavailable, the app logs a warning but continues running.
 
 ## Redis Cache
 
@@ -1328,9 +1396,9 @@ Preview every registered template at /system/mail in the admin panel.
 
 Redis-based background job processing:
 
-- **Email jobs** — Send emails asynchronously
-- **Image jobs** — Process uploaded images
-- **Cleanup jobs** — Remove expired data
+- **Email jobs**: Send emails asynchronously
+- **Image jobs**: Process uploaded images
+- **Cleanup jobs**: Remove expired data
 
 ` + "```go" + `
 // Enqueue a templated email job
@@ -1354,8 +1422,8 @@ Scheduled task execution built on asynq:
 
 Dual AI provider support:
 
-- **Claude** (Anthropic) — via the Anthropic API
-- **OpenAI** — via the OpenAI API
+- **Claude** (Anthropic): via the Anthropic API
+- **OpenAI**: via the OpenAI API
 
 Features:
 - Text generation with streaming support
@@ -1390,7 +1458,7 @@ MAIL_FROM=noreply@example.com
 SMTP_HOST=localhost
 SMTP_PORT=1025
 
-# AI (Vercel AI Gateway — one key, hundreds of models)
+# AI (Vercel AI Gateway: one key, hundreds of models)
 AI_GATEWAY_API_KEY=your-key
 AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6
 ` + "```" + `
@@ -1422,14 +1490,14 @@ Grit is created by **Muke Johnbaptist** (JB), a self-taught tech entrepreneur, e
 
 ## Background
 
-JB is entirely self-taught with no formal computer science degree. He transitioned from learning to code independently into building a thriving business that serves clients globally. His philosophy: **you don't need a computer science degree to build a successful tech career** — anyone can learn, anyone can build, and anyone can succeed.
+JB is entirely self-taught with no formal computer science degree. He transitioned from learning to code independently into building a thriving business that serves clients globally. His philosophy: **you don't need a computer science degree to build a successful tech career**. Anyone can learn, anyone can build, and anyone can succeed.
 
 ## What He Does
 
-- **Founder & CEO** of [Desishub Technologies](https://desishub.com) — a company that develops websites, mobile applications, and AI-powered business solutions across Africa and beyond
-- **Founder** of Nextjs Academy — an online learning platform with 9+ courses
-- **YouTube Creator** — [Grit Framework](https://youtube.com/@GritFramework) and [JB Web Developer](https://youtube.com/@JBWEBDEVELOPER) channels
-- **Educator** — Trained 100+ students through in-person coding bootcamps
+- **Founder & CEO** of [Desishub Technologies](https://desishub.com), a company that develops websites, mobile applications, and AI-powered business solutions across Africa and beyond
+- **Founder** of Nextjs Academy, an online learning platform with 9+ courses
+- **YouTube Creator**: [Grit Framework](https://youtube.com/@GritFramework) and [JB Web Developer](https://youtube.com/@JBWEBDEVELOPER) channels
+- **Educator**: Trained 100+ students through in-person coding bootcamps
 
 ## Achievements
 
@@ -1449,15 +1517,15 @@ JB is entirely self-taught with no formal computer science degree. He transition
 
 ## Connect
 
-- [GitHub](https://github.com/MUKE-coder) — @MUKE-coder
-- [YouTube](https://youtube.com/@GritFramework) — @GritFramework
-- [X (Twitter)](https://x.com/MJohnbaptist) — @MJohnbaptist
-- [LinkedIn](https://linkedin.com/company/grit-framework) — Grit Framework
-- [TikTok](https://tiktok.com/@jbdesishub) — @jbdesishub
-- [Website](https://jb.desishub.com) — jb.desishub.com
+- [GitHub](https://github.com/MUKE-coder): @MUKE-coder
+- [YouTube](https://youtube.com/@GritFramework): @GritFramework
+- [X (Twitter)](https://x.com/MJohnbaptist): @MJohnbaptist
+- [LinkedIn](https://linkedin.com/company/grit-framework): Grit Framework
+- [TikTok](https://tiktok.com/@jbdesishub): @jbdesishub
+- [Website](https://jb.desishub.com): jb.desishub.com
 
 ---
 
-*Grit is built with the belief that developers deserve better tools — tools that are fast to set up, production-ready, and don't compromise on quality.*
+*Grit is built with the belief that developers deserve better tools, tools that are fast to set up, production-ready, and don't compromise on quality.*
 `
 }

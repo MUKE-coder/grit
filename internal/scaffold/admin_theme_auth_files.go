@@ -267,7 +267,7 @@ export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMe
         style={{ background: t.heroBg, color: t.heroFg }}
       >
         <div className="flex items-center gap-2 text-2xl font-bold">
-          <BrandMark />
+          <BrandMark color={t.primary} fg={t.primaryFg} />
           <span style={{ fontFamily: f.display }}>{brand.name}</span>
         </div>
 
@@ -293,7 +293,7 @@ export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMe
         <div className="w-full max-w-md space-y-8">
           {/* Brand for sub-lg breakpoints */}
           <div className="lg:hidden flex items-center justify-center gap-2 text-2xl font-bold" style={{ color: t.primary }}>
-            <BrandMark />
+            <BrandMark color={t.primary} fg={t.primaryFg} />
             <span style={{ fontFamily: f.display }}>{brand.name}</span>
           </div>
 
@@ -332,14 +332,17 @@ export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMe
   );
 }
 
-function BrandMark() {
+// The brand colour, not a wash of the hero's own background: six of the eight
+// themes have a light hero panel, and white on fifteen percent white is nothing
+// at all. The letter was invisible on every one of them.
+function BrandMark({ color, fg }: { color: string; fg: string }) {
   if (brand.logo.image) {
     return <img src={brand.logo.image} alt={brand.name} className="h-8 w-8" />;
   }
   return (
     <span
-      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-white font-bold"
-      style={{ background: "rgba(255,255,255,0.15)" }}
+      className="inline-flex h-8 w-8 items-center justify-center rounded-md font-bold"
+      style={{ background: color, color: fg }}
     >
       {brand.logo.text}
     </span>
@@ -408,7 +411,7 @@ export function AuroraAuthShell({ theme, mode, title, subtitle, children, errorM
         style={{ background: t.card, borderColor: t.border }}
       >
         <div className="flex flex-col items-center text-center space-y-3">
-          <BrandMark color={t.primary} />
+          <BrandMark color={t.primary} fg={t.primaryFg} />
           <div>
             <h2 className="text-2xl font-semibold" style={{ fontFamily: f.display }}>{title}</h2>
             {subtitle && <p className="mt-1 text-sm" style={{ color: t.muted }}>{subtitle}</p>}
@@ -444,14 +447,14 @@ export function AuroraAuthShell({ theme, mode, title, subtitle, children, errorM
   );
 }
 
-function BrandMark({ color }: { color: string }) {
+function BrandMark({ color, fg }: { color: string; fg: string }) {
   if (brand.logo.image) {
     return <img src={brand.logo.image} alt={brand.name} className="h-10 w-10" />;
   }
   return (
     <span
-      className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-white font-bold text-lg"
-      style={{ background: color }}
+      className="inline-flex h-10 w-10 items-center justify-center rounded-xl font-bold text-lg"
+      style={{ background: color, color: fg }}
     >
       {brand.logo.text}
     </span>
@@ -518,7 +521,7 @@ export function PulseAuthShell({ theme, mode, title, subtitle, children, errorMe
       <div className="flex flex-1 items-center justify-center px-6 py-12 lg:px-12">
         <div className="w-full max-w-md space-y-8">
           <div className="flex items-center gap-2 text-xl font-bold" style={{ color: t.fg }}>
-            <BrandMark accent={t.accent} />
+            <BrandMark accent={t.accent} fg={t.primaryFg} />
             <span style={{ fontFamily: f.display }}>{brand.name}</span>
           </div>
 
@@ -643,14 +646,14 @@ function PulseHeroCarousel({ accent, fg, bg, fontDisplay }: { accent: string; fg
   );
 }
 
-function BrandMark({ accent }: { accent: string }) {
+function BrandMark({ accent, fg }: { accent: string; fg: string }) {
   if (brand.logo.image) {
     return <img src={brand.logo.image} alt={brand.name} className="h-7 w-7" />;
   }
   return (
     <span
-      className="inline-flex h-7 w-7 items-center justify-center rounded text-black font-bold"
-      style={{ background: accent }}
+      className="inline-flex h-7 w-7 items-center justify-center rounded font-bold"
+      style={{ background: accent, color: fg }}
     >
       {brand.logo.text}
     </span>
