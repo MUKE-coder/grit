@@ -1,0 +1,260 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Grit CLI Redesign</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: a spec sheet. Each screen is one caption above a dark and a light terminal showing identical output. */
+:root{
+  --bg:#F2F3F6; --surface:#FFFFFF; --fg:#171A21; --muted:#5A6272; --line:#D9DCE3; --accent:#0B57C9;
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",sans-serif;
+  --body:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono","Cascadia Mono",Consolas,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0B0D12; --surface:#12151C; --fg:#E4E7EE; --muted:#98A1B3; --line:#262B36; --accent:#6AA7FF; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0B0D12; --surface:#12151C; --fg:#E4E7EE; --muted:#98A1B3; --line:#262B36; --accent:#6AA7FF; color-scheme:dark }
+
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55}
+.wrap{max-width:1320px;margin:0 auto;padding-inline:20px;padding-block:40px 72px;display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(30px,5vw,46px);line-height:1.05;font-weight:700}
+h2{font-size:24px;font-weight:700}
+h3{font-size:17px;font-weight:500}
+p{margin:0;max-width:66ch}
+.muted{color:var(--muted)}
+code{font-family:var(--mono);font-size:.88em}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+header{display:flex;flex-direction:column;gap:14px}
+.switch{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:6px}
+.switch button{font:500 14px var(--body);color:var(--fg);background:var(--surface);border:1px solid var(--line);
+  border-radius:999px;padding:7px 14px 7px 10px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.switch button[aria-pressed="true"]{border-color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
+.switch button:focus-visible,.copy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dot{width:14px;height:14px;border-radius:50%;display:inline-block}
+
+section{display:flex;flex-direction:column;gap:28px}
+.screen{display:flex;flex-direction:column;gap:12px}
+.cap{display:flex;flex-direction:column;gap:4px}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:920px){.pair{grid-template-columns:minmax(0,1fr)}}
+
+/* Terminals keep their own fixed palettes on purpose: one always dark, one always light. */
+.term{--b:var(--brand);border-radius:10px;overflow:hidden;border:1px solid var(--tline);background:var(--tbg);color:var(--tfg);min-width:0}
+.term.dark{--tbg:#0D1017;--tfg:#D6DAE2;--tline:#262B36;--brand:#6AA7FF;--m:#939CAE;--f:#4A5160;--k:#3DD68C;--w:#F0B847;--e:#FF7B7B}
+.term.light{--tbg:#FCFCFB;--tfg:#1F2430;--tline:#D4D8DF;--brand:#0B57C9;--m:#586170;--f:#C4C9D2;--k:#0A7343;--w:#855300;--e:#BE1F2B}
+:root[data-accent="ember"] .term.dark{--brand:#FF9255}
+:root[data-accent="ember"] .term.light{--brand:#AD3F08}
+.bar{display:flex;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--tline);
+  font:400 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--m)}
+.term pre{margin:0;padding:16px 14px 18px;overflow-x:auto;font:400 12.5px/1.5 var(--mono);tab-size:2}
+.term .logo{display:block;line-height:1.18}
+.b{color:var(--b)} .m{color:var(--m)} .f{color:var(--f)} .k{color:var(--k)} .w{color:var(--w)} .e{color:var(--e)}
+.s{font-weight:700} .u{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--m)}
+
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+th{font:400 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+td code{white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12.5px;padding:4px 9px;border-radius:6px;font-weight:700}
+.chip.d{background:#0D1017} .chip.l{background:#FCFCFB;box-shadow:inset 0 0 0 1px #D4D8DF}
+
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:22px 36px}
+.rules div{display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--line);padding-top:12px}
+.rules p{color:var(--muted);font-size:14px}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">Grit framework · CLI output design</span>
+  <h1>One CLI, readable on any terminal</h1>
+  <p class="muted">Every screen below is the same output drawn twice, on a dark and a light terminal. Body text uses the terminal's own foreground, and the six role colors each have a dark and a light value that pass 5:1 contrast on common themes. The grain mark <code>░▒▓█</code> is the identity: loose data on the left, a solid app on the right.</p>
+  <div class="switch" role="group" aria-label="Brand color">
+    <span class="eyebrow">Brand color</span>
+    <button id="acc-cobalt" type="button" aria-pressed="true" data-a="cobalt"><span class="dot" style="background:#3B7FE8"></span>Cobalt</button>
+    <button id="acc-ember" type="button" aria-pressed="false" data-a="ember"><span class="dot" style="background:#E0692B"></span>Ember</button>
+  </div>
+</header>
+
+<section id="screens"><h2>Screens</h2></section>
+
+<section>
+  <h2>Color roles</h2>
+  <p class="muted">Seven roles cover the whole CLI. Color never carries meaning alone: each status also has its own glyph, so output still reads with <code>NO_COLOR</code> set.</p>
+  <div class="tablebox"><table>
+    <thead><tr><th>Role</th><th>Dark terminal</th><th>Light terminal</th><th>ANSI fallback</th><th>Use it for</th></tr></thead>
+    <tbody id="roles"></tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Rules</h2>
+  <div class="rules">
+    <div><h3>The big wordmark appears once</h3><p>Show it on <code>grit new</code> and <code>grit version</code>. Every other command gets a one-line header: mark, command, version.</p></div>
+    <div><h3>Report results, not activity</h3><p>A finished step is a green check and a noun. Only the step that is running gets a spinner. Timings sit dim on the right.</p></div>
+    <div><h3>Bold is the emphasis, brand is the action</h3><p>Brand color marks things the developer can type or pick. Names and totals are bold in the default foreground.</p></div>
+    <div><h3>Warnings say what still works</h3><p>Title, consequence, fix. The fix is a command in brand color that can be copied as is.</p></div>
+    <div><h3>Two-space gutter, aligned columns</h3><p>Everything starts at column 3. Descriptions and comments line up in a second column and are muted.</p></div>
+    <div><h3>No rules made of equals signs</h3><p>Separate groups with one blank line. A single faint line is allowed above the URL table and nowhere else.</p></div>
+  </div>
+</section>
+</div>
+
+<script>
+const G=["████████","██      ","██  ████","██    ██","████████"],
+      R=["███████ ","██    ██","███████ ","██  ██  ","██    ██"],
+      T=["████████","   ██   ","   ██   ","   ██   ","   ██   "];
+const LOGO='<span class="logo b">'+G.map((g,i)=>"  ░▒▓"+g+"  "+R[i]+"  ██  "+T[i]).join("\n")+"</span>";
+const MARK="[b]░▒▓█[/]";
+
+const SCREENS=[
+{t:"grit new: wordmark and prompts",
+ c:"The only place the full wordmark shows. Answered questions collapse to one checked line, so the active question is always the last thing on screen.",
+ x:String.raw`[m]$[/] grit new my-app
+
+@@LOGO@@
+
+  Describe your data. Get the whole app.  [m]v3.387.0[/]
+
+  [k]✓[/] [m]Architecture[/]  Single [m]· Go API + embedded React SPA[/]
+
+  [b s]?[/] [s]Visual theme[/]  [m]auth layout, dashboard, fonts, brand colors[/]
+
+  [b s]❯ Atlas[/]    split-screen, blue/white, team/organisation
+    Aurora   [m]Apple-inspired, monochrome black/white/grey[/]
+    Pulse    [m]Cloudflare-inspired, premium blue, elevated cards[/]
+    Coral    [m]a card over a blurred glimpse of the app, rose[/]
+    Amber    [m]a plain boxed form under a wordmark, amber[/]
+    Sky      [m]one bold heading, social sign-in first[/]
+    Mono     [m]a fine grid beside a panel of proof[/]
+    Emerald  [m]a form beside a customer quote, green[/]
+
+  [m]↑↓ move   / filter   shift+tab back   enter select[/]`},
+{t:"grit new: result",
+ c:"Twelve arrow lines become a checklist with timings. Commands are brand colored, their comments are muted, and URLs are underlined so terminals make them clickable.",
+ x:String.raw`  [k]✓[/] Directory structure
+  [k]✓[/] Configuration files
+  [k]✓[/] Go API  [m]migrations, seeders, blog example[/]
+  [k]✓[/] Batteries  [m]cache, storage, mail, jobs, cron, AI, TOTP[/]
+  [k]✓[/] Go dependencies                               [m]8.4s[/]
+  [k]✓[/] Docker setup
+  [k]✓[/] React frontend with admin panel at /admin     [m]2.1s[/]
+
+  [k s]Created my-app[/]  [m]Single · Atlas · 14.2s[/]
+
+  [s]Next steps[/]
+
+    [b]cd my-app[/]
+    [b]docker compose up -d[/]    [m]Postgres, Redis, MinIO, Mailhog[/]
+    [b]pnpm install[/]            [m]frontend deps, one time[/]
+    [b]grit migrate[/]            [m]create database tables[/]
+    [b]grit seed[/]               [m]sample data, optional[/]
+    [b]grit start[/]              [m]run everything[/]
+
+  [f]────────────────────────────────────────────────────[/]
+  [m]API[/]           [u]http://localhost:8080[/]
+  [m]API docs[/]      [u]http://localhost:8080/docs[/]
+  [m]GORM Studio[/]   [u]http://localhost:8080/studio[/]
+  [m]Sentinel[/]      [u]http://localhost:8080/sentinel/ui[/]
+  [m]Frontend[/]      [u]http://localhost:5173[/]
+  [m]PostgreSQL[/]    localhost:5434`},
+{t:"grit migrate",
+ c:"The one-line header replaces the banner. Long table lists are cut with a count, and the baseline warning becomes a note with a brand bar and the exact command.",
+ x:String.raw`[m]$[/] grit migrate
+
+  ${MARK} [s]grit migrate[/]  [m]v3.387.0 · sqlite[/]
+
+  [k]+[/] two_factor_configs
+  [k]+[/] uploads
+  [k]+[/] user_activities
+  [k]+[/] user_identities
+  [k]+[/] user_roles
+  [k]+[/] users
+  [k]+[/] web_authn_sessions
+  [k]+[/] webhook_events
+  [m]  … 35 more, see them all with --verbose[/]
+
+  [k]✓[/] [s]43 tables created[/]  [m]0.3s[/]
+
+  [b]│[/] [s]Baseline run[/]
+  [b]│[/] This run built the schema, so it cannot be rolled back.
+  [b]│[/] To start over: [b]grit migrate --fresh[/]`},
+{t:"grit seed: warnings and logs",
+ c:"Warnings lead with a yellow ! and a bold title, then say what still works and how to fix it. Runtime logs drop the date and the ===== rules and gain a muted source column.",
+ x:String.raw`[m]$[/] grit seed
+
+  ${MARK} [s]grit seed[/]  [m]v3.387.0[/]
+
+  [w]![/] [s]MinIO is not answering[/]  [m]http://localhost:9000[/]
+    Files are kept on local disk at storage/app. Uploads still work.
+    [m]Fix[/]  [b]docker compose up -d minio[/]
+    [m]or[/]   set STORAGE_DRIVER=local to choose the disk on purpose
+
+  [w]![/] [s]REDIS_URL is empty[/]
+    Cache, background jobs and cron are disabled.
+
+  [m]14:43:11  db       [/]connected  [m]sqlite, pool of 1[/]
+  [m]14:43:11  migrate  [/]43 models registered
+  [m]14:43:11  seed     [/]users, roles, contacts
+
+  [k]✓[/] [s]Seeded 3 tables[/]  [m]0.4s[/]`},
+{t:"grit update",
+ c:"The version change is the headline, so it sits alone in bold. The paths that were moved stay visible but muted.",
+ x:String.raw`[m]$[/] grit update
+
+  ${MARK} [s]grit update[/]  [m]v3.386.0[/]
+
+  [k]✓[/] Found v3.387.0 on GitHub
+  [k]✓[/] Moved running binary aside  [m]grit.exe → grit.exe.old[/]
+  [k]✓[/] Installed with go install   [m]GOBIN=C:\Users\USER\go\bin[/]
+
+  [k s]Updated[/]  v3.386.0 [m]→[/] [s]v3.387.0[/]
+  [m]Run[/] [b]grit version[/] [m]to verify[/]`},
+{t:"In progress and failed",
+ c:"A running step has a brand spinner and a bar whose leading edge is the grain. Pending steps are a faint dot. An error names the problem, the cause and the next command.",
+ x:String.raw`  [k]✓[/] Go dependencies                               [m]8.4s[/]
+  [b]⠹[/] Installing frontend deps  [b]████████████▓▒░[/][f]·········[/] [m]58%[/]
+  [f]·[/] [m]Admin panel[/]
+
+  [e]✗[/] [s]Port 8080 is already in use[/]
+    The API could not start because another process holds the port.
+    [m]Try[/]  [b]grit start --port 8081[/]`}
+];
+
+const fmt=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace("@@LOGO@@\n",LOGO)
+  .replace(/\[([a-z ]+)\]/g,'<span class="$1">').replace(/\[\/\]/g,"</span>");
+const host=document.getElementById("screens");
+SCREENS.forEach(s=>{
+  const body=fmt(s.x), d=document.createElement("div"); d.className="screen";
+  d.innerHTML=`<div class="cap"><h3>${s.t}</h3><p class="muted">${s.c}</p></div><div class="pair">`+
+    ["dark","light"].map(m=>`<div class="term ${m}"><div class="bar"><span>${m} terminal</span><span>bash</span></div><pre>${body}</pre></div>`).join("")+`</div>`;
+  host.appendChild(d);
+});
+
+const BR={cobalt:["#6AA7FF","#0B57C9","Bright blue / Blue"],ember:["#FF9255","#AD3F08","Bright red / Red"]};
+const ROLES=a=>[
+ ["brand","❯ grit start",BR[a][0],BR[a][1],BR[a][2],"Wordmark, pointer, spinner, commands to type, note bar"],
+ ["text","Created my-app","#D6DAE2","#1F2430","Default foreground","All body text. Never set a color, let the terminal decide"],
+ ["muted","frontend deps","#939CAE","#586170","Bright black / default","Descriptions, comments, timings, key hints, labels"],
+ ["faint","────────","#4A5160","#C4C9D2","Bright black / White","Rules, pending dots, progress track. Never for words"],
+ ["success","✓ 43 tables","#3DD68C","#0A7343","Bright green / Green","✓ and + glyphs, the final result word"],
+ ["warning","! REDIS_URL","#F0B847","#855300","Bright yellow / Yellow","The ! glyph only. The title after it is bold default text"],
+ ["error","✗ Port 8080","#FF7B7B","#BE1F2B","Bright red / Red","The ✗ glyph only. The title after it is bold default text"]];
+function roles(a){
+  document.getElementById("roles").innerHTML=ROLES(a).map(r=>`<tr><td><strong>${r[0]}</strong></td>
+   <td><span class="chip d" style="color:${r[2]}">${r[1]}</span> <code>${r[2]}</code></td>
+   <td><span class="chip l" style="color:${r[3]}">${r[1]}</span> <code>${r[3]}</code></td>
+   <td class="muted">${r[4]}</td><td class="muted">${r[5]}</td></tr>`).join("");
+}
+function setAccent(a){
+  document.documentElement.dataset.accent=a;
+  document.querySelectorAll(".switch button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.a===a));
+  roles(a);
+}
+document.querySelectorAll(".switch button").forEach(b=>b.onclick=()=>setAccent(b.dataset.a));
+setAccent("cobalt");
+</script>
+
+</body></html>

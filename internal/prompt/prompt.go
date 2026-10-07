@@ -4,6 +4,7 @@ import (
 	"github.com/charmbracelet/huh"
 
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
+	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
 // RunNewProjectPrompt shows an interactive prompt for project configuration.
@@ -108,7 +109,11 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 		).WithHideFunc(func() bool { return opts.DBProvider != "" }),
 	)
 
-	if err := form.Run(); err != nil {
+	// One theme for every picker, from internal/ui: huh's default draws a
+	// coloured border down the whole form and paints the options in its own
+	// palette, which is a second design living beside the one the rest of the
+	// output follows.
+	if err := form.WithTheme(ui.PromptTheme()).Run(); err != nil {
 		return err
 	}
 

@@ -66,6 +66,60 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.388.0 */}
+            <div className="mb-12" id="v3.388.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.388.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 7, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The CLI, redesigned</h3>
+                <p>
+                  Built to the style guide in <code>cli-design/</code>. The rule it turns on is
+                  that colour has to say something: green worked, yellow read this, red stopped,
+                  blue is a thing you can type or pick. Body text has no colour at all, because
+                  the terminal&apos;s own foreground is the only value readable on every theme
+                  anybody runs.
+                </p>
+                <p>
+                  Every role is a pair, a dark-terminal value and a light one, so the output reads
+                  on both without configuring anything. The brand is cobalt:{' '}
+                  <code>#6AA7FF</code> on dark, <code>#0B57C9</code> on light, each with an
+                  ANSI-16 fallback for terminals without 24-bit colour.{' '}
+                  <code>GRIT_THEME=light</code> overrides the detection when a terminal will not
+                  answer.
+                </p>
+                <p>
+                  Colour never carries meaning alone: every status has a glyph as well, so the
+                  output still reads with <code>NO_COLOR</code> set, piped to a file, or on a
+                  console that cannot draw <code>✓</code> and gets <code>ok</code> instead.
+                </p>
+
+                <h3>Results, not activity</h3>
+                <p>
+                  Thirty-four lines of <code>→ Scaffolding Go API...</code> are now a checklist of
+                  finished nouns with their timings. The difference shows at the end, which is
+                  when anybody reads the whole block: a list of nouns is a summary of what you
+                  got, a list of participles is a transcript of a process that is over.
+                </p>
+                <p>
+                  The stage that is running is rewritten in place when it finishes. In a pipe, in
+                  CI, or with <code>NO_COLOR</code> set there is no cursor control at all, just
+                  one plain line per stage, so a build log stays readable.
+                </p>
+                <p>
+                  <code>grit new</code> ends with a result line carrying the facts (
+                  <code>Created my-app  Single · Atlas · 14.2s</code>) rather than
+                  &ldquo;Project created successfully!&rdquo;, and the next steps are commands in
+                  brand colour with their comments aligned beside them, no <code>#</code>, because
+                  they were never shell comments.
+                </p>
+              </div>
+            </div>
+
             {/* v3.387.0 */}
             <div className="mb-12" id="v3.387.0">
               <div className="flex items-center gap-3 mb-4">

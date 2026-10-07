@@ -13,6 +13,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/codefmt"
 
 	"github.com/MUKE-coder/grit/v3/internal/manifest"
+	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
 // Architecture represents the project architecture mode.
@@ -72,7 +73,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.387.0"
+const DefaultVersion = "3.388.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -450,34 +451,38 @@ func Run(opts Options) error {
 		}
 	}()
 
+	// Results, not activity: the stage that is running shows as running and
+	// is rewritten to a check when it finishes. In a pipe or under NO_COLOR
+	// there is no cursor control, just one plain line per finished stage.
+	steps := ui.NewStepper(46)
 	spinner := color.New(color.FgHiBlack)
 
 	// Create directory structure
-	spinner.Printf("  → Creating directory structure...\n")
+	steps.Start("Directory structure")
 	if err := createDirectories(root, opts); err != nil {
 		return fmt.Errorf("creating directories: %w", err)
 	}
 
 	// Write root config files
-	spinner.Printf("  → Writing configuration files...\n")
+	steps.Start("Configuration files")
 	if err := writeRootFiles(root, opts); err != nil {
 		return fmt.Errorf("writing root files: %w", err)
 	}
 
 	// Write Go API files
-	spinner.Printf("  → Scaffolding Go API...\n")
+	steps.Start("Go API")
 	if err := writeAPIFiles(root, opts); err != nil {
 		return fmt.Errorf("writing API files: %w", err)
 	}
 
 	// Write migrate and seed entrypoints
-	spinner.Printf("  → Adding migration and seed tools...\n")
+	steps.Start("Migration and seed tools")
 	if err := writeMigrateSeedFiles(root, opts); err != nil {
 		return fmt.Errorf("writing migrate/seed files: %w", err)
 	}
 
 	// Write Phase 4 service files (cache, storage, mail, jobs, cron, AI)
-	spinner.Printf("  → Adding batteries (cache, storage, mail, jobs, cron, AI)...\n")
+	steps.Start("Batteries")
 	if err := writeCacheFiles(root, opts); err != nil {
 		return fmt.Errorf("writing cache files: %w", err)
 	}
@@ -573,13 +578,13 @@ func Run(opts Options) error {
 	}
 
 	// Write blog example files
-	spinner.Printf("  → Adding blog example...\n")
+	steps.Start("Blog example")
 	if err := writeAPIBlogFiles(root, opts); err != nil {
 		return fmt.Errorf("writing blog files: %w", err)
 	}
 
 	// Run go mod tidy to resolve dependencies and generate go.sum
-	spinner.Printf("  → Resolving Go dependencies...\n")
+	steps.Start("Go dependencies")
 	apiDir := filepath.Join(root, "apps", "api")
 	tidyCmd := exec.Command("go", "mod", "tidy")
 	tidyCmd.Dir = apiDir
@@ -588,14 +593,14 @@ func Run(opts Options) error {
 	}
 
 	// Write Docker files
-	spinner.Printf("  → Creating Docker setup...\n")
+	steps.Start("Docker setup")
 	if err := writeDockerFiles(root, opts); err != nil {
 		return fmt.Errorf("writing Docker files: %w", err)
 	}
 
 	if opts.ShouldIncludeShared() {
 		// Write shared package
-		spinner.Printf("  → Creating shared package...\n")
+		steps.Start("Shared package")
 		if err := writeSharedFiles(root, opts); err != nil {
 			return fmt.Errorf("writing shared files: %w", err)
 		}
@@ -603,12 +608,12 @@ func Run(opts Options) error {
 
 	if opts.ShouldIncludeWeb() {
 		if opts.UseTanStack() {
-			spinner.Printf("  → Scaffolding TanStack Router web app (Vite)...\n")
+			steps.Start("Web app")
 			if err := writeWebTanStackFiles(root, opts); err != nil {
 				return fmt.Errorf("writing TanStack web files: %w", err)
 			}
 		} else {
-			spinner.Printf("  → Scaffolding Next.js web app...\n")
+			steps.Start("Web app")
 			if err := writeWebFiles(root, opts); err != nil {
 				return fmt.Errorf("writing web files: %w", err)
 			}
@@ -617,12 +622,12 @@ func Run(opts Options) error {
 
 	if opts.ShouldIncludeAdmin() {
 		if opts.UseTanStack() {
-			spinner.Printf("  → Scaffolding TanStack Router admin panel (Vite)...\n")
+			steps.Start("Admin panel")
 			if err := writeAdminTanStackFiles(root, opts); err != nil {
 				return fmt.Errorf("writing TanStack admin files: %w", err)
 			}
 		} else {
-			spinner.Printf("  → Scaffolding admin panel...\n")
+			steps.Start("Admin panel")
 			if err := writeAdminFiles(root, opts); err != nil {
 				return fmt.Errorf("writing admin files: %w", err)
 			}
@@ -636,7 +641,7 @@ func Run(opts Options) error {
 	// A double on Next.js. A double built with --vite takes the Vite path below,
 	// which is the same panel in the dialect that app speaks.
 	if opts.ShouldEmbedAdmin() && !opts.ShouldEmbedAdminInSPA() {
-		spinner.Printf("  → Scaffolding admin panel into the web app at /admin...\n")
+		steps.Start("Admin panel at /admin")
 		if err := writeEmbeddedAdminFiles(root, opts); err != nil {
 			return fmt.Errorf("writing the embedded admin panel: %w", err)
 		}
@@ -650,7 +655,7 @@ func Run(opts Options) error {
 	// when it was scaffolded with --vite. The Vite admin is the source, because
 	// both are TanStack Router apps and the panel is already written that way.
 	if opts.ShouldEmbedAdminInSPA() {
-		spinner.Printf("  → Scaffolding admin panel into the SPA at /admin...\n")
+		steps.Start("Admin panel at /admin")
 		if err := writeEmbeddedSingleAdminFiles(root, opts); err != nil {
 			return fmt.Errorf("writing the embedded admin panel: %w", err)
 		}
@@ -658,7 +663,7 @@ func Run(opts Options) error {
 
 	if opts.ShouldIncludeExpo() {
 		// Write Expo mobile app
-		spinner.Printf("  → Scaffolding Expo mobile app...\n")
+		steps.Start("Expo mobile app")
 		if err := writeExpoFiles(root, opts); err != nil {
 			return fmt.Errorf("writing Expo files: %w", err)
 		}
@@ -666,7 +671,7 @@ func Run(opts Options) error {
 
 	if opts.ShouldIncludeDesktop() {
 		// Write desktop client (Wails + Vite + TanStack Router, shares the API)
-		spinner.Printf("  → Scaffolding desktop app (Wails)...\n")
+		steps.Start("Desktop app")
 		if err := writeDesktopClientFiles(root, opts); err != nil {
 			return fmt.Errorf("writing desktop files: %w", err)
 		}
@@ -679,7 +684,7 @@ func Run(opts Options) error {
 		// A failure here is not fatal. The API is already resolved and the
 		// project works; losing the whole scaffold to a network hiccup would
 		// be the worse outcome, so say what to run and carry on.
-		spinner.Printf("  → Resolving desktop Go dependencies...\n")
+		steps.Start("Desktop Go dependencies")
 		desktopTidy := exec.Command("go", "mod", "tidy")
 		desktopTidy.Dir = filepath.Join(root, "apps", "desktop")
 		if out, err := desktopTidy.CombinedOutput(); err != nil {
@@ -690,7 +695,7 @@ func Run(opts Options) error {
 
 	if opts.ShouldIncludeDocs() {
 		// Write docs site
-		spinner.Printf("  → Scaffolding documentation site...\n")
+		steps.Start("Documentation site")
 		if err := writeDocsFiles(root, opts); err != nil {
 			return fmt.Errorf("writing docs files: %w", err)
 		}
@@ -698,7 +703,7 @@ func Run(opts Options) error {
 
 	// Write frontend test files (Vitest + Playwright)
 	if opts.ShouldIncludeWeb() || opts.ShouldIncludeAdmin() {
-		spinner.Printf("  → Scaffolding frontend tests (Vitest + Playwright)...\n")
+		steps.Start("Frontend tests")
 		if err := writeFrontendTestFiles(root, opts); err != nil {
 			return fmt.Errorf("writing frontend test files: %w", err)
 		}
@@ -707,6 +712,8 @@ func Run(opts Options) error {
 	// One React across the monorepo when it has the Expo app.
 	alignReactVersions(root)
 
+	// Close the last stage, or its running line is the last thing on screen.
+	steps.Finish()
 	return nil
 }
 
@@ -736,16 +743,16 @@ func RunSingle(opts Options) error {
 		}
 	}()
 
-	spinner := color.New(color.FgHiBlack)
+	steps := ui.NewStepper(46)
 
 	// Create directory structure
-	spinner.Printf("  → Creating directory structure...\n")
+	steps.Start("Directory structure")
 	if err := createSingleDirectories(root, opts); err != nil {
 		return fmt.Errorf("creating directories: %w", err)
 	}
 
 	// Write root config files (.env, .gitignore, skill file, Makefile)
-	spinner.Printf("  → Writing configuration files...\n")
+	steps.Start("Configuration files")
 	if err := writeSingleRootFiles(root, opts); err != nil {
 		return fmt.Errorf("writing root files: %w", err)
 	}
@@ -756,19 +763,19 @@ func RunSingle(opts Options) error {
 	}
 
 	// Write Go API files (uses opts.APIRoot which returns root for single)
-	spinner.Printf("  → Scaffolding Go API...\n")
+	steps.Start("Go API")
 	if err := writeAPIFiles(root, opts); err != nil {
 		return fmt.Errorf("writing API files: %w", err)
 	}
 
 	// Write migrate/seed tools
-	spinner.Printf("  → Adding migration and seed tools...\n")
+	steps.Start("Migration and seed tools")
 	if err := writeMigrateSeedFiles(root, opts); err != nil {
 		return fmt.Errorf("writing migrate/seed files: %w", err)
 	}
 
 	// Write batteries
-	spinner.Printf("  → Adding batteries (cache, storage, mail, jobs, cron, AI, TOTP)...\n")
+	steps.Start("Batteries")
 	if err := writeCacheFiles(root, opts); err != nil {
 		return fmt.Errorf("writing cache files: %w", err)
 	}
@@ -858,19 +865,19 @@ func RunSingle(opts Options) error {
 	}
 
 	// Write blog example
-	spinner.Printf("  → Adding blog example...\n")
+	steps.Start("Blog example")
 	if err := writeAPIBlogFiles(root, opts); err != nil {
 		return fmt.Errorf("writing blog files: %w", err)
 	}
 
 	// Write embed-aware main.go (replaces the standard cmd/server/main.go)
-	spinner.Printf("  → Writing single-app main.go with go:embed...\n")
+	steps.Start("Single binary entry point")
 	if err := writeSingleMainGo(root, opts); err != nil {
 		return fmt.Errorf("writing single main.go: %w", err)
 	}
 
 	// Run go mod tidy at project root
-	spinner.Printf("  → Resolving Go dependencies...\n")
+	steps.Start("Go dependencies")
 	tidyCmd := exec.Command("go", "mod", "tidy")
 	tidyCmd.Dir = opts.APIRoot(root)
 	if out, err := tidyCmd.CombinedOutput(); err != nil {
@@ -878,7 +885,7 @@ func RunSingle(opts Options) error {
 	}
 
 	// Write Docker files
-	spinner.Printf("  → Creating Docker setup...\n")
+	steps.Start("Docker setup")
 	if err := writeDockerFiles(root, opts); err != nil {
 		return fmt.Errorf("writing Docker files: %w", err)
 	}
@@ -897,19 +904,19 @@ func RunSingle(opts Options) error {
 		// one resolves as a workspace member. The frontend's package.json asks for
 		// "@repo/shared": "workspace:*", so without it pnpm install fails on a
 		// dependency that is not there, before anything is built.
-		spinner.Printf("  → Creating shared package...\n")
+		steps.Start("Shared package")
 		if err := writeSharedFiles(root, opts); err != nil {
 			return fmt.Errorf("writing shared files: %w", err)
 		}
 
-		spinner.Printf("  → Scaffolding Next.js frontend...\n")
+		steps.Start("Next.js frontend")
 		if err := writeWebFiles(root, opts); err != nil {
 			return fmt.Errorf("writing frontend files: %w", err)
 		}
 
 		// The panel as a route group at /admin, which is the shape a double uses:
 		// the same screens, moved and repointed. See admin_embedded.go.
-		spinner.Printf("  → Scaffolding admin panel into the frontend at /admin...\n")
+		steps.Start("Admin panel at /admin")
 		if err := writeEmbeddedAdminFiles(root, opts); err != nil {
 			return fmt.Errorf("writing the embedded admin panel: %w", err)
 		}
@@ -926,7 +933,7 @@ func RunSingle(opts Options) error {
 		return nil
 	}
 
-	spinner.Printf("  → Scaffolding React frontend (Vite + TanStack Router)...\n")
+	steps.Start("React frontend")
 	if err := writeSingleFrontendFiles(root, opts); err != nil {
 		return fmt.Errorf("writing frontend files: %w", err)
 	}
@@ -934,11 +941,13 @@ func RunSingle(opts Options) error {
 	// And the admin panel inside it, at /admin. The Vite admin is the source,
 	// because this SPA is a TanStack Router app and the panel already exists in
 	// that dialect: see admin_embedded_single.go.
-	spinner.Printf("  → Scaffolding admin panel into the SPA at /admin...\n")
+	steps.Start("Admin panel at /admin")
 	if err := writeEmbeddedSingleAdminFiles(root, opts); err != nil {
 		return fmt.Errorf("writing the embedded admin panel: %w", err)
 	}
 
+	// Close the last stage, or its running line is the last thing on screen.
+	steps.Finish()
 	return nil
 }
 

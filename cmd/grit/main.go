@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -31,9 +32,10 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/routeparser"
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
+	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.387.0"
+var version = "3.388.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -264,10 +266,11 @@ func newCmd() *cobra.Command {
 			}
 
 			printLogo()
-			cHeading.Printf("\n  Creating new Grit project: %s\n", projectName)
 
-			gray := color.New(color.FgHiBlack)
-			gray.Printf("  Architecture: %s | Frontend: %s\n\n", opts.Architecture, opts.Frontend)
+			// The shape goes in the result line at the end, beside the timing.
+			// Repeating it here as "Architecture: triple | Frontend: next" told
+			// somebody what they had chosen a second earlier.
+			started := time.Now()
 
 			if err := scaffold.Run(opts); err != nil {
 				color.Red("\n  Error: %v\n", err)
@@ -305,7 +308,7 @@ func newCmd() *cobra.Command {
 				color.Yellow("    the project is fine; `grit doctor` has the detail\n")
 			}
 
-			printSuccess(projectName, opts)
+			printSuccess(projectName, opts, time.Since(started))
 			return nil
 		},
 	}
@@ -2219,83 +2222,167 @@ func openURL(url string) {
 	}
 }
 
+// printLogo draws the wordmark. Three commands show it: grit new, grit version
+// and grit on its own. Everything else opens with printHeader, because a
+// banner on every command is a banner nobody reads.
 func printLogo() {
-	cBrand.Println(`
-   ██████╗ ██████╗ ██╗████████╗
-  ██╔════╝ ██╔══██╗██║╚══██╔══╝
-  ██║  ███╗██████╔╝██║   ██║
-  ██║   ██║██╔══██╗██║   ██║
-  ╚██████╔╝██║  ██║██║   ██║
-   ╚═════╝ ╚═╝  ╚═╝╚═╝   ╚═╝`)
-	gray := color.New(color.FgHiBlack)
-	gray.Printf("  Describe your data. Get the whole app. v%s\n", version)
+	fmt.Print(ui.Wordmark(version))
 }
 
-func printSuccess(name string, opts scaffold.Options) {
-	green := color.New(color.FgHiGreen, color.Bold)
-	white := color.New(color.FgWhite)
-	cyan := color.New(color.FgHiCyan)
-	gray := color.New(color.FgHiBlack)
+// printHeader is the one-line opening for every other command:
+//
+//	░▒▓█ grit migrate  v3.387.0 · sqlite
+//
+// meta is whatever is worth knowing before the output starts, such as which
+// database the command is about to talk to.
+func printHeader(command string, meta ...string) {
+	detail := "v" + version
+	for _, m := range meta {
+		if m != "" {
+			detail += " · " + m
+		}
+	}
+	fmt.Println()
+	fmt.Println(ui.Header(command, detail))
+	fmt.Println()
+}
 
-	fmt.Println()
-	green.Println("  ✓ Project created successfully!")
+// printSuccess is the last thing grit new prints: what was made, then what to
+// do next, then where everything listens.
+//
+// The shape is from the style guide: a result line carrying the facts, a
+// command column with muted comments beside it, and one faint rule above the
+// URL table and nowhere else.
+func printSuccess(name string, opts scaffold.Options, took time.Duration) {
 	fmt.Println()
 
-	white.Println("  Next steps:")
+	// What it is, in the detail rather than in six lines of prose.
+	detail := []string{architectureLabel(opts)}
+	// The theme paints auth pages and a dashboard, so it is a fact about a
+	// project that has a frontend and noise on one that does not.
+	if opts.Theme != "" && opts.Architecture != scaffold.ArchAPI {
+		detail = append(detail, strings.ToUpper(opts.Theme[:1])+opts.Theme[1:])
+	}
+	if opts.DBProvider != "" {
+		detail = append(detail, opts.DBProvider)
+	}
+	if d := ui.Duration(took); d != "" {
+		detail = append(detail, d)
+	}
+	fmt.Println(ui.Result("Created", name, strings.Join(detail, " · ")))
 	fmt.Println()
+
+	fmt.Println(ui.Section("Next steps"))
+	fmt.Println()
+
+	type step struct{ cmd, note string }
+	steps := []step{}
 	if !opts.InPlace {
-		cyan.Printf("    cd %s\n", name)
+		steps = append(steps, step{"cd " + name, ""})
 	}
-	cyan.Println("    docker compose up -d      # Postgres, Redis, MinIO, Mailhog")
-
+	if opts.DBProvider == "postgres" || opts.DBProvider == "mysql" {
+		// Only worth saying when something actually has to be started: with
+		// sqlite there is no server, and the line was a detour.
+		steps = append(steps, step{"docker compose up -d", "Postgres, Redis, MinIO, Mailhog"})
+	}
 	if opts.Architecture != scaffold.ArchAPI {
-		cyan.Println("    pnpm install              # frontend deps (one-time)")
+		steps = append(steps, step{"pnpm install", "frontend deps, one time"})
 	}
-	cyan.Println("    grit migrate              # create database tables")
-	cyan.Println("    grit seed                 # (optional) sample data")
-
+	steps = append(steps,
+		step{"grit migrate", "create database tables"},
+		step{"grit seed", "sample data, optional"},
+	)
 	if opts.Architecture == scaffold.ArchAPI {
-		cyan.Println("    grit start server         # run the API")
+		steps = append(steps, step{"grit start server", "run the API"})
 	} else {
-		cyan.Println("    grit start                # run everything")
+		steps = append(steps, step{"grit start", "run everything"})
+	}
+	if opts.ShouldIncludeExpo() {
+		steps = append(steps, step{"grit start expo", "run the Expo app"})
 	}
 
-	if opts.ShouldIncludeExpo() {
-		cyan.Println("    grit start expo           # run the Expo app")
+	column := 0
+	for _, s := range steps {
+		if n := len([]rune(s.cmd)); n > column {
+			column = n
+		}
+	}
+	for _, s := range steps {
+		fmt.Println(ui.Command(s.cmd, s.note, column+4))
 	}
 
 	fmt.Println()
-	gray.Println("  ─────────────────────────────────────")
-	gray.Printf("  API:         http://localhost:8080\n")
-	gray.Printf("  API Docs:    http://localhost:8080/docs\n")
-	gray.Printf("  GORM Studio: http://localhost:8080/studio\n")
-	gray.Printf("  Sentinel:    http://localhost:8080/sentinel/ui\n")
+	fmt.Println(ui.Rule(52))
 
+	type link struct{ label, href string }
+	links := []link{
+		{"API", "http://localhost:8080"},
+		{"API docs", "http://localhost:8080/docs"},
+		{"GORM Studio", "http://localhost:8080/studio"},
+		{"Sentinel", "http://localhost:8080/sentinel/ui"},
+	}
 	if opts.ShouldIncludeWeb() {
-		gray.Printf("  Web App:     http://localhost:3000\n")
+		links = append(links, link{"Web app", "http://localhost:3000"})
 	}
 	if opts.ShouldIncludeAdmin() {
-		gray.Printf("  Admin:       http://localhost:3001\n")
+		links = append(links, link{"Admin", "http://localhost:3001"})
 	}
 	if opts.ShouldIncludeSingleSPA() {
-		gray.Printf("  Frontend:    http://localhost:5173\n")
+		links = append(links, link{"Frontend", "http://localhost:5173"})
 	}
 	if opts.ShouldIncludeExpo() {
-		gray.Printf("  Expo:        exp://localhost:8081\n")
+		links = append(links, link{"Expo", "exp://localhost:8081"})
 	}
 	if opts.ShouldIncludeDesktop() {
-		gray.Printf("  Desktop:     wails dev (from apps/desktop)\n")
+		links = append(links, link{"Desktop", "wails dev, from apps/desktop"})
 	}
 	if opts.ShouldIncludeDocs() {
-		gray.Printf("  Docs:        http://localhost:3002\n")
+		links = append(links, link{"Docs", "http://localhost:3002"})
 	}
+	// The services docker compose starts. Not listed when nothing starts them.
+	if opts.DBProvider == "postgres" {
+		links = append(links, link{"PostgreSQL", "localhost:5434"})
+	}
+	if opts.DBProvider == "mysql" {
+		links = append(links, link{"MySQL", "localhost:3308"})
+	}
+	links = append(links,
+		link{"Redis", "localhost:6380"},
+		link{"MinIO", "http://localhost:9003"},
+		link{"Mailhog", "http://localhost:8025"},
+	)
 
-	gray.Printf("  PostgreSQL:  localhost:5434\n")
-	gray.Printf("  Redis:       localhost:6380\n")
-	gray.Printf("  MinIO:       http://localhost:9003\n")
-	gray.Printf("  Mailhog:     http://localhost:8025\n")
-	gray.Println("  ─────────────────────────────────────")
+	labelColumn := 0
+	for _, l := range links {
+		if n := len([]rune(l.label)); n > labelColumn {
+			labelColumn = n
+		}
+	}
+	for _, l := range links {
+		fmt.Println(ui.URL(l.label, l.href, labelColumn+3))
+	}
 	fmt.Println()
+}
+
+// architectureLabel is the shape in a word, for the result line.
+func architectureLabel(opts scaffold.Options) string {
+	if opts.Full {
+		return "Full"
+	}
+	switch opts.Architecture {
+	case scaffold.ArchSingle:
+		return "Single"
+	case scaffold.ArchDouble:
+		return "Double"
+	case scaffold.ArchTriple:
+		return "Triple"
+	case scaffold.ArchAPI:
+		return "API only"
+	case scaffold.ArchMobile:
+		return "Mobile"
+	default:
+		return string(opts.Architecture)
+	}
 }
 
 func newDesktopCmd() *cobra.Command {
