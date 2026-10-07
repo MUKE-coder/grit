@@ -133,6 +133,7 @@ import { buttonClasses } from "@/components/ui/button";
  */
 const RULES = [
   { id: "length", label: "At least 8 characters" },
+  { id: "max-length", label: "At most 72 characters" },
   { id: "variety", label: "Letters and something else: a number, a symbol or a space" },
   { id: "not-common", label: "Not a password everyone tries first" },
   { id: "not-personal", label: "Nothing from your name or email" },

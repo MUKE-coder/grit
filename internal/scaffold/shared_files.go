@@ -117,7 +117,14 @@ export const RegisterSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    // bcrypt refuses anything over 72 bytes, so the server has the same
+    // rule. Bytes rather than characters: an emoji is four of them.
+    .refine((v) => new TextEncoder().encode(v).length <= 72, {
+      message: "Password must be at most 72 bytes (72 letters, fewer with emoji)",
+    }),
   confirmPassword: z.string(),
   macAddress: z.string().optional(), // optional — passed by client if available
 }).refine((data) => data.password === data.confirmPassword, {
@@ -142,7 +149,14 @@ export const ForgotPasswordSchema = z.object({
 
 export const ResetPasswordSchema = z.object({
   token: z.string().min(1, "Token is required"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    // bcrypt refuses anything over 72 bytes, so the server has the same
+    // rule. Bytes rather than characters: an emoji is four of them.
+    .refine((v) => new TextEncoder().encode(v).length <= 72, {
+      message: "Password must be at most 72 bytes (72 letters, fewer with emoji)",
+    }),
 });
 
 export type LoginInput = z.infer<typeof LoginSchema>;

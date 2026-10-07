@@ -32,6 +32,15 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
+		// The password rules. Framework-owned: the four rules, their wording and
+		// the checklist the admin draws are all Grit's, and a project that edits
+		// them is editing the wrong file.
+		//
+		// It was written at scaffold time only, so when the rules gained bcrypt's
+		// 72-byte ceiling every existing project kept answering 500 for a long
+		// passphrase, which is the error the ceiling exists to prevent.
+		filepath.Join(apiRoot, "internal", "password", "password.go"): apiPasswordRulesGo(),
+
 		// The webhook cluster. The model, the receiver that builds it and the
 		// dispatch package all read the same columns, so upgrading one without
 		// the others gives a project that does not compile: the receiver

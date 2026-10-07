@@ -21,6 +21,18 @@ import (
 // this is the rule that carries the most weight here.
 const MinLength = 8
 
+// MaxBytes is the ceiling, and it is bcrypt's rather than ours.
+//
+// golang.org/x/crypto/bcrypt refuses anything over 72 bytes outright. Without
+// this rule a 74-byte passphrase passed every check here, failed to hash, and
+// the API answered 500: a long passphrase is the strongest kind, so the people
+// turned away were the ones doing the right thing.
+//
+// Bytes, not characters. An accented letter is two bytes and an emoji is four,
+// so a 72-character password can be well over the limit, and counting runes
+// would put the 500 back for anybody not writing in ASCII.
+const MaxBytes = 72
+
 // Rule is one thing a password has to satisfy, named the way it is shown.
 type Rule struct {
 	// ID is what the admin's checklist matches on, so the wording can change
@@ -45,6 +57,8 @@ func Rules() []Rule {
 	return []Rule{
 		{ID: "length", Label: "At least 8 characters", Required: true,
 			Clause: "needs at least 8 characters"},
+		{ID: "max-length", Label: "At most 72 characters", Required: true,
+			Clause: "cannot be longer than 72 bytes, which is 72 letters, or fewer with accents or emoji"},
 		{ID: "variety", Label: "Letters and something else: a number, a symbol or a space", Required: true,
 			Clause: "needs letters and something else: a number, a symbol or a space"},
 		{ID: "not-common", Label: "Not a password everyone tries first", Required: true,
@@ -64,6 +78,11 @@ func Check(candidate string, about ...string) []string {
 
 	if len([]rune(candidate)) < MinLength {
 		failed = append(failed, "length")
+	}
+
+	// Bytes, because that is what bcrypt counts.
+	if len(candidate) > MaxBytes {
+		failed = append(failed, "max-length")
 	}
 
 	var letters, others bool

@@ -66,6 +66,52 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.390.0 */}
+            <div className="mb-12" id="v3.390.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.390.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 7, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A long passphrase returned a 500</h3>
+                <p>
+                  <code>golang.org/x/crypto/bcrypt</code> refuses anything over 72 bytes outright.
+                  The password rules had a minimum and no maximum, so this passphrase
+                </p>
+                <p>
+                  <code>correct horse battery staple correct horse battery staple correct horse 9!</code>
+                </p>
+                <p>
+                  which is 74 bytes and passes every other rule, reached the model&apos;s{' '}
+                  <code>BeforeCreate</code>, failed to hash, and came back as{' '}
+                  <code>500 INTERNAL_ERROR: Failed to create user</code>. A long passphrase is the
+                  strongest kind, so the people turned away were the ones doing the right thing,
+                  and the error told them nothing.
+                </p>
+                <p>
+                  There is a ceiling now, counted in bytes rather than characters because an
+                  accented letter is two and an emoji is four. It sits with the other four rules,
+                  so registering, changing and resetting all get it, the admin&apos;s checklist
+                  shows it, and the Zod schema says it before the round trip. The answer is a 422
+                  naming the limit.
+                </p>
+                <p>
+                  The password package was written at scaffold time only, so the fix would have
+                  reached new projects and left every existing one answering 500. It is
+                  framework-owned now, which means <code>grit upgrade</code> delivers it.
+                </p>
+                <p>
+                  Found reading{' '}
+                  <a href="https://github.com/zitadel/zitadel" className="underline">zitadel</a>,
+                  whose hasher validates that an encoded hash&apos;s cost parameters are within
+                  bounds before trusting it. Grit had no bound at all at the other end.
+                </p>
+              </div>
+            </div>
+
             {/* v3.389.0 */}
             <div className="mb-12" id="v3.389.0">
               <div className="flex items-center gap-3 mb-4">
