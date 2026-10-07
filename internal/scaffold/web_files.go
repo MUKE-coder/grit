@@ -46,15 +46,17 @@ func webFileMap(root string, opts Options) map[string]string {
 		filepath.Join(webRoot, "app", "globals.css"): webGlobalCSS(),
 		filepath.Join(webRoot, "app", "layout.tsx"):  webRootLayout(opts),
 		// The public site. A route group, so the URLs are unchanged: / and /blog.
-		filepath.Join(webRoot, "app", "(marketing)", "layout.tsx"): webMarketingLayout(),
-		filepath.Join(webRoot, "app", "(marketing)", "page.tsx"):   webLandingPage(opts),
-		filepath.Join(webRoot, "app", "error.tsx"):                 webErrorPage(),
-		filepath.Join(webRoot, "app", "not-found.tsx"):             webNotFoundPage(),
-		filepath.Join(webRoot, "app", "global-error.tsx"):          webGlobalErrorPage(),
-		filepath.Join(webRoot, "lib", "utils.ts"):                  webUtils(),
-		filepath.Join(webRoot, "components.json"):                  nextComponentsJSON(),
-		filepath.Join(webRoot, "components", "navbar.tsx"):         webNavbar(opts),
-		filepath.Join(webRoot, "components", "footer.tsx"):         webFooter(opts),
+		filepath.Join(webRoot, "app", "(marketing)", "layout.tsx"):    webMarketingLayout(),
+		filepath.Join(webRoot, "app", "(marketing)", "page.tsx"):      webLandingPage(opts),
+		filepath.Join(webRoot, "app", "error.tsx"):                    webErrorPage(),
+		filepath.Join(webRoot, "app", "not-found.tsx"):                webNotFoundPage(),
+		filepath.Join(webRoot, "components", "not-found-view.tsx"):    webNotFoundView(),
+		filepath.Join(webRoot, "app", "(marketing)", "not-found.tsx"): webMarketingNotFoundPage(),
+		filepath.Join(webRoot, "app", "global-error.tsx"):             webGlobalErrorPage(opts),
+		filepath.Join(webRoot, "lib", "utils.ts"):                     webUtils(),
+		filepath.Join(webRoot, "components.json"):                     nextComponentsJSON(),
+		filepath.Join(webRoot, "components", "navbar.tsx"):            webNavbar(opts),
+		filepath.Join(webRoot, "components", "footer.tsx"):            webFooter(opts),
 		// v3.31.49 — DevLinks renders every URL the `grit new` welcome
 		// banner prints (API, GORM Studio, Sentinel, Admin, MinIO,
 		// Mailhog, ...) on the landing page, dev-only.
@@ -1472,13 +1474,13 @@ export default function ErrorPage({
         <div className="flex gap-3 justify-center">
           <button
             onClick={() => window.history.back()}
-            className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent/50 transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-bg-hover transition-colors"
           >
             Go Back
           </button>
           <button
             onClick={reset}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-fg hover:bg-accent-hover transition-colors"
           >
             Try Again
           </button>
@@ -1490,34 +1492,48 @@ export default function ErrorPage({
 `
 }
 
-func webNotFoundPage() string {
-	// Next renders not-found.tsx from the app root, outside every route group, so
-	// it has no section layout to inherit chrome from and brings its own.
+// webNotFoundView is the 404 itself, with no chrome of its own.
+func webNotFoundView() string {
 	return `import Link from "next/link";
-import { Navbar } from "@/components/navbar";
+
+export function NotFoundView() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center px-4">
+      <div className="w-full max-w-md text-center">
+        <p className="mb-4 text-7xl font-bold text-accent">404</p>
+        <h2 className="mb-2 text-2xl font-bold text-foreground">Page not found</h2>
+        <p className="mb-8 text-text-muted">
+          The page you&apos;re looking for doesn&apos;t exist or has been moved.
+        </p>
+        <div className="flex gap-3 justify-center">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-fg hover:bg-accent-hover transition-colors"
+          >
+            Home
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+`
+}
+
+// webNotFoundPage is app/not-found.tsx: a URL that matched no route at all.
+//
+// Next renders this one from the app root, outside every route group, so there
+// is no section layout above it and it brings the chrome itself.
+func webNotFoundPage() string {
+	return `import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import { NotFoundView } from "@/components/not-found-view";
 
 export default function NotFound() {
   return (
     <>
       <Navbar />
-      <div className="flex min-h-[60vh] items-center justify-center px-4">
-        <div className="w-full max-w-md text-center">
-          <p className="mb-4 text-7xl font-bold text-primary">404</p>
-          <h2 className="mb-2 text-2xl font-bold text-foreground">Page not found</h2>
-          <p className="mb-8 text-text-muted">
-            The page you&apos;re looking for doesn&apos;t exist or has been moved.
-          </p>
-          <div className="flex gap-3 justify-center">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              Home
-            </Link>
-          </div>
-        </div>
-      </div>
+      <NotFoundView />
       <Footer />
     </>
   );
@@ -1525,7 +1541,35 @@ export default function NotFound() {
 `
 }
 
-func webGlobalErrorPage() string {
+// webMarketingNotFoundPage is app/(marketing)/not-found.tsx.
+//
+// notFound() called from a page inside the group, which is what a blog post
+// with an unknown slug does. Next renders the nearest not-found INSIDE the
+// layouts that matched, so the marketing layout has already drawn the navbar
+// and the footer. Without this file the root one is used and both appear
+// twice, which is what shipped.
+func webMarketingNotFoundPage() string {
+	return `import { NotFoundView } from "@/components/not-found-view";
+
+export default function NotFound() {
+  return <NotFoundView />;
+}
+`
+}
+
+func webGlobalErrorPage(opts Options) string {
+	// This page replaces the document, root layout and stylesheet included, so
+	// every colour has to be a value. They came from the midnight palette, which
+	// meant a purple button on near-black for a project that had chosen
+	// something else entirely.
+	t := opts.Theme
+	bg := themeColor(t, "bg-primary", "#0a0a0f")
+	fg := themeColor(t, "text-primary", "#e8e8f0")
+	muted := themeColor(t, "text-secondary", "#9090a8")
+	faint := themeColor(t, "text-muted", "#606078")
+	accent := themeColor(t, "accent", "#6c5ce7")
+	accentFg := themeColor(t, "accent-fg", "#ffffff")
+	danger := themeColor(t, "danger", "#ef4444")
 	return `"use client";
 
 export default function GlobalError({
@@ -1536,25 +1580,25 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body style={{ minHeight: "100vh", backgroundColor: "#0a0a0f", fontFamily: "system-ui, sans-serif", margin: 0 }}>
+    <html lang="en">
+      <body style={{ minHeight: "100vh", backgroundColor: "` + bg + `", fontFamily: "system-ui, sans-serif", margin: 0 }}>
         <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
           <div style={{ maxWidth: "28rem", textAlign: "center" }}>
-            <div style={{ margin: "0 auto 1.5rem", display: "flex", height: "4rem", width: "4rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px", backgroundColor: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
-              <svg style={{ height: "2rem", width: "2rem", color: "#f87171" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div style={{ margin: "0 auto 1.5rem", display: "flex", height: "4rem", width: "4rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px", backgroundColor: "` + rgba(danger, 0.1) + `", border: "1px solid ` + rgba(danger, 0.2) + `" }}>
+              <svg style={{ height: "2rem", width: "2rem", color: "` + danger + `" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h2 style={{ marginBottom: "0.5rem", fontSize: "1.5rem", fontWeight: 700, color: "#e8e8f0" }}>Application Error</h2>
-            <p style={{ marginBottom: "1.5rem", color: "#9090a8" }}>
+            <h2 style={{ marginBottom: "0.5rem", fontSize: "1.5rem", fontWeight: 700, color: "` + fg + `" }}>Application Error</h2>
+            <p style={{ marginBottom: "1.5rem", color: "` + muted + `" }}>
               A critical error occurred. Please try refreshing the page.
             </p>
             {error.digest && (
-              <p style={{ marginBottom: "1rem", fontSize: "0.75rem", color: "#606078", fontFamily: "monospace" }}>Error ID: {error.digest}</p>
+              <p style={{ marginBottom: "1rem", fontSize: "0.75rem", color: "` + faint + `", fontFamily: "monospace" }}>Error ID: {error.digest}</p>
             )}
             <button
               onClick={reset}
-              style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.5rem", backgroundColor: "#6c5ce7", padding: "0.625rem 1.25rem", fontSize: "0.875rem", fontWeight: 500, color: "white", border: "none", cursor: "pointer" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.5rem", backgroundColor: "` + accent + `", padding: "0.625rem 1.25rem", fontSize: "0.875rem", fontWeight: 500, color: "` + accentFg + `", border: "none", cursor: "pointer" }}
             >
               Try Again
             </button>

@@ -973,9 +973,7 @@ func Load() (*Config, error) {
 	// api/, found no .env at all, and fell back to the built-in defaults: the
 	// first thing anybody saw was a refusal to start under APP_ENV=production,
 	// naming five secrets that were sitting in a file one directory up.
-	_ = godotenv.Load()
-	_ = godotenv.Load("../.env")
-	_ = godotenv.Load("../../.env")
+	loadDotEnv()
 
 ` + configStorageDriverNew + `
 	cfg := &Config{
@@ -1049,7 +1047,7 @@ func Load() (*Config, error) {
 		PulseUsername:    getEnv("PULSE_USERNAME", "admin"),
 		PulsePassword:   getEnv("PULSE_PASSWORD", "pulse"),
 		PulseStorage:    getEnv("PULSE_STORAGE", "memory"),
-		PulseStorageDSN: getEnv("PULSE_STORAGE_DSN", "pulse.db"),
+		PulseStorageDSN: resolveSQLitePath(getEnv("PULSE_STORAGE_DSN", "pulse.db")),
 
 		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
@@ -1253,6 +1251,74 @@ func warnPortMismatch(urlVar, raw, portVar string) {
 	}
 }
 
+// envDir is the directory holding the .env this process loaded, or "" when there
+// is none. A relative path in that file is relative to it, not to wherever the
+// process happens to have been started.
+var envDir string
+
+// loadDotEnv reads the project's .env from wherever the binary is.
+//
+// godotenv does not overwrite a variable that is already set, so the nearest
+// file wins and the environment wins over all of them.
+func loadDotEnv() {
+	for _, candidate := range []string{".env", "../.env", "../../.env"} {
+		if _, err := os.Stat(candidate); err != nil {
+			continue
+		}
+		_ = godotenv.Load(candidate)
+		if envDir == "" {
+			envDir = filepath.Dir(candidate)
+		}
+	}
+}
+
+// resolveSQLitePath anchors a relative database file to the project.
+//
+// The CLI runs migrate and seed from apps/api and the server may run from
+// anywhere, so a path resolved against the working directory is two different
+// files. The second one is created empty, which is the part that hurts: the
+// server starts, finds no tables, and returns a 500 for every read while the
+// data sits in the first.
+//
+// A URI form (file:...) and an absolute path are left alone: both already say
+// exactly which file they mean.
+func resolveSQLitePath(path string) string {
+	return ResolveSQLitePath(path)
+}
+
+// ResolveSQLitePath is resolveSQLitePath, for the other things in this app that
+// keep a SQLite file of their own: Sentinel's threat log and Pulse's traces.
+// They had the same split, so a redeploy or a different working directory
+// started a fresh, empty one and the old entries looked deleted.
+func ResolveSQLitePath(path string) string {
+	if path == "" || envDir == "" || filepath.IsAbs(path) || strings.HasPrefix(path, "file:") {
+		return path
+	}
+	anchored := filepath.Join(envDir, path)
+	if _, err := os.Stat(anchored); err == nil {
+		return anchored
+	}
+	// A project created before this rule has its database where the old one put
+	// it: beside whichever directory the CLI ran migrate from, which is the API
+	// module. Those are the candidates below, and an existing file wins over
+	// starting an empty one beside .env, because an empty database that looks
+	// exactly like the real one is the whole failure this is about.
+	for _, legacy := range []string{
+		path,
+		filepath.Join(envDir, "apps", "api", path),
+		filepath.Join(envDir, "api", path),
+	} {
+		if _, err := os.Stat(legacy); err != nil {
+			continue
+		}
+		if abs, err := filepath.Abs(legacy); err == nil {
+			log.Printf("sqlite: using %s, the database this project already has. Move it beside .env to have every command agree on it wherever they run from.", abs)
+		}
+		return legacy
+	}
+	return anchored
+}
+
 // resolveDatabaseURL builds the DSN from DB_PROVIDER and that provider's parts.
 //
 // DATABASE_URL still wins: it is the escape hatch for a managed database whose
@@ -1294,7 +1360,7 @@ func resolveDatabaseURL() string {
 		return fmt.Sprintf("mysql:%s:%s@tcp(%s:%s)/%s", user, pass, host, port, db)
 
 	case "sqlite", "sqlite3", "file":
-		return "sqlite:" + getEnv("SQLITE_PATH", "./app.db")
+		return "sqlite:" + resolveSQLitePath(getEnv("SQLITE_PATH", "./app.db"))
 
 	case "memory", ":memory:":
 		// Shared cache, not a bare :memory:. GORM pools connections, and a bare
@@ -2340,11 +2406,34 @@ func apiCorsMiddlewareGo() string {
 	return `package middleware
 
 import (
+	"log"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 )
+
+// refusedOrigins remembers which origins have been reported already. A page
+// that retries would otherwise write the same line on every request.
+var refusedOrigins sync.Map
+
+// reportRefusedOrigin says, once per origin, that the browser was turned away.
+//
+// A request from an origin outside the allowlist gets a preflight with no
+// Access-Control-Allow-Origin, which is the correct answer and an invisible
+// one: the browser never sends the real request, so no handler runs, no status
+// is logged, and the screen shows a button that does nothing. Moving the admin
+// to a different port is enough to produce it.
+func reportRefusedOrigin(origin string) {
+	if origin == "" {
+		return
+	}
+	if _, seen := refusedOrigins.LoadOrStore(origin, struct{}{}); seen {
+		return
+	}
+	log.Printf("CORS: refused %s. The browser drops every request from that origin without reporting an error, so the page will look like it is doing nothing. Add it to CORS_ORIGINS in .env (comma separated) and restart.", origin)
+}
 
 // isWailsOrigin reports whether the request came from the Wails desktop
 // webview, whose origin is not stably enumerable:
@@ -2406,6 +2495,8 @@ func CORSDynamic(resolve func() []string) gin.HandlerFunc {
 		}
 		if allowed || isWailsOrigin(origin) {
 			c.Header("Access-Control-Allow-Origin", origin)
+		} else {
+			reportRefusedOrigin(origin)
 		}
 
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
@@ -7246,7 +7337,7 @@ func mountSentinel(r *gin.Engine, db *gorm.DB, cfg *config.Config, svc *Services
 		// SQLite file — which is ephemeral inside a container, so every
 		// redeploy would drop the threat log and the blocked-IP list. Point
 		// it at the same database the app uses when that's Postgres.
-		sentinelStorage := sentinel.StorageConfig{Driver: sentinel.SQLite, DSN: "sentinel.db"}
+		sentinelStorage := sentinel.StorageConfig{Driver: sentinel.SQLite, DSN: config.ResolveSQLitePath("sentinel.db")}
 		if !strings.HasPrefix(cfg.DatabaseURL, "sqlite:") {
 			sentinelStorage = sentinel.StorageConfig{Driver: sentinel.Postgres, DSN: cfg.DatabaseURL}
 		}

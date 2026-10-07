@@ -960,6 +960,7 @@ function FilterControl({
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          aria-label={` + "`" + `Filter by ${filter.label}` + "`" + `}
           className={inputClasses({ inputSize: "sm", fullWidth: false })}
         >
           <option value="">{filter.placeholder ?? ` + "`" + `All ${filter.label}` + "`" + `}</option>
@@ -976,6 +977,7 @@ function FilterControl({
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          aria-label={` + "`" + `Filter by ${filter.label}` + "`" + `}
           className={inputClasses({ inputSize: "sm", fullWidth: false })}
         >
           <option value="">{filter.placeholder ?? ` + "`" + `All ${filter.label}` + "`" + `}</option>
@@ -991,6 +993,7 @@ function FilterControl({
           <input
             type="number"
             placeholder="Min"
+            aria-label={` + "`" + `${filter.label}, from` + "`" + `}
             value={value.split(",")[0] ?? ""}
             onChange={(e) => {
               const max = value.split(",")[1] ?? "";
@@ -1002,6 +1005,7 @@ function FilterControl({
           <input
             type="number"
             placeholder="Max"
+            aria-label={` + "`" + `${filter.label}, to` + "`" + `}
             value={value.split(",")[1] ?? ""}
             onChange={(e) => {
               const min = value.split(",")[0] ?? "";
@@ -1018,6 +1022,7 @@ function FilterControl({
           <span className="text-xs text-text-muted">{filter.label}</span>
           <input
             type="date"
+            aria-label={` + "`" + `${filter.label}, from` + "`" + `}
             value={value.split(",")[0] ?? ""}
             onChange={(e) => {
               const end = value.split(",")[1] ?? "";
@@ -1028,6 +1033,7 @@ function FilterControl({
           <span className="text-text-muted">to</span>
           <input
             type="date"
+            aria-label={` + "`" + `${filter.label}, to` + "`" + `}
             value={value.split(",")[1] ?? ""}
             onChange={(e) => {
               const start = value.split(",")[0] ?? "";
@@ -1275,6 +1281,7 @@ export function TablePagination({
         <select
           value={pageSize}
           onChange={(e) => onPageSizeChange(Number(e.target.value))}
+          aria-label={t("table.perPageLabel", "Rows per page")}
           className="rounded-lg border border-border bg-bg-tertiary px-2 py-1 text-sm text-foreground focus:border-accent focus:outline-none"
         >
           {[10, 20, 50, 100].map((size) => (

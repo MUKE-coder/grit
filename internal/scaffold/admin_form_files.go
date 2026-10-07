@@ -638,7 +638,9 @@ export function FormModal<T extends object = Record<string, unknown>>({
               : t("form.createTitle", "Create {name}", { name: resource.label?.singular ?? resource.name })}
           </h2>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close"
             className="rounded-lg p-1 text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
           >
             <X className="h-5 w-5" />
@@ -741,7 +743,9 @@ export function FormSheet<T extends object = Record<string, unknown>>({
               {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </button>
             <button
+              type="button"
               onClick={onClose}
+              aria-label="Close"
               className="rounded-lg p-1 text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
             >
               <X className="h-5 w-5" />
@@ -1381,7 +1385,9 @@ export function FormModalSteps<T extends object = Record<string, unknown>>({
             {isEdit ? "Edit" : "Create"} {resource.label?.singular ?? resource.name}
           </h2>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close"
             className="rounded-lg p-1 text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
           >
             <X className="h-5 w-5" />
@@ -1808,6 +1814,7 @@ export function TextareaField({ field, value, onChange, error }: TextareaFieldPr
         {field.required && <span className="text-danger ml-1">*</span>}
       </label>
       <textarea
+        id={fieldId}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={field.placeholder}
@@ -2099,8 +2106,11 @@ export function SelectField({ field, value, onChange, error }: SelectFieldProps)
       </label>
       <div className="relative">
         <button
+          id={fieldId}
           type="button"
           onClick={() => setOpen((o) => !o)}
+          aria-haspopup="listbox"
+          aria-expanded={open}
           className={` + "`" + `flex w-full items-center justify-between rounded-lg border border-border bg-bg-tertiary px-4 py-2.5 text-left text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${error ? "border-danger" : ""}` + "`" + `}
         >
           <span className={selected ? "" : "text-text-muted"}>
@@ -2118,6 +2128,7 @@ export function SelectField({ field, value, onChange, error }: SelectFieldProps)
                 onChange={(e) => { setQuery(e.target.value); setActive(0); }}
                 onKeyDown={onKeyDown}
                 placeholder="Search..."
+                aria-label={` + "`" + `Search ${field.label} options` + "`" + `}
                 className="w-full bg-transparent text-sm text-foreground placeholder:text-text-muted focus:outline-none"
               />
             </div>
@@ -3462,7 +3473,7 @@ export function FilesField({ field, value, onChange, error }: FilesFieldProps) {
 func adminRelationshipSelectField() string {
 	src := `"use client";
 
-import { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
+import { useId, useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { getResourceByEndpoint } from "@/resources";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -3672,18 +3683,26 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
     document.body
   ) : null;
 
+  const fieldId = useId();
+
   return (
     <div className="space-y-1.5">
       {/* Every other field type renders its label; this one did not, so a
           relationship was the one control on the form with nothing above it.
-          Visible on any generated form with a belongs_to, not just a tree. */}
-      <label className="block text-sm font-medium text-foreground">
+          Visible on any generated form with a belongs_to, not just a tree.
+          htmlFor and the matching id came later: without them the label was
+          drawn and named nothing, so a screen reader still announced the
+          picker as an unlabelled button. */}
+      <label htmlFor={fieldId} className="block text-sm font-medium text-foreground">
         {field.label}
         {field.required && <span className="text-danger ml-1">*</span>}
       </label>
       <button
+        id={fieldId}
         ref={triggerRef}
         type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
         onClick={() => { if (!open) updatePosition(); setOpen(!open); }}
         className={` + "`" + `flex h-10 w-full items-center justify-between rounded-md border bg-bg-secondary px-3 py-2 text-sm text-foreground transition-colors
           ${error ? "border-red-500" : "border-border"}

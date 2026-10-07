@@ -301,6 +301,11 @@ function useDropzoneState({
   };
 }
 
+// The label travels with the state so the file input can carry it. The visible
+// <label> below is bound to nothing: react-dropzone owns the input and its id,
+// so the name goes on as aria-label rather than through htmlFor.
+const DropzoneLabelContext = createContext<string | undefined>(undefined);
+
 const DropzoneContext = createContext<DropzoneState | null>(null);
 
 /** The state of the enclosing Dropzone.Root, for a part you write yourself. */
@@ -324,6 +329,7 @@ function DropzoneRoot({
   const state = useDropzoneState(options);
   return (
     <DropzoneContext.Provider value={state}>
+    <DropzoneLabelContext.Provider value={label}>
       <div className={` + "`" + `space-y-1.5 ${className}` + "`" + `}>
         {label && (
           <label className="block text-sm font-medium text-foreground">{label}</label>
@@ -338,6 +344,7 @@ function DropzoneRoot({
           <p className="text-xs text-danger">{error || state.uploadError}</p>
         )}
       </div>
+    </DropzoneLabelContext.Provider>
     </DropzoneContext.Provider>
   );
 }
@@ -345,9 +352,10 @@ function DropzoneRoot({
 /** The element that opens the file picker and takes a drop. */
 function DropzoneTarget({ className, children }: { className?: string; children?: ReactNode }) {
   const { getRootProps, getInputProps } = useDropzoneContext();
+  const label = useContext(DropzoneLabelContext);
   return (
     <div {...getRootProps()} className={className}>
-      <input {...getInputProps()} />
+      <input {...getInputProps({ "aria-label": label ? ` + "`" + `${label}, choose a file` + "`" + ` : "Choose a file" })} />
       {children}
     </div>
   );

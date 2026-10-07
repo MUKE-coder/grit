@@ -66,6 +66,85 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.385.0 */}
+            <div className="mb-12" id="v3.385.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.385.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 7, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A project had two databases and no way to tell</h3>
+                <p>
+                  <code>SQLITE_PATH</code> is a relative path and it was resolved against the
+                  working directory. The CLI runs migrate and seed from the API module, so a
+                  project&apos;s data went to <code>apps/api/app.db</code>. A server started
+                  anywhere else, which is every built binary and everything{' '}
+                  <code>grit deploy</code> produces, resolved the same <code>./app.db</code> to a
+                  different file and created it empty.
+                </p>
+                <p>
+                  Nothing failed. The server started, found no tables, and answered every read
+                  with a 500 while the real rows sat one directory away: the home page said
+                  &ldquo;No blog posts yet&rdquo;, the log repeated &ldquo;no such table&rdquo;,
+                  and neither pointed at the cause. The path is anchored to the directory holding{' '}
+                  <code>.env</code> now, so migrate and the server agree wherever they run from,
+                  and a project that already has its database somewhere else keeps using it and
+                  says so once. Sentinel&apos;s threat log and Pulse&apos;s traces had the same
+                  split. <code>config.go</code> is not in the upgrade&apos;s file map, so this
+                  reaches existing projects through a repair.
+                </p>
+
+                <h3>Upgrading under a running dev server</h3>
+                <p>
+                  An upgrade rewrites route files, which makes the compiled output of those files
+                  stale the moment it finishes. The App Router does not always recover: its layout
+                  router reads the render tree for the level it is drawing, finds undefined, and
+                  throws <code>Cannot read properties of undefined (reading &apos;slots&apos;)</code>{' '}
+                  from a stack with no sign of which file caused it. The upgrade now removes the
+                  Next and Vite caches it has just invalidated, and says to restart any dev server
+                  that was running, because a locked directory is exactly the case where the
+                  removal cannot happen.
+                </p>
+
+                <h3>A refused origin said nothing</h3>
+                <p>
+                  An origin outside <code>CORS_ORIGINS</code> gets a preflight with no{' '}
+                  <code>Access-Control-Allow-Origin</code>. That is the right answer and a silent
+                  one: the browser never sends the real request, so no handler runs, nothing is
+                  logged, and the screen shows a Sign In button that does nothing when clicked.
+                  Running the admin on a port other than 3001 is enough to cause it. The allowlist
+                  is unchanged; a refusal is now one line in the log, naming the origin and the
+                  variable to put it in.
+                </p>
+
+                <h3>The 404 page</h3>
+                <p>
+                  It drew its own navbar and footer, which is right for a URL that matches no
+                  route and wrong when <code>notFound()</code> is called from a page inside the
+                  marketing group: Next renders it inside the layouts that did match, so the
+                  chrome came out twice. There are two now, sharing one component. Its buttons
+                  also used the admin&apos;s token names, and <code>bg-primary</code> is not a
+                  utility the web stylesheet defines, so the &ldquo;Home&rdquo; button rendered as
+                  bare text on no background. <code>global-error.tsx</code> replaces the document
+                  and has to carry its colours as values; it carried the midnight palette, so a
+                  project that chose emerald got a purple button on near-black.
+                </p>
+
+                <h3>Controls a screen reader could not name</h3>
+                <p>
+                  Found by walking every page of a generated triple project: the table&apos;s
+                  filters and page-size select, the textarea and select fields, the relationship
+                  picker, the modal close buttons and the upload input all had no accessible name.
+                  Three of them had a visible label bound to nothing, which is the same fault this
+                  project has fixed before, so there is now a test that walks every template and
+                  fails on a <code>htmlFor</code> with no control carrying that id.
+                </p>
+              </div>
+            </div>
+
             {/* v3.384.0 */}
             <div className="mb-12" id="v3.384.0">
               <div className="flex items-center gap-3 mb-4">

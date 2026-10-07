@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 5 to 11, 2026",
-    count: 29,
+    count: 30,
     entries: [
+      { version: "3.385.0", title: "A project had two databases and no way to tell" },
       { version: "3.384.0", title: "Your project’s app, not Grit’s" },
       { version: "3.383.1", title: "The one-binary tutorial said the frontend was Vite" },
       { version: "3.383.0", title: "--single --next is one binary too" },

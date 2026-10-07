@@ -588,6 +588,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairExpoRelations(root); err != nil {
 			fmt.Printf("  ⚠ naming related records in the Expo screens: %v\n", err)
 		}
+		// One database per project, wherever a command runs from. config.go is
+		// not in the file map, so without this the fix is new projects only.
+		if err := repairSQLitePath(root); err != nil {
+			fmt.Printf("  ⚠ anchoring the SQLite database to the project: %v\n", err)
+		}
 		if err := repairDesktopForms(root); err != nil {
 			fmt.Printf("  ⚠ typing the desktop forms' payloads: %v\n", err)
 		}
@@ -1076,8 +1081,18 @@ func Upgrade(uOpts UpgradeOptions) error {
 		spinner.Printf("  Could not update grit.json: %v\n", err)
 	}
 
+	// The frontends' build caches describe the routes as they were a moment ago.
+	if cleared := clearFrontendBuildCaches(root); len(cleared) > 0 {
+		green.Printf("  ✓ Cleared %s, stale now the routes have changed\n",
+			plural(len(cleared), "1 build cache", fmt.Sprintf("%d build caches", len(cleared))))
+	}
+
 	fmt.Println()
 	green.Printf("  ✓ Upgrade complete. Updated %d files.\n", written)
+
+	// Said every time, because the cache above cannot be removed while a dev
+	// server holds it open, which is exactly when it matters.
+	cyan.Printf("  Restart any dev server that was running: it compiled the routes as they were.\n")
 
 	if len(skipped) > 0 {
 		fmt.Println()
@@ -1754,6 +1769,38 @@ func readProjectStyle(root string) string {
 	}
 
 	return "default"
+}
+
+// clearFrontendBuildCaches removes the Next and Vite build output the upgrade
+// has just made stale, and returns what it managed to remove.
+//
+// Best effort on purpose. On Windows a running dev server holds these
+// directories open and the removal fails; the upgrade has still succeeded, and
+// the line printed next to this one says the thing that actually fixes it.
+func clearFrontendBuildCaches(root string) []string {
+	var cleared []string
+	for _, app := range []string{
+		filepath.Join("apps", "web"),
+		filepath.Join("apps", "admin"),
+		filepath.Join("apps", "docs"),
+		"frontend", // a single, before v3.380.0
+		".",        // a single: the frontend is the project root
+	} {
+		for _, cache := range []string{".next", filepath.Join("node_modules", ".vite")} {
+			dir := filepath.Join(root, app, cache)
+			if !dirExists(dir) {
+				continue
+			}
+			if err := os.RemoveAll(dir); err == nil {
+				rel, relErr := filepath.Rel(root, dir)
+				if relErr != nil {
+					rel = dir
+				}
+				cleared = append(cleared, filepath.ToSlash(rel))
+			}
+		}
+	}
+	return cleared
 }
 
 // readProjectTheme returns the theme this project uses.

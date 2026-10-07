@@ -373,13 +373,23 @@ func TestAnExistingSingleKeepsItsOwnLayout(t *testing.T) {
 // directory above it.
 func TestGeneratedConfigFindsTheEnvFromEveryModuleDirectory(t *testing.T) {
 	cfg := apiConfigGo()
+	// The three depths, now one list in loadDotEnv rather than three calls,
+	// because the directory that produced a hit is also what anchors a relative
+	// SQLITE_PATH.
 	for _, want := range []string{
-		`godotenv.Load()`,
-		`godotenv.Load("../.env")`,
-		`godotenv.Load("../../.env")`,
+		`for _, candidate := range []string{".env", "../.env", "../../.env"}`,
+		`godotenv.Load(candidate)`,
+		`loadDotEnv()`,
 	} {
 		if !strings.Contains(cfg, want) {
-			t.Errorf("config does not try %s, so a binary run from that depth gets the built-in defaults", want)
+			t.Errorf("config does not have %s, so a binary run from one of those depths gets the built-in defaults", want)
 		}
+	}
+	// The nearest file still wins, which is what makes an api/.env override the
+	// project's: godotenv never overwrites a variable that is already set, so
+	// the loop must run nearest first.
+	i := strings.Index(cfg, `[]string{".env", "../.env", "../../.env"}`)
+	if i < 0 {
+		t.Fatal("the candidate list is not the one this test can reason about")
 	}
 }
