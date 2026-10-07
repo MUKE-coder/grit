@@ -12,7 +12,10 @@ import (
 // is not enforced or hides one that is.
 func TestPasswordChecklistMatchesTheServerRules(t *testing.T) {
 	goIDs := idsIn(apiPasswordRulesGo(), regexp.MustCompile(`\{ID: "([a-z-]+)", Label: "([^"]+)"`))
-	tsIDs := idsIn(adminAccountPasswordFormTSX(), regexp.MustCompile(`\{ id: "([a-z-]+)", label: "([^"]+)"`))
+	// The checklist moved out of the account page into lib/password-rules.ts,
+	// which the register, reset and profile screens read as well.
+	rulesTS := passwordRulesTS()
+	tsIDs := idsIn(rulesTS, regexp.MustCompile(`\{ id: "([a-z-]+)", label: "([^"]+)"`))
 
 	if len(goIDs) == 0 || len(tsIDs) == 0 {
 		t.Fatalf("found %d server rules and %d checklist rules; one of the lists moved", len(goIDs), len(tsIDs))
@@ -28,6 +31,14 @@ func TestPasswordChecklistMatchesTheServerRules(t *testing.T) {
 		}
 		if goLabel != tsLabel {
 			t.Errorf("rule %q reads %q on the server and %q in the admin", id, goLabel, tsLabel)
+		}
+
+		// A rule in the list with no code behind it is worse than a missing
+		// rule: it shows a green check for a password the API will refuse.
+		// "max-length" was exactly that for as long as it existed, because
+		// matching ids and labels is all the comparison above can see.
+		if !strings.Contains(rulesTS, `failed.push("`+id+`")`) {
+			t.Errorf("the checklist lists %q and never checks it, so it shows a check the server disagrees with", id)
 		}
 	}
 }

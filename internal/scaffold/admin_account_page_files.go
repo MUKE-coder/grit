@@ -116,70 +116,28 @@ func adminAccountPasswordFormTSX() string {
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Check, Eye, EyeOff, Loader2, Lock } from "@/lib/icons";
+import { Eye, EyeOff, Loader2, Lock } from "@/lib/icons";
 import { inputClasses } from "@/components/ui/input";
+import { passwordFailures } from "@/lib/password-rules";
+import { PasswordStrength } from "@/components/password-strength";
 import { useMe } from "@/hooks/use-auth";
 import { useChangePassword } from "@/hooks/use-profile";
 import { buttonClasses } from "@/components/ui/button";
 
 /**
- * Changing a password, with the rules shown while you type.
+ * Changing a password, with the strength meter and the rules shown while you
+ * type.
  *
- * The checklist is the same four rules the API enforces (internal/password),
- * evaluated here so the answer is immediate. The server is still the
- * authority: this only decides what the list looks like, never whether the
- * save is allowed, so a checklist that drifted would cost a refused save and
- * not a weak password.
+ * Both come from lib/password-rules and components/password-strength, which the
+ * register and reset screens use as well. This page used to carry its own copy
+ * of the rules, and the copy checked four of the five: "At most 72 characters"
+ * was in its list and in none of its code, so a password bcrypt cannot hash got
+ * a green check here and a 422 from the API.
+ *
+ * The server is still the authority. The meter decides what the person sees,
+ * never whether the save is allowed, so the worst a drift can cost is a
+ * refusal that was not predicted rather than a password that should not exist.
  */
-const RULES = [
-  { id: "length", label: "At least 8 characters" },
-  { id: "max-length", label: "At most 72 characters" },
-  { id: "variety", label: "Letters and something else: a number, a symbol or a space" },
-  { id: "not-common", label: "Not a password everyone tries first" },
-  { id: "not-personal", label: "Nothing from your name or email" },
-] as const;
-
-// The few hundred that attackers try first, in the order they try them. The
-// long lists belong in a service; most of the value is in the first page.
-const COMMON = new Set([
-  "123456", "password", "12345678", "qwerty", "123456789", "12345", "1234", "111111",
-  "1234567", "dragon", "123123", "baseball", "abc123", "football", "monkey", "letmein",
-  "shadow", "master", "666666", "qwertyuiop", "123321", "mustang", "1234567890",
-  "superman", "1qaz2wsx", "7777777", "121212", "000000", "qazwsx", "123qwe", "killer",
-  "trustno1", "zxcvbnm", "asdfgh", "iloveyou", "starwars", "112233", "computer",
-  "zxcvbn", "555555", "11111111", "131313", "freedom", "777777", "pass", "159753",
-  "aaaaaa", "princess", "welcome", "admin", "letmein1", "password1", "password123",
-  "passw0rd", "p@ssw0rd", "qwerty123", "iloveyou1", "welcome1", "admin123", "root",
-  "changeme", "secret123", "hello", "test", "1111", "0000", "sunshine", "whatever",
-]);
-
-function personalPieces(raw: string): string[] {
-  const lower = raw.toLowerCase().trim();
-  if (!lower) return [];
-  const at = lower.indexOf("@");
-  const source = at > 0 ? lower.slice(0, at) + " " + lower.slice(at + 1).split(".")[0] : lower;
-  return source.split(/[^a-z0-9]+/).filter(Boolean);
-}
-
-export function passwordFailures(candidate: string, about: string[]): string[] {
-  const failed: string[] = [];
-  if ([...candidate].length < 8) failed.push("length");
-
-  const letters = /\p{L}/u.test(candidate);
-  const others = [...candidate].some((c) => !/\p{L}/u.test(c));
-  if (!letters || !others) failed.push("variety");
-
-  if (COMMON.has(candidate.toLowerCase().trim())) failed.push("not-common");
-
-  const lower = candidate.toLowerCase();
-  const personal = about
-    .flatMap(personalPieces)
-    .some((piece) => piece.length >= 4 && lower.includes(piece));
-  if (personal) failed.push("not-personal");
-
-  return failed;
-}
-
 interface Values {
   current_password: string;
   password: string;
@@ -199,7 +157,6 @@ export function PasswordForm() {
   const current = watch("current_password") ?? "";
   const about = [user?.email ?? "", user?.first_name ?? "", user?.last_name ?? ""].filter(Boolean);
   const failed = passwordFailures(next, about);
-  const met = RULES.filter((rule) => !failed.includes(rule.id));
   const ready = next.length > 0 && failed.length === 0 && current.length > 0;
 
   function onSubmit(values: Values) {
@@ -272,42 +229,7 @@ export function PasswordForm() {
             </div>
           </div>
 
-          {/* Four segments, one per rule met. A bar with no explanation tells
-              somebody they are wrong without telling them how to be right, so
-              the list below it is the part that matters. */}
-          <div className="flex gap-1.5" aria-hidden="true">
-            {RULES.map((rule, i) => (
-              <span
-                key={rule.id}
-                className={
-                  "h-1 flex-1 rounded-full transition-colors " +
-                  (next.length > 0 && met.length > i ? "bg-success" : "bg-border")
-                }
-              />
-            ))}
-          </div>
-
-          <ul id="account-password-rules" className="space-y-1.5 text-sm">
-            {RULES.map((rule) => {
-              const ok = next.length > 0 && !failed.includes(rule.id);
-              return (
-                <li key={rule.id} className="flex items-start gap-2">
-                  <span
-                    className={
-                      "mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border " +
-                      (ok ? "border-success bg-success/15 text-success" : "border-border text-transparent")
-                    }
-                  >
-                    <Check className="h-3 w-3" aria-hidden="true" />
-                  </span>
-                  <span className={ok ? "text-text-secondary" : "text-text-muted"}>
-                    {rule.label}
-                    <span className="sr-only">{ok ? ": met" : ": not met yet"}</span>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+          <PasswordStrength value={next} about={about} id="account-password-rules" />
 
           {changePassword.isError && (
             <p role="alert" className="text-sm text-danger">

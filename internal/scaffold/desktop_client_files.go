@@ -1527,6 +1527,7 @@ import { Loader2 } from "lucide-react";
 import { useRegister } from "@/hooks/use-auth";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { authInputCls, authInputStyle, AuthSubmit } from "@/components/auth/AuthField";
+import { PasswordStrength } from "@/components/password-strength";
 
 export const Route = createFileRoute("/auth/register")({
   component: RegisterPage,
@@ -1545,7 +1546,7 @@ function RegisterPage() {
   const navigate = useNavigate();
   const { mutate: registerUser, isPending, error } = useRegister();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<RegisterInput>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterInput>({
     resolver: zodResolver(RegisterSchema),
   });
 
@@ -1582,8 +1583,12 @@ function RegisterPage() {
 
         <div className="space-y-1.5">
           <label className="block text-sm font-medium">Password</label>
-          <input type="password" autoComplete="new-password" placeholder="At least 8 characters" className={authInputCls} style={authInputStyle} {...register("password")} />
+          <input type="password" autoComplete="new-password" aria-describedby="password-strength" placeholder="At least 8 characters" className={authInputCls} style={authInputStyle} {...register("password")} />
           {errors.password && <p className="text-xs text-[#dc2626]">{errors.password.message}</p>}
+          <PasswordStrength
+            value={watch("password") ?? ""}
+            about={[watch("email") ?? "", watch("first_name") ?? "", watch("last_name") ?? ""]}
+          />
         </div>
 
         <AuthSubmit disabled={isPending}>
@@ -2280,6 +2285,7 @@ function TwoFactorSection() {
                 <div className="flex flex-wrap items-center gap-2">
                   <input
                     type="password"
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Confirm your password"
@@ -2447,13 +2453,14 @@ function ProfilePage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-foreground-muted">New password</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" className={inputCls} />
+                <input type="password" autoComplete="new-password" aria-describedby="password-strength" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" className={inputCls} />
               </div>
               <div>
                 <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-foreground-muted">Confirm password</label>
-                <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Re-enter your password" className={inputCls} />
+                <input type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Re-enter your password" className={inputCls} />
               </div>
             </div>
+            <PasswordStrength value={password} />
             {pwError && <p className="text-[12px] text-danger">{pwError}</p>}
             <div className="flex justify-end">
               <button onClick={savePassword} disabled={update.isPending} className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50">

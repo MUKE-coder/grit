@@ -66,6 +66,112 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.391.0 */}
+            <div className="mb-12" id="v3.391.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.391.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A password meter that measures the password</h3>
+                <p>
+                  Every screen where somebody chooses a password now shows how strong it is, on a
+                  named ladder from <strong>Very weak</strong> to <strong>Very strong</strong>, with
+                  the five rules listed underneath and a check against each one that is satisfied.
+                  Sign up, reset, both profile pages, the account page, the desktop client: fifteen
+                  screens in all.
+                </p>
+                <p>
+                  Before this there was one bar, on the admin account page, and it filled one
+                  segment per rule met. That looks exactly like a strength meter and is close to the
+                  opposite of one. The password <code>a</code> fails two of the five rules, so it lit
+                  three of five segments: a single character shown as more than half way there. Every
+                  other screen in the product showed nothing at all beyond a placeholder reading
+                  &quot;At least 8 characters&quot;.
+                </p>
+                <p>
+                  The ladder is an estimate of how hard the password is to guess, which means it
+                  discounts the parts an attacker gets for free. Twenty <code>a</code>s and{' '}
+                  <code>abcdefghijklmnopqrst</code> are both twenty characters and both{' '}
+                  <strong>Very weak</strong>, because every character after the first repeats or
+                  continues a run. <code>Passw0rd</code> passes four rules and is{' '}
+                  <strong>Very weak</strong>, because it is on the list attackers try first.{' '}
+                  <code>correct horse battery staple</code> is <strong>Very strong</strong>. And
+                  nothing the form will refuse for being too short or too samey can read above{' '}
+                  <strong>Weak</strong>, so the bar never contradicts the cross beside it.
+                </p>
+                <p>
+                  The strength and the rules stay separate on purpose, because they disagree in both
+                  directions and that is the useful part. A 90-character passphrase is{' '}
+                  <strong>Very strong</strong> and still cannot be saved, since bcrypt will not hash
+                  it; the checklist is where that gets explained, rather than the meter calling the
+                  strongest kind of password weak.
+                </p>
+
+                <h3>Four things found by building it</h3>
+                <p>
+                  <strong>The admin account page checked four of the five rules it listed.</strong>{' '}
+                  &quot;At most 72 characters&quot; was in its array and in none of its code, so a
+                  password bcrypt cannot hash got a green check there and a 422 from the API. It had
+                  its own private copy of the rules, which is how: the test compared ids and labels
+                  between the server and the page, and a rule with no code behind it matches on both.
+                  There is one module now, read by every screen, and the test also checks that each
+                  listed rule is one the code can actually report.
+                </p>
+                <p>
+                  <strong>
+                    Five of the admin&apos;s six auth styles never set <code>autoComplete</code> on a
+                    password field.
+                  </strong>{' '}
+                  Nor did the web app&apos;s sign-in and sign-up, the desktop client&apos;s profile, or
+                  the standalone desktop app. Without <code>current-password</code> a password manager
+                  does not fill the sign-in form; without <code>new-password</code> it neither offers
+                  to generate a password nor offers to save the one that was typed, which pushes
+                  people towards something they can retype from memory. That is the opposite of what
+                  the meter beside it is asking for. All thirty-one password fields now say which kind
+                  they hold, including the two that hold neither: an OAuth client secret and the
+                  password on a shared form link are not the operator&apos;s credential, and a manager
+                  that saves either has stored the wrong secret under the wrong account.
+                </p>
+                <p>
+                  <strong>
+                    <code>grit add web-auth</code> wrote a web app that could not type-check.
+                  </strong>{' '}
+                  <code>AuthShell.tsx</code> is a dispatcher that imports all eight shells by name and
+                  picks one by theme. The admin registered all eight; the web app registered three. So
+                  the command wrote a dispatcher importing five modules it had not written. Nothing
+                  failed at install time and the dev server compiles only the page that is open, so
+                  the first sign of it was a build. Both now read the same list.
+                </p>
+                <p>
+                  <strong>The standalone desktop app promised six characters.</strong>{' '}
+                  Its sign-up placeholder read &quot;At least 6 characters&quot; while the API has
+                  enforced eight for as long as the rules have existed, so it was inviting a password
+                  the server would refuse.
+                </p>
+
+                <h3>Terminology, API design, and AGENTS.md per directory</h3>
+                <p>
+                  Three documents for anyone working on Grit itself, human or agent.{' '}
+                  <strong>TERMINOLOGY.md</strong> settles the words that have two meanings in the
+                  repository: architecture against tier, scaffold against generate, and which of the
+                  admin-panel predicates answers which question, since asking the wrong one is how a
+                  double shipped a user menu linking to a page that was never written.{' '}
+                  <strong>API_DESIGN.md</strong> writes the HTTP contract down as a contract: the
+                  envelope, the status codes, 400 against 422, why a record the caller may not see
+                  answers 404, and the helpers that write all of it. And six scoped{' '}
+                  <strong>AGENTS.md</strong> files, one each for <code>internal/scaffold</code>,{' '}
+                  <code>internal/generate</code>, <code>cmd/grit</code>, <code>internal/ui</code>,{' '}
+                  <code>docs</code> and <code>examples</code>, each saying what the source of truth in
+                  that directory is, the rules that are easy to break there, and how to verify a
+                  change.
+                </p>
+              </div>
+            </div>
+
             {/* v3.390.0 */}
             <div className="mb-12" id="v3.390.0">
               <div className="flex items-center gap-3 mb-4">

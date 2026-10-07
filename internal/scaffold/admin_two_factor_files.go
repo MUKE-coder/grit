@@ -447,6 +447,7 @@ export function TwoFactorCard() {
                 <div className="flex flex-wrap items-center gap-2">
                   <input
                     type="password"
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Confirm your password"

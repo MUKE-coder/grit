@@ -153,6 +153,7 @@ import { DataTable, type DataColumn } from "@/components/tables/data-table";
 import { ResourceDrawer } from "@/components/resource-drawer";
 import { useConfirm } from "@/components/confirm-dialog";
 import { apiClient } from "@/lib/api-client";
+import { PasswordStrength } from "@/components/password-strength";
 
 export const Route = createFileRoute("/app/system/users")({
   component: SystemUsersPage,
@@ -314,7 +315,8 @@ function UserForm({
           <label className="mb-1.5 block text-[13px] font-medium text-foreground">
             Password {record && <span className="text-foreground-muted">(leave blank to keep)</span>}
           </label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} />
+          <input type="password" autoComplete="new-password" aria-describedby="password-strength" value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} />
+          <PasswordStrength value={password} about={[email]} className="mt-2" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>

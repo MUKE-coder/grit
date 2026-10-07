@@ -267,6 +267,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { UserCog } from "lucide-react";
 import { api } from "@/lib/api";
 import { useMe } from "@/hooks/use-auth";
+import { PasswordStrength } from "@/components/password-strength";
 
 // One endpoint does all of this: PUT /api/profile takes the name fields, the
 // email, and a password when the customer wants to change it. An empty password
@@ -372,10 +373,19 @@ export default function AccountProfilePage() {
 
         <label className="block space-y-1.5">
           <span className="text-sm font-medium text-foreground">New password</span>
-          <input type="password" autoComplete="new-password" {...field("password")} />
+          <input
+            type="password"
+            autoComplete="new-password"
+            aria-describedby="password-strength"
+            {...field("password")}
+          />
           <span className="block text-xs text-text-secondary">
             Leave this empty to keep the password you have.
           </span>
+          <PasswordStrength
+            value={form.password}
+            about={[form.email, form.first_name, form.last_name]}
+          />
         </label>
 
         <label className="block space-y-1.5">

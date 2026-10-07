@@ -35,6 +35,12 @@ func singleAuthFiles(feRoot string, opts Options) []webAuthFile {
 		{filepath.Join(src, "lib", "auth.ts"), singleAuthLib()},
 		{filepath.Join(src, "lib", "api.ts"), viteAPIClientWithAuth()},
 		{filepath.Join(src, "hooks", "use-auth.ts"), singleUseAuthHook()},
+
+		// The password rules and the strength meter, in the Vite dialect: this
+		// command runs against an existing project, and the register and reset
+		// screens below import them.
+		{filepath.Join(src, "lib", "password-rules.ts"), passwordRulesTS()},
+		{filepath.Join(src, "components", "password-strength.tsx"), nextToTanStack(passwordStrengthTSX())},
 		{filepath.Join(src, "components", "user-menu.tsx"), singleUserMenu()},
 
 		// The auth section: pathless, so /login is still /login.
@@ -359,6 +365,7 @@ func singleRegisterRoute() string {
 import { createFileRoute, Link } from '@tanstack/react-router'
 
 import { useRegister } from '@/hooks/use-auth'
+import { PasswordStrength } from '@/components/password-strength'
 
 export const Route = createFileRoute('/_auth/register')({
   component: RegisterPage,
@@ -413,7 +420,17 @@ function RegisterPage() {
 
         <label className="block space-y-1.5">
           <span className="text-sm font-medium text-foreground">Password</span>
-          <input type="password" required autoComplete="new-password" {...field('password')} />
+          <input
+            type="password"
+            required
+            autoComplete="new-password"
+            aria-describedby="password-strength"
+            {...field('password')}
+          />
+          <PasswordStrength
+            value={form.password}
+            about={[form.email, form.first_name, form.last_name]}
+          />
         </label>
 
         {register.isError ? (
@@ -522,6 +539,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 
 import { api } from '@/lib/api'
+import { PasswordStrength } from '@/components/password-strength'
 
 // The token arrives in the query string of the emailed link.
 export const Route = createFileRoute('/_auth/reset-password')({
@@ -581,8 +599,10 @@ function ResetPasswordPage() {
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            aria-describedby="password-strength"
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-accent"
           />
+          <PasswordStrength value={password} />
         </label>
 
         {reset.isError ? (
@@ -826,6 +846,7 @@ import { UserCog } from 'lucide-react'
 
 import { api } from '@/lib/api'
 import { useMe } from '@/hooks/use-auth'
+import { PasswordStrength } from '@/components/password-strength'
 
 export const Route = createFileRoute('/account/profile')({
   component: AccountProfile,
@@ -931,10 +952,19 @@ function AccountProfile() {
 
         <label className="block space-y-1.5">
           <span className="text-sm font-medium text-foreground">New password</span>
-          <input type="password" autoComplete="new-password" {...field('password')} />
+          <input
+            type="password"
+            autoComplete="new-password"
+            aria-describedby="password-strength"
+            {...field('password')}
+          />
           <span className="block text-xs text-text-secondary">
             Leave this empty to keep the password you have.
           </span>
+          <PasswordStrength
+            value={form.password}
+            about={[form.email, form.first_name, form.last_name]}
+          />
         </label>
 
         <div className="flex items-center gap-3 pt-1">

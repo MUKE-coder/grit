@@ -12,10 +12,14 @@ func writeDesktopFrontendAppFiles(root string, opts DesktopOptions) error {
 		filepath.Join(root, "frontend", "src", "routes", "login.tsx"):    desktopLoginRoute(),
 		filepath.Join(root, "frontend", "src", "routes", "register.tsx"): desktopRegisterRoute(),
 		// Utilities and hooks
-		filepath.Join(root, "frontend", "src", "lib", "utils.ts"):        desktopUtilsTS(),
-		filepath.Join(root, "frontend", "src", "lib", "query-client.ts"): desktopQueryClientTS(),
-		filepath.Join(root, "frontend", "src", "hooks", "use-auth.tsx"):  desktopUseAuthHook(),
-		filepath.Join(root, "frontend", "src", "hooks", "use-theme.ts"):  desktopUseThemeHook(),
+		filepath.Join(root, "frontend", "src", "lib", "utils.ts"): desktopUtilsTS(),
+		// The password rules and the meter. The relative variant, because this
+		// app's routes import by path rather than through an @/ alias.
+		filepath.Join(root, "frontend", "src", "lib", "password-rules.ts"):            passwordRulesTS(),
+		filepath.Join(root, "frontend", "src", "components", "password-strength.tsx"): passwordStrengthTSXRelative(),
+		filepath.Join(root, "frontend", "src", "lib", "query-client.ts"):              desktopQueryClientTS(),
+		filepath.Join(root, "frontend", "src", "hooks", "use-auth.tsx"):               desktopUseAuthHook(),
+		filepath.Join(root, "frontend", "src", "hooks", "use-theme.ts"):               desktopUseThemeHook(),
 	}
 
 	for path, content := range files {
@@ -127,6 +131,7 @@ function LoginPage() {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
@@ -171,6 +176,7 @@ import { useState } from "react";
 import { Minus, Square, X, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/use-auth";
+import { PasswordStrength } from "../components/password-strength";
 // @ts-ignore
 import { MinimiseWindow, ToggleMaximise, CloseApp } from "../../wailsjs/go/main/App";
 
@@ -254,10 +260,12 @@ function RegisterPage() {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
+                  placeholder="At least 8 characters"
                   required
+                  aria-describedby="password-strength"
                   className="w-full bg-background border border-border rounded-lg px-3 py-2 pr-10 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
                 />
                 <button
@@ -268,12 +276,14 @@ function RegisterPage() {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              <PasswordStrength value={password} about={[email, name]} className="mt-2" />
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">Confirm Password</label>
               <div className="relative">
                 <input
                   type={showConfirm ? "text" : "password"}
+                  autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repeat password"

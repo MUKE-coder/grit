@@ -86,6 +86,7 @@ function LoginForm() {
             <input
               id="password"
               type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={inputOk + " pr-16"}
@@ -137,6 +138,7 @@ import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-core";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { setWebSessionMarker } from "@/lib/web-session";
+import { PasswordStrength } from "@/components/password-strength";
 
 const inputBase =
   "w-full rounded-[var(--auth-radius)] border bg-[var(--auth-card)] px-4 py-3 text-[var(--auth-fg)] placeholder:text-[var(--auth-muted)] focus:outline-none focus:ring-2 transition-colors";
@@ -233,13 +235,16 @@ export default function RegisterPage() {
           <input
             id="password"
             type="password"
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className={inputOk}
             placeholder="At least 8 characters"
+            aria-describedby="password-strength"
             minLength={8}
             required
           />
+          <PasswordStrength value={password} about={[email, firstName, lastName]} />
         </div>
 
         <button
@@ -268,6 +273,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-core";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { PasswordStrength } from "@/components/password-strength";
 
 const inputBase =
   "w-full rounded-[var(--auth-radius)] border bg-[var(--auth-card)] px-4 py-3 text-[var(--auth-fg)] placeholder:text-[var(--auth-muted)] focus:outline-none focus:ring-2 transition-colors";
@@ -355,8 +361,10 @@ function ResetPasswordForm() {
               onChange={(e) => setPassword(e.target.value)}
               className={inputOk}
               placeholder="At least 8 characters"
+              aria-describedby="password-strength"
               autoFocus
             />
+            <PasswordStrength value={password} />
           </div>
 
           <div className="space-y-2">

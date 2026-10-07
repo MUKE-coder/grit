@@ -215,6 +215,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRegister } from "@/hooks/use-auth";
 import { RegisterSchema, type RegisterInput } from "@repo/shared/schemas";
+import { PasswordStrength } from "@/components/password-strength";
 import { Eye, EyeOff, Loader2 } from "@/lib/icons";
 import { buttonClasses } from "@/components/ui/button";
 
@@ -226,6 +227,7 @@ export default function SignUpPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterInput>({
     resolver: zodResolver(RegisterSchema),
@@ -337,6 +339,7 @@ export default function SignUpPage() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   placeholder="At least 8 characters"
+                  aria-describedby="password-strength"
                   className={errors.password ? errorInputClass : inputClass}
                   {...register("password")}
                 />
@@ -352,6 +355,10 @@ export default function SignUpPage() {
               {errors.password && (
                 <p className="text-[12px] font-medium text-danger">{errors.password.message}</p>
               )}
+              <PasswordStrength
+                value={watch("password") ?? ""}
+                about={[watch("email") ?? "", watch("firstName") ?? "", watch("lastName") ?? ""]}
+              />
             </div>
 
             <button

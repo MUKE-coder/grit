@@ -203,6 +203,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := writeAdminAccountFiles(root, opts); err != nil {
 			return fmt.Errorf("updating security page: %w", err)
 		}
+		if err := writePasswordStrengthFiles(root, opts); err != nil {
+			return fmt.Errorf("updating the password meter: %w", err)
+		}
 		if err := writeMagicLinkFiles(root, opts); err != nil {
 			return fmt.Errorf("updating sign-in links: %w", err)
 		}

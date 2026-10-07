@@ -1637,6 +1637,7 @@ export default function LoginPage() {
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={inputClass + " pr-12"}
@@ -1726,6 +1727,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-core";
 import { isSocialAuthEnabled } from "@repo/shared/themes";
+import { PasswordStrength } from "@/components/password-strength";
 
 const inputClass = "w-full rounded-lg border border-border bg-bg-elevated px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
 
@@ -1843,6 +1845,7 @@ export default function RegisterPage() {
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={inputClass + " pr-12"}
@@ -1857,6 +1860,7 @@ export default function RegisterPage() {
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
+            <PasswordStrength value={password} about={[email, firstName, lastName]} />
           </div>
 
           <div className="space-y-2">
@@ -1866,6 +1870,7 @@ export default function RegisterPage() {
             <input
               id="confirmPassword"
               type="password"
+              autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className={inputClass}

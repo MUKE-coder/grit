@@ -76,6 +76,7 @@ export default function LoginPage() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
                   {...register("password")}
                   className={errors.password ? errorInputClass + " pr-12" : inputClass + " pr-12"}
                   placeholder="Enter your password"
@@ -133,6 +134,7 @@ import { useRegister } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RegisterSchema, type RegisterInput } from "@repo/shared/schemas";
+import { PasswordStrength } from "@/components/password-strength";
 import { buttonClasses } from "@/components/ui/button";
 
 const inputClass = "w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
@@ -143,7 +145,7 @@ export default function SignUpPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { mutate: registerUser, isPending, error: serverError } = useRegister();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<RegisterInput>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterInput>({
     resolver: zodResolver(RegisterSchema),
   });
 
@@ -229,6 +231,7 @@ export default function SignUpPage() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   {...register("password")}
                   className={errors.password ? errorInputClass + " pr-12" : inputClass + " pr-12"}
                   placeholder="Min. 8 characters"
@@ -242,6 +245,10 @@ export default function SignUpPage() {
                 </button>
               </div>
               {errors.password && <p className="text-sm text-danger">{errors.password.message}</p>}
+              <PasswordStrength
+                value={watch("password") ?? ""}
+                about={[watch("email") ?? "", watch("firstName") ?? "", watch("lastName") ?? ""]}
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -252,6 +259,7 @@ export default function SignUpPage() {
                 <input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   {...register("confirmPassword")}
                   className={errors.confirmPassword ? errorInputClass + " pr-12" : inputClass + " pr-12"}
                   placeholder="Repeat your password"

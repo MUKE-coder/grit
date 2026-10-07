@@ -110,11 +110,17 @@ type webAuthFile struct {
 }
 
 func webAuthFiles(webRoot string, opts Options) []webAuthFile {
-	return []webAuthFile{
+	files := []webAuthFile{
 		// Hooks + lib
 		{filepath.Join(webRoot, "hooks", "use-auth.ts"), webUseAuth()},
 		{filepath.Join(webRoot, "lib", "auth-provider.tsx"), webAuthProvider()},
 		{filepath.Join(webRoot, "lib", "web-session.ts"), webSessionLib()},
+
+		// The password rules and the strength meter. Here as well as in
+		// writePasswordStrengthFiles because this command runs against a project
+		// an upgrade may never touch, and the register page below imports them.
+		{filepath.Join(webRoot, "lib", "password-rules.ts"), passwordRulesTS()},
+		{filepath.Join(webRoot, "components", "password-strength.tsx"), passwordStrengthTSX()},
 
 		// Auth pages -- (auth) route group
 		{filepath.Join(webRoot, "app", "(auth)", "login", "page.tsx"), webThemedLoginPage()},
@@ -150,6 +156,26 @@ func webAuthFiles(webRoot string, opts Options) []webAuthFile {
 		// one adds the UserMenu. --force is required to overwrite an existing file.
 		{filepath.Join(webRoot, "components", "navbar.tsx"), webNavbarWithAuth(opts)},
 	}
+
+	// The five newer shells, from the one list the writers and the tests share.
+	//
+	// AuthShell.tsx is a dispatcher: it imports all eight by name and picks one
+	// by theme. The admin registers all eight and the web app registered three,
+	// so `grit add web-auth` wrote a dispatcher importing five modules it had
+	// not written, and the web app stopped type-checking. Nothing failed at
+	// scaffold time and the dev server compiles the page that is open, so the
+	// first sign of it was a build.
+	//
+	// Appended from authShellFiles() rather than listed again here, because a
+	// second list is what produced this.
+	for file, content := range authShellFiles() {
+		files = append(files, webAuthFile{
+			path:    filepath.Join(webRoot, "components", "auth", file),
+			content: content,
+		})
+	}
+
+	return files
 }
 
 // webMiddlewareTS — runs on every Next.js request. Cheap: checks for

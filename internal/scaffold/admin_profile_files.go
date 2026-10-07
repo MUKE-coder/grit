@@ -14,6 +14,7 @@ import { User, Briefcase, Lock, Trash2, Save, Loader2, Upload } from "@/lib/icon
 import { buttonClasses } from "@/components/ui/button";
 import { DeleteAccountDialog } from "@/components/profile/delete-account-dialog";
 import { uploadFile } from "@/lib/api-client";
+import { PasswordStrength } from "@/components/password-strength";
 
 const PersonalInfoSchema = z.object({
   first_name: z.string().min(2, "First name must be at least 2 characters"),
@@ -327,6 +328,8 @@ export default function ProfilePage() {
               <label className="text-sm font-medium text-text-secondary">New password</label>
               <input
                 type="password"
+                autoComplete="new-password"
+                aria-describedby="password-strength"
                 {...passwordForm.register("password")}
                 placeholder="Min. 8 characters"
                 className={passwordForm.formState.errors.password ? errorInputClass : inputClass}
@@ -334,11 +337,16 @@ export default function ProfilePage() {
               {passwordForm.formState.errors.password && (
                 <p className="text-xs text-danger">{passwordForm.formState.errors.password.message}</p>
               )}
+              <PasswordStrength
+                value={passwordForm.watch("password") ?? ""}
+                about={[user?.email ?? "", user?.first_name ?? "", user?.last_name ?? ""]}
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-text-secondary">Confirm new password</label>
               <input
                 type="password"
+                autoComplete="new-password"
                 {...passwordForm.register("confirm_password")}
                 placeholder="Repeat your new password"
                 className={passwordForm.formState.errors.confirm_password ? errorInputClass : inputClass}

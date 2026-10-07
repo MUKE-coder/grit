@@ -258,6 +258,7 @@ export default function LoginPage() {
             <input
               id="password"
               type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
               {...register("password")}
               className={(errors.password ? inputErr : inputOk) + " pr-12"}
               placeholder="Enter your password"
@@ -365,6 +366,7 @@ import { useRegister } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RegisterSchema, type RegisterInput } from "@repo/shared/schemas";
+import { PasswordStrength } from "@/components/password-strength";
 import { AuthShell } from "@/components/auth/AuthShell";
 
 const inputBase =
@@ -377,7 +379,7 @@ export default function SignUpPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { mutate: registerUser, isPending, error: serverError } = useRegister();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<RegisterInput>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterInput>({
     resolver: zodResolver(RegisterSchema),
   });
 
@@ -452,6 +454,7 @@ export default function SignUpPage() {
             <input
               id="password"
               type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
               {...register("password")}
               className={(errors.password ? inputErr : inputOk) + " pr-12"}
               placeholder="At least 8 characters"
@@ -467,6 +470,10 @@ export default function SignUpPage() {
             </button>
           </div>
           {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
+          <PasswordStrength
+            value={watch("password") ?? ""}
+            about={[watch("email") ?? "", watch("firstName") ?? "", watch("lastName") ?? ""]}
+          />
         </div>
 
         <div className="space-y-2">
@@ -477,6 +484,7 @@ export default function SignUpPage() {
             <input
               id="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
+              autoComplete="new-password"
               {...register("confirmPassword")}
               className={(errors.confirmPassword ? inputErr : inputOk) + " pr-12"}
               placeholder="Re-enter your password"
@@ -523,6 +531,7 @@ import { z } from "zod";
 import { apiClient } from "@/lib/api-client";
 import { getApiErrorMessage } from "@/lib/api-core";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { PasswordStrength } from "@/components/password-strength";
 
 const inputBase =
   "w-full rounded-[var(--auth-radius)] border bg-[var(--auth-card)] px-4 py-3 text-[var(--auth-fg)] placeholder:text-[var(--auth-muted)] focus:outline-none focus:ring-2 transition-colors";
@@ -549,9 +558,14 @@ function ResetPasswordForm() {
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
   });
+
+  // watch rather than formState, so the meter moves while they type instead of
+  // after a blur. There is no email or name to compare against on this screen:
+  // the reset link is all the page knows about who is using it.
+  const password = watch("password") ?? "";
 
   const onSubmit = async (data: FormValues) => {
     setError("");
@@ -618,9 +632,11 @@ function ResetPasswordForm() {
               {...register("password")}
               className={errors.password ? inputErr : inputOk}
               placeholder="At least 8 characters"
+              aria-describedby="password-strength"
               autoFocus
             />
             {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
+            <PasswordStrength value={password} />
           </div>
 
           <div className="space-y-2">

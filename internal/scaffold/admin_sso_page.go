@@ -361,7 +361,7 @@ export default function SSOPage() {
             label="Client secret"
             hint={editing ? "Leave blank to keep the stored secret." : "Stored encrypted at rest and never shown again."}
           >
-            <input type="password" value={form.client_secret} onChange={(e) => setForm({ ...form, client_secret: e.target.value })} className={inputCls} />
+            <input type="password" autoComplete="off" value={form.client_secret} onChange={(e) => setForm({ ...form, client_secret: e.target.value })} className={inputCls} />
           </Field>
           </>
           )}

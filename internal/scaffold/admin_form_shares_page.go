@@ -427,7 +427,8 @@ function CreateShareModal({ onClose }: { onClose: () => void }) {
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground">Password <span className="text-text-muted">(optional)</span></label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Leave blank for open access" className={inputClasses()} />
+            <input type="password"
+ autoComplete="off" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Leave blank for open access" className={inputClasses()} />
             <p className="text-xs text-text-muted">Stored as bcrypt. Visitors must enter this before the form is shown.</p>
           </div>
 
@@ -570,7 +571,8 @@ function EditShareModal({ share, onClose }: { share: FormShare; onClose: () => v
               })}
             </div>
             {passwordMode === "set" && (
-              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" className={inputClasses()} />
+              <input type="password"
+ autoComplete="off" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" className={inputClasses()} />
             )}
             {passwordMode === "remove" && (
               <p className="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning">
