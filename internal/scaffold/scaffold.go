@@ -72,7 +72,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.386.0"
+const DefaultVersion = "3.387.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -111,6 +111,11 @@ func (o *Options) Normalize() {
 
 // ValidStyles lists all supported admin panel style variants.
 var ValidStyles = []string{"default", "modern", "minimal", "glass", "centered"}
+
+// DBProviderOrder is the order the picker offers the engines in, commonest
+// first. A map has no order, and a picker whose options move between runs is
+// one people stop reading.
+var DBProviderOrder = []string{"postgres", "mysql", "sqlite", "memory"}
 
 // DBProviders are the engines .env can name, with what each one means.
 var DBProviders = map[string]string{

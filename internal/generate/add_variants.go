@@ -67,8 +67,10 @@ func AddVariants(resource string) error {
 	}
 
 	green := color.New(color.FgHiGreen)
-	purple := color.New(color.FgHiMagenta, color.Bold)
-	purple.Printf("\n  Adding variants to %s\n\n", names.Pascal)
+	// Bold in the terminal’s own colour: readable on a light background and
+	// a dark one, and it does not compete with the status lines under it.
+	heading := color.New(color.Bold)
+	heading.Printf("\n  Adding variants to %s\n\n", names.Pascal)
 
 	release, err := manifest.Start(root, "", "variants")
 	if err != nil {

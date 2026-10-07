@@ -33,7 +33,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.386.0"
+var version = "3.387.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -264,9 +264,7 @@ func newCmd() *cobra.Command {
 			}
 
 			printLogo()
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Printf("\n  Creating new Grit project: %s\n", projectName)
+			cHeading.Printf("\n  Creating new Grit project: %s\n", projectName)
 
 			gray := color.New(color.FgHiBlack)
 			gray.Printf("  Architecture: %s | Frontend: %s\n\n", opts.Architecture, opts.Frontend)
@@ -722,9 +720,7 @@ func addWebAuthCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Println("\n  Adding web-auth helpers to apps/web/")
+			cHeading.Println("\n  Adding web-auth helpers to apps/web/")
 
 			return scaffold.AddWebAuth(root, force)
 		},
@@ -741,9 +737,7 @@ func addRoleCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Printf("\n  Adding role: %s\n\n", strings.ToUpper(args[0]))
+			cHeading.Printf("\n  Adding role: %s\n\n", strings.ToUpper(args[0]))
 
 			return scaffold.AddRole(args[0])
 		},
@@ -792,13 +786,11 @@ func exposeFormCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
 			mode := "auth'd"
 			if publicShare {
 				mode = "public-share"
 			}
-			purple.Printf("\n  Exposing form for %s (%s) → %s\n\n", args[0], mode, to)
+			cHeading.Printf("\n  Exposing form for %s (%s) → %s\n\n", args[0], mode, to)
 
 			if err := expose.Form(expose.Opts{
 				Resource:    args[0],
@@ -852,9 +844,7 @@ func exposeTableCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Printf("\n  Exposing table for %s → %s\n\n", args[0], to)
+			cHeading.Printf("\n  Exposing table for %s → %s\n\n", args[0], to)
 
 			if err := expose.Table(expose.Opts{Resource: args[0], To: to, Root: root, Force: force}); err != nil {
 				return err
@@ -1094,12 +1084,10 @@ func migrateCmd() *cobra.Command {
 			if fresh {
 				goArgs = append(goArgs, "--fresh")
 			}
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
 			if fresh {
-				purple.Println("\n  Running fresh migration (drop + re-migrate)...")
+				cHeading.Println("\n  Running fresh migration (drop + re-migrate)...")
 			} else {
-				purple.Println("\n  Running database migrations...")
+				cHeading.Println("\n  Running database migrations...")
 			}
 
 			return runMigrateTool(goArgs)
@@ -1151,7 +1139,7 @@ func migrateStatusCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			printLogo()
-			color.New(color.FgHiMagenta, color.Bold).Println("\n  Migration history...")
+			cHeading.Println("\n  Migration history...")
 			return runMigrateTool([]string{"run", "cmd/migrate/main.go", "--status"})
 		},
 	}
@@ -1176,7 +1164,7 @@ func migrateDownCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			printLogo()
-			color.New(color.FgHiMagenta, color.Bold).Println("\n  Rolling back the last migration...")
+			cHeading.Println("\n  Rolling back the last migration...")
 
 			goArgs := []string{"run", "cmd/migrate/main.go", "--down", "--steps", strconv.Itoa(steps)}
 			if dryRun {
@@ -1231,12 +1219,10 @@ func backupCmd() *cobra.Command {
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
 			c.Stdin = os.Stdin
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
 			if output != "" {
-				purple.Printf("\n  Backing up the database to %s...\n", output)
+				cHeading.Printf("\n  Backing up the database to %s...\n", output)
 			} else {
-				purple.Println("\n  Backing up the database to object storage...")
+				cHeading.Println("\n  Backing up the database to object storage...")
 			}
 
 			return c.Run()
@@ -1291,7 +1277,7 @@ func restoreCmd() *cobra.Command {
 			c.Stderr = os.Stderr
 			c.Stdin = os.Stdin
 
-			color.New(color.FgHiMagenta, color.Bold).Printf("\n  Restoring the database from %s...\n", args[0])
+			cHeading.Printf("\n  Restoring the database from %s...\n", args[0])
 
 			return c.Run()
 		},
@@ -1344,7 +1330,6 @@ func packageCmd() *cobra.Command {
 			}
 
 			printLogo()
-			purple := color.New(color.FgHiMagenta, color.Bold)
 
 			wailsArgs := []string{"build"}
 			if platform != "" {
@@ -1355,9 +1340,9 @@ func packageCmd() *cobra.Command {
 			}
 			if buildInstaller {
 				wailsArgs = append(wailsArgs, "-nsis")
-				purple.Println("\n  Building desktop installer (this can take a minute)...")
+				cHeading.Println("\n  Building desktop installer (this can take a minute)...")
 			} else {
-				purple.Println("\n  Building desktop app...")
+				cHeading.Println("\n  Building desktop app...")
 			}
 
 			c := exec.Command("wails", wailsArgs...)
@@ -1445,9 +1430,7 @@ func seedCmd() *cobra.Command {
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
 			c.Stdin = os.Stdin
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Println("\n  Seeding database...")
+			cHeading.Println("\n  Seeding database...")
 
 			return c.Run()
 		},
@@ -1523,9 +1506,7 @@ func upgradeCmd() *cobra.Command {
 			"Files you have edited since Grit wrote them are left alone. Use --diff to see what the new version would change in them, or --force to take it anyway.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Printf("\n  Upgrading project to Grit v%s\n\n", version)
+			cHeading.Printf("\n  Upgrading project to Grit v%s\n\n", version)
 
 			if err := scaffold.Upgrade(scaffold.UpgradeOptions{
 				Force:    force,
@@ -1591,12 +1572,11 @@ Flags:
                    binary directly from GitHub releases.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
-			purple := color.New(color.FgHiMagenta, color.Bold)
 			green := color.New(color.FgHiGreen, color.Bold)
 			yellow := color.New(color.FgHiYellow)
 			spinner := color.New(color.FgHiBlack)
 
-			purple.Printf("\n  Grit self-update — current: v%s\n\n", version)
+			cHeading.Printf("\n  Grit self-update — current: v%s\n\n", version)
 
 			// 1. Check latest first. Both strategies (go install / GitHub binary)
 			//    do the same thing when already on latest — namely, nothing. Do
@@ -1806,8 +1786,7 @@ func startCmd() *cobra.Command {
 			}
 			if info.Type == project.ProjectDesktop {
 				printLogo()
-				purple := color.New(color.FgHiMagenta, color.Bold)
-				purple.Println("\n  Starting Wails desktop app...")
+				cHeading.Println("\n  Starting Wails desktop app...")
 
 				c := exec.Command("wails", "dev")
 				c.Dir = info.Root
@@ -1857,9 +1836,7 @@ func startAppCmd(use, short, appSubdir, bin string, args []string, requiresWails
 					return fmt.Errorf("the Wails toolchain isn't on PATH: install it from https://wails.io, then run 'grit start %s'", use)
 				}
 			}
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Printf("\n  Starting %s...\n", use)
+			cHeading.Printf("\n  Starting %s...\n", use)
 
 			c := exec.Command(bin, args...)
 			c.Dir = dir
@@ -1880,7 +1857,6 @@ func startAppCmd(use, short, appSubdir, bin string, args []string, requiresWails
 // apiDir:      where `go run cmd/server/main.go` runs (apps/api).
 func runDevPair(projectRoot, apiDir string) error {
 	printLogo()
-	purple := color.New(color.FgHiMagenta, color.Bold)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -1922,7 +1898,7 @@ func runDevPair(projectRoot, apiDir string) error {
 			desktopCmd := exec.CommandContext(ctx, "wails", "dev")
 			desktopCmd.Dir = desktopDir
 			desktopCmd.Stdin = nil
-			procs = append(procs, devProc{prefix: color.New(color.FgHiMagenta).Sprint("[desktop] "), cmd: desktopCmd})
+			procs = append(procs, devProc{prefix: color.New(color.FgHiBlue).Sprint("[desktop] "), cmd: desktopCmd})
 			desktopIncluded = true
 		} else {
 			color.New(color.FgYellow).Println("  apps/desktop found, but 'wails' isn't on PATH — skipping the desktop app.")
@@ -1932,11 +1908,11 @@ func runDevPair(projectRoot, apiDir string) error {
 
 	switch {
 	case desktopIncluded:
-		purple.Println("\n  Starting API + web + desktop in parallel...")
+		cHeading.Println("\n  Starting API + web + desktop in parallel...")
 	case hasFrontend:
-		purple.Println("\n  Starting API + client apps in parallel...")
+		cHeading.Println("\n  Starting API + client apps in parallel...")
 	default:
-		purple.Println("\n  Starting the API...")
+		cHeading.Println("\n  Starting the API...")
 	}
 	color.New(color.FgHiBlack).Println("  " + apiNote)
 	color.New(color.FgHiBlack).Println("  Press Ctrl+C to stop everything.")
@@ -2051,8 +2027,7 @@ func compileCmd() *cobra.Command {
 			}
 
 			printLogo()
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Println("\n  Building desktop executable...")
+			cHeading.Println("\n  Building desktop executable...")
 
 			c := exec.Command("wails", "build")
 			c.Dir = info.Root
@@ -2078,8 +2053,7 @@ func studioCmd() *cobra.Command {
 			printLogo()
 
 			if info.Type == project.ProjectDesktop {
-				purple := color.New(color.FgHiMagenta, color.Bold)
-				purple.Println("\n  Starting GORM Studio...")
+				cHeading.Println("\n  Starting GORM Studio...")
 
 				c := exec.Command("go", "run", "cmd/studio/main.go")
 				c.Dir = info.Root
@@ -2110,9 +2084,7 @@ func startClientCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Println("\n  Starting client apps...")
+			cHeading.Println("\n  Starting client apps...")
 
 			c := exec.Command("pnpm", "dev")
 			c.Dir = root
@@ -2135,9 +2107,7 @@ func startServerCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Println("\n  Starting API server...")
+			cHeading.Println("\n  Starting API server...")
 
 			// Go hot-reload via air, bundled through `go run` (no install).
 			bin, args2, note := apiHotReloadArgv()
@@ -2250,8 +2220,7 @@ func openURL(url string) {
 }
 
 func printLogo() {
-	purple := color.New(color.FgHiMagenta, color.Bold)
-	purple.Println(`
+	cBrand.Println(`
    ██████╗ ██████╗ ██╗████████╗
   ██╔════╝ ██╔══██╗██║╚══██╔══╝
   ██║  ███╗██████╔╝██║   ██║
@@ -2343,9 +2312,7 @@ func newDesktopCmd() *cobra.Command {
 			}
 
 			printLogo()
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Printf("\n  Creating new Grit desktop app: %s\n\n", projectName)
+			cHeading.Printf("\n  Creating new Grit desktop app: %s\n\n", projectName)
 
 			opts := scaffold.DesktopOptions{
 				ProjectName: projectName,
@@ -2416,9 +2383,7 @@ func routesCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Printf("\n  API Routes (%s)\n\n", routesFile)
+			cHeading.Printf("\n  API Routes (%s)\n\n", routesFile)
 
 			fmt.Println(routeparser.FormatTable(routes))
 			return nil
@@ -2574,9 +2539,7 @@ func deployCmd() *cobra.Command {
 				WebDir:  webDir,
 				DryRun:  dryRun,
 			}
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Printf("\n  Deploying %s to %s\n\n", appName, host)
+			cHeading.Printf("\n  Deploying %s to %s\n\n", appName, host)
 
 			if err := deploy.Run(cfg); err != nil {
 				color.Red("\n  Deploy failed: %v\n", err)

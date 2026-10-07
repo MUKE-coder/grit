@@ -66,6 +66,48 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.387.0 */}
+            <div className="mb-12" id="v3.387.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.387.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 7, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The database is a question now</h3>
+                <p>
+                  <code>grit new</code> asks for it, after the architecture, the frontend and the
+                  theme. It was <code>--db</code> or nothing, so everybody who ran the command
+                  without flags got Postgres and a docker-compose they had to start before the
+                  project would do anything. SQLite is the shortest path to a running app and it
+                  was reachable only by reading the flag&apos;s help text.
+                </p>
+                <p>
+                  The options are built from the same table the flag validates against, so the
+                  picker and the flag cannot drift. That has gone wrong before: five themes
+                  shipped that only <code>--theme</code> knew about, and a missing option is
+                  invisible in a way a rejected flag is not.
+                </p>
+
+                <h3>The CLI is not purple any more</h3>
+                <p>
+                  The wordmark and twenty-seven headings were bright magenta. Magenta reads as
+                  decoration rather than information, and a purple wordmark is the house style of
+                  every AI product shipped in the last two years.
+                </p>
+                <p>
+                  The colours live in one file now, with one rule: colour says something. Green
+                  means it worked, yellow means read this, red means it stopped, cyan marks a
+                  command you can copy, grey is detail you can skim. Headings are bold in the
+                  terminal&apos;s own foreground, which is readable on a light background and a
+                  dark one, where a white heading is invisible on one and a bright one competes
+                  with the lines under it. The wordmark is blue.
+                </p>
+              </div>
+            </div>
+
             {/* v3.386.0 */}
             <div className="mb-12" id="v3.386.0">
               <div className="flex items-center gap-3 mb-4">

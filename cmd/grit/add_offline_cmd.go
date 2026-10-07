@@ -3,7 +3,6 @@ package main
 import (
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
 	"github.com/MUKE-coder/grit/v3/internal/manifest"
@@ -29,9 +28,7 @@ func addOfflineCmd() *cobra.Command {
 			"--models to narrow it.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Printf("\n  Adding offline-first sync\n\n")
+			cHeading.Printf("\n  Adding offline-first sync\n\n")
 
 			var wanted []string
 			for _, m := range strings.Split(models, ",") {

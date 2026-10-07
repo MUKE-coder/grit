@@ -62,9 +62,7 @@ func testCmd() *cobra.Command {
 				keys = append(keys, "e2e")
 			}
 			suites = testrunner.Filter(suites, keys)
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Printf("\n  Running tests in %s\n", root)
+			cHeading.Printf("\n  Running tests in %s\n", root)
 
 			results := testrunner.Run(suites, os.Stdout, os.Stderr)
 			printReport(results)

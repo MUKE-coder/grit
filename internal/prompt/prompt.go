@@ -20,6 +20,7 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 	arch := string(opts.Architecture)
 	frontend := string(opts.Frontend)
 	theme := opts.Theme
+	db := opts.DBProvider
 
 	// "full" is a sentinel, not an Architecture enum: it maps to opts.Full,
 	// which Normalize() expands to triple + web + admin + docs + expo + desktop.
@@ -85,6 +86,26 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 		).WithHideFunc(func() bool {
 			return opts.Theme != "" || !needsFrontend()
 		}),
+
+		// The database. Asked of every architecture, because the API is the one
+		// thing every shape has.
+		//
+		// Postgres stays the default and the first option, but it needs a
+		// server: without one, a new project migrates into nothing and the
+		// first thing anybody sees is a connection refused. SQLite is the
+		// shortest path to a running app and it was reachable only by reading
+		// the help text for --db.
+		//
+		// Options come from scaffold.DBProviders, so this list and the flag
+		// cannot drift. TestThePickerOffersEveryDatabase keeps them together.
+		huh.NewGroup(
+			huh.NewSelect[string]().
+				Key("db").
+				Title("Select database").
+				Description("Written to .env as DB_PROVIDER. Change it later by editing that line.").
+				Options(databaseOptions()...).
+				Value(&db),
+		).WithHideFunc(func() bool { return opts.DBProvider != "" }),
 	)
 
 	if err := form.Run(); err != nil {
@@ -100,5 +121,28 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 	}
 	opts.Frontend = scaffold.Frontend(frontend)
 	opts.Theme = theme
+	opts.DBProvider = db
 	return nil
+}
+
+// databaseOptions builds the picker's list from the engines the flag accepts.
+//
+// Labelled "<name> — <what it means>", with the description scaffold.DBProviders
+// already holds, so the two say the same thing in both places.
+func databaseOptions() []huh.Option[string] {
+	labels := map[string]string{
+		"postgres": "PostgreSQL",
+		"mysql":    "MySQL / MariaDB",
+		"sqlite":   "SQLite",
+		"memory":   "In-memory",
+	}
+	options := make([]huh.Option[string], 0, len(scaffold.DBProviderOrder))
+	for _, name := range scaffold.DBProviderOrder {
+		label := labels[name]
+		if label == "" {
+			label = name
+		}
+		options = append(options, huh.NewOption(label+" — "+scaffold.DBProviders[name], name))
+	}
+	return options
 }

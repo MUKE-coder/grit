@@ -125,9 +125,8 @@ func uiAddCmd() *cobra.Command {
 
 			green := color.New(color.FgHiGreen, color.Bold)
 			dim := color.New(color.FgHiBlack)
-			purple := color.New(color.FgHiMagenta, color.Bold)
 
-			purple.Printf("\n  Installing into %s\n\n", label)
+			cHeading.Printf("\n  Installing into %s\n\n", label)
 
 			deps := map[string]bool{}
 			primitives := map[string]bool{}
