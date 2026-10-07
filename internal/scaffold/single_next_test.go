@@ -136,13 +136,26 @@ func TestSingleNextHasAWorkspaceButNoTurborepo(t *testing.T) {
 		t.Error("packages/shared is not written, so the dependency the frontend declares does not exist")
 	}
 
-	// The workspace lists the frontend a single project actually has.
+	// A --single --next has its frontend AT the project root, which is the
+	// workspace root and needs no entry. It listed "frontend", a directory that
+	// has not existed since v3.380.0.
 	ws := pnpmWorkspace(opts)
-	if !strings.Contains(ws, `- "frontend"`) {
-		t.Errorf("the workspace does not list frontend/, so it has no frontend in it:\n%s", ws)
+	if strings.Contains(ws, `- "frontend"`) {
+		t.Errorf("the workspace lists frontend/, which this layout does not have:\n%s", ws)
 	}
 	if strings.Contains(ws, `- "apps/*"`) {
 		t.Errorf("the workspace lists apps/*, which a single project does not have:\n%s", ws)
+	}
+
+	// And it carries the node linker, because pnpm 10 reads that from the
+	// workspace file and ignores .npmrc when one exists.
+	//
+	// Without it the install is isolated, node_modules/@swc does not exist, and
+	// Next's own compiled chunks fail with "_interop_require_wildcard._ is not a
+	// function" on every page: an error that reads like React is broken and
+	// means a package could not be resolved.
+	if !strings.Contains(ws, "nodeLinker: hoisted") {
+		t.Errorf("the workspace does not set nodeLinker, so Next cannot resolve @swc/helpers:\n%s", ws)
 	}
 
 	// And the scripts run that frontend rather than a task runner that is absent.

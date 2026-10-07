@@ -763,16 +763,36 @@ func pnpmWorkspace(opts Options) string {
 // pnpmWorkspaceFor takes the three facts rather than the Options, because the
 // upgrade path has a directory on disk and no Options to describe it.
 func pnpmWorkspaceFor(isSingle, includeDesktop, includeExpo bool) string {
-	// A single project has no apps/: its one frontend is frontend/, beside the Go
-	// module at the root. Listing "apps/*" there matches nothing, and pnpm
-	// installs a workspace with one member and no frontend in it.
+	// node-linker, and why it is here rather than only in .npmrc.
+	//
+	// Next under webpack requires @swc/helpers from its own compiled client
+	// chunks, and pnpm's default isolated layout does not put that anywhere
+	// Next can reach. .npmrc has said node-linker=hoisted for this reason for a
+	// long time, and pnpm 10 ignores it when a workspace file exists: it reads
+	// nodeLinker from here instead.
+	//
+	// A --single --next gained a workspace file in v3.38x and therefore lost the
+	// setting. The install recorded nodeLinker: isolated, node_modules/@swc did
+	// not exist, and every page failed with "_interop_require_wildcard._ is not
+	// a function" and "react.createContext is not a function": errors that read
+	// like React is broken and mean a package could not be resolved.
+	ws := `# Next under webpack resolves @swc/helpers from its own compiled chunks, and
+# pnpm's isolated layout does not put it anywhere it can reach. .npmrc says the
+# same thing for projects with no workspace file; pnpm 10 reads it from here
+# when there is one, and ignores the .npmrc.
+nodeLinker: hoisted
+
+`
+
+	// A single has no apps/. Since v3.380.0 its frontend is the project root
+	// itself, which is the workspace root and needs no entry: listing
+	// "frontend" named a directory that is not there.
 	members := `  - "apps/*"
 `
 	if isSingle {
-		members = `  - "frontend"
-`
+		members = ""
 	}
-	ws := "packages:\n" + members + `  - "packages/*"
+	ws += "packages:\n" + members + `  - "packages/*"
 `
 	// The Wails desktop client keeps its React app in apps/desktop/frontend,
 	// which "apps/*" doesn't match. Add it so a single root ` + "`pnpm install`" + `

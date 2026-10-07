@@ -66,6 +66,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.389.0 */}
+            <div className="mb-12" id="v3.389.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.389.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 7, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Every <code>--single --next</code> project failed to boot</h3>
+                <p>
+                  Not intermittently. Every page threw{' '}
+                  <code>TypeError: _interop_require_wildcard._ is not a function</code> and{' '}
+                  <code>react.createContext is not a function</code>, the app showed the error
+                  overlay and reloaded, and the errors name React and webpack internals, so they
+                  read like a React problem. They are a resolution problem.
+                </p>
+                <p>
+                  Next under webpack requires <code>@swc/helpers</code> from its own compiled
+                  client chunks, and pnpm&apos;s default isolated layout does not put that
+                  anywhere Next can reach: <code>node_modules/@swc</code> did not exist.{' '}
+                  <code>.npmrc</code> has asked for <code>node-linker=hoisted</code> for exactly
+                  this reason for a long time, and pnpm 10 ignores it when a workspace file is
+                  present, reading <code>nodeLinker</code> from{' '}
+                  <code>pnpm-workspace.yaml</code> instead.
+                </p>
+                <p>
+                  A <code>--single --next</code> gained a workspace file when its frontend moved
+                  to the project root, and lost the setting with it. The workspace carries{' '}
+                  <code>nodeLinker: hoisted</code> now, and the <code>.npmrc</code> stays for
+                  projects without one.
+                </p>
+                <p>
+                  The same file also listed <code>frontend</code> as a workspace member. A
+                  single&apos;s frontend has been the project root since v3.380.0, so that named a
+                  directory which is not there.
+                </p>
+                <p>
+                  <strong>If you have a project in this state:</strong> run{' '}
+                  <code>grit upgrade</code>, then delete <code>node_modules</code> and{' '}
+                  <code>pnpm install</code>. The lockfile and the module layout both have to be
+                  rebuilt; the upgrade alone will not do it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.388.0 */}
             <div className="mb-12" id="v3.388.0">
               <div className="flex items-center gap-3 mb-4">
