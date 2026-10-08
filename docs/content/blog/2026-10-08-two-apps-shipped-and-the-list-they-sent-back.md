@@ -1,10 +1,10 @@
 ---
 title: "Two apps on the Play Store, and the list they sent back"
-subtitle: "Two apps built with Grit are live. Shipping them found an admin panel organised around its own file structure, a new project that could not take an upload without Docker running, a delete with no undo, and a list page that showed the same four meaningless numbers for every table in the product. Here is what came back, and what I did about it."
+subtitle: "Stride and Committed are live. Shipping them found an admin panel organised around its own file structure, a new project that could not take an upload without Docker running, a delete with no undo, and a list page that showed the same four meaningless numbers for every table in the product. Here is the list, and a contacts app you can build in four commands to see every fix on your own screen."
 series: "The Daily Grit"
 edition: 18
 date: 2026-10-08
-readingTime: "13 min"
+readingTime: "17 min"
 author: "Muke JohnBaptist"
 tags: [grit, release, admin, storage, bulk-create, insights, trash, operations]
 canonical: "https://gritframework.dev/blog/two-apps-shipped-and-the-list-they-sent-back"
@@ -12,11 +12,47 @@ canonical: "https://gritframework.dev/blog/two-apps-shipped-and-the-list-they-se
 
 Two apps built with Grit are live on the Play Store.
 
+**[Stride: Team Step Challenge](https://play.google.com/store/apps/details?id=com.desishub.stride)** turns the walking a team already does into something they talk about: a board for the day, the week, the month and all time, medals for the top three, streaks, and a chat where the ribbing happens. The hard part was not the leaderboard. Most step apps count potholes, because a phone in a boda or a car over a rough road produces a rhythm a pedometer reads as walking, and a leaderboard built on that is one nobody believes twice. Stride watches for when you are travelling and takes those steps back off before anything is sent.
+
+**[Committed](https://play.google.com/store/apps/details?id=com.desishub.committed)** does the same thing for engineering work. Create a club, invite people with a link or a QR code, connect GitHub, and commits, merged pull requests, reviews, closed issues, new repositories and stars earn points, with each club deciding what each one is worth. Daily, weekly and monthly rankings, a group chat per club, and a leaderboard image you can share.
+
+Both are from Desishub Technologies. Both are in people's hands.
+
 That is the headline, and it is also the reason for everything underneath it. You cannot learn much about a framework by generating projects and admiring them. You learn by taking one all the way to a store listing, with a real client, real data and a real person who has to use the admin panel every day without you in the room. Both apps did that, and both sent back a list.
 
 None of the items on that list were bugs in the sense of a stack trace. They were worse than that. They were things the framework did correctly, that turned out to be the wrong thing to do correctly.
 
-This is what came back, in the order it hurt.
+---
+
+## Build the app this post is about
+
+Everything below is shown on a contacts app. It takes four commands, and you should run them, because the whole argument of this post is that reading about a screen is not the same as opening one.
+
+```bash
+grit new contacts --triple --next --db sqlite
+cd contacts
+pnpm install
+```
+
+Then the one resource:
+
+```bash
+grit generate resource Contact \
+  --fields "name:string,email:email,phone:tel,company:string,status:select:lead|customer|churned,starred:bool,notes:text" \
+  --faker --count 60
+```
+
+Two of those fields are doing more work than the rest, and it is worth knowing which before you see the result. **`status:select:lead|customer|churned` and `starred:bool`** are the only two columns in that list with a small, known set of values. Hold that thought.
+
+```bash
+grit migrate
+grit seed
+grit start
+```
+
+`grit seed` fills sixty fake contacts, which is enough to make a chart mean something. Open `http://localhost:3001`, sign in with `admin@example.com` / `admin123`, and the first thing on screen is three of the changes at once.
+
+![The contacts list: a grouped sidebar on the left, counted cards across the top, and an Insights panel waiting to be opened](/blog/two-apps/contacts-list.png)
 
 ---
 
@@ -34,14 +70,20 @@ The frustrating part is that the fix existed the whole time. The local disk driv
 
 So the scaffold pointed every new project at a MinIO that was not running, handed it credentials for that MinIO, and then disabled uploads when it did not answer. Whether the key was set was never the question anybody wanted asked.
 
-It now asks whether MinIO answers, with a 300ms TCP dial while the config is being read, and it says out loud what it decided. Two boundaries on that, both deliberate:
+It now asks whether MinIO answers, with a 300ms TCP dial while the config is being read, and it says out loud what it decided. If you ran the commands above without Docker, you already saw it in the log:
+
+```
+MinIO at http://localhost:9000 is not answering, so files are being kept on the
+local disk at storage/app and uploads work. Start it with docker compose up -d
+minio, or set STORAGE_DRIVER=local to choose the disk deliberately.
+```
+
+Two boundaries on that, both deliberate:
 
 - **Production never falls back.** A production app that quietly starts writing user uploads to a container's local disk is a data loss incident with a delay fuse on it.
 - **Only `minio` falls back.** An `s3`, `r2` or `b2` endpoint that is briefly unreachable is a transient network problem, not an invitation to change where the files go.
 
 While verifying that, a second one fell out. `APP_URL` is what every generated link is built from, uploaded files included. Change `APP_PORT` without changing `APP_URL` and every stored file's URL points at a port where nothing is listening. Behind a proxy a different port is correct and normal, so the warning is confined to localhost, where a mismatch is always a mistake and never anything else.
-
-Both reach an existing project through `grit upgrade`.
 
 ---
 
@@ -49,9 +91,11 @@ Both reach an existing project through `grit upgrade`.
 
 The admin had Import, for a file somebody already has, and New, for one record. The gap between them is **"I have twelve of these on a bit of paper"**, which is most of the data entry anybody actually does.
 
-Two buttons close it, both opening the same spreadsheet-shaped grid.
+Two buttons close it, both opening the same spreadsheet-shaped grid. On your contacts list, **Bulk Create** sits between Import and New.
 
-**Bulk Create** sits between Import and New and opens five blank rows. Type across them, add rows as you need them, and the lot is created in one transaction: if any row is rejected, none are written. Empty rows are ignored rather than refused, because the grid starts with five and most of the time you want three.
+![The Bulk Create grid with three rows typed in: the subtitle says they will be created in one go, and the button counts them](/blog/two-apps/contacts-bulk-create.png)
+
+It opens five blank rows. Type across them, add rows as you need them, and the lot is created in one transaction: if any row is rejected, none are written. Empty rows are ignored rather than refused, because the grid starts with five and most of the time you want three, which is why the two rows you left alone above do not count and the button reads **Create 3 Contacts**.
 
 **Bulk Edit** now opens the rows you selected as a grid at their current values, instead of applying one value to all of them. Only the cells you changed are sent, so two people editing different columns of the same row do not overwrite each other, and the button counts what will actually be written: `Save 2 changed`.
 
@@ -74,7 +118,7 @@ Bulk create decodes each row with `encoding/json`, which knows nothing about `bi
 
 A gadget with no category went into a table whose model requires one. Opening that row in the edit form answered `Category is required`, with no way to get at it.
 
-**A row you can create and cannot edit is the worst of both**, and to whoever hits it it looks like the edit form is broken. `respond.ValidateStruct` runs the same rules gin runs on a bound request body, and bulk create now runs it per row: the grid is refused whole, with the message against the row it belongs to.
+**A row you can create and cannot edit is the worst of both**, and to whoever hits it it looks like the edit form is broken. `respond.ValidateStruct` runs the same rules gin runs on a bound request body, and bulk create now runs it per row: the grid is refused whole, with the message against the row it belongs to. That is why `Name`, `Company` and `Status` carry a red asterisk in the screenshot above.
 
 ---
 
@@ -82,15 +126,19 @@ A gadget with no category went into a table whose model requires one. Opening th
 
 Every resource page showed a total and three date windows. Created today, this week, this month.
 
-Those are the only questions you can ask of a table whose columns are unknown. **The columns are not unknown.** The generator knows which are booleans and which are a short list of options, and those are exactly the ones worth counting.
+Those are the only questions you can ask of a table whose columns are unknown. **The columns are not unknown.** This is the thought I asked you to hold: the generator knows `status` is one of three values and `starred` is a boolean, and those are exactly the ones worth counting.
 
-So now it writes them. A resource with a `status` and an `urgent` column gets a card per status and one for each side of the boolean, with no configuration at all. The Users page opens on Admins, Editors, Users, Active, Inactive beside the totals.
+So now it writes them. Scroll back to the first screenshot: beside the four generic cards there is one card per status, **Lead 18, Customer 25, Churned 17**, and one for each side of the boolean, **Starred 32, Not starred 28**. Nothing configured that. The same generator run produced it, because you declared a `select` and a `bool`.
 
 The counts ride along with the list request rather than costing a round trip each, which means they describe **the rows the table is actually matching, filters included**. A count that ignores the filter above it is a number in a prominent place that is wrong.
 
 ### The charts, collapsed until you want them
 
-Under the cards there is now an Insights panel. Open it and it draws how many rows were created per day, week or month, and a bar chart for each counted column. It stays closed until you open it, and then remembers.
+Under the cards there is an Insights panel. Open it.
+
+![The Insights panel: a created-per-month chart, and a bar chart for each counted column](/blog/two-apps/contacts-insights.png)
+
+Daily, weekly or monthly for how many rows were created, and a bar chart for each counted column, which here means one for `starred` and one for `status`. It stays closed until you open it, and then remembers.
 
 The two queries behind it are a `GROUP BY` each, so an ordinary visit to a list costs exactly what it did before and the expensive answer is computed only when somebody asks the question. recharts, 400 KB of it, loads at that same moment rather than riding along with every list page in the product.
 
@@ -99,8 +147,8 @@ The charts are drawn over the list's own query, so narrowing to one category red
 None of this is admin-only. Two query parameters answer it on any list endpoint built on `paginate.List`:
 
 ```http
-GET /api/v1/orders?series=created_at:month:12
-GET /api/v1/orders?breakdown=status,role
+GET /api/v1/contacts?series=created_at:month:12
+GET /api/v1/contacts?breakdown=status,starred
 ```
 
 The first returns a count per period, the second a count per value. The series column is one of two literals and a breakdown column must already be filterable, because both reach the SQL where a bind parameter cannot go.
@@ -115,11 +163,15 @@ Every generated resource soft-deletes. The row stayed on disk and left every lis
 
 So the data was always there, and **"I deleted the wrong one" still had no answer short of a SQL console**. The rows accumulated forever, with nothing counting them and nothing clearing them.
 
-**System, Trash** lists them now, grouped by resource, newest first, each with a label taken from the model's own display column, when it was deleted and when it goes. Restore puts one back. Delete forever removes it now. Empty takes a whole resource, and refuses without an explicit confirm on the request.
+Delete two contacts from your list, then open **System, Trash**.
 
-Retention is thirty days, and a nightly task at 03:40 purges what is past it, so the table does not grow without bound whether or not anybody visits the page.
+![The Trash page: deleted contacts grouped by resource, each with its label, when it went and when it expires](/blog/two-apps/contacts-trash.png)
 
-It reads the sync registry the generator already populates, so **a resource you generate tomorrow appears in the bin with no extra step**.
+Grouped by resource, newest first, each with a label taken from the model's own display column, when it was deleted and when it goes. Restore puts one back. Delete forever removes it now. Empty takes a whole resource, and refuses without an explicit confirm on the request.
+
+Retention is thirty days, and a nightly task at 03:40 purges what is past it, so the table does not grow without bound whether or not anybody visits the page. The note at the bottom of that screenshot is the page being honest with you: that job runs on the queue, so on a project started without Redis nothing expires on its own and the records sit there until somebody empties the bin.
+
+It reads the sync registry the generator already populates, so **the Contact resource you generated ten minutes ago appears in the bin with no extra step**. You never told it contacts existed.
 
 Users are deliberately not in that registry. A row that carries its own role is not something a generic restore should write, so closed accounts got their own screen: **System, Deleted accounts** lists who closed theirs, with the role they had and the date, and restores one to signing in with the password it already had, or removes the row for good.
 
@@ -135,14 +187,18 @@ The System Hub listed two pages over the same endpoint.
 
 `/system/performance` read the summary the API returns. `/system/observability` declared a different, richer shape, and **the endpoint has never returned it**. Every figure on it read `data.overview.p95_ms` against a response with no `overview` key, so a page whose subtitle promised "percentile latency, SLOs, USE grid, top N+1, errors, runtime" rendered four dashes and three empty panels. The only live thing on it came from somewhere else entirely.
 
-They are one page now, at `/system/performance`, called **Operations**, built on what the API actually answers with: four tiles over a live window, latency and throughput charts, the slowest routes with their percentiles and error rates, Go runtime, database and cache, N+1 detections, recent errors, and the readiness report folded away at the bottom. The old URL redirects rather than 404s.
+They are one page now, called **Operations**.
 
-The charts cover this browser session, and say so under each one. The summary endpoint answers with the numbers as they are now and keeps no series, so the alternatives were drawing a chart from a single point or adding a metrics store to every scaffolded app. Pulse's own dashboard keeps the long window, and the header links to it.
+![The Operations page: four tiles, latency and throughput over the session, and the slowest routes with their percentiles](/blog/two-apps/contacts-operations.png)
+
+Four tiles over a live window, latency and throughput charts, the slowest routes with their percentiles and error rates, Go runtime, database and cache, N+1 detections, recent errors, and the readiness report folded away at the bottom. The old URL redirects rather than 404s.
+
+Note the line above the charts: **"2 samples, every 10s since this page opened"**. The summary endpoint answers with the numbers as they are now and keeps no series, so the alternatives were drawing a chart from a single point or adding a metrics store to every scaffolded app. The page keeps what it has seen since you opened it and says so. Pulse's own dashboard keeps the long window, and the header links to it.
 
 Three numbers were wrong on the way here, and each is worth naming, because each one reads as a broken application rather than a display bug:
 
 - a route's error rate was multiplied by a hundred **twice**, and read `8571.4%`
-- throughput rounded to `0.0 req/s` beside "162 requests seen", because an admin panel on a quiet morning runs at a few requests a minute
+- throughput rounded to `0.0 req/s` beside "162 requests seen", because an admin panel on a quiet morning runs at a few requests a minute, which is why the tile in that screenshot reads `0.01`
 - a flat series was drawn along the floor of its box rather than through the middle, which reads as a collapse to nothing instead of something steady
 
 No chart library was added for it. The lines are SVG polylines; recharts stays on the pages that have axes and tooltips.
@@ -166,7 +222,13 @@ A few details fixed while it was being rebuilt:
 - The avatar uploads, crops and persists.
 - Sign-in links and active sessions are two blocks with space between them, instead of one wall.
 
-The password card shows strength as you type. As of this week that is a named ladder from Very weak to Very strong with the five rules listed underneath and a check against each one satisfied, and it is on **every** screen that chooses a password rather than just this one: sign up on all six admin auth styles, reset, both profile pages, the desktop client. Fifteen screens. It measures guessability rather than counting rules met, so twenty `a`s is Very weak and `Passw0rd` is Very weak, and nothing the form will refuse can read as encouraging.
+Type into the new-password box on your contacts app and the newest piece of this lands:
+
+![The password meter: five rungs filled, Very strong, and a check against each of the five rules](/blog/two-apps/contacts-account.png)
+
+A named ladder from Very weak to Very strong, with the five rules listed underneath and a check against each one satisfied. It is on **every** screen that chooses a password, not just this one: sign up on all six admin auth styles, reset, both profile pages, the desktop client. Fifteen screens.
+
+It measures guessability rather than counting rules met, which is the distinction the old bar got wrong. The old one filled one segment per rule satisfied, so `a` lit three of five segments. The new one calls twenty `a`s Very weak, because every character after the first repeats the one before it and costs a guesser nothing. `Passw0rd` is Very weak too, because it is on the list attackers try first, whatever the composition rules say about it. And nothing the form will refuse for being too short can read above Weak, so the bar never contradicts the cross beside it.
 
 ---
 
@@ -174,7 +236,7 @@ The password card shows strength as you type. As of this week that is a named la
 
 The rail was Dashboard, then every resource, then one System Hub link. Anything operational was two clicks from anywhere.
 
-It now has a **Content** heading over the resources, and a **System** group holding Operations, Security, Backups and Account beside the hub, open by default.
+Look at the left edge of any screenshot above. A **Content** heading over the resources, and a **System** group holding Operations, Security, Backups and Account beside the hub, open by default.
 
 Four, not thirty. The test for what earns a place there is whether you open it **while working** rather than while configuring. Everything else stays one click further on, inside the hub, which is what a hub is for.
 
@@ -202,11 +264,13 @@ The storage fallback was written deliberately, with a comment explaining why it 
 
 They all survived because **generating a project and reading it is not the same as living in it**. A scaffold test matches strings. A type-check proves the imports resolve. Neither one has ever once told me that a page is in the wrong place, or that a number is right and useless, or that the thing somebody needs to do forty times a day takes forty form submissions.
 
-Two apps went to a store. That is what found these.
+Stride and Committed went to a store. That is what found these.
+
+Your contacts app is still running. Delete something and get it back, type twelve rows into the grid, open the Insights panel and narrow the table underneath it to one status. It takes four minutes, and it is the only way to know whether the next thing I build is worth anything.
 
 ```bash
 grit update
 cd your-project && grit upgrade
 ```
 
-If you are running anything older than `v3.370.0`, the upload fix alone is worth the upgrade, and you probably have a MinIO in your `.env` that has never answered.
+If you are running anything older than `v3.370.0`, the upload fix alone is worth it, and you probably have a MinIO in your `.env` that has never answered.
