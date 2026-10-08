@@ -1,26 +1,22 @@
 ---
-title: "Two apps on the Play Store, and the list they sent back"
-subtitle: "Stride and Committed are live. Shipping them found an admin panel organised around its own file structure, a new project that could not take an upload without Docker running, a delete with no undo, and a list page that showed the same four meaningless numbers for every table in the product. Here is the list, and a contacts app you can build in four commands to see every fix on your own screen."
+title: "Everything new in Grit, on a contacts app you build in four commands"
+subtitle: "Bulk create and bulk edit as a spreadsheet grid, counted cards and charts generated per resource, a bin you can get a deleted record back from, one Operations page instead of two, one account page out from behind the System Hub, a grouped sidebar, uploads that work without Docker, and new Pulse, Sentinel and GORM Studio. Every one of them shown on a contacts app you can generate yourself in four commands."
 series: "The Daily Grit"
 edition: 18
 date: 2026-10-08
 readingTime: "17 min"
 author: "Muke JohnBaptist"
 tags: [grit, release, admin, storage, bulk-create, insights, trash, operations]
-canonical: "https://gritframework.dev/blog/two-apps-shipped-and-the-list-they-sent-back"
+canonical: "https://gritframework.dev/blog/everything-new-in-grit"
 ---
 
-Two apps built with Grit are live on the Play Store.
+Grit has had a long month. Entering many rows at once instead of opening the form twelve times. List pages that count the columns they actually have rather than showing the same four date windows everywhere. A bin, so deleting the wrong row is recoverable. One Operations page instead of two, one of which was empty. One account page, out from behind the System Hub where almost nobody found it. A sidebar grouped around what you open while working. Uploads that work on a machine with no Docker running. And new releases of Pulse, Sentinel and GORM Studio that let two long-standing workarounds come out of the scaffold.
 
-**[Stride: Team Step Challenge](https://play.google.com/store/apps/details?id=com.desishub.stride)** turns the walking a team already does into something they talk about: a board for the day, the week, the month and all time, medals for the top three, streaks, and a chat where the ribbing happens. The hard part was not the leaderboard. Most step apps count potholes, because a phone in a boda or a car over a rough road produces a rhythm a pedometer reads as walking, and a leaderboard built on that is one nobody believes twice. Stride watches for when you are travelling and takes those steps back off before anything is sent.
+This post is all of it, in order, shown on a contacts app you can generate in four commands and have open beside this page while you read.
 
-**[Committed](https://play.google.com/store/apps/details?id=com.desishub.committed)** does the same thing for engineering work. Create a club, invite people with a link or a QR code, connect GitHub, and commits, merged pull requests, reviews, closed issues, new repositories and stars earn points, with each club deciding what each one is worth. Daily, weekly and monthly rankings, a group chat per club, and a leaderboard image you can share.
+A word first on where the list came from, because it is the only thing these changes have in common. **None of them were bugs in the sense of a stack trace.** They were things the framework did deliberately, and correctly, that turned out to be the wrong thing to do correctly. The storage fallback was written on purpose, with a comment explaining why it mattered, and it tested the wrong condition for a year. The account page was put under System because it is administrative, which is true and was exactly the wrong reason.
 
-Both are from Desishub Technologies. Both are in people's hands.
-
-That is the headline, and it is also the reason for everything underneath it. You cannot learn much about a framework by generating projects and admiring them. You learn by taking one all the way to a store listing, with a real client, real data and a real person who has to use the admin panel every day without you in the room. Both apps did that, and both sent back a list.
-
-None of the items on that list were bugs in the sense of a stack trace. They were worse than that. They were things the framework did correctly, that turned out to be the wrong thing to do correctly.
+Faults like that do not surface from generating a project and reading it. They surface from living in one. Two apps built with Grit went to the Play Store this month, **[Stride: Team Step Challenge](https://play.google.com/store/apps/details?id=com.desishub.stride)** and **[Committed](https://play.google.com/store/apps/details?id=com.desishub.committed)**, both from Desishub Technologies, and between them they put a real client and a real operator in front of the admin panel every day without me in the room. That is what produced the list below.
 
 ---
 
@@ -258,15 +254,13 @@ And the govulncheck allowlist is empty again. `GO-2026-6452` was accepted becaus
 
 ## What I take from it
 
-Every single item above is a thing Grit did on purpose.
+I said at the top that none of these were bugs in the ordinary sense, and the pattern is worth finishing.
 
-The storage fallback was written deliberately, with a comment explaining why it mattered, and it tested the wrong condition for a year. The observability page was designed from a richer API response that was never built. The account page was put under System because it is administrative, which is true and was exactly the wrong reason. The four list cards were chosen because they are the only questions you can ask without knowing the columns, by somebody who had forgotten that the generator knows the columns.
+The observability page was designed from a richer API response that was never built. The four list cards were chosen because they are the only questions you can ask without knowing the columns, by somebody who had forgotten that the generator knows the columns. Every item on this list is a decision, taken for a stated reason, that was wrong in a way no test could express.
 
 They all survived because **generating a project and reading it is not the same as living in it**. A scaffold test matches strings. A type-check proves the imports resolve. Neither one has ever once told me that a page is in the wrong place, or that a number is right and useless, or that the thing somebody needs to do forty times a day takes forty form submissions.
 
-Stride and Committed went to a store. That is what found these.
-
-Your contacts app is still running. Delete something and get it back, type twelve rows into the grid, open the Insights panel and narrow the table underneath it to one status. It takes four minutes, and it is the only way to know whether the next thing I build is worth anything.
+Which is the argument for the four commands at the top. Your contacts app is still running. Delete something and get it back, type twelve rows into the grid, open the Insights panel and narrow the table underneath it to one status. It takes four minutes, and it is the only way to know whether the next thing I build is worth anything.
 
 ```bash
 grit update
