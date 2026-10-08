@@ -459,6 +459,7 @@ func adminTanStackFileMap(root string, opts Options) map[string]string {
 
 		// Auth shells — the themed login/sign-up/forgot chrome. Without these the
 		// Vite admin's auth pages looked nothing like the Next.js admin's.
+		filepath.Join(adminRoot, "src", "components", "forms", "unsaved-guard.tsx"):    nextToTanStack(adminUnsavedGuard()),
 		filepath.Join(adminRoot, "src", "components", "auth", "AuthShell.tsx"):         nextToTanStack(adminAuthShellDispatcher()),
 		filepath.Join(adminRoot, "src", "components", "auth", "AtlasAuthShell.tsx"):    nextToTanStack(adminAtlasAuthShell()),
 		filepath.Join(adminRoot, "src", "components", "auth", "AuroraAuthShell.tsx"):   nextToTanStack(adminAuroraAuthShell()),

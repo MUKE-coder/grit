@@ -10,6 +10,7 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useT } from "@/lib/i18n";
 import { useForm, Controller, useWatch, type FieldErrors } from "react-hook-form";
+import { useUnsavedGuard, UnsavedBadge } from "@/components/forms/unsaved-guard";
 import type { FieldDefinition, FormDefinition } from "@/lib/resource";
 import { displayFormat, displayValue, isDisplayOnly, writableValues } from "@/lib/form-values";
 import { renderCell } from "@/components/tables/cell-renderers";
@@ -99,10 +100,15 @@ export function FormBuilder({
     control,
     handleSubmit,
     getValues,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm({
     defaultValues: buildDefaults(formDef.fields, defaultValues),
   });
+
+  // Not while it is being submitted: the save is a navigation of its own on a
+  // page form, and asking "leave and lose them?" about the save itself is how
+  // a guard teaches people to click through it without reading.
+  useUnsavedGuard(isDirty && !isSubmitting);
 
   const isTwoColumn = formDef.layout === "two-column";
 
@@ -127,6 +133,7 @@ export function FormBuilder({
       </div>
 
       <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
+        <UnsavedBadge dirty={isDirty && !isSubmitting} />
         <Button variant="outline" onClick={onCancel}>
           {t("form.cancel", "Cancel")}
         </Button>

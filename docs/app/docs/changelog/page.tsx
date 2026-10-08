@@ -66,6 +66,97 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.392.0 */}
+            <div className="mb-12" id="v3.392.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.392.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A form with edits in it stops being easy to throw away</h3>
+                <p>
+                  The admin had no <code>beforeunload</code> anywhere in it. A resource form with
+                  twenty fields, a rich text body and three uploads could be lost to one click on
+                  the sidebar, and nothing said so: no prompt, no warning on tab close, nothing on
+                  screen suggesting there was anything to lose. The row went back to how it was and
+                  the typing was gone.
+                </p>
+                <p>
+                  Every generated form now tracks whether it is dirty. While it is, a quiet
+                  &quot;Unsaved changes&quot; sits beside the save button, and leaving asks first.
+                </p>
+                <p>
+                  Two listeners, because they catch different accidents.{' '}
+                  <code>beforeunload</code> covers closing the tab, reloading, and leaving the site.
+                  It does <strong>not</strong> fire on a Next <code>{'<Link>'}</code>, which is a
+                  client-side navigation the browser never hears about, and in an admin panel that
+                  is the common one: you click Users in the sidebar with a half-filled form behind
+                  you. So the second listener sits on the capture phase of every click, finds the
+                  anchor the click is heading for, and asks before the router gets it.
+                </p>
+                <p>
+                  It asks with <code>window.confirm</code>, which is ugly, and the prettier option
+                  was considered and rejected. The admin&apos;s own confirm modal is asynchronous,
+                  and by the time it resolves, the navigation it was meant to stop has already
+                  happened. A native confirm is the only thing that can block a click
+                  synchronously. Looking right is worth less than working.
+                </p>
+                <p>
+                  A modified click still opens a new tab without being asked, an external link
+                  falls through to <code>beforeunload</code>, and both listeners come off the moment
+                  the form goes clean, so a saved form stops asking. The guard is off while a save
+                  is in flight: asking &quot;leave and lose them?&quot; about the save itself is how
+                  a prompt teaches people to click through it without reading.
+                </p>
+
+                <h3>A counted card narrows the table to what it counted</h3>
+                <p>
+                  Since v3.373.0 a list page has carried a card per value of each counted column:
+                  Lead 18, Customer 25, Churned 17. Every one of them was a <code>div</code>
+                  carrying <code>hover:border-border/80</code>, so the whole row lit up under the
+                  pointer and none of it did anything.
+                </p>
+                <p>
+                  That is a worse fault on a counted card than anywhere else, because
+                  &quot;Lead 18&quot; is exactly the number somebody wants to click. Those cards are
+                  buttons now. Click one and the table narrows to those rows; click it again and the
+                  filter comes off, because a filter you cannot remove from where you applied it is
+                  one people reload the page to escape.
+                </p>
+                <p>
+                  The generic cards are untouched and stay <code>div</code>s. Total and This Week
+                  have no subset to narrow to, and they lose the hover state with it: a border that
+                  lights up is a promise, and theirs had nothing behind it.
+                </p>
+                <p>
+                  One behaviour worth knowing before it surprises you. Every count on the page
+                  describes <strong>the rows the table is currently matching</strong>, which is the
+                  contract since v3.373.0 and the reason the numbers agree with the Insights panel
+                  below them. So filtering to Lead leaves Customer reading 0. Clicking it still
+                  works and still shows all 25, but the number beside it is the count within the
+                  view, not the count you would get. Proper faceted counts, where a value&apos;s own
+                  filter is excluded from its own tally, mean rebuilding the query once per counted
+                  column in <code>internal/paginate</code>, and that is the hottest path in every
+                  generated project. It is a change of its own and not one to make at the end of
+                  another.
+                </p>
+                <p>
+                  Both of these came from reading{' '}
+                  <a href="https://github.com/jubayer910/Admin-panel" className="underline">
+                    jubayer910/Admin-panel
+                  </a>{' '}
+                  (MIT), a portfolio admin whose settings form keeps a sticky save bar reading
+                  &quot;Unsaved changes&quot; or &quot;All changes saved&quot;, and whose project
+                  list puts counted tabs above the table. Grit&apos;s forms are modals and pages
+                  rather than one long settings screen, and it already had the counted cards, so
+                  neither is a copy. The ideas are the borrowed part.
+                </p>
+              </div>
+            </div>
+
             {/* v3.391.0 */}
             <div className="mb-12" id="v3.391.0">
               <div className="flex items-center gap-3 mb-4">

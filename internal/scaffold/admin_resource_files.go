@@ -1273,6 +1273,13 @@ function ResourceListView({ resource }: ResourcePageProps) {
         subtitle={` + "`" + `Manage ${c.pluralName.toLowerCase()}` + "`" + `}
         actions={headerActions}
         stats={c.stats}
+        // Clicking a counted card narrows the table to it, and clicking the
+        // same one again clears it. Toggling matters: a filter you cannot take
+        // off from where you put it on is one people reload the page to escape.
+        onStatFilter={(filter) =>
+          c.setFilter(filter.field, c.filters[filter.field] === filter.value ? "" : filter.value)
+        }
+        isStatFilterActive={(filter) => c.filters[filter.field] === filter.value}
         insights={
           <InsightsPanel
             resource={c.resource}
@@ -2159,6 +2166,10 @@ export function useResourceController<T = Record<string, unknown>>(
           loading,
           icon: column.icon,
           color: column.color,
+          // What this card counted, so clicking it can narrow the table to
+          // exactly those rows. The four generic cards above have no subset
+          // and get none, which is what keeps them from looking clickable.
+          filter: { field: column.field, value },
         });
       }
     }

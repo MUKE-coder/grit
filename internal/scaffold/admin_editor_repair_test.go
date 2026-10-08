@@ -282,8 +282,18 @@ func TestOnePageHeader(t *testing.T) {
 		}
 	}
 	header := adminPageHeaderComponent()
-	if !strings.Contains(header, "stats?: StatCard[];") || !strings.Contains(header, "<StatCards stats={stats} />") {
+	// Matched on the pieces rather than one literal line: the element gained
+	// the filter handler and wrapped onto three lines, and the thing worth
+	// asserting is that this header draws the cards, not how it is formatted.
+	if !strings.Contains(header, "stats?: StatCard[];") ||
+		!strings.Contains(header, "<StatCards") ||
+		!strings.Contains(header, "stats={stats}") {
 		t.Error("chrome/PageHeader.tsx does not take stat cards")
+	}
+	// And a counted card can narrow the table, which is the whole reason it
+	// stopped being a div.
+	if !strings.Contains(header, "onFilter={onStatFilter}") {
+		t.Error("chrome/PageHeader.tsx does not pass the stat filter through")
 	}
 	if !strings.Contains(adminResourcePage(), `import { PageHeader } from "@/components/chrome/PageHeader";`) {
 		t.Error("resource-page.tsx does not use the chrome page header")

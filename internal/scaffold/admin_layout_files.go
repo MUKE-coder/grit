@@ -555,6 +555,14 @@ export interface StatCard {
   trend?: { value: number; direction: "up" | "down" };
   /** Shows the placeholder while a static value is still on its way. */
   loading?: boolean;
+  /**
+   * The rows this card counted. Give it one and the card becomes a button
+   * that narrows the table to them.
+   *
+   * Only the cards that stand for a subset get it. "Total" and "This Week"
+   * have nothing to narrow to and stay as they were.
+   */
+  filter?: { field: string; value: string };
 }
 
 const colorClasses: Record<string, { bg: string; text: string }> = {
@@ -573,7 +581,15 @@ function getPath(obj: unknown, path: string): unknown {
   );
 }
 
-function StatCardItem({ stat }: { stat: StatCard }) {
+function StatCardItem({
+  stat,
+  onFilter,
+  active,
+}: {
+  stat: StatCard;
+  onFilter?: (filter: StatFilter) => void;
+  active?: boolean;
+}) {
   const color = colorClasses[stat.color || "default"];
   const Icon = stat.icon ? getIcon(stat.icon) : null;
 
@@ -598,8 +614,7 @@ function StatCardItem({ stat }: { stat: StatCard }) {
       ? (getPath(data, stat.field) as string | number | undefined) ?? "—"
       : "—";
 
-  return (
-    <div className="rounded-xl border border-border bg-bg-secondary p-5 transition-colors hover:border-border/80">
+  const body = (
       <div className="flex items-start justify-between">
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
@@ -635,16 +650,64 @@ function StatCardItem({ stat }: { stat: StatCard }) {
           </div>
         )}
       </div>
-    </div>
+  );
+
+  const base = "rounded-xl border p-5 text-left transition-colors ";
+
+  // A card with nothing to narrow to stays a div, and loses the hover state
+  // with it: a border that lights up under the pointer is a promise, and this
+  // one had nothing behind it.
+  if (!stat.filter || !onFilter) {
+    return <div className={base + "border-border bg-bg-secondary"}>{body}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => onFilter(stat.filter!)}
+      aria-pressed={active}
+      className={
+        base +
+        "w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 " +
+        (active
+          ? "border-accent bg-accent/10"
+          : "border-border bg-bg-secondary hover:border-accent/50 hover:bg-bg-hover")
+      }
+    >
+      {body}
+      <span className="sr-only">
+        {active ? ". Showing only these. Activate to show all." : ". Activate to show only these."}
+      </span>
+    </button>
   );
 }
 
+export interface StatFilter {
+  field: string;
+  value: string;
+}
+
 /** The row of stat cards under a page header. */
-export function StatCards({ stats }: { stats: StatCard[] }) {
+export function StatCards({
+  stats,
+  onFilter,
+  isFilterActive,
+}: {
+  stats: StatCard[];
+  /** Given, every card carrying a filter becomes a button. */
+  onFilter?: (filter: StatFilter) => void;
+  /** Whether the table is currently narrowed to that card. */
+  isFilterActive?: (filter: StatFilter) => boolean;
+}) {
   return (
     <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {stats.map((stat, i) => (
-        <StatCardItem key={i} stat={stat} />
+        <StatCardItem
+          key={i}
+          stat={stat}
+          onFilter={onFilter}
+          active={stat.filter ? (isFilterActive?.(stat.filter) ?? false) : false}
+        />
       ))}
     </div>
   );

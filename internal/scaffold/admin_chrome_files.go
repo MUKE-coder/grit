@@ -443,7 +443,7 @@ import { RefreshCw, Search, ArrowLeft } from "@/lib/icons";
 import { DarkModeToggle } from "./DarkModeToggle";
 import { UserMenu } from "./UserMenu";
 import { NotificationBell } from "./NotificationBell";
-import { StatCards, type StatCard } from "./StatCards";
+import { StatCards, type StatCard, type StatFilter } from "./StatCards";
 import { inputClasses } from "@/components/ui/input";
 
 // Queries that belong to the layout rather than to any page: the signed-in
@@ -475,6 +475,13 @@ interface PageHeaderProps {
   /** Stat cards shown under the header, e.g. a resource page's totals. */
   stats?: StatCard[];
   /**
+   * Given, a card that stands for a subset becomes a button and this is
+   * called with what it counted. Left out, every card stays a plain div.
+   */
+  onStatFilter?: (filter: StatFilter) => void;
+  /** Whether the table is currently narrowed to that card. */
+  isStatFilterActive?: (filter: StatFilter) => boolean;
+  /**
    * The collapsible insights panel, under the cards.
    *
    * A slot rather than a prop of its own, because the panel needs the page's
@@ -502,6 +509,8 @@ export function PageHeader({
   backHref,
   backLabel,
   stats,
+  onStatFilter,
+  isStatFilterActive,
   insights,
 }: PageHeaderProps) {
   const queryClient = useQueryClient();
@@ -599,7 +608,9 @@ export function PageHeader({
       </div>
     </header>
     {/* The cards are content, not chrome: they scroll away under the header. */}
-    {stats && stats.length > 0 && <StatCards stats={stats} />}
+    {stats && stats.length > 0 && (
+      <StatCards stats={stats} onFilter={onStatFilter} isFilterActive={isStatFilterActive} />
+    )}
     {insights}
     </>
   );

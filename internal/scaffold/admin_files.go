@@ -351,6 +351,7 @@ func adminFileMap(root string, opts Options) map[string]string {
 		// Layout components
 		filepath.Join(adminRoot, "components", "layout", "admin-layout.tsx"): adminLayoutComponent(),
 		filepath.Join(adminRoot, "components", "chrome", "StatCards.tsx"):    adminStatCards(),
+		filepath.Join(adminRoot, "components", "forms", "unsaved-guard.tsx"): adminUnsavedGuard(),
 
 		// Table components
 		filepath.Join(adminRoot, "components", "tables", "data-table.tsx"):      adminDataTable(),
