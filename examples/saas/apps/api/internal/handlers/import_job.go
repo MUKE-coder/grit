@@ -1,0 +1,56 @@
+package handlers
+
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"saas/apps/api/internal/authz"
+	"saas/apps/api/internal/models"
+	"saas/apps/api/internal/respond"
+)
+
+// ImportJobHandler serves the progress/result of background CSV imports.
+type ImportJobHandler struct {
+	DB *gorm.DB
+}
+
+// GetByID returns a single import job. Poll this while Status is "processing"
+// to drive a progress bar (processed/total), then read created/skipped/failed
+// and the per-row errors once Status is "completed".
+func (h *ImportJobHandler) GetByID(c *gin.Context) {
+	var job models.ImportJob
+	// Whoever started the import, or an admin. Anybody else, and a job from
+	// before its starter was recorded, is told it does not exist: any signed-in
+	// user holding the id read another user's counts and row errors.
+	q := h.DB.WithContext(c.Request.Context()).Where("id = ?", c.Param("id"))
+	if actor := authz.ActorOf(c); !actor.Admin {
+		q = q.Where("created_by = ? AND created_by <> ''", actor.UserID)
+	}
+	if err := q.First(&job).Error; err != nil {
+		respond.Fail(c, respond.CodeNotFound, "Import job not found")
+		return
+	}
+
+	rowErrors := []map[string]interface{}{}
+	if job.Errors != "" {
+		_ = json.Unmarshal([]byte(job.Errors), &rowErrors)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"id":        job.ID,
+			"resource":  job.Resource,
+			"status":    job.Status,
+			"total":     job.Total,
+			"processed": job.Processed,
+			"created":   job.Created,
+			"skipped":   job.Skipped,
+			"failed":    job.Failed,
+			"errors":    rowErrors,
+			"message":   job.Message,
+		},
+	})
+}

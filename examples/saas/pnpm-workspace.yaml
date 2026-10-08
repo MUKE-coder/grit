@@ -1,0 +1,16 @@
+# Next under webpack resolves @swc/helpers from its own compiled chunks, and
+# pnpm's isolated layout does not put it anywhere it can reach. .npmrc says the
+# same thing for projects with no workspace file; pnpm 10 reads it from here
+# when there is one, and ignores the .npmrc.
+nodeLinker: hoisted
+
+packages:
+  - "apps/*"
+  - "packages/*"
+
+allowBuilds:
+  esbuild: true
+
+# pnpm 10 spelling of the same setting.
+onlyBuiltDependencies:
+  - esbuild

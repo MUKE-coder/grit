@@ -1,0 +1,118 @@
+package handlers
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"saas/apps/api/internal/audit"
+	"saas/apps/api/internal/paginate"
+	"saas/apps/api/internal/respond"
+	"saas/apps/api/internal/services"
+)
+
+// ActivityHandler exposes the audit log as a paginated, filterable
+// list. Mounted under admin/* in routes.go.
+type ActivityHandler struct {
+	DB *gorm.DB
+}
+
+func NewActivityHandler(db *gorm.DB) *ActivityHandler {
+	return &ActivityHandler{DB: db}
+}
+
+// activity is the service the reads below go through. Which columns a client may
+// sort or filter by is a decision about data, because each name ends up in SQL:
+// see internal/services/activity_reads.go.
+func (h *ActivityHandler) activity() *services.ActivityService {
+	return &services.ActivityService{DB: h.DB}
+}
+
+// List returns activity log entries, newest first. Supports filtering
+// by user_id, method, resource, path prefix and record id via query params.
+func (h *ActivityHandler) List(c *gin.Context) {
+	params := paginate.Bind(c).
+		With("user_id", c.Query("user_id")).
+		With("method", c.Query("method")).
+		With("resource", c.Query("resource"))
+
+	// path narrows to one area of the API; record answers the question an access
+	// review asks about one patient's chart, which is everybody who read or
+	// changed that row.
+	res, err := h.activity().Logs(c.Request.Context(), params, c.Query("path"), c.Query("record"))
+	if err != nil {
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// VerifyIntegrity walks the entire activity log and verifies every
+// row's Hash matches what we'd compute now. A mismatch means a row
+// was modified, deleted, or inserted out of order — the response
+// pinpoints which row broke the chain.
+//
+// Bounded by a 60-second deadline so a runaway scan can't hold the
+// connection forever — if you have hundreds of millions of rows,
+// run this from a cron job instead of an HTTP request.
+//
+//	GET /api/admin/activity/integrity
+//	→ { "valid": true, "total_entries": 12345 }
+//	→ { "valid": false, "broken_at": 47, "broken_at_id": "uuid",
+//	    "expected": "abc...", "got": "def...",
+//	    "message": "hash mismatch — row was modified..." }
+func (h *ActivityHandler) VerifyIntegrity(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
+	defer cancel()
+	status, err := audit.VerifyChain(ctx, h.DB)
+	if err != nil {
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
+		return
+	}
+	c.JSON(http.StatusOK, status)
+}
+
+// ResealRequest names the entry a reseal starts from: the first one that
+// fails verification, as the integrity check reports it.
+type ResealRequest struct {
+	FromID string `json:"from_id" binding:"required"`
+}
+
+// ResealResponse says how many entries were resealed.
+type ResealResponse struct {
+	Data struct {
+		Resealed int `json:"resealed"`
+	} `json:"data"`
+	Message string `json:"message"`
+}
+
+// Reseal recomputes the chain from its first bad entry and records who did.
+// See audit.Reseal for when that is right, and why it is never automatic.
+//
+//	POST /api/admin/activity/reseal  {"from_id": "<broken_at_id>"}
+func (h *ActivityHandler) Reseal(c *gin.Context) {
+	var req ResealRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)
+	defer cancel()
+
+	userID, _ := c.Get("user_id")
+	uid, _ := userID.(string)
+	n, err := audit.Reseal(ctx, h.DB, req.FromID, uid, c.ClientIP(), c.Request.UserAgent())
+	switch {
+	case errors.Is(err, audit.ErrChainIntact), errors.Is(err, audit.ErrNotTheBreak):
+		respond.Fail(c, respond.CodeResealRefused, err.Error())
+		return
+	case err != nil:
+		respond.ServerError(c, "INTERNAL_ERROR", err, "Internal server error")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"resealed": n}, "message": "Chain resealed"})
+}

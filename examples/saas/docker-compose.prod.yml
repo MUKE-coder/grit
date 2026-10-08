@@ -1,0 +1,184 @@
+# Production stack.
+#
+# Security posture: nothing in this file uses `ports:` — only
+# `expose:`. That means none of these services bind to the public host
+# interface. Traffic reaches the API and the front-ends ONLY through
+# your reverse proxy (Traefik, Caddy, nginx, or a managed PaaS like
+# Dokploy/Coolify), which lives on the same Docker network and routes
+# domain.com → `api:8080`, app.domain.com → `admin:3000`, etc.
+#
+# Postgres and Redis have NO host binding at all — they're reachable
+# only by containers on this stack's own network. That is the property you
+# want: a successful host-level compromise still has to pop a container
+# to reach the database.
+#
+# That network is Compose's implicit <project>_default, and this file
+# deliberately declares none of its own. Docker slices bridge subnets out
+# of 172.17.0.0/12 in /16 blocks, which is about sixteen networks for the
+# entire daemon, and it does not release them when a deploy fails or a
+# project is deleted. A named network here would take a second subnet and
+# buy nothing the default does not already give. On a host whose pool is
+# already full, use docker-compose.shared-network.yml, which creates none.
+#
+# MinIO is included as an option but most production deployments use
+# Cloudflare R2 or AWS S3 (see STORAGE_* in .env). Delete the minio
+# service if you're on managed object storage.
+#
+# To configure your reverse proxy:
+#   - Point your apex domain at the api container's expose port (8080)
+#   - Point app.domain.com at the admin container (3000)
+#   - Point www.domain.com at the web container (3000)
+#   - Use Let's Encrypt or your PaaS' auto-TLS for HTTPS — never serve
+#     the API over plain HTTP in production.
+
+services:
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "8080"
+    env_file:
+      - .env
+    # POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB come from .env
+    # (env_file above). POSTGRES_HOST and POSTGRES_PORT are overridden to
+    # reach pgbouncer on the Docker network, whatever host port .env names
+    # for development. The Go config builds DATABASE_URL from these parts at
+    # startup.
+    environment:
+      APP_ENV: production
+      # Postgres, whatever DB_PROVIDER a development .env says. SQLite here lives
+      # inside the container, and a redeploy starts from an empty database.
+      DB_PROVIDER: postgres
+      # Through pgbouncer, so replicas share its DEFAULT_POOL_SIZE server
+      # connections instead of each holding its own pool open on Postgres.
+      POSTGRES_HOST: pgbouncer
+      POSTGRES_PORT: "6432"
+      REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}@redis:6379
+      MINIO_ENDPOINT: http://minio:9000
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:8080}
+    environment:
+      # Server-rendered pages call the API over the Docker network.
+      API_INTERNAL_URL: http://api:8080
+    restart: unless-stopped
+    expose:
+      - "3000"
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:8080}
+    restart: unless-stopped
+    expose:
+      - "3000"
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    # Only the settings Postgres reads, from the same .env the api uses. With
+    # env_file it was handed all of .env: the JWT secret, the Sentinel keys and
+    # every dashboard password. The password has no fallback, so a stack that
+    # cannot find it refuses to start rather than run on "grit".
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-grit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-saas}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-grit} -d ${POSTGRES_DB:-saas}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Connection pooler. Postgres forks a backend process per connection, so
+  # connection count — not query load — is usually what falls over first. The
+  # API and the asynq workers are separate processes against the same database,
+  # which is exactly that setup, and the failure ("too many clients already")
+  # arrives long before any traffic that would justify it.
+  #
+  # transaction pooling multiplexes many client connections onto few server
+  # ones. The tradeoff: session-scoped state (LISTEN/NOTIFY, session advisory
+  # locks, prepared statements outside a transaction) does not survive it. Grit
+  # uses none of those, but if you add them, point that code at postgres:5432
+  # directly and leave everything else on the pooler.
+  #
+  # The api service connects through it. Grit's queries use the simple
+  # protocol, and pgbouncer 1.21 and later carries the prepared statements
+  # Sentinel's driver sends (max_prepared_statements, 200 by default).
+  # MAX_CLIENT_CONN covers DB_MAX_OPEN_CONNS + SENTINEL_DB_MAX_OPEN_CONNS
+  # (30 by default) per replica.
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.25.2-p0
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-grit}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      DB_NAME: ${POSTGRES_DB:-saas}
+      # The image listens on 5432 unless told otherwise, and the health check
+      # and the api use 6432.
+      LISTEN_PORT: 6432
+      POOL_MODE: transaction
+      # Client slots the app may open, against server connections actually held
+      # open to Postgres. The whole point is that the first number can be much
+      # larger than the second.
+      MAX_CLIENT_CONN: 500
+      DEFAULT_POOL_SIZE: 20
+      AUTH_TYPE: scram-sha-256
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 6432 -U ${POSTGRES_USER:-grit}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # A password, with no default. Anything on the Docker network could otherwise
+    # read the cache and the job queue. REDISCLI_AUTH lets the health check in.
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}"]
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    restart: unless-stopped
+    # Only its root credentials, with no default. Presigned uploads put MinIO
+    # behind the public proxy, where minioadmin/minioadmin is the whole bucket.
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?set MINIO_ACCESS_KEY in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?set MINIO_SECRET_KEY in .env}
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:

@@ -308,6 +308,16 @@ type %sLinks struct {
 
 	// Sortable: never a relation, and a money field sorts by its amount
 	// column, the one that exists.
+	//
+	// Dates are in this list, and used not to be. The test was on GoType, which
+	// is *jsontime.Date for a date and *jsontime.DateTime for a timestamp, so
+	// neither matched "string", "int" or "uint" and neither was sortable. An
+	// invoices table that cannot be sorted by the date it was issued is the
+	// obvious case, and it failed quietly: paginate drops a sort it does not
+	// recognise rather than refusing it, so the request succeeded and the rows
+	// came back in whatever order the database felt like.
+	//
+	// Floats too, which covers float, percent and rating.
 	p.sortCols = `"id": true, "created_at": true`
 	for _, f := range g.Definition.Fields {
 		if f.IsRelationship() {
@@ -317,7 +327,14 @@ type %sLinks struct {
 			p.sortCols += fmt.Sprintf(`, "%s_amount": true`, toSnakeCase(f.Name))
 			continue
 		}
-		if f.GoType() == "string" || f.GoType() == "int" || f.GoType() == "uint" {
+		switch FieldType(f.Type) {
+		case FieldDate, FieldDatetime:
+			p.sortCols += fmt.Sprintf(`, "%s": true`, toSnakeCase(f.Name))
+			continue
+		}
+		// Not bool: ordering by true before false is a sort nobody asks for,
+		// and it widens the SQL surface for nothing.
+		if f.GoType() == "string" || f.GoType() == "int" || f.GoType() == "uint" || f.GoType() == "float64" {
 			p.sortCols += fmt.Sprintf(`, "%s": true`, toSnakeCase(f.Name))
 		}
 	}

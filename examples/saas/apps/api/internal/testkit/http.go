@@ -1,0 +1,357 @@
+package testkit
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
+	"strings"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+)
+
+// Client makes requests against an engine and returns something you can assert
+// on.
+//
+// The alternative, written out, is four lines of httptest per request and then
+// a json.Unmarshal into a map[string]any before you can look at anything. That
+// is the shape most likely to be copied badly when somebody adds the next test.
+type Client struct {
+	tb     testing.TB
+	engine *gin.Engine
+	header http.Header
+}
+
+// New returns a client for the engine. Puts gin in test mode, so a test does
+// not have to remember to.
+func New(tb testing.TB, engine *gin.Engine) *Client {
+	tb.Helper()
+	gin.SetMode(gin.TestMode)
+	return &Client{tb: tb, engine: engine, header: http.Header{}}
+}
+
+// As returns a client that sends a bearer token with every request.
+//
+// A copy rather than a mutation, so one test can hold a signed-in client and an
+// anonymous one at the same time, which is what a permission test needs.
+func (c *Client) As(token string) *Client {
+	out := &Client{tb: c.tb, engine: c.engine, header: c.header.Clone()}
+	out.header.Set("Authorization", "Bearer "+token)
+	return out
+}
+
+// With returns a client that sends an extra header, for an API key or a tenant.
+func (c *Client) With(key, value string) *Client {
+	out := &Client{tb: c.tb, engine: c.engine, header: c.header.Clone()}
+	out.header.Set(key, value)
+	return out
+}
+
+// Get performs a GET.
+func (c *Client) Get(path string) *Response { return c.Do(http.MethodGet, path, nil) }
+
+// Delete performs a DELETE.
+func (c *Client) Delete(path string) *Response { return c.Do(http.MethodDelete, path, nil) }
+
+// Post performs a POST with body encoded as JSON. A nil body sends no body at
+// all, which is different from sending "null" and is what an action endpoint
+// expects.
+func (c *Client) Post(path string, body any) *Response { return c.Do(http.MethodPost, path, body) }
+
+// Put performs a PUT with body encoded as JSON.
+func (c *Client) Put(path string, body any) *Response { return c.Do(http.MethodPut, path, body) }
+
+// Patch performs a PATCH with body encoded as JSON.
+func (c *Client) Patch(path string, body any) *Response { return c.Do(http.MethodPatch, path, body) }
+
+// Do performs any request. The other methods are this one with a verb filled
+// in; use it directly for HEAD, OPTIONS or a method the API adds later.
+func (c *Client) Do(method, path string, body any) *Response {
+	c.tb.Helper()
+
+	var reader io.Reader
+	if body != nil {
+		encoded, err := json.Marshal(body)
+		if err != nil {
+			c.tb.Fatalf("encoding the request body for %s %s: %v", method, path, err)
+		}
+		reader = bytes.NewReader(encoded)
+	}
+
+	req := httptest.NewRequest(method, path, reader)
+	for key, values := range c.header {
+		for _, value := range values {
+			req.Header.Add(key, value)
+		}
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	rec := httptest.NewRecorder()
+	c.engine.ServeHTTP(rec, req)
+
+	return &Response{tb: c.tb, rec: rec, method: method, path: path}
+}
+
+// Response is one answer, and everything you might want to say about it.
+type Response struct {
+	tb     testing.TB
+	rec    *httptest.ResponseRecorder
+	method string
+	path   string
+}
+
+// Code is the status, for the rare assertion these methods do not cover.
+func (r *Response) Code() int { return r.rec.Code }
+
+// Body is the raw response body.
+func (r *Response) Body() string { return r.rec.Body.String() }
+
+// Recorder is the underlying recorder, for cookies, streaming, or anything
+// else this type does not wrap.
+func (r *Response) Recorder() *httptest.ResponseRecorder { return r.rec }
+
+// AssertStatus fails unless the status matches, and prints the body when it
+// does not.
+//
+// Printing the body is the whole point. "expected 200, got 422" sends you to
+// add a print statement and run it again; "expected 200, got 422" followed by
+// {"error":{"code":"VALIDATION_ERROR","details":{"email":"..."}}} is the
+// answer.
+func (r *Response) AssertStatus(want int) *Response {
+	r.tb.Helper()
+	if r.rec.Code != want {
+		r.tb.Errorf("%s %s: status %d, want %d\n%s", r.method, r.path, r.rec.Code, want, r.trimmedBody())
+	}
+	return r
+}
+
+// The statuses this API actually returns, named. Anything else goes through
+// AssertStatus.
+func (r *Response) AssertOK() *Response           { return r.AssertStatus(http.StatusOK) }
+func (r *Response) AssertCreated() *Response      { return r.AssertStatus(http.StatusCreated) }
+func (r *Response) AssertNoContent() *Response    { return r.AssertStatus(http.StatusNoContent) }
+func (r *Response) AssertBadRequest() *Response   { return r.AssertStatus(http.StatusBadRequest) }
+func (r *Response) AssertUnauthorized() *Response { return r.AssertStatus(http.StatusUnauthorized) }
+func (r *Response) AssertForbidden() *Response    { return r.AssertStatus(http.StatusForbidden) }
+func (r *Response) AssertNotFound() *Response     { return r.AssertStatus(http.StatusNotFound) }
+func (r *Response) AssertConflict() *Response     { return r.AssertStatus(http.StatusConflict) }
+func (r *Response) AssertUnprocessable() *Response {
+	return r.AssertStatus(http.StatusUnprocessableEntity)
+}
+func (r *Response) AssertTooManyRequests() *Response {
+	return r.AssertStatus(http.StatusTooManyRequests)
+}
+
+// AssertHeader fails unless the response carries the header with that value.
+func (r *Response) AssertHeader(name, want string) *Response {
+	r.tb.Helper()
+	if got := r.rec.Header().Get(name); got != want {
+		r.tb.Errorf("%s %s: header %s = %q, want %q", r.method, r.path, name, got, want)
+	}
+	return r
+}
+
+// AssertCode fails unless the response is an error carrying this code from the
+// project's error catalogue, such as VALIDATION_ERROR or FORBIDDEN.
+//
+// The code is the part a client branches on, and it is the part a refactor
+// silently changes. Asserting the status alone lets 403 FORBIDDEN become 403
+// TENANT_MISMATCH without a single test noticing.
+func (r *Response) AssertCode(want string) *Response {
+	r.tb.Helper()
+	got := r.JSON().String("error.code")
+	if got != want {
+		r.tb.Errorf("%s %s: error code %q, want %q\n%s", r.method, r.path, got, want, r.trimmedBody())
+	}
+	return r
+}
+
+// Bind decodes the whole body into dest, for a test that wants the typed value.
+func (r *Response) Bind(dest any) *Response {
+	r.tb.Helper()
+	if err := json.Unmarshal(r.rec.Body.Bytes(), dest); err != nil {
+		r.tb.Fatalf("%s %s: decoding the response: %v\n%s", r.method, r.path, err, r.trimmedBody())
+	}
+	return r
+}
+
+// BindData decodes the "data" envelope into dest, which is where this API puts
+// every successful payload.
+func (r *Response) BindData(dest any) *Response {
+	r.tb.Helper()
+	var envelope struct {
+		Data json.RawMessage `json:"data"`
+	}
+	r.Bind(&envelope)
+	if len(envelope.Data) == 0 {
+		r.tb.Fatalf("%s %s: no data in the response\n%s", r.method, r.path, r.trimmedBody())
+	}
+	if err := json.Unmarshal(envelope.Data, dest); err != nil {
+		r.tb.Fatalf("%s %s: decoding data: %v\n%s", r.method, r.path, err, r.trimmedBody())
+	}
+	return r
+}
+
+// JSON returns the body for path-based assertions.
+func (r *Response) JSON() *JSON {
+	r.tb.Helper()
+	var value any
+	if err := json.Unmarshal(r.rec.Body.Bytes(), &value); err != nil {
+		r.tb.Fatalf("%s %s: the response is not JSON: %v\n%s", r.method, r.path, err, r.trimmedBody())
+	}
+	return &JSON{tb: r.tb, root: value, where: r.method + " " + r.path}
+}
+
+// trimmedBody keeps a failure message readable when the body is a page of rows.
+func (r *Response) trimmedBody() string {
+	body := strings.TrimSpace(r.rec.Body.String())
+	if len(body) > 2000 {
+		return body[:2000] + "\n  ... (truncated)"
+	}
+	return body
+}
+
+// JSON asserts about a decoded body by path.
+//
+// Paths are dotted, and a numeric segment indexes an array:
+// "data.0.name", "meta.total", "error.details.email".
+type JSON struct {
+	tb    testing.TB
+	root  any
+	where string
+}
+
+// Has fails unless something is at path. A null counts as present, because the
+// API returning null for a field is different from omitting it.
+func (j *JSON) Has(path string) *JSON {
+	j.tb.Helper()
+	if _, ok := j.lookup(path); !ok {
+		j.tb.Errorf("%s: nothing at %q\n%s", j.where, path, j.dump())
+	}
+	return j
+}
+
+// Missing fails unless nothing is at path. This is the assertion that catches a
+// password hash or an internal column leaking into a response, which is the
+// thing worth a test.
+func (j *JSON) Missing(path string) *JSON {
+	j.tb.Helper()
+	if _, ok := j.lookup(path); ok {
+		j.tb.Errorf("%s: %q is in the response and should not be\n%s", j.where, path, j.dump())
+	}
+	return j
+}
+
+// Where fails unless the value at path equals want.
+//
+// Compared after a round trip through JSON, so an int and a float64 of the same
+// value match. Without that every numeric assertion would have to be written as
+// float64(3), which nobody remembers and everybody gets wrong once.
+func (j *JSON) Where(path string, want any) *JSON {
+	j.tb.Helper()
+	got, ok := j.lookup(path)
+	if !ok {
+		j.tb.Errorf("%s: nothing at %q\n%s", j.where, path, j.dump())
+		return j
+	}
+	if !equalJSON(got, want) {
+		j.tb.Errorf("%s: %s = %v, want %v", j.where, path, got, want)
+	}
+	return j
+}
+
+// Count fails unless the array at path has exactly n entries.
+func (j *JSON) Count(path string, n int) *JSON {
+	j.tb.Helper()
+	value, ok := j.lookup(path)
+	if !ok {
+		j.tb.Errorf("%s: nothing at %q\n%s", j.where, path, j.dump())
+		return j
+	}
+	list, ok := value.([]any)
+	if !ok {
+		j.tb.Errorf("%s: %s is %T, not a list", j.where, path, value)
+		return j
+	}
+	if len(list) != n {
+		j.tb.Errorf("%s: %s has %d entries, want %d", j.where, path, len(list), n)
+	}
+	return j
+}
+
+// String returns the value at path as a string, or "" when it is absent or is
+// not a string. Used by AssertCode, and useful for reading an id out of a
+// create response.
+func (j *JSON) String(path string) string {
+	value, ok := j.lookup(path)
+	if !ok {
+		return ""
+	}
+	if s, isString := value.(string); isString {
+		return s
+	}
+	return ""
+}
+
+// Value returns the raw decoded value at path and whether anything was there.
+func (j *JSON) Value(path string) (any, bool) { return j.lookup(path) }
+
+func (j *JSON) lookup(path string) (any, bool) {
+	current := j.root
+	for _, segment := range strings.Split(path, ".") {
+		switch node := current.(type) {
+		case map[string]any:
+			next, ok := node[segment]
+			if !ok {
+				return nil, false
+			}
+			current = next
+		case []any:
+			index, err := strconv.Atoi(segment)
+			if err != nil || index < 0 || index >= len(node) {
+				return nil, false
+			}
+			current = node[index]
+		default:
+			return nil, false
+		}
+	}
+	return current, true
+}
+
+// dump prints the body on a failure, so the message says what was there instead.
+func (j *JSON) dump() string {
+	pretty, err := json.MarshalIndent(j.root, "  ", "  ")
+	if err != nil {
+		return fmt.Sprintf("  %v", j.root)
+	}
+	if len(pretty) > 2000 {
+		return "  " + string(pretty[:2000]) + "\n  ... (truncated)"
+	}
+	return "  " + string(pretty)
+}
+
+// equalJSON compares a decoded value against an expectation written in Go,
+// after putting the expectation through the same decoding. An int written in a
+// test and a float64 decoded from the body are the same number.
+func equalJSON(got, want any) bool {
+	wantEncoded, err := json.Marshal(want)
+	if err != nil {
+		return false
+	}
+	var wantDecoded any
+	if err := json.Unmarshal(wantEncoded, &wantDecoded); err != nil {
+		return false
+	}
+	gotEncoded, err := json.Marshal(got)
+	if err != nil {
+		return false
+	}
+	return string(gotEncoded) == string(wantEncoded) || fmt.Sprint(got) == fmt.Sprint(wantDecoded)
+}

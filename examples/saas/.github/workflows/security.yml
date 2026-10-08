@@ -1,0 +1,107 @@
+name: security
+
+# Security scans on every pull request, and weekly for the advisories published
+# about code that has not changed (OWASP Top 10:2025 A03 and A02). Pair with
+# Dependabot.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  govulncheck:
+    name: Go vulnerability scan (govulncheck)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          # The Go the API builds with. Scanned on an older one, the report lists
+          # standard library issues the build does not have.
+          go-version-file: apps/api/go.mod
+          cache-dependency-path: apps/api/go.sum
+      # A called vulnerability fails the scan unless .github/govulncheck-allow.txt
+      # lists it with a reason and the issue tracking the real fix. Listed ones
+      # print as warnings on every run so they stay in view; anything new fails.
+      # Without the list, one advisory with no fixed release (excelize, reached
+      # through GORM Studio) turned every new project's first push red.
+      - name: Run govulncheck
+        run: |
+          allow="$GITHUB_WORKSPACE/.github/govulncheck-allow.txt"
+          go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 -format json ./... > /tmp/govulncheck.json
+          jq -r 'select(.finding != null and (.finding.trace[0].function // "") != "") | .finding.osv' /tmp/govulncheck.json | sort -u > /tmp/called.txt
+          { grep -oE '^GO-[0-9]+-[0-9]+' "$allow" 2>/dev/null || true; } | sort -u > /tmp/allowed.txt
+          for id in $(comm -12 /tmp/called.txt /tmp/allowed.txt); do
+            echo "::warning::$id is called but accepted in .github/govulncheck-allow.txt: $(grep "^$id" "$allow")"
+          done
+          comm -23 /tmp/called.txt /tmp/allowed.txt > /tmp/new.txt
+          if [ -s /tmp/new.txt ]; then
+            echo "::error::called vulnerabilities not in .github/govulncheck-allow.txt: $(tr '\n' ' ' < /tmp/new.txt)"
+            go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./... || true
+            exit 1
+          fi
+          echo "govulncheck: $(wc -l < /tmp/called.txt) called, all accepted in the allowlist"
+
+  pnpm-audit:
+    name: JavaScript dependency audit (pnpm audit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      # The committed lockfile is what gets installed and audited. Until one is
+      # committed, the install resolves one.
+      - name: Install
+        run: if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi
+      # High and critical, in production dependencies: a moderate issue in a
+      # dev tool should not block every pull request.
+      - name: Audit
+        run: pnpm audit --prod --audit-level=high
+
+  codeql:
+    name: CodeQL static analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Go is built by hand: its module is in apps/api.
+          - language: go
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - if: matrix.language == 'go'
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: apps/api/go.mod
+      - uses: github/codeql-action/init@faaca9a8f6edddba5725ffe5adefdab6669a2eca # v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+      - if: matrix.build-mode == 'manual'
+        working-directory: apps/api
+        run: go build ./...
+      - uses: github/codeql-action/analyze@faaca9a8f6edddba5725ffe5adefdab6669a2eca # v3
+        with:
+          category: "/language:${{ matrix.language }}"

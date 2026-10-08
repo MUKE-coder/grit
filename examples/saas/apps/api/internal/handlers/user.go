@@ -1,0 +1,605 @@
+package handlers
+
+import (
+	"errors"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
+
+	"saas/apps/api/internal/authz"
+	"saas/apps/api/internal/crypto"
+	"saas/apps/api/internal/events"
+	"saas/apps/api/internal/models"
+	"saas/apps/api/internal/paginate"
+	"saas/apps/api/internal/password"
+	"saas/apps/api/internal/respond"
+	"saas/apps/api/internal/services"
+)
+
+// UserHandler handles user management endpoints.
+type UserHandler struct {
+	DB *gorm.DB
+	// AuthService is used by DeleteProfile to clear the HttpOnly auth
+	// cookies as part of the soft-delete response. Optional — if nil,
+	// the cookies just won't be cleared and the client's next request
+	// will 401 normally.
+	AuthService *services.AuthService
+}
+
+// A new user.
+type CreateUserRequest struct {
+	FirstName string `json:"first_name" binding:"required"`
+	LastName  string `json:"last_name" binding:"required"`
+	Email     string `json:"email" binding:"required,email"`
+	Password  string `json:"password" binding:"required,min=6"`
+	Role      string `json:"role"`
+	Avatar    string `json:"avatar"`
+	JobTitle  string `json:"job_title"`
+	Active    *bool  `json:"active"`
+}
+
+// Create creates a new user (admin only).
+
+func (h *UserHandler) Create(c *gin.Context) {
+	var req CreateUserRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+
+	// Only an ADMIN makes an ADMIN, and nobody hands out a role that grants more
+	// than they hold.
+	if reason := authz.RoleBeyondCaller(c, h.DB, req.Role); reason != "" {
+		respond.Fail(c, respond.CodeForbidden, "You cannot give that role: "+reason)
+		return
+	}
+
+	user := models.User{
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Email:     req.Email,
+		Password:  req.Password,
+		Role:      req.Role,
+		Avatar:    req.Avatar,
+		JobTitle:  req.JobTitle,
+		Active:    true,
+	}
+
+	if req.Active != nil {
+		user.Active = *req.Active
+	}
+	if user.Role == "" {
+		user.Role = models.RoleUser
+	}
+
+	// The unique index on users.email decides, not a SELECT before the INSERT.
+	// Two requests for the same address arriving together both found nothing
+	// and both inserted; one then failed on the constraint and was answered
+	// with a 500 that said "Failed to create user".
+	if err := services.CreateUser(c.Request.Context(), h.DB, &user); err != nil {
+		if errors.Is(err, services.ErrEmailExists) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": gin.H{
+					"code":    "EMAIL_EXISTS",
+					"message": "A user with this email already exists",
+				},
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to create user",
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"data":    user,
+		"message": "User created successfully",
+	})
+}
+
+// users is the service every method below calls, and the only thing here that
+// touches the database. Built per request because it is one field and a struct
+// literal, and because building it here means the wiring in routes.go did not
+// have to change.
+//
+// What a user endpoint may search, sort and filter by, how a role assignment is
+// kept in step with users.role, and which of those writes share a transaction
+// are all decisions about data, so they are the service's: see
+// internal/services/user.go. The same methods are what a job or a console
+// command calls, which is the point of moving them.
+func (h *UserHandler) users() *services.UserService {
+	return &services.UserService{DB: h.DB}
+}
+
+// List returns a paginated list of users.
+//
+// Sixty-five lines of page clamping, sort whitelisting, search building and
+// page arithmetic used to live here, with the Count error dropped on the
+// floor: a count that failed left total at 0 and the table reported "0 of 0"
+// over a full page of rows. paginate.List is the same logic every generated
+// resource already uses, so a fix to it now reaches this endpoint too.
+func (h *UserHandler) List(c *gin.Context) {
+	res, err := h.users().List(c.Request.Context(), paginate.Bind(c))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to fetch users",
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
+// GetByID returns a single user by ID.
+func (h *UserHandler) GetByID(c *gin.Context) {
+	id := c.Param("id")
+
+	user, err := h.users().GetByID(c.Request.Context(), id)
+	if err != nil {
+		respond.Fail(c, respond.CodeNotFound, "User not found")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": user,
+	})
+}
+
+// Changes to a user.
+type UpdateUserRequest struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	Role      string `json:"role"`
+	Avatar    string `json:"avatar"`
+	JobTitle  string `json:"job_title"`
+	Bio       string `json:"bio"`
+	Active    *bool  `json:"active"`
+}
+
+// Update modifies an existing user.
+
+func (h *UserHandler) Update(c *gin.Context) {
+	id := c.Param("id")
+
+	user, err := h.users().GetByID(c.Request.Context(), id)
+	if err != nil {
+		respond.Fail(c, respond.CodeNotFound, "User not found")
+		return
+	}
+
+	var req UpdateUserRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+
+	// Only an ADMIN changes an ADMIN account or makes one. Before, a users.edit
+	// holder could PUT {"role":"ADMIN"} on themselves, or reset an
+	// administrator's password or email and sign in as them.
+	if !authz.IsAdmin(c) && authz.IsAdminAccount(h.DB, user) {
+		respond.Fail(c, respond.CodeForbidden, "Only an ADMIN can change an ADMIN account")
+		return
+	}
+	if reason := authz.RoleBeyondCaller(c, h.DB, req.Role); reason != "" {
+		respond.Fail(c, respond.CodeForbidden, "You cannot give that role: "+reason)
+		return
+	}
+
+	updates := map[string]interface{}{}
+	if req.FirstName != "" {
+		updates["first_name"] = req.FirstName
+	}
+	if req.LastName != "" {
+		updates["last_name"] = req.LastName
+	}
+	if req.Email != "" {
+		updates["email"] = req.Email
+	}
+	if req.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			respond.Fail(c, respond.CodeInternalError, "Failed to hash password")
+			return
+		}
+		updates["password"] = string(hashedPassword)
+	}
+	if req.Role != "" {
+		updates["role"] = req.Role
+	}
+	if req.Avatar != "" {
+		updates["avatar"] = req.Avatar
+	}
+	if req.JobTitle != "" {
+		updates["job_title"] = req.JobTitle
+	}
+	if req.Bio != "" {
+		updates["bio"] = crypto.EncryptedString(req.Bio)
+	}
+	if req.Active != nil {
+		updates["active"] = *req.Active
+	}
+
+	// The role assignment and the row are one change, and the service is where
+	// that is decided: see UserService.Update.
+	if err := h.users().Update(c.Request.Context(), user, updates, req.Role); err != nil {
+		if errors.Is(err, services.ErrEmailExists) || services.IsDuplicateKey(err) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": gin.H{
+					"code":    "EMAIL_EXISTS",
+					"message": "A user with this email already exists",
+				},
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to update user",
+			},
+		})
+		return
+	}
+	// Reload to get updated values. A failure here is reported rather than
+	// ignored: the response used to carry whatever the struct happened to hold
+	// when the read failed, which is the row as it was before the update.
+	user, err = h.users().GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to reload the updated user",
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":    user,
+		"message": "User updated successfully",
+	})
+}
+
+// Delete soft-deletes a user.
+func (h *UserHandler) Delete(c *gin.Context) {
+	id := c.Param("id")
+
+	user, err := h.users().GetByID(c.Request.Context(), id)
+	if err != nil {
+		respond.Fail(c, respond.CodeNotFound, "User not found")
+		return
+	}
+
+	// Deleting an administrator is an ADMIN's call too.
+	if !authz.IsAdmin(c) && authz.IsAdminAccount(h.DB, user) {
+		respond.Fail(c, respond.CodeForbidden, "Only an ADMIN can change an ADMIN account")
+		return
+	}
+
+	if err := h.users().Delete(c.Request.Context(), user); err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to delete user")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "User deleted successfully",
+	})
+}
+
+// GetProfile returns the currently authenticated user's profile.
+func (h *UserHandler) GetProfile(c *gin.Context) {
+	userID := c.GetString("user_id")
+
+	user, err := h.users().GetByID(c.Request.Context(), userID)
+	if err != nil {
+		respond.Fail(c, respond.CodeNotFound, "User not found")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": user,
+	})
+}
+
+// Changes to your own profile.
+type UpdateProfileRequest struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	Avatar    string `json:"avatar"`
+	JobTitle  string `json:"job_title"`
+	Bio       string `json:"bio"`
+
+	// Required to change the email or the password.
+	CurrentPassword string `json:"current_password"`
+}
+
+// UpdateProfile updates the currently authenticated user's profile.
+
+func (h *UserHandler) UpdateProfile(c *gin.Context) {
+	userID := c.GetString("user_id")
+
+	user, err := h.users().GetByID(c.Request.Context(), userID)
+	if err != nil {
+		respond.Fail(c, respond.CodeNotFound, "User not found")
+		return
+	}
+
+	var req UpdateProfileRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond.Fail(c, respond.CodeValidationError, err.Error())
+		return
+	}
+
+	// Changing the address or the password takes the current password. Without
+	// it a stolen session was enough to take the account for good. An account
+	// with no password, one made through a provider, proves the address with a
+	// password reset instead.
+	emailChanged := req.Email != "" && !strings.EqualFold(req.Email, user.Email)
+	if emailChanged || req.Password != "" {
+		if user.Password == "" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": gin.H{"code": "NO_PASSWORD", "message": "Set a password with a password reset before changing your email or password"},
+			})
+			return
+		}
+		if req.CurrentPassword == "" {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{
+				"error": gin.H{
+					"code":    "VALIDATION_ERROR",
+					"message": "Enter your current password to change your email or password",
+					"details": gin.H{"current_password": "Required"},
+				},
+			})
+			return
+		}
+		if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.CurrentPassword)) != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": gin.H{"code": "INVALID_PASSWORD", "message": "Your current password is not correct"},
+			})
+			return
+		}
+	}
+	if emailChanged {
+		taken, err := h.users().EmailTakenByAnother(c.Request.Context(), req.Email, user.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to check the email address"},
+			})
+			return
+		}
+		if taken {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": gin.H{"code": "EMAIL_EXISTS", "message": "Another account already uses that email address"},
+			})
+			return
+		}
+	}
+
+	updates := map[string]interface{}{}
+	passwordChanged := false
+	if req.FirstName != "" {
+		updates["first_name"] = req.FirstName
+	}
+	if req.LastName != "" {
+		updates["last_name"] = req.LastName
+	}
+	if emailChanged {
+		// A new address is unconfirmed until its owner confirms it.
+		updates["email"] = req.Email
+		updates["email_verified_at"] = nil
+	}
+	if req.Password != "" {
+		if failed := password.Check(req.Password, user.Email, user.FirstName, user.LastName); len(failed) > 0 {
+			respond.Fail(c, respond.CodeValidationError, password.Message(failed))
+			return
+		}
+	}
+	if req.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			respond.Fail(c, respond.CodeInternalError, "Failed to hash password")
+			return
+		}
+		updates["password"] = string(hashedPassword)
+		passwordChanged = true
+	}
+	if req.Avatar != "" {
+		updates["avatar"] = req.Avatar
+	}
+	if req.JobTitle != "" {
+		updates["job_title"] = req.JobTitle
+	}
+	if req.Bio != "" {
+		updates["bio"] = crypto.EncryptedString(req.Bio)
+	}
+
+	// No role here: changing your own role is not something this endpoint does.
+	if err := h.users().Update(c.Request.Context(), user, updates, ""); err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to update profile")
+		return
+	}
+
+	user, err = h.users().GetByID(c.Request.Context(), user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to reload your profile",
+			},
+		})
+		return
+	}
+
+	// Changing a password must invalidate every logged-in device — that is the
+	// whole point of changing it after a suspected compromise.
+	//
+	// The caller is then re-issued a brand-new session rather than spared: the
+	// grit_refresh cookie is scoped to /api/auth, so a PUT /api/profile never
+	// carries it and there is no way to recognise "this device" here. Revoking
+	// everything and minting a fresh pair is both simpler and stricter — the old
+	// token is dead even for the caller, and they stay signed in.
+	// A new address ends every other session too: the same stolen-session
+	// takeover, by way of the password reset the new address would receive.
+	if passwordChanged || emailChanged {
+		if err := services.RevokeAllUserSessions(h.DB, user.ID, ""); err != nil {
+			// Log it; the password DID change, so failing the request now would be
+			// misleading. Sessions still die at their idle/absolute timeout.
+			log.Printf("failed to revoke sessions after password change for user %s: %v", user.ID, err)
+		} else if h.AuthService != nil {
+			pair, terr := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
+			if terr != nil {
+				log.Printf("failed to re-issue tokens after password change for user %s: %v", user.ID, terr)
+			} else if _, serr := services.CreateSession(h.DB, c, user.ID, pair.RefreshToken); serr != nil {
+				log.Printf("failed to open a session after password change for user %s: %v", user.ID, serr)
+			} else {
+				h.AuthService.SetAuthCookies(c, pair)
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":    user,
+		"message": "Profile updated successfully",
+	})
+}
+
+// DeleteProfile soft-deletes the currently authenticated user's account.
+// DeletedAccounts answers GET /admin/deleted-accounts.
+//
+// A closed account is a soft delete like any other row, and until this nothing
+// could see it: "I deleted my account by mistake" had no answer short of a SQL
+// console. Users are deliberately not in the sync registry the bin reads, so
+// they get their own three endpoints rather than a table name in that one.
+func (h *UserHandler) DeletedAccounts(c *gin.Context) {
+	// Selected into a shape of its own rather than returned as models.User.
+	// The model tags DeletedAt as json:"-", which is right everywhere else and
+	// wrong here: it is the one column this page is about, and without it the
+	// "Closed" column shows a dash for every row.
+	type deletedAccount struct {
+		ID        string     `json:"id"`
+		FirstName string     `json:"first_name"`
+		LastName  string     `json:"last_name"`
+		Email     string     `json:"email"`
+		Role      string     `json:"role"`
+		DeletedAt *time.Time `json:"deleted_at"`
+	}
+
+	var accounts []deletedAccount
+	if err := h.DB.WithContext(c.Request.Context()).
+		Model(&models.User{}).
+		Unscoped().
+		Select("id", "first_name", "last_name", "email", "role", "deleted_at").
+		Where("deleted_at IS NOT NULL").
+		Order("deleted_at DESC").
+		Limit(200).
+		Find(&accounts).Error; err != nil {
+		respond.WriteError(c, err, "Failed to list deleted accounts")
+		return
+	}
+	respond.OK(c, accounts)
+}
+
+// RestoreAccount answers POST /admin/deleted-accounts/:id/restore.
+func (h *UserHandler) RestoreAccount(c *gin.Context) {
+	id := c.Param("id")
+	res := h.DB.WithContext(c.Request.Context()).
+		Unscoped().
+		Model(&models.User{}).
+		Where("id = ? AND deleted_at IS NOT NULL", id).
+		Update("deleted_at", nil)
+	if res.Error != nil {
+		respond.WriteError(c, res.Error, "Failed to restore the account")
+		return
+	}
+	if res.RowsAffected == 0 {
+		respond.NotFound(c, "No deleted account with that id")
+		return
+	}
+	events.Emitted(c, "users", "User", "restore", id, "restored a deleted account", "the account can sign in again", nil, nil)
+	respond.OK(c, gin.H{"id": id}, "Account restored")
+}
+
+// PurgeAccount answers DELETE /admin/deleted-accounts/:id.
+//
+// The row and nothing else. Erasing what a person left behind across every
+// table is a different operation with different law attached to it, and it
+// already exists at /system/gdpr.
+func (h *UserHandler) PurgeAccount(c *gin.Context) {
+	id := c.Param("id")
+	if id == c.GetString("user_id") {
+		respond.Forbidden(c, "That is the account you are signed in with")
+		return
+	}
+	res := h.DB.WithContext(c.Request.Context()).
+		Unscoped().
+		Where("id = ? AND deleted_at IS NOT NULL", id).
+		Delete(&models.User{})
+	if res.Error != nil {
+		respond.WriteError(c, res.Error, "Failed to delete the account")
+		return
+	}
+	if res.RowsAffected == 0 {
+		respond.NotFound(c, "No deleted account with that id")
+		return
+	}
+	events.Emitted(c, "users", "User", "purge", id, "permanently deleted an account", "the row is gone; a GDPR erasure covers the rest", nil, nil)
+	respond.OK(c, gin.H{"id": id}, "Account deleted for good")
+}
+
+func (h *UserHandler) DeleteProfile(c *gin.Context) {
+	userID := c.GetString("user_id")
+
+	user, err := h.users().GetByID(c.Request.Context(), userID)
+	if err != nil {
+		respond.Fail(c, respond.CodeNotFound, "User not found")
+		return
+	}
+
+	// An administrator cannot close their own account.
+	//
+	// This is how an organisation locks itself out of its own admin panel, and
+	// the account that did it is the one that could have undone it. Another
+	// administrator can still remove this one from the Users screen, which
+	// reaches the same end with somebody left holding the keys.
+	if user.Role == "ADMIN" {
+		respond.Forbidden(c, "An administrator cannot close their own account. Ask another administrator to remove it, or change this account's role first.")
+		return
+	}
+
+	if err := h.users().Delete(c.Request.Context(), user); err != nil {
+		respond.Fail(c, respond.CodeInternalError, "Failed to delete account")
+		return
+	}
+
+	// Soft-delete leaves the JWT valid in theory; the auth middleware
+	// would still 401 on the next request because the user row is
+	// excluded by the default scope. We still expire the HttpOnly auth
+	// cookies on the way out so the next /api/* call from this browser
+	// doesn't even attempt — saves a round trip and a confusing 401 in
+	// the dev console.
+	if h.AuthService != nil {
+		h.AuthService.ClearAuthCookies(c)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Account deleted successfully",
+	})
+}

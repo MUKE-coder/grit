@@ -1,0 +1,86 @@
+"use client";
+
+import { useEffect } from "react";
+
+const MESSAGE = "You have unsaved changes. Leave this page and lose them?";
+
+/**
+ * Warns before unsaved edits are thrown away.
+ *
+ * Pass whether the form is dirty. While it is true the hook holds two
+ * listeners, and takes them off the moment it goes false, so a saved form
+ * stops asking.
+ *
+ * It deliberately does not try to block the browser's own back button on a
+ * client-side navigation. The History API gives no way to ask first without
+ * pushing a decoy entry onto the stack, and a back button that needs pressing
+ * twice is a worse bug than the one being fixed.
+ */
+export function useUnsavedGuard(dirty: boolean) {
+  useEffect(() => {
+    if (!dirty) return;
+
+    // Closing the tab, reloading, or leaving the site.
+    const onLeave = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      // Chrome still wants returnValue set. No browser has shown this string
+      // for years: they all display their own wording.
+      event.returnValue = "";
+    };
+
+    // A click on a link, which beforeunload never hears because Next handles
+    // it in the client. Capture phase, so this runs before the router does.
+    const onClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      // A modified click opens a new tab and leaves this one alone.
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      const link = (event.target as HTMLElement | null)?.closest("a");
+      if (!link) return;
+
+      const href = link.getAttribute("href");
+      if (!href || href.startsWith("#")) return;
+      if (link.target && link.target !== "_self") return;
+      if (link.hasAttribute("download")) return;
+
+      let destination: URL;
+      try {
+        destination = new URL(link.href, window.location.href);
+      } catch {
+        return;
+      }
+      // Another origin leaves the app, which beforeunload already covers.
+      if (destination.origin !== window.location.origin) return;
+      // Going where we already are is not leaving.
+      if (destination.pathname === window.location.pathname) return;
+
+      if (window.confirm(MESSAGE)) return;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
+    window.addEventListener("beforeunload", onLeave);
+    document.addEventListener("click", onClick, true);
+    return () => {
+      window.removeEventListener("beforeunload", onLeave);
+      document.removeEventListener("click", onClick, true);
+    };
+  }, [dirty]);
+}
+
+/**
+ * The line beside a save button that says whether there is anything to lose.
+ *
+ * Renders nothing when the form is untouched. A permanent "All changes saved"
+ * is noise on a form nobody has typed in yet, and it trains people to stop
+ * reading the place the warning will appear.
+ */
+export function UnsavedBadge({ dirty }: { dirty: boolean }) {
+  if (!dirty) return null;
+  return (
+    <span role="status" className="mr-auto flex items-center gap-2 text-xs text-warning">
+      <span className="h-1.5 w-1.5 rounded-full bg-warning" aria-hidden="true" />
+      Unsaved changes
+    </span>
+  );
+}

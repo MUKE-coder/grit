@@ -1,0 +1,342 @@
+// Package crypto provides transparent field-level encryption for model columns.
+package crypto
+
+import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"database/sql"
+	"database/sql/driver"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"reflect"
+	"strings"
+	"sync"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+// cipherPrefix tags an encrypted value and versions the scheme, so the algorithm
+// or key can change later without ambiguity about how an existing value was
+// written. v1 = AES-256-GCM with a random 12-byte nonce.
+const cipherPrefix = "enc:v1:"
+
+var (
+	keyMu    sync.RWMutex
+	fieldKey []byte // nil = encryption disabled; values pass through as plaintext
+)
+
+// InitFieldKey configures the process-wide field key from a base64 string that
+// decodes to 32 bytes (AES-256). An empty string disables encryption so a
+// project can adopt the feature later without migrating existing rows. A
+// non-empty key of the wrong length is a hard error: silently running without
+// the encryption you asked for is worse than refusing to start.
+func InitFieldKey(b64 string) error {
+	keyMu.Lock()
+	defer keyMu.Unlock()
+	if b64 == "" {
+		fieldKey = nil
+		return nil
+	}
+	// .env.example carries this placeholder. Copied unchanged, it would otherwise
+	// fail as "not base64", which does not say what to do.
+	if strings.EqualFold(b64, "CHANGE_ME") {
+		return errors.New("FIELD_ENCRYPTION_KEY is still the placeholder from .env.example: generate a key with openssl rand -base64 32, or use the one grit new wrote to .env")
+	}
+	raw, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		return fmt.Errorf("FIELD_ENCRYPTION_KEY must be base64: %w", err)
+	}
+	if len(raw) != 32 {
+		return fmt.Errorf("FIELD_ENCRYPTION_KEY must decode to 32 bytes for AES-256 (got %d)", len(raw))
+	}
+	fieldKey = raw
+	return nil
+}
+
+// EncryptionEnabled reports whether a key is configured.
+func EncryptionEnabled() bool {
+	keyMu.RLock()
+	defer keyMu.RUnlock()
+	return fieldKey != nil
+}
+
+func aead() (cipher.AEAD, bool, error) {
+	keyMu.RLock()
+	k := fieldKey
+	keyMu.RUnlock()
+	if k == nil {
+		return nil, false, nil
+	}
+	block, err := aes.NewCipher(k)
+	if err != nil {
+		return nil, false, err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, false, err
+	}
+	return gcm, true, nil
+}
+
+// Encrypt returns the ciphertext form of s. Empty or already-encrypted values,
+// and the disabled-key case, return s unchanged so the operation is idempotent
+// and safe to call unconditionally.
+func Encrypt(s string) (string, error) {
+	if s == "" || strings.HasPrefix(s, cipherPrefix) {
+		return s, nil
+	}
+	gcm, on, err := aead()
+	if err != nil {
+		return "", err
+	}
+	if !on {
+		return s, nil
+	}
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", err
+	}
+	sealed := gcm.Seal(nonce, nonce, []byte(s), nil)
+	return cipherPrefix + base64.StdEncoding.EncodeToString(sealed), nil
+}
+
+// Decrypt reverses Encrypt. A value without the prefix is returned unchanged —
+// that is plaintext written before a key was configured, which stays readable.
+// A prefixed value with no key configured is an error, not a silent leak.
+func Decrypt(s string) (string, error) {
+	if !strings.HasPrefix(s, cipherPrefix) {
+		return s, nil
+	}
+	gcm, on, err := aead()
+	if err != nil {
+		return "", err
+	}
+	if !on {
+		return "", errors.New("value is encrypted but FIELD_ENCRYPTION_KEY is not configured")
+	}
+	raw, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(s, cipherPrefix))
+	if err != nil {
+		return "", fmt.Errorf("decoding ciphertext: %w", err)
+	}
+	if len(raw) < gcm.NonceSize() {
+		return "", errors.New("ciphertext shorter than nonce")
+	}
+	nonce, sealed := raw[:gcm.NonceSize()], raw[gcm.NonceSize():]
+	plain, err := gcm.Open(nil, nonce, sealed, nil)
+	if err != nil {
+		return "", fmt.Errorf("decrypt failed (wrong key or tampered value): %w", err)
+	}
+	return string(plain), nil
+}
+
+// EncryptedString is a string that is transparently encrypted at rest. Declare a
+// model field as crypto.EncryptedString and GORM stores ciphertext while your
+// code sees plaintext. The scheme is non-deterministic, so encrypted columns
+// cannot be queried by equality — use it for data you store and display but never
+// filter on (notes, tokens, personal details), not for keys or lookup columns.
+type EncryptedString string
+
+// GormDataType stores the column as text: ciphertext is base64 and longer than
+// the plaintext, so a bounded varchar could truncate it.
+func (EncryptedString) GormDataType() string { return "text" }
+
+// Value implements driver.Valuer, so GORM writes ciphertext. This also runs for
+// map-based Updates — provided the map value is an EncryptedString and not a bare
+// string, since a bare string never reaches this method.
+func (e EncryptedString) Value() (driver.Value, error) {
+	return Encrypt(string(e))
+}
+
+// Scan implements sql.Scanner, decrypting the column on read.
+func (e *EncryptedString) Scan(src interface{}) error {
+	if src == nil {
+		*e = ""
+		return nil
+	}
+	var raw string
+	switch v := src.(type) {
+	case string:
+		raw = v
+	case []byte:
+		raw = string(v)
+	default:
+		return fmt.Errorf("EncryptedString: cannot scan %T", src)
+	}
+	dec, err := Decrypt(raw)
+	if err != nil {
+		return err
+	}
+	*e = EncryptedString(dec)
+	return nil
+}
+
+// MarshalJSON / UnmarshalJSON make the type behave as a plain string over the
+// wire, so API responses carry plaintext and request binding is unchanged.
+func (e EncryptedString) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(e))
+}
+
+func (e *EncryptedString) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	*e = EncryptedString(s)
+	return nil
+}
+
+// Install makes map-based updates encrypt EncryptedString columns. Call it once,
+// straight after connecting.
+//
+// Value() encrypts, but GORM only calls it when the value already has the
+// EncryptedString type. The generated update and PATCH handlers, bulk edit and
+// most hand-written code write updates as a map of plain strings, so the first
+// edit to an encrypted column stored plaintext. Nothing showed it: Scan passes
+// a value without the enc:v1: prefix straight through, so reads looked right.
+//
+// This wraps any string headed for an EncryptedString column before GORM builds
+// the statement. It needs the model to know the column: db.Model(&row).Updates
+// is covered, db.Table("x").Updates is not, and neither is raw SQL.
+func Install(db *gorm.DB) error {
+	return db.Callback().Update().Before("gorm:update").Register("crypto:encrypt_map_values", encryptMapValues)
+}
+
+var encryptedStringType = reflect.TypeOf(EncryptedString(""))
+
+// EncryptExisting encrypts the values of every EncryptedString column, in the
+// models given, that are still stored in the clear, and reports how many it
+// wrote. grit migrate calls it with models.Models().
+//
+// A column is readable either way: Scan hands back a value without the enc:v1:
+// prefix as it is. That is what lets a key be set on a project with data, and
+// it is also why setting one encrypted nothing that was already there. Rows
+// written before the key, two-factor secrets among them, stayed plaintext until
+// something happened to save them again. Without a key this does nothing.
+//
+// Each row is rewritten only while it still holds the value that was read, so a
+// row changed in the meantime is left to the write that changed it. Soft-deleted
+// rows are included: deleted is not the same as gone.
+func EncryptExisting(db *gorm.DB, models ...interface{}) (int64, error) {
+	if !EncryptionEnabled() {
+		return 0, nil
+	}
+	var total int64
+	for _, model := range models {
+		stmt := &gorm.Statement{DB: db}
+		if err := stmt.Parse(model); err != nil {
+			return total, fmt.Errorf("reading the schema of %T: %w", model, err)
+		}
+		pk := stmt.Schema.PrioritizedPrimaryField
+		if pk == nil || !db.Migrator().HasTable(model) {
+			continue
+		}
+		for _, field := range stmt.Schema.Fields {
+			if field.FieldType != encryptedStringType || field.DBName == "" {
+				continue
+			}
+			n, err := encryptColumn(db, model, pk.DBName, field.DBName)
+			total += n
+			if err != nil {
+				return total, fmt.Errorf("encrypting %s.%s: %w", stmt.Schema.Table, field.DBName, err)
+			}
+		}
+	}
+	return total, nil
+}
+
+// pendingValue is one plaintext value waiting to be encrypted.
+type pendingValue struct {
+	id    interface{}
+	value string
+}
+
+// plaintextBatch reads up to batch rows whose column is not encrypted yet.
+//
+// rows.Err is checked after the loop: a read that failed partway otherwise
+// looks like a short batch, which the caller takes for the last one, and the
+// backfill stopped with plaintext left behind and nothing said.
+func plaintextBatch(db *gorm.DB, model interface{}, pk string, col clause.Column, batch int) ([]pendingValue, error) {
+	rows, err := db.Unscoped().Model(model).
+		Select([]string{pk, col.Name}).
+		Where("? <> '' AND ? NOT LIKE ?", col, col, cipherPrefix+"%").
+		Order(clause.OrderByColumn{Column: clause.Column{Name: pk}}).
+		Limit(batch).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var found []pendingValue
+	for rows.Next() {
+		var id interface{}
+		var value sql.NullString
+		if err := rows.Scan(&id, &value); err != nil {
+			return nil, err
+		}
+		if b, ok := id.([]byte); ok {
+			id = string(b)
+		}
+		found = append(found, pendingValue{id: id, value: value.String})
+	}
+	return found, rows.Err()
+}
+
+// encryptColumn encrypts one column's plaintext values, a batch at a time.
+func encryptColumn(db *gorm.DB, model interface{}, pk, column string) (int64, error) {
+	const batch = 500
+	col := clause.Column{Name: column}
+	var written int64
+	for {
+		found, err := plaintextBatch(db, model, pk, col, batch)
+		if err != nil {
+			return written, err
+		}
+
+		var round int64
+		for _, row := range found {
+			res := db.Unscoped().Model(model).
+				Where(clause.Eq{Column: clause.Column{Name: pk}, Value: row.id}).
+				Where(clause.Eq{Column: col, Value: row.value}).
+				UpdateColumn(column, EncryptedString(row.value))
+			if res.Error != nil {
+				return written, res.Error
+			}
+			round += res.RowsAffected
+		}
+		written += round
+		// A short batch was the last one. A batch that wrote nothing was
+		// changed under us, and reading it again would find the same rows.
+		if len(found) < batch || round == 0 {
+			return written, nil
+		}
+	}
+}
+
+func encryptMapValues(tx *gorm.DB) {
+	stmt := tx.Statement
+	if stmt == nil || stmt.Schema == nil {
+		return
+	}
+	values, ok := stmt.Dest.(map[string]interface{})
+	if !ok {
+		return
+	}
+	for key, value := range values {
+		field := stmt.Schema.LookUpField(key)
+		if field == nil || field.FieldType != encryptedStringType {
+			continue
+		}
+		switch v := value.(type) {
+		case string:
+			values[key] = EncryptedString(v)
+		case *string:
+			if v != nil {
+				values[key] = EncryptedString(*v)
+			}
+		}
+	}
+}

@@ -1,0 +1,26 @@
+{
+  "name": "saas",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" --if-present run dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "format": "biome format --write .",
+    "type-check": "turbo type-check",
+    "dev:api": "cd apps/api && air",
+    "dev:web": "cd apps/web && pnpm dev",
+    "dev:admin": "cd apps/admin && pnpm dev",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "test": "turbo test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@playwright/test": "^1.48.0",
+    "turbo": "^2.0.0"
+  },
+  "packageManager": "pnpm@10.33.4"
+}

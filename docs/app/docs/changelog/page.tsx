@@ -66,6 +66,99 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.393.0 */}
+            <div className="mb-12" id="v3.393.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.393.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A customer portal, checked in and tested</h3>
+                <p>
+                  The question people ask before starting a SaaS with Grit is whether their
+                  customers have to log into the admin panel. They do not, and{' '}
+                  <code>examples/saas</code> is the answer with the code attached: a subscription
+                  product whose customer portal lives in <code>apps/web</code> beside the operator
+                  console in <code>apps/admin</code>.
+                </p>
+                <p>
+                  One users table, one login, one API, two front doors. The portal is not a second
+                  API: <code>/account/billing</code> reads <code>GET /api/subscriptions</code> and{' '}
+                  <code>GET /api/invoices</code>, the same endpoints the admin reads, with the same
+                  JWT. What makes it the customer&apos;s data is one flag on three resources,{' '}
+                  <code>--owned-by user</code>, which puts{' '}
+                  <code>authz.ScopeOwned(ctx, query, &quot;user_id&quot;)</code> on every list and{' '}
+                  <code>authz.Owns(ctx, &amp;item)</code> on every read, inside the service where a
+                  job and a command get it too.
+                </p>
+                <p>
+                  Two mechanisms, not one, and the example needs both. A permission gets a customer
+                  through the door: they are a plain <code>USER</code> holding{' '}
+                  <code>subscriptions.view</code>, <code>invoices.view</code> and{' '}
+                  <code>usage_records.view</code>. The owner scope decides which rows are behind it.
+                </p>
+                <p>
+                  It is checked in rather than described because data isolation in a README is a
+                  claim. <code>portal_isolation_test.go</code> makes the requests: a customer sees
+                  their own subscriptions and invoices and not the other customer&apos;s; a guessed
+                  id answers 404 rather than 403, because 403 confirms the row exists; the operator
+                  sees both, so the test cannot pass on an API returning nothing to anybody; and a
+                  signed-in stranger without the grants gets 403. They are verified to fail when the
+                  protection is removed. Deleting the <code>ScopeOwned</code> line turns the first
+                  one red with <em>Ada can see Basil&apos;s subscription</em>.
+                </p>
+                <p>
+                  CI builds it, vets it, runs its tests, runs the isolation tests again on their own
+                  so a failure names the breach, and type-checks the portal. It is the third
+                  checked-in application and each earns its place differently:{' '}
+                  <code>library</code> proves an app generated at an earlier version still builds
+                  against today&apos;s libraries, <code>commerce</code> that hand-written code
+                  calling into generated code keeps compiling, and <code>saas</code> that the owner
+                  scope is still on the query. It is the only one of the three whose failure would
+                  be a breach rather than a build error.
+                </p>
+                <p>
+                  Seed it and you get two customers, <code>ada@example.com</code> and{' '}
+                  <code>basil@example.com</code>, both with the password{' '}
+                  <code>customer123</code>, on different plans with different invoices. Sign in as
+                  each and compare, then sign in to the admin and see both.
+                </p>
+
+                <h3>A date column could be filtered but not sorted</h3>
+                <p>
+                  Found while building the example, which is what examples are for.
+                </p>
+                <p>
+                  A generated resource&apos;s <code>Sortable</code> whitelist was built by testing
+                  each field&apos;s Go type against <code>string</code>, <code>int</code> and{' '}
+                  <code>uint</code>. A date&apos;s Go type is <code>*jsontime.Date</code> and a
+                  timestamp&apos;s is <code>*jsontime.DateTime</code>, so neither matched. Every date
+                  column in every generated project was filterable and not sortable.
+                </p>
+                <p>
+                  It failed quietly, which is the part that made it worth a test.{' '}
+                  <code>paginate</code> drops a sort column that is not on the whitelist rather than
+                  refusing the request, so <code>?sort=issued_on</code> returned 200 with the rows in
+                  whatever order the database chose. The portal&apos;s invoice table showed October,
+                  August, September and looked like it had a sorting bug rather than a missing
+                  permission. An invoice list that cannot be ordered by its issue date is the obvious
+                  case of this, and bookings, events and anything else with a date on it had the same
+                  hole.
+                </p>
+                <p>
+                  Dates and timestamps are sortable now, and so are floats, which covers{' '}
+                  <code>float</code>, <code>percent</code> and <code>rating</code>. Booleans are
+                  deliberately still out: ordering by true before false is a sort nobody asks for,
+                  and every name on that list widens the surface that reaches SQL. Existing projects
+                  get it by regenerating the resource, or by adding the column to{' '}
+                  <code>Sortable</code> in its service by hand.
+                </p>
+              </div>
+            </div>
+
             {/* v3.392.0 */}
             <div className="mb-12" id="v3.392.0">
               <div className="flex items-center gap-3 mb-4">

@@ -1,0 +1,210 @@
+"use client";
+
+import dynamic from "next/dynamic";
+import { Suspense, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
+import { ChevronDown, ChevronRight, BarChart3 } from "@/lib/icons";
+import type { InsightsConfig, ResourceDefinition } from "@/lib/resource";
+
+/*
+ * The charts above a list, collapsed until somebody wants them.
+ *
+ * Collapsed is the default on purpose, and not only to save space. The panel's
+ * two queries are a GROUP BY each over the whole filtered set, which is work
+ * the list page does not otherwise do; leaving it closed means an ordinary
+ * visit to a list costs exactly what it did before, and the expensive answer is
+ * computed when somebody asks the question.
+ *
+ * What it charts is the rows the table is showing. The same filters, search and
+ * date window go on the request, so narrowing to one category redraws the chart
+ * for that category. A whole-table chart sitting above a filtered table would
+ * be a lie told in a prominent place, and the dashboard's per-resource card is
+ * where an unfiltered view already lives.
+ */
+
+// recharts is about 400 KB. It loads when the panel opens, which is the one
+// moment it is certain to be wanted.
+const InsightsCharts = dynamic(
+  () => import("@/components/insights/insights-charts").then((m) => m.InsightsCharts),
+  { ssr: false },
+);
+
+export interface Bucket {
+  bucket: string;
+  count: number;
+}
+
+export interface Slice {
+  value: string;
+  count: number;
+}
+
+interface InsightsResponse {
+  meta: {
+    total: number;
+    series?: Bucket[] | null;
+    breakdown?: Record<string, Slice[]> | null;
+  };
+}
+
+type Unit = "day" | "week" | "month";
+
+const UNITS: { key: Unit; label: string; buckets: number }[] = [
+  { key: "day", label: "Daily", buckets: 30 },
+  { key: "week", label: "Weekly", buckets: 26 },
+  { key: "month", label: "Monthly", buckets: 12 },
+];
+
+export interface InsightsPanelProps {
+  resource: ResourceDefinition;
+  /** The filters the table is showing, so the charts describe the same rows. */
+  filters?: Record<string, string>;
+  search?: string;
+  dateParams?: Record<string, string>;
+}
+
+export function InsightsPanel({ resource, filters, search, dateParams }: InsightsPanelProps) {
+  const config = normalise(resource.insights);
+  const storageKey = "grit.insights." + resource.slug;
+
+  // Closed on the first visit, and then however this viewer last left it.
+  //
+  // Read in an effect rather than in the initial state, because the server
+  // renders this and localStorage does not exist there: a panel open on the
+  // client and closed in the server's HTML is a hydration mismatch.
+  const [open, setOpen] = useState(false);
+  const [unit, setUnit] = useState<Unit>(config.unit ?? "month");
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(storageKey);
+      if (saved === "open") setOpen(true);
+    } catch {
+      // Private browsing, blocked site data, a thumbnail capture: the panel
+      // just starts closed.
+    }
+  }, [storageKey]);
+
+  function toggle() {
+    setOpen((was) => {
+      const next = !was;
+      try {
+        window.localStorage.setItem(storageKey, next ? "open" : "closed");
+      } catch {
+        // See above. Remembering is a convenience, not a requirement.
+      }
+      return next;
+    });
+  }
+
+  const bucketCount = config.buckets ?? UNITS.find((u) => u.key === unit)?.buckets ?? 12;
+  const query = useQuery<InsightsResponse>({
+    queryKey: ["insights", resource.endpoint, unit, bucketCount, filters, search, dateParams, config.breakdown],
+    queryFn: async ({ signal }) => {
+      const params = new URLSearchParams({
+        // One row, because the panel wants the meta and the table already has
+        // the rows. Zero is not allowed: the API would read it as unset and
+        // send a full page back.
+        page: "1",
+        page_size: "1",
+        series: (config.field ?? "created_at") + ":" + unit + ":" + String(bucketCount),
+      });
+      if (config.breakdown && config.breakdown.length > 0) {
+        params.set("breakdown", config.breakdown.join(","));
+      }
+      if (search) params.set("search", search);
+      for (const [key, value] of Object.entries(filters ?? {})) {
+        if (value) params.set(key, value);
+      }
+      for (const [key, value] of Object.entries(dateParams ?? {})) {
+        if (value) params.set(key, value);
+      }
+      const { data } = await apiClient.get<InsightsResponse>(resource.endpoint + "?" + params.toString(), { signal });
+      return data;
+    },
+    // The whole point of the panel being collapsed.
+    enabled: open,
+    staleTime: 30_000,
+  });
+
+  if (config.enabled === false) return null;
+
+  const series = query.data?.meta?.series ?? [];
+  const breakdown = query.data?.meta?.breakdown ?? {};
+  const filtered = Boolean(search) || Object.values(filters ?? {}).some(Boolean);
+
+  return (
+    <section className="mb-4 rounded-xl border border-border bg-bg-secondary">
+      <h2>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={open}
+          aria-controls={"insights-" + resource.slug}
+          className="flex w-full items-center gap-2 rounded-xl px-4 py-3 text-left text-sm font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-foreground"
+        >
+          {open ? (
+            <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" />
+          ) : (
+            <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+          )}
+          <BarChart3 className="h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+          <span>Insights</span>
+          <span className="text-xs font-normal text-text-muted">
+            {open
+              ? filtered
+                ? "for the rows matching your filters"
+                : "over every row"
+              : "charts for these " + (resource.label?.plural ?? resource.slug).toLowerCase()}
+          </span>
+        </button>
+      </h2>
+
+      {open && (
+        <div id={"insights-" + resource.slug} className="border-t border-border px-4 pb-4 pt-3">
+          <div className="mb-3 flex flex-wrap items-center gap-1">
+            {UNITS.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setUnit(option.key)}
+                aria-pressed={unit === option.key}
+                className={
+                  "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors " +
+                  (unit === option.key
+                    ? "bg-accent text-accent-fg"
+                    : "border border-border text-text-secondary hover:bg-bg-hover hover:text-foreground")
+                }
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {query.isError ? (
+            <p className="py-6 text-center text-sm text-text-muted">
+              The charts could not be loaded. The list above is unaffected.
+            </p>
+          ) : query.isLoading ? (
+            <div className="h-56 animate-pulse rounded-lg bg-bg-tertiary" />
+          ) : series.length === 0 && Object.keys(breakdown).length === 0 ? (
+            <p className="py-6 text-center text-sm text-text-muted">
+              Nothing to chart yet.
+            </p>
+          ) : (
+            <Suspense fallback={<div className="h-56 animate-pulse rounded-lg bg-bg-tertiary" />}>
+              <InsightsCharts series={series} breakdown={breakdown} unit={unit} labels={config.labels} />
+            </Suspense>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** insights: true, insights: false and no insights at all all mean something. */
+function normalise(config: ResourceDefinition["insights"]): InsightsConfig {
+  if (config === false) return { enabled: false };
+  if (config === true || config === undefined) return {};
+  return config;
+}

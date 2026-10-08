@@ -1,0 +1,424 @@
+package handlers
+
+import (
+	"fmt"
+	"net/http"
+	"os"
+	"runtime"
+	"strconv"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
+
+	"saas/apps/api/internal/cache"
+	"saas/apps/api/internal/database"
+	"saas/apps/api/internal/middleware"
+)
+
+// ScaleHandler answers "which scaling stage am I at, and what is the one thing
+// to do next".
+//
+// The rule the whole thing follows: never recommend the next box until the
+// current one is actually hurting, and never recommend two at once. Most
+// answers should be "nothing, you have headroom", and that answer is the
+// feature. An admin panel that nags you to add read replicas at forty requests
+// a minute has taught you to ignore it.
+type ScaleHandler struct {
+	DB    *gorm.DB
+	Cache *cache.Cache
+}
+
+// ScaleReport is the measurement plus the verdict.
+type ScaleReport struct {
+	Latency middleware.LatencySnapshot `json:"latency"`
+	DB      dbFacts                    `json:"database"`
+	Cache   cacheFacts                 `json:"cache"`
+	Stage   string                     `json:"stage"`
+	Next    string                     `json:"next"`
+	Why     string                     `json:"why"`
+	Notes   []string                   `json:"notes"`
+	Stages  []StageStatus              `json:"stages"`
+}
+
+// StageStatus is one of the ten scaling stages, as this deployment stands.
+//
+// The verdict above names the one thing to do next. This is the other half of
+// the question, and the one people actually ask first: what is already handled?
+// It is answered from measurements rather than from a list of features, so a
+// green tick here means this deployment was observed doing the thing, not that
+// the framework claims to.
+type StageStatus struct {
+	N    string `json:"n"`
+	Name string `json:"name"`
+	// State is one of:
+	//   on        in force here, and measured
+	//   ready     shipped and not switched on, because nothing yet needs it
+	//   attention this is the stage that is currently hurting
+	//   yours     Grit deliberately does nothing, and says so
+	State string `json:"state"`
+	What  string `json:"what"`
+	// Evidence is the measurement behind the state, or "" where the answer is
+	// structural rather than measured.
+	Evidence string `json:"evidence"`
+}
+
+// The thresholds the stage panel and the verdict share, so the panel cannot
+// show green for the stage the verdict is calling out.
+const (
+	connectionPressure = 0.8 // of max_connections in use
+	replicaLagSeconds  = 5.0 // the read-your-own-writes window
+	poorHitRate        = 0.5
+	hitRateSample      = 1000 // lookups before a hit rate means anything
+)
+
+type dbFacts struct {
+	Driver          string      `json:"driver"`
+	OpenConnections int         `json:"open_connections"`
+	MaxConnections  int         `json:"max_connections"`
+	PoolMax         int         `json:"pool_max_per_instance"`
+	Replicas        int         `json:"replicas"`
+	ReplicationLag  float64     `json:"replication_lag_seconds"`
+	SlowQueries     []slowQuery `json:"slowest_queries"`
+	SeqScanTables   []seqScan   `json:"tables_scanned_end_to_end"`
+	// QueryStats is false when pg_stat_statements is not installed, which is
+	// the default on self-hosted Postgres. Without it the slowest-query list is
+	// empty and this report is half blind.
+	QueryStats bool `json:"query_stats_available"`
+}
+
+type slowQuery struct {
+	Query   string  `json:"query"`
+	Calls   int64   `json:"calls"`
+	MeanMS  float64 `json:"mean_ms"`
+	TotalMS float64 `json:"total_ms"`
+}
+
+type seqScan struct {
+	Table    string `json:"table"`
+	SeqScans int64  `json:"seq_scans"`
+	LiveRows int64  `json:"live_rows"`
+}
+
+type cacheFacts struct {
+	Configured bool    `json:"configured"`
+	Hits       int64   `json:"hits"`
+	Misses     int64   `json:"misses"`
+	HitRate    float64 `json:"hit_rate"`
+}
+
+// Report is GET /api/v1/admin/scale.
+func (h *ScaleHandler) Report(c *gin.Context) {
+	r := ScaleReport{Latency: middleware.Latencies()}
+	r.DB = h.dbFacts()
+	r.Cache = h.cacheFacts()
+	r.Stage, r.Next, r.Why, r.Notes = verdict(r)
+	r.Stages = stages(r, h.largestTable())
+	c.JSON(http.StatusOK, gin.H{"data": r})
+}
+
+func (h *ScaleHandler) dbFacts() dbFacts {
+	f := dbFacts{Driver: h.DB.Dialector.Name()}
+	f.PoolMax = envInt("DB_MAX_OPEN_CONNS", 25)
+
+	if raw := strings.TrimSpace(os.Getenv("DATABASE_REPLICA_URLS")); raw != "" {
+		for _, u := range strings.Split(raw, ",") {
+			if strings.TrimSpace(u) != "" {
+				f.Replicas++
+			}
+		}
+		if lag, err := database.ReplicationLag(h.DB); err == nil {
+			f.ReplicationLag = lag.Seconds()
+		}
+	}
+
+	if f.Driver != "postgres" {
+		return f
+	}
+
+	// Connections against the ceiling. This is the Stage 5 question and the
+	// only one whose answer is an error rather than slowness.
+	_ = h.DB.Raw("SELECT count(*) FROM pg_stat_activity").Scan(&f.OpenConnections).Error
+	var maxConn string
+	if err := h.DB.Raw("SELECT current_setting('max_connections')").Scan(&maxConn).Error; err == nil {
+		f.MaxConnections, _ = strconv.Atoi(maxConn)
+	}
+
+	// Slowest by total time spent, which is the ranking that matters: a query
+	// taking 4ms a million times costs more than one taking 2s once.
+	// pg_stat_statements is an extension and may not be installed; a missing
+	// one is not an error, it is a note.
+	// Silenced: the extension is off by default on self-hosted Postgres, and
+	// a red ERROR line on every poll for an ordinary condition is how people
+	// learn to stop reading their error log. The report says so instead.
+	quiet := h.DB.Session(&gorm.Session{Logger: h.DB.Logger.LogMode(gormlogger.Silent)})
+	f.QueryStats = quiet.Raw(`
+		SELECT query, calls, mean_exec_time AS mean_ms, total_exec_time AS total_ms
+		FROM pg_stat_statements
+		WHERE query NOT LIKE '%pg_stat_%'
+		ORDER BY total_exec_time DESC
+		LIMIT 5`).Scan(&f.SlowQueries).Error == nil
+
+	// Tables being read end to end. A sequential scan on a big table is the
+	// Stage 6 free fix: an index, not a replica.
+	_ = quiet.Raw(`
+		SELECT relname AS table, seq_scan AS seq_scans, n_live_tup AS live_rows
+		FROM pg_stat_user_tables
+		WHERE seq_scan > 0 AND n_live_tup > 10000
+		ORDER BY seq_scan * n_live_tup DESC
+		LIMIT 5`).Scan(&f.SeqScanTables).Error
+
+	return f
+}
+
+func (h *ScaleHandler) cacheFacts() cacheFacts {
+	f := cacheFacts{Configured: h.Cache != nil}
+	f.Hits, f.Misses, f.HitRate = cache.Stats()
+	return f
+}
+
+// verdict is the guide's decision tree, in order. The first thing that is
+// actually breaking wins, and nothing after it is mentioned as a "next step",
+// because two changes at once means not knowing which one helped.
+func verdict(r ScaleReport) (stage, next, why string, notes []string) {
+	db := r.DB
+
+	if db.Driver == "sqlite" {
+		return "Stage 1: one server, one database",
+			"Nothing. Move to Postgres before you think about scaling.",
+			"SQLite serialises writes, so every scaling question after this one has the same answer.",
+			notes
+	}
+
+	// Stage 5 first, because it is the only failure that is an error rather
+	// than slowness: the app returns 500s while every dashboard looks healthy.
+	if db.MaxConnections > 0 {
+		used := float64(db.OpenConnections) / float64(db.MaxConnections)
+		if used > connectionPressure {
+			return "Stage 5: connection exhaustion",
+				fmt.Sprintf("Put pgbouncer in front, or lower DB_MAX_OPEN_CONNS (currently %d per instance).", db.PoolMax),
+				fmt.Sprintf("%d of %d connections are in use. At 100%% the API returns errors while the database looks idle.",
+					db.OpenConnections, db.MaxConnections),
+				notes
+		}
+	}
+
+	// Stage 6 step 1: the free fix. An index before a machine, always.
+	if len(db.SeqScanTables) > 0 {
+		t := db.SeqScanTables[0]
+		return "Stage 6: missing indexes",
+			fmt.Sprintf("EXPLAIN ANALYZE the queries hitting %s, then add the index. Do this before any replica.", t.Table),
+			fmt.Sprintf("%s has %d rows and has been read end to end %d times. A missing index looks exactly like a capacity problem and costs nothing to fix.",
+				t.Table, t.LiveRows, t.SeqScans),
+			notes
+	}
+
+	if db.Replicas > 0 && db.ReplicationLag > replicaLagSeconds {
+		return "Stage 6: replicas are behind",
+			"Find what is loading the primary, or add replica capacity. Consider routing reads back to the primary until lag recovers.",
+			fmt.Sprintf("Replication lag is %.0fs. The read-your-writes window is 5s, so users are seeing stale data outside it.", db.ReplicationLag),
+			notes
+	}
+
+	// Stage 7: the same expensive answer computed over and over.
+	if r.Cache.Configured && r.Cache.Hits+r.Cache.Misses > hitRateSample && r.Cache.HitRate < poorHitRate {
+		return "Stage 7: the cache is not earning its keep",
+			"Check what you are caching and for how long. A hit rate under 50% usually means the TTL is shorter than the gap between reads.",
+			fmt.Sprintf("Hit rate is %.0f%% over %d lookups.", r.Cache.HitRate*100, r.Cache.Hits+r.Cache.Misses),
+			notes
+	}
+
+	if r.Latency.Samples > 100 && r.Latency.P99 > 1000 {
+		return "Stage 2 or 3: the app is the bottleneck",
+			"Check CPU on the API instances. Below 70% it is not capacity, it is a slow dependency: look at the slowest queries below.",
+			fmt.Sprintf("p99 is %.0fms over the last %d requests, while p50 is %.0fms. That gap is a tail, not a trend.",
+				r.Latency.P99, r.Latency.Samples, r.Latency.P50),
+			notes
+	}
+
+	// Nothing is breaking. Say so, plainly, and do not invent work.
+	if db.Replicas == 0 {
+		notes = append(notes, "No read replicas, and you should not add any until the database's CPU is pegged by reads with the indexes already right.")
+	}
+	if !r.Cache.Configured {
+		notes = append(notes, "No cache configured. Add one when the same expensive query shows up near the top of the slowest list.")
+	}
+	if db.Driver == "postgres" && !db.QueryStats {
+		notes = append(notes, "pg_stat_statements is not installed, so the slowest-query list is empty. CREATE EXTENSION pg_stat_statements; and add it to shared_preload_libraries.")
+	}
+	if r.Latency.Samples < 100 {
+		notes = append(notes, "Fewer than 100 requests measured, so the percentiles are not worth much yet. Run a load test against staging.")
+	}
+
+	return "Healthy",
+		"Nothing. Adding infrastructure now buys complexity and no speed.",
+		fmt.Sprintf("p99 %.0fms over %d requests, %d of %d database connections in use.",
+			r.Latency.P99, r.Latency.Samples, db.OpenConnections, db.MaxConnections),
+		notes
+}
+
+// stages answers "what is already handled here", stage by stage.
+//
+// Everything is read off this deployment. Stages 1 to 4 and 8 are structural
+// and true of any Grit app, but the evidence beside them is this one's: its
+// driver, its cores, its storage, its queue. Stages 5, 6 and 7 are measured,
+// and go amber on the same thresholds the verdict uses, so the panel cannot
+// show a green tick for the stage the verdict is calling out.
+func stages(r ScaleReport, biggest seqScan) []StageStatus {
+	db, ch := r.DB, r.Cache
+	out := make([]StageStatus, 0, 10)
+	add := func(n, name, state, what, evidence string) {
+		out = append(out, StageStatus{N: n, Name: name, State: state, What: what, Evidence: evidence})
+	}
+
+	measured := "not enough requests measured yet"
+	if r.Latency.Samples > 0 {
+		measured = fmt.Sprintf("p50 %.0fms, p95 %.0fms, p99 %.0fms over %d requests",
+			r.Latency.P50, r.Latency.P95, r.Latency.P99, r.Latency.Samples)
+	}
+	add("0", "Measure first", "on",
+		"Request percentiles, connection use, the slowest queries and the cache hit rate, with one verdict.",
+		measured)
+
+	// Stage 1. SQLite is the one arrangement that makes every later answer the
+	// same, so it is said here rather than left for the verdict alone.
+	stage1 := "on"
+	stage1why := fmt.Sprintf("config from the environment, one database module (%s), uploads in object storage, /health", db.Driver)
+	if db.Driver == "sqlite" {
+		stage1 = "attention"
+		stage1why = "SQLite serialises writes, so every scaling question after this one has the same answer. Move to Postgres."
+	}
+	add("1", "One server, one database", stage1,
+		"A Grit app is born past this stage: nothing to extract, nothing to move off the local disk.",
+		stage1why)
+
+	add("2", "Vertical scaling", "on",
+		"Go uses every core in one process. There is no cluster module to add and no worker count to tune.",
+		fmt.Sprintf("%d cores visible, GOMAXPROCS %d", runtime.NumCPU(), runtime.GOMAXPROCS(0)))
+
+	instances := "instance count not declared (set APP_INSTANCES so doctor can do the connection arithmetic)"
+	if n := envInt("APP_INSTANCES", 0); n > 0 {
+		instances = fmt.Sprintf("%d instance(s) declared", n)
+	}
+	add("3", "Horizontal + load balancer", "on",
+		"Stateless by construction, graceful shutdown on SIGTERM, and a health endpoint the balancer can poll.",
+		instances)
+
+	// Stage 4. The one thing that can actually be wrong here is uploads on a
+	// local disk, which works on one machine and silently breaks on two.
+	driver := strings.ToLower(strings.TrimSpace(os.Getenv("STORAGE_DRIVER")))
+	if driver == "" {
+		driver = "minio"
+	}
+	queue := "jobs and cron run in-process (REDIS_URL is empty)"
+	if strings.TrimSpace(os.Getenv("REDIS_URL")) != "" {
+		queue = "cron elected to one instance through Redis"
+	}
+	stage4, stage4why := "on", fmt.Sprintf("sessions are rows, uploads on %s, %s", driver, queue)
+	if driver == "local" {
+		stage4 = "attention"
+		stage4why = "STORAGE_DRIVER=local keeps uploads on one machine's disk, so a second instance serves 404s for half of them."
+	}
+	add("4", "Stateless servers", stage4,
+		"Sessions in the database, uploads in object storage, cache invalidation across instances, cron elected to one.",
+		stage4why)
+
+	// Stage 5. The only failure here that arrives as errors rather than
+	// slowness, so it is checked before anything else that is measured.
+	stage5, stage5why := "on", fmt.Sprintf("%d of %d connections in use, pool max %d per instance",
+		db.OpenConnections, db.MaxConnections, db.PoolMax)
+	switch {
+	case db.MaxConnections == 0:
+		stage5, stage5why = "ready", fmt.Sprintf("pool max %d per instance; the server's ceiling is not readable on %s", db.PoolMax, db.Driver)
+	case float64(db.OpenConnections)/float64(db.MaxConnections) > connectionPressure:
+		stage5 = "attention"
+		stage5why = fmt.Sprintf("%d of %d connections in use. At the ceiling the API returns errors while the database looks idle.",
+			db.OpenConnections, db.MaxConnections)
+	}
+	add("5", "Connection pooling", stage5,
+		"pgbouncer in the production compose file, a per-instance pool limit, and a doctor check that does the arithmetic.",
+		stage5why)
+
+	// Stage 6. An index is free and a replica is not, so a table being read
+	// end to end outranks having no replicas.
+	stage6, stage6why := "ready", "no replicas, and none needed until reads peg the primary with the indexes already right"
+	switch {
+	case len(db.SeqScanTables) > 0:
+		t := db.SeqScanTables[0]
+		stage6 = "attention"
+		stage6why = fmt.Sprintf("%s has %d rows and has been read end to end %d times. An index costs nothing; a bigger database does not.",
+			t.Table, t.LiveRows, t.SeqScans)
+	case db.Replicas > 0 && db.ReplicationLag > replicaLagSeconds:
+		stage6 = "attention"
+		stage6why = fmt.Sprintf("%d replica(s), %.0fs behind. The read-your-own-writes window is %.0fs, so users see stale data outside it.",
+			db.Replicas, db.ReplicationLag, replicaLagSeconds)
+	case db.Replicas > 0:
+		stage6 = "on"
+		stage6why = fmt.Sprintf("%d replica(s), %.1fs behind, reads routed per statement", db.Replicas, db.ReplicationLag)
+	}
+	add("6", "Indexes, then read replicas", stage6,
+		"Indexes on foreign keys as generated. Replica routing in one environment variable, read-your-own-writes, and a lag probe.",
+		stage6why)
+
+	// Stage 7.
+	lookups := ch.Hits + ch.Misses
+	stage7, stage7why := "ready", "no cache configured, and none needed until the same expensive query is near the top of the slowest list"
+	switch {
+	case ch.Configured && lookups > hitRateSample && ch.HitRate < poorHitRate:
+		stage7 = "attention"
+		stage7why = fmt.Sprintf("hit rate %.0f%% over %d lookups, which usually means the TTL is shorter than the gap between reads",
+			ch.HitRate*100, lookups)
+	case ch.Configured && lookups > 0:
+		stage7 = "on"
+		stage7why = fmt.Sprintf("hit rate %.0f%% over %d lookups", ch.HitRate*100, lookups)
+	case ch.Configured:
+		stage7 = "on"
+		stage7why = "configured, nothing cached yet"
+	}
+	add("7", "Caching", stage7,
+		"cache.Remember: cache-aside with a fallback when Redis is down, jittered TTLs, stampede protection and a hit rate.",
+		stage7why)
+
+	stage8, stage8why := "on", "asynq workers, retries with backoff, a jobs dashboard, cron and a transactional outbox"
+	if strings.TrimSpace(os.Getenv("REDIS_URL")) == "" {
+		stage8 = "ready"
+		stage8why = "REDIS_URL is empty, so queued work runs in-process. Set it and the workers take over with no code change."
+	}
+	add("8", "Queues and background jobs", stage8,
+		"Slow work moves off the request, retries itself, and is visible while it does.",
+		stage8why)
+
+	size := "no table is large enough for this to be a question"
+	if biggest.LiveRows > 0 {
+		size = fmt.Sprintf("largest table %s, about %d rows", biggest.Table, biggest.LiveRows)
+	}
+	add("9", "Sharding", "yours",
+		"Nothing, deliberately. Archive cold rows, partition, or let Citus shard for you. Almost nobody needs this.",
+		size)
+
+	return out
+}
+
+// largestTable is the row count Stage 9 is judged against. Empty off Postgres,
+// where the statistics view does not exist.
+func (h *ScaleHandler) largestTable() seqScan {
+	var t seqScan
+	if h.DB.Dialector.Name() != "postgres" {
+		return t
+	}
+	quiet := h.DB.Session(&gorm.Session{Logger: h.DB.Logger.LogMode(gormlogger.Silent)})
+	_ = quiet.Raw(`
+		SELECT relname AS table, seq_scan AS seq_scans, n_live_tup AS live_rows
+		FROM pg_stat_user_tables
+		ORDER BY n_live_tup DESC
+		LIMIT 1`).Scan(&t).Error
+	return t
+}
+
+func envInt(key string, fallback int) int {
+	if v, err := strconv.Atoi(os.Getenv(key)); err == nil && v > 0 {
+		return v
+	}
+	return fallback
+}

@@ -1,0 +1,162 @@
+package llms
+
+import (
+	"strings"
+	"testing"
+)
+
+func testConfig() Config {
+	return Config{AppName: "Acme", BaseURL: "https://api.acme.test", Version: "v1", MaxPageSize: 100}
+}
+
+func TestIndexIsAnLLMsTxt(t *testing.T) {
+	out := Index(testConfig())
+	if !strings.HasPrefix(out, "# Acme API\n\n> ") {
+		t.Fatalf("llms.txt must open with an H1 and a blockquote, got:\n%.80s", out)
+	}
+	for _, want := range []string{
+		"https://api.acme.test/docs/openapi.json",
+		"https://api.acme.test/llms-full.txt",
+		"https://api.acme.test/api/health",
+		"Authorization: Bearer",
+		"X-API-Key",
+		"page_size",
+		"VALIDATION_ERROR",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("llms.txt does not mention %q", want)
+		}
+	}
+}
+
+func TestIndexUsesTheConfiguredVersionEverywhere(t *testing.T) {
+	// The version is in the auth examples as well as the versioning section, and
+	// an example that names v1 in a project serving v2 is worse than no example.
+	cfg := testConfig()
+	cfg.Version = "v2"
+	out := Index(cfg)
+	if strings.Contains(out, "/api/v1") {
+		t.Error("llms.txt still names v1 in a project serving v2")
+	}
+	if !strings.Contains(out, "/api/v2/auth/login") {
+		t.Error("the sign-in example does not use the configured version")
+	}
+}
+
+func TestIndexFillsItsOwnBlanks(t *testing.T) {
+	// A zero Config is what a project gets if somebody wires this up without
+	// reading it. It should still produce a usable file rather than one that
+	// says the page ceiling is 0.
+	out := Index(Config{AppName: "Acme"})
+	if strings.Contains(out, "clamped to 0") {
+		t.Error("a zero MaxPageSize reached the text")
+	}
+	if !strings.Contains(out, "/api/v1") {
+		t.Error("an empty Version should fall back to v1")
+	}
+}
+
+func TestBaseURLHasNoDoubleSlash(t *testing.T) {
+	cfg := testConfig()
+	cfg.BaseURL = "https://api.acme.test/"
+	if strings.Contains(Index(cfg), "test//docs") {
+		t.Error("a trailing slash on BaseURL produced a double slash")
+	}
+}
+
+func TestFullGroupsRoutesByWhatTheyAreAbout(t *testing.T) {
+	out := Full(testConfig(), []Route{
+		{Method: "GET", Path: "/api/health", Handler: "healthCheck"},
+		{Method: "POST", Path: "/api/v1/auth/login", Handler: "AuthHandler.Login"},
+		{Method: "GET", Path: "/api/v1/users", Handler: "UserHandler.List"},
+		{Method: "DELETE", Path: "/api/v1/admin/flags/:id", Handler: "FlagHandler.Delete"},
+		{Method: "GET", Path: "/studio", Handler: "studio.Handler"},
+	})
+
+	for _, want := range []string{
+		"5 routes",
+		"## health",
+		"## auth",
+		"## users",
+		"## admin/flags",
+		"## Mounted dashboards and static files",
+		"`POST /api/v1/auth/login` -> AuthHandler.Login",
+		"`DELETE /api/v1/admin/flags/:id` -> FlagHandler.Delete",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("llms-full.txt does not contain %q", want)
+		}
+	}
+	// The index is the head of it, so an agent that fetched only this file has
+	// the conventions too.
+	if !strings.HasPrefix(out, "# Acme API") {
+		t.Error("llms-full.txt does not open with the index")
+	}
+}
+
+func TestGroupOf(t *testing.T) {
+	for path, want := range map[string]string{
+		"/api/health":                   "health",
+		"/api/v1/health":                "health",
+		"/api/v1/auth/login":            "auth",
+		"/api/v1/auth/me":               "auth",
+		"/api/v1/public/forms/:slug":    "public",
+		"/api/v1/users":                 "users",
+		"/api/v1/users/:id":             "users",
+		"/api/uploads":                  "uploads",
+		"/api/v1/admin/flags":           "admin/flags",
+		"/api/v1/admin/form-shares/:id": "admin/form-shares",
+		"/api/v12/users":                "users",
+		"/studio":                       "Mounted dashboards and static files",
+		"/pulse/ui":                     "Mounted dashboards and static files",
+		"/webhooks/:provider":           "Mounted dashboards and static files",
+	} {
+		if got := GroupOf(path); got != want {
+			t.Errorf("GroupOf(%q) = %q, want %q", path, got, want)
+		}
+	}
+}
+
+func TestGroupOfDoesNotMistakeAResourceForAVersion(t *testing.T) {
+	// "videos" starts with a v and is not v1. A looser check than isVersion
+	// swallowed the segment and filed every video route under its own :id.
+	for _, path := range []string{"/api/videos", "/api/v1/videos"} {
+		if got := GroupOf(path); got != "videos" {
+			t.Errorf("GroupOf(%q) = %q, want videos", path, got)
+		}
+	}
+}
+
+func TestFullWithNoRoutesStillRenders(t *testing.T) {
+	out := Full(testConfig(), nil)
+	if !strings.Contains(out, "0 routes") {
+		t.Error("an empty router should still produce a file that says so")
+	}
+}
+
+func TestNeitherFileNamesASecret(t *testing.T) {
+	// These are served without authentication when API_DOCS_PUBLIC is on, so
+	// what goes in them is a path and a handler name, never a value.
+	out := Full(testConfig(), []Route{{Method: "GET", Path: "/api/v1/users", Handler: "userHandler.List"}})
+	for _, forbidden := range []string{"JWT_SECRET", "DATABASE_URL", "REDIS_URL", "SECRET_KEY"} {
+		if strings.Contains(out, forbidden) {
+			t.Errorf("%s reached a file served without authentication", forbidden)
+		}
+	}
+}
+
+func TestTheMountedDashboardsComeLast(t *testing.T) {
+	// They are the biggest group by a distance, 130 of the routes in a fresh
+	// project, and they are somebody else's: the reference, the profiler, the
+	// database browser. Sorted alphabetically they came first, which put the
+	// least useful thing at the top of the file.
+	out := Full(testConfig(), []Route{
+		{Method: "GET", Path: "/studio", Handler: "studio.Handler"},
+		{Method: "GET", Path: "/api/v1/users", Handler: "UserHandler.List"},
+	})
+	mounted := strings.Index(out, "## "+GroupMounted)
+	users := strings.Index(out, "## users")
+	if mounted < 0 || users < 0 || mounted < users {
+		t.Errorf("the mounted dashboards are not last (mounted at %d, users at %d)", mounted, users)
+	}
+}

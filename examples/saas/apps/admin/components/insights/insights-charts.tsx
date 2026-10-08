@@ -1,0 +1,167 @@
+"use client";
+
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import type { Bucket, Slice } from "@/components/insights/insights-panel";
+
+/*
+ * The recharts half of the insights panel, in its own module so the 400 KB
+ * only loads for somebody who opened the panel.
+ *
+ * Two charts, because two questions get asked of a list and they want different
+ * shapes. "How many per month" is a time series and reads as vertical bars left
+ * to right. "How many of each status" is a comparison of a handful of named
+ * things, and reads as horizontal bars with the labels beside them, where a
+ * long value like "awaiting_approval" has somewhere to go: as a vertical axis
+ * tick it would be turned on its side or cut off.
+ */
+
+const AXIS = "var(--text-muted)";
+const GRID = "var(--border)";
+const BAR = "var(--accent)";
+
+// The palette for a breakdown, in the order the values arrive. Deliberately not
+// one colour per value hashed from its name: the same four colours in the same
+// order are easier to read across two charts than a stable but arbitrary hue.
+const SLICE_COLOURS = [
+  "var(--accent)",
+  "var(--info)",
+  "var(--success)",
+  "var(--warning)",
+  "var(--danger)",
+];
+
+export interface InsightsChartsProps {
+  series: Bucket[];
+  breakdown: Record<string, Slice[]>;
+  unit: "day" | "week" | "month";
+  labels?: Record<string, Record<string, string>>;
+}
+
+export function InsightsCharts({ series, breakdown, unit, labels }: InsightsChartsProps) {
+  const columns = Object.keys(breakdown).filter((key) => (breakdown[key] ?? []).length > 0);
+
+  return (
+    <div className="space-y-5">
+      {series.length > 0 && (
+        <figure>
+          <figcaption className="mb-2 text-xs font-medium text-text-secondary">
+            Created, {unit === "day" ? "by day" : unit === "week" ? "by week" : "by month"}
+          </figcaption>
+          <div className="h-56 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={series.map((b) => ({ ...b, label: bucketLabel(b.bucket, unit) }))}>
+                <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
+                <XAxis dataKey="label" stroke={AXIS} fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke={AXIS} fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} width={32} />
+                <Tooltip
+                  cursor={{ fill: "var(--bg-hover)" }}
+                  contentStyle={{
+                    background: "var(--bg-elevated)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "0.5rem",
+                    fontSize: "12px",
+                    color: "var(--text-primary)",
+                  }}
+                />
+                {/* A new project has one month of data, and a single bar
+                    stretched across the whole chart reads as a block of colour
+                    rather than a measurement. */}
+                <Bar dataKey="count" fill={BAR} radius={[4, 4, 0, 0]} maxBarSize={56} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </figure>
+      )}
+
+      {columns.length > 0 && (
+        <div className="grid gap-5 md:grid-cols-2">
+          {columns.map((column) => (
+            <figure key={column}>
+              <figcaption className="mb-2 text-xs font-medium text-text-secondary">
+                By {humanise(column)}
+              </figcaption>
+              <div className="h-44 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    layout="vertical"
+                    data={(breakdown[column] ?? []).map((slice) => ({
+                      ...slice,
+                      label: sliceLabel(column, slice.value, labels),
+                    }))}
+                    margin={{ left: 8, right: 8 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke={GRID} horizontal={false} />
+                    <XAxis type="number" stroke={AXIS} fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <YAxis
+                      type="category"
+                      dataKey="label"
+                      stroke={AXIS}
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      width={96}
+                    />
+                    <Tooltip
+                      cursor={{ fill: "var(--bg-hover)" }}
+                      contentStyle={{
+                        background: "var(--bg-elevated)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "0.5rem",
+                        fontSize: "12px",
+                        color: "var(--text-primary)",
+                      }}
+                    />
+                    <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={28}>
+                      {(breakdown[column] ?? []).map((slice, index) => (
+                        <Cell key={slice.value} fill={SLICE_COLOURS[index % SLICE_COLOURS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </figure>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/*
+ * The bucket as a person reads it.
+ *
+ * The API sends a sortable label (2026-03, or the Monday of a week as
+ * 2026-06-08), because a chart that sorts its own axis needs one that sorts as
+ * text. An axis tick wants the short form.
+ */
+function bucketLabel(bucket: string, unit: "day" | "week" | "month"): string {
+  const parts = bucket.split("-");
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const month = months[Number(parts[1]) - 1] ?? bucket;
+  if (unit === "month") return month;
+  if (parts.length < 3) return bucket;
+  return month + " " + Number(parts[2]);
+}
+
+/** A column's value, through the resource's labels if it named any. */
+function sliceLabel(column: string, value: string, labels?: Record<string, Record<string, string>>): string {
+  const named = labels?.[column]?.[value];
+  if (named) return named;
+  if (value === "") return "None";
+  return value;
+}
+
+/** created_at -> Created at, payment_status -> Payment status. */
+function humanise(column: string): string {
+  const words = column.replace(/_id$/, "").split("_").join(" ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}

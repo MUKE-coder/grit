@@ -1,0 +1,22 @@
+# Everything not listed here is sent to the Docker daemon as the build context,
+# and a Dockerfile that copies the context bakes it into the image. The **/
+# patterns matter: a bare name only matches at the context root, which is how
+# apps/web/.env.local, local databases and dev binaries ended up in images.
+**/node_modules
+**/.next
+**/.turbo
+dist
+**/tmp
+**/*.log
+**/.env
+**/.env.*
+!**/.env.example
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/*.sqlite
+**/*.exe
+**/coverage
+.git
+.grit
+e2e

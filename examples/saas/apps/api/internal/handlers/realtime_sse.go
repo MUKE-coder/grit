@@ -1,0 +1,206 @@
+package handlers
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/gin-gonic/gin"
+
+	"saas/apps/api/internal/realtime"
+	"saas/apps/api/internal/respond"
+)
+
+const (
+	// sseHeartbeat is how often a comment line goes out on an idle stream.
+	//
+	// Proxies and load balancers close a connection that has sent nothing for
+	// a while, and a comment is the cheapest thing that counts as traffic: the
+	// EventSource spec says a line starting with a colon is ignored, so it
+	// reaches no handler and costs the client nothing to read. 25 seconds sits
+	// under the 30 second idle timeout most defaults use.
+	sseHeartbeat = 25 * time.Second
+
+	// sseRetry is the reconnect delay the browser uses after a drop, in
+	// milliseconds. EventSource reconnects on its own; this only sets how long
+	// it waits, and it is sent once at the top of the stream.
+	sseRetry = 3000
+)
+
+// Events streams realtime events over Server-Sent Events.
+//
+// # Why this exists beside the WebSocket
+//
+// Some platforms do not pass a WebSocket upgrade through to the application.
+// Laravel Cloud strips Connection: upgrade before the container, and it is not
+// alone: a corporate proxy, an older load balancer or an API gateway configured
+// for plain HTTP will all do the same. The socket handshake fails, the client's
+// reconnect loop retries forever, and live updates silently never arrive.
+//
+// SSE is plain HTTP with a response that never ends, so it survives all of
+// that. The client gets the same events from the same hub, and the only thing
+// it gives up is sending: a WebSocket is bidirectional and this is not.
+//
+// # What it cannot do, and why that is usually fine
+//
+// A browser cannot send on an SSE stream, so the two client-to-server messages
+// the socket accepts are not available here: channel subscribe/unsubscribe, and
+// whispers. Subscriptions are instead declared up front with ?channels=, which
+// covers the case that matters, a page that knows what it is watching when it
+// opens. Whispers are a presence nicety and a page that needs them should be on
+// the socket.
+//
+// # One request, one connection
+//
+// A browser holds at most six connections per origin on HTTP/1.1, and an open
+// SSE stream is one of them for as long as the page lives. That is the real
+// cost here and the reason this is a fallback rather than the default: over
+// HTTP/2 it is multiplexed and free, over HTTP/1.1 it is a sixth of the
+// page's budget.
+func (h *RealtimeHandler) Events(c *gin.Context) {
+	// The same credential rules as the socket handshake, for the same reasons.
+	// See Connect: a browser cannot put an HttpOnly cookie in a query string,
+	// so the cookie is read from the request, and only from an allowed origin.
+	tokenStr := c.Query("token")
+	if tokenStr == "" {
+		if bearer := c.GetHeader("Authorization"); bearer != "" {
+			tokenStr = strings.TrimPrefix(bearer, "Bearer ")
+		} else if cookie, err := c.Cookie("grit_access"); err == nil {
+			if !realtime.CheckOrigin(c.Request) {
+				log.Printf("[sse] refused a cookie stream from origin %q", c.GetHeader("Origin"))
+				c.JSON(http.StatusForbidden, gin.H{
+					"error": gin.H{"code": "FORBIDDEN", "message": "this origin may not open the realtime stream with a cookie"},
+				})
+				return
+			}
+			tokenStr = cookie
+		}
+	}
+	if tokenStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": gin.H{"code": "MISSING_TOKEN", "message": "a ?token query or a grit_access cookie is required"},
+		})
+		return
+	}
+
+	claims, err := h.Auth.ValidateAccessToken(tokenStr)
+	if err != nil {
+		log.Printf("[sse] refused a stream token: %v", err)
+		respond.Fail(c, respond.CodeInvalidToken, "Invalid or expired token")
+		return
+	}
+
+	// Without a Flusher the response is buffered and nothing reaches the client
+	// until the handler returns, which for a stream is never. Checked before
+	// anything is written so the failure is a clean 500 rather than a request
+	// that hangs.
+	flusher, ok := c.Writer.(http.Flusher)
+	if !ok {
+		respond.ServerError(c, "STREAMING_UNSUPPORTED", fmt.Errorf("writer is not an http.Flusher"),
+			"This server cannot stream events")
+		return
+	}
+
+	client := &realtime.Client{
+		UserID: claims.UserID,
+		// No Conn: this client has no socket. The hub already allows that, and
+		// delivers through Send either way.
+		Send: make(chan []byte, 32),
+	}
+	// The token is checked once, here, so the stream carries its own deadline.
+	// Without one it would outlive the credential that opened it and keep
+	// delivering to a session that has since been signed out.
+	if exp := claims.ExpiresAt; exp != nil {
+		client.ExpiresAt = exp.Time
+	}
+
+	greeting, _ := json.Marshal(realtime.Event{
+		Type:    "system.connected",
+		Payload: gin.H{"user_id": claims.UserID, "transport": "sse"},
+	})
+	select {
+	case client.Send <- greeting:
+	default:
+	}
+
+	if err := h.Hub.Admit(client); err != nil {
+		// 429 with Retry-After. EventSource reconnects on its own, and this is
+		// the one answer that tells it to wait rather than hammer. A connection
+		// cap is a rate limit, so it uses the code the catalogue already has for
+		// one rather than inventing a second way to say the same thing.
+		c.Header("Retry-After", "5")
+		respond.Fail(c, respond.CodeRateLimited, "Too many realtime connections, try again shortly")
+		return
+	}
+	defer h.Hub.Unregister(client)
+
+	// Channels are declared up front, because an SSE client has no way to ask
+	// later. ?channels=orders,invoices.42
+	for _, name := range strings.Split(c.Query("channels"), ",") {
+		if name = strings.TrimSpace(name); name != "" {
+			h.Hub.Subscribe(client, name)
+		}
+	}
+
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	// Nginx buffers proxied responses by default, which holds every event until
+	// the buffer fills and makes a live stream arrive in batches minutes apart.
+	// This header is how you turn that off from behind it.
+	c.Header("X-Accel-Buffering", "no")
+	c.Writer.WriteHeader(http.StatusOK)
+
+	fmt.Fprintf(c.Writer, "retry: %d\n\n", sseRetry)
+	flusher.Flush()
+
+	heartbeat := time.NewTicker(sseHeartbeat)
+	defer heartbeat.Stop()
+
+	// The request's context closes when the client goes away, which is the only
+	// signal a stream gets: there is no close frame to read.
+	ctx := c.Request.Context()
+
+	var expiry <-chan time.Time
+	if !client.ExpiresAt.IsZero() {
+		timer := time.NewTimer(time.Until(client.ExpiresAt))
+		defer timer.Stop()
+		expiry = timer.C
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+
+		case <-expiry:
+			// Say why before going, so the client reconnects with a fresh token
+			// instead of treating it as a network drop and retrying the old one.
+			fmt.Fprint(c.Writer, "event: system.expired\ndata: {\"reason\":\"token expired\"}\n\n")
+			flusher.Flush()
+			return
+
+		case <-heartbeat.C:
+			// A comment. The spec says the client ignores it; the proxy counts
+			// it as traffic, which is the whole point.
+			fmt.Fprint(c.Writer, ": keep-alive\n\n")
+			flusher.Flush()
+
+		case msg, open := <-client.Send:
+			if !open {
+				// The hub closed the channel, which is how it signs somebody
+				// out of every connection at once.
+				fmt.Fprint(c.Writer, "event: system.disconnected\ndata: {\"reason\":\"session ended\"}\n\n")
+				flusher.Flush()
+				return
+			}
+			// One data: line. The hub's payloads are compact JSON with no
+			// newlines in them, and a newline would split one event into two.
+			fmt.Fprintf(c.Writer, "data: %s\n\n", msg)
+			flusher.Flush()
+		}
+	}
+}

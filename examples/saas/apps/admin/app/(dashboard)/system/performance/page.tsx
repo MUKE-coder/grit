@@ -1,0 +1,801 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { PageHeader } from "@/components/chrome/PageHeader";
+import { apiClient } from "@/lib/api-client";
+import { API_URL } from "@/lib/api-core";
+import { useQuery } from "@tanstack/react-query";
+import { useScaleReport } from "@/hooks/use-system";
+import {
+  Activity,
+  AlertTriangle,
+  CheckCircle,
+  ChevronDown,
+  ChevronRight,
+  Circle,
+  Cpu,
+  ExternalLink,
+  Gauge,
+  Minus,
+  Pause,
+  Play,
+  Zap,
+} from "@/lib/icons";
+
+/*
+ * One operations page, from two.
+ *
+ * There were two: /system/performance, which read the summary the API actually
+ * returns, and /system/observability, which declared a richer shape the
+ * endpoint has never produced. Every KPI on that second page read
+ * data.overview.p95_ms against a response with no overview key, so the page
+ * promised "percentile latency, SLOs, USE grid, top N+1, errors, runtime" in
+ * its subtitle and rendered four dashes and three empty panels. The only live
+ * thing on it was the scaling readiness report, which came from a different
+ * endpoint and is kept here.
+ *
+ * Everything below is drawn from what /api/admin/observability/summary and
+ * /api/scale genuinely return. Where a number is a stand-in, it says so rather
+ * than being presented as the thing it approximates.
+ */
+
+// ─── what the API answers with ─────────────────────────────────────────────
+
+interface Summary {
+  latency?: { p50: number; p95: number; p99: number; avg: number };
+  traffic?: { throughput: number; total: number };
+  errors?: { rate: number; active_open: number };
+  saturation?: { goroutines: number; heap_mb: number; gc_cycles: number; cpu_cores: number };
+  slowest_routes?: Array<{
+    route: string;
+    method: string;
+    requests: number;
+    avg: number;
+    p95: number;
+    p99: number;
+    error_rate: number;
+  }>;
+  n1_detections?: Array<{ route: string; query_count: number; first_seen: string }>;
+  recent_errors?: Array<{ id: string; route: string; message: string; created_at: string }>;
+  degraded?: string[];
+}
+
+type StageState = "on" | "ready" | "attention" | "yours";
+
+interface ScaleReport {
+  stage?: string;
+  next?: string;
+  why?: string;
+  stages?: Array<{ n: string; name: string; state: StageState; what: string; evidence: string }>;
+  database?: { replicas?: number; open_connections?: number; max_connections?: number };
+  cache?: { configured?: boolean; hit_rate?: number };
+}
+
+/*
+ * The history behind the charts is collected here, in the page.
+ *
+ * The summary endpoint answers with the numbers as they are now and keeps no
+ * series, so there is nothing to ask for a window of. Rather than draw a chart
+ * from one point or add a metrics store to every scaffolded app, the page keeps
+ * what it has seen since it was opened and says so under the charts. It is an
+ * honest small window, and it is the one an operator watching a deploy wants.
+ */
+const MAX_SAMPLES = 60;
+const POLL_MS = 10_000;
+
+interface Sample {
+  at: number;
+  rps: number;
+  p95: number;
+  p99: number;
+  avg: number;
+  errorRate: number;
+  heap: number;
+  goroutines: number;
+}
+
+export default function OperationsPage() {
+  const [live, setLive] = useState(true);
+  const [showStages, setShowStages] = useState(false);
+  const [history, setHistory] = useState<Sample[]>([]);
+  const seen = useRef(0);
+
+  const { data, isPending, isFetching, error, refetch } = useQuery<Summary>({
+    queryKey: ["admin", "operations", "summary"],
+    queryFn: async () => {
+      const { data } = await apiClient.get<Summary>("/api/admin/observability/summary");
+      return data;
+    },
+    refetchInterval: live ? POLL_MS : false,
+  });
+  const scale = useScaleReport<ScaleReport>();
+
+  // One sample per answer, which is what makes the charts move. Keyed off the
+  // fetch count rather than the data, because two identical readings a minute
+  // apart are two samples and an effect watching the object would see one.
+  useEffect(() => {
+    if (!data) return;
+    seen.current += 1;
+    setHistory((prev) =>
+      [
+        ...prev,
+        {
+          at: Date.now(),
+          rps: data.traffic?.throughput ?? 0,
+          p95: data.latency?.p95 ?? 0,
+          p99: data.latency?.p99 ?? 0,
+          avg: data.latency?.avg ?? 0,
+          errorRate: data.errors?.rate ?? 0,
+          heap: data.saturation?.heap_mb ?? 0,
+          goroutines: data.saturation?.goroutines ?? 0,
+        },
+      ].slice(-MAX_SAMPLES),
+    );
+  }, [data]);
+
+  const latest = history[history.length - 1];
+  const degraded = data?.degraded ?? [];
+
+  return (
+    <div>
+      <PageHeader
+        title="Operations"
+        subtitle="Latency, traffic, errors and saturation, from Pulse"
+        actions={
+          <>
+            <button
+              type="button"
+              onClick={() => setLive((on) => !on)}
+              aria-pressed={live}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-bg-elevated px-3 text-sm text-text-secondary transition-colors hover:bg-bg-hover hover:text-foreground"
+            >
+              {live ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  aria-hidden="true"
+                  className={
+                    "h-1.5 w-1.5 rounded-full " + (live ? "bg-success" : "bg-text-muted")
+                  }
+                />
+                {live ? "Live" : "Paused"}
+              </span>
+            </button>
+            <a
+              href={API_URL + "/pulse"}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-bg-elevated px-3 text-sm text-text-secondary transition-colors hover:bg-bg-hover hover:text-foreground"
+            >
+              Open full Pulse
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </>
+        }
+      />
+
+      {error ? (
+        <Banner tone="danger">
+          Pulse is not answering, so none of this is current. The API is unaffected: this page
+          reads a separate summary endpoint.
+        </Banner>
+      ) : degraded.length > 0 ? (
+        <Banner tone="warning">
+          Pulse did not answer for {degraded.join(", ")}. Those panels are empty rather than
+          zero.
+        </Banner>
+      ) : null}
+
+      {/* ── the four numbers, each over its own short history ─────────── */}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Tile
+          label="Throughput"
+          value={rps(latest?.rps)}
+          unit="req/s"
+          icon={Activity}
+          series={history.map((h) => h.rps)}
+          loading={isPending}
+        />
+        <Tile
+          label="Latency, p95"
+          value={fmt(latest?.p95, 0)}
+          unit="ms"
+          icon={Zap}
+          series={history.map((h) => h.p95)}
+          tone={toneForLatency(latest?.p95)}
+          loading={isPending}
+        />
+        <Tile
+          label="Responses 4xx / 5xx"
+          value={fmt(latest?.errorRate, 2)}
+          unit="%"
+          icon={AlertTriangle}
+          series={history.map((h) => h.errorRate)}
+          tone={latest && latest.errorRate > 1 ? "danger" : "default"}
+          loading={isPending}
+        />
+        <Tile
+          label="Heap in use"
+          value={fmt(latest?.heap, 1)}
+          unit="MB"
+          icon={Cpu}
+          series={history.map((h) => h.heap)}
+          loading={isPending}
+        />
+      </div>
+
+      {/* ── API ───────────────────────────────────────────────────────── */}
+      <Section
+        title="API"
+        meta={
+          history.length < 2
+            ? "collecting"
+            : history.length + " samples, every " + POLL_MS / 1000 + "s since this page opened"
+        }
+        pill={
+          data?.errors?.rate != null
+            ? {
+                tone: data.errors.rate > 1 ? "danger" : "success",
+                label: fmt(data.errors.rate, 2) + "% of responses 4xx / 5xx",
+              }
+            : undefined
+        }
+      />
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Panel title="Latency" now={fmt(latest?.p95, 0) + " ms p95"}>
+          <Lines
+            series={[
+              { name: "avg", values: history.map((h) => h.avg), className: "stroke-info" },
+              { name: "p95", values: history.map((h) => h.p95), className: "stroke-accent" },
+              { name: "p99", values: history.map((h) => h.p99), className: "stroke-warning" },
+            ]}
+            unit="ms"
+          />
+          <p className="mt-2 text-[11px] leading-snug text-text-muted">
+            Pulse&apos;s overview carries an average and a p95. p50 is that average and p99 is
+            that p95 until it carries more, so the three lines can sit on top of each other:
+            that is this endpoint, not your traffic.
+          </p>
+        </Panel>
+
+        <Panel title="Throughput" now={rps(latest?.rps) + " req/s"}>
+          <Lines
+            series={[{ name: "req/s", values: history.map((h) => h.rps), className: "stroke-success" }]}
+            unit="req/s"
+          />
+          <Kvs
+            rows={[
+              ["Requests seen", fmtInt(data?.traffic?.total)],
+              ["Responses 4xx / 5xx", fmtInt(data?.errors?.active_open)],
+            ]}
+          />
+        </Panel>
+      </div>
+
+      <div className="mt-3">
+        <Panel title="Slowest endpoints" now={(data?.slowest_routes?.length ?? 0) + " routes"}>
+          {(data?.slowest_routes ?? []).length === 0 ? (
+            <Empty>No routes have been exercised yet.</Empty>
+          ) : (
+            <div className="-mx-1 overflow-x-auto">
+              <table className="w-full text-sm tabular-nums">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs text-text-muted">
+                    <th className="px-1 py-2 font-medium">Route</th>
+                    <th className="px-1 py-2 text-right font-medium">Calls</th>
+                    <th className="px-1 py-2 text-right font-medium">avg</th>
+                    <th className="px-1 py-2 text-right font-medium">p95</th>
+                    <th className="px-1 py-2 text-right font-medium">p99</th>
+                    <th className="px-1 py-2 text-right font-medium" title="Share of this route\u2019s responses with a status of 400 or more">4xx+</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data?.slowest_routes ?? []).slice(0, 12).map((r) => (
+                    <tr key={r.method + r.route} className="border-b border-border/60 last:border-0">
+                      <td className="px-1 py-2">
+                        <span className="mr-2 rounded bg-bg-tertiary px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">
+                          {r.method}
+                        </span>
+                        <span className="font-mono text-[12px]">{r.route}</span>
+                      </td>
+                      <td className="px-1 py-2 text-right text-text-secondary">{fmtInt(r.requests)}</td>
+                      <td className="px-1 py-2 text-right text-text-secondary">{fmt(r.avg, 0)}</td>
+                      <td className="px-1 py-2 text-right">{fmt(r.p95, 0)}</td>
+                      <td className={"px-1 py-2 text-right " + (r.p99 > 500 ? "text-warning" : "")}>
+                        {fmt(r.p99, 0)}
+                      </td>
+                      {/* Already a percentage, like errors.rate above it.
+                          Multiplying by a hundred read 8571.4% on a route that
+                          had failed 6 times in 7. */}
+                      <td className={"px-1 py-2 text-right " + (r.error_rate > 0 ? "text-danger" : "text-text-muted")}>
+                        {fmt(r.error_rate, 1)}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Panel>
+      </div>
+
+      {/* ── runtime, database, cache ───────────────────────────────────── */}
+      <Section title="Runtime and data" meta={isFetching ? "refreshing" : undefined} />
+      <div className="grid gap-3 lg:grid-cols-3">
+        <Panel title="Go runtime" now={fmtInt(data?.saturation?.goroutines) + " goroutines"}>
+          <Lines
+            series={[{ name: "goroutines", values: history.map((h) => h.goroutines), className: "stroke-accent" }]}
+            unit=""
+            short
+          />
+          <Kvs
+            rows={[
+              ["Heap in use", fmt(data?.saturation?.heap_mb, 1) + " MB"],
+              ["GC cycles", fmtInt(data?.saturation?.gc_cycles)],
+              ["Cores visible", fmtInt(data?.saturation?.cpu_cores)],
+            ]}
+          />
+        </Panel>
+
+        <Panel title="Database" now={dbNow(scale.data)}>
+          {(scale.data?.database?.max_connections ?? 0) > 0 ? (
+            <>
+              <Meter
+                label="Connections in use"
+                value={scale.data?.database?.open_connections ?? 0}
+                max={scale.data?.database?.max_connections ?? 0}
+              />
+              <Kvs
+                rows={[
+                  ["Read replicas", fmtInt(scale.data?.database?.replicas)],
+                  ["Pool ceiling", fmtInt(scale.data?.database?.max_connections)],
+                ]}
+              />
+            </>
+          ) : (
+            <Empty>
+              SQLite writes one at a time and has no pool ceiling to read, so there is nothing
+              here to watch. Move to Postgres and this fills in.
+            </Empty>
+          )}
+        </Panel>
+
+        <Panel title="Cache" now={scale.data?.cache?.configured ? "Redis" : "off"}>
+          {scale.data?.cache?.configured ? (
+            <Meter
+              label="Hit rate"
+              value={Math.round((scale.data.cache.hit_rate ?? 0) * 100)}
+              max={100}
+              suffix="%"
+            />
+          ) : (
+            <Empty>
+              No REDIS_URL, so reads go to the database every time. That is a fine place to
+              start and the first thing to change under load.
+            </Empty>
+          )}
+        </Panel>
+      </div>
+
+      {/* ── what is wrong right now ────────────────────────────────────── */}
+      <Section
+        title="Attention"
+        pill={
+          (data?.n1_detections?.length ?? 0) + (data?.recent_errors?.length ?? 0) === 0
+            ? { tone: "success", label: "nothing outstanding" }
+            : {
+                tone: "warning",
+                label:
+                  (data?.n1_detections?.length ?? 0) +
+                  " N+1, " +
+                  (data?.recent_errors?.length ?? 0) +
+                  " exceptions",
+              }
+        }
+      />
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Panel title="N+1 queries">
+          {(data?.n1_detections ?? []).length === 0 ? (
+            <Empty>No route is issuing a query per row. This is the state to keep.</Empty>
+          ) : (
+            <ul className="divide-y divide-border">
+              {(data?.n1_detections ?? []).slice(0, 8).map((n) => (
+                <li key={n.route} className="flex items-baseline justify-between gap-3 py-2">
+                  <span className="truncate font-mono text-[12px]">{n.route}</span>
+                  <span className="shrink-0 text-sm tabular-nums text-warning">
+                    {fmtInt(n.query_count)} queries
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+
+        <Panel title="Recorded exceptions">
+          {(data?.recent_errors ?? []).length === 0 ? (
+            <Empty>
+              Nothing has thrown.
+              {(data?.errors?.rate ?? 0) > 0 && (
+                <>
+                  {" "}
+                  The {fmt(data?.errors?.rate, 2)}% above is a different measurement: it counts
+                  every response with a status of 400 or more, and an expired token answered
+                  401 is one of those. This panel is exceptions Pulse recorded, and an app can
+                  refuse a great many requests correctly without throwing once.
+                </>
+              )}
+            </Empty>
+          ) : (
+            <ul className="divide-y divide-border">
+              {(data?.recent_errors ?? []).slice(0, 8).map((e) => (
+                <li key={e.id} className="py-2">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="truncate font-mono text-[12px] text-danger">{e.route}</span>
+                    <time className="shrink-0 text-[11px] text-text-muted">{shortTime(e.created_at)}</time>
+                  </div>
+                  <p className="truncate text-[12px] text-text-secondary">{e.message}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      </div>
+
+      {/* ── scaling readiness, folded away ─────────────────────────────── */}
+      <Section
+        title="Scaling readiness"
+        meta={scale.data?.stage}
+        pill={stagePill(scale.data)}
+      />
+      <div className="rounded-xl border border-border bg-bg-secondary">
+        <button
+          type="button"
+          onClick={() => setShowStages((on) => !on)}
+          aria-expanded={showStages}
+          className="flex w-full items-center gap-2 rounded-xl px-4 py-3 text-left text-sm text-text-secondary transition-colors hover:bg-bg-hover hover:text-foreground"
+        >
+          {showStages ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          <Gauge className="h-4 w-4 text-accent" aria-hidden="true" />
+          <span>{scale.data?.next ? "Next: " + scale.data.next : "The ten stages, and where this app sits"}</span>
+        </button>
+        {showStages && (
+          <div className="border-t border-border px-4 py-3">
+            {scale.data?.why && <p className="mb-3 text-sm text-text-secondary">{scale.data.why}</p>}
+            <ul className="divide-y divide-border">
+              {(scale.data?.stages ?? []).map((s) => {
+                const state = STAGE_STATE[s.state] ?? STAGE_STATE.yours;
+                const Icon = state.icon;
+                return (
+                  <li key={s.n} className="flex gap-3 py-3">
+                    <Icon className={"mt-0.5 h-4 w-4 shrink-0 " + state.cls} aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="text-sm font-medium">
+                          <span className="mr-1.5 font-mono text-[11px] text-text-muted">{s.n}</span>
+                          {s.name}
+                        </span>
+                        <span className={"shrink-0 text-[11px] " + state.cls}>{state.label}</span>
+                      </div>
+                      <p className="text-[12px] text-text-secondary">{s.what}</p>
+                      {s.evidence && (
+                        <p className="mt-0.5 font-mono text-[11px] text-text-muted">{s.evidence}</p>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      <p className="mt-6 text-xs text-text-muted">
+        Numbers come from Pulse, which samples in the API process. The charts cover this
+        browser session only; Pulse&apos;s own dashboard keeps the long window.{" "}
+        <button type="button" onClick={() => void refetch()} className="underline hover:text-foreground">
+          Refresh now
+        </button>
+      </p>
+    </div>
+  );
+}
+
+// ─── the pieces ────────────────────────────────────────────────────────────
+
+const STAGE_STATE: Record<StageState, { icon: typeof CheckCircle; cls: string; label: string }> = {
+  on: { icon: CheckCircle, cls: "text-success", label: "In force" },
+  ready: { icon: Circle, cls: "text-success/60", label: "Ready, not needed yet" },
+  attention: { icon: AlertTriangle, cls: "text-warning", label: "Needs attention" },
+  yours: { icon: Minus, cls: "text-text-muted", label: "Yours to decide" },
+};
+
+function Banner({ tone, children }: { tone: "warning" | "danger"; children: React.ReactNode }) {
+  const cls =
+    tone === "danger"
+      ? "border-danger/30 bg-danger/5 text-danger"
+      : "border-warning/30 bg-warning/5 text-warning";
+  return (
+    <div className={"mb-4 flex items-start gap-2 rounded-lg border px-4 py-3 text-sm " + cls} role="status">
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+      <span>{children}</span>
+    </div>
+  );
+}
+
+function Section({
+  title,
+  meta,
+  pill,
+}: {
+  title: string;
+  meta?: string;
+  pill?: { tone: "success" | "warning" | "danger"; label: string };
+}) {
+  const pillCls = {
+    success: "border-success/30 bg-success/10 text-success",
+    warning: "border-warning/30 bg-warning/10 text-warning",
+    danger: "border-danger/30 bg-danger/10 text-danger",
+  };
+  return (
+    <div className="mb-3 mt-7 flex items-baseline gap-2.5">
+      <h2 className="text-[15px] font-semibold tracking-tight">{title}</h2>
+      {pill && (
+        <span className={"rounded-full border px-2 py-0.5 text-[11px] " + pillCls[pill.tone]}>
+          {pill.label}
+        </span>
+      )}
+      {meta && <span className="ml-auto text-[11px] text-text-muted">{meta}</span>}
+    </div>
+  );
+}
+
+function Panel({ title, now, children }: { title: string; now?: string; children: React.ReactNode }) {
+  return (
+    <section className="min-w-0 rounded-xl border border-border bg-bg-secondary p-4">
+      <h3 className="mb-2 flex items-baseline justify-between gap-2 text-[13px] font-medium text-text-secondary">
+        <span>{title}</span>
+        {now && <span className="font-semibold tabular-nums text-foreground">{now}</span>}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+function Tile({
+  label,
+  value,
+  unit,
+  icon: Icon,
+  series,
+  tone = "default",
+  loading,
+}: {
+  label: string;
+  value: string;
+  unit: string;
+  icon: typeof Activity;
+  series: number[];
+  tone?: "default" | "warning" | "danger";
+  loading?: boolean;
+}) {
+  const valueCls =
+    tone === "danger" ? "text-danger" : tone === "warning" ? "text-warning" : "text-foreground";
+  return (
+    <div className="rounded-xl border border-border bg-bg-secondary p-4">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[12.5px] text-text-secondary">{label}</span>
+        <Icon className="h-4 w-4 text-text-muted" aria-hidden="true" />
+      </div>
+      <div className="mt-1 flex items-end justify-between gap-3">
+        <span className={"text-[26px] font-semibold leading-none tabular-nums " + valueCls}>
+          {loading ? "—" : value}
+          <span className="ml-1 text-[13px] font-normal text-text-muted">{unit}</span>
+        </span>
+        <Spark values={series} />
+      </div>
+    </div>
+  );
+}
+
+/*
+ * A sparkline as plain SVG.
+ *
+ * recharts is 400 KB and this is a polyline. The chart library earns its place
+ * on a page with axes, tooltips and a legend; four tiles and three line panels
+ * do not need one, and this page is the one an operator opens when something is
+ * already wrong.
+ */
+function Spark({ values, className = "stroke-accent" }: { values: number[]; className?: string }) {
+  if (values.length < 2) return <div className="h-9 w-24" />;
+  return (
+    <svg viewBox="0 0 100 36" preserveAspectRatio="none" className="h-9 w-24" aria-hidden="true">
+      <polyline points={points(values, 100, 36)} fill="none" strokeWidth="1.5" className={className} />
+    </svg>
+  );
+}
+
+function Lines({
+  series,
+  unit,
+  short,
+}: {
+  series: Array<{ name: string; values: number[]; className: string }>;
+  unit: string;
+  short?: boolean;
+}) {
+  const height = short ? 90 : 140;
+  const all = series.flatMap((s) => s.values);
+  const top = all.length > 0 ? Math.max(...all) : 0;
+
+  if (all.length < 2) {
+    return (
+      <div
+        className="flex items-center justify-center rounded-lg bg-bg-tertiary text-[12px] text-text-muted"
+        style={{ height }}
+      >
+        Collecting, one reading every {POLL_MS / 1000} seconds.
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <svg
+        viewBox="0 0 320 100"
+        preserveAspectRatio="none"
+        className="w-full rounded-lg bg-bg-tertiary"
+        style={{ height }}
+        role="img"
+        aria-label={series.map((s) => s.name).join(", ") + " over the collected window"}
+      >
+        {[25, 50, 75].map((y) => (
+          <line key={y} x1="0" y1={y} x2="320" y2={y} className="stroke-border" strokeWidth="0.5" />
+        ))}
+        {series.map((s) => (
+          <polyline
+            key={s.name}
+            points={points(s.values, 320, 100, top)}
+            fill="none"
+            strokeWidth="1.5"
+            className={s.className}
+          />
+        ))}
+      </svg>
+      <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[11px] text-text-muted">
+        {series.map((s) => (
+          <span key={s.name} className="inline-flex items-center gap-1.5">
+            <span className={"inline-block h-0.5 w-3 " + s.className.replace("stroke-", "bg-")} />
+            {s.name}
+          </span>
+        ))}
+        <span className="ml-auto tabular-nums">
+          peak {fmt(top, top < 10 ? 2 : 0)} {unit}
+        </span>
+      </div>
+    </>
+  );
+}
+
+function Meter({
+  label,
+  value,
+  max,
+  suffix,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  suffix?: string;
+}) {
+  const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
+  const cls = pct > 85 ? "bg-danger" : pct > 60 ? "bg-warning" : "bg-accent";
+  return (
+    <div className="mb-3">
+      <div className="flex items-baseline justify-between text-[12.5px]">
+        <span className="text-text-secondary">{label}</span>
+        <span className="font-medium tabular-nums">
+          {max > 0 ? (suffix ? value + suffix : value + " / " + max) : "—"}
+        </span>
+      </div>
+      <div className="mt-1.5 h-2 overflow-hidden rounded bg-bg-tertiary">
+        <div className={"h-full rounded " + cls} style={{ width: pct + "%" }} />
+      </div>
+    </div>
+  );
+}
+
+function Kvs({ rows }: { rows: Array<[string, string]> }) {
+  return (
+    <dl className="mt-3 space-y-0">
+      {rows.map(([k, v]) => (
+        <div key={k} className="flex justify-between border-b border-border py-1.5 text-[13px] last:border-0">
+          <dt className="text-text-secondary">{k}</dt>
+          <dd className="font-medium tabular-nums">{v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function Empty({ children }: { children: React.ReactNode }) {
+  return <p className="py-6 text-center text-[12.5px] text-text-muted">{children}</p>;
+}
+
+// ─── small helpers ─────────────────────────────────────────────────────────
+
+/** A polyline for values, scaled to the box. A flat line sits in the middle. */
+function points(values: number[], width: number, height: number, ceiling?: number): string {
+  if (values.length === 0) return "";
+  // One reading is a flat line across the box, not a dot at the origin.
+  //
+  // The x coordinate divides by values.length - 1, which is zero on the first
+  // poll of a fresh server: 0/0 is NaN, and the browser rejects the whole
+  // polyline with "Expected number, NaN,96.0" in the console. The y axis
+  // already had this guard for a span of zero; the x axis needed the same one,
+  // and nothing showed it until a chart was looked at with one point in it.
+  const series = values.length === 1 ? [values[0], values[0]] : values;
+  const top = ceiling ?? Math.max(...series);
+  const bottom = Math.min(...series);
+  const span = top - bottom;
+  const pad = 4;
+  return series
+    .map((v, i) => {
+      const x = (i / (series.length - 1)) * width;
+      // A series that has not moved draws across the middle. Dividing by a
+      // span of zero put it on the floor of the box, which reads as "this
+      // dropped to nothing" rather than "this is steady".
+      const y = span === 0 ? height / 2 : height - pad - ((v - bottom) / span) * (height - pad * 2);
+      return x.toFixed(1) + "," + y.toFixed(1);
+    })
+    .join(" ");
+}
+
+/*
+ * Requests per second, to a precision that shows something.
+ *
+ * An admin panel on a quiet morning runs at a few requests a minute, which is
+ * 0.0 at one decimal place, and a dashboard reporting 0.0 req/s beside "162
+ * requests seen" looks broken rather than quiet.
+ */
+function rps(n: number | undefined): string {
+  if (n == null || Number.isNaN(n)) return "—";
+  if (n === 0) return "0";
+  return n < 1 ? n.toFixed(2) : n.toFixed(1);
+}
+
+function fmt(n: number | undefined, dp: number): string {
+  return n == null || Number.isNaN(n) ? "—" : n.toFixed(dp);
+}
+
+function fmtInt(n: number | undefined): string {
+  return n == null ? "—" : n.toLocaleString();
+}
+
+function toneForLatency(p95?: number): "default" | "warning" | "danger" {
+  if (p95 == null) return "default";
+  if (p95 > 1000) return "danger";
+  if (p95 > 300) return "warning";
+  return "default";
+}
+
+function dbNow(report?: ScaleReport): string {
+  const open = report?.database?.open_connections;
+  const max = report?.database?.max_connections;
+  // Without a ceiling the open count is not a measurement of anything: SQLite
+  // reports zero, and "0" as the headline figure reads as a dead database.
+  if (open == null || !max) return "—";
+  return open + " / " + max;
+}
+
+function stagePill(report?: ScaleReport): { tone: "success" | "warning" | "danger"; label: string } | undefined {
+  const stages = report?.stages ?? [];
+  if (stages.length === 0) return undefined;
+  const attention = stages.filter((s) => s.state === "attention").length;
+  return attention > 0
+    ? { tone: "warning", label: attention + (attention === 1 ? " stage needs attention" : " stages need attention") }
+    : { tone: "success", label: "nothing blocking" };
+}
+
+function shortTime(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}

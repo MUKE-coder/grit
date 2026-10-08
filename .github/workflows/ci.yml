@@ -124,6 +124,46 @@ jobs:
           pnpm install --frozen-lockfile=false
           cd apps/web && npx tsc --noEmit
 
+      # examples/saas is the third: a subscription product with a customer
+      # portal in apps/web beside the operator console in apps/admin. It is
+      # here for a reason neither of the others covers, which is that its claim
+      # is a security property rather than a build.
+      #
+      # One users table, one JWT, two front doors. The only thing between one
+      # customer and another customer's invoices is that three resources were
+      # generated with --owned-by user, so the service carries
+      # authz.ScopeOwned on every list and authz.Owns on every read. If a
+      # change to the generator drops either, this is where it is caught, and
+      # the alternative to catching it here is catching it in production.
+      - name: Build, vet and test the SaaS
+        working-directory: examples/saas/apps/api
+        run: |
+          set -o pipefail
+          gofmt -l . | tee /tmp/unformatted-saas
+          test ! -s /tmp/unformatted-saas
+          go build ./...
+          go vet ./...
+          go test ./... 2>&1 | tail -40
+
+      # On its own, so a failure names the thing that broke rather than being
+      # one line in a wall of output. These are the requests that turn "your
+      # customers cannot see each other's billing" from a claim in a README
+      # into a fact about the running code.
+      - name: A customer cannot see another customer's billing
+        working-directory: examples/saas/apps/api
+        run: go test ./internal/handlers/ -run 'TestThePortal|TestAGuessedID|TestTheOperator|TestASignedIn' -v
+
+      # The portal type-checks against the Go side's published shapes, the same
+      # reason the storefront does. It also reads API_ROUTES from
+      # packages/shared rather than typing paths: a two-word resource mounts at
+      # /api/usage_records, and a hand-typed guess is a 404 the page renders as
+      # "nothing here yet".
+      - name: The customer portal type-checks
+        working-directory: examples/saas
+        run: |
+          pnpm install --frozen-lockfile=false
+          cd apps/web && npx tsc --noEmit
+
       # TUTORIAL.md embeds every hand-written file whole, spliced from the real
       # ones by scripts/tutorial-build.py. A tutorial that paraphrases its code
       # goes stale without anyone noticing, and a reader following it stops at

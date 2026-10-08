@@ -1,0 +1,4 @@
+# Called vulnerabilities the govulncheck job in security.yml accepts, one per line:
+#   <OSV id> | <why it is accepted> | <issue tracking the real fix>
+# Each prints as a warning on every run. Remove a line as soon as a fix ships;
+# anything not listed fails the scan.

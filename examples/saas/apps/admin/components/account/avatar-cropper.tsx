@@ -1,0 +1,362 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Loader2, X } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
+
+/**
+ * Crop a picture before it is uploaded.
+ *
+ * A profile picture is square and the pictures people have are not. Uploading
+ * the file as it came meant the browser cropped it on display: object-cover
+ * takes the middle, so a photo of two people became a photo of somebody's
+ * shoulder, and the only fix was to go and edit the file. This asks first.
+ *
+ * The whole picture stays visible and a round selection moves and resizes over
+ * it, which is the shape of this that people already know from GitHub and every
+ * other avatar picker. The alternative, a fixed hole with the picture dragged
+ * behind it, hides the parts you are choosing between.
+ *
+ * What comes back is a new square file, cropped and scaled to `size` pixels, so
+ * the bytes stored are the bytes shown. Nothing is uploaded until the button is
+ * pressed: cancel and the original file is never sent anywhere.
+ */
+interface AvatarCropperProps {
+  /** The picked file. The dialog is open whenever this is set. */
+  file: File | null;
+  onCancel: () => void;
+  /** Called with the cropped square. Upload it from here. */
+  onCropped: (cropped: File) => void;
+  /** Output edge in pixels. 512 is enough for a retina 128px avatar. */
+  size?: number;
+  /** True while the caller is uploading, which keeps the dialog up and busy. */
+  saving?: boolean;
+}
+
+/** The picture is fitted inside this, in CSS pixels. */
+const STAGE_W = 520;
+const STAGE_H = 300;
+/** Smaller than this and the selection is not a face any more. */
+const MIN_SELECTION = 48;
+/** How far an arrow key moves the selection, for anybody not using a pointer. */
+const NUDGE = 8;
+
+type Corner = "nw" | "ne" | "sw" | "se";
+type Drag =
+  | { kind: "move"; pointerX: number; pointerY: number; startX: number; startY: number }
+  | { kind: "resize"; corner: Corner; anchorX: number; anchorY: number };
+
+export function AvatarCropper({ file, onCancel, onCropped, size = 512, saving = false }: AvatarCropperProps) {
+  const [url, setUrl] = useState("");
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const [error, setError] = useState("");
+  /** The selection, in displayed pixels, relative to the top left of the picture. */
+  const [sel, setSel] = useState({ x: 0, y: 0, size: 0 });
+  const drag = useRef<Drag | null>(null);
+  const stage = useRef<HTMLDivElement>(null);
+
+  // One object URL per file, revoked when the file changes or the dialog closes:
+  // a blob URL that is never revoked keeps the whole image in memory for the
+  // life of the tab.
+  useEffect(() => {
+    if (!file) {
+      setUrl("");
+      return;
+    }
+    const next = URL.createObjectURL(file);
+    setUrl(next);
+    return () => URL.revokeObjectURL(next);
+  }, [file]);
+
+  // Load it to learn its real size, which everything below is measured against.
+  // A file the browser cannot decode says so here rather than showing an empty
+  // box with a Save button.
+  useEffect(() => {
+    if (!url) {
+      setImage(null);
+      return;
+    }
+    setError("");
+    const img = new Image();
+    img.onload = () => setImage(img);
+    img.onerror = () => setError("That file is not an image this browser can read.");
+    img.src = url;
+  }, [url]);
+
+  /** How much the picture is shrunk to fit the stage. Never enlarged. */
+  const fit = image ? Math.min(1, STAGE_W / image.naturalWidth, STAGE_H / image.naturalHeight) : 1;
+  const shown = image
+    ? { w: Math.round(image.naturalWidth * fit), h: Math.round(image.naturalHeight * fit) }
+    : { w: 0, h: 0 };
+
+  // Start with the largest circle the picture can hold, centred: the crop
+  // somebody who changes nothing would want.
+  useEffect(() => {
+    if (!image) return;
+    const edge = Math.min(shown.w, shown.h);
+    setSel({ x: (shown.w - edge) / 2, y: (shown.h - edge) / 2, size: edge });
+  }, [image, shown.w, shown.h]);
+
+  /** Keep the selection square, inside the picture, and big enough to be a face. */
+  const clamp = useCallback(
+    (next: { x: number; y: number; size: number }) => {
+      const edge = Math.max(MIN_SELECTION, Math.min(next.size, shown.w, shown.h));
+      return {
+        size: edge,
+        x: Math.max(0, Math.min(shown.w - edge, next.x)),
+        y: Math.max(0, Math.min(shown.h - edge, next.y)),
+      };
+    },
+    [shown.w, shown.h],
+  );
+
+  function onMoveStart(event: React.PointerEvent<HTMLDivElement>) {
+    if (!image) return;
+    event.preventDefault();
+    drag.current = { kind: "move", pointerX: event.clientX, pointerY: event.clientY, startX: sel.x, startY: sel.y };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function onResizeStart(event: React.PointerEvent<HTMLButtonElement>, corner: Corner) {
+    if (!image) return;
+    event.preventDefault();
+    event.stopPropagation();
+    // The opposite corner stays put, which is what makes a handle feel attached
+    // to the thing it is dragging.
+    drag.current = {
+      kind: "resize",
+      corner,
+      anchorX: corner === "nw" || corner === "sw" ? sel.x + sel.size : sel.x,
+      anchorY: corner === "nw" || corner === "ne" ? sel.y + sel.size : sel.y,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function onPointerMove(event: React.PointerEvent<HTMLElement>) {
+    const current = drag.current;
+    if (!current || !stage.current) return;
+    if (current.kind === "move") {
+      setSel(
+        clamp({
+          x: current.startX + (event.clientX - current.pointerX),
+          y: current.startY + (event.clientY - current.pointerY),
+          size: sel.size,
+        }),
+      );
+      return;
+    }
+    // Resize: the square is as big as the smaller side of the box the pointer
+    // and the anchor make, so it never stops being square.
+    const box = stage.current.getBoundingClientRect();
+    const px = event.clientX - box.left;
+    const py = event.clientY - box.top;
+    const edge = Math.min(Math.abs(px - current.anchorX), Math.abs(py - current.anchorY));
+    const x = px < current.anchorX ? current.anchorX - edge : current.anchorX;
+    const y = py < current.anchorY ? current.anchorY - edge : current.anchorY;
+    setSel(clamp({ x, y, size: edge }));
+  }
+
+  function onPointerEnd(event: React.PointerEvent<HTMLElement>) {
+    drag.current = null;
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  // The same moves without a pointer. A cropper that only works by dragging is
+  // one a keyboard user cannot use at all, and the alternative is no picture.
+  function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    const moves: Record<string, { x: number; y: number }> = {
+      ArrowLeft: { x: -NUDGE, y: 0 },
+      ArrowRight: { x: NUDGE, y: 0 },
+      ArrowUp: { x: 0, y: -NUDGE },
+      ArrowDown: { x: 0, y: NUDGE },
+    };
+    const move = moves[event.key];
+    if (move) {
+      event.preventDefault();
+      setSel((current) => clamp({ ...current, x: current.x + move.x, y: current.y + move.y }));
+      return;
+    }
+    if (event.key === "+" || event.key === "=") {
+      event.preventDefault();
+      // Grown from the middle, so the part somebody framed stays framed.
+      setSel((current) => clamp({ x: current.x - NUDGE / 2, y: current.y - NUDGE / 2, size: current.size + NUDGE }));
+    }
+    if (event.key === "-" || event.key === "_") {
+      event.preventDefault();
+      setSel((current) => clamp({ x: current.x + NUDGE / 2, y: current.y + NUDGE / 2, size: current.size - NUDGE }));
+    }
+  }
+
+  // Esc cancels, which is what every other dialog in here does.
+  useEffect(() => {
+    if (!file) return;
+    function onEsc(event: KeyboardEvent) {
+      if (event.key === "Escape" && !saving) onCancel();
+    }
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, [file, saving, onCancel]);
+
+  async function save() {
+    if (!image || !file) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      setError("This browser could not prepare the picture.");
+      return;
+    }
+    // The selection is in displayed pixels; the picture is cropped in its own,
+    // which is the same rectangle divided by the fit. Those two agreeing is the
+    // whole job: what you framed is what gets stored.
+    const sx = sel.x / fit;
+    const sy = sel.y / fit;
+    const edge = sel.size / fit;
+    ctx.imageSmoothingQuality = "high";
+    // PNG keeps transparency and JPEG does not, so a PNG stays a PNG. A
+    // transparent picture flattened to JPEG goes black, which on a dark panel
+    // reads as a broken upload.
+    const png = file.type === "image/png";
+    if (!png) {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, size, size);
+    }
+    ctx.drawImage(image, sx, sy, edge, edge, 0, 0, size, size);
+
+    const type = png ? "image/png" : "image/jpeg";
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 0.9));
+    if (!blob) {
+      setError("This browser could not prepare the picture.");
+      return;
+    }
+    const base = file.name.replace(/\.[^.]+$/, "") || "avatar";
+    onCropped(new File([blob], `${base}-square.${png ? "png" : "jpg"}`, { type }));
+  }
+
+  if (!file) return null;
+
+  const handles: Array<{ corner: Corner; className: string; cursor: string; label: string }> = [
+    { corner: "nw", className: "-left-1.5 -top-1.5", cursor: "nwse-resize", label: "top left" },
+    { corner: "ne", className: "-right-1.5 -top-1.5", cursor: "nesw-resize", label: "top right" },
+    { corner: "sw", className: "-bottom-1.5 -left-1.5", cursor: "nesw-resize", label: "bottom left" },
+    { corner: "se", className: "-bottom-1.5 -right-1.5", cursor: "nwse-resize", label: "bottom right" },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/60" onClick={saving ? undefined : onCancel} />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="avatar-cropper-title"
+        className="relative z-10 w-full max-w-xl overflow-hidden rounded-xl border border-border bg-bg-secondary shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+          <div>
+            <h2 id="avatar-cropper-title" className="text-sm font-semibold text-text-primary">
+              Crop your new profile picture
+            </h2>
+            <p className="mt-0.5 text-xs text-text-muted">
+              Drag the circle to choose the part you want, and drag a corner to resize it.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={saving}
+            aria-label="Cancel"
+            className="rounded-lg p-1 text-text-muted transition-colors hover:bg-bg-hover hover:text-text-primary"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="p-5">
+          {error ? (
+            <p role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+              {error}
+            </p>
+          ) : (
+            <div className="flex justify-center">
+              {/* The picture at its own shape, with the selection over it. Both
+                  are measured from the same box, so what is framed is what is
+                  cropped. */}
+              <div
+                ref={stage}
+                tabIndex={0}
+                role="group"
+                aria-label="Crop area. Drag the circle, or use the arrow keys to move it and plus and minus to resize it."
+                onKeyDown={onKeyDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerEnd}
+                onPointerCancel={onPointerEnd}
+                style={{ width: shown.w || STAGE_W, height: shown.h || STAGE_H }}
+                className="relative touch-none select-none overflow-hidden rounded-lg bg-bg-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary"
+              >
+                {url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={url}
+                    alt=""
+                    draggable={false}
+                    // Tailwind's preflight sets img { max-width: 100% }, which
+                    // would shrink the picture below the size everything here is
+                    // measured in.
+                    style={{ width: shown.w, height: shown.h, maxWidth: "none" }}
+                  />
+                )}
+                {image && (
+                  <div
+                    onPointerDown={onMoveStart}
+                    style={{
+                      position: "absolute",
+                      left: sel.x,
+                      top: sel.y,
+                      width: sel.size,
+                      height: sel.size,
+                      // Everything outside the circle is dimmed by the shadow of
+                      // the circle itself, so there is one element to keep in
+                      // step rather than four.
+                      boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.55)",
+                      cursor: "move",
+                    }}
+                    className="rounded-full border-2 border-dashed border-white/90"
+                  >
+                    {handles.map((handle) => (
+                      <button
+                        key={handle.corner}
+                        type="button"
+                        aria-label={`Resize from the ${handle.label}`}
+                        onPointerDown={(event) => onResizeStart(event, handle.corner)}
+                        style={{ cursor: handle.cursor }}
+                        className={`absolute h-3 w-3 rounded-sm border border-black/20 bg-white shadow ${handle.className}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-4">
+          <button type="button" onClick={onCancel} disabled={saving} className={buttonClasses({ variant: "outline", size: "sm" })}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving || !image || Boolean(error)}
+            className={buttonClasses({ size: "sm" })}
+          >
+            {saving && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+            {saving ? "Uploading" : "Set new profile picture"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
