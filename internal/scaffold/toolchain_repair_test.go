@@ -12,11 +12,11 @@ func TestGoVersionLess(t *testing.T) {
 		a, b string
 		want bool
 	}{
-		{"1.25.0", "1.26.6", true},
-		{"1.26", "1.26.6", true},
-		{"1.26.6", "1.26.6", false},
-		{"1.27", "1.26.6", false},
-		{"1.21", "1.26.6", true},
+		{"1.25.0", "1.26.9", true},
+		{"1.26", "1.26.9", true},
+		{"1.26.9", "1.26.9", false},
+		{"1.27", "1.26.9", false},
+		{"1.21", "1.26.9", true},
 	} {
 		if got := goVersionLess(c.a, c.b); got != c.want {
 			t.Errorf("goVersionLess(%s, %s) = %v", c.a, c.b, got)
@@ -49,7 +49,7 @@ func TestRepairGoVersionPins(t *testing.T) {
 	src := "FROM golang:1.26-alpine AS builder\nFROM golang:1.27-alpine AS later\n" +
 		"      - uses: actions/setup-go@v5\n        with:\n          go-version: '1.24'\n"
 	out, fixed, _ := repairGoVersionPinsSource(src)
-	for _, want := range []string{"golang:1.26.6-alpine AS builder", "golang:1.27-alpine AS later", "go-version: '1.26.6'"} {
+	for _, want := range []string{"golang:1.26.9-alpine AS builder", "golang:1.27-alpine AS later", "go-version: '1.26.9'"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("missing %q in:\n%s", want, out)
 		}

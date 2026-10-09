@@ -66,6 +66,34 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.394.1 */}
+            <div className="mb-12" id="v3.394.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.394.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Go 1.26.9, for an HTTP/2 crash reachable from every API</h3>
+                <p>
+                  <a href="https://pkg.go.dev/vuln/GO-2026-6617">GO-2026-6617</a> is a race in the
+                  HPACK encoder that crashes an HTTP/2 server, fixed in go1.26.9. It is reachable
+                  from any generated API&apos;s own server and from the CLI&apos;s update client,
+                  and <code>govulncheck</code> said so on the release that had just gone out, which
+                  is what that job is for.
+                </p>
+                <p>
+                  The floor moves in one place and reaches everywhere: the <code>go</code>{' '}
+                  directive a generated <code>go.mod</code> carries is what setup-go and the
+                  release workflow install, and an older toolchain downloads it rather than
+                  refusing. Every workflow, every Dockerfile and all three checked-in examples
+                  move with it. <code>grit upgrade</code> raises an existing project.
+                </p>
+              </div>
+            </div>
+
             {/* v3.394.0 */}
             <div className="mb-12" id="v3.394.0">
               <div className="flex items-center gap-3 mb-4">

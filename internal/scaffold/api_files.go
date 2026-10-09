@@ -244,12 +244,14 @@ func importJobHandlerGo() string { return tmpl("api/handlers/import_job.go") }
 func apiGoMod(opts Options) string {
 	return fmt.Sprintf(`module %s
 
-// Go 1.26.6, and not an earlier patch. Go 1.26.4 carries eight standard library
-// vulnerabilities this code reaches, among them net/http and the encoding/xml
-// behind the SAML sign-in path, before anyone has signed in. The go directive is
-// also what CI, setup-go and the release workflow install, and an older Go
-// downloads this one, so raising it here raises it everywhere.
-go 1.26.6
+// Go 1.26.9, and not an earlier patch. Earlier ones carry standard library
+// vulnerabilities this code reaches before anyone has signed in: Go 1.26.4 and
+// below, eight of them, among them net/http and the encoding/xml behind the
+// SAML sign-in path; Go 1.26.8 and below, GO-2026-6617, an HPACK encoder race
+// that crashes an HTTP/2 server. The go directive is also what CI, setup-go and
+// the release workflow install, and an older Go downloads this one, so raising
+// it here raises it everywhere.
+go 1.26.9
 
 require (
 	github.com/MUKE-coder/gin-docs v0.0.0-20260222113017-4d647cb4e7aa

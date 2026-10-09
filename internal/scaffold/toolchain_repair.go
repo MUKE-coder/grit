@@ -12,10 +12,12 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/manifest"
 )
 
-// goToolchainFloor is the Go release a generated API builds with. Go 1.26.4 and
-// earlier carry eight standard library vulnerabilities the API reaches (H11 in
-// the contact-app review), including the encoding/xml behind SAML sign-in.
-const goToolchainFloor = "1.26.6"
+// goToolchainFloor is the Go release a generated API builds with. Earlier ones
+// carry standard library vulnerabilities the API reaches: Go 1.26.4 and below,
+// eight of them (H11 in the contact-app review), including the encoding/xml
+// behind SAML sign-in; Go 1.26.8 and below, GO-2026-6617, an HPACK encoder race
+// that crashes an HTTP/2 server.
+const goToolchainFloor = "1.26.9"
 
 // goModEdit runs go mod edit in dir. A variable, so a test can see the call
 // without a Go toolchain.

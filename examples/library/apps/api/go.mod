@@ -1,11 +1,11 @@
 module library/apps/api
 
-// Go 1.26.6, and not an earlier patch. Go 1.26.4 carries eight standard library
+// Go 1.26.9, and not an earlier patch. Go 1.26.4 carries eight standard library
 // vulnerabilities this code reaches, among them net/http and the encoding/xml
 // behind the SAML sign-in path, before anyone has signed in. The go directive is
 // also what CI, setup-go and the release workflow install, and an older Go
 // downloads this one, so raising it here raises it everywhere.
-go 1.26.6
+go 1.26.9
 
 require (
 	// Pure-Go WebP, so image optimisation does not cost the static

@@ -15,7 +15,7 @@
 # machine, and cgo cannot cross-compile without a target toolchain.
 ARG IMAGE_BACKEND=purego
 
-FROM golang:1.26.6-alpine AS builder
+FROM golang:1.26.9-alpine AS builder
 
 WORKDIR /app
 
