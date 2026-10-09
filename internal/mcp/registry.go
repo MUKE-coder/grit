@@ -184,6 +184,49 @@ func allTools() []tool {
 			run: (*Server).cliReference,
 		},
 		{
+			name: "grit_search_docs",
+			description: "Search the Grit documentation for the version this CLI was built " +
+				"from, offline. Use this BEFORE writing Grit-specific code: Grit ships several " +
+				"releases a week, so the docs site describes a newer version than most projects " +
+				"are pinned to, and the answer here carries the version it is true of plus a " +
+				"warning when the project disagrees. Returns page URLs with a snippet; follow " +
+				"with grit_read_doc.",
+			schema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"query": map[string]interface{}{
+						"type": "string",
+						"description": "What you want to know, in a few words, e.g. " +
+							"\"field types\" or \"scope rows to their owner\".",
+					},
+					"limit": map[string]interface{}{
+						"type":        "integer",
+						"description": "How many pages to return. Default 5, maximum 20.",
+					},
+				},
+				"required": []string{"query"},
+			},
+			run: (*Server).searchDocs,
+		},
+		{
+			name: "grit_read_doc",
+			description: "Read one documentation page in full, by the URL grit_search_docs " +
+				"returned. Prose only: code samples are not in the index, so for the exact " +
+				"command surface use grit_cli_reference, which is read from this CLI rather " +
+				"than from the docs.",
+			schema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"url": map[string]interface{}{
+						"type":        "string",
+						"description": "The page path, e.g. /docs/concepts/field-types.",
+					},
+				},
+				"required": []string{"url"},
+			},
+			run: (*Server).readDoc,
+		},
+		{
 			name: "grit_generate_resource",
 			description: "Generate a full resource: the GORM model, service, handler and routes, " +
 				"the Zod schema and TypeScript types, the React Query hooks and the admin page, " +

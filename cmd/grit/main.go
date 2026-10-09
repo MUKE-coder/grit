@@ -87,6 +87,7 @@ func rootCommand() *cobra.Command {
 	rootCmd.AddCommand(uiCmd())
 	rootCmd.AddCommand(swapCmd())
 	rootCmd.AddCommand(mcpCmd())
+	rootCmd.AddCommand(docsCmd())
 	rootCmd.AddCommand(versionCmd())
 	rootCmd.AddCommand(routesCmd())
 	rootCmd.AddCommand(downCmd())

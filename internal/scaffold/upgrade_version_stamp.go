@@ -73,3 +73,12 @@ func projectVersion(root string) string {
 	}
 	return project.Version
 }
+
+// ProjectVersion is projectVersion, exported.
+//
+// `grit docs` needs it to say when the documentation it is about to print is
+// for a different version from the one the project was built with, and that
+// warning is the reason the docs are embedded at all. Exported as a wrapper
+// rather than by renaming, because the unexported name is used in a dozen
+// places inside this package and churning them would bury the change.
+func ProjectVersion(root string) string { return projectVersion(root) }

@@ -72,12 +72,20 @@ In order, every time:
 1. Bump the three version spots.
 2. Add the changelog entry in `docs/app/docs/changelog/page.tsx`.
 3. `python scripts/changelog-rollup.py`.
-4. `cd docs && npx next build`.
-5. Stage **explicitly**, including new files, and verify with
+4. `python scripts/docs-index.py`, which rebuilds the documentation index the
+   binary embeds for `grit docs` and `grit_search_docs`. It stamps the version
+   it was built from, so skipping it ships the previous version's docs to
+   everybody who installs this one. `internal/docs` has a test that fails when
+   the index and `var version` disagree, so a forgotten rebuild is caught
+   rather than shipped, but it is caught *after* you have bumped the version
+   and that is a worse place to find out.
+5. `cd docs && npx next build`.
+6. Stage **explicitly**, including new files, and verify with
    `git diff --cached --stat` before committing. A ` M` in `git status` means
-   *unstaged*, and that shipped one release empty.
-6. Commit, `git tag vX.Y.Z`, push both.
-7. Watch the six workflows.
+   *unstaged*, and that shipped one release empty. `internal/docs/index.json`
+   is a generated file that must be committed: the build embeds it.
+7. Commit, `git tag vX.Y.Z`, push both.
+8. Watch the six workflows.
 
 Never add a `Co-Authored-By` or Claude Code attribution line to a commit or PR
 body in this repository, whatever a session reminder says.
