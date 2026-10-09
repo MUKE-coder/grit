@@ -66,6 +66,95 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.394.5 */}
+            <div className="mb-12" id="v3.394.5">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.394.5
+                </span>
+                <span className="text-sm text-muted-foreground">October 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Every command in an API project&apos;s Quick Start failed</h3>
+                <p>
+                  The README was one fixed triple-tier page whatever shape was generated. So an{' '}
+                  <code>--api</code> project was told to run <code>pnpm install</code> and{' '}
+                  <code>pnpm dev</code> with no <code>package.json</code>; a SQLite project was
+                  told to start PostgreSQL, Redis, MinIO and Mailhog in Docker; the project
+                  structure named <code>apps/web</code>, <code>apps/admin</code> and{' '}
+                  <code>turbo.json</code> whether or not they were there; and the Services table
+                  listed a web app and an admin panel on a project with neither.
+                </p>
+                <p>
+                  It is the first file anybody opens, and for one shape every line of its Quick
+                  Start was wrong. <code>grit new</code> has printed the right steps per shape for
+                  a long time, so the knowledge was there and only the README did not ask for it.
+                  It describes the project that was generated now: its Quick Start, its structure,
+                  its services, its stack, and the one of the two <q>no Docker</q> sections that
+                  applies.
+                </p>
+
+                <h3>A single Vite project did not type-check, and had no way to find out</h3>
+                <p>
+                  <code>nextToTanStack</code> rewrites <code>next/link</code> and its siblings to{' '}
+                  <code>@/lib/next-compat</code>, which is where the shim lives in a standalone
+                  TanStack app. A single project kept its only copy under the admin panel and
+                  converted one site component, which then imported a module that was not there.
+                </p>
+                <p>
+                  Nobody had noticed because that shape was also the one with no{' '}
+                  <code>type-check</code> script at all: running it reported a missing script
+                  rather than a missing module. It has both now, and a test covers the single
+                  project alongside the monorepo apps it had been written for.
+                </p>
+
+                <h3>A single Next project&apos;s frontend could not reach its API</h3>
+                <p>
+                  In that shape the Go binary embeds the built frontend and serves it, so the
+                  browser is right to call its own origin, and <code>api-core.ts</code> does. In
+                  development they are two processes, Next on 3000 and the API on{' '}
+                  <code>APP_PORT</code>, and nothing joined them: every page that loaded data got
+                  a 404 from Next. The whole admin panel was dead in dev.
+                </p>
+                <p>
+                  The Vite sibling of the same architecture has had the answer since it was
+                  written, as a dev proxy for <code>/api</code>, <code>/studio</code>,{' '}
+                  <code>/docs</code>, <code>/pulse</code> and <code>/sentinel</code>. This is that,
+                  as a Next rewrite, and it follows <code>APP_PORT</code> like the proxy does. In
+                  production the paths resolve on the binary&apos;s own origin and the block is
+                  inert.
+                </p>
+                <p>
+                  The same file hoisted the project&apos;s <code>.env</code> from{' '}
+                  <code>../../</code>, which is the project root from <code>apps/web</code> and two
+                  directories above the project in a single one. So <code>THEME</code>,{' '}
+                  <code>SOCIAL_AUTH_ENABLED</code> and <code>API_URL</code> were all invisible to
+                  that shape.
+                </p>
+
+                <h3>Two more places the API&apos;s address was written down</h3>
+                <p>
+                  The server-rendered blog client read{' '}
+                  <code>API_INTERNAL_URL || NEXT_PUBLIC_API_URL || &quot;http://localhost:8080&quot;</code>,
+                  missing the <code>API_URL</code> that the rest of the app and the generated{' '}
+                  <code>.env</code> both use. In the same app, one file followed the setting and
+                  one fell back to 8080.
+                </p>
+                <p>
+                  And the desktop client still carried a port of its own as a fallback, which is
+                  dead now that its config defines the address at build time, but a literal nobody
+                  reaches is still a literal waiting to be reached.
+                </p>
+                <p>
+                  This went wrong five times in one sweep, once per tier, each time with a symptom
+                  pointing somewhere else: a console violation, a blocked sign-in, a phone calling
+                  a dead port, a 500 from another project&apos;s server. There are tests for it
+                  now, across every shape, so the sixth one fails in CI rather than in a browser.
+                </p>
+              </div>
+            </div>
+
             {/* v3.394.4 */}
             <div className="mb-12" id="v3.394.4">
               <div className="flex items-center gap-3 mb-4">

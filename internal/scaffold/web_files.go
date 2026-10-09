@@ -173,7 +173,7 @@ func webPackageJSON(opts Options) string {
     "clsx": "^2.1.0",
     "dompurify": "^3.4.15",
     "lucide-react": "^0.468.0",
-    "next": "` + nextVersion + `",
+    "next": "`+nextVersion+`",
     "react": "`+reactVersionFor(opts)+`",
     "react-dom": "`+reactVersionFor(opts)+`",
     "react-hook-form": "^7.49.0",
@@ -267,11 +267,13 @@ func webNextConfig(opts Options) string {
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-// Hoist the monorepo's root .env into process.env. Next.js auto-loads
+// Hoist the project's root .env into process.env. Next.js auto-loads
 // .env only from the package's own directory, so without this the THEME
 // and SOCIAL_AUTH_ENABLED values set at the root are invisible to the
 // web app. Shell env wins — we only fill in unset keys.
-const rootEnv = resolve(process.cwd(), "..", "..", ".env");
+//
+// ` + envHoistNote(opts) + `
+const rootEnv = resolve(process.cwd(), ` + envHoistPath(opts) + `, ".env");
 if (existsSync(rootEnv)) {
   for (const line of readFileSync(rootEnv, "utf8").split(/\r?\n/)) {
     const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/i);
@@ -299,10 +301,68 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_API_URL:
       process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "http://localhost:8080",
   },
-` + nextSecurityHeadersConfig(opts) + `};
+` + nextSecurityHeadersConfig(opts) + nextAPIRewrites(opts) + `};
 
 export default nextConfig;
 `
+}
+
+// nextAPIRewrites bridges the frontend to the Go API in development, for the
+// one shape where the browser calls its own origin.
+//
+// A single Next project ships as one binary: the Go server embeds the built
+// frontend and serves it, so window.location.origin is the API's origin and
+// api-core.ts is right to use it. In development they are two processes, Next
+// on 3000 and the API on APP_PORT, and nothing joined them: every page that
+// loaded data got a 404 from Next. The Vite sibling of the same architecture
+// has had this proxy since it was written.
+//
+// A monorepo frontend needs none of this: it calls the API cross-origin by
+// its configured URL, which is what the CSP above authorises.
+func nextAPIRewrites(opts Options) string {
+	if opts.Architecture != ArchSingle {
+		return ""
+	}
+	return `
+  // In development the API is a separate process. In production the Go binary
+  // serves this frontend from its own origin, so these paths resolve there
+  // without a rewrite and this block is inert.
+  async rewrites() {
+    const api =
+      process.env.NEXT_PUBLIC_API_URL ||
+      process.env.API_URL ||
+      "http://localhost:" + (process.env.APP_PORT || "8080");
+    return [
+      { source: "/api/:path*", destination: api + "/api/:path*" },
+      { source: "/studio/:path*", destination: api + "/studio/:path*" },
+      { source: "/docs/:path*", destination: api + "/docs/:path*" },
+      { source: "/pulse/:path*", destination: api + "/pulse/:path*" },
+      { source: "/sentinel/:path*", destination: api + "/sentinel/:path*" },
+      { source: "/files/:path*", destination: api + "/files/:path*" },
+    ];
+  },
+`
+}
+
+// envHoistPath is where the project's .env sits relative to the Next app.
+//
+// A monorepo app runs from apps/web, two directories down. A single project
+// runs from the root, and asking for "../../" there reads a file outside the
+// project, or nothing: THEME, SOCIAL_AUTH_ENABLED and API_URL were all
+// invisible to that shape.
+func envHoistPath(opts Options) string {
+	if opts.Architecture == ArchSingle {
+		return `"."`
+	}
+	return `"..", ".."`
+}
+
+// envHoistNote says which shape the path above is for, in the generated file.
+func envHoistNote(opts Options) string {
+	if opts.Architecture == ArchSingle {
+		return "This project runs from its own root, so .env is right here."
+	}
+	return "This app runs from apps/web, so the project root is two up."
 }
 
 func webTailwindConfig() string {

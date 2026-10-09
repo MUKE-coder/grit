@@ -18,9 +18,15 @@ import { API_VERSION } from "@/lib/api";
 // In Docker the web container reaches the API by its service name, which the
 // production compose file passes as API_INTERNAL_URL. Everywhere else the
 // public URL works from the server as well.
+//
+// API_URL is in the chain because that is the name the generated root .env
+// sets, and leaving it out is how the rest of the app came to disagree with
+// this file about where the API is: everything else fell back to API_URL and
+// this one fell back to 8080.
 const API_URL = (
   process.env.API_INTERNAL_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
+  process.env.API_URL ||
   "http://localhost:8080"
 ).replace(/\/+$/, "");
 

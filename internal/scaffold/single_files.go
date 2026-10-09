@@ -162,6 +162,11 @@ func singleFrontendOwnFiles(root string, opts Options) map[string]string {
 		// frontends get, put through the compat rewrite.
 		filepath.Join(feRoot, "src", "lib", "nav-menu.ts"):          nextToTanStack(webNavMenuConfig(opts)),
 		filepath.Join(feRoot, "src", "components", "mega-menu.tsx"): nextToTanStack(webMegaMenu()),
+		// nextToTanStack rewrites next/link and friends to "@/lib/next-compat",
+		// so the shim has to be there. The admin panel has its own copy under
+		// @admin/, and the site components converted above cannot reach into
+		// it: this project did not type-check without this file.
+		filepath.Join(feRoot, "src", "lib", "next-compat.tsx"):      adminNextCompatShim(),
 		filepath.Join(feRoot, "src", "components", "footer.tsx"):    singleViteFooter(opts),
 		filepath.Join(feRoot, "src", "components", "providers.tsx"): webTanStackProviders(),
 		filepath.Join(feRoot, "src", "lib", "utils.ts"):             webUtils(),
@@ -579,6 +584,7 @@ func singleFrontendPackageJSON(opts Options) string {
     "build": "tsr generate && tsc -b && vite build",
     "preview": "vite preview",
     "routes:generate": "tsr generate",
+    "type-check": "tsr generate && tsc -b",
     "postinstall": "tsr generate || true",
     "lint": "`+biomeLintScript+`",
     "format": "`+biomeFormatScript+`"

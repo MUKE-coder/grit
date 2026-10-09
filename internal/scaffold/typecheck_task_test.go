@@ -105,6 +105,31 @@ func TestNoAppUsesTheUnhyphenatedSpelling(t *testing.T) {
 	}
 }
 
+// A single project has no turbo and one package.json, so the monorepo test
+// above cannot see it. It was the one shape with no type-check script at all:
+// `pnpm run type-check` in it reported a missing script rather than checking
+// anything.
+func TestASingleProjectDeclaresTypeCheckToo(t *testing.T) {
+	for name, src := range map[string]string{
+		"single + vite": singleFrontendPackageJSON(Options{ProjectName: "app", Frontend: FrontendTanStack, Architecture: ArchSingle}),
+		"single + next": singleNextRootPackageJSON(Options{ProjectName: "app", Frontend: FrontendNext, Architecture: ArchSingle}),
+	} {
+		scripts := scriptsOf(t, name, src)
+		check, ok := scripts["type-check"]
+		if !ok {
+			t.Errorf("%s declares no type-check script, so the command reports a missing "+
+				"script rather than checking anything (it has: %s)",
+				name, strings.Join(keysOf(scripts), ", "))
+			continue
+		}
+		// A Vite project's routes are generated, so the check has to generate
+		// them, for the same reason the TanStack apps do.
+		if strings.Contains(src, "@tanstack/router-cli") && !strings.Contains(check, "tsr generate") {
+			t.Errorf("%s runs %q without generating its route tree first", name, check)
+		}
+	}
+}
+
 // The root script has to point at the task that exists.
 func TestTheRootScriptRunsTheRealTask(t *testing.T) {
 	opts := Options{ProjectName: "app", Frontend: FrontendNext}

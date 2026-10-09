@@ -1022,115 +1022,293 @@ export default {
 	return config
 }
 
+// readmeFile is the first file anybody opens, so it describes the project that
+// was generated rather than the one the template was written for.
+//
+// It used to be a fixed triple-tier page. An --api project was told to run
+// `pnpm install` and `pnpm dev` with no package.json; a SQLite project was
+// told to start PostgreSQL in Docker; the structure named apps/web,
+// apps/admin and turbo.json whether or not they existed. Every command in an
+// API-only project's Quick Start failed. `grit new` already prints the right
+// steps per shape, so the knowledge was there and the README did not ask.
 func readmeFile(opts Options) string {
-	return fmt.Sprintf(`# %s
+	var b strings.Builder
 
-Built with [Grit](https://gritframework.dev).
+	fmt.Fprintf(&b, "# %s\n\nBuilt with [Grit](https://gritframework.dev).\n\n", opts.ProjectName)
 
-## Quick Start
+	// ── Quick Start ─────────────────────────────────────────────────────
+	b.WriteString("## Quick Start\n\n```bash\n")
+	b.WriteString("# Go hot reload, bundled by the CLI; this installs it globally instead\ngo install github.com/air-verse/air@latest\n")
+	if needsDockerServices(opts) {
+		fmt.Fprintf(&b, "\n# The services this project talks to: %s\ndocker compose up -d\n", dockerServiceList(opts))
+	}
+	if opts.ShouldIncludeFrontend() {
+		b.WriteString("\n# Frontend dependencies\npnpm install\n")
+	}
+	b.WriteString("\n# Create the tables\ngrit migrate\n")
+	b.WriteString("\n# Sample data, optional\ngrit seed\n")
+	if opts.Architecture == ArchAPI {
+		b.WriteString("\n# Run the API\ngrit start server\n")
+	} else {
+		b.WriteString("\n# Run everything\ngrit start\n")
+	}
+	if opts.ShouldIncludeExpo() {
+		b.WriteString("\n# Run the mobile app\ngrit start expo\n")
+	}
+	b.WriteString("```\n\n")
 
-`+"```bash"+`
-# 1. Install Air for Go hot reloading
-go install github.com/air-verse/air@latest
+	// ── Cloned? ─────────────────────────────────────────────────────────
+	b.WriteString("## Cloned this project?\n\n")
+	b.WriteString("`.env` holds this machine's secrets and is not committed; `.env.example` is, with\n")
+	b.WriteString("`CHANGE_ME` in their place. Create yours before anything else:\n\n")
+	b.WriteString("```bash\ngrit env        # .env from .env.example, every secret freshly generated\ngrit migrate\ngrit seed\n```\n\n")
+	b.WriteString("To share a database that already holds encrypted data, put the team's\n")
+	b.WriteString("`FIELD_ENCRYPTION_KEY` in `.env` instead of the new one.\n\n")
 
-# 2. Start infrastructure (PostgreSQL, Redis, MinIO, Mailhog)
-docker compose up -d
+	// ── Structure ───────────────────────────────────────────────────────
+	fmt.Fprintf(&b, "## Project Structure\n\n```\n%s/\n%s```\n\n", opts.ProjectName, projectTree(opts))
 
-# 3. Install frontend dependencies
-pnpm install
+	// ── Services ────────────────────────────────────────────────────────
+	b.WriteString("## Services\n\n| Service | URL |\n|---------|-----|\n")
+	for _, row := range readmeServices(opts) {
+		fmt.Fprintf(&b, "| %s | %s |\n", row.label, row.url)
+	}
+	b.WriteString("\n")
 
-# 4. Start all services (API auto-reloads on file changes)
-pnpm dev
-`+"```"+`
+	// ── Running one piece at a time ─────────────────────────────────────
+	b.WriteString("## Development\n\n```bash\n")
+	fmt.Fprintf(&b, "# The Go API, with hot reload\ncd %s && air\n", readmeAPIDir(opts))
+	for _, cmd := range readmeDevCommands(opts) {
+		fmt.Fprintf(&b, "\n# %s\n%s\n", cmd.what, cmd.run)
+	}
+	b.WriteString("```\n\n")
 
-## Cloned this project?
+	// ── No Docker ───────────────────────────────────────────────────────
+	if opts.DBProvider == "postgres" || opts.DBProvider == "mysql" {
+		b.WriteString("## No Docker? No Problem\n\nIf you cannot run Docker, use cloud services instead:\n\n")
+		b.WriteString("```bash\ncp .env.cloud.example .env\n```\n\nThen fill in your keys for:\n\n")
+		b.WriteString("- **[Neon](https://neon.tech)** — PostgreSQL (free tier)\n")
+		b.WriteString("- **[Upstash](https://upstash.com)** — Redis (free tier)\n")
+		b.WriteString("- **[Cloudflare R2](https://dash.cloudflare.com)** — File storage (free tier)\n")
+		b.WriteString("- **[Resend](https://resend.com)** — Email (free tier)\n\n")
+	} else {
+		fmt.Fprintf(&b, "## No servers to run\n\nThis project uses %s, so there is no database process to start.\n"+
+			"Redis is off unless you set `REDIS_URL`, and files go to `storage/` unless you\nset `STORAGE_DRIVER`.\n\n",
+			readmeDBName(opts))
+	}
 
-`+"`.env`"+` holds this machine's secrets and is not committed; `+"`.env.example`"+` is, with
-`+"`CHANGE_ME`"+` in their place. Create yours before anything else:
+	// ── Stack ───────────────────────────────────────────────────────────
+	b.WriteString("## Tech Stack\n\n")
+	for _, line := range readmeStack(opts) {
+		fmt.Fprintf(&b, "- %s\n", line)
+	}
 
-`+"```bash"+`
-grit env        # .env from .env.example, every secret freshly generated
-grit migrate
-grit seed
-`+"```"+`
+	fmt.Fprintf(&b, "\n---\n\n*Built with Grit v%s*\n", opts.Version)
+	return b.String()
+}
 
-To share a database that already holds encrypted data, put the team's
-`+"`FIELD_ENCRYPTION_KEY`"+` in `+"`.env`"+` instead of the new one.
+// needsDockerServices reports whether this project has anything for docker
+// compose to start. A SQLite project with no Redis has nothing.
+func needsDockerServices(opts Options) bool {
+	return opts.DBProvider == "postgres" || opts.DBProvider == "mysql"
+}
 
-## Project Structure
+// dockerServiceList names them, so the comment above the command is true.
+func dockerServiceList(opts Options) string {
+	switch opts.DBProvider {
+	case "mysql":
+		return "MySQL, Redis, MinIO, Mailhog"
+	default:
+		return "PostgreSQL, Redis, MinIO, Mailhog"
+	}
+}
 
-`+"```"+`
-%s/
-├── apps/
-│   ├── api/          # Go backend (Gin + GORM)
-│   ├── web/          # Next.js frontend
-│   └── admin/        # Next.js admin panel
-├── packages/
-│   └── shared/       # Shared types, schemas, constants
-├── docker-compose.yml
-└── turbo.json
-`+"```"+`
+// readmeDBName is the database in a word.
+func readmeDBName(opts Options) string {
+	switch opts.DBProvider {
+	case "memory":
+		return "SQLite in memory"
+	case "mysql":
+		return "MySQL"
+	case "postgres":
+		return "PostgreSQL"
+	default:
+		return "SQLite"
+	}
+}
 
-## Services
+// readmeAPIDir is where the Go module lives, which differs between a single
+// project and a monorepo.
+func readmeAPIDir(opts Options) string {
+	if opts.Architecture == ArchSingle {
+		return "api"
+	}
+	return "apps/api"
+}
 
-| Service       | URL                          |
-|---------------|------------------------------|
-| API           | http://localhost:8080         |
-| GORM Studio   | http://localhost:8080/studio  |
-| Web App       | http://localhost:3000         |
-| Admin Panel   | http://localhost:3001         |
-| PostgreSQL    | localhost:5434               |
-| Redis         | localhost:6380               |
-| MinIO Console | http://localhost:9003         |
-| Mailhog       | http://localhost:8025         |
+// projectTree is the directory listing, with only the directories that exist.
+func projectTree(opts Options) string {
+	var b strings.Builder
+	if opts.Architecture == ArchSingle {
+		b.WriteString("├── api/              # Go backend (Gin + GORM)\n")
+		if opts.UseTanStack() {
+			b.WriteString("├── src/              # The SPA the binary embeds\n")
+		} else {
+			b.WriteString("├── app/              # Next.js App Router\n")
+			b.WriteString("├── admin-panel/      # The admin, as a route group\n")
+		}
+		b.WriteString("├── packages/shared/  # Shared types, schemas, constants\n")
+		b.WriteString("└── docker-compose.yml\n")
+		return b.String()
+	}
 
-## Development
+	b.WriteString("├── apps/\n")
+	// The API is the last app when it is the only one, which an --api project
+	// is. A tree that draws a branch onwards from the last entry is describing
+	// a directory that is not there.
+	apiBranch := "│   ├──"
+	if !opts.ShouldIncludeWeb() && !opts.ShouldIncludeAdmin() &&
+		!opts.ShouldIncludeExpo() && !opts.ShouldIncludeDesktop() && !opts.ShouldIncludeDocs() {
+		apiBranch = "│   └──"
+	}
+	b.WriteString(apiBranch + " api/          # Go backend (Gin + GORM)\n")
+	if opts.ShouldIncludeWeb() {
+		if opts.UseTanStack() {
+			b.WriteString("│   ├── web/          # Vite + TanStack frontend\n")
+		} else {
+			b.WriteString("│   ├── web/          # Next.js frontend\n")
+		}
+	}
+	if opts.ShouldIncludeAdmin() {
+		if opts.UseTanStack() {
+			b.WriteString("│   ├── admin/        # Vite + TanStack admin panel\n")
+		} else {
+			b.WriteString("│   ├── admin/        # Next.js admin panel\n")
+		}
+	}
+	if opts.ShouldIncludeExpo() {
+		b.WriteString("│   ├── expo/         # React Native mobile app\n")
+	}
+	if opts.ShouldIncludeDesktop() {
+		b.WriteString("│   ├── desktop/      # Wails desktop app\n")
+	}
+	if opts.ShouldIncludeDocs() {
+		b.WriteString("│   ├── docs/         # Documentation site\n")
+	}
+	b.WriteString("├── packages/\n")
+	b.WriteString("│   └── shared/       # Shared types, schemas, constants\n")
+	b.WriteString("├── docker-compose.yml\n")
+	if opts.UsesPnpmWorkspace() {
+		b.WriteString("└── turbo.json\n")
+	} else {
+		b.WriteString("└── grit.json\n")
+	}
+	return b.String()
+}
 
-`+"```bash"+`
-# Run Go API with hot reload
-cd apps/api && air
+type readmeRow struct{ label, url string }
 
-# Run Next.js web app
-cd apps/web && pnpm dev
+// readmeServices lists what this project actually serves.
+func readmeServices(opts Options) []readmeRow {
+	rows := []readmeRow{
+		{"API", "http://localhost:8080"},
+		{"API docs", "http://localhost:8080/docs"},
+		{"GORM Studio", "http://localhost:8080/studio"},
+	}
+	if opts.ShouldIncludeSingleSPA() {
+		rows = append(rows, readmeRow{"Frontend", "http://localhost:5173"})
+	}
+	if opts.ShouldIncludeWeb() {
+		rows = append(rows, readmeRow{"Web app", "http://localhost:3000"})
+	}
+	if opts.ShouldIncludeAdmin() {
+		rows = append(rows, readmeRow{"Admin panel", "http://localhost:3001"})
+	}
+	if opts.ShouldIncludeExpo() {
+		rows = append(rows, readmeRow{"Expo", "exp://localhost:8081"})
+	}
+	if opts.ShouldIncludeDesktop() {
+		rows = append(rows, readmeRow{"Desktop", "`wails dev`, from apps/desktop"})
+	}
+	if opts.ShouldIncludeDocs() {
+		rows = append(rows, readmeRow{"Docs", "http://localhost:3002"})
+	}
+	switch opts.DBProvider {
+	case "postgres":
+		rows = append(rows, readmeRow{"PostgreSQL", "localhost:5434"})
+	case "mysql":
+		rows = append(rows, readmeRow{"MySQL", "localhost:3308"})
+	}
+	if needsDockerServices(opts) {
+		rows = append(rows,
+			readmeRow{"Redis", "localhost:6380"},
+			readmeRow{"MinIO console", "http://localhost:9003"},
+			readmeRow{"Mailhog", "http://localhost:8025"},
+		)
+	}
+	return rows
+}
 
-# Run admin panel
-cd apps/admin && pnpm dev
+type readmeCmd struct{ what, run string }
 
-# Run all services via Turborepo
-pnpm dev
-`+"```"+`
+// readmeDevCommands is how to run each frontend on its own.
+func readmeDevCommands(opts Options) []readmeCmd {
+	var out []readmeCmd
+	if opts.Architecture == ArchSingle {
+		if opts.ShouldIncludeFrontend() {
+			out = append(out, readmeCmd{"The frontend", "pnpm dev"})
+		}
+		return out
+	}
+	if opts.ShouldIncludeWeb() {
+		out = append(out, readmeCmd{"The web app", "cd apps/web && pnpm dev"})
+	}
+	if opts.ShouldIncludeAdmin() {
+		out = append(out, readmeCmd{"The admin panel", "cd apps/admin && pnpm dev"})
+	}
+	if opts.ShouldIncludeExpo() {
+		out = append(out, readmeCmd{"The mobile app", "cd apps/expo && pnpm start"})
+	}
+	if opts.ShouldIncludeDesktop() {
+		out = append(out, readmeCmd{"The desktop app", "cd apps/desktop && wails dev"})
+	}
+	if opts.UsesPnpmWorkspace() && opts.ShouldIncludeFrontend() {
+		out = append(out, readmeCmd{"Every frontend at once, via Turborepo", "pnpm dev"})
+	}
+	return out
+}
 
-## No Docker? No Problem
-
-If you can't run Docker, use cloud services instead:
-
-`+"```bash"+`
-cp .env.cloud.example .env
-`+"```"+`
-
-Then fill in your keys for:
-- **[Neon](https://neon.tech)** — PostgreSQL (free tier)
-- **[Upstash](https://upstash.com)** — Redis (free tier)
-- **[Cloudflare R2](https://dash.cloudflare.com)** — File storage (free tier)
-- **[Resend](https://resend.com)** — Email (free tier)
-
-No Docker needed — just your API keys and `+"``"+`go run`+"``"+`.
-
-## Tech Stack
-
-- **Backend:** Go + Gin + GORM
-- **Frontend:** Next.js 14+ (App Router) + React + TypeScript
-- **Styling:** Tailwind CSS + shadcn/ui
-- **Database:** PostgreSQL
-- **Cache:** Redis
-- **Monorepo:** Turborepo + pnpm
-- **Validation:** Zod (shared schemas)
-- **Data Fetching:** React Query (TanStack Query)
-
----
-
-*Built with Grit v%s*
-`, opts.ProjectName, opts.ProjectName, opts.Version)
+// readmeStack is what this project is built from, as built.
+func readmeStack(opts Options) []string {
+	lines := []string{"**Backend:** Go + Gin + GORM"}
+	if opts.ShouldIncludeFrontend() {
+		if opts.UseTanStack() {
+			lines = append(lines, "**Frontend:** Vite + React + TanStack Router + TypeScript")
+		} else {
+			lines = append(lines, "**Frontend:** Next.js (App Router) + React + TypeScript")
+		}
+		lines = append(lines, "**Styling:** Tailwind CSS + shadcn/ui")
+	}
+	if opts.ShouldIncludeExpo() {
+		lines = append(lines, "**Mobile:** Expo + React Native + NativeWind")
+	}
+	if opts.ShouldIncludeDesktop() {
+		lines = append(lines, "**Desktop:** Wails + React")
+	}
+	lines = append(lines, "**Database:** "+readmeDBName(opts))
+	if needsDockerServices(opts) {
+		lines = append(lines, "**Cache:** Redis")
+	}
+	if opts.UsesPnpmWorkspace() {
+		lines = append(lines, "**Monorepo:** Turborepo + pnpm")
+	}
+	if opts.ShouldIncludeFrontend() {
+		lines = append(lines,
+			"**Validation:** Zod (shared schemas)",
+			"**Data fetching:** React Query (TanStack Query)",
+		)
+	}
+	return lines
 }
 
 func gritJSON(opts Options) string {
