@@ -23,6 +23,7 @@ import (
 
 	"github.com/MUKE-coder/grit/v3/internal/accessgen"
 	"github.com/MUKE-coder/grit/v3/internal/deploy"
+	"github.com/MUKE-coder/grit/v3/internal/devlog"
 	"github.com/MUKE-coder/grit/v3/internal/expose"
 	"github.com/MUKE-coder/grit/v3/internal/generate"
 	"github.com/MUKE-coder/grit/v3/internal/maintenance"
@@ -88,6 +89,7 @@ func rootCommand() *cobra.Command {
 	rootCmd.AddCommand(swapCmd())
 	rootCmd.AddCommand(mcpCmd())
 	rootCmd.AddCommand(docsCmd())
+	rootCmd.AddCommand(logsCmd())
 	rootCmd.AddCommand(versionCmd())
 	rootCmd.AddCommand(routesCmd())
 	rootCmd.AddCommand(downCmd())
@@ -1938,6 +1940,23 @@ func runDevProcs(ctx context.Context, cancel context.CancelFunc, procs []devProc
 	var outWg sync.WaitGroup
 	started := make([]*exec.Cmd, 0, len(procs))
 
+	// Everything these processes print also goes to .grit/logs/dev.log, so
+	// that something other than a person can read it.
+	//
+	// A Grit application logs to stderr, which is right for a container and
+	// leaves an agent with nothing to look at. Best effort on purpose: a log
+	// that cannot be opened must never stop the dev servers, so Open returning
+	// an error is noted and ignored, and a nil writer is usable and does
+	// nothing.
+	var devLog *devlog.Writer
+	if root, err := scaffold.FindProjectRoot(); err == nil {
+		if w, err := devlog.Open(root); err == nil {
+			devLog = w
+			defer devLog.Close()
+			color.New(color.FgHiBlack).Printf("  Recording output to %s\n", devlog.Dir+"/"+devlog.Name)
+		}
+	}
+
 	for _, p := range procs {
 		out, _ := p.cmd.StdoutPipe()
 		errPipe, _ := p.cmd.StderrPipe()
@@ -1949,8 +1968,8 @@ func runDevProcs(ctx context.Context, cancel context.CancelFunc, procs []devProc
 		}
 		started = append(started, p.cmd)
 		outWg.Add(2)
-		go prefixCopy(&outWg, p.prefix, out, os.Stdout)
-		go prefixCopy(&outWg, p.prefix, errPipe, os.Stderr)
+		go prefixCopy(&outWg, p.prefix, out, os.Stdout, devLog)
+		go prefixCopy(&outWg, p.prefix, errPipe, os.Stderr, devLog)
 	}
 
 	sigCh := make(chan os.Signal, 1)
@@ -1994,16 +2013,38 @@ func runDevProcs(ctx context.Context, cancel context.CancelFunc, procs []devProc
 // prefixCopy streams r line-by-line into w, prefixing every line with
 // prefix. Used so the API and the client share one terminal without the
 // developer guessing whose output is whose.
-func prefixCopy(wg *sync.WaitGroup, prefix string, r io.Reader, w io.Writer) {
+// prefixCopy writes each line to the terminal and, when there is one, to the
+// run's log.
+//
+// The log gets the line without the colour prefix: an agent reading it back
+// should not have to strip ANSI escapes, and the process name is more useful
+// as plain text than as a colour.
+func prefixCopy(wg *sync.WaitGroup, prefix string, r io.Reader, w io.Writer, log *devlog.Writer) {
 	defer wg.Done()
+	plain := stripANSI(prefix)
 	scanner := bufio.NewScanner(r)
 	// Default token cap is 64 KB which truncates fat lines from webpack /
 	// turbo. Lift it so we don't lose error messages.
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 	for scanner.Scan() {
-		fmt.Fprintln(w, prefix+scanner.Text())
+		line := scanner.Text()
+		fmt.Fprintln(w, prefix+line)
+		if log != nil {
+			// The whole line, not just the prefix.
+			//
+			// Stripping only the prefix left Vite's and turbo's own colour
+			// codes in the file, so the thing written for a reader that cannot
+			// see colour was full of escape sequences. Checked by reading the
+			// log rather than by assuming the prefix was the only source.
+			fmt.Fprintln(log, plain+stripANSI(line))
+		}
 	}
 }
+
+// ansiEscape matches the colour codes the prefixes carry.
+var ansiEscape = regexp.MustCompile("\x1b\\[[0-9;]*m")
+
+func stripANSI(s string) string { return ansiEscape.ReplaceAllString(s, "") }
 
 // killProcess sends SIGINT then falls back to Kill if the process is
 // still alive — used in error paths where we never even got both

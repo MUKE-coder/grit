@@ -184,6 +184,46 @@ func allTools() []tool {
 			run: (*Server).cliReference,
 		},
 		{
+			name: "grit_dev_log",
+			description: "Read the tail of what the running application printed: the Go API, " +
+				"the frontends, and the hot reloader. This is the only tool here that " +
+				"describes what actually happened rather than what the source says. Written " +
+				"by `grit start`; if it reports nothing is available, ask the developer to " +
+				"run that. Use it when behaviour and code disagree.",
+			schema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"lines": map[string]interface{}{
+						"type":        "integer",
+						"description": "How many lines from the end. Default 120, maximum 500.",
+					},
+					"grep": map[string]interface{}{
+						"type":        "string",
+						"description": "Optional case-insensitive filter, e.g. a route or a table name.",
+					},
+				},
+			},
+			run: (*Server).devLogTool,
+		},
+		{
+			name: "grit_last_errors",
+			description: "The recent failures: compile errors from the hot reloader, panics " +
+				"and stack traces, and 5xx responses. Call this FIRST when something does not " +
+				"work, before reading source: a build failure means the binary never started " +
+				"and a panic means it started and died, and those lead to different places. " +
+				"Needs `grit start` to have been running.",
+			schema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"limit": map[string]interface{}{
+						"type":        "integer",
+						"description": "How many problems to return, newest last. Default 20.",
+					},
+				},
+			},
+			run: (*Server).lastErrorsTool,
+		},
+		{
 			name: "grit_search_docs",
 			description: "Search the Grit documentation for the version this CLI was built " +
 				"from, offline. Use this BEFORE writing Grit-specific code: Grit ships several " +
