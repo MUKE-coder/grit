@@ -1,0 +1,39 @@
+# Trivy findings the generated-app scan accepts, with the reason and the date
+# the acceptance expires.
+#
+# This is the dependency-graph scanner, so it reports what is present. The
+# reachability question is answered by govulncheck in the same job, and a
+# called vulnerability still fails the build unless it is in
+# .github/govulncheck-allow.txt. Nothing here is called.
+#
+# An expiry rather than a permanent entry: every line is a bet that upstream
+# will ship a release, and a bet nobody re-examines is how a known hole becomes
+# a permanent one.
+
+vulnerabilities:
+  # excelize v2.11.0 is the newest tagged release. Five denial-of-service
+  # findings were fixed on its master branch and none of them has been
+  # released: Trivy reports the fix as a pseudo-version
+  # (2.11.1-0.2026...-<commit>), which is a commit, not a release.
+  #
+  # Adopting an untagged upstream commit into every generated project is a
+  # worse risk than the finding: all five need a hostile .xlsx, and a Grit
+  # project reads spreadsheets only through an authenticated import that an
+  # operator starts. govulncheck reports none of them as called.
+  #
+  # Remove this block the day excelize tags v2.11.1 and raise the pin.
+  - id: CVE-2026-107215
+    statement: "excelize DoS on a hostile .xlsx; fixed only on master, no tagged release. Not reachable per govulncheck."
+    expired_at: 2026-12-31
+  - id: CVE-2026-107216
+    statement: "excelize DoS on a hostile .xlsx; fixed only on master, no tagged release. Not reachable per govulncheck."
+    expired_at: 2026-12-31
+  - id: CVE-2026-107217
+    statement: "excelize DoS on a hostile .xlsx; fixed only on master, no tagged release. Not reachable per govulncheck."
+    expired_at: 2026-12-31
+  - id: CVE-2026-107219
+    statement: "excelize DoS on a hostile .xlsx; fixed only on master, no tagged release. Not reachable per govulncheck."
+    expired_at: 2026-12-31
+  - id: CVE-2026-107223
+    statement: "excelize DoS on a hostile .xlsx; fixed only on master, no tagged release. Not reachable per govulncheck."
+    expired_at: 2026-12-31

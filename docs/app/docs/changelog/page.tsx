@@ -66,6 +66,107 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.394.3 */}
+            <div className="mb-12" id="v3.394.3">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.394.3
+                </span>
+                <span className="text-sm text-muted-foreground">October 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A generated mobile app shipped Grit&apos;s brand as its own</h3>
+                <p>
+                  <code>icon.png</code>, <code>adaptive-icon.png</code>, <code>splash.png</code>{' '}
+                  and <code>favicon.png</code> were four copies of the Grit logo. So an app called{' '}
+                  <code>cm2</code> had the framework&apos;s mark on the home screen, on the splash,
+                  in the browser tab and in whatever a store listing would have shown. The sign-in
+                  and sign-up screens rendered the same file at 76px, and the sign-up screen told
+                  the user to &quot;Get started with Grit in seconds&quot;.
+                </p>
+                <p>
+                  The rule has applied to the web app and the admin panel for a long time: a
+                  generated app shows its own name, copy and theme. The mobile app is the surface
+                  where breaking it costs the most, because an app icon is what somebody sees
+                  before they open anything.
+                </p>
+                <p>
+                  The icons are drawn at scaffold time from the project&apos;s accent colour, with
+                  a README beside them saying they are placeholders and what each one is for. The
+                  auth screens draw the project&apos;s own initial, taken from{' '}
+                  <code>lib/brand.ts</code>, which reads the name out of <code>app.json</code> so
+                  renaming the project renames it on screen. The splash and adaptive-icon
+                  backgrounds follow the theme too: they were Grit&apos;s near-black on every
+                  project, including the default theme, whose background is white.
+                </p>
+
+                <h3>And painted itself purple whatever theme it chose</h3>
+                <p>
+                  <code>grit new shop --theme emerald</code> produced an app whose sign-in button,
+                  focus states, tab bar, stat cards and switches were all <code>#6c5ce7</code>:
+                  Grit&apos;s default accent, belonging to no theme anybody picked. There were 29
+                  hardcoded copies of it.
+                </p>
+                <p>
+                  The machinery was already there and unused. <code>tailwind.config.js</code>{' '}
+                  defines an <code>accent</code> from the theme, so every class only had to say{' '}
+                  <code>accent</code>, and the handful of colours a class cannot reach come from
+                  the palette, which is where the gradients and the tab bar already got theirs.
+                </p>
+
+                <h3>The seeder wrote one set of variable names for three bundlers</h3>
+                <p>
+                  Every frontend got <code>NEXT_PUBLIC_</code> names. A Next app reads those. A
+                  Vite app reads <code>VITE_</code>, so its <code>.env.local</code> named a
+                  publishable key the app could not see and an API address it ignored. An Expo app
+                  reads <code>EXPO_PUBLIC_</code> and was not in the list at all, so it got no file:
+                  no key, no address.
+                </p>
+                <p>
+                  Each symptom points somewhere else. A public endpoint answering{' '}
+                  <code>INVALID_API_KEY</code> looks like a key problem. A phone calling a port
+                  nothing answers looks like the phone. Each app is now asked what it is, by the
+                  config file it has, and gets the names it reads.
+                </p>
+                <p>
+                  Expo gets a port rather than a URL, because a phone cannot reach{' '}
+                  <code>localhost</code>: that address is the phone. The app derives the dev
+                  machine&apos;s LAN address from the host Metro is served on and needed only the
+                  port to go with it, and that port was the literal <code>8080</code> in{' '}
+                  <code>lib/api.ts</code>, so moving <code>APP_PORT</code> broke all three
+                  resolution paths at once.
+                </p>
+
+                <h3>Two gaps in checks that already existed</h3>
+                <p>
+                  The Expo app had no <code>type-check</code> script, so{' '}
+                  <code>turbo type-check</code> skipped it in silence: the same fault found on the
+                  Next tier two releases ago, in the one app the test for it did not cover. It is
+                  covered now.
+                </p>
+                <p>
+                  And <code>grit start server</code> wrote no dev log, nor did any{' '}
+                  <code>grit start &lt;app&gt;</code>. The log existed only when{' '}
+                  <code>grit start</code> ran everything at once, which is the thing an{' '}
+                  <code>--api</code> project cannot do and a <code>--mobile</code> project does not
+                  do by design. Those two shapes had nothing for an agent to read. Every start path
+                  writes it now, in the same shape, so <code>grit logs</code> cannot tell them
+                  apart.
+                </p>
+
+                <h3>Five accepted Trivy findings, each with an expiry</h3>
+                <p>
+                  excelize v2.11.0 is its newest tagged release and five denial-of-service fixes
+                  are on its master branch, unreleased. govulncheck reports none of them as called,
+                  and adopting an untagged upstream commit into every generated project is the
+                  worse risk, so they are accepted in{' '}
+                  <code>.github/trivyignore.yaml</code> with the reason and a date the acceptance
+                  runs out. A bet nobody re-examines is how a known hole becomes a permanent one.
+                </p>
+              </div>
+            </div>
+
             {/* v3.394.2 */}
             <div className="mb-12" id="v3.394.2">
               <div className="flex items-center gap-3 mb-4">

@@ -101,3 +101,7 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: "1"
           ignore-unfixed: true
+          # Accepted findings, each with a reason and an expiry date. The file
+          # lives in this repository rather than in the generated project,
+          # because the generated project is written fresh on every run.
+          trivyignores: .github/trivyignore.yaml

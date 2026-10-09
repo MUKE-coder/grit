@@ -54,32 +54,54 @@ func checkAPIAddressAgrees(p *project) []Finding {
 		}
 	}
 
-	// NEXT_PUBLIC_API_URL, per app: written once by grit seed and never
-	// rewritten, so this is the one that goes stale without anybody editing it.
-	for _, app := range []string{"web", "admin"} {
+	// The per-app file, written once by grit seed and never rewritten, so this
+	// is the one that goes stale without anybody editing anything.
+	//
+	// Each bundler exposes only its own prefix, so the name differs per app and
+	// all of them are checked: a file naming the wrong one is its own problem,
+	// and a file naming the right one with the wrong port is this one.
+	for _, app := range []string{"web", "admin", "expo", "desktop"} {
 		path := filepath.Join(p.root, "apps", app, ".env.local")
 		raw, err := os.ReadFile(path)
 		if err != nil {
 			continue
 		}
-		url := envValueIn(string(raw), "NEXT_PUBLIC_API_URL")
-		if url == "" || !isLocalURL(url) {
-			continue
+		body := string(raw)
+		rel := "apps/" + app + "/.env.local"
+
+		// An Expo app is given the port on its own, because a phone cannot
+		// reach a localhost URL: that address is the phone.
+		if got := envValueIn(body, "EXPO_PUBLIC_API_PORT"); got != "" && got != port {
+			findings = append(findings, Finding{
+				Level:    "error",
+				Resource: rel,
+				Message: "EXPO_PUBLIC_API_PORT is " + got + " and the API listens on " + port +
+					". The app derives the dev machine's address from Metro and takes the " +
+					"port from here, so every request goes to a port nothing answers.",
+				Fix: "Change EXPO_PUBLIC_API_PORT in " + rel + " to " + port + ".",
+			})
 		}
-		got, ok := urlPort(url)
-		if !ok || got == port {
-			continue
+
+		for _, key := range []string{"NEXT_PUBLIC_API_URL", "VITE_API_URL", "EXPO_PUBLIC_API_URL"} {
+			url := envValueIn(body, key)
+			if url == "" || !isLocalURL(url) {
+				continue
+			}
+			got, ok := urlPort(url)
+			if !ok || got == port {
+				continue
+			}
+			findings = append(findings, Finding{
+				Level:    "error",
+				Resource: rel,
+				Message: key + " points at port " + got + " and the API listens on " + port +
+					". This file is written once by grit seed and never overwritten, so it " +
+					"keeps the port the project had when it was first seeded, and it wins " +
+					"over API_URL in the root .env.",
+				Fix: "Change " + key + " in " + rel + " to use :" + port +
+					", or delete the line and let the root API_URL answer.",
+			})
 		}
-		findings = append(findings, Finding{
-			Level:    "error",
-			Resource: "apps/" + app + "/.env.local",
-			Message: "NEXT_PUBLIC_API_URL points at port " + got + " and the API listens on " +
-				port + ". This file is written once by grit seed and never overwritten, so " +
-				"it keeps the port the project had when it was first seeded, and it wins " +
-				"over API_URL in the root .env.",
-			Fix: "Change NEXT_PUBLIC_API_URL in apps/" + app + "/.env.local to use :" + port +
-				", or delete the line and let the root API_URL answer.",
-		})
 	}
 
 	return findings

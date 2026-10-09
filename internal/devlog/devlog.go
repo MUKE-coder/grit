@@ -18,6 +18,7 @@ package devlog
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -374,4 +375,49 @@ func mustRel(root, path string) string {
 		return path
 	}
 	return filepath.ToSlash(rel)
+}
+
+// ansiEscape matches the colour codes a dev server writes. They belong on a
+// terminal and are noise in a file written for something that cannot see
+// colour.
+var ansiEscape = regexp.MustCompile("\x1b\\[[0-9;]*m")
+
+// StripANSI removes those codes.
+func StripANSI(s string) string { return ansiEscape.ReplaceAllString(s, "") }
+
+// Prefixed wraps a log so each line written to it is tagged with the process
+// it came from, exactly as the combined `grit start` writes them.
+//
+// The tag is what tells an API panic from a bundler's output when both are in
+// one file, and Errors uses it to keep the context around a failure to the
+// process that failed. A single-process start writes the same shape so that
+// `grit logs` cannot tell the two cases apart.
+func Prefixed(w io.Writer, label string) io.Writer {
+	return &prefixWriter{w: w, prefix: "[" + label + "] "}
+}
+
+// prefixWriter buffers until a newline, because a Writer is handed whatever
+// chunk the pipe produced and a tag belongs at the start of a line rather than
+// at the start of a read.
+type prefixWriter struct {
+	w      io.Writer
+	prefix string
+	buf    []byte
+}
+
+func (p *prefixWriter) Write(b []byte) (int, error) {
+	n := len(b)
+	p.buf = append(p.buf, b...)
+	for {
+		i := bytes.IndexByte(p.buf, '\n')
+		if i < 0 {
+			break
+		}
+		line := strings.TrimRight(string(p.buf[:i]), "\r")
+		p.buf = p.buf[i+1:]
+		if _, err := fmt.Fprintln(p.w, p.prefix+StripANSI(line)); err != nil {
+			return n, err
+		}
+	}
+	return n, nil
 }

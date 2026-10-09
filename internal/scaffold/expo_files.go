@@ -60,6 +60,7 @@ func writeExpoFiles(root string, opts Options) error {
 		filepath.Join(expoRoot, "lib", "auth.tsx"):                                expoAuthProvider(),
 		filepath.Join(expoRoot, "lib", "theme.tsx"):                               expoThemeProvider(opts),
 		filepath.Join(expoRoot, "lib", "query-client.ts"):                         expoQueryClient(),
+		filepath.Join(expoRoot, "lib", "brand.ts"):                                expoBrand(),
 	}
 
 	for path, content := range files {
@@ -68,10 +69,16 @@ func writeExpoFiles(root string, opts Options) error {
 		}
 	}
 
-	// Icons/splash/favicon referenced by app.json — ship the Grit logo for each
-	// so Metro doesn't fail with "Unable to resolve asset ./assets/icon.png".
-	if err := writeBrandLogo(filepath.Join(expoRoot, "assets"),
+	// Icons/splash/favicon referenced by app.json. This project's mark in this
+	// project's accent colour, not the framework's: these four used to be four
+	// copies of the Grit logo, so a generated app shipped somebody else's brand
+	// to a home screen and a store listing. They are placeholders, and the
+	// README says so and says where to replace them.
+	if err := writeAppIcons(filepath.Join(expoRoot, "assets"), opts.Theme,
 		"icon.png", "splash.png", "adaptive-icon.png", "favicon.png"); err != nil {
+		return err
+	}
+	if err := writeFile(filepath.Join(expoRoot, "assets", "README.md"), expoAssetsReadme()); err != nil {
 		return err
 	}
 
@@ -95,7 +102,8 @@ func expoPackageJSON(opts Options) string {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "expo": "~54.0.0",
@@ -145,6 +153,11 @@ func expoPackageJSON(opts Options) string {
 }
 
 func expoAppJSON(opts Options) string {
+	// The splash and adaptive-icon backgrounds were Grit's dark palette on
+	// every project, whatever theme it chose, so a light-themed app flashed
+	// somebody else's near-black on launch. The theme's own background, like
+	// every other surface.
+	background := themeColor(opts.Theme, "bg-primary", "#0a0a0f")
 	return fmt.Sprintf(`{
   "expo": {
     "name": "%s",
@@ -157,7 +170,7 @@ func expoAppJSON(opts Options) string {
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0a0a0f"
+      "backgroundColor": "%s"
     },
     "icon": "./assets/icon.png",
     "ios": {
@@ -167,7 +180,7 @@ func expoAppJSON(opts Options) string {
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0a0a0f"
+        "backgroundColor": "%s"
       },
       "package": "com.%s.app"
     },
@@ -191,7 +204,8 @@ func expoAppJSON(opts Options) string {
     }
   }
 }
-`, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
+`, opts.ProjectName, opts.ProjectName, opts.ProjectName, background,
+		opts.ProjectName, background, opts.ProjectName)
 }
 
 func expoTSConfig() string {
@@ -619,6 +633,7 @@ import * as Haptics from "expo-haptics";
 import { useAuth } from "@/lib/auth";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Image } from "expo-image";
+import { APP_INITIAL } from "@/lib/brand";
 import { useTheme } from "@/lib/theme";
 
 const loginSchema = z.object({
@@ -757,7 +772,7 @@ export default function LoginScreen() {
                       className={
                         "h-5 w-5 rounded border items-center justify-center mr-2 " +
                         (trustDevice
-                          ? "bg-[#6c5ce7] border-[#6c5ce7]"
+                          ? "bg-accent border-accent"
                           : "border-[#D1D5DB] dark:border-[#2a2a3a]")
                       }
                     >
@@ -772,7 +787,7 @@ export default function LoginScreen() {
                 <Pressable
                   onPress={onVerify}
                   disabled={loading || code.trim().length < (useBackup ? 8 : 6)}
-                  className="mt-6 rounded-2xl bg-[#6c5ce7] py-4 items-center"
+                  className="mt-6 rounded-2xl bg-accent py-4 items-center"
                   style={{ opacity: loading || code.trim().length < (useBackup ? 8 : 6) ? 0.5 : 1 }}
                 >
                   <Text className="text-white font-semibold text-base">
@@ -782,7 +797,7 @@ export default function LoginScreen() {
 
                 <View className="flex-row items-center justify-between mt-5">
                   <Pressable onPress={() => { setUseBackup(!useBackup); setCode(""); }}>
-                    <Text className="text-[#6c5ce7] font-medium">
+                    <Text className="text-accent font-medium">
                       {useBackup ? "Use your app" : "Use a backup code"}
                     </Text>
                   </Pressable>
@@ -827,7 +842,7 @@ export default function LoginScreen() {
               entering={FadeInUp.duration(500)}
               className="rounded-[28px] bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#1f1f2b] overflow-hidden"
               style={{
-                shadowColor: "#6c5ce7",
+                shadowColor: palette.accent,
                 shadowOffset: { width: 0, height: 18 },
                 shadowOpacity: 0.18,
                 shadowRadius: 32,
@@ -851,11 +866,31 @@ export default function LoginScreen() {
                       shadowRadius: 22,
                     }}
                   >
-                    <Image
-                      source={require("../../assets/icon.png")}
-                      style={{ width: 76, height: 76, borderRadius: 20 }}
-                      contentFit="contain"
-                    />
+                    {/* The project's own initial, in its own accent colour.
+                        This used to render assets/icon.png, which every
+                        scaffold shipped as the Grit logo, so an app showed
+                        somebody else's brand on its sign-in screen. */}
+                    <View
+                      style={{
+                        width: 76,
+                        height: 76,
+                        borderRadius: 20,
+                        backgroundColor: palette.accent,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: palette.accentForeground,
+                          fontSize: 38,
+                          fontWeight: "700",
+                          lineHeight: 44,
+                        }}
+                      >
+                        {APP_INITIAL}
+                      </Text>
+                    </View>
                   </View>
                   <Text className="text-[28px] font-bold text-[#0F1018] dark:text-white tracking-tight">
                     Welcome back
@@ -950,7 +985,7 @@ export default function LoginScreen() {
                           <Ionicons
                             name={showPassword ? "eye-off-outline" : "eye-outline"}
                             size={19}
-                            color={showPassword ? "#6c5ce7" : "#606078"}
+                            color={showPassword ? palette.accent : palette.inputIcon}
                           />
                         </Pressable>
                       </View>
@@ -970,7 +1005,7 @@ export default function LoginScreen() {
                   pressScale={0.97}
                   className="overflow-hidden rounded-full"
                   style={{
-                    shadowColor: "#6c5ce7",
+                    shadowColor: palette.accent,
                     shadowOffset: { width: 0, height: 10 },
                     shadowOpacity: 0.4,
                     shadowRadius: 18,
@@ -978,7 +1013,7 @@ export default function LoginScreen() {
                   }}
                 >
                   <LinearGradient
-                    colors={["#7c6cf7", "#6c5ce7"]}
+                    colors={[palette.accentHover, palette.accent]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={{ height: 54, flexDirection: "row", alignItems: "center", justifyContent: "center" }}
@@ -1034,7 +1069,7 @@ export default function LoginScreen() {
                 <View className="flex-row justify-center mt-6">
                   <Text className="text-[#6B7280] dark:text-[#9090a8] text-[13.5px]">Don't have an account? </Text>
                   <Link href="/(auth)/register">
-                    <Text className="text-[#6c5ce7] font-semibold text-[13.5px]">Sign up</Text>
+                    <Text className="text-accent font-semibold text-[13.5px]">Sign up</Text>
                   </Link>
                 </View>
               </View>
@@ -1095,6 +1130,7 @@ import * as Haptics from "expo-haptics";
 import { useAuth } from "@/lib/auth";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Image } from "expo-image";
+import { APP_INITIAL } from "@/lib/brand";
 import { useTheme } from "@/lib/theme";
 
 const registerSchema = z.object({
@@ -1171,7 +1207,7 @@ export default function RegisterScreen() {
               entering={FadeInUp.duration(500)}
               className="rounded-[28px] bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#1f1f2b] overflow-hidden"
               style={{
-                shadowColor: "#6c5ce7",
+                shadowColor: palette.accent,
                 shadowOffset: { width: 0, height: 18 },
                 shadowOpacity: 0.18,
                 shadowRadius: 32,
@@ -1194,17 +1230,37 @@ export default function RegisterScreen() {
                       shadowRadius: 22,
                     }}
                   >
-                    <Image
-                      source={require("../../assets/icon.png")}
-                      style={{ width: 76, height: 76, borderRadius: 20 }}
-                      contentFit="contain"
-                    />
+                    {/* The project's own initial, in its own accent colour.
+                        This used to render assets/icon.png, which every
+                        scaffold shipped as the Grit logo, so an app showed
+                        somebody else's brand on its sign-in screen. */}
+                    <View
+                      style={{
+                        width: 76,
+                        height: 76,
+                        borderRadius: 20,
+                        backgroundColor: palette.accent,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: palette.accentForeground,
+                          fontSize: 38,
+                          fontWeight: "700",
+                          lineHeight: 44,
+                        }}
+                      >
+                        {APP_INITIAL}
+                      </Text>
+                    </View>
                   </View>
                   <Text className="text-[28px] font-bold text-[#0F1018] dark:text-white tracking-tight">
                     Create account
                   </Text>
                   <Text className="text-[#6B7280] dark:text-[#9090a8] text-[14px] mt-1.5 px-6 text-center leading-5">
-                    Get started with Grit in seconds.
+                    Get started in seconds.
                   </Text>
                 </View>
               </LinearGradient>
@@ -1325,7 +1381,7 @@ export default function RegisterScreen() {
                           <Ionicons
                             name={showPassword ? "eye-off-outline" : "eye-outline"}
                             size={19}
-                            color={showPassword ? "#6c5ce7" : "#606078"}
+                            color={showPassword ? palette.accent : palette.inputIcon}
                           />
                         </Pressable>
                       </View>
@@ -1367,7 +1423,7 @@ export default function RegisterScreen() {
                   pressScale={0.97}
                   className="overflow-hidden rounded-full"
                   style={{
-                    shadowColor: "#6c5ce7",
+                    shadowColor: palette.accent,
                     shadowOffset: { width: 0, height: 10 },
                     shadowOpacity: 0.4,
                     shadowRadius: 18,
@@ -1375,7 +1431,7 @@ export default function RegisterScreen() {
                   }}
                 >
                   <LinearGradient
-                    colors={["#7c6cf7", "#6c5ce7"]}
+                    colors={[palette.accentHover, palette.accent]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={{ height: 54, flexDirection: "row", alignItems: "center", justifyContent: "center" }}
@@ -1396,7 +1452,7 @@ export default function RegisterScreen() {
                 <View className="flex-row justify-center mt-6">
                   <Text className="text-[#6B7280] dark:text-[#9090a8] text-[13.5px]">Already have an account? </Text>
                   <Link href="/(auth)/login">
-                    <Text className="text-[#6c5ce7] font-semibold text-[13.5px]">Sign in</Text>
+                    <Text className="text-accent font-semibold text-[13.5px]">Sign in</Text>
                   </Link>
                 </View>
               </View>
@@ -1459,7 +1515,7 @@ export default function TabsLayout() {
       }}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#7c6cf7",
+        tabBarActiveTintColor: palette.accentHover,
         tabBarInactiveTintColor: palette.tabInactive,
         tabBarLabelStyle: {
           fontSize: 11,
@@ -1557,6 +1613,8 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useState, useCallback } from "react";
+import { useTheme } from "@/lib/theme";
+import { APP_NAME } from "@/lib/brand";
 import { Ionicons } from "@expo/vector-icons";
 
 interface Stats {
@@ -1594,10 +1652,11 @@ function StatCard({
 }
 
 function RecentItemRow({ item }: { item: RecentItem }) {
+  const { palette } = useTheme();
   return (
     <View className="flex-row items-center bg-white dark:bg-[#22222e] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-xl px-4 py-3 mb-2">
-      <View className="w-10 h-10 rounded-full bg-[#6c5ce7]/20 items-center justify-center mr-3">
-        <Ionicons name={item.icon as any} size={18} color="#6c5ce7" />
+      <View className="w-10 h-10 rounded-full bg-accent/20 items-center justify-center mr-3">
+        <Ionicons name={item.icon as any} size={18} color={palette.accent} />
       </View>
       <View className="flex-1">
         <Text className="text-sm font-medium text-[#0F1018] dark:text-white">{item.title}</Text>
@@ -1610,6 +1669,7 @@ function RecentItemRow({ item }: { item: RecentItem }) {
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const { palette } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
   // /users is ADMIN-only. Fetching it for everyone meant a regular user got a
@@ -1652,7 +1712,7 @@ export default function HomeScreen() {
       className="flex-1 bg-[#F4F4F6] dark:bg-[#0a0a0f]"
       contentContainerClassName="px-6 pt-16 pb-28"
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6c5ce7" />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.accent} />
       }
     >
       <Text className="text-2xl font-bold text-[#0F1018] dark:text-white mb-1">
@@ -1667,7 +1727,7 @@ export default function HomeScreen() {
           number plus two hardcoded zeros — invented data on every install. */}
       {!permsLoading && canViewUsers && (
         <View className="flex-row gap-3 mb-8">
-          <StatCard title="Total Users" value={stats?.total_users ?? 0} color="#6c5ce7" icon="people-outline" />
+          <StatCard title="Total Users" value={stats?.total_users ?? 0} color={palette.accent} icon="people-outline" />
         </View>
       )}
 
@@ -1680,7 +1740,7 @@ export default function HomeScreen() {
       <View className="bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-2xl p-6 mt-4">
         <Text className="text-lg font-semibold text-[#0F1018] dark:text-white mb-3">Quick Start</Text>
         <Text className="text-sm text-[#6B7280] dark:text-[#9090a8] leading-6">
-          Your Grit mobile app is connected to the API. Edit this screen in{"\n"}
+          {APP_NAME} is connected to the API. Edit this screen in{"\n"}
           apps/expo/app/(tabs)/index.tsx
         </Text>
       </View>
@@ -1695,6 +1755,7 @@ func expoExploreScreen() string {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ScreenHeader } from "@/components/ui/screen-header";
+import { useTheme } from "@/lib/theme";
 
 interface LinkItem {
   title: string;
@@ -1707,7 +1768,9 @@ interface LinkItem {
 // Generated resources. ` + "`" + `grit generate resource` + "`" + ` injects an entry below the
 // marker for every resource, so each one's list screen is reachable here.
 const resources: LinkItem[] = [
-  { title: "Users", description: "Manage user accounts", icon: "people-outline", color: "#6c5ce7", route: "/explore/users" },
+  // "accent" rather than a hex: this array is module level, so no hook can
+  // run here, and LinkCard resolves it against the theme when it renders.
+  { title: "Users", description: "Manage user accounts", icon: "people-outline", color: "accent", route: "/explore/users" },
   { title: "Blogs", description: "Posts and articles", icon: "newspaper-outline", color: "#00b894", route: "/blogs" },
   // grit:mobile-resources
 ];
@@ -1723,6 +1786,10 @@ const tools: LinkItem[] = [
 
 function LinkCard({ item }: { item: LinkItem }) {
   const router = useRouter();
+  const { palette } = useTheme();
+  // The literal "accent" means this project's accent, whatever theme it is on.
+  // Everything else is a hex already.
+  const color = item.color === "accent" ? palette.accent : item.color;
   return (
     <TouchableOpacity
       className="bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#1f1f2b] rounded-2xl p-5 mb-3"
@@ -1732,9 +1799,9 @@ function LinkCard({ item }: { item: LinkItem }) {
       <View className="flex-row items-center">
         <View
           className="w-11 h-11 rounded-xl items-center justify-center mr-4"
-          style={{ backgroundColor: item.color + "20" }}
+          style={{ backgroundColor: color + "20" }}
         >
-          <Ionicons name={item.icon as any} size={22} color={item.color} />
+          <Ionicons name={item.icon as any} size={22} color={color} />
         </View>
         <View className="flex-1">
           <Text className="text-base font-semibold text-[#0F1018] dark:text-white">{item.title}</Text>
@@ -1766,7 +1833,7 @@ export default function MoreScreen() {
           <View className="bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#1f1f2b] rounded-2xl p-5 mb-3">
             <Text className="text-[14px] text-[#6B7280] dark:text-[#9090a8] leading-5">
               Generate a resource and it shows up here:{"\n"}
-              <Text className="font-semibold text-[#6c5ce7]">grit generate resource Product</Text>
+              <Text className="font-semibold text-accent">grit generate resource Product</Text>
             </Text>
           </View>
         )}
@@ -1795,6 +1862,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import { useTheme } from "@/lib/theme";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -1831,6 +1899,7 @@ function ProfileRow({
 
 export default function ProfileScreen() {
   const { user, logout, refreshUser } = useAuth();
+  const { palette } = useTheme();
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1972,7 +2041,7 @@ export default function ProfileScreen() {
         </View>
 
         <TouchableOpacity
-          className={` + "`" + `rounded-xl py-4 items-center mb-3 ${saving ? "bg-[#6c5ce7]/50" : "bg-[#6c5ce7]"}` + "`" + `}
+          className={` + "`" + `rounded-xl py-4 items-center mb-3 ${saving ? "bg-accent/50" : "bg-accent"}` + "`" + `}
           onPress={handleSubmit(onSave)}
           disabled={saving}
           activeOpacity={0.8}
@@ -1999,14 +2068,14 @@ export default function ProfileScreen() {
     <ScrollView className="flex-1 bg-[#F4F4F6] dark:bg-[#0a0a0f]" contentContainerClassName="px-6 pt-16 pb-28">
       <View className="items-center mb-8 mt-4">
         <TouchableOpacity onPress={onChangeAvatar} activeOpacity={0.85} className="mb-4">
-          <View className="w-24 h-24 rounded-full bg-[#6c5ce7] items-center justify-center overflow-hidden">
+          <View className="w-24 h-24 rounded-full bg-accent items-center justify-center overflow-hidden">
             {user?.avatar ? (
               <Image source={{ uri: user.avatar }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
             ) : (
               <Text className="text-3xl font-bold text-white">{initials}</Text>
             )}
           </View>
-          <View className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#6c5ce7] border-2 border-[#F4F4F6] dark:border-[#0a0a0f] items-center justify-center">
+          <View className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-accent border-2 border-[#F4F4F6] dark:border-[#0a0a0f] items-center justify-center">
             {uploadingAvatar ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
@@ -2016,8 +2085,8 @@ export default function ProfileScreen() {
         </TouchableOpacity>
         <Text className="text-xl font-bold text-[#0F1018] dark:text-white">{displayName.trim()}</Text>
         <Text className="text-sm text-[#6B7280] dark:text-[#9090a8] mt-1">{user?.email}</Text>
-        <View className="bg-[#6c5ce7]/20 px-3 py-1 rounded-full mt-2">
-          <Text className="text-[#6c5ce7] text-xs font-medium capitalize">
+        <View className="bg-accent/20 px-3 py-1 rounded-full mt-2">
+          <Text className="text-accent text-xs font-medium capitalize">
             {user?.role || "user"}
           </Text>
         </View>
@@ -2032,7 +2101,7 @@ export default function ProfileScreen() {
       </View>
 
       <TouchableOpacity
-        className="bg-[#6c5ce7] rounded-2xl py-4 items-center mb-3"
+        className="bg-accent rounded-2xl py-4 items-center mb-3"
         onPress={() => setEditing(true)}
         activeOpacity={0.8}
       >
@@ -2044,7 +2113,7 @@ export default function ProfileScreen() {
         onPress={() => router.push("/change-password")}
         activeOpacity={0.8}
       >
-        <Ionicons name="lock-closed-outline" size={18} color="#6c5ce7" />
+        <Ionicons name="lock-closed-outline" size={18} color={palette.accent} />
         <Text className="text-[#0F1018] dark:text-white font-semibold text-base ml-2">Change Password</Text>
       </TouchableOpacity>
 
@@ -2094,7 +2163,7 @@ interface SettingSection {
 export default function SettingsScreen() {
   const router = useRouter();
   const { logout } = useAuth();
-  const { scheme, setMode } = useTheme();
+  const { scheme, setMode, palette } = useTheme();
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState("English");
 
@@ -2210,7 +2279,7 @@ export default function SettingsScreen() {
           <Switch
             value={item.id === "dark_mode" ? scheme === "dark" : notifications}
             onValueChange={(val) => handleToggle(item.id, val)}
-            trackColor={{ false: scheme === "dark" ? "#2a2a3a" : "#D1D5DB", true: "#6c5ce7" }}
+            trackColor={{ false: scheme === "dark" ? "#2a2a3a" : "#D1D5DB", true: palette.accent }}
             thumbColor="#ffffff"
           />
         ) : null}
@@ -2321,7 +2390,15 @@ import { Platform } from "react-native";
 //      can't reach "localhost"/"10.0.2.2" — those point at the device
 //      itself — but it CAN reach whatever IP Metro is served on.
 //   3. Fall back to the platform loopback for web / edge cases.
-const API_PORT = 8080;
+// The port the API listens on, to go with the LAN host derived below.
+//
+// It was the literal 8080, so moving APP_PORT left the phone calling a port
+// nothing answers on all three paths here, with EXPO_PUBLIC_API_URL the only
+// escape and nothing setting it. grit seed writes EXPO_PUBLIC_API_PORT into
+// apps/expo/.env.local, so the port moves with the project and the LAN
+// derivation keeps working, which an absolute localhost URL would break: on a
+// real device, localhost is the device.
+const API_PORT = process.env.EXPO_PUBLIC_API_PORT || "8080";
 
 function resolveApiUrl(): string {
   const explicit = process.env.EXPO_PUBLIC_API_URL;
@@ -2649,10 +2726,62 @@ export const useAuth = () => useContext(AuthContext);
 `
 }
 
+// expoAssetsReadme says what these four files are, beside them.
+//
+// They are placeholders drawn from the project's accent colour, and the one
+// place somebody will look for that fact is the folder they are in. A note in
+// the project README is a note nobody reads at the moment they are about to
+// submit an app with a plain square on it.
+func expoAssetsReadme() string {
+	return `# App icons
+
+These four files are placeholders, drawn at scaffold time from this project's
+accent colour. Replace them before you ship.
+
+| File                 | What it is                                   | Size      |
+| -------------------- | -------------------------------------------- | --------- |
+| ` + "`icon.png`" + `           | The home screen icon, iOS and Android        | 1024x1024 |
+| ` + "`adaptive-icon.png`" + `  | The Android foreground layer                 | 1024x1024 |
+| ` + "`splash.png`" + `         | The launch screen                            | 1024x1024 |
+| ` + "`favicon.png`" + `        | The browser tab, for ` + "`expo start --web`" + `      | 48x48 up  |
+
+Their names and the colours behind them are set in ` + "`app.json`" + `. The sign-in and
+sign-up screens do not use these files: they draw this project's initial from
+` + "`lib/brand.ts`" + `, which reads the name out of ` + "`app.json`" + `.
+`
+}
+
+// expoBrand is what the app calls itself, read from app.json.
+//
+// Read at runtime rather than spliced into each screen, so renaming the
+// project in app.json renames it everywhere, and so there is one answer rather
+// than one per screen.
+func expoBrand() string {
+	return `import Constants from "expo-constants";
+
+/**
+ * The app's own name, from app.json.
+ *
+ * Everything on screen is this project's, not the framework's: the auth
+ * screens used to render assets/icon.png, which every scaffold shipped as the
+ * Grit logo, so a new app showed somebody else's brand before anybody had
+ * signed in.
+ */
+export const APP_NAME: string = Constants.expoConfig?.name ?? "App";
+
+/** The first letter, for the lettermark the auth screens draw. */
+export const APP_INITIAL: string = (APP_NAME.trim()[0] ?? "A").toUpperCase();
+`
+}
+
 func expoThemeProvider(opts Options) string {
 	// The brand colour, for the handful of places a class cannot reach: the
 	// header gradient, the pull-to-refresh spinner, the logo's shadow.
 	accent := themeColor(opts.Theme, "accent", "#6c5ce7")
+	// The label on an accent fill. Dark on the light-blue themes, white on the
+	// rest, which is the same rule the web apps' --accent-fg follows.
+	accentForeground := themeColor(opts.Theme, "accent-fg", "#ffffff")
+	accentHover := themeColor(opts.Theme, "accent-hover", "#7c6cf7")
 	return `import { createContext, useContext, useEffect, useState } from "react";
 import { useColorScheme, colorScheme as nwColorScheme } from "nativewind";
 import * as SecureStore from "@/lib/secure-store";
@@ -2672,6 +2801,12 @@ export interface Palette {
   scheme: "light" | "dark";
   statusBar: "light" | "dark";
   headerGradient: [string, string, string];
+  // The brand colour as a fill, and a label colour that reads on it. The
+  // lettermark on the auth screens uses both: it used to be an <Image> of
+  // assets/icon.png, which every scaffold shipped as the Grit logo.
+  accent: string;
+  accentHover: string;
+  accentForeground: string;
   logoShadow: string;
   gridLine: string;
   gridOpacity: number;
@@ -2688,6 +2823,9 @@ const LIGHT: Palette = {
   scheme: "light",
   statusBar: "dark",
   headerGradient: ["` + rgba(accent, 0.1) + `", "` + rgba(accent, 0.04) + `", "#FFFFFF"],
+  accent: "` + accent + `",
+  accentHover: "` + accentHover + `",
+  accentForeground: "` + accentForeground + `",
   logoShadow: "` + accent + `",
   gridLine: "#0f1018",
   gridOpacity: 0.04,
@@ -2704,6 +2842,9 @@ const DARK: Palette = {
   scheme: "dark",
   statusBar: "light",
   headerGradient: ["` + rgba(accent, 0.18) + `", "` + rgba(accent, 0.07) + `", "#111118"],
+  accent: "` + accent + `",
+  accentHover: "` + accentHover + `",
+  accentForeground: "` + accentForeground + `",
   logoShadow: "` + accent + `",
   gridLine: "#e8e8f0",
   gridOpacity: 0.06,

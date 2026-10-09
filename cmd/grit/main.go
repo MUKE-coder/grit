@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.394.2"
+var version = "3.394.3"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -1821,6 +1821,29 @@ func startCmd() *cobra.Command {
 	return cmd
 }
 
+// teeToDevLog points a single process at both the terminal and the project's
+// dev log, and returns a close function.
+//
+// The log is what `grit logs` reads and what the MCP tools hand an agent, and
+// for a while it only existed when `grit start` ran everything at once. The
+// projects least likely to do that are the ones that most need it: an --api
+// project has no other way to start, and a --mobile project runs its API and
+// its Expo app as separate commands by design.
+//
+// A log that cannot be opened is not worth failing a dev server over, so this
+// says so once and carries on writing to the terminal alone.
+func teeToDevLog(c *exec.Cmd, root, label string) func() {
+	log, err := devlog.Open(root)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "  (not writing %s: %v)\n", filepath.Join(devlog.Dir, devlog.Name), err)
+		c.Stdout, c.Stderr = os.Stdout, os.Stderr
+		return func() {}
+	}
+	c.Stdout = io.MultiWriter(os.Stdout, devlog.Prefixed(log, label))
+	c.Stderr = io.MultiWriter(os.Stderr, devlog.Prefixed(log, label))
+	return func() { log.Close() }
+}
+
 // startAppCmd builds a `grit start <app>` subcommand that runs a single app's
 // dev process from anywhere in the project. appSubdir is relative to the
 // project root; requiresWails gates the desktop app on the Wails toolchain.
@@ -1846,9 +1869,8 @@ func startAppCmd(use, short, appSubdir, bin string, args []string, requiresWails
 
 			c := exec.Command(bin, args...)
 			c.Dir = dir
-			c.Stdout = os.Stdout
-			c.Stderr = os.Stderr
 			c.Stdin = os.Stdin
+			defer teeToDevLog(c, root, use)()
 			return c.Run()
 		},
 	}
@@ -2160,9 +2182,16 @@ func startServerCmd() *cobra.Command {
 
 			c := exec.Command(bin, args2...)
 			c.Dir = apiDir
-			c.Stdout = os.Stdout
-			c.Stderr = os.Stderr
 			c.Stdin = os.Stdin
+
+			// An --api project starts no other way, so without this it had no
+			// dev log at all and `grit logs` had nothing to read.
+			root, rootErr := scaffold.FindProjectRoot()
+			if rootErr == nil {
+				defer teeToDevLog(c, root, "api")()
+			} else {
+				c.Stdout, c.Stderr = os.Stdout, os.Stderr
+			}
 
 			return c.Run()
 		},

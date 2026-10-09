@@ -412,3 +412,92 @@ func TestTheWiderPatternsStayQuietOnASuccess(t *testing.T) {
 		t.Fatal("the widened patterns report failures in a healthy run")
 	}
 }
+
+// A single-process start writes the same shape as the combined one.
+//
+// The log existed only when `grit start` ran everything at once, so the
+// projects least likely to do that had nothing for an agent to read: an --api
+// project has no other way to start, and a --mobile project runs its API and
+// its Expo app as separate commands by design. Found by starting a mobile
+// project's API with `grit start server` and watching `grit logs` say there
+// was no log.
+func TestPrefixedWritesTheSameShapeAsACombinedStart(t *testing.T) {
+	root := t.TempDir()
+	log, err := Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := Prefixed(log, "api")
+	// Written in the chunks a pipe produces, not in whole lines: a tag belongs
+	// at the start of a line, and a Writer is handed whatever arrived.
+	for _, chunk := range []string{"Server star", "ting on port 8096\npanic: ", "nope\n"} {
+		if _, err := w.Write([]byte(chunk)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := log.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := Tail(root, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"[api] Server starting on port 8096", "[api] panic: nope"}
+	if len(lines) != len(want) {
+		t.Fatalf("got %d lines, want %d: %q", len(lines), len(want), lines)
+	}
+	for i := range want {
+		if lines[i] != want[i] {
+			t.Errorf("line %d: got %q, want %q", i, lines[i], want[i])
+		}
+	}
+}
+
+// And the colour a dev server writes does not reach the file.
+func TestPrefixedStripsColour(t *testing.T) {
+	root := t.TempDir()
+	log, err := Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Prefixed(log, "expo").Write([]byte("\x1b[32mready\x1b[39m in 900ms\n")); err != nil {
+		t.Fatal(err)
+	}
+	if err := log.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := Tail(root, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 1 || lines[0] != "[expo] ready in 900ms" {
+		t.Fatalf("got %q, want [\"[expo] ready in 900ms\"]", lines)
+	}
+}
+
+// The tag is what Errors uses to keep a failure's context to the process that
+// failed, so a single-process log has to carry it.
+func TestASingleProcessLogIsSearchableByProcess(t *testing.T) {
+	root := t.TempDir()
+	log, err := Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Prefixed(log, "api").Write([]byte("listening\nError: bind: address already in use\n")); err != nil {
+		t.Fatal(err)
+	}
+	if err := log.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	problems, err := Errors(root, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(problems) == 0 {
+		t.Fatal("a bind failure in a single-process log was not reported as an error")
+	}
+}
