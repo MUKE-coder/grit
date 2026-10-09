@@ -347,3 +347,68 @@ func TestABuildLogWithARealMessage(t *testing.T) {
 		t.Fatalf("the compiler's message was dropped: %v", problems[0].More)
 	}
 }
+
+// The failure a real run found that the first pattern list missed.
+//
+// A triple-tier project started before `pnpm install` is a total outage, and
+// every line it produces avoids the word error: "'next' is not recognized",
+// "apps/web dev: Failed", ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL, "Exit status 1".
+// grit logs --errors reported that nothing had failed, which is the worst
+// answer available: it is confident and wrong, and it sends the reader looking
+// somewhere else.
+func TestAMissingToolchainIsAFailure(t *testing.T) {
+	root := project(t)
+	write(t, root, strings.Join([]string{
+		"[web] Scope: 2 of 5 workspace projects",
+		"[web] apps/web dev$ rm -rf .next && next dev --webpack --port 3000",
+		"[web] apps/web dev: 'next' is not recognized as an internal or external command,",
+		"[web] apps/web dev: operable program or batch file.",
+		"[web] apps/admin dev: Failed",
+		"[web]  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @app/admin@0.1.0 dev: `next dev`",
+		"[web] Exit status 1",
+		"[web]  ELIFECYCLE  Command failed with exit code 1.",
+	}, "\n")+"\n")
+
+	problems, err := Errors(root, 20)
+	if err != nil {
+		t.Fatalf("Errors: %v", err)
+	}
+	if len(problems) == 0 {
+		t.Fatal("a project whose frontend toolchain is missing was reported as healthy")
+	}
+
+	all := ""
+	for _, p := range problems {
+		all += p.Text + "\n" + strings.Join(p.More, "\n") + "\n"
+	}
+	for _, want := range []string{"not recognized", "ERR_PNPM"} {
+		if !strings.Contains(all, want) {
+			t.Errorf("the failures do not include %q", want)
+		}
+	}
+}
+
+// And the widened patterns must not fire on an ordinary successful run, which
+// is the half that keeps the tool worth calling.
+func TestTheWiderPatternsStayQuietOnASuccess(t *testing.T) {
+	root := project(t)
+	write(t, root, strings.Join([]string{
+		"[web] apps/web dev$ next dev --port 3000",
+		"[web] ready in 812ms",
+		"[web] compiled successfully",
+		"[api] 2026/10/09 05:00:01 starting on :8099",
+		"[api] 2026/10/09 05:00:02 [GIN] | 200 |  1.1ms | GET /api/v1/contacts",
+		"[api] 2026/10/09 05:00:03 [GIN] | 201 |  4.3ms | POST /api/v1/contacts",
+	}, "\n")+"\n")
+
+	problems, err := Errors(root, 20)
+	if err != nil {
+		t.Fatalf("Errors: %v", err)
+	}
+	if len(problems) != 0 {
+		for _, p := range problems {
+			t.Errorf("fired on: %s", p.Text)
+		}
+		t.Fatal("the widened patterns report failures in a healthy run")
+	}
+}

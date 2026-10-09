@@ -325,7 +325,13 @@ jobs:
             exit 0
           fi
           pnpm install --frozen-lockfile=false
-          pnpm -r exec tsc --noEmit 2>&1 | tail -30
+          # The project's own script, not `pnpm -r exec tsc`.
+          #
+          # packages/shared has no scripts and no local typescript, so the
+          # recursive form fails there with "Command tsc not found" and says
+          # nothing about the application. Found by running it against a real
+          # generated project rather than by reading the workflow.
+          pnpm run type-check 2>&1 | tail -30
 
       - name: Say what was proved
         run: |

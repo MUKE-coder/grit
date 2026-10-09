@@ -145,6 +145,19 @@ var errorLine = regexp.MustCompile(`(?i)` + strings.Join([]string{
 	`\b5\d\d\b\s*\|`, // Gin's request log: "| 500 |"
 	`unhandled|uncaught`,
 	`failed to|failure`,
+	// The ones a real run found that this list missed.
+	//
+	// A triple-tier project started before `pnpm install` printed "'next' is
+	// not recognized as an internal or external command", "apps/web dev:
+	// Failed", ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL and "Exit status 1", and
+	// grit logs --errors reported that nothing had failed. Every one of those
+	// is a total outage and none of them contains the word error.
+	`not recognized as an internal`,
+	`command not found|not found:`,
+	`ERR_[A-Z_]+`,
+	`FAILED?`,
+	`ELIFECYCLE`,
+	`[Ee]xit status [1-9]`,
 	`\.go:\d+:\d+:`, // a compiler diagnostic
 	`Module not found|Failed to compile`,
 }, "|"))
