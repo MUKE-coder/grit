@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 5 to 11, 2026",
-    count: 40,
+    count: 41,
     entries: [
+      { version: "3.394.2", title: "A TanStack frontend could not reach its own API" },
       { version: "3.394.1", title: "Go 1.26.9, for an HTTP/2 crash reachable from every API" },
       { version: "3.394.0", title: "Documentation an agent can read, pinned to the version it is true of" },
       { version: "3.393.0", title: "A customer portal, checked in and tested" },

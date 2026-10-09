@@ -277,6 +277,16 @@ function toOrigin(value: string): string {
 }
 
 const API_ORIGIN = toOrigin(apiTarget)
+// The browser bundle reads import.meta.env.VITE_API_URL, and Vite only exposes
+// a variable to the client when it is set with the VITE_ prefix. A project
+// configures the API with APP_PORT in the root .env, which is not one, so the
+// client fell back to localhost:8080 while the policy below authorised the
+// real port: every request blocked, as a console violation with no HTTP
+// status. Handing the client the value already resolved above means the proxy,
+// the policy and the bundle cannot disagree.
+const clientEnv = {
+  'import.meta.env.VITE_API_URL': JSON.stringify(apiTarget),
+}
 // Browser-facing storage origin — presigned uploads PUT here directly and
 // stored images load from it. Defaults to local MinIO; set VITE_STORAGE_URL
 // to your S3/R2/B2 public origin in production.

@@ -117,6 +117,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),` + viteHostAliases(opts) + `
     },
   },
+  // The resolved API address, so the browser bundle calls the host the CSP
+  // authorises. See clientEnv above.
+  define: clientEnv,
   preview: {
     headers: securityHeaders,
   },

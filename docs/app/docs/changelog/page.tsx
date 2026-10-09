@@ -66,6 +66,69 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.394.2 */}
+            <div className="mb-12" id="v3.394.2">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.394.2
+                </span>
+                <span className="text-sm text-muted-foreground">October 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A TanStack frontend could not reach its own API</h3>
+                <p>
+                  The mirror image of the fault the Next frontends had, found on the next tier in
+                  the sweep. There the policy was stale and the client was right; here the policy
+                  is right and the client is stale.
+                </p>
+                <p>
+                  <code>vite.config.ts</code> resolves where the API is, from{' '}
+                  <code>VITE_API_URL</code> or <code>APP_PORT</code>, points the dev proxy at it
+                  and authorises exactly that origin in the Content-Security-Policy. The browser
+                  bundle never saw that answer: <code>api-core.ts</code> reads{' '}
+                  <code>import.meta.env.VITE_API_URL</code>, Vite only exposes a variable to client
+                  code when it is set with the <code>VITE_</code> prefix, and a project configures
+                  its API with <code>APP_PORT</code>, which is not one. So every request went to
+                  the <code>localhost:8080</code> fallback and the policy the config had just
+                  written blocked it, as a console violation with no HTTP status.
+                </p>
+                <p>
+                  The config now hands the client the value it already resolved, so the proxy, the
+                  policy and the bundle cannot disagree. That is what the comment above{' '}
+                  <code>apiTarget</code> always claimed.
+                </p>
+
+                <h3>The realtime client shipped process.env into a bundle with no process</h3>
+                <p>
+                  Vite does not polyfill <code>process</code>, so a module reading{' '}
+                  <code>process.env</code> throws the moment anything imports it. The converter
+                  that rewrites those reads for the rest of a Vite admin never saw{' '}
+                  <code>lib/realtime.ts</code>, because that file is written straight to disk, and{' '}
+                  <code>vite build</code> uses esbuild and does no type checking, so nothing caught
+                  it before a blank screen would have.
+                </p>
+                <p>
+                  There are three clients and there were two spellings. Each now says which
+                  bundler it is for, in one place, so a fourth cannot quietly inherit the wrong
+                  one.
+                </p>
+
+                <h3>golang.org/x/net v0.60.0, for four called vulnerabilities</h3>
+                <p>
+                  <a href="https://pkg.go.dev/vuln/GO-2026-6617">GO-2026-6617</a>, GO-2026-6612,
+                  GO-2026-6611 and GO-2026-6603, all reached from a generated API. The first is the
+                  same HPACK encoder race go1.26.9 fixed in the standard library a release ago; the
+                  module carries its own copy, so raising the toolchain did not raise it.
+                </p>
+                <p>
+                  Caught by the scan that generates an app and scans that, rather than the one that
+                  scans the CLI, which is the reason that job exists: the CLI does not depend on{' '}
+                  <code>x/net</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.394.1 */}
             <div className="mb-12" id="v3.394.1">
               <div className="flex items-center gap-3 mb-4">

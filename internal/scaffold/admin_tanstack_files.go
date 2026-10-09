@@ -682,6 +682,9 @@ export default defineConfig({
   css: {
     postcss: {},
   },
+  // The resolved API address, so the browser bundle calls the host the CSP
+  // authorises. See clientEnv above.
+  define: clientEnv,
   // Security headers, mirroring the Next.js admin + the Go API's
   // middleware.SecurityHeaders. Vite only applies these when IT serves the
   // files (dev + preview) — a production deploy serves dist/ from a reverse
@@ -754,7 +757,7 @@ func adminTanStackIndexHTML(opts Options) string {
       %s
       }
     </style>
-    <title>%s — Admin</title>
+    <title>%s Admin</title>
     <!--
       The stored theme, applied before the browser paints. The SPA mounts after
       its bundle loads and after /auth/me answers, so without this the dashboard

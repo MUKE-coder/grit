@@ -362,6 +362,10 @@ require (
 	// v0.5.1 is its newest release and still asks for the vulnerable version.
 	github.com/russellhaering/goxmldsig v1.6.0 // CVE-2026-33487
 	golang.org/x/image v0.45.0 // GO-2026-5066, -5062, -5032, -5031, -4815, CVE-2026-46603
+	// HTTP/2 again, and reached from the API's own server: GO-2026-6617 is the
+	// HPACK encoder race that go1.26.9 fixes in the standard library's copy,
+	// and this module carries its own. Raising the toolchain does not raise it.
+	golang.org/x/net v0.60.0 // GO-2026-6617, -6612, -6611, -6603
 	golang.org/x/oauth2 v0.27.0 // CVE-2025-22868
 	golang.org/x/text v0.39.0 // GO-2026-5970
 	// Pulled in by the MySQL driver; govulncheck flags releases before v1.1.1.

@@ -31,7 +31,7 @@ func writeRealtimeClientFiles(root string, opts Options) error {
 		if opts.UseTanStack() {
 			webRoot = filepath.Join(webRoot, "src")
 		}
-		files[filepath.Join(webRoot, "lib", "realtime.ts")] = realtimeClientTS(false)
+		files[filepath.Join(webRoot, "lib", "realtime.ts")] = realtimeClientTS(frontendFor(opts))
 		files[filepath.Join(webRoot, "hooks", "use-realtime.ts")] = useRealtimeTS(!opts.UseTanStack())
 	}
 	// A panel inside the web app shares the web app's copy. A second one there
@@ -43,12 +43,12 @@ func writeRealtimeClientFiles(root string, opts Options) error {
 		// Appending "src" here as well wrote admin-panel/src/hooks into an
 		// embedded panel, which nothing imports and tsc reports as missing.
 		adminRoot := adminPath(root, opts)
-		files[filepath.Join(adminRoot, "lib", "realtime.ts")] = realtimeClientTS(false)
+		files[filepath.Join(adminRoot, "lib", "realtime.ts")] = realtimeClientTS(frontendFor(opts))
 		files[filepath.Join(adminRoot, "hooks", "use-realtime.ts")] = useRealtimeTS(opts.Frontend == FrontendNext)
 	}
 	if opts.ShouldIncludeExpo() {
 		expoRoot := filepath.Join(root, "apps", "expo")
-		files[filepath.Join(expoRoot, "lib", "realtime.ts")] = realtimeClientTS(true)
+		files[filepath.Join(expoRoot, "lib", "realtime.ts")] = realtimeClientTS(frontendNative)
 		files[filepath.Join(expoRoot, "hooks", "use-realtime.ts")] = useRealtimeTS(false)
 	}
 
@@ -60,6 +60,16 @@ func writeRealtimeClientFiles(root string, opts Options) error {
 	return nil
 }
 
+// frontendFor says which bundler a browser client is being written for. The
+// desktop app's Vite frontend reaches this through desktopRealtimeTS, which
+// names its own target.
+func frontendFor(opts Options) frontendTarget {
+	if opts.UseTanStack() {
+		return frontendVite
+	}
+	return frontendNext
+}
+
 // realtimeSharedWithWeb reports whether the admin panel lives inside the web
 // app, where the web app's lib/realtime.ts and hooks/use-realtime.ts serve it.
 func realtimeSharedWithWeb(opts Options) bool {
@@ -69,17 +79,23 @@ func realtimeSharedWithWeb(opts Options) bool {
 // realtimeClientTS is the connection itself: one socket for the whole app,
 // reconnection, and a subscriber registry.
 //
-// native switches to explicit-token auth. A browser sends the grit_access
-// cookie with the handshake and cannot read it; React Native has no cookie jar
-// to send, so it passes the token it already holds.
-func realtimeClientTS(native bool) string {
-	if native {
+// frontendNative switches to explicit-token auth. A browser sends the
+// grit_access cookie with the handshake and cannot read it; React Native has no
+// cookie jar to send, so it passes the token it already holds.
+//
+// frontendVite differs only in how it reads an environment variable, which
+// sounds like a detail and is a blank screen: this file is written straight to
+// disk, so the converter that rewrites process.env for the rest of a Vite
+// admin never touches it.
+func realtimeClientTS(target frontendTarget) string {
+	if target == frontendNative {
 		return realtimeClientFor(realtimeTarget{
-			native: true, imports: expoSecureStoreImport, tokenGetter: expoTokenGetterNew, wsURL: wsURLExpr(true),
+			native: true, imports: expoSecureStoreImport, tokenGetter: expoTokenGetterNew,
+			wsURL:     wsURLExpr(frontendNative),
 			tokenHelp: "React Native has no cookie jar",
 		})
 	}
-	return realtimeClientFor(realtimeTarget{wsURL: wsURLExpr(false)})
+	return realtimeClientFor(realtimeTarget{wsURL: wsURLExpr(target)})
 }
 
 // desktopRealtimeTS is the desktop app's client: the one every other app has,
@@ -562,15 +578,39 @@ function subscribeChannel(channel: string, onChannel: ChannelHandlers): () => vo
 `
 }
 
-// wsURLExpr picks the websocket origin per client. Both derive it from the
+// frontendTarget is which bundler a browser or native client is being written
+// for. They disagree about how client code reads an environment variable, and
+// getting it wrong is a blank screen rather than a build error.
+type frontendTarget int
+
+const (
+	frontendNext frontendTarget = iota
+	frontendVite
+	frontendNative
+)
+
+// wsURLExpr picks the websocket origin per client. Each derives it from the
 // REST base so there is one thing to configure, not two that can disagree.
-func wsURLExpr(native bool) string {
-	if native {
+//
+// There are three clients, and for a long time there were two spellings. A
+// Vite app got the Next one, which reads process.env, and Vite does not
+// polyfill process: the module threw "process is not defined" as soon as
+// anything imported it. Nothing caught that, because vite build uses esbuild
+// and does no type checking, and because the converter that rewrites
+// process.env for the rest of a Vite admin never sees this file: it is written
+// straight to disk.
+func wsURLExpr(target frontendTarget) string {
+	switch target {
+	case frontendNative:
 		return `(process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080")
   .replace(/^http/, "ws") + "/api/ws"`
-	}
-	return `(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080")
+	case frontendVite:
+		return `(import.meta.env.VITE_API_URL || "http://localhost:8080")
   .replace(/^http/, "ws") + "/api/ws"`
+	default:
+		return `(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080")
+  .replace(/^http/, "ws") + "/api/ws"`
+	}
 }
 
 // useRealtimeTS is the React binding.

@@ -268,7 +268,7 @@ func TestFrontendTemplatesHaveNoAvoidableAny(t *testing.T) {
 		"web (Next)":   webFileMap(root, tripleOptions()),
 	}
 	sources["extras"] = map[string]string{
-		"realtime.ts":     realtimeClientTS(false),
+		"realtime.ts":     realtimeClientTS(frontendNext),
 		"use-realtime.ts": useRealtimeTS(true),
 		"blog (Vite)":     webTanStackBlogListRoute(),
 	}

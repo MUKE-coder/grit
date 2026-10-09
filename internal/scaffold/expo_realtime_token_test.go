@@ -8,7 +8,7 @@ import (
 // The Expo realtime client finds the access token by itself, and the web one
 // is untouched: a browser sends its cookie and has no SecureStore.
 func TestExpoRealtimeClientReadsTheAccessToken(t *testing.T) {
-	native := realtimeClientTS(true)
+	native := realtimeClientTS(frontendNative)
 	if !strings.HasPrefix(native, expoSecureStoreImport) {
 		t.Error("the Expo client does not import expo-secure-store first")
 	}
@@ -18,14 +18,14 @@ func TestExpoRealtimeClientReadsTheAccessToken(t *testing.T) {
 	if strings.Contains(native, expoTokenGetterOld) {
 		t.Error("the Expo client still has the getter that returns null")
 	}
-	web := realtimeClientTS(false)
+	web := realtimeClientTS(frontendNext)
 	if strings.Contains(web, "SecureStore") || strings.Contains(web, "tokenGetter") {
 		t.Error("the browser client picked up the native token code")
 	}
 }
 
 func TestExpoRealtimeTokenRepair(t *testing.T) {
-	now := realtimeClientTS(true)
+	now := realtimeClientTS(frontendNative)
 	before := strings.Replace(strings.TrimPrefix(now, expoSecureStoreImport), expoTokenGetterNew, expoTokenGetterOld, 1)
 	got, fixed, warn := repairExpoRealtimeTokenSource(before)
 	if got != now || len(fixed) != 1 || len(warn) != 0 {
