@@ -508,3 +508,101 @@ func TestABuiltInListConfigIsNotAResource(t *testing.T) {
 		t.Fatalf("a built-in list config produced findings: %+v", report.Findings)
 	}
 }
+
+// The three conventions a machine can check.
+//
+// All three build cleanly, log nothing, and leave something quietly broken,
+// which is the only kind of rule a check earns its place for.
+
+func TestAWorkspaceWithoutTheNodeLinker(t *testing.T) {
+	// A Next app, and a workspace file that forgets the setting.
+	report := run(t, map[string]string{
+		"pnpm-workspace.yaml":      "packages:\n  - \"apps/*\"\n",
+		"apps/web/next.config.mjs": "export default {}\n",
+	})
+
+	found := fired(report, "pnpm-node-linker-missing")
+	if len(found) != 1 {
+		t.Fatalf("%d findings for a workspace with no nodeLinker", len(found))
+	}
+	if found[0].Level != "error" {
+		t.Errorf("level is %q; without this every Next page throws", found[0].Level)
+	}
+	if !strings.Contains(found[0].Message, "_interop_require_wildcard") {
+		t.Errorf("the message does not name the symptom: %s", found[0].Message)
+	}
+}
+
+func TestAWorkspaceWithTheNodeLinkerIsFine(t *testing.T) {
+	report := run(t, map[string]string{
+		"pnpm-workspace.yaml":      "nodeLinker: hoisted\n\npackages:\n  - \"apps/*\"\n",
+		"apps/web/next.config.mjs": "export default {}\n",
+	})
+	if found := fired(report, "pnpm-node-linker-missing"); len(found) != 0 {
+		t.Fatalf("a correct workspace was reported: %s", found[0].Message)
+	}
+}
+
+// No Next app means nothing to break, so saying nothing is right.
+func TestAWorkspaceWithNoNextApp(t *testing.T) {
+	report := run(t, map[string]string{
+		"pnpm-workspace.yaml": "packages:\n  - \"apps/*\"\n",
+	})
+	if found := fired(report, "pnpm-node-linker-missing"); len(found) != 0 {
+		t.Fatalf("a project with no Next app was reported: %s", found[0].Message)
+	}
+}
+
+func TestAppURLPointingAtTheWrongPort(t *testing.T) {
+	env := cleanProject()[".env"] + "\nAPP_PORT=9000\nAPP_URL=http://localhost:8080\n"
+	report := run(t, map[string]string{".env": env})
+
+	found := fired(report, "app-url-port-mismatch")
+	if len(found) != 1 {
+		t.Fatalf("%d findings for APP_URL on the wrong port", len(found))
+	}
+	if !strings.Contains(found[0].Message, "9000") || !strings.Contains(found[0].Message, "8080") {
+		t.Errorf("the message does not name both ports: %s", found[0].Message)
+	}
+}
+
+func TestAppURLMatchingAppPortIsFine(t *testing.T) {
+	env := cleanProject()[".env"] + "\nAPP_PORT=9000\nAPP_URL=http://localhost:9000\n"
+	report := run(t, map[string]string{".env": env})
+	if found := fired(report, "app-url-port-mismatch"); len(found) != 0 {
+		t.Fatalf("a matching pair was reported: %s", found[0].Message)
+	}
+}
+
+// A deployed APP_URL is behind a proxy on 443 and has no business matching
+// APP_PORT. Reporting it would be noise on every real deployment.
+func TestADeployedAppURLIsNotCompared(t *testing.T) {
+	env := cleanProject()[".env"] + "\nAPP_PORT=9000\nAPP_URL=https://app.example.com\n"
+	report := run(t, map[string]string{".env": env})
+	if found := fired(report, "app-url-port-mismatch"); len(found) != 0 {
+		t.Fatalf("a deployed URL was compared to APP_PORT: %s", found[0].Message)
+	}
+}
+
+func TestNextOnACaretRange(t *testing.T) {
+	report := run(t, map[string]string{
+		"apps/web/package.json": "{\n  \"dependencies\": {\n    \"next\": \"^16.1.6\"\n  }\n}\n",
+	})
+
+	found := fired(report, "next-not-pinned")
+	if len(found) != 1 {
+		t.Fatalf("%d findings for a caret on Next", len(found))
+	}
+	if found[0].Level != "warning" {
+		t.Errorf("level is %q; a range is a risk and not yet a fault", found[0].Level)
+	}
+}
+
+func TestNextPinnedExactlyIsFine(t *testing.T) {
+	report := run(t, map[string]string{
+		"apps/web/package.json": "{\n  \"dependencies\": {\n    \"next\": \"16.1.6\"\n  }\n}\n",
+	})
+	if found := fired(report, "next-not-pinned"); len(found) != 0 {
+		t.Fatalf("an exact pin was reported: %s", found[0].Message)
+	}
+}

@@ -82,6 +82,11 @@ var checks = []struct {
 	{"public-allowlist-sensitive", checkPublicAllowlist},
 	{"outbox-topic-undelivered", checkOutboxRelays},
 	{"access-table-stale", checkAccessTableStale},
+	// The three conventions a machine can check. Each one builds cleanly,
+	// logs nothing, and leaves something quietly broken.
+	{"pnpm-node-linker-missing", checkNodeLinker},
+	{"app-url-port-mismatch", checkAppURLPort},
+	{"next-not-pinned", checkNextPinned},
 }
 
 // Run audits the project at root.
