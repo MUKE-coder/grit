@@ -105,7 +105,7 @@ func uploadPackageJSON() string {
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "type-check": "tsc --noEmit"
   },
   "peerDependencies": {
     "react": ">=18"

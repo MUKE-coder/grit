@@ -159,6 +159,7 @@ func webPackageJSON(opts Options) string {
     "start": "next start",
     "lint": "`+biomeLintScript+`",
     "format": "`+biomeFormatScript+`",
+    "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"

@@ -759,7 +759,7 @@ func desktopClientPackageJSON(opts Options) string {
   "scripts": {
     "dev": "vite",
     "build": "vite build && tsc -b",
-    "typecheck": "tsc -b",
+    "type-check": "tsc -b",
     "preview": "vite preview",
     "lint": "` + biomeLintScript + `",
     "format": "` + biomeFormatScript + `"

@@ -61,7 +61,7 @@ func webTanStackPackageJSON(opts Options) string {
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "typecheck": "tsc -b",
+    "type-check": "tsc -b",
     "preview": "vite preview",
     "lint": "`+biomeLintScript+`",
     "format": "`+biomeFormatScript+`"

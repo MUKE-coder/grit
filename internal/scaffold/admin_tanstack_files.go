@@ -608,7 +608,7 @@ func adminTanStackPackageJSON(opts Options) string {
   "scripts": {
     "dev": "vite --port 3001",
     "build": "vite build",
-    "typecheck": "tsc -b",
+    "type-check": "tsc -b",
     "preview": "vite preview",
     "lint": "`+biomeLintScript+`",
     "format": "`+biomeFormatScript+`",

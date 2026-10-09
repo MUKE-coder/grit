@@ -553,6 +553,7 @@ func adminPackageJSON(opts Options) string {
     "start": "next start",
     "lint": "`+biomeLintScript+`",
     "format": "`+biomeFormatScript+`",
+    "type-check": "tsc --noEmit",
     "analyze": "ANALYZE=true next build",
     "test": "vitest run",
     "test:watch": "vitest",
