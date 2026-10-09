@@ -140,10 +140,78 @@ function ApiTable({ group }: { group: ApiGroup }) {
   )
 }
 
+const SECTION_NAMES: Record<string, string> = {
+  problem: 'Problem statement',
+  requirements: 'System requirements',
+  capacity: 'Capacity estimation',
+  'high-level-design': 'High level design',
+  stack: 'Technology stack',
+  'data-model': 'Data model',
+  api: 'API design',
+  'low-level-design': 'Low level design',
+  scaling: 'Scalability and performance',
+  bottlenecks: 'Bottlenecks and improvements',
+}
+
+/**
+ * The interview questions, before anything else and outside the numbering.
+ *
+ * Collapsed by default with native <details>, so the page still opens on its
+ * problem statement rather than on a wall of question text, and so this works
+ * with no JavaScript at all.
+ */
+function InterviewQuestions({ s }: { s: SystemDesign }) {
+  if (!s.interview) return null
+  return (
+    <section className="mt-10 scroll-mt-24" id="interview-questions">
+      <h2 className="text-2xl font-bold tracking-tight">Questions this page answers</h2>
+      {s.interview.intro && (
+        <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
+          {s.interview.intro}
+        </p>
+      )}
+      <div className="mt-4 divide-y divide-border/50 overflow-hidden rounded-xl border border-border/50">
+        {s.interview.questions.map((item, i) => (
+          <details key={i} className="group bg-card/20 open:bg-card/40">
+            <summary className="flex cursor-pointer list-none items-start gap-3 px-4 py-3 text-[15px] font-medium hover:bg-card/60">
+              <span
+                aria-hidden
+                className="mt-0.5 shrink-0 text-xs font-semibold tabular-nums text-primary"
+              >
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <span className="flex-1">{item.q}</span>
+              <span
+                aria-hidden
+                className="mt-1 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
+              >
+                ›
+              </span>
+            </summary>
+            <div className="px-4 pb-4 pl-11">
+              <p className="text-[15px] leading-relaxed text-muted-foreground">{item.a}</p>
+              {item.see && SECTION_NAMES[item.see] && (
+                <a
+                  href={`#${item.see}`}
+                  className="mt-2 inline-block text-sm font-medium text-primary hover:underline"
+                >
+                  Worked through in {SECTION_NAMES[item.see]} &rarr;
+                </a>
+              )}
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export function SystemDesignBody({ s }: { s: SystemDesign }) {
   let n = 0
   return (
     <>
+      <InterviewQuestions s={s} />
+
       <Section n={++n} id="problem" title="Problem statement">
         {s.problem.text.map((p, i) => (
           <p key={i} className="mb-3 text-[15px] leading-relaxed text-muted-foreground">

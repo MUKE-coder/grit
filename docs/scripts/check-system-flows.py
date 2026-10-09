@@ -138,11 +138,56 @@ def grab(src, start_idx):
     raise ValueError('unbalanced')
 
 
+# Which SystemDesign field backs each section id the renderer emits, so a
+# question that promises an answer "in the data model" can be checked against
+# the page actually having a data model.
+SECTION_FIELD = {
+    'problem': 'problem',
+    'requirements': 'functional',
+    'capacity': 'capacity',
+    'high-level-design': 'highLevel',
+    'stack': 'stack',
+    'data-model': 'dataModel',
+    'api': 'api',
+    'low-level-design': 'lowLevel',
+    'scaling': 'scaling',
+    'bottlenecks': 'bottlenecks',
+}
+
+
+def check_interview(src, path, report):
+    """Every interview question must point at a section this page really has.
+
+    A question listed with no section behind it is a promise the page does not
+    keep, which is worse than not listing the question at all.
+    """
+    bad = 0
+    for m in re.finditer(r'^export const (\w+): SystemDesign = \{', src, re.M):
+        start = m.start()
+        nxt = re.search(r'^export const \w+: SystemDesign = \{', src[start + 10:], re.M)
+        block = src[start: start + 10 + nxt.start()] if nxt else src[start:]
+        name = m.group(1)
+        if 'interview:' not in block:
+            continue
+        for see in re.findall(r"\bsee:\s*'([^']+)'", block):
+            field = SECTION_FIELD.get(see)
+            if field is None:
+                report('INTERVIEW   %-24s [%s] unknown section id "%s"' % (
+                    os.path.basename(path), name, see))
+                bad += 1
+            elif not re.search(r'^  %s[?]?:' % re.escape(field), block, re.M):
+                report('INTERVIEW   %-24s [%s] points at "%s" but the page has no %s' % (
+                    os.path.basename(path), name, see, field))
+                bad += 1
+    return bad
+
+
 problems = 0
 diagrams = 0
 rerouted = 0
 for path in sorted(glob.glob('config/systems*.ts')):
     src = open(path, encoding='utf-8').read()
+    problems += check_interview(src, path, print)
     for m in re.finditer(r'\bnodes:\s*\[', src):
         diagrams += 1
         ntext, nend = grab(src, m.start())

@@ -80,6 +80,31 @@ export interface SystemDesign {
   /** The Go package or packages in a generated project. */
   packages: string[]
 
+  /**
+   * The interview questions this page answers, shown before the problem
+   * statement.
+   *
+   * These pages are read by two people. One wants to know how Grit works. The
+   * other is preparing for an interview and wants to know whether this page
+   * covers the thing they will be asked. The second reader cannot tell from a
+   * table of contents, so the questions go at the top with a one-paragraph
+   * answer each and a link to the section that works it through properly.
+   *
+   * The rule that keeps this honest: a question only belongs here if the page
+   * genuinely answers it. A question with no section behind it is a promise
+   * the page does not keep, which is worse than not listing it.
+   */
+  interview?: {
+    intro?: string
+    questions: {
+      q: string
+      /** The short answer, in full, for somebody who reads nothing else. */
+      a: string
+      /** The id of the section that covers it, for the "read more" link. */
+      see?: string
+    }[]
+  }
+
   /** 1. The problem, in prose, then what the system must be able to do. */
   problem: { text: string[]; capabilities: string[] }
 
