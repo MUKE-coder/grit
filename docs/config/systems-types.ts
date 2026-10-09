@@ -76,6 +76,7 @@ export interface SystemDesign {
     | 'Delivery'
     | 'Operations'
     | 'Platform'
+    | 'Embedded'
   /** The Go package or packages in a generated project. */
   packages: string[]
 

@@ -9,6 +9,7 @@ import { BACKGROUND_JOBS, OUTBOX, SCHEDULING } from './systems-delivery'
 import { EMAIL, REALTIME, WEBHOOKS } from './systems-delivery-2'
 import { AUDIT, FILE_STORAGE, IMPORT_EXPORT, OBSERVABILITY } from './systems-operations'
 import { API_CONTRACT, CODE_GENERATION, FEATURE_FLAGS } from './systems-platform'
+import { GORM_STUDIO, PULSE, SENTINEL } from './systems-embedded'
 
 /**
  * The registry. Order here is the order the index and the sidebar show.
@@ -45,6 +46,9 @@ export const SYSTEMS: SystemDesign[] = [
   CODE_GENERATION,
   API_CONTRACT,
   FEATURE_FLAGS,
+  GORM_STUDIO,
+  PULSE,
+  SENTINEL,
 ]
 
 export const SYSTEM_GROUPS = [
@@ -54,6 +58,7 @@ export const SYSTEM_GROUPS = [
   'Delivery',
   'Operations',
   'Platform',
+  'Embedded',
 ] as const
 
 /** What each group is for, shown above its cards on the index. */
@@ -64,6 +69,8 @@ export const GROUP_BLURB: Record<string, string> = {
   Delivery: 'Getting work out of the request path and getting results back to the client.',
   Operations: 'Knowing what the system did, and being able to say so afterwards.',
   Platform: 'The parts that generate, migrate and run everything above.',
+  Embedded:
+    'Separate libraries, versioned and released on their own, that mount into the generated API with one call.',
 }
 
 export function getSystem(slug: string): SystemDesign | undefined {

@@ -40,14 +40,43 @@ def route_is_clear(pts, a, b, nodes):
 
 def route_points(a, b, bend, nodes):
     A, B = box(a), box(b)
+
+    # Straight along a row or down a column still has to be checked: two boxes
+    # three columns apart have a box between them.
     if a['row'] == b['row']:
         left = A['x'] < B['x']
-        return [(A['x'] + A['w'] if left else A['x'], A['cy']),
-                (B['x'] if left else B['x'] + B['w'], B['cy'])], True
+        straight = [(A['x'] + A['w'] if left else A['x'], A['cy']),
+                    (B['x'] if left else B['x'] + B['w'], B['cy'])]
+        if route_is_clear(straight, a, b, nodes):
+            return straight, True
+        above = A['y'] - ROW_GAP / 2
+        below = A['y'] + A['h'] + ROW_GAP / 2
+        for lane in ([above, below] if a['row'] > 0 else [below, above]):
+            up = lane < A['y']
+            detour = [(A['cx'], A['y'] if up else A['y'] + A['h']),
+                      (A['cx'], lane),
+                      (B['cx'], lane),
+                      (B['cx'], B['y'] if up else B['y'] + B['h'])]
+            if route_is_clear(detour, a, b, nodes):
+                return detour, True
+        return straight, False
     if a['col'] == b['col']:
         down = A['y'] < B['y']
-        return [(A['cx'], A['y'] + A['h'] if down else A['y']),
-                (B['cx'], B['y'] if down else B['y'] + B['h'])], True
+        straight = [(A['cx'], A['y'] + A['h'] if down else A['y']),
+                    (B['cx'], B['y'] if down else B['y'] + B['h'])]
+        if route_is_clear(straight, a, b, nodes):
+            return straight, True
+        left_lane = A['x'] - COL_GAP / 2
+        right_lane = A['x'] + A['w'] + COL_GAP / 2
+        for lane in ([left_lane, right_lane] if a['col'] > 0 else [right_lane, left_lane]):
+            leftward = lane < A['x']
+            detour = [(A['x'] if leftward else A['x'] + A['w'], A['cy']),
+                      (lane, A['cy']),
+                      (lane, B['cy']),
+                      (B['x'] if leftward else B['x'] + B['w'], B['cy'])]
+            if route_is_clear(detour, a, b, nodes):
+                return detour, True
+        return straight, False
 
     right = A['x'] < B['x']
     down = A['y'] < B['y']

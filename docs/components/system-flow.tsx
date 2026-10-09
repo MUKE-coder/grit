@@ -116,19 +116,51 @@ function routePoints(a: FlowNode, b: FlowNode, bend: 'h' | 'v' | undefined, node
   const A = nodeBox(a)
   const B = nodeBox(b)
 
+  // Straight along a row or down a column is the natural drawing, but it is not
+  // automatically a clear one: two boxes three columns apart have a box between
+  // them, and the straight line runs through it. So these get checked too, and
+  // detour out into the gutter beside the row or column when they have to.
   if (a.row === b.row) {
     const left = A.x < B.x
-    return [
+    const straight: Pt[] = [
       { x: left ? A.x + A.w : A.x, y: A.cy },
       { x: left ? B.x : B.x + B.w, y: B.cy },
     ]
+    if (routeIsClear(straight, a, b, nodes)) return straight
+    const above = A.y - ROW_GAP / 2
+    const below = A.y + A.h + ROW_GAP / 2
+    for (const lane of a.row > 0 ? [above, below] : [below, above]) {
+      const up = lane < A.y
+      const detour: Pt[] = [
+        { x: A.cx, y: up ? A.y : A.y + A.h },
+        { x: A.cx, y: lane },
+        { x: B.cx, y: lane },
+        { x: B.cx, y: up ? B.y : B.y + B.h },
+      ]
+      if (routeIsClear(detour, a, b, nodes)) return detour
+    }
+    return straight
   }
   if (a.col === b.col) {
     const down = A.y < B.y
-    return [
+    const straight: Pt[] = [
       { x: A.cx, y: down ? A.y + A.h : A.y },
       { x: B.cx, y: down ? B.y : B.y + B.h },
     ]
+    if (routeIsClear(straight, a, b, nodes)) return straight
+    const leftLane = A.x - COL_GAP / 2
+    const rightLane = A.x + A.w + COL_GAP / 2
+    for (const lane of a.col > 0 ? [leftLane, rightLane] : [rightLane, leftLane]) {
+      const leftward = lane < A.x
+      const detour: Pt[] = [
+        { x: leftward ? A.x : A.x + A.w, y: A.cy },
+        { x: lane, y: A.cy },
+        { x: lane, y: B.cy },
+        { x: leftward ? B.x : B.x + B.w, y: B.cy },
+      ]
+      if (routeIsClear(detour, a, b, nodes)) return detour
+    }
+    return straight
   }
 
   const right = A.x < B.x
@@ -232,8 +264,23 @@ export function SystemFlow({
   const byId = new Map(nodes.map((n) => [n.id, n]))
   const cols = Math.max(...nodes.map((n) => n.col)) + 1
   const rows = Math.max(...nodes.map((n) => n.row)) + 1
-  const width = PAD * 2 + cols * COL_W + (cols - 1) * COL_GAP
-  const height = PAD * 2 + rows * ROW_H + (rows - 1) * ROW_GAP
+
+  // Routes are computed once, because the view box has to contain them. A
+  // detour around a box in the same row leaves through the gutter beside it,
+  // and on the outermost row or column that gutter is outside the grid: drawn
+  // against a box sized only to the nodes, such a line is simply clipped away.
+  const routed = edges.flatMap((e) => {
+    const a = byId.get(e.from)
+    const b = byId.get(e.to)
+    return a && b ? [{ edge: e, pts: routePoints(a, b, e.bend, nodes) }] : []
+  })
+
+  const xs = routed.flatMap((r) => r.pts.map((p) => p.x))
+  const ys = routed.flatMap((r) => r.pts.map((p) => p.y))
+  const minX = Math.min(0, ...xs.map((x) => x - PAD))
+  const minY = Math.min(0, ...ys.map((y) => y - PAD))
+  const width = Math.max(PAD * 2 + cols * COL_W + (cols - 1) * COL_GAP, ...xs.map((x) => x + PAD)) - minX
+  const height = Math.max(PAD * 2 + rows * ROW_H + (rows - 1) * ROW_GAP, ...ys.map((y) => y + PAD)) - minY
 
   // A sentence of the same thing, for anybody who cannot see the picture.
   // Without this the diagram is a decoration to a screen reader, and the
@@ -250,7 +297,7 @@ export function SystemFlow({
         <p className="mb-4 text-center text-sm font-semibold tracking-tight">{title}</p>
         <div className="overflow-x-auto">
           <svg
-            viewBox={`0 0 ${width} ${height}`}
+            viewBox={`${minX} ${minY} ${width} ${height}`}
             width="100%"
             style={{ minWidth: Math.min(width, 640) }}
             role="img"
@@ -271,11 +318,7 @@ export function SystemFlow({
               </marker>
             </defs>
 
-            {edges.map((e, i) => {
-              const a = byId.get(e.from)
-              const b = byId.get(e.to)
-              if (!a || !b) return null
-              const pts = routePoints(a, b, e.bend, nodes)
+            {routed.map(({ edge: e, pts }, i) => {
               const badge = pointAlong(pts, e.at ?? 0.5)
               return (
                 <g key={`${e.from}-${e.to}-${i}`}>
