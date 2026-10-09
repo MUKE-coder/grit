@@ -640,10 +640,19 @@ func (g *Generator) buildHandlerSearchCols() string {
 func (g *Generator) writeZodSchema(names Names) error {
 	createFields := ""
 	updateFields := ""
+	owner := g.Definition.OwnerField()
 
 	for _, f := range g.Definition.Fields {
 		// Slug fields are auto-generated — exclude from create/update schemas
 		if f.IsSlug() {
+			continue
+		}
+		// The owner of an --owned-by row is the signed-in user: the service
+		// stamps it on create and ignores whatever the body said. Required
+		// here, it asks a caller for a value that will be discarded, and a
+		// form built from this schema cannot be submitted without inventing
+		// one.
+		if owner != nil && f.Name == owner.Name {
 			continue
 		}
 
@@ -1045,12 +1054,17 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 			continue
 		}
 
-		// belongs_to: show related model's name via dot notation
+		// belongs_to: show what the related model is called, by the same
+		// rule the form's dropdown uses. Hardcoding ".name" here left an
+		// empty column for every related model that has no name column: a
+		// User has first_name, an Invoice has a number, a Collection has a
+		// title.
 		if f.IsBelongsTo() {
 			baseName := strings.TrimSuffix(f.Name, "_id")
 			assocSnake := toSnakeCase(baseName)
 			colLabel := strings.Join(splitPascal(toPascalCase(baseName)), " ")
-			columns += fmt.Sprintf("\n      { key: \"%s.name\", label: \"%s\" },", assocSnake, colLabel)
+			columns += fmt.Sprintf("\n      { key: \"%s.%s\", label: \"%s\" },",
+				assocSnake, g.displayFieldFor(f.RelatedModelName()), colLabel)
 			continue
 		}
 		// many_to_many: skip from table columns (arrays are noisy)
@@ -1091,8 +1105,17 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 
 	// Build form field definitions (skip slug — auto-generated, not editable)
 	formFields := ""
+	owner := g.Definition.OwnerField()
 	for _, f := range g.Definition.Fields {
 		if f.IsSlug() {
+			continue
+		}
+		// The owner of an --owned-by row is whoever is signed in. The service
+		// stamps it on create and nothing writes it afterwards, so a picker
+		// here is a required field whose answer is thrown away: it refused to
+		// submit until an operator chose a user, and then stored a different
+		// one. The column stays in the table, which is a read.
+		if owner != nil && f.Name == owner.Name {
 			continue
 		}
 		// Auto-number fields are filled by the server in BeforeCreate — keep them

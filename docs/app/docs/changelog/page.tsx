@@ -66,6 +66,177 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.394.0 */}
+            <div className="mb-12" id="v3.394.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.394.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Documentation an agent can read, pinned to the version it is true of</h3>
+                <p>
+                  Grit ships several releases a week, so an agent reading today&apos;s website
+                  inside a project scaffolded three weeks ago is confidently wrong, and nothing
+                  told it so. <code>grit docs search</code>, <code>grit docs show</code> and{' '}
+                  <code>grit docs list</code> read an index of 194 pages compiled into the binary,
+                  so they work offline and they answer for the version that built them. Agents get
+                  the same thing as <code>grit_search_docs</code> and <code>grit_read_doc</code>{' '}
+                  over MCP.
+                </p>
+                <p>
+                  Every answer carries its version, and a project scaffolded at a different one
+                  gets a warning saying which is which. That is the whole point of embedding the
+                  index rather than fetching a website.
+                </p>
+                <p>
+                  The ranking took four attempts, and each one is a test. The changelog has 807
+                  headings, so a naive heading count made it the best answer to every question
+                  ever asked. Headings are now weighted down as a page accumulates them, a page
+                  with more than sixty of them is scored as an aggregate rather than a topic, and
+                  coverage only counts when the terms land in a title or a heading rather than
+                  anywhere in the prose.
+                </p>
+
+                <h3>The dev server writes down what it printed</h3>
+                <p>
+                  A Grit application logs to stderr, which left an agent helping with it nothing
+                  to read: it could see that a command exited non-zero and not what went wrong.{' '}
+                  <code>grit start</code> now tees everything into{' '}
+                  <code>.grit/logs/dev.log</code>, keeping the previous run beside it.{' '}
+                  <code>grit logs</code> reads it with <code>-n</code>, <code>--errors</code>,{' '}
+                  <code>--grep</code> and <code>--json</code>, and{' '}
+                  <code>grit_dev_log</code> and <code>grit_last_errors</code> do the same over MCP.
+                </p>
+                <p>
+                  <code>--errors</code> was wrong when it was first written, and using it is how
+                  that was found: during an outage where nothing started at all, it reported
+                  &quot;nothing failed&quot;. Its patterns now cover a missing toolchain, an
+                  <code>ELIFECYCLE</code>, a non-zero exit status and a Node <code>ERR_</code>{' '}
+                  code, and the lines of context around a failure come only from the process that
+                  failed, because an API panic surrounded by Vite&apos;s output is not context.
+                </p>
+
+                <h3>The conventions that cost an afternoon ship with the project</h3>
+                <p>
+                  Fourteen rules that existed only as accumulated experience are now in the{' '}
+                  <code>AGENTS.md</code> every project is generated with, which went from 96 lines
+                  to 198. They are the ones whose symptom points somewhere else: an icon in the
+                  admin&apos;s icon map is not automatically a named export, a change to the login
+                  screen is six edits across six files, auto-numbering has to call{' '}
+                  <code>sequence.Next</code> directly or models and services form an import cycle.
+                </p>
+                <p>
+                  Three of them are mechanical, so they are <code>grit doctor</code> checks rather
+                  than paragraphs: <code>pnpm-workspace.yaml</code> without{' '}
+                  <code>nodeLinker: hoisted</code>, an <code>APP_URL</code> whose port has drifted
+                  from <code>APP_PORT</code>, and a caret range on Next. All three leave a project
+                  that builds cleanly and is quietly broken.
+                </p>
+
+                <h3>A generated app survives Grit being deleted, and CI proves it</h3>
+                <p>
+                  The first question anyone asks about a framework with one maintainer is what
+                  happens if it stops, and it had only ever been answered with a paragraph. A CI
+                  job now scaffolds an app, generates the shapes people actually use, deletes the
+                  binary, checks that nothing named grit is on <code>PATH</code>, and then builds,
+                  vets, tests and type-checks the project. It also fails if the generated{' '}
+                  <code>go.mod</code> requires the Grit module, because an application that
+                  carries the framework with it is a different claim from the one being made.
+                </p>
+
+                <h3>Six things found by building a contact app and looking at it</h3>
+                <p>
+                  Every one of these was in a shared component or a generator, so every generated
+                  project had it, and every unit test passed throughout.
+                </p>
+                <p>
+                  <strong>The Content-Security-Policy and the app disagreed about where the API
+                  is.</strong> The policy read <code>NEXT_PUBLIC_API_URL</code> alone while the
+                  client fell back to <code>API_URL</code>, which is the name the generated{' '}
+                  <code>.env</code> actually sets. Move <code>APP_PORT</code> the way the comment
+                  above it invites you to, and the browser blocked every request from the web app
+                  and the admin panel, reporting it as a console violation naming a port nobody
+                  configured rather than as an HTTP status. Both read the same names now, and{' '}
+                  <code>grit upgrade</code> repairs an existing project.
+                </p>
+                <p>
+                  <strong>The API&apos;s address is written down four times.</strong>{' '}
+                  <code>APP_PORT</code>, <code>APP_URL</code>, <code>API_URL</code> and the{' '}
+                  <code>NEXT_PUBLIC_API_URL</code> that <code>grit seed</code> writes into{' '}
+                  <code>apps/*/.env.local</code> once and never overwrites. <code>grit doctor</code>{' '}
+                  checked one pair of them. It checks all four now, and says which file holds the
+                  stale copy, because a frontend calling the wrong port reports a network error or
+                  a CORS failure and never the setting that is wrong.
+                </p>
+                <p>
+                  <strong><code>--owned-by user</code> put a required owner picker on the form and
+                  threw the answer away.</strong> The service is explicit that the owner is
+                  whoever is signed in and never the body, and it is right. The admin panel did
+                  not know: it refused to submit a new contact until an operator chose a user, and
+                  then stored a row owned by the operator. Picking Jane Cooper and reading back a
+                  row owned by <code>admin@example.com</code> is how it was found. The owner is
+                  off the create and edit forms and out of the Zod schemas; it stays a column,
+                  because a table is a read.
+                </p>
+                <p>
+                  <strong>A <code>belongs_to</code> column showed{' '}
+                  <code>&lt;relation&gt;.name</code> whatever the related model was called.</strong>{' '}
+                  The form next to it already resolved the label properly, so a contact&apos;s
+                  Group column read &quot;Family&quot; and its User column read a dash: a User has
+                  a first name and no name at all. Every relationship to a model labelled by a
+                  title, a number or a code had an empty column. The column uses the same rule the
+                  dropdown does now, and an email address counts as a label, so a picker of people
+                  can tell two Janes apart.
+                </p>
+                <p>
+                  <strong>A picker at the bottom of a form opened its list off the bottom of the
+                  window.</strong> The panel is portalled and <code>position: fixed</code>, so
+                  nothing could scroll it back: only typing into its search box reached the
+                  options. The date picker in the same file has flipped above since it was
+                  written. Both relationship pickers do now, and the panel is never taller than
+                  the space it has, so the search box and the create action survive a tight fit.
+                </p>
+                <p>
+                  <strong>Two labels that were right for one column and wrong for the
+                  rest.</strong> A boolean column said &quot;Active&quot; or
+                  &quot;Inactive&quot; whatever it was called, so a contact&apos;s{' '}
+                  <code>starred</code> column read &quot;Inactive&quot;. It says Yes and No. The
+                  not-archived tab was labelled &quot;Published&quot; on every resource; a Contact
+                  is not published, and it is labelled Active. And a table with no rows in it told
+                  you to adjust a search you had never made, which is the one piece of advice that
+                  is useless to somebody who has just generated a resource: an empty resource now
+                  says so and an empty search still suggests widening it.
+                </p>
+
+                <h3>pnpm run type-check type-checked nothing and exited 0</h3>
+                <p>
+                  The root script runs <code>turbo type-check</code>, turbo matches tasks by name,
+                  and four app templates declared <code>typecheck</code> without the hyphen while
+                  the web and admin apps declared no such script at all. Turbo found nothing to
+                  run, printed &quot;No tasks were executed&quot; and exited 0.
+                </p>
+                <p>
+                  That is the worst shape a check can take. A missing script is noticed; a command
+                  that looks like it ran, says nothing and is green is relied upon. A project
+                  generated this way could ship a type error through the CI step whose whole
+                  purpose was to catch it. One name now, three tests that every app declares it,
+                  that nothing declares the other spelling, and that the root script names a task
+                  that exists.
+                </p>
+
+                <h3>examples/saas shipped without internal/storage</h3>
+                <p>
+                  A <code>--exclude=storage</code> meant to skip the uploads directory also ate{' '}
+                  <code>internal/storage</code>, and the example would not build from a clean
+                  checkout. Copying a project into <code>examples/</code> now diffs the two file
+                  lists before the commit.
+                </p>
+              </div>
+            </div>
+
             {/* v3.393.0 */}
             <div className="mb-12" id="v3.393.0">
               <div className="flex items-center gap-3 mb-4">

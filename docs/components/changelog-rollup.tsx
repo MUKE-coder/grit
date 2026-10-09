@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 5 to 11, 2026",
-    count: 38,
+    count: 39,
     entries: [
+      { version: "3.394.0", title: "Documentation an agent can read, pinned to the version it is true of" },
       { version: "3.393.0", title: "A customer portal, checked in and tested" },
       { version: "3.392.0", title: "A form with edits in it stops being easy to throw away" },
       { version: "3.391.0", title: "A password meter that measures the password" },

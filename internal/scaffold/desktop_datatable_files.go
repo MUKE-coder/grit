@@ -700,10 +700,12 @@ function Cell({ value, format }: { value: unknown; format?: ColumnFormat }) {
   }
   switch (format) {
     case "boolean":
+      // Yes and No: this renders every boolean column, not just one called
+      // "active".
       return value ? (
-        <span className="inline-flex items-center gap-1 text-success"><Check className="h-3.5 w-3.5" /> Active</span>
+        <span className="inline-flex items-center gap-1 text-success"><Check className="h-3.5 w-3.5" /> Yes</span>
       ) : (
-        <span className="inline-flex items-center gap-1 text-foreground-muted"><XIcon className="h-3.5 w-3.5" /> Inactive</span>
+        <span className="inline-flex items-center gap-1 text-foreground-muted"><XIcon className="h-3.5 w-3.5" /> No</span>
       );
     case "badge":
       return <span className="inline-flex rounded-full bg-accent/10 px-2 py-0.5 text-[12px] font-medium text-accent">{String(value)}</span>;

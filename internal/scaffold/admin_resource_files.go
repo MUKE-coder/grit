@@ -481,6 +481,8 @@ export interface ResourceTableProps<T = Record<string, unknown>> {
   onEdit?: (item: T) => void;
   onDelete?: (id: string) => void;
   rowActions?: RowActionDefinition[];
+  /** Whether a search, a filter or a tab is narrowing these rows. */
+  isFiltered?: boolean;
 }
 
 /** Props a replacement form receives. Identical to FormSheet / FormModal. */
@@ -1299,7 +1301,10 @@ function ResourceListView({ resource }: ResourcePageProps) {
       {hasArchive && (
         <div className="mb-3 flex w-fit gap-1 rounded-lg border border-border bg-bg-secondary p-1">
           {[
-            { label: "Published", archived: false },
+            // Active, not Published: archiving is what these two tabs are
+            // about, and most resources have nothing to publish. A Contact
+            // is not published; a Group is not published.
+            { label: "Active", archived: false },
             { label: "Archived", archived: true },
           ].map((tab) => (
             <button
@@ -1422,6 +1427,11 @@ function ResourceListView({ resource }: ResourcePageProps) {
             onEdit={c.can("edit") ? c.edit : undefined}
             onDelete={c.can("delete") ? c.remove : undefined}
             rowActions={resource.table.rowActions}
+            isFiltered={
+              c.search.trim() !== "" ||
+              Object.keys(c.queryFilters).length > 0 ||
+              c.showArchived
+            }
           />
         )}
         </div>

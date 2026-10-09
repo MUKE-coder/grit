@@ -104,6 +104,12 @@ interface DataTableProps<T extends object = Record<string, unknown>> {
   onDelete?: (id: string) => void;
   /** Extra per-row actions from the resource's table.rowActions. */
   rowActions?: RowActionDefinition[];
+  /**
+   * Whether a search or a filter is narrowing these rows. It decides which
+   * empty state to show: advice about filters is only useful to somebody who
+   * set one.
+   */
+  isFiltered?: boolean;
 }
 
 // The default for selectedRows. A fresh [] per render would rebuild the
@@ -124,6 +130,7 @@ export function DataTable<T extends object = Record<string, unknown>>({
   onEdit: onEditProp,
   onDelete,
   rowActions,
+  isFiltered,
 }: DataTableProps<T>) {
   // The row type is erased once, here. Everything below reads cells by string
   // key, and a concrete interface has no index signature to read them through.
@@ -163,7 +170,7 @@ export function DataTable<T extends object = Record<string, unknown>>({
   }
 
   if (data.length === 0) {
-    return <TableEmptyState />;
+    return <TableEmptyState filtered={Boolean(isFiltered)} />;
   }
 
   const toggleAll = () => {
@@ -671,16 +678,22 @@ function BadgeCell({
   );
 }
 
+// Yes and No, because this renders every boolean column there is.
+//
+// It used to say Active and Inactive, which reads correctly for a column
+// called "active" and wrongly for all the others: a contact's "starred"
+// column said Inactive, an order's "paid" column said Active. A column whose
+// own header already names the thing only needs the answer.
 function BooleanCell({ value }: { value: boolean }) {
   return value ? (
     <span className="inline-flex items-center gap-1 text-success">
       <Check className="h-3.5 w-3.5" />
-      <span className="text-xs">Active</span>
+      <span className="text-xs">Yes</span>
     </span>
   ) : (
     <span className="inline-flex items-center gap-1 text-text-muted">
       <X className="h-3.5 w-3.5" />
-      <span className="text-xs">Inactive</span>
+      <span className="text-xs">No</span>
     </span>
   );
 }
@@ -1402,17 +1415,27 @@ func adminTableEmptyState() string {
 	return `import { Database } from "@/lib/icons";
 import { useT } from "@/lib/i18n";
 
-export function TableEmptyState() {
+// Two empty states, because they are two different situations.
+//
+// A table narrowed to nothing by a search is telling you to widen it. A table
+// with nothing in it is telling you to add the first record, and advising
+// that person to adjust filters they never set sends them looking for a
+// control that is already in its default position.
+export function TableEmptyState({ filtered = false }: { filtered?: boolean }) {
   const t = useT();
+  const title = filtered
+    ? t("table.empty", "No records found")
+    : t("table.emptyAll", "Nothing here yet");
+  const hint = filtered
+    ? t("table.emptyHint", "Try adjusting your search or filters")
+    : t("table.emptyAllHint", "The first record you add shows up here.");
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
       <div className="rounded-full bg-bg-tertiary p-4 mb-4">
         <Database className="h-8 w-8 text-text-muted" />
       </div>
-      <h3 className="text-sm font-medium text-foreground mb-1">{t("table.empty", "No records found")}</h3>
-      <p className="text-sm text-text-muted">
-        {t("table.emptyHint", "Try adjusting your search or filters")}
-      </p>
+      <h3 className="text-sm font-medium text-foreground mb-1">{title}</h3>
+      <p className="text-sm text-text-muted">{hint}</p>
     </div>
   );
 }

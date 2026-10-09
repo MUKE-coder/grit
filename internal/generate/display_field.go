@@ -24,7 +24,12 @@ import (
 // Order is the point. A model with both a `name` and a `title` is showing the
 // name; one with a `title` and a `label` is showing the title. Only when none
 // of them is there does the first text column win.
-var labelColumns = []string{"name", "title", "label", "subject", "number", "code", "reference"}
+//
+// "email" is last of them and still ahead of the first-text-column fallback,
+// for a model like User that has no label column at all. A dropdown of first
+// names cannot tell two Janes apart; a dropdown of email addresses can, and
+// every row has one.
+var labelColumns = []string{"name", "title", "label", "subject", "number", "code", "reference", "email"}
 
 // modelStringField matches a model's exported string column and its json name:
 //

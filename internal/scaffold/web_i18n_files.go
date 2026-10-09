@@ -163,6 +163,8 @@ func i18nMessagesEN() string {
     "import": "Import",
     "selected": "{count} selected",
     "empty": "No records found",
+    "emptyAll": "Nothing here yet",
+    "emptyAllHint": "The first record you add shows up here.",
     "rowsPerPage": "Rows per page",
     "of": "of",
     "previous": "Previous",

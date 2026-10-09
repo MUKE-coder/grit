@@ -537,6 +537,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairCSPWebSocket(root); err != nil {
 			fmt.Printf("  ⚠ letting the CSP admit the realtime socket: %v\n", err)
 		}
+		// After the socket repair, which leaves the origin line in place
+		// whichever spelling it found.
+		if err := repairCSPAPIURLFallback(root); err != nil {
+			fmt.Printf("  ⚠ letting the CSP read API_URL: %v\n", err)
+		}
 		// After the socket repair, whose connect-src shape it matches on.
 		if err := repairCSPUploadOrigin(root); err != nil {
 			fmt.Printf("  ⚠ letting the CSP admit a separate upload host: %v\n", err)

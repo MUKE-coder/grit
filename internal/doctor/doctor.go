@@ -86,6 +86,7 @@ var checks = []struct {
 	// logs nothing, and leaves something quietly broken.
 	{"pnpm-node-linker-missing", checkNodeLinker},
 	{"app-url-port-mismatch", checkAppURLPort},
+	{"api-address-mismatch", checkAPIAddressAgrees},
 	{"next-not-pinned", checkNextPinned},
 }
 

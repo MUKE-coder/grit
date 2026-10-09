@@ -17,7 +17,18 @@ import (
 // Next.js web app or admin panel were dead in production. Found building the
 // WhatsApp blueprint.
 const (
-	nextAPIOriginLine = "const API_ORIGIN = toOrigin(process.env.NEXT_PUBLIC_API_URL || \"http://localhost:8080\");\n"
+	// One origin, read the same way the client reads it.
+	//
+	// The CSP authorises what the app is about to call, so the two must agree
+	// about where the API is. This one read only the public name while the
+	// client fell back to API_URL, which is the name the generated .env
+	// actually sets: move APP_PORT and the browser blocks every request,
+	// naming a port the developer never configured.
+	nextAPIOriginLine = "const API_ORIGIN = toOrigin(\n  process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || \"http://localhost:8080\",\n);\n"
+
+	// What projects written before v3.395.0 have. Kept so the repairs below
+	// still recognise a config they wrote, and so an upgrade can replace it.
+	nextAPIOriginLineOld = "const API_ORIGIN = toOrigin(process.env.NEXT_PUBLIC_API_URL || \"http://localhost:8080\");\n"
 	nextAPIWSOrigin   = `// The realtime socket is the API origin over ws: or wss:. A CSP source matches
 // its scheme exactly, so API_ORIGIN does not admit it, and without this the
 // browser blocks every live update once the dev-only ws: wss: below is gone.
@@ -64,12 +75,53 @@ func repairCSPWebSocketNextSource(src string) (string, []string, []string) {
 	if strings.Contains(src, "API_WS_ORIGIN") || !strings.Contains(src, "connect-src") {
 		return src, nil, nil
 	}
-	if strings.Count(src, nextAPIOriginLine) != 1 || strings.Count(src, nextConnectSrcOld) != 1 {
+	// Either spelling of the origin line: a project may predate the API_URL
+	// fallback or already have it.
+	anchor := nextAPIOriginLine
+	if strings.Count(src, anchor) != 1 {
+		anchor = nextAPIOriginLineOld
+	}
+	if strings.Count(src, anchor) != 1 || strings.Count(src, nextConnectSrcOld) != 1 {
 		return src, nil, []string{"the Content-Security-Policy is not the one Grit wrote: add the API origin with ws: or wss: in place of http: or https: to connect-src, or the browser blocks the realtime socket in production"}
 	}
-	out := strings.Replace(src, nextAPIOriginLine, nextAPIOriginLine+nextAPIWSOrigin, 1)
+	out := strings.Replace(src, anchor, anchor+nextAPIWSOrigin, 1)
 	out = strings.Replace(out, nextConnectSrcOld, nextConnectSrcNew, 1)
 	return out, []string{"connect-src admits the API's realtime socket, which the browser blocked in production"}, nil
+}
+
+// repairCSPAPIURLFallback gives an existing project's frontends the API_URL
+// fallback in their CSP origin.
+//
+// Without it the policy authorises one host and the app calls another the
+// moment APP_PORT moves, and the browser reports that as a console violation
+// rather than a status: a sign-in that does nothing, with nothing in the
+// network tab that looks like a failure.
+func repairCSPAPIURLFallback(root string) error {
+	m, err := manifest.Load(root)
+	if err != nil {
+		return err
+	}
+	for _, app := range []string{"admin", "web"} {
+		for _, name := range []string{"next.config.ts", "next.config.mjs", "next.config.js"} {
+			if path := filepath.Join(root, "apps", app, name); fileExists(path) {
+				if err := repairTextFile(root, m, path, repairCSPAPIURLFallbackSource); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func repairCSPAPIURLFallbackSource(src string) (string, []string, []string) {
+	if strings.Contains(src, "process.env.API_URL") {
+		return src, nil, nil
+	}
+	if strings.Count(src, nextAPIOriginLineOld) != 1 {
+		return src, nil, nil
+	}
+	return strings.Replace(src, nextAPIOriginLineOld, nextAPIOriginLine, 1),
+		[]string{"the Content-Security-Policy reads API_URL, so moving APP_PORT no longer blocks every request"}, nil
 }
 
 func repairCSPWebSocketNginxSource(src string) (string, []string, []string) {
