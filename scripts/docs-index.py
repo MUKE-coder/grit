@@ -172,6 +172,90 @@ def doc_pages(meta):
     return pages
 
 
+# The system design pages.
+#
+# These are data rather than files: one config entry per system, one dynamic
+# route, one renderer. The walk above sees a single `[system]` page and indexes
+# the template, so without this the whole section is unsearchable, which for
+# twenty-six pages of prose is the difference between the index being useful
+# and being a list of the pages somebody happened to write by hand.
+#
+# Parsed rather than evaluated, like docs-metadata.ts above, and lossily on
+# purpose: every string literal long enough to be a sentence, which is the
+# prose, plus the labels and the fixed section headings a reader scans for.
+SYSTEM_SECTIONS = [
+    "Problem statement",
+    "System requirements",
+    "Capacity estimation",
+    "High level design",
+    "Technology stack",
+    "Data model",
+    "API design",
+    "Low level design",
+    "Scalability and performance",
+    "Bottlenecks and improvements",
+]
+
+TS_STRING = re.compile(r"'((?:[^'\\\n]|\\.)*)'")
+UNICODE_ESCAPE = re.compile(r"\\u([0-9a-fA-F]{4})")
+
+
+def ts_string(raw):
+    """One single-quoted TypeScript literal, as the text it stands for."""
+    text = UNICODE_ESCAPE.sub(lambda m: chr(int(m.group(1), 16)), raw)
+    return unescape(text)
+
+
+def system_pages():
+    config = os.path.join(DOCS, "config")
+    if not os.path.isdir(config):
+        return []
+
+    sources = []
+    for name in sorted(os.listdir(config)):
+        if name.startswith("systems") and name.endswith(".ts") and name != "systems.ts":
+            sources.append(read(os.path.join(config, name)))
+
+    pages = []
+    for source in sources:
+        # Each `export const X: SystemDesign = {` opens one system, and the
+        # next one closes it.
+        starts = [m.start() for m in re.finditer(r"^export const \w+: SystemDesign = \{", source, re.M)]
+        for i, start in enumerate(starts):
+            block = source[start: starts[i + 1] if i + 1 < len(starts) else len(source)]
+
+            def field(key):
+                match = re.search(r"\b%s:\s*'((?:[^'\\\n]|\\.)*)'" % key, block)
+                return ts_string(match.group(1)) if match else ""
+
+            slug = field("slug")
+            name = field("name")
+            if not slug or not name:
+                continue
+
+            labels = [ts_string(m) for m in re.findall(r"\blabel:\s*'((?:[^'\\\n]|\\.)*)'", block)]
+            classes = [ts_string(m) for m in re.findall(r"\bname:\s*'((?:[^'\\\n]|\\.)*)'", block)]
+
+            # Every literal long enough to be a sentence rather than a key, a
+            # slug or a table cell. Short ones are mostly stack rows and node
+            # labels, which the headings already carry.
+            prose_bits = []
+            for raw in TS_STRING.findall(block):
+                text = clean(ts_string(raw))
+                if len(text) >= 40:
+                    prose_bits.append(text)
+
+            pages.append({
+                "url": "/docs/systems/%s" % slug,
+                "title": "%s System Design" % name,
+                "description": field("tagline"),
+                "headings": SYSTEM_SECTIONS + sorted(set(labels + classes[1:])),
+                "text": " ".join(prose_bits)[:6000],
+                "kind": "docs",
+            })
+    return pages
+
+
 FRONTMATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.S)
 
 
@@ -215,7 +299,9 @@ def main():
         sys.exit("docs/ not found; run this from the repository root")
 
     meta = metadata()
-    pages = doc_pages(meta) + markdown_pages()
+    pages = doc_pages(meta) + system_pages() + markdown_pages()
+    # The dynamic route itself indexes the template, not a page anybody reads.
+    pages = [p for p in pages if "[" not in p["url"]]
     pages.sort(key=lambda p: p["url"])
 
     index = {

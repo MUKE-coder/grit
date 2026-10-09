@@ -16,6 +16,13 @@ export const docsMetadata: Record<string, DocPage> = {
       'Get started with Grit, the full-stack meta-framework that combines Go (Gin + GORM) with React (Next.js) and a Filament-like admin panel.',
   },
 
+  // System Design
+  '/docs/systems': {
+    title: 'Systems: How Grit Is Built',
+    description:
+      'System design pages for every subsystem in Grit. Problem statement, functional and non-functional requirements, capacity estimation, high and low level design, data model, API surface, scaling and bottlenecks, one page per system.',
+  },
+
   // Getting Started
   '/docs/stack-selector': {
     title: 'Stack Selector: Pick the Right Grit Combo',

@@ -28,6 +28,7 @@ import {
   Smartphone,
   Menu,
   TerminalSquare,
+  Network,
   Heart,
   ArrowRight,
 } from 'lucide-react'
@@ -63,6 +64,10 @@ const navItems: NavItem[] = [
   { title: 'Courses', href: '/courses', icon: <GraduationCap className="h-3.5 w-3.5" /> },
   { title: 'Batteries Included', href: '/docs/batteries', icon: <Database className="h-3.5 w-3.5" /> },
   { title: 'Command Explorer', href: '/docs/cli', icon: <TerminalSquare className="h-3.5 w-3.5" /> },
+  // How each subsystem is built, one system design page each. A reference
+  // organised by subsystem answers "where is X"; these answer "how does X
+  // work and why is it shaped that way".
+  { title: 'Systems (Design)', href: '/docs/systems', icon: <Network className="h-3.5 w-3.5" /> },
   {
     title: 'Getting Started',
     icon: <Rocket className="h-3.5 w-3.5" />,
