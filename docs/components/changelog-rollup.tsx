@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 5 to 11, 2026",
-    count: 44,
+    count: 45,
     entries: [
+      { version: "3.395.0", title: "Every architecture, generated and used" },
       { version: "3.394.5", title: "Every command in an API project’s Quick Start failed" },
       { version: "3.394.4", title: "The Wails desktop app did not build" },
       { version: "3.394.3", title: "A generated mobile app shipped Grit’s brand as its own" },

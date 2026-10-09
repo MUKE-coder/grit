@@ -252,6 +252,11 @@ const testing: { label: string; detail: string }[] = [
     detail: 'all 586 of them are resolved against the real command tree, and every --fields spec is run through the generator\u2019s own parser. A renamed command or a field type that does not exist fails the build. Blocks marked verify= go further: CI runs them against a scaffolded project on a real Postgres.',
   },
   {
+    label: 'Every architecture generated, run and looked at',
+    detail:
+      'the eight shapes the stack selector offers, each scaffolded fresh, built, type-checked, migrated, started and driven through a browser as a contact app. It found thirty faults in one pass, every one of them now a test: a Content-Security-Policy that authorised a different host from the one the client called, an owner picker whose answer the server discarded, a mobile app shipping the framework\u2019s logo as its own, a desktop app that did not build, and a Next single-binary project whose admin panel could not reach its API in development. Five of the thirty were the same fault in five places, which is why there is now a test for that family across every shape.',
+  },
+  {
     label: '13 project checks in grit doctor',
     detail: 'the mistakes that fail silently, reported in your own project: an encrypted field with no key, a resource nothing scopes, a table shared across organizations, a database browser with no login.',
   },
@@ -388,7 +393,17 @@ export default function StabilityPage() {
                   slower train, pin a version and read the changelog before moving.
                 </li>
                 <li>
-                  <strong>No signed desktop release has been verified</strong> end to end.
+                  <strong>No signed desktop release has been verified</strong> end to end. The
+                  desktop app itself is built and run on every sweep; what is unverified is the
+                  Authenticode and Apple Developer signing, which needs certificates this project
+                  does not own.
+                </li>
+                <li>
+                  <strong>The architecture sweep is a person, not a job.</strong> CI builds a
+                  generated app and type-checks it, and the live suite drives the API over HTTP,
+                  but nothing in CI opens a browser and looks at eight shapes. The thirty faults
+                  that found were all invisible to a green build, and five of them were in work
+                  that had shipped hours earlier the same day.
                 </li>
                 <li>
                   <strong>No production case studies yet.</strong> Benchmarks and tests are not the
