@@ -73,7 +73,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.394.3"
+const DefaultVersion = "3.394.4"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -1152,7 +1152,10 @@ func createDirectories(root string, opts Options) error {
 			filepath.Join(root, "apps", "desktop", "frontend", "src", "components", "ui"),
 			filepath.Join(root, "apps", "desktop", "frontend", "src", "lib"),
 			filepath.Join(root, "apps", "desktop", "frontend", "src", "hooks"),
-			filepath.Join(root, "apps", "desktop", "build", "appicon"),
+			// build/ holds appicon.png, which writeDesktopClientFiles draws.
+			// This used to create build/appicon as a directory, which is not
+			// what Wails reads and is not what the README describes.
+			filepath.Join(root, "apps", "desktop", "build"),
 		)
 	}
 

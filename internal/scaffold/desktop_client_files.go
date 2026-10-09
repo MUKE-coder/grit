@@ -48,6 +48,19 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "globals.css"):     desktopClientGlobalsCSS(),
 		filepath.Join(desktopRoot, "frontend", "src", "vite-env.d.ts"):   desktopClientViteEnvDTS(),
 
+		// Something for //go:embed all:frontend/dist to match before anybody
+		// has built the frontend. Without it `go build ./...` in this module
+		// fails on a fresh scaffold, which is every Go tool and every editor
+		// reporting a broken package on a project nobody has touched yet.
+		//
+		// A page rather than a .gitkeep, because an empty embed is a window
+		// that opens blank. This one says what happened.
+		filepath.Join(desktopRoot, "frontend", "dist", "index.html"): desktopClientDistPlaceholder(opts),
+		// Committed, unlike index.html, which a real build overwrites. A
+		// fresh clone has to satisfy the embed too, or `go build` is broken
+		// for everybody who did not run the scaffold themselves.
+		filepath.Join(desktopRoot, "frontend", "dist", ".gitkeep"): desktopDistGitkeep(),
+
 		// Routes (TanStack Router file-based)
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "__root.tsx"):             desktopClientRootRoute(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "index.tsx"):              desktopClientIndexRoute(),
@@ -177,7 +190,82 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		}
 	}
 
+	// The icon Wails builds the platform icons from. build/appicon was an
+	// empty directory, and Wails wants build/appicon.png, a file: the README
+	// said so and nothing wrote it, so every generated desktop app had no icon
+	// at all. Drawn from the project's accent, the same placeholder the mobile
+	// app gets, with the same note beside it.
+	if err := writeAppIcons(filepath.Join(desktopRoot, "build"), opts.Theme, "appicon.png"); err != nil {
+		return err
+	}
+	if err := writeFile(filepath.Join(desktopRoot, "build", "README.md"), desktopIconReadme()); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// desktopClientDistPlaceholder is what the embed matches until the frontend
+// has been built.
+//
+// Wails overwrites frontend/dist on every build, so this is only ever seen by
+// somebody who ran the Go binary directly without building the frontend. It
+// says so rather than showing an empty window.
+func desktopClientDistPlaceholder(opts Options) string {
+	return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>` + opts.ProjectName + `</title>
+    <style>
+      body {
+        margin: 0;
+        display: grid;
+        place-items: center;
+        height: 100vh;
+        font: 15px/1.6 system-ui, sans-serif;
+        background: #0a0a0f;
+        color: #e8e8f0;
+      }
+      div { max-width: 30rem; padding: 2rem; text-align: center; }
+      code { background: #1a1a24; padding: 0.15rem 0.4rem; border-radius: 4px; }
+      p { color: #9090a8; }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>The frontend has not been built</h1>
+      <p>
+        This page is a placeholder so that <code>go build</code> has something
+        to embed. Run <code>wails dev</code> or <code>wails build</code> from
+        <code>apps/desktop</code> and it will be replaced by the real app.
+      </p>
+    </div>
+  </body>
+</html>
+`
+}
+
+// desktopDistGitkeep is the one file in frontend/dist that is committed.
+func desktopDistGitkeep() string {
+	return `This directory is build output and is gitignored, except for this file.
+
+//go:embed all:frontend/dist in main.go needs something here, so without it
+go build and go vet fail in this module on a fresh clone, before anybody has
+run wails build. Deleting this file breaks them again.
+`
+}
+
+// desktopIconReadme sits beside the generated icon and says it is one.
+func desktopIconReadme() string {
+	return `# Build assets
+
+` + "`appicon.png`" + ` is a placeholder, drawn at scaffold time from this project's
+accent colour. Wails builds every platform icon from it, so replace it with
+your own 1024x1024 PNG before you ship.
+
+` + "`bin/`" + ` is where ` + "`wails build`" + ` puts the executable. It is gitignored.
+`
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -630,9 +718,17 @@ require (
 	github.com/99designs/keyring v1.2.2
 	github.com/glebarez/sqlite v1.11.0
 	github.com/google/uuid v1.6.0
-	github.com/wailsapp/wails/v2 v2.9.2
+	// Keep this in step with the CLI version the release workflow installs.
+	// Wails warns on every build when the two differ, and for a long time
+	// this said 2.9.2 while the current CLI was several minor versions ahead.
+	github.com/wailsapp/wails/v2 v2.16.0
 	gorm.io/gorm v1.31.1
 )
+
+// Wails asks for an older x/net than the API module pins. This is a separate
+// module, so it needs the floor too: v0.58.0 and below carry GO-2026-6617,
+// the HPACK encoder race, and three others.
+require golang.org/x/net v0.60.0
 `
 }
 
@@ -663,6 +759,10 @@ func desktopClientGitignore() string {
 	return `# Build output
 build/bin/
 frontend/dist/
+# ...except this one file. //go:embed all:frontend/dist needs something to
+# match, and without it go build and go vet fail in this module on a fresh
+# clone, before anybody has run wails build.
+!frontend/dist/.gitkeep
 frontend/node_modules/
 frontend/wailsjs/
 
@@ -695,7 +795,7 @@ Go API (over HTTP) as the web app, admin panel, and mobile app in this monorepo.
 
 - Go 1.24+
 - pnpm 8+
-- [Wails CLI](https://wails.io/docs/gettingstarted/installation): ` + "`" + `go install github.com/wailsapp/wails/v2/cmd/wails@latest` + "`" + `
+- [Wails CLI](https://wails.io/docs/gettingstarted/installation): ` + "`" + `go install github.com/wailsapp/wails/v2/cmd/wails@v2.16.0` + "`" + `
 
 ## Development
 
@@ -759,7 +859,7 @@ func desktopClientPackageJSON(opts Options) string {
   "scripts": {
     "dev": "vite",
     "build": "vite build && tsc -b",
-    "type-check": "tsc -b",
+    "type-check": "tsr generate && tsc -b",
     "preview": "vite preview",
     "lint": "` + biomeLintScript + `",
     "format": "` + biomeFormatScript + `"
@@ -785,6 +885,7 @@ func desktopClientPackageJSON(opts Options) string {
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@tanstack/router-cli": "^1.167.40",
     "@tanstack/router-plugin": "^1.95.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
@@ -847,10 +948,35 @@ func desktopClientTSConfigNode() string {
 }
 
 func desktopClientViteConfig() string {
-	return `import { defineConfig } from "vite";
+	return `import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import path from "node:path";
+
+// Where the Go API listens, resolved once.
+//
+// envDir is the monorepo root, not this directory: the app runs from
+// apps/desktop/frontend and there is no .env there, so reading it from cwd
+// returned undefined and every value below fell back to its default.
+//
+// APP_PORT is the same variable the Go binary reads, so moving the API moves
+// the proxy and the client with it. The client used to carry its own literal
+// localhost:8080, which meant that on a project that had moved APP_PORT it
+// called a port nothing was listening on, or worse, one that answered and
+// belonged to something else.
+const viteMode = process.env.NODE_ENV || "development";
+const viteEnv = loadEnv(viteMode, path.resolve(__dirname, "../../.."), "");
+const apiTarget =
+  viteEnv.VITE_API_URL?.replace(/\/api\/?$/, "") ||
+  "http://localhost:" + (viteEnv.APP_PORT || "8080");
+
+// Handed to the browser bundle so the client and the proxy cannot disagree.
+// api-client.ts reads import.meta.env.VITE_API_URL, and Vite exposes a
+// variable to client code only when it carries the VITE_ prefix, which
+// APP_PORT does not.
+const clientEnv = {
+  "import.meta.env.VITE_API_URL": JSON.stringify(apiTarget + "/api"),
+};
 
 export default defineConfig({
   plugins: [
@@ -863,6 +989,7 @@ export default defineConfig({
       "@repo/shared": path.resolve(__dirname, "../../../packages/shared"),
     },
   },
+  define: clientEnv,
   server: {
     port: 5174,
     strictPort: true,
@@ -870,7 +997,7 @@ export default defineConfig({
     // server and wraps it in a native window.
     proxy: {
       "/api": {
-        target: "http://localhost:8080",
+        target: apiTarget,
         changeOrigin: true,
       },
     },
@@ -2060,6 +2187,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { User as UserIcon, Briefcase, Lock, Upload, Loader2, Save, Trash2, ShieldCheck, Copy, Check } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { PasswordStrength } from "@/components/password-strength";
 import { useConfirm } from "@/components/confirm-dialog";
 import {
   useMe,

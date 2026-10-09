@@ -161,7 +161,7 @@ const releaseDesktopJob = `
           go-version-file: {{API_DIR}}/go.mod
 
       - name: Install Wails
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.9.2
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.16.0
 
       - name: Build
         working-directory: apps/desktop

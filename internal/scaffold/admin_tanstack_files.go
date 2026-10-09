@@ -608,7 +608,7 @@ func adminTanStackPackageJSON(opts Options) string {
   "scripts": {
     "dev": "vite --port 3001",
     "build": "vite build",
-    "type-check": "tsc -b",
+    "type-check": "tsr generate && tsc -b",
     "preview": "vite preview",
     "lint": "`+biomeLintScript+`",
     "format": "`+biomeFormatScript+`",
@@ -641,6 +641,7 @@ func adminTanStackPackageJSON(opts Options) string {
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/user-event": "^14.5.0",
     "@tanstack/react-router-devtools": "^1.93.0",
+    "@tanstack/router-cli": "^1.167.40",
     "@tanstack/router-vite-plugin": "^1.93.0",
     "@types/react": "^19.0.0",
     "@types/node": "^22.0.0",

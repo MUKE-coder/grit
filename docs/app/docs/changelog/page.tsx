@@ -66,6 +66,98 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.394.4 */}
+            <div className="mb-12" id="v3.394.4">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.394.4
+                </span>
+                <span className="text-sm text-muted-foreground">October 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The Wails desktop app did not build</h3>
+                <p>
+                  <code>apps/desktop/frontend/src/routes/app/profile.tsx</code> rendered{' '}
+                  <code>&lt;PasswordStrength&gt;</code> and never imported it. The component was
+                  there, and the two other routes that use it import it properly. One missing
+                  line, and <code>tsc</code> failed, and <code>wails build</code> failed with it.
+                </p>
+                <p>
+                  Why it had not been caught is the more interesting half, and it is fixed below.
+                </p>
+
+                <h3>type-check failed on every TanStack frontend for the wrong reason</h3>
+                <p>
+                  <code>routeTree.gen.ts</code> is written by the router&apos;s Vite plugin during
+                  dev or build, and it is gitignored. So on a project nobody has run yet,{' '}
+                  <code>tsc</code> cannot find it and reports an error in every route file: the web
+                  app, the admin panel and the desktop client, roughly twenty errors that are all
+                  one missing file.
+                </p>
+                <p>
+                  That is worse than having no check, because it buries a real one. The missing
+                  import above was sitting in the middle of that noise, and the only reason it ever
+                  surfaced is that <code>wails build</code> runs Vite first and <code>tsc</code>{' '}
+                  second. The check now generates what it reads: <code>tsr generate &amp;&amp; tsc</code>,
+                  with <code>@tanstack/router-cli</code> to provide it. A check that needs
+                  somebody to have run a build first is not a check.
+                </p>
+
+                <h3>The desktop app had no icon, and its Go module did not build</h3>
+                <p>
+                  <code>build/appicon</code> was created as an empty directory. Wails reads{' '}
+                  <code>build/appicon.png</code>, a file, which is also what the project&apos;s own
+                  README describes. It is drawn now from the project&apos;s accent colour, the same
+                  placeholder the mobile app gets, with a note beside it saying what it is.
+                </p>
+                <p>
+                  And <code>//go:embed all:frontend/dist</code> had nothing to match on a fresh
+                  scaffold, so <code>go build ./...</code> and <code>go vet ./...</code> both failed
+                  in that module. <code>wails build</code> worked, because it builds the frontend
+                  first; every other Go tool, and every editor, reported a broken package on a
+                  project nobody had touched. There is a page there now explaining itself, and a
+                  committed <code>.gitkeep</code> beside it, because a real build overwrites the
+                  page and a fresh clone has to satisfy the embed too.
+                </p>
+
+                <h3>Wails was pinned three minor versions behind, in four places</h3>
+                <p>
+                  <code>go.mod</code> asked for v2.9.2, the release workflow installed the CLI at
+                  v2.9.2, and two READMEs told people to install <code>@latest</code>. Wails prints
+                  a warning on every build when the module and the CLI disagree, and the{' '}
+                  <code>@latest</code> instruction guaranteed they would. All four say v2.16.0 now,
+                  and a test fails if the module and the workflow ever diverge again.
+                </p>
+                <p>
+                  The desktop module is its own module, so the API&apos;s dependency floors do not
+                  reach it, and <code>go mod tidy</code> took the <code>golang.org/x/net</code>{' '}
+                  Wails asks for, which is below the one carrying the fix for GO-2026-6617 and
+                  three others. It pins v0.60.0 now, like the API.
+                </p>
+
+                <h3>And the fifth place the API&apos;s address was written down</h3>
+                <p>
+                  The desktop client&apos;s <code>api-client.ts</code> read{' '}
+                  <code>import.meta.env.VITE_API_URL</code> and fell back to the literal{' '}
+                  <code>localhost:8080</code>, and nothing set that variable for it. The dev proxy
+                  named the same literal.
+                </p>
+                <p>
+                  So on a project that had moved <code>APP_PORT</code>, a desktop app called a port
+                  nothing was listening on, and when something else happened to be there it
+                  answered: sign-in came back 500 from a server belonging to a different project
+                  entirely. The config resolves the address once, from <code>VITE_API_URL</code> or{' '}
+                  <code>APP_PORT</code>, and hands it to both the proxy and the browser bundle.
+                </p>
+                <p>
+                  That is the third frontend to have had this, after the Next apps and the Vite
+                  ones, and the pattern is the same every time: the API&apos;s address is written
+                  down in several places, some of them literals, and only some of them move.
+                </p>
+              </div>
+            </div>
+
             {/* v3.394.3 */}
             <div className="mb-12" id="v3.394.3">
               <div className="flex items-center gap-3 mb-4">

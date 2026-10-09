@@ -118,11 +118,19 @@ func parseHexColour(s string) color.RGBA {
 	if len(h) != 6 {
 		return color.RGBA{0x6c, 0x5c, 0xe7, 255}
 	}
-	v, err := strconv.ParseUint(h, 16, 32)
-	if err != nil {
-		return color.RGBA{0x6c, 0x5c, 0xe7, 255}
+	// One channel at a time, with a bit width of 8. Parsing all six digits at
+	// once and shifting needs three narrowing conversions a reader has to
+	// check by hand, and gosec reports each of them as a possible overflow;
+	// this way the width is in the call and there is nothing to narrow.
+	var channel [3]uint8
+	for i := range channel {
+		v, err := strconv.ParseUint(h[i*2:i*2+2], 16, 8)
+		if err != nil {
+			return color.RGBA{0x6c, 0x5c, 0xe7, 255}
+		}
+		channel[i] = uint8(v)
 	}
-	return color.RGBA{uint8(v >> 16), uint8(v >> 8), uint8(v), 255}
+	return color.RGBA{channel[0], channel[1], channel[2], 255}
 }
 
 // writeAppIcons writes the mobile app's icon, splash, adaptive icon and

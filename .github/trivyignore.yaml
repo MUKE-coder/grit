@@ -11,29 +11,46 @@
 # a permanent one.
 
 vulnerabilities:
-  # excelize v2.11.0 is the newest tagged release. Five denial-of-service
-  # findings were fixed on its master branch and none of them has been
-  # released: Trivy reports the fix as a pseudo-version
+  # A run of denial-of-service findings in excelize, all of the same shape: a
+  # crafted .xlsx makes it allocate without bound, recurse without bound or
+  # compute an out-of-range coordinate.
+  #
+  # v2.11.0 is the newest tagged release and every one of these is fixed only
+  # on master. Trivy reports the fix as a pseudo-version
   # (2.11.1-0.2026...-<commit>), which is a commit, not a release.
   #
-  # Adopting an untagged upstream commit into every generated project is a
-  # worse risk than the finding: all five need a hostile .xlsx, and a Grit
-  # project reads spreadsheets only through an authenticated import that an
-  # operator starts. govulncheck reports none of them as called.
+  # Adopting an untagged upstream commit into every generated project is the
+  # worse risk. All of them need a hostile spreadsheet, and a Grit project
+  # reads one only through an import an authenticated operator starts, and
+  # govulncheck reports none of them as called.
   #
-  # Remove this block the day excelize tags v2.11.1 and raise the pin.
+  # Delete this whole block the day excelize tags v2.11.1, and raise the pin in
+  # internal/scaffold/api_files.go. If that has not happened by the expiry,
+  # the question to ask is whether Grit should still be importing it.
+  - id: CVE-2026-107211
+    statement: "excelize DoS on a hostile .xlsx; fixed on master only, no tagged release. Not called, per govulncheck."
+    expired_at: 2026-12-31
+  - id: CVE-2026-107212
+    statement: "excelize DoS on a hostile .xlsx; fixed on master only, no tagged release. Not called, per govulncheck."
+    expired_at: 2026-12-31
+  - id: CVE-2026-107213
+    statement: "excelize DoS on a hostile .xlsx; fixed on master only, no tagged release. Not called, per govulncheck."
+    expired_at: 2026-12-31
+  - id: CVE-2026-107214
+    statement: "excelize DoS on a hostile .xlsx; fixed on master only, no tagged release. Not called, per govulncheck."
+    expired_at: 2026-12-31
   - id: CVE-2026-107215
-    statement: "excelize DoS on a hostile .xlsx; fixed only on master, no tagged release. Not reachable per govulncheck."
+    statement: "excelize DoS on a hostile .xlsx; fixed on master only, no tagged release. Not called, per govulncheck."
     expired_at: 2026-12-31
   - id: CVE-2026-107216
-    statement: "excelize DoS on a hostile .xlsx; fixed only on master, no tagged release. Not reachable per govulncheck."
+    statement: "excelize DoS on a hostile .xlsx; fixed on master only, no tagged release. Not called, per govulncheck."
     expired_at: 2026-12-31
   - id: CVE-2026-107217
-    statement: "excelize DoS on a hostile .xlsx; fixed only on master, no tagged release. Not reachable per govulncheck."
+    statement: "excelize DoS on a hostile .xlsx; fixed on master only, no tagged release. Not called, per govulncheck."
     expired_at: 2026-12-31
   - id: CVE-2026-107219
-    statement: "excelize DoS on a hostile .xlsx; fixed only on master, no tagged release. Not reachable per govulncheck."
+    statement: "excelize DoS on a hostile .xlsx; fixed on master only, no tagged release. Not called, per govulncheck."
     expired_at: 2026-12-31
   - id: CVE-2026-107223
-    statement: "excelize DoS on a hostile .xlsx; fixed only on master, no tagged release. Not reachable per govulncheck."
+    statement: "excelize DoS on a hostile .xlsx; fixed on master only, no tagged release. Not called, per govulncheck."
     expired_at: 2026-12-31
