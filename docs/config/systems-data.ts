@@ -8,6 +8,63 @@ export const CACHING: SystemDesign = {
   group: 'Data',
   packages: ['internal/cache', 'internal/middleware'],
 
+  interview: {
+    intro:
+      'Caching appears in nearly every system design interview, usually as the answer to "how would you make this faster" and then immediately as "what breaks". The follow-ups are about staleness, hot keys, and what happens when the cache disappears.',
+    questions: [
+      {
+        q: 'What caching strategy would you use?',
+        a: 'Cache-aside, also called lazy loading, is the usual default: ask the cache, and on a miss compute the value and store it. The alternatives are read-through, where the cache itself fetches on a miss, write-through, which writes to the cache and the database together and keeps them consistent at the cost of write latency, and write-behind, which writes to the cache and flushes to the database later and risks losing data. Cache-aside wins mostly because it is the only one that keeps working when the cache is absent.',
+        see: 'problem',
+      },
+      {
+        q: 'Your cache goes down. What happens to the application?',
+        a: 'It gets slower, and nothing else. This is the property that makes a cache acceptable as a dependency at all. A cache failure is treated exactly like a miss, so the loader runs and the request succeeds. The anti-pattern is a code path that returns an error when the cache is unreachable, because that turns an optional component into a required one, usually without anybody deciding to.',
+        see: 'requirements',
+      },
+      {
+        q: 'How do you handle invalidation?',
+        a: 'At the write, not on a timer. Relying on a short expiry to hide staleness means choosing between stale data and no caching at all, whereas invalidating when the underlying thing changes removes the choice. It is done by prefix here rather than by listing keys, because the set of list keys for a resource is unbounded in query parameters. The hook lives in the service every writer passes through, so a job or a command invalidates too.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'A popular key expires and a thousand requests arrive at once. What happens?',
+        a: 'That is a cache stampede, and without protection all thousand run the same expensive query simultaneously, usually taking the database down. The failure is worst exactly when the key is most valuable, which is why it is a correctness feature rather than an optimisation. The fix is single-flight: one caller rebuilds and the rest wait briefly for its result.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'A deploy warms ten thousand keys in one second. What happens five minutes later?',
+        a: 'They all expire in the same second and hand the database the entire working set at once. This is synchronised expiry, and it is a self-inflicted stampede across every key rather than one. Adding a small random amount to each lifetime, up to ten per cent here, spreads the expiry over a window and costs nothing.',
+        see: 'capacity',
+      },
+      {
+        q: 'What goes in the cache key?',
+        a: 'Everything that varies the answer, which in practice means the owner and, in a multi-tenant product, the organisation. A key that omits the owner is the worst bug in this system, because it does not look like a bug: it looks like one user occasionally seeing another user data. It also presents intermittently depending on who warmed the entry, which makes it nearly impossible to reproduce on purpose.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'How do you deal with a hot key that one node cannot serve?',
+        a: 'Redis is single-threaded per instance, so a single extremely hot key is a real ceiling that sharding does not fix, since the key lives on one shard. The usual answers are to keep that value in a small in-process cache in front of the shared one, or to write it under several suffixed keys and read from one at random, spreading the load across nodes.',
+        see: 'scaling',
+      },
+      {
+        q: 'How do you decide what is worth caching?',
+        a: 'Hit rate times the share of traffic that is cacheable, not hit rate alone. A 99 per cent hit rate on five per cent of requests is worth far less than 80 per cent on sixty. The capacity section works that arithmetic, and the conclusion is that the question is always which traffic rather than how good the cache is.',
+        see: 'capacity',
+      },
+      {
+        q: 'How do you keep the cache from growing without limit?',
+        a: 'Everything has a lifetime, and keys built from arbitrary query parameters are hashed from a whitelist rather than from whatever the caller sent. An entry with no expiry is a second database with no migrations, and an unbounded key space lets a caller fill your memory just by varying a parameter you never read.',
+        see: 'requirements',
+      },
+      {
+        q: 'How do you know the application does not secretly depend on it?',
+        a: 'Run the test suite with no cache configured. It is a cheap check and it proves a property that is otherwise only assumed. If something fails, the cache has become load-bearing, and you have found out in a test rather than during a Redis incident.',
+        see: 'bottlenecks',
+      },
+    ],
+  },
+
   problem: {
     text: [
       'Most read traffic asks the same questions. A dashboard count, a settings lookup, a permission set, a list that changes hourly and is read thousands of times an hour. Recomputing each of them from the database is work the database did not need to do.',
@@ -299,6 +356,63 @@ export const CONCURRENCY: SystemDesign = {
     'Two people editing the same record, and the second one finding out rather than silently winning.',
   group: 'Data',
   packages: ['internal/concurrency', 'internal/services'],
+
+  interview: {
+    intro:
+      'The lost update problem is a standard interview topic, usually arriving as "two users edit the same record, what happens". The expected answer names both locking strategies and says which one a web application wants.',
+    questions: [
+      {
+        q: 'Two people open the same record, both save. What happens?',
+        a: 'By default the second write silently overwrites the first, and nobody is told. That is the lost update problem. It is invisible in testing because it needs two people and a few seconds of overlap, and in production it is reported as "the system lost my change", which is indistinguishable from a bug in saving.',
+        see: 'problem',
+      },
+      {
+        q: 'Optimistic or pessimistic locking?',
+        a: 'Optimistic, for a web application, and the reason is the human in the middle. Pessimistic locking takes a lock when the record is read and holds it until the write, which means holding a database lock while somebody thinks about a form, goes to lunch, or closes the tab. Optimistic locking lets both proceed and rejects the second write if the record moved. The rule of thumb is pessimistic for short write-heavy transactions, optimistic when conflicts are rare and the gap between read and write is long.',
+        see: 'problem',
+      },
+      {
+        q: 'How does optimistic locking actually work?',
+        a: 'Every row carries a version number. A client reads the record and gets version 7. When it writes, it says "update this row, but only if it is still at version 7", and the version is raised as part of the same statement. If somebody else wrote in between, the row is at 8, no rows match, and the write is rejected. The check costs nothing because it is a predicate on an update you were already doing.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'Why does the check have to be in the same statement?',
+        a: 'Because reading the version, comparing it in your code, and then writing has the same race it is meant to prevent, just narrower. Another writer can land between your read and your write. The predicate belongs in the UPDATE, and the version must be raised by the database as an expression rather than set to a value your code calculated.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'How does the client know what version it read?',
+        a: 'It travels in the response and comes back in an If-Match header, with the version also exposed as an ETag. Using the standard HTTP preconditions rather than a bespoke field means ordinary clients, proxies and caches already understand it. If the version is never surfaced, the protection exists and nobody can use it.',
+        see: 'api',
+      },
+      {
+        q: 'What do you return on a conflict, and what should the client do?',
+        a: 'A 409, carrying the current version and the current row. That last part matters: a client that only learns it failed can do nothing except reload and lose whatever the user typed. Returning the current state lets the interface show both versions and offer a merge, which is the difference between a conflict the user can resolve and one that just loses their work.',
+        see: 'api',
+      },
+      {
+        q: 'Does this break existing clients?',
+        a: 'No, because it is opt-in. A request with no If-Match header gets no predicate and behaves exactly as before. That is what allowed it to be added to an existing API without a breaking change, and it is a reasonable thing to point out when an interviewer asks how you would roll it out.',
+        see: 'requirements',
+      },
+      {
+        q: 'What about a row everybody writes, like a counter?',
+        a: 'Optimistic locking turns that into a retry storm, because conflicts are the normal case rather than the rare one. That is a signal the data model is wrong rather than the locking strategy. A counter belongs in an atomic increment, or in an append-and-aggregate shape where writers never contend, and the contended row disappears.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'An operation spans three records. Does the version protect it?',
+        a: 'No. A version protects one row, so a multi-row operation can still half-succeed. The answer is a transaction around the whole operation, with the per-row versions still preventing lost updates inside it. The two mechanisms solve different problems and you want both.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Does this work for an offline client that syncs hours later?',
+        a: 'Yes, unchanged, which is the nice property of putting the version on the row rather than in a session. A mobile client that read version 7 last Tuesday and syncs today is checked by exactly the same predicate. The longer the gap, the more likely the conflict, which is why an offline-capable product needs the conflict response to be genuinely useful rather than a refusal.',
+        see: 'scaling',
+      },
+    ],
+  },
 
   problem: {
     text: [

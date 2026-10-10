@@ -8,6 +8,63 @@ export const CODE_GENERATION: SystemDesign = {
   group: 'Platform',
   packages: ['internal/generate', 'internal/scaffold'],
 
+  interview: {
+    intro:
+      'Code generation is not a classic interview prompt, so these are the questions a reviewer or a staff engineer asks instead: what it buys, what it costs, and how a tool that edits a codebase avoids breaking it.',
+    questions: [
+      {
+        q: 'What problem does generating code actually solve?',
+        a: 'Consistency, more than typing. A new resource is around eleven files, none of them hard and all of them the same every time. Written by hand they diverge: one list paginates with a cap and the next does not, one scopes to the owner and the next forgets, which is a data leak rather than a style difference. Nobody notices, because each file is individually reasonable and the divergence is only visible across the set.',
+        see: 'problem',
+      },
+      {
+        q: 'Why not a runtime framework that does this dynamically instead?',
+        a: 'Because generated code is readable, debuggable and editable, and a dynamic framework is none of those at the moment you need to change one thing. The trade is that generated code must be regenerated or hand-maintained after the generator changes, where a framework upgrades in place. This design picks explicit code you can step through over magic you cannot.',
+        see: 'problem',
+      },
+      {
+        q: 'The hard part is not writing files, it is editing existing ones. How do you do that safely?',
+        a: 'Named anchor comments that the templates emit and the generator injects before. The anchor is a contract between the two halves, which means renaming one silently breaks the other. A test asserting that every anchor the generator looks for exists in the scaffold output turns that from a silent failure into a failing build.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'What happens if somebody runs the same command twice?',
+        a: 'Nothing the second time. Every injection checks for its own output first, because somebody will run it twice and two route registrations for the same resource is a compile error at best. Idempotency is not a nicety here, it is the difference between a tool you can rerun and one you have to be careful with.',
+        see: 'requirements',
+      },
+      {
+        q: 'How do you undo it?',
+        a: 'Every injection has a matching removal, written in the same change. An injection added without its inverse leaves a dangling import or a sidebar link to a deleted page, so the project stops compiling during a cleanup operation, which is the one least likely to be tested and most likely to be run in a hurry. The test is a round trip: generate, compile, remove, compile.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'Is there a failure mode specific to editing files programmatically?',
+        a: 'Yes, and it is the one worth knowing. A string replace against an anchor that has moved matches nothing, returns the input unchanged, and reports success. The result is a half-generated resource with no error anywhere. Building the emitted block as a list, so a missing anchor is an error rather than a silent no-op, is the fix.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'How do you keep the backend and frontend types from drifting?',
+        a: 'Generate them from one source. The Go struct produces the TypeScript type and the validation schema, so the response shape and the client expectation cannot disagree, and changing a field is a compile error in the client rather than a runtime surprise. That is the same argument as generating a client from an API specification.',
+        see: 'api',
+      },
+      {
+        q: 'How do you test a generator?',
+        a: 'By compiling the output, not by comparing strings. A snapshot test passes while the generated code fails to build. The specific discipline here is one resource using all thirty field types, compiled in continuous integration, because a mapping that is wrong for a money or JSON column is invisible in a resource that uses neither, and the resource that uses them is somebody else project.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'What about projects that already generated code and then edited it?',
+        a: 'That is the genuinely hard part, and the honest answer is that you cannot blindly overwrite. A manifest of hashes per generated file lets an upgrade tell edited from untouched, and report the edited ones rather than silently replacing or skipping them. Silently doing either is how a project loses a fix or a customisation.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'What is the real limit on this approach?',
+        a: 'That generated code is read by people. Output nobody wants to read gets forked, and once it is forked the generator is irrelevant to that project. So the output is formatted, commented and ordinary rather than marked as untouchable, which is a product constraint rather than a technical one.',
+        see: 'scaling',
+      },
+    ],
+  },
+
   problem: {
     text: [
       'A new resource in a full-stack application is about eleven files. A Go model, a service, a handler, a route group, a Zod schema, a TypeScript type, a React Query hook, an admin resource definition, an admin page, a sidebar entry, a CSV importer. None of them is hard, all of them are the same every time, and writing them by hand takes an afternoon and produces four inconsistencies.',
@@ -362,6 +419,63 @@ export const API_CONTRACT: SystemDesign = {
   group: 'Platform',
   packages: ['internal/respond', 'internal/errorcodes', 'internal/access'],
 
+  interview: {
+    intro:
+      'API design questions come up in their own right and as a part of every larger design. These are the ones that get asked, and they are mostly about the decisions that are expensive to reverse once clients exist.',
+    questions: [
+      {
+        q: 'How do you version an API?',
+        a: 'Prefer not to. Additive changes need no version: add fields, never remove or retype them, and old clients keep working. When a change genuinely cannot be additive, a path prefix is the bluntest and clearest option, running the new version alongside the old rather than making a flag day of it. Header-based versioning is tidier in theory and harder to debug, cache and log in practice.',
+        see: 'problem',
+      },
+      {
+        q: 'Should a list endpoint return a bare array?',
+        a: 'No, and this is a cheap mistake to avoid up front. An array at the top level cannot gain a sibling field later, so the day you need pagination metadata you have to break every caller. Wrapping everything in an object costs about forty bytes and keeps the response extensible forever.',
+        see: 'requirements',
+      },
+      {
+        q: 'What goes in an error response?',
+        a: 'A stable machine-readable code, a human-readable message, and per-field details where they apply. Clients branch on the code; the message is copy that may be improved at any time. A client that branches on message text breaks the first time somebody fixes a typo, and the break happens somewhere other than where the change was made.',
+        see: 'requirements',
+      },
+      {
+        q: 'When is it 400 and when is it 422?',
+        a: '400 means it could not be parsed, or a required parameter is absent. 422 means it was understood and the answer is no: a failed validation, a password that breaks the rules, debits that do not balance. The distinction gets muddled because both are client errors, and once it is muddled clients cannot rely on either, which is why it needs writing down and testing.',
+        see: 'api',
+      },
+      {
+        q: 'A record exists but this caller may not see it. 403 or 404?',
+        a: '404. A 403 confirms existence, which on any endpoint keyed by a guessable id lets somebody enumerate your data by walking ids and reading the status codes. Reserve 403 for an action the caller may not perform on a record they can already see.',
+        see: 'api',
+      },
+      {
+        q: 'How much should a 500 explain?',
+        a: 'Nothing. A driver error can describe your schema and sometimes contains SQL, so the caller gets a generic sentence and a code. The operator gets the real error logged with the method, path and request identifier. The identifier is what ties a user complaint to the log line, which is how both parties get what they need without the response leaking anything.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'How do you stop endpoints drifting into different shapes?',
+        a: 'By making the shared helpers the shortest path. They are each a line over a common writer, so writing an envelope by hand is never the easier option. The failure this prevents is specific and happened here: two tables of code-to-status existed, so one error code returned 422 from a helper and 400 from a hand-written response, and clients branching on status saw two different outcomes for the same condition.',
+        see: 'problem',
+      },
+      {
+        q: 'How do you keep clients in step with the contract?',
+        a: 'Generate them. Types, schemas and hooks produced from the same definitions as the handlers mean a contract change is a compile error in every client that uses it. With six clients built against one API, that is the only mechanism that scales; reviewing by hand works for two and fails quietly after that.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'Should pagination fields be omitted when empty?',
+        a: 'No. A response that leaves out the total because it is zero leaves every client doing arithmetic on undefined, which renders as a blank stat card rather than a nought and turns any sum into NaN. Zero is an answer. One test asserting the counts are present on an empty result covers a whole class of these.',
+        see: 'api',
+      },
+      {
+        q: 'How would you audit which endpoints need authentication?',
+        a: 'From a generated table of route requirements rather than by reading middleware chains. Making the policy data means the question is a query instead of an exercise, and a route with no entry is denied by default rather than quietly public.',
+        see: 'high-level-design',
+      },
+    ],
+  },
+
   problem: {
     text: [
       'Six clients are built against this API: an admin panel, a web app, an Expo app, a desktop client, a generated SDK and whatever an operator writes next. Each one has code that reads a response, finds the data, finds the error, and decides what to show.',
@@ -714,6 +828,63 @@ export const FEATURE_FLAGS: SystemDesign = {
     'Turning a feature on for ten per cent of users without a deploy, and having the same user stay in the same group.',
   group: 'Platform',
   packages: ['internal/flags', 'internal/models'],
+
+  interview: {
+    intro:
+      'Feature flags come up in deployment and progressive delivery questions, and as the answer to "how would you roll this out safely". The follow-ups are about stickiness, about the cost of checking, and about what happens to the flags afterwards.',
+    questions: [
+      {
+        q: 'Why have feature flags at all?',
+        a: 'So that turning a feature off is a toggle rather than a deploy. If the new checkout is wrong, a rollback takes minutes at best and the damage is everybody; a flag takes seconds and the damage was ten per cent. It also separates deploying code from releasing a feature, which is what lets a half-finished thing live on the main branch safely.',
+        see: 'problem',
+      },
+      {
+        q: 'A page checks a dozen flags. What does that cost?',
+        a: 'Nothing, because every flag is held in memory and refreshed in the background. A naive implementation reads a row per check, so a page with twelve flagged components does twelve queries and the flag system becomes the slowest part of the request it was meant to make safe. A check has to be cheaper than the branch it guards or nobody will put one on a hot path.',
+        see: 'capacity',
+      },
+      {
+        q: 'How do you give ten per cent of users the new version without it flickering?',
+        a: 'Hash the user id together with the flag name and take the result modulo one hundred. It is deterministic, so the same user always lands in the same bucket and sees the same version on Monday and Tuesday. Choosing randomly per request means a user who is in neither cohort consistently, which makes the experiment meaningless and the product confusing.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'Why is the flag name in the hash as well as the user id?',
+        a: 'So the ten per cent for one flag is not the same ten per cent as every other flag. Hashing the user alone means one unlucky cohort receives every experiment simultaneously, which both skews the results and gives those users a consistently stranger product than everybody else.',
+        see: 'requirements',
+      },
+      {
+        q: 'What about users who are not signed in?',
+        a: 'There is no stable key, so the bucket is effectively random per request and the flag flickers. The honest answer is to say so and to take a session or device identifier when stickiness matters for anonymous traffic. Pretending it is sticky without an identifier is the quiet bug.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'You flip a flag off during an incident. How fast does it take effect?',
+        a: 'Within the refresh interval, thirty seconds here, and immediately on the replica handling the change. That window is the thing to be explicit about, because a flag used as a kill switch is judged on exactly that number. Broadcasting the change so other replicas refresh at once, with the interval as a fallback, narrows it to about as fast as a distributed system honestly can.',
+        see: 'requirements',
+      },
+      {
+        q: 'How do you know whether the experiment worked?',
+        a: 'By recording exposures: who saw which variant and when. Without that, a ten per cent rollout produces a feeling rather than a result. The catch is volume, because exposures happen as often as checks. Writing one row per check was the original implementation here and a busy page turned it into thousands of inserts a second; one batched writer fed by a channel is three orders of magnitude fewer statements for the same information.',
+        see: 'data-model',
+      },
+      {
+        q: 'An unknown flag is requested. On or off?',
+        a: 'Off. The uncertain cases are a flag not yet created and a flag just deleted, and in both the safe behaviour is the old path. Defaulting to on means a deploy that references a flag nobody has made yet turns the feature on everywhere.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'What happens to flags after the rollout finishes?',
+        a: 'They accumulate, and this is the real long-term cost. A flag left in is a permanent branch, and a hundred of them is a codebase with no single defined behaviour and an untestable number of combinations. Removing the flag has to be part of shipping the feature rather than a separate project, which in practice means a review date and a report of overdue ones.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Twenty independent flags is a million combinations. How do you test that?',
+        a: 'You do not. You test both sides of any flag guarding a path that has its own tests, and you treat the combinatorial explosion as an argument for having fewer flags rather than for writing more tests. Saying that plainly is better than claiming a coverage that is not achievable.',
+        see: 'bottlenecks',
+      },
+    ],
+  },
 
   problem: {
     text: [

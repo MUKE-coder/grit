@@ -168,6 +168,9 @@ def check_interview(src, path, report):
         block = src[start: start + 10 + nxt.start()] if nxt else src[start:]
         name = m.group(1)
         if 'interview:' not in block:
+            report('INTERVIEW   %-24s [%s] has no interview questions' % (
+                os.path.basename(path), name))
+            bad += 1
             continue
         for see in re.findall(r"\bsee:\s*'([^']+)'", block):
             field = SECTION_FIELD.get(see)

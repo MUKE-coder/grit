@@ -8,6 +8,63 @@ export const REALTIME: SystemDesign = {
   group: 'Delivery',
   packages: ['internal/realtime', 'internal/handlers'],
 
+  interview: {
+    intro:
+      'Live updates come up as "design a chat system" or "design a notification feed", and as a follow-up whenever a screen has to change without a refresh. The questions are about fan-out, about more than one server, and about what happens when the socket cannot be established.',
+    questions: [
+      {
+        q: 'Polling, long polling, server-sent events or WebSockets?',
+        a: 'Polling is simplest and wastes nearly every request, since most return nothing changed. Long polling holds the request open until there is news, which works everywhere and ties up a connection. Server-sent events are a one-way stream over plain HTTP, which is enough when only the server speaks and survives proxies well. WebSockets are bidirectional and the usual choice when clients also send. This design uses WebSockets with server-sent events as the fallback.',
+        see: 'problem',
+      },
+      {
+        q: 'You have two servers. A user connected to A, and the event is published on B. What happens?',
+        a: 'Nothing, silently. The push succeeds into a registry that does not contain them, so no error is raised anywhere. This is the defining problem of in-process realtime: it works perfectly on one instance and breaks the first time a rolling deploy has two versions overlapping. The fix is a backplane, a pub/sub channel every replica subscribes to, so a publish anywhere reaches subscribers everywhere.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'Do you need sticky sessions at the load balancer?',
+        a: 'No, and that is worth saying because people assume you do. With a backplane any replica can serve any subscriber, so a connection can land anywhere. That matters more than it sounds: without affinity, a rolling deploy does not have to preserve which server a client was on.',
+        see: 'scaling',
+      },
+      {
+        q: 'How do you decide who receives an event?',
+        a: 'Named channels with an authoriser per pattern, checked when the client subscribes. The alternative, addressing by user id, means a page showing one invoice receives every event for that user, which is both wasteful and a disclosure. Authorisation happens at subscribe rather than per message, so the cost is paid once.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'Should the event carry the new data?',
+        a: 'Better not. Send a notification that something changed and let the client refetch through the ordinary API. That keeps authorisation in one place rather than making the socket a second surface that has to get it right, and it stays correct when an event is dropped, which best-effort delivery permits. Clients that apply payloads directly diverge the first time a message is lost.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'A client is slow and cannot keep up. What do you do?',
+        a: 'Drop it, and count the drop. Buffering without limit means one bad network connection grows memory until the replica suffers, so the bound is the design. Realtime is a view accelerator rather than the source of truth, and a reload is always the recovery, which is what makes dropping acceptable.',
+        see: 'requirements',
+      },
+      {
+        q: 'What is the scaling limit of the backplane?',
+        a: 'Every replica receives every publish, whether or not it has a subscriber for it, so received traffic grows with replica count rather than with interest. At forty replicas that is forty times the publish volume to deliver the same messages. The fix is sharding by channel, so a replica subscribes only to what it has subscribers for.',
+        see: 'capacity',
+      },
+      {
+        q: 'A proxy strips the upgrade header and the WebSocket never connects. What then?',
+        a: 'The client retry loop runs forever and nothing is logged, which is the worst outcome because nobody is told. Some platforms and corporate proxies do exactly this. Server-sent events are plain HTTP with a response that never ends, so they survive it, and the same hub serves both because delivery was never tied to the connection type.',
+        see: 'problem',
+      },
+      {
+        q: 'A deploy disconnects every client at once. What happens next?',
+        a: 'They all reconnect at once, each one authenticating and re-subscribing, which is a thundering herd aimed at the thing that just restarted. Exponential backoff with jitter on the client turns a spike into a spread. It is a client-side fix for a server-side problem, which is why it gets forgotten.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Somebody loses access to a record while they are subscribed to it. Do they stop receiving events?',
+        a: 'Not until something re-evaluates the subscription, because the check happened at subscribe time. That window is the honest cost of checking once rather than per message. Closing it means publishing a revocation the hub acts on, rather than waiting for the client to reconnect.',
+        see: 'bottlenecks',
+      },
+    ],
+  },
+
   problem: {
     text: [
       'An operator has a list of orders open. Another operator marks one as shipped. The first screen should change, and with plain request and response it does not: it changes when somebody reloads, or after whatever polling interval was guessed at.',
@@ -347,6 +404,63 @@ export const WEBHOOKS: SystemDesign = {
     'Receiving a call from someone else’s system and believing it, and making one to theirs that survives their outage.',
   group: 'Delivery',
   packages: ['internal/webhooks', 'internal/outbox'],
+
+  interview: {
+    intro:
+      '"Design a webhook system" is a real prompt, and it is two systems with one name: receiving calls you must believe, and making calls to endpoints you do not control. The follow-ups are about verification, duplicates, and the receiver that is down.',
+    questions: [
+      {
+        q: 'A request arrives claiming a payment succeeded. Why would you believe it?',
+        a: 'Only because of a signature. There is no session and no user; the request comes from an address you do not control and asserts something with financial consequences. Acting on an unverified webhook means anybody who learns the URL can tell you they paid. Verification is recomputing an HMAC over the body with a shared secret and comparing it.',
+        see: 'problem',
+      },
+      {
+        q: 'What is the most common mistake in verifying that signature?',
+        a: 'Verifying the wrong bytes. Frameworks parse JSON before your handler runs, and re-serialising produces different bytes than the sender signed, so the comparison fails intermittently and maddeningly. The raw body has to be captured before anything touches it. The second mistake is comparing with ordinary string equality, which leaks the signature a byte at a time through timing; it has to be constant-time.',
+        see: 'requirements',
+      },
+      {
+        q: 'Someone captures a valid signed request and sends it again tomorrow. What stops it?',
+        a: 'A timestamp inside the signed material, plus a tolerance. Sign the timestamp along with the body and refuse anything outside a few minutes, five here, so a captured request has a short life rather than an unlimited one. Without it, a valid signature is valid forever.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'The same event arrives twice. Is that a bug?',
+        a: 'No, it is the normal behaviour of every sender worth integrating with, because they retry when they do not get a prompt 200. So the receiver has to be idempotent, deduplicating on the sender event id. Hashing the body instead would be wrong, since a legitimately repeated event is not a duplicate.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'How quickly must you respond?',
+        a: 'Within a couple of seconds, because senders time out and then retry, which means a slow handler manufactures duplicate deliveries of an event you already received. So you verify, deduplicate, acknowledge, and do the real work in a background job. Acknowledging fast is a correctness property here rather than a latency nicety.',
+        see: 'requirements',
+      },
+      {
+        q: 'Now the outbound side. A subscriber endpoint is down for an hour. What happens?',
+        a: 'Their events accumulate, and the risk is that their retries crowd out deliveries to everybody who is healthy. The answer is a circuit breaker per receiver: stop delivering to an endpoint failing consistently, retry on a long interval, and notify the subscriber. One dead endpoint stops being everybody problem.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'How do you make sure you never send a webhook for something that was rolled back?',
+        a: 'Write the outbound event in the same transaction as the data that caused it, and let a relay deliver it afterwards. Sending from the request means a later rollback leaves a downstream system believing in an order that does not exist. This is the transactional outbox, and webhooks are its most common application.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'How does a subscriber verify what you send?',
+        a: 'The same way you verify what you receive: an HMAC over the exact body with their secret, a timestamp to bound replay, and a stable event id so they can deduplicate. Following an existing convention rather than inventing one means their libraries already work. Rotation needs a window where both the old and new secret are accepted, or deliveries fail during the change.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Do you guarantee ordering to subscribers?',
+        a: 'Not globally, and promising it is expensive: strict ordering means one in-flight delivery per subscriber, which collapses throughput and means one slow response blocks everything behind it. The usual compromise is ordering per entity, with an event id and a timestamp so a receiver can detect and ignore an out-of-order arrival.',
+        see: 'requirements',
+      },
+      {
+        q: 'The signature is valid. Can you trust the contents?',
+        a: 'You can trust who sent it, which is not the same thing. The amounts, identifiers and references inside still need the same validation and sanity checks as any other input, and anything you look up from them still needs authorisation. A valid signature authenticates the sender; it does not make the payload true.',
+        see: 'bottlenecks',
+      },
+    ],
+  },
 
   problem: {
     text: [
@@ -691,6 +805,63 @@ export const EMAIL: SystemDesign = {
     'Getting a password reset into an inbox, through whichever provider is configured, without the request waiting for it.',
   group: 'Delivery',
   packages: ['internal/mail', 'internal/handlers', 'internal/jobs'],
+
+  interview: {
+    intro:
+      '"Design a notification system" is a standard prompt, and email is the channel every product needs first. The questions are about getting it out of the request, about what happens during a provider outage, and about the part no dashboard shows you: whether it arrived.',
+    questions: [
+      {
+        q: 'A user signs up and you send a welcome email. Where does that happen?',
+        a: 'Not in the request. The user should not wait on a third party, and a provider timeout should not become a thirty second sign-up. The handler queues the send and returns; a worker does the sending. That single move also buys retries, bounded concurrency, survival across a deploy, and a place where failures are visible.',
+        see: 'problem',
+      },
+      {
+        q: 'The provider is down for ten minutes. What happens to those emails?',
+        a: 'They sit in the queue and go out when it recovers, because each is a durable record with a retry schedule rather than an in-flight attempt. The thing to be able to state is the size of that backlog, which the capacity section works out, and the thing to design for is that payloads carry a template name and data rather than rendered HTML, so ten minutes of backlog is megabytes rather than most of a gigabyte.',
+        see: 'capacity',
+      },
+      {
+        q: 'You can send faster than the provider will accept. What happens?',
+        a: 'You get 429s, which look like failures and burn retry attempts, so the queue drains more slowly the harder it tries. A rate limiter in front of the transport, matched to the provider allowance, is worth more than more workers: the queue paces itself and retries stay available for real failures.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'How do you avoid being locked to one provider?',
+        a: 'A transport interface with an implementation per provider, chosen once from configuration at startup rather than branched on per send. The call sites never change when the provider does. It also lets a log driver exist as a real transport, which is what makes a fresh clone able to register a user and read the verification link in the terminal with no account anywhere.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'How do you test code that sends email?',
+        a: 'A fake transport that records messages instead of sending them, so a test can assert the recipient and the template without a network or a provider account. Without one, the realistic options are sending real mail from tests or not testing it, and in practice teams choose the second.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'The email sends successfully but never arrives. What is going on?',
+        a: 'Deliverability, which is the failure no dashboard shows because the send genuinely succeeded. It is decided by whether the receiving server believes you: SPF, DKIM and DMARC on the sending domain, and the reputation of that domain. No amount of throughput or retry logic substitutes, and a transactional subdomain separate from marketing stops a campaign damaging password resets.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'What do you do about bounces?',
+        a: 'Process them and suppress the address. Repeatedly sending to a dead mailbox damages the sending reputation of the domain, which degrades delivery for every other message including the ones that matter. Bounces usually arrive as an inbound webhook, so they already have a verified path in.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'A campaign is queued and a password reset arrives behind it. What happens?',
+        a: 'The reset waits, which is the difference between slow marketing and locked-out users. Separate queues by urgency so transactional mail is never behind a bulk send. The broader point is that bulk and transactional are different systems with different rate limits and different reputations, and running a campaign through a transactional path meets the provider limit first and the reputation limit second.',
+        see: 'scaling',
+      },
+      {
+        q: 'How do you know a template still renders?',
+        a: 'A test that renders every template with sample data, because a template that fails to render fails every message using it, and it fails in a worker at midnight rather than in a build. A preview page covers the visual check; the test covers the break.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Why one dispatch function instead of letting handlers send?',
+        a: 'Because twelve handlers each sending is twelve chances to get bounding, retry and shutdown wrong, and this project shipped exactly that: every email left from a bare goroutine while the job client that handles all of it properly was never called. One exit point is one place to get it right, and it is the kind of answer interviewers like because it is about structure rather than care.',
+        see: 'requirements',
+      },
+    ],
+  },
 
   problem: {
     text: [

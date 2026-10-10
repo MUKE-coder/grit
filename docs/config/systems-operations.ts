@@ -8,6 +8,63 @@ export const OBSERVABILITY: SystemDesign = {
   group: 'Operations',
   packages: ['internal/tracing', 'internal/health', 'internal/middleware'],
 
+  interview: {
+    intro:
+      '"Design a monitoring and alerting system" is a standard prompt, and observability is also the section interviewers reach for when they want to know whether you have operated anything. The questions are about the three signals, about cost, and about cardinality.',
+    questions: [
+      {
+        q: 'What are logs, metrics and traces, and when do you reach for each?',
+        a: 'They answer three different questions. Logs say what happened, in detail, for one event. Metrics say how much and how often, aggregated, and are cheap to keep for a long time. Traces say where the time went across the services one request touched. People conflate them and then wonder why their logging bill is enormous or why they cannot work out which service was slow.',
+        see: 'problem',
+      },
+      {
+        q: 'A user says a request was slow at ten past four. How do you investigate?',
+        a: 'With a request identifier that appears in the response, in every log line that request produced, and as the trace id. One key joins all three stores, so the investigation starts with a lookup rather than with a correlation exercise. If the log id and the trace id are different values, every investigation begins with a translation step, which is why they are the same string here.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'Logging every request at full detail is expensive. What do you do?',
+        a: 'Sample, and be careful about what you sample. Log every error and a fraction of successes, because the successes are nearly all identical and the errors are all different. The number that surprises people is the volume: the capacity section works it out, and at scale the log bill can exceed the compute bill, usually because a debug level was left on.',
+        see: 'capacity',
+      },
+      {
+        q: 'If you sample traces, you will miss the slow request you needed.',
+        a: 'That is the real objection to head sampling, where the decision is made at the start: at ten per cent, the eleven second request is ninety per cent likely to be missing, and it is the only one anybody wanted. Tail sampling buffers the spans and keeps the slow and failed ones after the fact. It costs a collector that holds spans in memory, and it keeps exactly the traces that get looked at.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'What is cardinality and why does it matter?',
+        a: 'The number of distinct label combinations on a metric. Each one is a separate time series, so labelling by user id or by a path containing an id creates a series per value and an unbounded set of them. Metric stores fall over on cardinality rather than on volume, which is counterintuitive and is why it is a favourite deep-dive question. Label by route pattern, which is a fixed set, not by path.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Your health endpoint returns a boolean per component. What is wrong with that?',
+        a: 'It cannot distinguish "Redis is down" from "this deployment has no Redis", which are opposite situations. That was a real bug here: the dashboard had to guess, and it guessed differently for each component. Four states fix it: ok, degraded, off and unknown. Only degraded lowers the overall status, because a component that was never asked for is not a problem.',
+        see: 'requirements',
+      },
+      {
+        q: 'Why is "unknown" not just treated as a failure?',
+        a: 'Because not knowing is not the same as being broken, and treating a probe that could not run as an outage is how an on-call rota learns to ignore the page. Alert fatigue is a monitoring design failure rather than an operator failure, and the cheapest way to cause it is to make uncertainty look like breakage.',
+        see: 'requirements',
+      },
+      {
+        q: 'What should a health check actually do?',
+        a: 'As little as possible, because a load balancer polls it every few seconds forever. A ping or a cached value is fine; a probe that counts rows is a permanent load increase added in order to detect load. Caching the result for a few seconds is almost always correct, since nobody needs sub-second freshness in a health response.',
+        see: 'capacity',
+      },
+      {
+        q: 'How do you avoid editing a central handler every time you add a component?',
+        a: 'A registry: a component registers a name and a probe function, and the handler merges whatever is registered. The alternative is a switch statement somebody has to remember to extend, which is exactly how storage ended up missing from the health response here for a long time.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'What should you alert on?',
+        a: 'Symptoms users feel rather than causes, and budget burn rather than instantaneous badness. An alert on processor usage fires when nothing is wrong and stays quiet when something is. An alert on error rate against an objective fires when the thing you promised is actually being consumed. The other category worth alerting on is absence: a scheduled job that stops produces no error at all.',
+        see: 'bottlenecks',
+      },
+    ],
+  },
+
   problem: {
     text: [
       'A user reports that saving an order took eleven seconds at about ten past four. There is no way to answer that from the code. The question needs evidence collected before anybody knew it would be asked, which is the whole premise of observability: the instrumentation has to already be there, because the interesting failures are the ones nobody predicted.',
@@ -353,6 +410,63 @@ export const AUDIT: SystemDesign = {
   group: 'Operations',
   packages: ['internal/audit', 'internal/appendonly', 'internal/models'],
 
+  interview: {
+    intro:
+      'Audit logging appears in any design touching money, health or regulated data. The question that makes it interesting is not how to write the rows, it is how you convince anybody the rows were not edited afterwards.',
+    questions: [
+      {
+        q: 'Why not just log to a file or your normal logging stack?',
+        a: 'Because the questions asked of an audit log are "who deleted this customer" and "what happened to this record", which are queries against structured fields rather than text searches. Application logs also rotate after days or weeks, and the question usually arrives months later. It is a table, with indexes, and a retention period measured in years.',
+        see: 'problem',
+      },
+      {
+        q: 'An administrator can edit the database. What is an audit log worth against them?',
+        a: 'Nothing, unless it is tamper evident, and that is the whole design problem. An audit trail an administrator can quietly edit proves nothing about administrators, which is a large share of what it exists for. You cannot prevent the edit from inside the database, so the achievable goal is to make it detectable.',
+        see: 'problem',
+      },
+      {
+        q: 'How do you make it detectable?',
+        a: 'A hash chain. Each entry includes a hash of the entry before it, so changing or removing any entry invalidates every hash after it, and a single ordered pass finds the first break. It is the same idea a blockchain uses, without the distributed consensus, because here there is one writer and the question is only integrity.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'What stops someone deleting rows rather than editing them?',
+        a: 'The same chain: a missing entry breaks the link for everything after it. Alongside that, the table is append-only, enforced by a hook on the model rather than a rule in a service, so updates and deletes are refused wherever they come from, including a migration or a database browser.',
+        see: 'requirements',
+      },
+      {
+        q: 'Someone could recompute the whole chain after tampering. Does that not defeat it?',
+        a: 'Yes, and admitting it is the strong answer. Internal consistency is not external proof: an attacker who can rewrite the entire table can rewrite the hashes too. The fix is to anchor it outside, by periodically publishing the current head hash somewhere you do not control, so any rewrite contradicts a value already recorded elsewhere. Adding an HMAC with a key held outside the database raises the bar in the meantime.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'What is the cost of chaining?',
+        a: 'Writes serialise, because each entry needs the hash of the one before it. That caps the append rate and is fine for audit volumes while being unworkable for logging every request. The hashing itself is irrelevant: SHA-256 over a few hundred bytes is microseconds, so the cost is the ordering rather than the cryptography.',
+        see: 'capacity',
+      },
+      {
+        q: 'Verification over seventy million rows takes minutes. Is that usable?',
+        a: 'Not from a button, which is why the practical split is verifying the recent tail on demand and the whole chain as a scheduled job that alerts on a break. Chaining per month, with the boundary hashes linking the partitions, keeps both verification and archival bounded as the log grows.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'How long do you keep it, and where?',
+        a: 'Years, usually set by a compliance requirement rather than a technical one, which makes it the fastest growing table in most systems. Closed monthly partitions archived to object storage keep the record without keeping the rows in the operational database competing with live queries.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'The chain fails verification. What does that tell you?',
+        a: 'Where it first breaks, and nothing about why. A restore from backup, a replication artefact and a deliberate edit all look identical, which is why operational events like a restore or a reseal should themselves be written into the chain. Then an unexplained break is genuinely unexplained.',
+        see: 'api',
+      },
+      {
+        q: 'Is there a subtle way to get this wrong?',
+        a: 'Yes, and it happened here. The chain hashed a timestamp more precise than Postgres and MySQL actually store, so the value written and the value read back differed and verification failed on the very first row of every such deployment. Every hashed value has to be normalised to what the column will store, before hashing rather than after.',
+        see: 'data-model',
+      },
+    ],
+  },
+
   problem: {
     text: [
       'Somebody deleted a customer record. Six weeks later it matters who, and when, and what the record said. Without an audit log there is no answer: the row is gone, the application logs rotated after fourteen days, and the only remaining evidence is a backup that shows the record existed and nothing about its removal.',
@@ -685,6 +799,63 @@ export const FILE_STORAGE: SystemDesign = {
     'Accepting an upload, keeping it somewhere that survives a redeploy, and serving it back to the people allowed to see it.',
   group: 'Operations',
   packages: ['internal/storage', 'internal/files', 'internal/media'],
+
+  interview: {
+    intro:
+      '"Design Dropbox" or "design a file upload service" is one of the most common prompts there is. The expected answers are about keeping bytes out of the application, about what the database holds, and about serving files back only to the people allowed to see them.',
+    questions: [
+      {
+        q: 'Where do uploaded files go?',
+        a: 'Object storage, not the container filesystem and not the database. The container disk is scratch space that disappears on the next deploy. Bytes in the database make every backup the size of every upload and every restore an hour long. Object storage is cheap, effectively unlimited, and scales without the application participating, which is most of why it is the answer.',
+        see: 'problem',
+      },
+      {
+        q: 'Should the upload go through your API?',
+        a: 'For small files it is fine and simpler. For anything large it should not, because every upload then holds a request for its whole duration, bounded by the body limit and the proxy timeout, and the failure looks like a network problem. A pre-signed URL lets the browser upload straight to the bucket while your API only authorises and records, so the bytes never touch your servers.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'How do you handle a two gigabyte file on a flaky connection?',
+        a: 'Chunked, resumable uploads. Split the file, upload the parts, and on failure resume from the chunk that failed rather than from the beginning. Addressing chunks by the hash of their contents also gives you deduplication for free: a chunk whose hash is already stored does not need uploading at all, which is how a file-sync product avoids re-sending what it already has.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'What goes in the database?',
+        a: 'Metadata only: the key, the size, the content type, who owns it, and any derived variants. The row is the record; the object is the bytes. That split is what makes a file listable, attributable and deletable without the database carrying any of the weight.',
+        see: 'data-model',
+      },
+      {
+        q: 'Do you write the row or the object first?',
+        a: 'The object, then the row, and the ordering is a deliberate choice about which failure you prefer. Object first means a crash leaves an orphaned object: wasted space, findable by a sweep, harmless. Row first means a crash leaves a row pointing at nothing, which is a broken page for a user. Both need a reconciliation job eventually, and one of them is much more pleasant.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'How do you serve a private file?',
+        a: 'Not from a public bucket. Either stream it through an authorised endpoint, which costs a request per read, or check authorisation and hand back a short-lived signed URL so the bytes come from the store while the decision stays in your application. Making the bucket public to simplify serving means its entire contents are enumerable by anybody who guesses the naming scheme.',
+        see: 'requirements',
+      },
+      {
+        q: 'What dominates the cost at scale?',
+        a: 'Egress. Storage is cheap and bandwidth is not, so at hundreds of gigabytes a day the bill is reads rather than bytes held. A CDN in front of public files is the only change that moves that number materially, and it is a configuration change rather than a code one. Lifecycle rules moving old objects to colder classes handle the storage side.',
+        see: 'capacity',
+      },
+      {
+        q: 'When do you generate thumbnails?',
+        a: 'In a background job, not during the upload. A large image takes seconds, and an upload that waits for processing is an upload that times out. The alternative is generating on first request and caching, which trades storage for latency on the first view. Either way it is not in the request that accepted the file.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'A user uploads a file called ../../etc/passwd. What happens?',
+        a: 'Nothing, because the key is generated rather than taken from the upload. The original filename is kept as a display name and never used as a path. Alongside that, the size is capped and the content type is checked against an allowlist by sniffing the bytes, since the extension is chosen by the uploader and means nothing.',
+        see: 'requirements',
+      },
+      {
+        q: 'How do you keep files and rows consistent over time?',
+        a: 'A sweep comparing both directions on a schedule, reporting rather than deleting until the counts are understood. Orphans accumulate silently from failed requests, and rows pointing at missing objects break pages. Neither shows up in normal use, so the only way to know is to go looking.',
+        see: 'bottlenecks',
+      },
+    ],
+  },
 
   problem: {
     text: [
@@ -1036,6 +1207,63 @@ export const IMPORT_EXPORT: SystemDesign = {
     'Taking a spreadsheet somebody has and turning it into rows, and giving them a file back, without either one taking the application down.',
   group: 'Operations',
   packages: ['internal/imports', 'internal/export'],
+
+  interview: {
+    intro:
+      'Bulk import is where the interview question "how would you load a million rows" lives, and it is a good one because the naive answer fails in three different ways at once: memory, connections and partial failure.',
+    questions: [
+      {
+        q: 'A customer uploads a ninety thousand row spreadsheet. What does the naive version do wrong?',
+        a: 'Three things at once. It reads the file into memory, so the file and the parsed rows are both resident. It loops row by row, holding a database connection for the entire run. And when row forty thousand is invalid, the first 39,999 are already committed with no record of what happened. Streaming, batching and a per-row error report fix them in that order.',
+        see: 'problem',
+      },
+      {
+        q: 'How much does batching actually buy?',
+        a: 'Roughly twenty times here: ninety thousand individual inserts at about a millisecond each is ninety seconds, while 180 batches of five hundred is four and a half seconds. The number that matters more is connection hold time, which falls from ninety seconds to four. The capacity section has the arithmetic.',
+        see: 'capacity',
+      },
+      {
+        q: 'Five customers import at once and the whole application goes slow. Why?',
+        a: 'Because each import holds a connection for its entire run, so five of them take a fifth of a twenty-five connection pool for minutes during business hours. It presents as general slowness with nothing in the logs about imports, which is what makes it hard to diagnose. The fix is a gate: imports take turns, and the waiting is reported so a queued import looks queued rather than hung.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'The spreadsheet says the group is "Suppliers" but your table wants an id. How do you resolve that?',
+        a: 'Look it up by natural key, and cache the result for the run. Uncached, ninety thousand rows across two such columns is 180,000 queries; cached by distinct value it is about four hundred. The cache is per run rather than global, because a concurrent import may be creating the very records this one is looking up.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'The lookup fails. Do you create the record?',
+        a: 'Only if it genuinely was not found. This is the subtle one. Treating a database error as "not found" silently creates a second Suppliers group, and nothing in the run reports a problem. Found, not found and failed are three outcomes, and collapsing the last two is how an import quietly corrupts data.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'Row 40,000 is invalid. Do you stop?',
+        a: 'No. Record it with its row number and reason and keep going, because stopping on the first bad row means the user fixes one problem per attempt and imports ninety thousand rows in ninety tries. The useful output is a list of row numbers, since the person fixing it has the spreadsheet open in front of them.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'It fails halfway. The customer reruns the same file. Now what?',
+        a: 'Without care, duplicates, because batches are already committed. Making the import idempotent on a natural key, upserting rather than inserting, means a rerun converges instead of doubling. The alternative is a dry run that validates the whole file before anything is written, so the user fixes the spreadsheet once rather than discovering problems in stages.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Where is the transaction boundary?',
+        a: 'Per batch, not per row and not per run. Per row pays the transaction cost the batching exists to remove. Per run holds locks across the whole import and makes a failure at the end discard everything. The batch is the unit of work and the unit of failure, which is the trade being made deliberately.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'Should the import run in the request?',
+        a: 'Not once it takes minutes, because a four minute import is a four minute request that a closed tab or a proxy timeout can end. Upload, queue, and let the user close the tab, with progress from polling the run rather than from a held connection.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'And exporting a hundred thousand rows?',
+        a: 'Stream it: read a batch, write a batch, flush, so the response starts before the query finishes and memory stays flat. Building the whole file first works until the result set is large, and then it is an out-of-memory kill. Worth noting that CSV streams freely and XLSX does not, because of its structure, so very large exports should prefer CSV and say so.',
+        see: 'scaling',
+      },
+    ],
+  },
 
   problem: {
     text: [

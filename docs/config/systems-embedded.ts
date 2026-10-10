@@ -8,6 +8,63 @@ export const GORM_STUDIO: SystemDesign = {
   group: 'Embedded',
   packages: ['github.com/MUKE-coder/gorm-studio/studio', 'v1.1.1'],
 
+  interview: {
+    intro:
+      '"Design an internal admin tool" is a real prompt and a surprisingly good one, because the interesting content is entirely about constraints rather than features. These are the questions it raises.',
+    questions: [
+      {
+        q: 'Why build a database browser into the application rather than using an existing client?',
+        a: 'Because of where it is needed. A staging container has no desktop, no installed client, and no database port open to anybody laptop. Customer-hosted instances cannot have one opened either. In exactly the situations where looking at the data would settle an argument in thirty seconds, the usual tools are the ones that are not there.',
+        see: 'problem',
+      },
+      {
+        q: 'That sounds like a database console on the public internet.',
+        a: 'It is, which is why nearly all of the design is constraints. Authentication in front, read-only and no SQL editor unless a specific task needs otherwise, a per-table policy, and loud warnings at startup for each dangerous combination. The library cannot refuse to mount without breaking the laptop case it is good at, so the unsafe default is made noisy rather than impossible.',
+        see: 'requirements',
+      },
+      {
+        q: 'How do you stop somebody dropping a table through the SQL box?',
+        a: 'Refuse categories rather than sanitising strings, because there is no safe escaping of DROP TABLE. A blocked leading keyword list applies whether or not the instance is read-only, and it includes the non-obvious ones: VACUUM is on it because VACUUM INTO writes an arbitrary file, which is data exfiltration wearing a maintenance command.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'Checking the first keyword is easy to get around. "SELECT 1; DELETE FROM users".',
+        a: 'Which is why the statement count is checked first. Comments are stripped, statements are split, and anything that is not exactly one statement is rejected. That single rule closes the whole class, where keyword matching on the first word never would. A common table expression hiding DML inside it needs whole-word matching to catch as well.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'Some tables hold secrets. How do you handle those?',
+        a: 'Hide them, and make hidden mean hidden in every path: absent from the schema, 404 on a direct request, left out of exports, and refused by the SQL editor when a statement names one. A table omitted from three of the four and present in the fourth is worse than one never hidden, because somebody is relying on it.',
+        see: 'requirements',
+      },
+      {
+        q: 'You have a scope function limiting what an operator sees. Does the SQL editor respect it?',
+        a: 'No, and saying so is the point. A scope filters table queries and cannot filter arbitrary SQL, so leaving both enabled gives an operator a way around the boundary. Documenting that limitation, and advising that the editor be disabled when a scope is set, is the difference between a known constraint and a breach.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'What stops an import from taking the process down?',
+        a: 'Three caps applied together: a byte limit checked before the body is read, a row limit, and a timeout. The ordering matters most. A size check performed after buffering the upload has already lost, because the decompression bomb has gone off by then.',
+        see: 'capacity',
+      },
+      {
+        q: 'What is the operational risk once it is running?',
+        a: 'That it shares the application connection pool. A sort on an unindexed column over ten million rows is a long query holding a connection a request wanted, and it is being run by somebody investigating a problem, which is when the system is already under strain. A separate pool with a low maximum and a statement timeout contains it.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Someone edits a row here. What is different from editing it through the application?',
+        a: 'Every validation, hook and audit the application would have applied is skipped, so the row can end up in a state no code path could produce. The audit callback records that it happened, not that it was correct. That is why writes through this tool belong in the same audit log as everything else, and why read-only is the right default.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Why read the schema from both the database and the model structs?',
+        a: 'Because neither alone describes the schema a developer is thinking about. The database knows the column types and the foreign keys; the models know the relationship names, the Go types and the many-to-many join tables. Reconciling the two is what lets the tool offer navigation along a relationship rather than just a list of columns.',
+        see: 'high-level-design',
+      },
+    ],
+  },
+
   problem: {
     text: [
       'Every developer needs to look at the data. Did the migration run, why does that row have a null in it, what did the importer actually write. The usual answers are a separate desktop client that each person installs and configures, or psql, which does not exist in a container, or an admin panel built for the business rather than for the rows.',
@@ -387,6 +444,63 @@ export const PULSE: SystemDesign = {
   group: 'Embedded',
   packages: ['github.com/MUKE-coder/pulse/pulse', 'v1.2.0'],
 
+  interview: {
+    intro:
+      '"Design a metrics and monitoring platform" is a classic prompt. This is the in-process version of that problem, which changes the answers in interesting ways: no collector to scale, and a hard rule that the measurement must not cost what it is measuring.',
+    questions: [
+      {
+        q: 'Why build this in-process rather than running Prometheus and a collector?',
+        a: 'For the application that is one container and a database, a monitoring stack is bigger and harder to operate than the thing it monitors, so it does not get installed and the answer to "why was it slow" stays "nobody knows". In-process costs a dependency instead of an architecture. It stops being the right trade once there are enough replicas that you need a combined view.',
+        see: 'problem',
+      },
+      {
+        q: 'What stops the profiler from slowing down the requests it measures?',
+        a: 'Storing a metric is a buffer push or a queue append, and the call returns immediately. Nothing on the request path waits on storage. The moment measurement is a measurable fraction of request time, every latency number it reports includes itself, which makes the tool actively misleading rather than merely expensive.',
+        see: 'requirements',
+      },
+      {
+        q: 'How do you keep memory bounded under unexpected traffic?',
+        a: 'A fixed-size ring buffer, so the bound is the data structure rather than a cleanup goroutine that is supposed to keep up. The oldest entry is overwritten rather than memory growing. That is a much stronger guarantee than any policy, and it is what lets the thing run in a container with a limit.',
+        see: 'requirements',
+      },
+      {
+        q: 'You sample traces to control cost. Does that not make your error rate wrong?',
+        a: 'It would, which is why sampling and counting are separated. Traces are sampled; per-minute rollups count every single request. Totals, error rates and objectives are therefore exact at any sample rate. Computing an error rate from a ten per cent sample gives an answer with no stated error bar that people then act on, which is worse than having no number.',
+        see: 'capacity',
+      },
+      {
+        q: 'Your retention says 24 hours but the buffer holds two minutes of traffic. Who tells the user?',
+        a: 'The tool does. It reports when buffer capacity rather than the retention setting is what limits history, along with dropped writes and unclean restarts. A monitoring system that silently holds two minutes while its settings claim a day is actively misleading, and of all tools it is the one that must not hide its own gaps.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'How do you find an N plus one query?',
+        a: 'By tallying repeated query patterns within a single request and flagging when the same shape runs more than a handful of times. It is the single most common cause of a slow page and the hardest to see in a log of individual queries, because each one is fast. Recording the file and line that issued the query is what turns "this query is slow" into "this line is slow".',
+        see: 'high-level-design',
+      },
+      {
+        q: 'Capturing request bodies sounds risky.',
+        a: 'It is, in two ways. It is a security risk, handled by redacting passwords, tokens, card numbers and keys before anything is stored rather than before it is displayed. And it is a correctness risk: in one version here the error middleware read the body and put back only the first four kilobytes, so every request with a Content-Length reached the handler truncated. Mobile and curl uploads failed while browsers, which send chunked, did not.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'You have four replicas. Where is the dashboard?',
+        a: 'There are four of them, and whichever one the load balancer picks is what you see. That is the structural limit of an in-process design and the point at which a real collector earns its cost. The bridge is an OpenTelemetry exporter: keep the in-process detail, ship spans out for the combined view.',
+        see: 'scaling',
+      },
+      {
+        q: 'What should alerting look like?',
+        a: 'Two-phase firing so a single spike does not page anybody, a cooldown so one problem is not fifty notifications, and burn-rate alerting against an objective rather than a raw threshold. A threshold on a noisy metric pages people for nothing, and the second time that happens the alert stops being read.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'Memory or SQLite for storage?',
+        a: 'Memory is a ring buffer with the highest write ceiling and loses everything on restart. SQLite appends to a queue committed in batches by one writer, so it survives a restart at a lower ceiling. For an application restarted more often than it is busy, which is most of them, surviving the restart is worth more than the throughput.',
+        see: 'capacity',
+      },
+    ],
+  },
+
   problem: {
     text: [
       'Something is slow. Answering why needs per-request latency, the queries each request ran, how long each took, where in the code they came from, what the heap and the goroutine count were doing at the time, and which of those is unusual. That is a known problem with known answers, and all of the standard ones are a second deployment: a collector, a time series database, a dashboard, and a budget line.',
@@ -760,6 +874,63 @@ export const SENTINEL: SystemDesign = {
     'A web application firewall, threat intelligence and audit layer that mounts in one call, and the accuracy numbers to say how often it is wrong.',
   group: 'Embedded',
   packages: ['github.com/MUKE-coder/sentinel/v2', 'v2.6.0'],
+
+  interview: {
+    intro:
+      '"Design a web application firewall" and "design a DDoS protection layer" are real prompts, and this is the in-application version. The questions worth preparing are about false positives, about keeping the request path cheap, and about what an attack does to your own analysis.',
+    questions: [
+      {
+        q: 'What is the dominant failure mode of a firewall inside an application?',
+        a: 'Blocking legitimate traffic, not missing an attack. A pattern that matches real requests takes the site down for the people it was protecting, and it does so quietly, as a fraction of users who cannot complete something. This library shipped that twice: an SSRF pattern matched 0.0.0.0 inside browser version strings like Chrome/140.0.0.0, blocking every Chrome user, and a bare double hyphen matched inside base64url cookies, rejecting about one session in ten at random.',
+        see: 'problem',
+      },
+      {
+        q: 'So how do you know your rules are any good?',
+        a: 'Measure both rates against a fixed corpus and pin them in continuous integration. Here that is 89 legitimate-but-suspicious requests alongside 56 attacks, giving ten per cent false positives and one hundred per cent detection, down from thirty-eight per cent false positives. Without a corpus, a rule change is a guess with production as the test, and the accuracy of the whole thing is simply unknown.',
+        see: 'requirements',
+      },
+      {
+        q: 'How do you roll it out without breaking everyone?',
+        a: 'Log mode first. Run it against real traffic for a week and look at what it would have refused, then switch to blocking once the false positives are understood. The generated projects do exactly this, logging in development and blocking in production, and exclude the authenticated rich-text routes whose bodies are legitimately full of markup.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'An attacker double-encodes the payload. Does your pattern still match?',
+        a: 'Only if you decode until there is nothing left to decode. Decoding once means a double-encoded payload passes through unexamined, which was a real bypass here. Every layer has to be unwrapped across the path, the parameters and form bodies, and then every layer scanned.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'How do you keep inspection off the critical path?',
+        a: 'Split the decision from the analysis. Blocking is synchronous and cheap: decode, match, decide. Everything else, scoring, actor profiling, reputation lookups, anomaly detection and the audit write, goes through a bounded buffer to background workers. That is what makes the expensive half affordable.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'What happens to that buffer during an actual attack?',
+        a: 'It fills, which is exactly when losing the records is worst. So drops are counted and surfaced on the dashboard rather than silently discarded. An attack large enough to overwhelm the analysis must not also erase the evidence of itself, and the only way to know it happened is a counter somebody is watching.',
+        see: 'capacity',
+      },
+      {
+        q: 'What bounds the worst-case cost of inspecting one request?',
+        a: 'A body size cap, with oversized bodies rejected rather than partly scanned. Without one, the attacker chooses how much processor time each request costs by choosing how large a body to send. Scanning the first ten kilobytes and passing the rest is the other failure, since it is a bypass rather than a limit.',
+        see: 'requirements',
+      },
+      {
+        q: 'Behind a load balancer, how do you know the client address?',
+        a: 'By walking the forwarded chain from the right, past the proxies you trust. Taking the leftmost entry trusts a value the client wrote, so anybody can choose their own address and walk past rate limits, address blocks and the lockout. The safe default is to ignore the header entirely unless trusted proxy ranges are configured.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'You wrote an exclusion for /api/blogs/:id and it does nothing. Why?',
+        a: 'Because exclusions match the real request path, not the router template, so it matches the literal string ":id" and never "/api/blogs/123". It is dead config that reads as correct, which is the worst kind. The general defence is a validator that refuses configuration that compiles and does nothing, and the specific one is exporting the matcher so a test can assert a concrete production path is excluded.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Should a security layer fail open or closed?',
+        a: 'It depends on what failed, and the distinction is the interesting part. If your own dependency is unavailable, such as the shared counter store, allow the request: a limiter that takes the site down when Redis blinks is an outage with a security rationale. If the caller is hostile and a pattern matched, refuse. Our infrastructure failing and the caller attacking are different situations and should not share a policy.',
+        see: 'requirements',
+      },
+    ],
+  },
 
   problem: {
     text: [

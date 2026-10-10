@@ -8,6 +8,63 @@ export const MULTITENANCY: SystemDesign = {
   group: 'Access',
   packages: ['plugin: multitenant', 'internal/authz', 'internal/middleware'],
 
+  interview: {
+    intro:
+      '"Design a multi-tenant SaaS" is a common prompt, and the questions are almost always about isolation rather than features. A tenant leak is a breach, not a bug, and interviewers want to hear that distinction made.',
+    questions: [
+      {
+        q: 'What are the ways to separate one customer from another?',
+        a: 'Three, on a spectrum. A database per tenant gives the strongest isolation and the worst operations, because a migration now runs a thousand times and a connection pool exists per customer. A schema per tenant sits in the middle. A shared table with a tenant column is what most products use: one migration, one pool, and isolation that is now entirely your code rather than the database. This design takes the third and spends its effort making the predicate impossible to forget.',
+        see: 'problem',
+      },
+      {
+        q: 'With a shared table, what stops one customer seeing another?',
+        a: 'A predicate on every query, which sounds obvious and is exactly the thing that fails. The question an interviewer is really asking is what happens when somebody writes a query without it. The answer here is that the scope is applied in the service layer that every caller passes through, rather than in each handler, so a new endpoint inherits it instead of having to remember it.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'Where does the tenant id come from?',
+        a: 'From the authenticated session, never from the request. This is the question that catches people. If a tenant id arrives in a header, a path or a body, then changing it is an attack, and you have built an access control system whose key input is supplied by the attacker. It is resolved from who the caller is, and verified against their membership.',
+        see: 'requirements',
+      },
+      {
+        q: 'How do you prove the isolation actually holds?',
+        a: 'With a test that behaves like an attacker rather than like a user. Create two tenants, sign in as the first, and attempt to read, update and delete a record belonging to the second by its real id. The test passes when all of them fail. Tests written from the happy path never catch this, because the happy path never asks for somebody else record.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'One tenant runs a huge report and everyone else slows down. What do you do?',
+        a: 'This is the noisy neighbour problem, and it is the main operational cost of sharing. The mitigations are per-tenant rate limits and quotas so one customer cannot consume the whole budget, statement timeouts so no single query can run unbounded, and moving the largest tenants to their own database when they outgrow the shared one. The shared model does not have to be forever.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'What does the tenant column do to your indexes?',
+        a: 'It has to lead them. An index on created_at is nearly useless when every query also filters by tenant, because the database still walks rows belonging to everybody. The composite index with the tenant first keeps each tenant queries proportional to their own data rather than to the whole table, which is also what stops a large customer slowing down a small one.',
+        see: 'capacity',
+      },
+      {
+        q: 'Should support staff be able to see a customer account?',
+        a: 'Usually yes, and that is a deliberate hole that needs bounding. Impersonation should be explicit rather than implicit, time-limited, and written to an audit log that says who viewed what and when. The dangerous version is a support tool that quietly ignores the tenant predicate, because then there is no record and no limit.',
+        see: 'requirements',
+      },
+      {
+        q: 'Where else does the tenant id need to appear, besides queries?',
+        a: 'Cache keys, log lines, metric labels and background jobs. A cache key missing the tenant serves one customer data to another and looks like a caching bug rather than a breach. A job that loads a record by id outside a request has no session to resolve the tenant from, so it has to carry it explicitly. These are the places the predicate is forgotten precisely because they are not queries.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'How does this interact with per-user ownership?',
+        a: 'They compose rather than replace each other. The tenant scope says which organisation, and the owner scope says which person inside it, and a record needs to satisfy both. Treating them as the same mechanism produces one of two bugs: either everybody in an organisation sees everything, or a user cannot see records their colleague created and was supposed to share.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'When should you not do this?',
+        a: 'When one customer regulatory requirements or scale genuinely demand separation, when the cost of a leak is unacceptable at any probability, or when tenants need different schemas. Being able to say when the shared model is wrong is a better answer than defending it everywhere.',
+        see: 'scaling',
+      },
+    ],
+  },
+
   problem: {
     text: [
       'Selling the same application to many organisations has three possible shapes. A database per tenant is the safest and the most expensive to operate: a hundred customers means a hundred migrations. A schema per tenant is cheaper but still multiplies the operational surface. A shared schema with a tenant column is the cheapest and the most dangerous, because the entire isolation guarantee is one predicate that a developer can forget.',
@@ -325,6 +382,63 @@ export const RATE_LIMITING: SystemDesign = {
     'Keeping one caller from consuming the capacity of all of them, and making a password-guessing attack cost something.',
   group: 'Access',
   packages: ['Sentinel', 'internal/middleware'],
+
+  interview: {
+    intro:
+      '"Design a rate limiter" is one of the most frequently asked system design questions there is. The algorithm comparison is table stakes; the follow-ups about shared counters, what to do when the store is down, and lockouts as a weapon are where the answer is actually judged.',
+    questions: [
+      {
+        q: 'Which algorithm would you use, and what are the alternatives?',
+        a: 'The four worth naming are fixed window, which is simplest and allows a double burst across the boundary; sliding window log, which is exact and stores a timestamp per request so memory grows with traffic; sliding window counter, which approximates the log from two fixed windows at constant cost and is the usual default; and token bucket, which allows a controlled burst and then a steady rate, which suits APIs where occasional bursts are legitimate. This design uses a sliding window by default and offers the other two.',
+        see: 'problem',
+      },
+      {
+        q: 'What is the fixed window boundary problem?',
+        a: 'With a limit of 100 per minute, a client can send 100 at 10:00:59 and another 100 at 10:01:00 and stay inside both windows while sending 200 requests in two seconds. A sliding window fixes it by weighting the previous window by how much of it is still in view, which costs one extra counter and removes the burst.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'You run twelve replicas. Where does the counter live?',
+        a: 'Somewhere shared, or the limit is not the limit. Counting in process means each replica permits the full allowance, so a limit of 100 with twelve replicas is really 1,200, and it moves whenever you scale. This is the single most common mistake in rate limiter answers. Here a Redis-backed store is used when one is configured, and the effective-limit arithmetic is in the capacity section.',
+        see: 'capacity',
+      },
+      {
+        q: 'Redis is down. Do you allow the request or refuse it?',
+        a: 'Allow it, by default, and know why. Failing closed means your limiter outage is a total outage, which is a self-inflicted incident caused by a component that exists to protect you. Failing open means you are unprotected during that window. The nuance worth offering is that the right answer differs per endpoint: a catalogue read can fail open safely, while a login endpoint is better failing closed or falling back to a local limiter, because that is exactly when an attacker benefits.',
+        see: 'requirements',
+      },
+      {
+        q: 'What do you key the counter on?',
+        a: 'On the thing you are protecting, which is rarely just the address. For anonymous traffic the IP is all you have, and it is shared: an office, a university or a mobile carrier gateway can put thousands of real users behind one address. For authenticated traffic, key on the user, which is both fairer and harder to evade. For a multi-tenant product, key on the tenant as well, or the loudest customer consumes everybody allowance.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'How is this different from an account lockout?',
+        a: 'They solve different problems and need different keys. A rate limit protects capacity and is keyed by caller. A lockout protects one account from password guessing and must be keyed by account, because an attacker spreading guesses across a thousand addresses never trips a per-address limit. Running only one of the two leaves a real gap.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'Can a lockout be used as a weapon?',
+        a: 'Yes, and this is the follow-up people miss. If ten failures lock an account, anybody who knows your email address can lock you out whenever they like. That is a denial of service delivered through your security feature. The mitigations are to lock briefly and with increasing delay rather than hard, to require a challenge instead of refusing outright, and never to lock based on an attacker-chosen key.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Where in the request should the check run?',
+        a: 'Before anything expensive. A limiter that runs after password hashing still lets an attacker force 60 milliseconds of work per attempt, so the endpoint falls over to processor exhaustion even though every request is being refused. Refusing before the cost is paid is the entire point.',
+        see: 'requirements',
+      },
+      {
+        q: 'What do you return, and what should the client do?',
+        a: 'A 429 with a Retry-After header, plus headers saying the limit and how much is left. Without them a client has no way to behave well, so it retries immediately and makes things worse. Telling a caller exactly when to come back turns a refusal into something a well-written client can cooperate with.',
+        see: 'api',
+      },
+      {
+        q: 'How do you tune the limits?',
+        a: 'By measuring first. Run the limiter in a mode that records what it would have refused, look at real traffic, and set the threshold above the legitimate heavy users. Numbers chosen in a meeting are either so high they protect nothing or so low they break an integration you did not know existed, and you discover which only in production.',
+        see: 'bottlenecks',
+      },
+    ],
+  },
 
   problem: {
     text: [

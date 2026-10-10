@@ -8,6 +8,63 @@ export const MIGRATIONS: SystemDesign = {
   group: 'Data',
   packages: ['internal/migrate', 'internal/models'],
 
+  interview: {
+    intro:
+      'Schema change comes up in interviews as "how do you deploy this without downtime", usually buried inside a larger design. The expected answers are about backward compatibility and about what you do when a change cannot be undone.',
+    questions: [
+      {
+        q: 'How do you change a schema without taking the application down?',
+        a: 'By making every change backward compatible with the version still running, because during a rolling deploy both versions are live at once. Adding a nullable column or a new table is safe. Dropping a column the old code still selects, or renaming one, is not. The discipline is that the schema change and the code that needs it ship in different releases.',
+        see: 'problem',
+      },
+      {
+        q: 'How would you rename a column safely?',
+        a: 'In three deploys, not one. Add the new column, write to both while reading from the old, backfill the existing rows in batches, switch reads to the new column, and only then drop the old one. Each step is independently reversible, which a single rename is not. An interviewer asking this is checking whether you will reach for the one-line answer that causes an outage.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Migration files or derived from the models?',
+        a: 'A trade-off worth naming. Migration files give you exact control and a readable history, at the cost of restating in SQL what the model already says, with the two free to drift. Deriving from the models removes the duplication and gives up the control. This design derives, and the interesting consequence is that there are no down scripts, which is the next question.',
+        see: 'problem',
+      },
+      {
+        q: 'With no down scripts, how do you roll back?',
+        a: 'By computing the inverse rather than writing it. The applier only ever adds: it creates tables, adds columns and builds indexes, and never drops a column. So you snapshot the schema before and after, store the difference, and a rollback is dropping exactly what that run added, newest first. The reverse does not have to be written by somebody who will never run it, which is why hand-written down scripts are usually wrong.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'What can a rollback not do?',
+        a: 'Bring data back. Dropping a column that has been live for a week takes a week of writes with it, so computable does not mean safe. That is why the command prints every statement it is about to run and refuses to proceed without an explicit flag, and why the real advice is to take a backup immediately before.',
+        see: 'requirements',
+      },
+      {
+        q: 'What happens if the migration runs twice?',
+        a: 'Nothing, and that has to be true. The applier converges on a target state rather than replaying a sequence, so a second run finds everything present and does nothing. Anything else makes deployment pipelines conditional, and conditional deployment steps are the ones that get skipped.',
+        see: 'requirements',
+      },
+      {
+        q: 'Ten replicas start at once and all try to migrate. What happens?',
+        a: 'They race, and on some engines the losers get an error rather than a harmless no-op. The clean answer is not to coordinate them but to remove the race: run migration as its own deploy step, one process, before any new instance starts. That is what the generated pipelines do, and it is simpler than any locking scheme.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Adding an index to a table with ten million rows. What do you expect?',
+        a: 'Minutes, and locking on some engines, which during a deploy means an outage. The cost is a property of the change rather than the tool, which is why a dry run that prints the statements matters: it is the only chance to notice an index build before it happens on a live table. Postgres offers a concurrent build that avoids the lock at the cost of time.',
+        see: 'capacity',
+      },
+      {
+        q: 'Where do data changes go, as opposed to shape changes?',
+        a: 'Not in the migration. Backfilling a column or reshaping existing rows is code with tests that should be idempotent and resumable, which a migration is a poor place for. Putting it in a job or a seed means it can be rerun after a failure halfway through, and it does not hold a transaction open across millions of rows.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'How do you know what actually happened in production?',
+        a: 'A history table recording what each run changed, taken from the before and after snapshots rather than from what the code intended. Recording the effect rather than the intent means the history is still true when the applier did something unexpected, and storing the framework version alongside it turns "when did this column appear" into one query.',
+        see: 'data-model',
+      },
+    ],
+  },
+
   problem: {
     text: [
       'The schema changes constantly early on and keeps changing forever. A new column, a new table, an index somebody needed at three in the morning. Every one of those changes has to be applied to a database that already holds data, in an order, on every machine that runs the application, and in production exactly once.',
@@ -305,6 +362,63 @@ export const PAGINATION: SystemDesign = {
     'Returning a slice of a large table with a total, a sort, a filter and a search box, without the query getting slower as the table grows.',
   group: 'Data',
   packages: ['internal/paginate', 'internal/services'],
+
+  interview: {
+    intro:
+      'Pagination arrives as a follow-up in almost any design with a list in it, and the expected answer is the offset versus cursor trade-off plus an awareness that the count is usually the expensive part.',
+    questions: [
+      {
+        q: 'Offset or cursor pagination?',
+        a: 'Offset gives you page numbers and a total, and costs more the deeper you go, because the database produces and discards every row before the one you asked for. Cursor, or keyset, pagination remembers where the last page ended and asks for rows after that point, so page ten thousand costs the same as page one, and it cannot give you page numbers. Use offset for an admin table somebody browses, cursor for anything that walks the whole set.',
+        see: 'problem',
+      },
+      {
+        q: 'How expensive is deep offset, concretely?',
+        a: 'Page 10,000 at 20 per page means LIMIT 20 OFFSET 199,980, so the database produces 200,000 rows to return 20. It is linear in the page number, which is fine for a human who never goes past page thirty and fatal for an export loop that walks every page. The capacity section has the comparison against keyset at the same depth.',
+        see: 'capacity',
+      },
+      {
+        q: 'What goes in the cursor?',
+        a: 'The sort value and the id together, encoded opaquely. Both, because a sort value is not unique: cursor on created_at alone and rows sharing a timestamp are either skipped or repeated. Opaque, because the moment clients parse it you can never change the sort without breaking them.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'Somebody inserts a row while a user is paging. What happens?',
+        a: 'With offset, everything shifts: the user sees a row twice or misses one entirely, because page two is defined by position and the positions moved. Keyset is stable, because the page is defined by a value rather than a position. This is the correctness argument for cursors, and it is usually more persuasive than the performance one.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'What is usually the slowest part of a list request?',
+        a: 'The total, not the page. A filtered COUNT over ten million rows can cost hundreds of milliseconds while the page itself takes single digits. That is why cursor mode does not count unless asked, and why the cheapest optimisation available on a list endpoint is usually not computing a number nobody is displaying.',
+        see: 'capacity',
+      },
+      {
+        q: 'A client sends sort_by=;DROP TABLE users. What happens?',
+        a: 'Nothing, because the sort column is checked against a per-resource whitelist. This is the one input on a list endpoint that cannot be a bound parameter, since a parameter cannot be a column name, which makes it the one place a whitelist is mandatory rather than advisable. An unknown column falls back to the default sort rather than returning an error, so a stale bookmark still returns rows.',
+        see: 'requirements',
+      },
+      {
+        q: 'What stops a caller asking for a million rows?',
+        a: 'A maximum page size, enforced in the binder rather than in each handler. Forty handlers each remembering to cap the size is thirty-nine that do and one that does not. Capping centrally bounds the worst request anybody can send, which bounds memory and bandwidth per request by construction.',
+        see: 'requirements',
+      },
+      {
+        q: 'What index makes this fast?',
+        a: 'A composite index on the sort column plus the id, which is exactly the tuple the keyset predicate compares. It serves the offset sort as well, and it makes the tie-break deterministic. Without an index on the sort column, every page is a sort of the whole filtered set, and that is the usual reason a list endpoint is slow.',
+        see: 'scaling',
+      },
+      {
+        q: 'How does search fit in?',
+        a: 'Across declared columns only, because searching everything means searching columns nobody indexed. A leading-wildcard LIKE across several columns is a full scan that looks perfectly fine on a thousand rows and falls over on a million. Past that point it belongs in a full text index on a generated column, or in a search engine.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'How does a client tell which mode answered?',
+        a: 'The response says so. In cursor mode the total, page and pages are all zero, which is indistinguishable from an empty table unless the envelope carries a mode field. The counts are also serialised without omitempty, because a missing total leaves every client doing arithmetic on undefined, which renders as a blank card rather than a nought.',
+        see: 'api',
+      },
+    ],
+  },
 
   problem: {
     text: [
@@ -640,6 +754,63 @@ export const ENCRYPTION: SystemDesign = {
     'Making a column unreadable without the key, while the handler and the model carry on treating it as a string.',
   group: 'Data',
   packages: ['internal/crypto', 'internal/models'],
+
+  interview: {
+    intro:
+      'Encryption at rest comes up in any design touching personal or regulated data. The questions that separate a real answer from a buzzword are about key management and about what you give up by encrypting a column.',
+    questions: [
+      {
+        q: 'Is database-level encryption not enough?',
+        a: 'It protects the files on disk, which guards against a stolen volume and nothing else. Anybody with a connection sees plain text, and so does every backup dump, every replica and every analyst given read access for an afternoon. Encrypting in the application closes that, because the database never holds the readable value at all.',
+        see: 'problem',
+      },
+      {
+        q: 'Which algorithm, and why does the choice matter?',
+        a: 'AES-256-GCM, which is authenticated encryption. The authentication is the part worth explaining: it means a modified ciphertext fails to open rather than decrypting to garbage. Encryption without authentication protects confidentiality and not integrity, and integrity is exactly what you need when the threat is somebody who can write to your database.',
+        see: 'requirements',
+      },
+      {
+        q: 'What is a nonce and why does it have to be fresh every time?',
+        a: 'A number used once, mixed in so the same plaintext encrypts differently each time. Reusing a nonce with the same key is the one catastrophic mistake available in this mode, because it leaks the relationship between the two messages. So it is random per write and never derived from the value or a counter.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'What do you give up by encrypting a column?',
+        a: 'The ability to query it. Because the same value encrypts differently every time, there is no equality lookup, no sorting, no prefix search and no unique constraint. This is the constraint that actually bites, and it bites after the data exists. It makes this suitable for data you store and display, and unsuitable for keys and lookup columns.',
+        see: 'requirements',
+      },
+      {
+        q: 'But you need to look people up by their encrypted email. Now what?',
+        a: 'A blind index: a second column holding a deterministic keyed hash of the normalised value. Exact-match lookup works against that column while the encrypted one stays non-deterministic. You give up range queries and you leak which rows share a value, which is usually an acceptable trade for being able to find a record at all.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Where does the key live?',
+        a: 'Anywhere except the database it protects. A key sitting in the same backup as the ciphertext provides no protection while looking exactly like protection. The better answer is a managed key service, with the field key wrapped rather than stored, which also brings rotation and audit and stops the key being an environment variable somebody can print.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'What happens if you lose the key?',
+        a: 'The data is gone, permanently, and that is the feature working as designed. There is no recovery, which makes key custody a bigger operational problem than the encryption itself. It is worth saying plainly in an interview, because the follow-up is usually about backup and escrow of the key rather than of the data.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'How do you add this to a table that already has a million rows?',
+        a: 'A versioned prefix on every stored value, and a backfill. Because a prefixed value is recognisably encrypted and an unprefixed one is recognisably plain text, both can live in the column at once, which is what makes the backfill resumable and safe to rerun. It runs in batches so it does not hold a transaction open across the whole table.',
+        see: 'capacity',
+      },
+      {
+        q: 'Why the version prefix?',
+        a: 'So the scheme can change later without archaeology. Seven bytes now means that when you move to a different algorithm or key, you can tell how each existing row was written instead of guessing. Rotation then becomes a second backfill: decrypt under the old key, encrypt under the new, with the prefix distinguishing them.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'Where in the code does the encryption happen?',
+        a: 'In the column type, at the driver boundary, rather than at the call sites. That way every writer is covered: the handler, a background job, a seed, a bulk import. Encrypting in a service method only covers the callers who went through that method, and the one that did not is the one that wrote plain text.',
+        see: 'low-level-design',
+      },
+    ],
+  },
 
   problem: {
     text: [

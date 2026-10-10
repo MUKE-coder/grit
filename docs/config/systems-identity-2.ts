@@ -10,6 +10,68 @@ export const SESSIONS: SystemDesign = {
   group: 'Identity',
   packages: ['internal/session', 'internal/models'],
 
+  interview: {
+    intro:
+      'Session design is where the follow-up questions in an authentication interview end up, because it is the half that stateless tokens cannot do on their own. These are the ones that come up, each with a short answer.',
+    questions: [
+      {
+        q: 'If the access token is stateless, what is a session row even for?',
+        a: 'Revocation. A stateless token is valid because the mathematics says so, which means nothing can make it invalid before it expires. The session row is the one piece of state that can be changed: the long-lived refresh token only works if a matching row exists and is not revoked. Deleting or marking that row is how "sign this device out" becomes a real thing rather than a request the server has no way to honour.',
+        see: 'problem',
+      },
+      {
+        q: 'How does a user see the devices they are signed in on, and sign one out?',
+        a: 'Because there is a row per device, that list is a query rather than a feature that has to be invented. Each row carries the user agent and the address it was created from, so the interface can show something a person recognises, such as "Chrome on Windows, Kampala, last used 2 hours ago". Signing one out marks that row revoked and leaves the others alone.',
+        see: 'api',
+      },
+      {
+        q: 'How do you keep someone signed in for a week but sign them out after a period of inactivity?',
+        a: 'Two timestamps on one row, which is the part people usually get half right. The idle clock moves forward every time the session is used, so an active person is never interrupted. The absolute clock never moves, so a session dies at a fixed point however active it is. Here idle is 7 days and absolute is 30. With only the idle clock, a session that is touched often enough lives forever.',
+        see: 'data-model',
+      },
+      {
+        q: 'How would you detect that a refresh token has been stolen?',
+        a: 'Make each one usable exactly once, then watch for a second use. Every renewal issues a new refresh token and invalidates the one presented, and the row remembers the hash of the token it just replaced. If that replaced token turns up again, two copies of it exist in the world. You did not need to detect the theft itself, only the consequence, which is much easier to see.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'You detect a replay. Which of the two callers is the thief?',
+        a: 'You cannot tell, and that is the honest answer. The legitimate client and the attacker both present a token the server issued. Since you cannot distinguish them, the safe move is to assume the worst and revoke the whole session, forcing a fresh sign-in that the attacker cannot complete without the password. It is deliberately the harsher option: a user who has to sign in again has lost two minutes, and a user whose session was quietly shared has lost their account.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'A client retries after a dropped response and presents the old token again. That looks exactly like a replay.',
+        a: 'It does, and this is the follow-up that separates a design that has been run in production from one that has not. A network timeout after the server committed the rotation produces a perfectly innocent second use of the old token. The usual answer is a short grace window: a reuse within a few seconds of the rotation returns the same new token rather than revoking the session. The cost is a small period in which a stolen token would still work, which is the trade being made.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Why store a hash of the refresh token rather than the token itself?',
+        a: 'So that a copy of the database is not a set of working credentials. The server only ever needs to recognise a token it issued, which a hash does perfectly well, and it never needs to produce one. It is the same reasoning as password hashing. The difference is that a refresh token is already long and random, so a fast hash like SHA-256 is enough; the slow hashing that passwords need exists to defend against guessing, and nobody guesses a 256-bit random value.',
+        see: 'requirements',
+      },
+      {
+        q: 'What should happen to other sessions when a user changes their password?',
+        a: 'All of them end. Changing a password is the action people take when they think somebody else has access, so leaving other devices signed in defeats the point of the thing they just did. The exception is the device doing the changing, which is reissued so the user is not signed out of the screen they are standing in front of.',
+        see: 'api',
+      },
+      {
+        q: 'Should sessions live in Redis or in the main database?',
+        a: 'Here they live in the main database, and the reason is that the access pattern is not what people assume. A session is read once per renewal, not once per request, because per-request checks are stateless. That is roughly one read every 15 minutes per device rather than hundreds a minute, so the volume never justifies a second store to operate and keep consistent. Redis becomes the right answer if you move to per-request session lookups, which is the other design.',
+        see: 'data-model',
+      },
+      {
+        q: 'What stops the sessions table growing forever?',
+        a: 'A scheduled sweep, and the fact that nothing else would. Rows past their absolute expiry are deleted, and revoked rows go once they are older than the retention window. Without it the table grows with every sign-in ever made rather than with devices currently signed in, and the unique index on the token hash grows with it. Revoked rows are kept for a while rather than deleted immediately, because a replay of a revoked token is still worth recognising.',
+        see: 'scaling',
+      },
+      {
+        q: 'What is the write load, and what drives it?',
+        a: 'One write per renewal, because rotation replaces the stored hash. The rate follows directly from the access token lifetime: a shorter token means more renewals and therefore more writes. That makes the lifetime the main lever on write load, and it is a security lever at the same time, since a shorter token also means a smaller window for a stolen one. The capacity section works the arithmetic both ways.',
+        see: 'capacity',
+      },
+    ],
+  },
+
   problem: {
     text: [
       'A signed token is self-contained by design: the server can verify it without looking anything up. That property is also the problem. A token that needs no lookup cannot be cancelled, so "sign out this device", "sign out everywhere", and "that laptop was stolen" have no implementation.',
@@ -334,6 +396,63 @@ export const MFA: SystemDesign = {
     'A second factor that survives a leaked password, without locking out the user who loses their phone.',
   group: 'Identity',
   packages: ['internal/totp', 'internal/handlers', 'internal/services'],
+
+  interview: {
+    intro:
+      'Multi-factor authentication comes up as a follow-up to almost every authentication question, and the interesting parts are recovery and replay rather than the code-generating algorithm. These are the ones that get asked.',
+    questions: [
+      {
+        q: 'Where does the second factor fit into the login flow?',
+        a: 'Sign-in stops halfway. A correct password returns not a real token but a short-lived pending token, which proves the first factor passed and grants nothing else: it is accepted on exactly one endpoint, the one that takes the code. Only when the code checks out are real tokens issued. The point is that an attacker who has the password is holding something with no authority at all.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'Why not issue the real token and just ask for a code before sensitive actions?',
+        a: 'Because then the password alone gets an attacker a working session, and everything that is not on your sensitive list is already theirs. That design is sometimes chosen deliberately, usually called step-up authentication, and it is reasonable as an addition. As a replacement for a second factor at sign-in it quietly downgrades the whole thing to single-factor for most of what the account can do.',
+        see: 'requirements',
+      },
+      {
+        q: 'How does a time-based code actually work?',
+        a: 'The server and the phone share a secret, generated once at enrolment and shown as a QR code. Both take the current time, divide it into 30 second periods, and compute a hash of the secret and that period number, which is truncated to six digits. No network traffic is involved, which is why an authenticator app works on a plane. The code changes every 30 seconds because the period number does.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'Clocks drift. How much do you allow, and what does being generous cost?',
+        a: 'A window of periods either side of the current one, so a phone a little fast or slow still works. Every extra period you accept is another valid code at any moment, so widening the window directly multiplies what an attacker guessing codes gets for free. One period either side is the usual compromise. This is a nice question because the security cost is arithmetic rather than opinion.',
+        see: 'requirements',
+      },
+      {
+        q: 'A code is valid for 30 seconds. What stops it being used twice in that window?',
+        a: 'Recording which code was used. Without that, somebody who sees a code over the user shoulder, or intercepts it on a phishing page, can use it again until the period rolls over. Remembering the last accepted period per user and refusing a repeat closes it, and costs one small column.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'The user has lost their phone. Now what?',
+        a: 'Backup codes, handed over at enrolment, each usable once. This is the part that gets skipped and is the reason support queues fill up: a second factor with no recovery path is a way to lose accounts permanently. The codes are stored hashed like passwords, because a list of them in the database is a bypass for every account that has them.',
+        see: 'data-model',
+      },
+      {
+        q: 'Where does the shared secret live, and what happens if your database leaks?',
+        a: 'Encrypted at rest rather than in plain text, because the secret is a password-equivalent: anyone holding it can generate valid codes forever. This is the asymmetry worth naming in an interview. A password hash protects the user even after a leak, but a TOTP secret must be reversible for the server to use it, so the only defence is encryption with a key that is not in the same database.',
+        see: 'data-model',
+      },
+      {
+        q: 'Users hate entering a code every time. How do you handle "remember this device"?',
+        a: 'A separate long-lived marker that lets a known device skip the second factor. Be honest about what it costs: you have traded the second factor away on that device for as long as the marker lives, so it should be bounded, listed somewhere the user can see, and revocable. An interviewer raising it is usually checking whether you will describe the convenience without naming the weakening.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Does this stop phishing?',
+        a: 'No, and saying so is the strong answer. A convincing fake login page can ask for the code as readily as the password, and relay both to the real site within the 30 second window. Time-based codes defend against a leaked password and against credential stuffing, which is most of the real-world risk, and they do not defend against a user who is being actively fooled. The defence against phishing is a credential bound to the origin, which is what passkeys are.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'What does this cost at scale?',
+        a: 'Almost nothing, which is worth stating so the discussion moves on. Verifying a code is a hash over a few bytes, with no storage read beyond fetching the secret, and it happens once per sign-in rather than once per request. The capacity section works it through, and the conclusion is that nothing here is a scaling problem.',
+        see: 'capacity',
+      },
+    ],
+  },
 
   problem: {
     text: [
@@ -665,6 +784,63 @@ export const PASSKEYS: SystemDesign = {
     'A credential that cannot be phished, cannot be reused across sites, and leaves nothing worth stealing in the database.',
   group: 'Identity',
   packages: ['internal/handlers', 'internal/models', 'go-webauthn/webauthn'],
+
+  interview: {
+    intro:
+      'Passkeys turn up as the "how would you remove passwords entirely" follow-up. The questions worth preparing are about what the server stores, why phishing stops working, and what happens when somebody loses the device.',
+    questions: [
+      {
+        q: 'What is a passkey, in one sentence?',
+        a: 'A key pair, where the private half never leaves the device and the public half is all your server keeps. Signing in means the server sends a random challenge, the device signs it with the private key after the user approves with a fingerprint or a PIN, and the server checks the signature against the public key it stored. Nothing secret crosses the network and nothing secret sits in your database.',
+        see: 'problem',
+      },
+      {
+        q: 'What does an attacker get from stealing your database?',
+        a: 'Public keys, which are public. That is the whole point. A password database is a liability you have to defend forever, and a table of public keys is not: there is nothing in it that can be used to sign in anywhere, including on your own site. It removes a class of breach rather than mitigating it.',
+        see: 'requirements',
+      },
+      {
+        q: 'Why can a passkey not be phished?',
+        a: 'Because the browser, not the user, decides which credential applies, and it decides by origin. A passkey registered for your-bank.com will not be offered on your-bank.example.net, no matter how convincing the page is, because the browser compares the origin before the key is ever used. The user cannot be talked into overriding it, which is the difference from a code they type: a human can be fooled, and this check is not performed by the human.',
+        see: 'requirements',
+      },
+      {
+        q: 'What is the challenge, and why must it be single-use?',
+        a: 'A random value the server generates per sign-in attempt and expects back signed. Single-use is what makes a captured exchange worthless: a signature over an old challenge proves nothing, because the server is now asking about a different one. Reusing challenges, or not tracking which were issued, turns the whole protocol into a replayable transcript.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'How would you detect a cloned authenticator?',
+        a: 'A signature counter. The device increases a number every time it signs, and sends it along. If the server ever sees a counter lower than or equal to the one it last recorded, two things are signing with the same key, which means the key has been extracted and copied. It is an elegant detection: the clone cannot avoid it without coordinating with the original.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'That counter sounds like it would produce false alarms.',
+        a: 'It does, and knowing why is the better answer. Several authenticators, including most platform ones that sync across a user device set, report a counter of zero and never move it, because a synced credential genuinely exists in more than one place by design. The rule is to treat a permanently zero counter as "not supported" and only alarm when a counter that was previously moving goes backwards.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'The user loses the device holding their only passkey. What happens?',
+        a: 'They are locked out, unless the design anticipated it. This is the real operational risk and it is worth raising before the interviewer does. The answers are to require more than one credential, to keep another sign-in method available, and to warn clearly when somebody is about to delete the last one. Modern platform passkeys sync through the account, which helps a great deal and is not something your design can assume.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Can passkeys be the only way in?',
+        a: 'Technically yes, and in most products it is premature. Support, device loss and users on machines they do not control all need a path, so passkeys sit alongside passwords here rather than replacing them. The honest framing for an interview is that passkeys remove the password from the common path, which is where nearly all the risk is, without removing the recovery path.',
+        see: 'requirements',
+      },
+      {
+        q: 'Where do challenges live when you run several replicas?',
+        a: 'Somewhere shared, which is the one piece of state this design needs. A challenge issued by one replica has to be recognised by whichever replica receives the response, so holding them in process memory works on one instance and fails intermittently on several, in a way that looks like random sign-in failures. A short-lived shared store is the fix, and the entries expire in seconds.',
+        see: 'scaling',
+      },
+      {
+        q: 'What breaks if the relying party identifier is wrong?',
+        a: 'Everything, and only in production. The relying party id is the domain a credential is bound to, and it has to match the site actually serving the page. Get it wrong and registration succeeds while sign-in silently never offers the credential, which presents as "passkeys do not work" with no error to search for. It is worth validating at startup rather than discovering through support tickets.',
+        see: 'bottlenecks',
+      },
+    ],
+  },
 
   problem: {
     text: [

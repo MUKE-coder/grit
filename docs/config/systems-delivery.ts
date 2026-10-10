@@ -8,6 +8,63 @@ export const BACKGROUND_JOBS: SystemDesign = {
   group: 'Delivery',
   packages: ['internal/jobs', 'internal/handlers'],
 
+  interview: {
+    intro:
+      'Queues turn up in nearly every system design answer as "and then we put it on a queue". The follow-ups check whether you know what that actually buys and what it costs, especially around delivery guarantees and retries.',
+    questions: [
+      {
+        q: 'Why not just start a goroutine or a thread?',
+        a: 'Because it gives you concurrency and nothing else. Nothing bounds it, so a burst of traffic is a burst of threads each holding a database connection. Nothing retries it, so a provider down for a minute loses that work for good. A deploy drops whatever is in flight. And no error surfaces, because the request already returned 200. A queue replaces the thread with a durable record, which buys all four.',
+        see: 'problem',
+      },
+      {
+        q: 'What delivery guarantee do you offer?',
+        a: 'At least once, and say it out loud rather than implying exactly-once. A worker can do the work and die before acknowledging, so the task runs again. Exactly-once delivery is not available in a distributed system; exactly-once effect is, and you get it by making handlers idempotent. Implying the stronger guarantee is how somebody ends up charging a card twice.',
+        see: 'requirements',
+      },
+      {
+        q: 'How do you make a handler idempotent?',
+        a: 'Give the work a stable key and make the effect conditional on it. A processed-tasks table keyed on that id, or a unique constraint on the thing being created, so the second run is a no-op rather than a second charge. The key has to come from the business event rather than being generated per attempt, or every retry looks new.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'What is your retry policy?',
+        a: 'Exponential backoff with a bounded number of attempts, five by default here, after which the task moves to a dead letter set rather than disappearing. Backoff matters because retrying immediately hammers a dependency that is already struggling. Jitter matters too: without it, everything that failed during an outage retries in lockstep when it comes back.',
+        see: 'capacity',
+      },
+      {
+        q: 'How many workers do you need?',
+        a: 'Concurrency per process divided into the average job duration gives throughput per worker, and peak rate divided by that gives the process count. The capacity section works it through. The important part is what breaks first when you turn it up, which is almost never processor and almost always the database connection pool.',
+        see: 'capacity',
+      },
+      {
+        q: 'You raise worker concurrency to clear a backlog and the API gets slow. Why?',
+        a: 'Because worker concurrency times worker count is a connection count, and those connections come from the same database as the API. It is the classic second-order failure: the fix for one symptom causes another somewhere nobody was looking. Sizing the pool for workers plus API, rather than for either alone, is the answer.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'What goes in the job payload?',
+        a: 'A reference, not the data. An image in a payload is an image in Redis, several times over once retries exist, and a queue that falls over on memory rather than depth. Carry an identifier and let the handler load the row, remembering that by the time it runs the row may have been deleted.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'A password reset is stuck behind ten thousand thumbnails. What do you do?',
+        a: 'Separate queues by urgency, consumed in priority order, which is why there are three here rather than one. It is the difference between a backlog being a slow feature and a backlog being a broken product. A task type that fails often also deserves its own queue, so its retries cannot crowd out anything that matters.',
+        see: 'scaling',
+      },
+      {
+        q: 'The same enqueue happens twice because of a retry upstream. How do you stop two sends?',
+        a: 'An idempotency key with a window, checked at enqueue rather than at execution. A duplicate inside the window is refused, and the caller treats that refusal as success, because the original is already on its way. Deduplicating at enqueue is cheaper than deduplicating the effect, and both are worth having.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'Redis is your broker and it goes down. What have you lost?',
+        a: 'The queue, which is durable storage whether or not you planned it that way. No amount of worker redundancy helps, so it needs persistence and a replica like any other store. This is the honest cost of the design and worth stating before the interviewer finds it.',
+        see: 'bottlenecks',
+      },
+    ],
+  },
+
   problem: {
     text: [
       'A request that sends an email, resizes an image, builds a PDF or calls a third-party API is a request held open by something that has nothing to do with the response. The user waits for work they did not ask to wait for, a connection and a database handle are held for seconds, and if the third party is slow then so is the application.',
@@ -344,6 +401,63 @@ export const SCHEDULING: SystemDesign = {
   group: 'Delivery',
   packages: ['internal/cron', 'internal/jobs'],
 
+  interview: {
+    intro:
+      '"Design a distributed job scheduler" is a standard prompt in its own right, and the entire question is really "how do you run something exactly once when several copies of your application are running".',
+    questions: [
+      {
+        q: 'You have three replicas and a nightly job. What goes wrong?',
+        a: 'It runs three times. Three digests to every subscriber, three reconciliation passes, three prunes racing each other. Nothing errors, because each replica did exactly what it was told. This is the whole problem: a ticker inside the process is correct on one instance and wrong on three, and the third instance arrives during a rolling deploy without anybody deciding.',
+        see: 'problem',
+      },
+      {
+        q: 'How do you make it run once?',
+        a: 'Elect a leader. Every replica runs a scheduler and competes for a lock; only the holder enqueues. The important detail is that the lock is a lease with an expiry that the holder renews, not a permanent key. A permanent lock held by a replica that dies needs a human to clear it. A lease clears itself, and another replica takes over within one lease period.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'Why does the scheduler enqueue rather than run the work?',
+        a: 'So that a slow task cannot delay the next tick and a crash during it loses nothing. It also means scheduled work inherits everything the queue already has: retries, timeouts, a dead letter set and a dashboard. Keeping the timer and the execution apart is the single structural decision in this design.',
+        see: 'requirements',
+      },
+      {
+        q: 'Clocks drift between replicas. Does that break the exactly-once property?',
+        a: 'It can produce an occurrence evaluated twice at a boundary, with the lock being the only thing preventing a double enqueue. The stronger answer is not to rely on the lock alone: key the work on the date it is for, so a second enqueue for the same night is a no-op. Then the lock is a performance feature rather than a correctness one.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Nobody was up at midnight. Should the job catch up when the system returns?',
+        a: 'Usually not, and it should be a deliberate choice rather than an accident. A nightly task catching up on four missed nights at once sends four days of digests in one morning. Missed occurrences stay missed, with a manual trigger as the explicit way to make one up. That is a product decision and interviewers like hearing it framed as one.',
+        see: 'requirements',
+      },
+      {
+        q: 'A nightly cleanup starts taking nine hours. What happens?',
+        a: 'It overlaps the next night, and two copies compete over the same rows. The fix is to make the task batched and resumable so overrunning is slow rather than broken, and to guard against a second run starting while the first is alive. A task that cannot finish inside its window is a design problem the scheduler cannot solve for you.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'How do you know the schedule is still running?',
+        a: 'By alerting on absence, because nothing raises an error when something fails to happen. The characteristic failure of scheduled work is that it stops quietly and nobody notices for a fortnight. A heartbeat per task, and an alert when the last run is older than the expression allows, is the only thing that makes it visible.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Eight tasks are all set to midnight. Is that a problem?',
+        a: 'It makes a spike that can push the worker pool into a backlog lasting into the morning. Because the scheduler enqueues rather than executes, eight simultaneous occurrences are a queue depth of eight rather than eight things running at once, so it degrades rather than breaks. Spreading them across eight different minutes is a one-line change that removes it.',
+        see: 'capacity',
+      },
+      {
+        q: 'What about time zones and daylight saving?',
+        a: 'An hourly job runs twice or not at all on the two days a year the clock changes, in whichever zone the expression is evaluated. Scheduling in UTC and converting for display removes the ambiguity, at the cost of a nightly task happening an hour later for half the year. Naming the trade is better than claiming there is not one.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Where do the schedules live?',
+        a: 'In code, next to the work, so adding one goes through review like any other change. The alternative is a database table operators edit, which is more flexible and means a schedule can be changed without a deploy, and also means nobody can tell from the repository what runs at night. The admin surface here is a trigger and a view rather than an editor.',
+        see: 'api',
+      },
+    ],
+  },
+
   problem: {
     text: [
       'Every application accumulates recurring work. Expire old sessions at midnight. Send the digest on Monday morning. Prune soft-deleted rows after thirty days. Reconcile with the payment provider hourly.',
@@ -640,6 +754,63 @@ export const OUTBOX: SystemDesign = {
     'Saving a row and telling the world about it as one atomic act, when the database and the message broker cannot share a transaction.',
   group: 'Delivery',
   packages: ['internal/outbox', 'internal/models'],
+
+  interview: {
+    intro:
+      'The dual write problem is a favourite follow-up: you have written a row and now you need to tell another system. It is asked because both obvious orderings are wrong, and the expected answer names the pattern that removes the choice.',
+    questions: [
+      {
+        q: 'You save an order and send a webhook. What can go wrong?',
+        a: 'Whichever order you pick, one failure mode is unrecoverable. Publish then commit, and a failed commit means you announced an order that does not exist, with nothing to reconcile against. Commit then publish, and a crash in between means the order exists and nobody was told, with no error logged anywhere because from the process point of view nothing failed. This is the dual write problem.',
+        see: 'problem',
+      },
+      {
+        q: 'So how do you fix it?',
+        a: 'Stop writing to two systems. Write the message to a table in the same transaction as the business data, so it commits or rolls back with it, and let a separate relay deliver committed messages afterwards. Either both happened or neither did, because there is now only one atomic write. That is the transactional outbox.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'What does that cost?',
+        a: 'Delivery semantics and latency. It is at least once rather than exactly once, because the process can die between sending and recording that it sent, so consumers must be idempotent. And a message waits up to one poll interval before anybody looks at it, so delivery is seconds rather than milliseconds. Both are usually worth it; pretending they are not there is what interviewers notice.',
+        see: 'requirements',
+      },
+      {
+        q: 'Why not use a message broker with a two-phase commit instead?',
+        a: 'Because distributed transactions across a database and a broker are available in theory and avoided in practice: they are slow, they are poorly supported by the systems people actually use, and a coordinator failure leaves locks held. The outbox gets the same guarantee using only a transaction you were already opening, which is why it has become the standard answer.',
+        see: 'problem',
+      },
+      {
+        q: 'How do you run more than one relay without delivering everything twice?',
+        a: 'Claiming, as a status transition rather than a read. A batch moves from pending to claimed in one statement, so a second relay reading at the same moment finds nothing to claim and takes different work. If claiming were a plain select, both would read the same rows and both would deliver them.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'A relay claims a batch and then crashes. What happens to those rows?',
+        a: 'They sit in claimed and nothing picks them up, which is the stuck claim problem. The fix is to treat a row claimed for longer than a threshold as pending again. That risks a duplicate delivery if the original relay was merely slow, which at-least-once already permits, so it is the right trade.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'How fast does this table grow, and what do you do about it?',
+        a: 'At thirty messages a second with two kilobyte payloads it is several gigabytes a day, so at that volume it needs a prune job deleting delivered rows past a retention window. Keeping delivered messages is what makes the audit trail useful and what fills the disk, and both are true at once, so the retention period is an integration decision rather than a technical one.',
+        see: 'capacity',
+      },
+      {
+        q: 'Polling every few seconds seems wasteful. Alternatives?',
+        a: 'Listen and notify, where the commit signals the relay directly, so delivery is immediate rather than waiting out the interval. Keep the poll as a fallback, because the notification is not durable and a missed one would otherwise strand a message forever. Change data capture off the transaction log is the heavier version of the same idea.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Does the outbox preserve ordering?',
+        a: 'Oldest first, and not strict global ordering, because strict ordering would mean a single relay and no parallelism. If a particular consumer needs ordering, partition by key so messages for one entity go through one worker while different entities proceed in parallel. Global ordering is almost always a more expensive requirement than people realise.',
+        see: 'requirements',
+      },
+      {
+        q: 'What stops somebody enqueuing outside a transaction?',
+        a: 'The function refuses. It takes the transaction as an argument and errors if handed anything else, because enqueuing outside a transaction is not a smaller version of the right thing, it is the commit-then-publish bug with extra steps. It would also work in every test and fail only in production, which is the worst possible failure mode to leave available.',
+        see: 'low-level-design',
+      },
+    ],
+  },
 
   problem: {
     text: [

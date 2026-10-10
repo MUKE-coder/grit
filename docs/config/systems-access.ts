@@ -10,6 +10,63 @@ export const AUTHORIZATION: SystemDesign = {
   group: 'Access',
   packages: ['internal/authz', 'internal/access', 'internal/middleware'],
 
+  interview: {
+    intro:
+      '"Design an access control system" is a standard prompt, and it is also the follow-up that ends most authentication questions. Interviewers are looking for more than an admin flag, and for an answer to "how do you know it is right".',
+    questions: [
+      {
+        q: 'What is the difference between authentication and authorization?',
+        a: 'Authentication is who you are. Authorization is what you may do. They are separate systems and merging them causes real breaches, because a token can be entirely valid and still not entitle its holder to the record they just asked for. In this design the auth middleware produces an identity and makes no decision about permission; a second layer reads that identity and decides.',
+        see: 'problem',
+      },
+      {
+        q: 'Admins can do everything and users can do some things. Is that an access control model?',
+        a: 'No, and an interviewer asking this is checking whether you will say so. It collapses the moment a product needs an editor who can publish but not delete, or a finance role that sees invoices and nothing else. The usual models are role-based access control, where permissions attach to roles and roles to users, attribute-based, where the decision is computed from properties of the request, and resource-based, where the record itself names who may touch it. This design uses the first, with ownership handled separately.',
+        see: 'problem',
+      },
+      {
+        q: 'Where do you put the check?',
+        a: 'In one place that every request passes through, which here is a middleware driven by a registry of route requirements. Checks scattered across handlers are the same question asked forty times, and the fortieth is the one somebody forgets. A registry also makes the whole policy a list you can read in one sitting, which is what turns a security review from an exercise in hunting into a query.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'What is the default when a route has no rule?',
+        a: 'Denied. This is the single most important line in the design. If an unlisted route is open, every new endpoint is public until somebody remembers to protect it, and the failure is silent. If an unlisted route is closed, the failure is a 403 in development that somebody fixes in a minute. Default deny makes forgetting loud rather than dangerous.',
+        see: 'requirements',
+      },
+      {
+        q: 'Should this also decide whether the user owns the record?',
+        a: 'No, and keeping the two apart matters. Role permission answers "may someone like you edit invoices", and ownership answers "is this particular invoice yours". Only the second needs the record, so only the second can be decided after it is loaded. Merging them produces the classic bug where a user who legitimately holds an edit permission can edit everybody else records.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'How does the user interface know which buttons to show?',
+        a: 'From the same source as the enforcement, fetched as the effective permissions of the current user, never from a list hardcoded in the frontend. Two copies of the rules drift, and the drift is visible either as a button that errors when clicked or, worse, as a hidden button for something the backend would happily allow. The frontend is a convenience; the server decides.',
+        see: 'api',
+      },
+      {
+        q: 'What does the check cost on every request?',
+        a: 'A map lookup, because the permission set is resolved once and carried on the identity rather than queried per check. That matters: an authorization layer that costs a database read per request will be worked around, and a layer people work around is not a layer. The capacity section gives the numbers.',
+        see: 'capacity',
+      },
+      {
+        q: 'A role changes. When do the people in it notice?',
+        a: 'Not instantly, if permissions are cached or carried in a token, and that window is the thing to be explicit about. The options are to invalidate the cached set on write, to keep the carried copy short-lived, or to look up on every request and pay for it. Saying "it is eventually consistent and here is the window" is a much better answer than implying a change is instant when it is not.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'How do you stop roles multiplying until nobody can explain them?',
+        a: 'By reviewing roles rather than users, and by resisting a role per customer request. The failure mode is well known: a role is added for one person, never removed, and after two years the permission model is a list nobody dares change. Keeping permissions fine-grained and roles few, and periodically reading the whole registry, is the practical defence.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Your design has an administrator who bypasses the checks. Is that not the hole?',
+        a: 'It is, and it is deliberate, so the thing to do is bound it rather than pretend it is not there. A bypass that is implicit and unlogged is how a support engineer reads customer data with no record. A bypass that is explicit, narrow and written to an audit log is a known risk with evidence attached. An interviewer raising this wants to hear the second answer.',
+        see: 'bottlenecks',
+      },
+    ],
+  },
+
   problem: {
     text: [
       'Authentication answers who is calling. Authorization answers whether they may. The two get conflated constantly, and the result is an application where the only check is "is there a token", which means any signed-in user can call any endpoint.',
@@ -366,6 +423,63 @@ export const DATA_ISOLATION: SystemDesign = {
     'Making "your invoices" mean yours, in the query rather than in the handler, so a forgotten check is not a breach.',
   group: 'Access',
   packages: ['internal/authz', 'internal/services'],
+
+  interview: {
+    intro:
+      'This is the "your API returned another user invoice" question, and it is asked because it is one of the most common real vulnerabilities. The interviewer wants the fix to be structural rather than a reminder to be careful.',
+    questions: [
+      {
+        q: 'A signed-in user requests /invoices/4821, which belongs to somebody else. What happens?',
+        a: 'They get a 404. The request is authenticated, so a check that only asks "is this caller signed in" passes and hands over the record. This is usually listed as the most common serious API vulnerability, under the name broken object level authorization, and it is common because the check that is missing is the one that needs the record in hand.',
+        see: 'problem',
+      },
+      {
+        q: 'Should that be a 403 or a 404?',
+        a: 'A 404, and the reasoning is worth giving. A 403 confirms the record exists, which on any endpoint with guessable ids lets somebody map your data by walking numbers and reading the status codes. Reserve 403 for an action the caller may not perform on a record they can already see. For a record they may not see at all, the honest answer is that it does not exist as far as they are concerned.',
+        see: 'requirements',
+      },
+      {
+        q: 'Where do you put the ownership check?',
+        a: 'In the query, not after it. Filtering in the handler means the record was already loaded, so any path that forgets the filter has the data in memory and usually returns it. Putting the predicate into the query means a record that is not yours is never fetched, and a forgotten check produces an empty result rather than a leak. That is the difference between a bug and a breach.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'How do you make it impossible to forget?',
+        a: 'By making the safe path the default one. The scope is applied inside the shared service layer that generated handlers call, so a new resource is isolated because it exists, not because somebody remembered. The remaining risk is a hand-written endpoint that queries directly, which is why the rule is that such endpoints go through the same service.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'What happens when there is no identity on the request at all?',
+        a: 'The scope matches nothing rather than everything. This is the detail that decides whether a mistake is survivable. A scope that quietly becomes a no-op when it cannot find an actor turns a middleware ordering error into "every user sees every record". Failing closed turns the same error into an empty list, which somebody notices immediately and nobody gets hurt by.',
+        see: 'requirements',
+      },
+      {
+        q: 'How do admins see everything without the scope blocking them?',
+        a: 'The scope is skipped for an administrator, deliberately and in one place. The important part is that it is one place: a bypass implemented per endpoint will be applied inconsistently, and the inconsistency is invisible until somebody finds the endpoint where it was not. One bypass that is easy to find is also easy to audit.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'What about reports and aggregates?',
+        a: 'They are the usual leak, because a count or a sum is written as a direct query and nobody thinks of a number as data. A total revenue figure computed without the scope tells a user exactly how much everybody else is making. Aggregates go through the same scoped service as the lists.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'And caching?',
+        a: 'A cache key that omits the owner is a data leak wearing a performance feature. The first user to request a resource populates the entry and the next user gets it. This is a nasty one because it presents intermittently, depending on who warmed the cache, and is almost impossible to reproduce deliberately. Everything that varies the answer belongs in the key.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'How do you test for this?',
+        a: 'Write the test as the attack. Two users, one record each, then assert that user A gets a 404 on user B record for read, update and delete. Tests built from the normal flow never request somebody else id, so they can pass completely while the system is wide open.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'Does the extra predicate cost anything?',
+        a: 'Almost nothing, provided the index leads with the owner column. The filter makes queries more selective, not less, so it usually makes them faster. The failure case is an index on the sort column alone, where the database scans rows belonging to everybody before discarding them.',
+        see: 'capacity',
+      },
+    ],
+  },
 
   problem: {
     text: [
