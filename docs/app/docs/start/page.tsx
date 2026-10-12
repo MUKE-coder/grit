@@ -154,6 +154,52 @@ export default function StartPage() {
               </p>
             </div>
 
+            {/* Installing comes first, because the block below starts with
+                `grit new` and this page is the one people arrive at with
+                nothing installed. Without it the first command of the first
+                thing we ask anybody to run is "command not found". */}
+            <section aria-labelledby="install" className="mb-10">
+              <h2 id="install" className="text-2xl font-bold tracking-tight mb-2">
+                First, install Grit
+              </h2>
+              <p className="text-muted-foreground leading-relaxed mb-5">
+                One command. It puts a single binary on your PATH and needs nothing else
+                installed to do it.
+              </p>
+              <CodeBlock
+                language="bash"
+                filename="Terminal"
+                code={`# macOS / Linux
+curl -fsSL https://gritframework.dev/install.sh | sh
+
+# Windows (PowerShell)
+iwr -useb https://gritframework.dev/install.ps1 | iex`}
+              />
+              <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+                Already have the Go toolchain?{' '}
+                <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[12px]">
+                  go install github.com/MUKE-coder/grit/v3/cmd/grit@latest
+                </code>{' '}
+                does the same thing.
+              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed mt-3">
+                Check it worked, then carry on below:
+              </p>
+              <CodeBlock language="bash" filename="Terminal" code="grit version" />
+              <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+                Later, <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[12px]">grit update</code>{' '}
+                moves you to the newest release.{' '}
+                <Link href="/docs/getting-started/installation" className="text-primary hover:underline">
+                  Full installation notes
+                </Link>
+                , including what the script does and how to install a specific version.
+              </p>
+            </section>
+
+            <div className="mb-10 border-t border-border pt-10">
+              <h2 className="text-2xl font-bold tracking-tight mb-2">Then build the app</h2>
+            </div>
+
             <QuickStart />
 
             <div className="mb-10 mt-16 border-t border-border pt-10">
