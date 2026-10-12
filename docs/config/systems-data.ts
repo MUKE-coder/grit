@@ -13,6 +13,11 @@ export const CACHING: SystemDesign = {
       'Caching appears in nearly every system design interview, usually as the answer to "how would you make this faster" and then immediately as "what breaks". The follow-ups are about staleness, hot keys, and what happens when the cache disappears.',
     questions: [
       {
+        q: 'What is caching?',
+        a: 'Keeping the answer to an expensive question so the next person who asks gets it without the work being redone. Most read traffic asks the same few questions over and over, so a cache turns repeated work into a lookup. The cost is that a stored answer can become wrong when the underlying data changes, which is why almost every hard problem in caching is about invalidation rather than about storing anything.',
+        see: 'problem',
+      },
+      {
         q: 'What caching strategy would you use?',
         a: 'Cache-aside, also called lazy loading, is the usual default: ask the cache, and on a miss compute the value and store it. The alternatives are read-through, where the cache itself fetches on a miss, write-through, which writes to the cache and the database together and keeps them consistent at the cost of write latency, and write-behind, which writes to the cache and flushes to the database later and risks losing data. Cache-aside wins mostly because it is the only one that keeps working when the cache is absent.',
         see: 'problem',
@@ -361,6 +366,11 @@ export const CONCURRENCY: SystemDesign = {
     intro:
       'The lost update problem is a standard interview topic, usually arriving as "two users edit the same record, what happens". The expected answer names both locking strategies and says which one a web application wants.',
     questions: [
+      {
+        q: 'What is concurrency control?',
+        a: 'Stopping two people who change the same record at the same time from quietly overwriting each other. Two operators open an invoice, one edits the amount, the other edits the due date, both save, and the second write erases the first with nobody told. That is the lost update problem, and concurrency control is the machinery that either prevents it or makes the second writer find out.',
+        see: 'problem',
+      },
       {
         q: 'Two people open the same record, both save. What happens?',
         a: 'By default the second write silently overwrites the first, and nobody is told. That is the lost update problem. It is invisible in testing because it needs two people and a few seconds of overlap, and in production it is reported as "the system lost my change", which is indistinguishable from a bug in saving.',

@@ -13,6 +13,11 @@ export const BACKGROUND_JOBS: SystemDesign = {
       'Queues turn up in nearly every system design answer as "and then we put it on a queue". The follow-ups check whether you know what that actually buys and what it costs, especially around delivery guarantees and retries.',
     questions: [
       {
+        q: 'What is a background job?',
+        a: 'Work the application records now and does later, outside the request that asked for it. Sending an email, resizing an image, building a report: slow things the person on the other end should not wait for. The job is written down somewhere durable first, which is what separates it from simply starting a thread, and is what lets it be retried after a failure or a restart.',
+        see: 'problem',
+      },
+      {
         q: 'Why not just start a goroutine or a thread?',
         a: 'Because it gives you concurrency and nothing else. Nothing bounds it, so a burst of traffic is a burst of threads each holding a database connection. Nothing retries it, so a provider down for a minute loses that work for good. A deploy drops whatever is in flight. And no error surfaces, because the request already returned 200. A queue replaces the thread with a durable record, which buys all four.',
         see: 'problem',
@@ -406,6 +411,11 @@ export const SCHEDULING: SystemDesign = {
       '"Design a distributed job scheduler" is a standard prompt in its own right, and the entire question is really "how do you run something exactly once when several copies of your application are running".',
     questions: [
       {
+        q: 'What is a scheduled task?',
+        a: 'Work that runs on a clock rather than in response to a request: the nightly cleanup, the Monday digest, the hourly reconciliation. On one machine this is a timer. The reason it is a system design topic is that applications run as several copies, and a timer in each of them means the nightly job runs several times, which is usually worse than it not running at all.',
+        see: 'problem',
+      },
+      {
         q: 'You have three replicas and a nightly job. What goes wrong?',
         a: 'It runs three times. Three digests to every subscriber, three reconciliation passes, three prunes racing each other. Nothing errors, because each replica did exactly what it was told. This is the whole problem: a ticker inside the process is correct on one instance and wrong on three, and the third instance arrives during a rolling deploy without anybody deciding.',
         see: 'problem',
@@ -759,6 +769,11 @@ export const OUTBOX: SystemDesign = {
     intro:
       'The dual write problem is a favourite follow-up: you have written a row and now you need to tell another system. It is asked because both obvious orderings are wrong, and the expected answer names the pattern that removes the choice.',
     questions: [
+      {
+        q: 'What is the transactional outbox?',
+        a: 'A way to save a record and tell another system about it as one indivisible act. There is no transaction spanning your database and a message broker, so one of the two happens first and can fail alone: you either announce an order that was never saved, or save one nobody was told about. The outbox writes the message into the same database transaction as the data, and a separate process delivers it afterwards.',
+        see: 'problem',
+      },
       {
         q: 'You save an order and send a webhook. What can go wrong?',
         a: 'Whichever order you pick, one failure mode is unrecoverable. Publish then commit, and a failed commit means you announced an order that does not exist, with nothing to reconcile against. Commit then publish, and a crash in between means the order exists and nobody was told, with no error logged anywhere because from the process point of view nothing failed. This is the dual write problem.',

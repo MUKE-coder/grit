@@ -172,6 +172,19 @@ def check_interview(src, path, report):
                 os.path.basename(path), name))
             bad += 1
             continue
+
+        # The definition comes first. Somebody meeting the topic for the first
+        # time needs to know what it is before any trade-off makes sense, and
+        # every other question on these pages assumes they already do.
+        first = re.search(r"questions: \[\s*\{\s*q: '([^']*)'", block)
+        if not first:
+            report('INTERVIEW   %-24s [%s] has an empty questions array' % (
+                os.path.basename(path), name))
+            bad += 1
+        elif not first.group(1).lower().startswith(('what is', 'what are')):
+            report('INTERVIEW   %-24s [%s] opens with %r, not a "What is" definition' % (
+                os.path.basename(path), name, first.group(1)[:50]))
+            bad += 1
         for see in re.findall(r"\bsee:\s*'([^']+)'", block):
             field = SECTION_FIELD.get(see)
             if field is None:

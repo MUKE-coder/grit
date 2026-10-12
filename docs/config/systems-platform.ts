@@ -13,6 +13,11 @@ export const CODE_GENERATION: SystemDesign = {
       'Code generation is not a classic interview prompt, so these are the questions a reviewer or a staff engineer asks instead: what it buys, what it costs, and how a tool that edits a codebase avoids breaking it.',
     questions: [
       {
+        q: 'What is code generation?',
+        a: 'Writing the repetitive code from a description instead of by hand: give it a resource and its fields, and get the model, the API, the validation, the types, the client hooks and the admin screen. The value is less about typing saved than about consistency, since eleven hand-written files per resource drift apart in small ways, and the small ways include which ones remembered to check who owns the record.',
+        see: 'problem',
+      },
+      {
         q: 'What problem does generating code actually solve?',
         a: 'Consistency, more than typing. A new resource is around eleven files, none of them hard and all of them the same every time. Written by hand they diverge: one list paginates with a cap and the next does not, one scopes to the owner and the next forgets, which is a data leak rather than a style difference. Nobody notices, because each file is individually reasonable and the divergence is only visible across the set.',
         see: 'problem',
@@ -424,6 +429,11 @@ export const API_CONTRACT: SystemDesign = {
       'API design questions come up in their own right and as a part of every larger design. These are the ones that get asked, and they are mostly about the decisions that are expensive to reverse once clients exist.',
     questions: [
       {
+        q: 'What is an API contract?',
+        a: 'The promises an API makes about the shape of what it returns, held steady so that code written against one endpoint works against the rest. The response envelope, the error codes, the status codes, what pagination looks like. It matters in proportion to how many clients exist: with one you can adapt, and with six every inconsistency is handled six times or, more often, handled once and broken five times.',
+        see: 'problem',
+      },
+      {
         q: 'How do you version an API?',
         a: 'Prefer not to. Additive changes need no version: add fields, never remove or retype them, and old clients keep working. When a change genuinely cannot be additive, a path prefix is the bluntest and clearest option, running the new version alongside the old rather than making a flag day of it. Header-based versioning is tidier in theory and harder to debug, cache and log in practice.',
         see: 'problem',
@@ -833,6 +843,11 @@ export const FEATURE_FLAGS: SystemDesign = {
     intro:
       'Feature flags come up in deployment and progressive delivery questions, and as the answer to "how would you roll this out safely". The follow-ups are about stickiness, about the cost of checking, and about what happens to the flags afterwards.',
     questions: [
+      {
+        q: 'What is a feature flag?',
+        a: 'A switch, read at runtime, that decides whether a piece of behaviour is on. It separates deploying code from releasing a feature, so a half-finished thing can live on the main branch, a new version can go to ten per cent of users, and something going wrong is a toggle rather than a rollback. The cost is that every flag is a permanent branch until somebody removes it.',
+        see: 'problem',
+      },
       {
         q: 'Why have feature flags at all?',
         a: 'So that turning a feature off is a toggle rather than a deploy. If the new checkout is wrong, a rollback takes minutes at best and the damage is everybody; a flag takes seconds and the damage was ten per cent. It also separates deploying code from releasing a feature, which is what lets a half-finished thing live on the main branch safely.',

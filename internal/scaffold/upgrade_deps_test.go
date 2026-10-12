@@ -84,7 +84,7 @@ go 1.24
 require (
 	github.com/MUKE-coder/gorm-studio v1.1.1
 	github.com/MUKE-coder/pulse v1.2.0
-	github.com/MUKE-coder/sentinel/v2 v2.6.0
+	github.com/MUKE-coder/sentinel/v2 v2.7.0
 )
 `)
 	if raised, err := raiseFrameworkDeps(dir); err != nil || raised != nil || calls != 0 {

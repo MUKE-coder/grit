@@ -66,6 +66,75 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.398.0 */}
+            <div className="mb-12" id="v3.398.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.398.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Sign-in limits that do not punish an office for sharing an address</h3>
+                <p>
+                  Sentinel v2.7.0 fixes the two issues raised from here: a lockout now bars the
+                  (address, account) pair rather than the address, and the CAPTCHA tier is no
+                  longer configured when no provider exists. Both are adopted.
+                </p>
+                <p>
+                  Adopting them exposed that Grit&apos;s own limits had become the binding
+                  constraint. The per-route limits are counted per client address and count every
+                  request rather than every failure, so a successful sign-in consumes one. At five
+                  sign-ins per quarter hour, behind an office, university or mobile carrier NAT,
+                  the sixth person to arrive in the morning was refused: the limit meant to stop
+                  password guessing was stopping people logging in.
+                </p>
+                <p>
+                  Those limits are now flood control and nothing more: 30 sign-ins per 5 minutes,
+                  and the other credential routes loosened to match. That is safe because guessing
+                  is caught precisely elsewhere, and by counting failures rather than attempts. The
+                  pair lockout bars one account under attack without touching anybody else sharing
+                  the address, an address accumulating roughly four times as many failures is
+                  refused outright, and the account lockout still catches the attack spread across
+                  a botnet. <code>SENTINEL_LOCKOUT_EXEMPT_IPS</code> names egress ranges that are
+                  never barred by address, and are still counted.
+                </p>
+                <p>
+                  Also fixed: a MySQL project was handing Sentinel a MySQL DSN under the Postgres
+                  driver, because every branch that was not SQLite went to Postgres. It could not
+                  connect, so the API ran with no security storage at all. v2.7.0 added a MySQL
+                  adapter and it is now selected, with <code>parseTime</code> set, without which
+                  the audit log&apos;s hash chain cannot verify what it stored.
+                </p>
+
+                <h3>Stable, and how to tell</h3>
+                <p>
+                  Nothing in the docs said whether the version you were looking at was a finished
+                  release. The machinery was already right and invisible: the release workflow
+                  marks a tag containing <code>-rc</code>, <code>-beta</code> or{' '}
+                  <code>-alpha</code> as a GitHub prerelease, and <code>grit update</code> asks for
+                  the latest release, which excludes prereleases, so an update never moves you onto
+                  one.
+                </p>
+                <p>
+                  That is now written down, on{' '}
+                  <Link href="/docs/stability#release-channels">the stability page</Link>, and
+                  shown: a prerelease is labelled next to the version wherever the site displays
+                  it. No label means stable, which is why there is no badge saying so on every
+                  page.
+                </p>
+
+                <h3>Every system design page now starts with what the thing is</h3>
+                <p>
+                  The 29 system design pages opened with a trade-off question, which assumes you
+                  already know the topic. Each now opens with a plain definition: what caching is,
+                  what multitenancy is, what an audit log is. The check that runs over these pages
+                  enforces it, so a new page cannot skip it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.397.0 */}
             <div className="mb-12" id="v3.397.0">
               <div className="flex items-center gap-3 mb-4">

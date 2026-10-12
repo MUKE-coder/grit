@@ -340,7 +340,7 @@ require (
 	// v2.2.2 is a security release (client-IP spoofing behind a proxy, a
 	// sort_by SQL injection, SSRF bypasses), and v2.5.0 keeps rate limits and
 	// lockouts in Redis, so every replica counts against the same numbers.
-	github.com/MUKE-coder/sentinel/v2 v2.6.0
+	github.com/MUKE-coder/sentinel/v2 v2.7.0
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
@@ -974,6 +974,11 @@ type Config struct {
 	// provider configured, never for none. So with these empty the tier is
 	// configured, unreachable, and silent about it: set one of them and the
 	// tier starts doing the job it is already configured to do.
+	// Egress addresses or CIDRs that a sign-in lockout never bars by address.
+	// For an office, a university or a carrier NAT, where one address is
+	// thousands of people. They are still counted and still subject to the
+	// (address, account) lockout.
+	SentinelLockoutExemptIPs []string
 	SentinelTurnstileSecret string
 	SentinelHCaptchaSecret  string
 	SentinelRecaptchaSecret string
@@ -1093,6 +1098,7 @@ func Load() (*Config, error) {
 		SentinelTurnstileSecret: getEnv("SENTINEL_TURNSTILE_SECRET", ""),
 		SentinelHCaptchaSecret:  getEnv("SENTINEL_HCAPTCHA_SECRET", ""),
 		SentinelRecaptchaSecret: getEnv("SENTINEL_RECAPTCHA_SECRET", ""),
+		SentinelLockoutExemptIPs: splitCSV(getEnv("SENTINEL_LOCKOUT_EXEMPT_IPS", "")),
 		` + configSentinelProxiesNew + `
 
 		PulseEnabled:    getEnv("PULSE_ENABLED", "true") == "true",
@@ -7375,6 +7381,26 @@ func mountGlobalMiddleware(r *gin.Engine, cfg *config.Config, svc *Services) fun
 	return corsOrigins
 }
 
+// sentinelMySQLDSN turns this project's DATABASE_URL into what the MySQL
+// driver wants.
+//
+// The scheme is stripped rather than parsed, because go-sql-driver takes
+// "user:pass@tcp(host:port)/db" and not a URL. parseTime is not optional: the
+// audit log's hash chain covers a timestamp, and without it the driver hands
+// back a []byte that never recomputes to the value that was hashed, so every
+// entry fails verification.
+func sentinelMySQLDSN(dsn string) string {
+	my := strings.TrimPrefix(strings.TrimPrefix(dsn, "mysql://"), "mysql:")
+	if !strings.Contains(my, "parseTime=") {
+		sep := "?"
+		if strings.Contains(my, "?") {
+			sep = "&"
+		}
+		my += sep + "parseTime=true&loc=UTC"
+	}
+	return my
+}
+
 // mountSentinel mounts the security suite: WAF, rate limiting, auth shield and
 // anomaly detection, with its dashboard at /sentinel.
 //
@@ -7395,7 +7421,17 @@ func mountSentinel(r *gin.Engine, db *gorm.DB, cfg *config.Config, svc *Services
 		// redeploy would drop the threat log and the blocked-IP list. Point
 		// it at the same database the app uses when that's Postgres.
 		sentinelStorage := sentinel.StorageConfig{Driver: sentinel.SQLite, DSN: config.ResolveSQLitePath("sentinel.db")}
-		if !strings.HasPrefix(cfg.DatabaseURL, "sqlite:") {
+		switch {
+		case strings.HasPrefix(cfg.DatabaseURL, "sqlite:"):
+			// Already the SQLite default above.
+		case strings.HasPrefix(cfg.DatabaseURL, "mysql:"), strings.HasPrefix(cfg.DatabaseURL, "mysql://"):
+			// Sentinel v2.7.0 added a MySQL adapter. Before it existed, every
+			// branch that was not SQLite was handed to the Postgres driver, so
+			// a MySQL project pointed Sentinel's Postgres driver at a MySQL
+			// DSN: it could not connect, Mount failed, and the API carried on
+			// with no security storage at all.
+			sentinelStorage = sentinel.StorageConfig{Driver: sentinel.MySQL, DSN: sentinelMySQLDSN(cfg.DatabaseURL)}
+		default:
 			sentinelStorage = sentinel.StorageConfig{Driver: sentinel.Postgres, DSN: cfg.DatabaseURL}
 		}
 		// Keys the audit log's hash chain: an entry edited by someone with the
@@ -7486,13 +7522,22 @@ func mountSentinel(r *gin.Engine, db *gorm.DB, cfg *config.Config, svc *Services
 			AuthShield: sentinel.AuthShieldConfig{
 				Enabled:    !isDev,
 				LoginRoute: "/api/" + APIVersion + "/auth/login",
+				// Since v2.7.0 a lockout bars the (address, account) pair by
+				// default rather than the address, which is what stops one
+				// person's mistakes behind an office or carrier NAT locking
+				// out everybody who shares that egress address. Failures are
+				// still counted per address as well, so one machine working
+				// through many accounts is still caught.
+				//
+				// SENTINEL_LOCKOUT_EXEMPT_IPS names egress ranges that are
+				// never locked by address: still counted, still throttled,
+				// still subject to the pair lockout.
+				ExemptIPs: cfg.SentinelLockoutExemptIPs,
 				// The CAPTCHA tier sits between "let it through" and "bar this
-				// address". Sentinel gives it a threshold of its own accord
-				// (half the failure limit), so it is configured whether or not
-				// a provider exists, and it validates only for more than one
-				// provider, never for none. Set SENTINEL_TURNSTILE_SECRET or
-				// one of its siblings below and the tier starts working; leave
-				// them empty and it stays configured and unreachable.
+				// pair". Since v2.7.0 its threshold is 0 unless a provider is
+				// configured, so it is no longer a tier that exists and cannot
+				// fire. Set SENTINEL_TURNSTILE_SECRET or one of its siblings
+				// below to bring it into play.
 			},
 			// Passing these is what makes the tier above reachable. Empty
 			// strings are the same as not setting them at all.

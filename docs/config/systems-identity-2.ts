@@ -15,6 +15,11 @@ export const SESSIONS: SystemDesign = {
       'Session design is where the follow-up questions in an authentication interview end up, because it is the half that stateless tokens cannot do on their own. These are the ones that come up, each with a short answer.',
     questions: [
       {
+        q: 'What is session management?',
+        a: 'Keeping somebody signed in after they have proved who they are, so they are not asked for a password on every request, and being able to end that state on demand. A session is the record of one signed-in device: this laptop, this phone. Managing them means knowing which exist, expiring them when they go unused, and revoking one without touching the others, which is what \u201csign out this device\u201d actually is underneath.',
+        see: 'problem',
+      },
+      {
         q: 'If the access token is stateless, what is a session row even for?',
         a: 'Revocation. A stateless token is valid because the mathematics says so, which means nothing can make it invalid before it expires. The session row is the one piece of state that can be changed: the long-lived refresh token only works if a matching row exists and is not revoked. Deleting or marking that row is how "sign this device out" becomes a real thing rather than a request the server has no way to honour.',
         see: 'problem',
@@ -401,6 +406,11 @@ export const MFA: SystemDesign = {
     intro:
       'Multi-factor authentication comes up as a follow-up to almost every authentication question, and the interesting parts are recovery and replay rather than the code-generating algorithm. These are the ones that get asked.',
     questions: [
+      {
+        q: 'What is multi-factor authentication?',
+        a: 'Requiring more than one kind of proof before letting somebody in. The kinds are conventionally something you know (a password), something you have (a phone, a security key) and something you are (a fingerprint). A password alone fails badly because passwords leak in bulk and get reused, so an attacker with a leaked one is already in. Adding a second factor means a leaked password on its own is not enough.',
+        see: 'problem',
+      },
       {
         q: 'Where does the second factor fit into the login flow?',
         a: 'Sign-in stops halfway. A correct password returns not a real token but a short-lived pending token, which proves the first factor passed and grants nothing else: it is accepted on exactly one endpoint, the one that takes the code. Only when the code checks out are real tokens issued. The point is that an attacker who has the password is holding something with no authority at all.',

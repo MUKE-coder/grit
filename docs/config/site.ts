@@ -3,7 +3,39 @@
 // example output, verify-install lesson, animated terminal). Bump this
 // when the Go CLI releases; keep it in sync with cmd/grit/main.go's
 // `var version` and internal/scaffold.DefaultVersion.
-export const GRIT_VERSION = '3.397.0'
+export const GRIT_VERSION = '3.398.0'
+
+/**
+ * Which channel the version above belongs to.
+ *
+ * A release is stable unless its version carries a prerelease suffix, and the
+ * suffix is the only thing that decides it: `3.398.0-rc.1` is a release
+ * candidate, `3.398.0` is stable. That is not just a naming convention here.
+ * The release workflow marks a tag containing -rc, -beta or -alpha as a GitHub
+ * prerelease, and `grit update` asks GitHub for the latest release, which by
+ * definition excludes prereleases. So a prerelease is something you install on
+ * purpose and never something you are moved onto.
+ *
+ * Derived rather than configured, so the badge cannot disagree with the version
+ * it sits next to.
+ */
+export type ReleaseChannel = 'stable' | 'rc' | 'beta' | 'alpha'
+
+export function releaseChannel(version: string = GRIT_VERSION): ReleaseChannel {
+  const suffix = version.split('-')[1]?.toLowerCase() ?? ''
+  if (suffix.startsWith('rc')) return 'rc'
+  if (suffix.startsWith('beta')) return 'beta'
+  if (suffix.startsWith('alpha')) return 'alpha'
+  return 'stable'
+}
+
+/** What the channel is called where a reader sees it. */
+export const RELEASE_CHANNEL_LABEL: Record<ReleaseChannel, string> = {
+  stable: 'stable',
+  rc: 'release candidate',
+  beta: 'beta',
+  alpha: 'alpha',
+}
 
 export const siteConfig = {
   name: 'Grit',

@@ -15,6 +15,11 @@ export const AUTHENTICATION: SystemDesign = {
       '"Design an authentication system" is one of the most common system design interview prompts, and the follow-up questions are remarkably consistent between companies. Here are the ones that come up, each with a short answer. Every one of them is worked through somewhere below, so if you can follow this page you can answer the question.',
     questions: [
       {
+        q: 'What is authentication?',
+        a: 'Proving that somebody is who they say they are. It is the step that turns an anonymous request into a request from a known person, usually by checking something only they should have: a password, a code from their phone, a key on their laptop. It answers one question and only one, which is who is calling. What they are then allowed to do is a separate system, and keeping the two apart matters more than it sounds.',
+        see: 'problem',
+      },
+      {
         q: 'Design a login system. Where do you start?',
         a: 'With requirements, not with tokens. Ask who is signing in (people in a browser, a mobile app, another service), whether you need to sign somebody out instantly, whether a second factor is required, and roughly how many users there are. Those four answers decide almost everything else. Only then write the functional list: register, sign in, stay signed in, sign out, reset a forgotten password. Jumping straight to "I would use JWTs" is the mistake interviewers are watching for, because it answers a question nobody asked yet.',
         see: 'requirements',
@@ -51,17 +56,17 @@ export const AUTHENTICATION: SystemDesign = {
       },
       {
         q: 'What if the attacker spreads the guesses across a thousand different IP addresses?',
-        a: 'Then a limit counted per IP address does nothing, because no single address reaches it. This is why the lockout counts failures per account. The mirror-image mistake is to lock out the IP address instead: an attacker who can guess your office address can then deliberately lock out everybody in your building. Count per account for the lockout, and keep a per-address rate limit as a separate, looser control on top.',
+        a: 'Then a limit counted per address does nothing, because no single address reaches it, which is why the lockout counts failures per account. The mirror-image mistake is to bar the address instead, and it is worth naming because it is so easy to make: behind an office, a university or a mobile carrier, one address is hundreds of people, so barring it bars all of them, and anybody who can guess your egress address can do it on purpose. The shape that avoids both is to bar the (address, account) pair, and to keep a separate, looser address control that counts failures rather than attempts.',
         see: 'high-level-design',
       },
       {
         q: 'Slow hashing protects the database after a breach. What protects the login endpoint before one?',
-        a: 'A different set of defences entirely, layered in front. bcrypt makes a stolen hash expensive to crack, and does nothing about somebody hammering your endpoint ten thousand times a minute: in fact it makes that worse, because you are now paying 60 milliseconds of processor time per guess. The layers that matter at the request level are an address rate limit at the edge, tighter limits on the credential routes specifically, a per-address failed-login shield, and a per-account lockout. Each catches an attack shape the others miss.',
+        a: 'A different set of defences entirely, layered in front. bcrypt makes a stolen hash expensive to crack, and does nothing about somebody hammering your endpoint ten thousand times a minute: in fact it makes that worse, because you are now paying 60 milliseconds of processor time per guess. The layers that matter at the request level are an address rate limit at the edge, tighter flood limits on the credential routes, a shield that counts failed sign-ins per (address, account) pair, and a per-account lockout. Each catches an attack shape the others miss, and the two that do the real work count failures rather than attempts, so a busy shared address is not punished for signing in successfully.',
         see: 'high-level-design',
       },
       {
         q: 'Walk through the layers. What does each one actually catch?',
-        a: 'An address limit, 100 requests a minute here, stops a crude flood from one machine. Per-route limits, 5 sign-ins per 15 minutes, make that route far tighter than the general ceiling because it is the one worth attacking. A per-address login shield bars an address after 5 failures, catching one attacker working through many accounts. A per-account lockout bars an account after 10 failures, catching many addresses working on one account. Remove any one and a specific attack walks straight through, which is what defence in depth means in practice rather than as a slogan.',
+        a: 'An address limit, 100 requests a minute, stops a crude flood from one machine. Per-route limits on the credential endpoints are tighter, because those are the ones worth attacking, and they are flood control rather than guess control: they count every request including the successful ones, so they have to leave room for a shared office address. The guessing is caught by counting failures instead. The sign-in shield bars the (address, account) pair after 5 failures and refuses an address outright once it accumulates about four times that many, and the account lockout bars an account after 10 failures wherever they come from. Remove any one and a specific attack shape walks through.',
         see: 'stack',
       },
       {
@@ -343,8 +348,8 @@ export const AUTHENTICATION: SystemDesign = {
         text: 'the layer in front of all of it, from the security library mounted at the edge of the router. A general ceiling of 100 requests a minute per address, and much tighter limits on the routes that take a password or a code: 5 sign-ins per 15 minutes, 3 registrations, 3 forgotten-password requests, 5 code verifications per 5 minutes. Counted in Redis when it is configured, so the limit means the same thing behind every replica.',
       },
       {
-        label: 'Per-address login shield',
-        text: 'a separate failed-login counter keyed by address rather than account, barring an address after 5 failures. It sits alongside the per-account lockout rather than replacing it, because the two catch different attacks: one attacker trying many accounts, and many addresses trying one account.',
+        label: 'Sign-in shield',
+        text: 'a failed-login counter that bars the (address, account) pair after 5 failures, so one account under attack is protected without touching anybody else behind the same address. An address that accumulates roughly four times that many failures is refused outright for a minute, which is the one machine working through many accounts. Known shared egress ranges can be exempted from address-level barring and are still counted.',
       },
     ],
     flow: {
@@ -403,9 +408,9 @@ export const AUTHENTICATION: SystemDesign = {
     ['Transport', 'Authorization: Bearer, plus HttpOnly cookies for browsers'],
     ['Social sign-in', 'OAuth2 against Google and GitHub'],
     ['Address rate limit', '100 requests/minute in production, 1,000 in development'],
-    ['Sign-in route limit', '5 attempts per 15 minutes, per address'],
-    ['Other credential routes', 'register 3/15min, forgot-password 3/15min, reset 5/15min, code verify 5/5min'],
-    ['Per-address login shield', '5 failed sign-ins bars the address for 15 minutes'],
+    ['Sign-in route limit', '30 attempts per 5 minutes, per address: flood control, counting every attempt'],
+    ['Other credential routes', 'register 10/15min, forgot-password 10/15min, reset 10/15min, code verify 20/5min'],
+    ['Sign-in shield', '5 failures bars the (address, account) pair; roughly 20 failures refuses the address briefly'],
     ['Per-account lockout', '10 failed sign-ins bars the account for 15 minutes, database-backed so it survives a restart'],
     ['Lockout recovery', 'the owner is emailed a reset link, and a completed reset clears the lock'],
     ['Challenge tier', 'Turnstile, hCaptcha or reCAPTCHA, by configuration; dormant when none is set'],

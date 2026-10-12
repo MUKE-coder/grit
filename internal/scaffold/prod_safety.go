@@ -102,6 +102,31 @@ const routesLimitsBlock = `		// Built from the prefix the router mounts, because
 
 const routesAuthLimitsFunc = `// authRouteLimits are the per-route limits on the routes that take a password
 // or a one-time code, under the live API prefix. Development gets room to test.
+//
+// These are flood control and nothing more, which is a change from what they
+// used to be. They are counted per client address, and they count every
+// request rather than every failure, so a successful sign-in consumes one.
+// That matters because an address is often not a person: behind an office,
+// university or mobile carrier NAT it is hundreds of them, and at five sign-ins
+// per quarter hour the sixth person to arrive in the morning was refused. The
+// limit meant to stop password guessing was stopping people logging in.
+//
+// Guessing is caught precisely elsewhere, and by counting failures rather than
+// attempts, which is what makes it safe to loosen these:
+//
+//   - AuthShield bars the (address, account) pair after 5 failures, so one
+//     account under attack is protected without touching anybody else who
+//     shares the address.
+//   - AuthShield refuses an address outright once it accumulates roughly four
+//     times that many failures in the window, which is the one machine working
+//     through many accounts.
+//   - The account lockout in this application bars an account after
+//     LOGIN_MAX_ATTEMPTS failures wherever they come from, which is the attack
+//     spread across a botnet.
+//
+// So these numbers only need to be low enough that an automated client hits
+// them and high enough that a shared office never does. Set
+// SENTINEL_LOCKOUT_EXEMPT_IPS for egress ranges you know about.
 func authRouteLimits(dev bool) map[string]sentinel.Limit {
 	v := "/api/" + APIVersion + "/auth"
 	if dev {
@@ -109,11 +134,11 @@ func authRouteLimits(dev bool) map[string]sentinel.Limit {
 		return map[string]sentinel.Limit{v + "/login": relaxed, v + "/register": relaxed}
 	}
 	return map[string]sentinel.Limit{
-		v + "/login":           {Requests: 5, Window: 15 * time.Minute},
-		v + "/register":        {Requests: 3, Window: 15 * time.Minute},
-		v + "/forgot-password": {Requests: 3, Window: 15 * time.Minute},
-		v + "/reset-password":  {Requests: 5, Window: 15 * time.Minute},
-		v + "/totp/verify":     {Requests: 5, Window: 5 * time.Minute},
+		v + "/login":           {Requests: 30, Window: 5 * time.Minute},
+		v + "/register":        {Requests: 10, Window: 15 * time.Minute},
+		v + "/forgot-password": {Requests: 10, Window: 15 * time.Minute},
+		v + "/reset-password":  {Requests: 10, Window: 15 * time.Minute},
+		v + "/totp/verify":     {Requests: 20, Window: 5 * time.Minute},
 	}
 }
 `

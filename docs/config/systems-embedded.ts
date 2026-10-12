@@ -13,6 +13,11 @@ export const GORM_STUDIO: SystemDesign = {
       '"Design an internal admin tool" is a real prompt and a surprisingly good one, because the interesting content is entirely about constraints rather than features. These are the questions it raises.',
     questions: [
       {
+        q: 'What is GORM Studio?',
+        a: 'A database browser that runs inside the application itself, reached in the browser: tables, rows, relationships, a query box, import and export. It is a separate library that Grit mounts, not part of Grit. The reason it exists in that shape is that the moments you most want to look at the data, a staging container or a customer-hosted install, are exactly where a desktop database client is not available.',
+        see: 'problem',
+      },
+      {
         q: 'Why build a database browser into the application rather than using an existing client?',
         a: 'Because of where it is needed. A staging container has no desktop, no installed client, and no database port open to anybody laptop. Customer-hosted instances cannot have one opened either. In exactly the situations where looking at the data would settle an argument in thirty seconds, the usual tools are the ones that are not there.',
         see: 'problem',
@@ -449,6 +454,11 @@ export const PULSE: SystemDesign = {
       '"Design a metrics and monitoring platform" is a classic prompt. This is the in-process version of that problem, which changes the answers in interesting ways: no collector to scale, and a hard rule that the measurement must not cost what it is measuring.',
     questions: [
       {
+        q: 'What is Pulse?',
+        a: 'An observability tool that runs inside the Go application rather than alongside it: request timings, every database query with the line that issued it, memory and goroutine counts, errors with stack traces, health checks and alerts, with a dashboard embedded in the binary. A separate library that Grit mounts. It exists because the standard answer is a monitoring stack bigger than the application it watches, so small deployments install nothing and know nothing.',
+        see: 'problem',
+      },
+      {
         q: 'Why build this in-process rather than running Prometheus and a collector?',
         a: 'For the application that is one container and a database, a monitoring stack is bigger and harder to operate than the thing it monitors, so it does not get installed and the answer to "why was it slow" stays "nobody knows". In-process costs a dependency instead of an architecture. It stops being the right trade once there are enough replicas that you need a combined view.',
         see: 'problem',
@@ -873,12 +883,17 @@ export const SENTINEL: SystemDesign = {
   tagline:
     'A web application firewall, threat intelligence and audit layer that mounts in one call, and the accuracy numbers to say how often it is wrong.',
   group: 'Embedded',
-  packages: ['github.com/MUKE-coder/sentinel/v2', 'v2.6.0'],
+  packages: ['github.com/MUKE-coder/sentinel/v2', 'v2.7.0'],
 
   interview: {
     intro:
       '"Design a web application firewall" and "design a DDoS protection layer" are real prompts, and this is the in-application version. The questions worth preparing are about false positives, about keeping the request path cheap, and about what an attack does to your own analysis.',
     questions: [
+      {
+        q: 'What is Sentinel?',
+        a: 'A security layer that mounts into the application with one call: a web application firewall inspecting requests for attack shapes, rate limiting, brute-force protection on sign-in, threat records, an audit trail and a dashboard. A separate library that Grit mounts. Running inside the application rather than at the edge means it sees the parsed request and the authenticated user, and costs a dependency rather than a service to operate.',
+        see: 'problem',
+      },
       {
         q: 'What is the dominant failure mode of a firewall inside an application?',
         a: 'Blocking legitimate traffic, not missing an attack. A pattern that matches real requests takes the site down for the people it was protecting, and it does so quietly, as a fraction of users who cannot complete something. This library shipped that twice: an SSRF pattern matched 0.0.0.0 inside browser version strings like Chrome/140.0.0.0, blocking every Chrome user, and a bare double hyphen matched inside base64url cookies, rejecting about one session in ten at random.',

@@ -13,6 +13,11 @@ export const MULTITENANCY: SystemDesign = {
       '"Design a multi-tenant SaaS" is a common prompt, and the questions are almost always about isolation rather than features. A tenant leak is a breach, not a bug, and interviewers want to hear that distinction made.',
     questions: [
       {
+        q: 'What is multitenancy?',
+        a: 'One running copy of an application serving many separate customers, called tenants, each seeing only their own data. Nearly every business product works this way, because the alternative is running and upgrading a separate installation per customer. The whole difficulty is separation: one deployment, one database, and a boundary that is enforced entirely by your code rather than by the operating system.',
+        see: 'problem',
+      },
+      {
         q: 'What are the ways to separate one customer from another?',
         a: 'Three, on a spectrum. A database per tenant gives the strongest isolation and the worst operations, because a migration now runs a thousand times and a connection pool exists per customer. A schema per tenant sits in the middle. A shared table with a tenant column is what most products use: one migration, one pool, and isolation that is now entirely your code rather than the database. This design takes the third and spends its effort making the predicate impossible to forget.',
         see: 'problem',
@@ -387,6 +392,11 @@ export const RATE_LIMITING: SystemDesign = {
     intro:
       '"Design a rate limiter" is one of the most frequently asked system design questions there is. The algorithm comparison is table stakes; the follow-ups about shared counters, what to do when the store is down, and lockouts as a weapon are where the answer is actually judged.',
     questions: [
+      {
+        q: 'What is rate limiting?',
+        a: 'Capping how many requests a caller can make in a window, and refusing the rest. It is there for two different reasons that get muddled: protecting capacity, so one noisy client cannot consume the service for everybody, and making abuse expensive, so guessing passwords or scraping data costs time an attacker does not want to spend. The two want different limits in different places.',
+        see: 'problem',
+      },
       {
         q: 'Which algorithm would you use, and what are the alternatives?',
         a: 'The four worth naming are fixed window, which is simplest and allows a double burst across the boundary; sliding window log, which is exact and stores a timestamp per request so memory grows with traffic; sliding window counter, which approximates the log from two fixed windows at constant cost and is the usual default; and token bucket, which allows a controlled burst and then a steady rate, which suits APIs where occasional bursts are legitimate. This design uses a sliding window by default and offers the other two.',

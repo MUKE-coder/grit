@@ -11,7 +11,7 @@ import { MobileNav } from '@/components/docs-sidebar'
 import { GitHubStars } from '@/components/github-stars'
 import { WhatsAppIcon, WHATSAPP_COMMUNITY_URL } from '@/components/community-cta'
 import { cn } from '@/lib/utils'
-import { GRIT_VERSION } from '@/config/site'
+import { GRIT_VERSION, RELEASE_CHANNEL_LABEL, releaseChannel } from '@/config/site'
 
 export function SiteHeader() {
   const { theme, setTheme } = useTheme()
@@ -43,9 +43,23 @@ export function SiteHeader() {
             <span className="font-semibold text-[15px] tracking-tight text-foreground">
               Grit
             </span>
-            <span className="hidden sm:inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-mono font-medium text-primary/80">
+            {/* The channel is shown only when it is not stable, because a
+                badge saying "stable" on every page is noise, and its absence
+                has to mean stable for that to work. */}
+            <span
+              className="hidden sm:inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-mono font-medium text-primary/80"
+              title={`Grit ${GRIT_VERSION}, a ${RELEASE_CHANNEL_LABEL[releaseChannel()]} release`}
+            >
               v{GRIT_VERSION}
             </span>
+            {releaseChannel() !== 'stable' && (
+              <Link
+                href="/docs/stability#release-channels"
+                className="hidden sm:inline-flex items-center rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400"
+              >
+                {RELEASE_CHANNEL_LABEL[releaseChannel()]}
+              </Link>
+            )}
           </Link>
         </div>
 

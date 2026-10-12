@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { GRIT_VERSION } from '@/config/site'
 
 export const metadata = getDocMetadata('/docs/stability')
 
@@ -343,6 +344,58 @@ export default function StabilityPage() {
                   </dl>
                 </div>
               ))}
+            </div>
+
+            {/* Release channels */}
+            <div className="prose-grit mt-12">
+              <h2 id="release-channels">Stable, and how to tell</h2>
+              <p>
+                The table above says which <em>features</em> are settled. This says which{' '}
+                <em>releases</em> are, which is a different question and is answered entirely by
+                the version number.
+              </p>
+              <p>
+                A version with nothing after the patch number is stable:{' '}
+                <code>{GRIT_VERSION}</code> is the current one. A version carrying a suffix is
+                not, and the suffix says which kind:
+              </p>
+              <ul>
+                <li>
+                  <code>3.398.0-rc.1</code> is a <strong>release candidate</strong>: feature
+                  complete, published so it can be tried before the real thing.
+                </li>
+                <li>
+                  <code>3.398.0-beta.1</code> is a <strong>beta</strong>: the shape is settled,
+                  the details are not.
+                </li>
+                <li>
+                  <code>3.398.0-alpha.1</code> is an <strong>alpha</strong>: published to get
+                  feedback, and expected to change.
+                </li>
+              </ul>
+              <p>
+                The suffix is not only a naming convention. The release workflow marks any tag
+                containing <code>-rc</code>, <code>-beta</code> or <code>-alpha</code> as a GitHub
+                prerelease, and <code>grit update</code> asks GitHub for the <em>latest release</em>,
+                which by definition excludes prereleases. So a prerelease is something you install
+                deliberately, and never something an update moves you onto.
+              </p>
+              <p>
+                Everywhere this site shows a version, a prerelease is labelled next to it. No
+                label means stable, which is why there is no badge saying so on every page.
+              </p>
+              <p>
+                To install one on purpose, name it:{' '}
+                <code>go install github.com/MUKE-coder/grit/v3/cmd/grit@v3.398.0-rc.1</code>, or
+                take the binary from that release on GitHub. To go back,{' '}
+                <code>grit update</code> returns you to the newest stable.
+              </p>
+              <p>
+                Every release is cut when something ships rather than on a schedule, so the
+                version number tells you what kind of release it is and nothing about how much
+                changed. The{' '}
+                <Link href="/docs/changelog">changelog</Link> is where that lives.
+              </p>
             </div>
 
             {/* How Grit is tested */}

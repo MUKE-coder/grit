@@ -13,6 +13,11 @@ export const MIGRATIONS: SystemDesign = {
       'Schema change comes up in interviews as "how do you deploy this without downtime", usually buried inside a larger design. The expected answers are about backward compatibility and about what you do when a change cannot be undone.',
     questions: [
       {
+        q: 'What is a schema migration?',
+        a: 'Changing the shape of a database that already holds data: adding a column, creating a table, building an index. It has to happen in order, on every machine that runs the application, exactly once in production, and without losing what is already stored. The difficulty is never the change itself, it is doing it to a live system that cannot be emptied first.',
+        see: 'problem',
+      },
+      {
         q: 'How do you change a schema without taking the application down?',
         a: 'By making every change backward compatible with the version still running, because during a rolling deploy both versions are live at once. Adding a nullable column or a new table is safe. Dropping a column the old code still selects, or renaming one, is not. The discipline is that the schema change and the code that needs it ship in different releases.',
         see: 'problem',
@@ -367,6 +372,11 @@ export const PAGINATION: SystemDesign = {
     intro:
       'Pagination arrives as a follow-up in almost any design with a list in it, and the expected answer is the offset versus cursor trade-off plus an awareness that the count is usually the expensive part.',
     questions: [
+      {
+        q: 'What is pagination?',
+        a: 'Returning a slice of a large result rather than all of it, so a list of ten million rows becomes page one of twenty. Without it, one request can exhaust the memory of both the server and the client. In practice it arrives bundled with sorting, filtering, searching and a total count, because a list screen needs all of those at once, and the total is usually the expensive part.',
+        see: 'problem',
+      },
       {
         q: 'Offset or cursor pagination?',
         a: 'Offset gives you page numbers and a total, and costs more the deeper you go, because the database produces and discards every row before the one you asked for. Cursor, or keyset, pagination remembers where the last page ended and asks for rows after that point, so page ten thousand costs the same as page one, and it cannot give you page numbers. Use offset for an admin table somebody browses, cursor for anything that walks the whole set.',
@@ -759,6 +769,11 @@ export const ENCRYPTION: SystemDesign = {
     intro:
       'Encryption at rest comes up in any design touching personal or regulated data. The questions that separate a real answer from a buzzword are about key management and about what you give up by encrypting a column.',
     questions: [
+      {
+        q: 'What is encryption at rest?',
+        a: 'Storing data in a form that is unreadable without a key, so that having the data is not the same as being able to read it. Database-level encryption protects the files on disk, which guards against a stolen drive and nothing else: anybody with a connection still sees plain text. Encrypting particular fields in the application protects them from backups, replicas and anybody granted read access.',
+        see: 'problem',
+      },
       {
         q: 'Is database-level encryption not enough?',
         a: 'It protects the files on disk, which guards against a stolen volume and nothing else. Anybody with a connection sees plain text, and so does every backup dump, every replica and every analyst given read access for an afternoon. Encrypting in the application closes that, because the database never holds the readable value at all.',

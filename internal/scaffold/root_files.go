@@ -312,6 +312,14 @@ SENTINEL_TURNSTILE_SECRET=
 SENTINEL_HCAPTCHA_SECRET=
 SENTINEL_RECAPTCHA_SECRET=
 
+# Egress addresses or CIDRs a sign-in lockout never bars by address: your
+# office, your VPN, a customer's corporate NAT. Behind one of those an address
+# is hundreds of people, and barring it bars all of them. They are still
+# counted, still throttled, and still subject to the (address, account)
+# lockout, so this loosens the blunt control and not the precise one.
+# Comma separated, for example: 203.0.113.0/24,198.51.100.7
+SENTINEL_LOCKOUT_EXEMPT_IPS=
+
 # Require a confirmed email address before a password sign-in is accepted.
 # Leave false on an existing project: every current user has a NULL
 # email_verified_at and would be locked out the moment you switch it on.

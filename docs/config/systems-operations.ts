@@ -13,6 +13,11 @@ export const OBSERVABILITY: SystemDesign = {
       '"Design a monitoring and alerting system" is a standard prompt, and observability is also the section interviewers reach for when they want to know whether you have operated anything. The questions are about the three signals, about cost, and about cardinality.',
     questions: [
       {
+        q: 'What is observability?',
+        a: 'Being able to work out what a running system did, from the outside, without adding code first. It is usually described as three kinds of signal: logs, which say what happened; metrics, which say how much and how often; and traces, which say where the time went across the services one request touched. The point of the word is that the instrumentation has to already be there, because the interesting failures are the ones nobody predicted.',
+        see: 'problem',
+      },
+      {
         q: 'What are logs, metrics and traces, and when do you reach for each?',
         a: 'They answer three different questions. Logs say what happened, in detail, for one event. Metrics say how much and how often, aggregated, and are cheap to keep for a long time. Traces say where the time went across the services one request touched. People conflate them and then wonder why their logging bill is enormous or why they cannot work out which service was slow.',
         see: 'problem',
@@ -415,6 +420,11 @@ export const AUDIT: SystemDesign = {
       'Audit logging appears in any design touching money, health or regulated data. The question that makes it interesting is not how to write the rows, it is how you convince anybody the rows were not edited afterwards.',
     questions: [
       {
+        q: 'What is an audit log?',
+        a: 'A durable, queryable record of who did what and when, kept for months or years to answer questions asked long afterwards. It is not the same as application logging: those rotate in days and are written for engineers debugging, while this is written for the question \u201cwho deleted this customer\u201d asked six weeks later, often by somebody outside engineering. The hard part is making it credible evidence rather than just another table.',
+        see: 'problem',
+      },
+      {
         q: 'Why not just log to a file or your normal logging stack?',
         a: 'Because the questions asked of an audit log are "who deleted this customer" and "what happened to this record", which are queries against structured fields rather than text searches. Application logs also rotate after days or weeks, and the question usually arrives months later. It is a table, with indexes, and a retention period measured in years.',
         see: 'problem',
@@ -804,6 +814,11 @@ export const FILE_STORAGE: SystemDesign = {
     intro:
       '"Design Dropbox" or "design a file upload service" is one of the most common prompts there is. The expected answers are about keeping bytes out of the application, about what the database holds, and about serving files back only to the people allowed to see them.',
     questions: [
+      {
+        q: 'What is file storage, as a system?',
+        a: 'Everything between a person choosing a file and that file coming back to the right people later: accepting the upload, keeping the bytes somewhere that survives a redeploy, recording what was stored and who owns it, deriving things like thumbnails, and serving it back under the right permissions. Writing to the container disk is the obvious answer and is wrong, because that disk disappears on the next deploy.',
+        see: 'problem',
+      },
       {
         q: 'Where do uploaded files go?',
         a: 'Object storage, not the container filesystem and not the database. The container disk is scratch space that disappears on the next deploy. Bytes in the database make every backup the size of every upload and every restore an hour long. Object storage is cheap, effectively unlimited, and scales without the application participating, which is most of why it is the answer.',
@@ -1212,6 +1227,11 @@ export const IMPORT_EXPORT: SystemDesign = {
     intro:
       'Bulk import is where the interview question "how would you load a million rows" lives, and it is a good one because the naive answer fails in three different ways at once: memory, connections and partial failure.',
     questions: [
+      {
+        q: 'What is bulk import and export?',
+        a: 'Getting a large amount of data in from a file, usually a spreadsheet, and back out again. It is how most customers start, because their data is already somewhere else, and how they reassure themselves they are not trapped. The naive version reads the file into memory and saves row by row, which works for the twelve-row test file and fails on the real ninety-thousand-row one in three ways at once.',
+        see: 'problem',
+      },
       {
         q: 'A customer uploads a ninety thousand row spreadsheet. What does the naive version do wrong?',
         a: 'Three things at once. It reads the file into memory, so the file and the parsed rows are both resident. It loops row by row, holding a database connection for the entire run. And when row forty thousand is invalid, the first 39,999 are already committed with no record of what happened. Streaming, batching and a per-row error report fix them in that order.',

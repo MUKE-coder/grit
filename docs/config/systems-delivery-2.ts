@@ -13,6 +13,11 @@ export const REALTIME: SystemDesign = {
       'Live updates come up as "design a chat system" or "design a notification feed", and as a follow-up whenever a screen has to change without a refresh. The questions are about fan-out, about more than one server, and about what happens when the socket cannot be established.',
     questions: [
       {
+        q: 'What are realtime updates?',
+        a: 'The server telling a client something changed, instead of the client asking over and over whether anything has. A list that updates when a colleague edits a record, a chat message appearing, a notification. The server has to be able to speak first, which ordinary request and response cannot do, so it needs a connection that stays open and a way to reach the right subscribers across however many servers you run.',
+        see: 'problem',
+      },
+      {
         q: 'Polling, long polling, server-sent events or WebSockets?',
         a: 'Polling is simplest and wastes nearly every request, since most return nothing changed. Long polling holds the request open until there is news, which works everywhere and ties up a connection. Server-sent events are a one-way stream over plain HTTP, which is enough when only the server speaks and survives proxies well. WebSockets are bidirectional and the usual choice when clients also send. This design uses WebSockets with server-sent events as the fallback.',
         see: 'problem',
@@ -409,6 +414,11 @@ export const WEBHOOKS: SystemDesign = {
     intro:
       '"Design a webhook system" is a real prompt, and it is two systems with one name: receiving calls you must believe, and making calls to endpoints you do not control. The follow-ups are about verification, duplicates, and the receiver that is down.',
     questions: [
+      {
+        q: 'What is a webhook?',
+        a: 'One system calling another over HTTP when something happens, instead of the second system polling for news. Your payment provider posts to your server when a payment succeeds; your server posts to a customer when their order ships. It is two problems wearing one name: receiving calls from somebody else, where the question is whether to believe them, and making calls to somebody else, where the question is what happens when they are down.',
+        see: 'problem',
+      },
       {
         q: 'A request arrives claiming a payment succeeded. Why would you believe it?',
         a: 'Only because of a signature. There is no session and no user; the request comes from an address you do not control and asserts something with financial consequences. Acting on an unverified webhook means anybody who learns the URL can tell you they paid. Verification is recomputing an HMAC over the body with a shared secret and comparing it.',
@@ -810,6 +820,11 @@ export const EMAIL: SystemDesign = {
     intro:
       '"Design a notification system" is a standard prompt, and email is the channel every product needs first. The questions are about getting it out of the request, about what happens during a provider outage, and about the part no dashboard shows you: whether it arrived.',
     questions: [
+      {
+        q: 'What is transactional email?',
+        a: 'Mail the application sends because something happened: a password reset, a receipt, a verification link, as opposed to a marketing campaign. It is usually where account recovery actually lives, so a message that does not arrive is an account that cannot be recovered. The feature is not \u201csend mail\u201d, it is \u201cthe person receives it\u201d, and most of the work lives in the gap between those two.',
+        see: 'problem',
+      },
       {
         q: 'A user signs up and you send a welcome email. Where does that happen?',
         a: 'Not in the request. The user should not wait on a third party, and a provider timeout should not become a thirty second sign-up. The handler queues the send and returns; a worker does the sending. That single move also buys retries, bounded concurrency, survival across a deploy, and a place where failures are visible.',

@@ -15,6 +15,11 @@ export const AUTHORIZATION: SystemDesign = {
       '"Design an access control system" is a standard prompt, and it is also the follow-up that ends most authentication questions. Interviewers are looking for more than an admin flag, and for an answer to "how do you know it is right".',
     questions: [
       {
+        q: 'What is authorization?',
+        a: 'Deciding what a known caller is allowed to do. Authentication established who they are; authorization decides whether this particular person may publish an article, read an invoice, or delete a customer. It is a different question from identity and it needs a different system, because a perfectly valid token says nothing about permission. Conflating the two is a common source of real breaches.',
+        see: 'problem',
+      },
+      {
         q: 'What is the difference between authentication and authorization?',
         a: 'Authentication is who you are. Authorization is what you may do. They are separate systems and merging them causes real breaches, because a token can be entirely valid and still not entitle its holder to the record they just asked for. In this design the auth middleware produces an identity and makes no decision about permission; a second layer reads that identity and decides.',
         see: 'problem',
@@ -428,6 +433,11 @@ export const DATA_ISOLATION: SystemDesign = {
     intro:
       'This is the "your API returned another user invoice" question, and it is asked because it is one of the most common real vulnerabilities. The interviewer wants the fix to be structural rather than a reminder to be careful.',
     questions: [
+      {
+        q: 'What is data isolation?',
+        a: 'Making sure each person sees only their own records, even when they ask for somebody else\u2019s by id. The difference from general permissions is that this one needs the record in hand: \u201cmay you edit invoices\u201d can be answered from your role, and \u201cis this invoice yours\u201d cannot. It is the check most often missed, which is why it has a name of its own in security writing.',
+        see: 'problem',
+      },
       {
         q: 'A signed-in user requests /invoices/4821, which belongs to somebody else. What happens?',
         a: 'They get a 404. The request is authenticated, so a check that only asks "is this caller signed in" passes and hands over the record. This is usually listed as the most common serious API vulnerability, under the name broken object level authorization, and it is common because the check that is missing is the one that needs the record in hand.',

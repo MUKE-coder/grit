@@ -28,8 +28,8 @@ type FrameworkDep struct {
 func FrameworkDepFloors() []FrameworkDep { return frameworkDeps }
 
 var frameworkDeps = []FrameworkDep{
-	{"github.com/MUKE-coder/sentinel/v2", "v2.6.0",
-		"rate limits and lockouts counted in Redis rather than per process (v2.5.0), whitelisted IPs and dashboard settings surviving a restart and reaching every replica (v2.5.1, v2.6.0)"},
+	{"github.com/MUKE-coder/sentinel/v2", "v2.7.0",
+		"a sign-in lockout bars the (address, account) pair rather than the address, so one person's mistakes behind an office or carrier NAT no longer lock out everybody sharing that egress; the CAPTCHA tier is no longer configured when no provider exists; MySQL is a real storage driver rather than a silent fall-through"},
 	{"github.com/MUKE-coder/gorm-studio", "v1.1.1",
 		"a table in TablePolicy.Hidden is refused by the raw SQL editor too, and a crafted XLSX import returns an error instead of panicking the request"},
 	{"github.com/MUKE-coder/pulse", "v1.2.0",
