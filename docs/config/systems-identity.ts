@@ -55,6 +55,31 @@ export const AUTHENTICATION: SystemDesign = {
         see: 'high-level-design',
       },
       {
+        q: 'Slow hashing protects the database after a breach. What protects the login endpoint before one?',
+        a: 'A different set of defences entirely, layered in front. bcrypt makes a stolen hash expensive to crack, and does nothing about somebody hammering your endpoint ten thousand times a minute: in fact it makes that worse, because you are now paying 60 milliseconds of processor time per guess. The layers that matter at the request level are an address rate limit at the edge, tighter limits on the credential routes specifically, a per-address failed-login shield, and a per-account lockout. Each catches an attack shape the others miss.',
+        see: 'high-level-design',
+      },
+      {
+        q: 'Walk through the layers. What does each one actually catch?',
+        a: 'An address limit, 100 requests a minute here, stops a crude flood from one machine. Per-route limits, 5 sign-ins per 15 minutes, make that route far tighter than the general ceiling because it is the one worth attacking. A per-address login shield bars an address after 5 failures, catching one attacker working through many accounts. A per-account lockout bars an account after 10 failures, catching many addresses working on one account. Remove any one and a specific attack walks straight through, which is what defence in depth means in practice rather than as a slogan.',
+        see: 'stack',
+      },
+      {
+        q: 'Is a hard account lockout actually a good idea?',
+        a: 'It is the part of this design most open to challenge, and the honest answer is that it trades one attack for another. The key is an email address anybody can guess, so ten deliberate failures lock a known user out for fifteen minutes, and repeating it locks them out indefinitely. That is a denial of service delivered through a security feature. The better shape is a progressive delay: instant, then a second, then three, then ten. It collapses the attack rate just as effectively and there is no state an attacker can push somebody else into. This design has the hard lock today and the delay is listed as an improvement rather than described as done.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Where do CAPTCHAs fit, and are they worth it?',
+        a: 'As a middle tier between no friction and a hard bar: after a couple of failures ask for a challenge, and only start barring if that also fails. Interactive puzzles are weak now, since solving services and vision models are cheap, and they annoy exactly the people who are not attacking. An invisible risk-based challenge, scoring the request from its telemetry, is the version worth having. Worth noting honestly: this design configures that tier and never wires a provider, so it is currently a setting that cannot fire.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'What should you return when you refuse, and does it matter?',
+        a: 'A 429 with a Retry-After header. The status code alone tells a client it was refused but not when to come back, so it retries on its own schedule and makes things worse. The lockout already knows its own expiry, so putting it in the header is nearly free. This design currently returns the sentence and not the header, which is a small gap with a real cost: no client can back off correctly.',
+        see: 'bottlenecks',
+      },
+      {
         q: 'How do you avoid telling an attacker which email addresses are registered?',
         a: 'By making "no such account" and "wrong password" indistinguishable, in both the message and the time taken. Returning different errors turns the login form into a lookup service for valid addresses. Timing matters as much as wording: if an unknown address returns instantly while a real one takes 60 milliseconds because a hash was computed, the difference is measurable, so the unknown-address path does the same wasted work. The same rule applies to the forgotten-password endpoint, which answers identically whether or not the address exists.',
         see: 'requirements',
@@ -263,7 +288,15 @@ export const AUTHENTICATION: SystemDesign = {
       },
       {
         label: 'Lockout counter',
-        text: 'failed attempts counted per account rather than per address, so an attack spread across a thousand machines still trips it.',
+        text: 'failed attempts counted per account rather than per address, so an attack spread across a thousand machines still trips it. Ten failures bar the account for fifteen minutes, and the count resets on any successful sign-in.',
+      },
+      {
+        label: 'Edge rate limiter',
+        text: 'the layer in front of all of it, from the security library mounted at the edge of the router. A general ceiling of 100 requests a minute per address, and much tighter limits on the routes that take a password or a code: 5 sign-ins per 15 minutes, 3 registrations, 3 forgotten-password requests, 5 code verifications per 5 minutes. Counted in Redis when it is configured, so the limit means the same thing behind every replica.',
+      },
+      {
+        label: 'Per-address login shield',
+        text: 'a separate failed-login counter keyed by address rather than account, barring an address after 5 failures. It sits alongside the per-account lockout rather than replacing it, because the two catch different attacks: one attacker trying many accounts, and many addresses trying one account.',
       },
     ],
     flow: {
@@ -318,7 +351,13 @@ export const AUTHENTICATION: SystemDesign = {
     ['Session storage', 'the primary database, one row per device'],
     ['Transport', 'Authorization: Bearer, plus HttpOnly cookies for browsers'],
     ['Social sign-in', 'OAuth2 against Google and GitHub'],
-    ['Lockout counter', 'database-backed, so it survives a restart'],
+    ['Address rate limit', '100 requests/minute in production, 1,000 in development'],
+    ['Sign-in route limit', '5 attempts per 15 minutes, per address'],
+    ['Other credential routes', 'register 3/15min, forgot-password 3/15min, reset 5/15min, code verify 5/5min'],
+    ['Per-address login shield', '5 failed sign-ins bars the address for 15 minutes'],
+    ['Per-account lockout', '10 failed sign-ins bars the account for 15 minutes, database-backed so it survives a restart'],
+    ['Shared counters', 'Redis when configured, so limits hold across replicas'],
+    ['Client address', 'the forwarded chain walked from the right, past configured trusted proxies'],
     ['Reset tokens', 'single-use, hashed at rest, short expiry'],
   ],
 
@@ -538,6 +577,18 @@ export const AUTHENTICATION: SystemDesign = {
         label: 'Clock skew',
         text: 'token expiry is a comparison against the local clock. A replica whose clock has drifted will reject valid tokens or accept dead ones, and nothing in the logs will say so.',
       },
+      {
+        label: 'The lockout is a weapon',
+        text: 'the per-account lockout is keyed on the email address, which anybody can guess. Ten deliberate failures against a known address bars that person for fifteen minutes, and repeating it bars them indefinitely. That is a denial of service delivered through a security feature, and it is the cost of a hard lock rather than a graduated one.',
+      },
+      {
+        label: 'A refusal a client cannot act on',
+        text: 'the locked response is a 429 carrying a sentence a person can read and no Retry-After header. A well-behaved client has nothing machine-readable to back off against, so it retries on its own schedule and the refusals continue.',
+      },
+      {
+        label: 'The challenge tier is configured and unreachable',
+        text: 'the login shield supports a middle tier that asks for a challenge before it starts barring addresses, and it defaults its threshold to half the failure limit. No challenge provider is wired in, so the tier can never fire: the configuration exists, does nothing, and is the kind of dead setting that reads as a working defence.',
+      },
     ],
     improvements: [
       {
@@ -563,6 +614,22 @@ export const AUTHENTICATION: SystemDesign = {
       {
         label: 'Asymmetric signing for many services',
         text: 'with a shared secret, every service that verifies a token could also mint one. Signing with a private key and verifying with the public one means a compromised service can check tokens and not forge them.',
+      },
+      {
+        label: 'Delay before you lock',
+        text: 'make the response slower with each failure rather than jumping from no friction to a fifteen minute wall. Instant, then a second, then three, then ten. A script attempting thousands of guesses is stopped just as effectively, because the attack rate is what collapses, while a person who mistyped twice barely notices and is never locked out by somebody else. It also removes the denial of service, because there is no state an attacker can push another account into.',
+      },
+      {
+        label: 'Wire the challenge or drop the tier',
+        text: 'the middle tier is the right shape, sitting between no friction and a hard bar, and it needs a provider to be anything at all. An invisible challenge that scores the request from its telemetry keeps the friction off real users while costing an automated client the thing it cannot cheaply buy. Configuration that cannot fire should not be left looking like a defence.',
+      },
+      {
+        label: 'Send Retry-After',
+        text: 'the lockout already knows exactly when it expires, so putting that number in the header costs one line and turns a refusal into something a client can cooperate with rather than guess at.',
+      },
+      {
+        label: 'Unlock by email as well as by waiting',
+        text: 'a locked-out user with no way back in except a timer will contact support or give up. A single-use link sent to the address on the account lets the real owner clear the lock immediately, which an attacker cannot do, and it makes a longer lockout acceptable because it is no longer a dead end.',
       },
     ],
   },
