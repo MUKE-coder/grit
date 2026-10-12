@@ -269,6 +269,24 @@ OAUTH_FRONTEND_URL=http://localhost:3001
 LOGIN_MAX_ATTEMPTS=10
 LOGIN_LOCKOUT_MINUTES=15
 
+# When an account locks, its owner is emailed a reset link, and completing that
+# reset clears the lock. Nothing to configure: it needs a mailer, and without
+# one a locked-out user waits out the window instead.
+
+# Check a chosen password against the public breach corpus, on registering,
+# changing and resetting. Off by default because it calls a third party.
+# k-anonymity: the password is hashed here and only the first five characters
+# of the hash are sent, so the service never learns which password was asked
+# about. It fails open, so an outage there cannot stop people signing up.
+PASSWORD_BREACH_CHECK=false
+
+# The sign-in shield's challenge tier, between "let it through" and "bar this
+# address". Set one of these and it starts working; leave them empty and the
+# tier stays dormant.
+SENTINEL_TURNSTILE_SECRET=
+SENTINEL_HCAPTCHA_SECRET=
+SENTINEL_RECAPTCHA_SECRET=
+
 # Require a confirmed email address before a password sign-in is accepted.
 # Leave false on an existing project: every current user has a NULL
 # email_verified_at and would be locked out the moment you switch it on.

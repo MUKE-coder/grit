@@ -66,18 +66,33 @@ export const AUTHENTICATION: SystemDesign = {
       },
       {
         q: 'Is a hard account lockout actually a good idea?',
-        a: 'It is the part of this design most open to challenge, and the honest answer is that it trades one attack for another. The key is an email address anybody can guess, so ten deliberate failures lock a known user out for fifteen minutes, and repeating it locks them out indefinitely. That is a denial of service delivered through a security feature. The better shape is a progressive delay: instant, then a second, then three, then ten. It collapses the attack rate just as effectively and there is no state an attacker can push somebody else into. This design has the hard lock today and the delay is listed as an improvement rather than described as done.',
+        a: 'It is the part of this design most open to challenge, because the key is an email address anybody can guess, so ten deliberate failures lock a known user out. What makes it survivable is the recovery: the owner is emailed when it happens, and a password reset clears the lock immediately. Without that the victim is refused with the same "invalid email or password" as everybody else, having no idea why, with no way back except waiting or an administrator. A graduated delay is the stronger answer and it has its own trap, which is the next question.',
+        see: 'bottlenecks',
+      },
+      {
+        q: 'Why not use progressive delays instead of locking?',
+        a: 'Because the obvious way to do it leaks. If the delay grows with that account failure count, then a slow response means the address exists and a fast one means it does not, and you have built a timing oracle into the thing that was carefully made uniform. It has to be keyed on the caller instead, which an attacker evades by rotating addresses. So a delay is a good complement and a poor replacement: it slows a single attacker, and the per-account lockout is still what catches a distributed one.',
         see: 'bottlenecks',
       },
       {
         q: 'Where do CAPTCHAs fit, and are they worth it?',
-        a: 'As a middle tier between no friction and a hard bar: after a couple of failures ask for a challenge, and only start barring if that also fails. Interactive puzzles are weak now, since solving services and vision models are cheap, and they annoy exactly the people who are not attacking. An invisible risk-based challenge, scoring the request from its telemetry, is the version worth having. Worth noting honestly: this design configures that tier and never wires a provider, so it is currently a setting that cannot fire.',
-        see: 'bottlenecks',
+        a: 'As a middle tier between no friction and a hard bar: after a couple of failures ask for a challenge, and only start barring if that also fails. Interactive puzzles are weak now, since solving services and vision models are cheap, and they annoy exactly the people who are not attacking. An invisible challenge that scores the request from its telemetry is the version worth having. Here the tier is wired to a provider through configuration, and if no provider is set it stays dormant rather than silently pretending to be a defence.',
+        see: 'stack',
       },
       {
-        q: 'What should you return when you refuse, and does it matter?',
-        a: 'A 429 with a Retry-After header. The status code alone tells a client it was refused but not when to come back, so it retries on its own schedule and makes things worse. The lockout already knows its own expiry, so putting it in the header is nearly free. This design currently returns the sentence and not the header, which is a small gap with a real cost: no client can back off correctly.',
-        see: 'bottlenecks',
+        q: 'What should you return when you refuse a sign-in, and does it matter?',
+        a: 'On the sign-in route, nothing that distinguishes the refusal: a locked account answers exactly like a wrong password, because a 429 saying "too many attempts" confirms the address exists and turns the form into a lookup service. You give up Retry-After to keep that uniform, which is the right trade. Once the password has been checked, on the second-factor route, the caller already knows the account exists, so naming the wait leaks nothing and Retry-After is sent there.',
+        see: 'api',
+      },
+      {
+        q: 'Your rules accept "Summer2024!". Is that a strong password?',
+        a: 'It passes every local rule and it is in every credential-stuffing list in existence, which is the point. Length and character variety measure shape, and shape is a weak proxy for compromise. Credential stuffing is not guessing, it is replaying known passwords, so the question that matters is whether this exact password already appears in a breach corpus. That check uses k-anonymity: the password is hashed locally and only the first five characters of the hash are sent, so the service never learns which password was asked about.',
+        see: 'requirements',
+      },
+      {
+        q: 'That check calls a third party on your registration path. What if it is down?',
+        a: 'It answers false and the registration proceeds, which is a deliberate choice about which failure is worse. Failing closed means somebody else outage stops every registration and every password change here, a self-inflicted incident caused by an advisory check. Failing open means that during the outage passwords are judged by the local rules alone, which is exactly where you started. It is also off by default and bounded by a short timeout, for the same reason.',
+        see: 'requirements',
       },
       {
         q: 'How do you avoid telling an attacker which email addresses are registered?',
@@ -175,7 +190,15 @@ export const AUTHENTICATION: SystemDesign = {
     },
     {
       label: 'No membership oracle',
-      text: 'an oracle here means anything that answers a question an attacker should not get to ask. A wrong password and an unknown address answer the same way, in the same time, so the login form cannot be used to discover which addresses are registered.',
+      text: 'an oracle here means anything that answers a question an attacker should not get to ask. A wrong password, an unknown address and a locked account all answer the same way, in the same time, so the login form cannot be used to discover which addresses are registered or what state they are in.',
+    },
+    {
+      label: 'Every lockout has a way out',
+      text: 'a lock keyed on something anybody can guess must not be a dead end. The owner is told it happened and given a link that clears it, through the mailbox, which is the one channel where saying so reveals nothing to whoever caused it.',
+    },
+    {
+      label: 'Advisory checks fail open',
+      text: 'the breach check calls a service this application does not run. If it is slow, broken or unreachable the password is allowed, because an outage elsewhere must not stop people registering or changing a password here.',
     },
   ],
 
@@ -356,6 +379,9 @@ export const AUTHENTICATION: SystemDesign = {
     ['Other credential routes', 'register 3/15min, forgot-password 3/15min, reset 5/15min, code verify 5/5min'],
     ['Per-address login shield', '5 failed sign-ins bars the address for 15 minutes'],
     ['Per-account lockout', '10 failed sign-ins bars the account for 15 minutes, database-backed so it survives a restart'],
+    ['Lockout recovery', 'the owner is emailed a reset link, and a completed reset clears the lock'],
+    ['Challenge tier', 'Turnstile, hCaptcha or reCAPTCHA, by configuration; dormant when none is set'],
+    ['Breach checking', 'optional, off by default: the chosen password checked against the public corpus by k-anonymity, failing open'],
     ['Shared counters', 'Redis when configured, so limits hold across replicas'],
     ['Client address', 'the forwarded chain walked from the right, past configured trusted proxies'],
     ['Reset tokens', 'single-use, hashed at rest, short expiry'],
@@ -578,16 +604,20 @@ export const AUTHENTICATION: SystemDesign = {
         text: 'token expiry is a comparison against the local clock. A replica whose clock has drifted will reject valid tokens or accept dead ones, and nothing in the logs will say so.',
       },
       {
-        label: 'The lockout is a weapon',
-        text: 'the per-account lockout is keyed on the email address, which anybody can guess. Ten deliberate failures against a known address bars that person for fifteen minutes, and repeating it bars them indefinitely. That is a denial of service delivered through a security feature, and it is the cost of a hard lock rather than a graduated one.',
+        label: 'The lockout can still be aimed at somebody',
+        text: 'the per-account lockout is keyed on an email address, which anybody can guess, so ten deliberate failures bar that person for fifteen minutes. Recovery is now immediate rather than a dead end, because the owner is emailed and a password reset clears the lock, but the nuisance is real: an attacker can still make somebody reset a password they did not want to change. A graduated delay would remove it entirely, at the cost of a timing signal that has to be keyed carefully.',
       },
       {
-        label: 'A refusal a client cannot act on',
-        text: 'the locked response is a 429 carrying a sentence a person can read and no Retry-After header. A well-behaved client has nothing machine-readable to back off against, so it retries on its own schedule and the refusals continue.',
+        label: 'The sign-in route cannot say why it refused',
+        text: 'a locked account answers exactly like a wrong password, because saying "locked" would confirm the address exists. That is the right call and it has a cost: no status code, no Retry-After, and nothing a client can back off against. The mailbox carries the explanation instead, which is the only channel where saying it leaks nothing.',
       },
       {
-        label: 'The challenge tier is configured and unreachable',
-        text: 'the login shield supports a middle tier that asks for a challenge before it starts barring addresses, and it defaults its threshold to half the failure limit. No challenge provider is wired in, so the tier can never fire: the configuration exists, does nothing, and is the kind of dead setting that reads as a working defence.',
+        label: 'Local password rules measure the wrong thing',
+        text: 'length, variety and a list of a few hundred obvious passwords all judge shape. "Summer2024!" passes every one of them and is in every credential-stuffing list there is. Shape is a weak proxy for whether a password is actually compromised, and the breach check that closes the gap is off by default because it calls a third party.',
+      },
+      {
+        label: 'Nothing escalates on an unusual sign-in',
+        text: 'a correct password from a new device in a new country is treated exactly like one from the usual laptop. The pieces for a risk score exist, since the device is already recognised for the second factor and the address is already geolocated, but nothing combines them into a decision to ask for more.',
       },
     ],
     improvements: [
@@ -617,19 +647,15 @@ export const AUTHENTICATION: SystemDesign = {
       },
       {
         label: 'Delay before you lock',
-        text: 'make the response slower with each failure rather than jumping from no friction to a fifteen minute wall. Instant, then a second, then three, then ten. A script attempting thousands of guesses is stopped just as effectively, because the attack rate is what collapses, while a person who mistyped twice barely notices and is never locked out by somebody else. It also removes the denial of service, because there is no state an attacker can push another account into.',
+        text: 'make each failure slower rather than jumping from no friction to a fifteen minute wall. A script is stopped just as well, because the attack rate collapses, and a person who mistyped twice barely notices. The subtlety that decides whether it is safe: keyed on the account it is a timing oracle, since a delay that only happens for real addresses announces which addresses are real. It has to be keyed on the caller, where it costs an attacker nothing to evade by rotating addresses, which is why it is a complement to the lockout rather than a replacement for it.',
       },
       {
-        label: 'Wire the challenge or drop the tier',
-        text: 'the middle tier is the right shape, sitting between no friction and a hard bar, and it needs a provider to be anything at all. An invisible challenge that scores the request from its telemetry keeps the friction off real users while costing an automated client the thing it cannot cheaply buy. Configuration that cannot fire should not be left looking like a defence.',
+        label: 'Risk-based step-up rather than a uniform challenge',
+        text: 'score the sign-in from what is already known, which is the recognised device, the address and its location, and the velocity of attempts, then ask for more only when the score is poor. A correct password from a new device in a new country is the case worth interrupting. Everything needed is already collected for other reasons; nothing currently combines it.',
       },
       {
-        label: 'Send Retry-After',
-        text: 'the lockout already knows exactly when it expires, so putting that number in the header costs one line and turns a refusal into something a client can cooperate with rather than guess at.',
-      },
-      {
-        label: 'Unlock by email as well as by waiting',
-        text: 'a locked-out user with no way back in except a timer will contact support or give up. A single-use link sent to the address on the account lets the real owner clear the lock immediately, which an attacker cannot do, and it makes a longer lockout acceptable because it is no longer a dead end.',
+        label: 'Tell the owner, through the one channel that leaks nothing',
+        text: 'the sign-in response must stay uniform, so the explanation goes to the mailbox: somebody has been trying, here is a link that lets you back in now. The attacker cannot read it and the owner learns both facts at once. This is what turns a lockout from a wall into an event with a remedy.',
       },
     ],
   },

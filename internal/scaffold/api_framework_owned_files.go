@@ -40,6 +40,7 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// 72-byte ceiling every existing project kept answering 500 for a long
 		// passphrase, which is the error the ceiling exists to prevent.
 		filepath.Join(apiRoot, "internal", "password", "password.go"): apiPasswordRulesGo(),
+		filepath.Join(apiRoot, "internal", "password", "breach.go"): apiPasswordBreachGo(),
 
 		// The webhook cluster. The model, the receiver that builds it and the
 		// dispatch package all read the same columns, so upgrading one without

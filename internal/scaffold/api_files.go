@@ -80,7 +80,9 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "activity.go"):             apiActivityMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "activity_read_test.go"):   apiActivityReadTestGo(),
 		filepath.Join(apiRoot, "internal", "password", "password.go"):               apiPasswordRulesGo(),
+		filepath.Join(apiRoot, "internal", "password", "breach.go"):               apiPasswordBreachGo(),
 		filepath.Join(apiRoot, "internal", "password", "password_test.go"):          apiPasswordRulesTestGo(),
+		filepath.Join(apiRoot, "internal", "password", "breach_test.go"):            apiPasswordBreachTestGo(),
 		filepath.Join(apiRoot, "internal", "audit", "audit.go"):                     apiAuditGo(),
 		filepath.Join(apiRoot, "internal", "audit", "chain_test.go"):                apiAuditChainTestGo(),
 		filepath.Join(apiRoot, "internal", "cluster", "cluster.go"):                 apiClusterGo(),
@@ -784,6 +786,7 @@ import (
 	"golang.org/x/net/publicsuffix"
 
 	"{{MODULE}}/internal/crypto"
+	"{{MODULE}}/internal/password"
 )
 
 // StorageConfig holds credentials for a single S3-compatible provider.
@@ -931,6 +934,11 @@ type Config struct {
 	// TOTP (Two-Factor Authentication)
 	TOTPIssuer string
 	RequireEmailVerification bool
+	// PasswordBreachCheck asks the public breach corpus whether a chosen
+	// password is already on the lists attackers replay. Off by default: it is
+	// a call to a third party, and it fails open when that call does not
+	// answer, so switching it on cannot take registration down.
+	PasswordBreachCheck bool
 	LoginMaxAttempts         int
 	LoginLockoutWindow       time.Duration
 
@@ -940,6 +948,17 @@ type Config struct {
 	SentinelPassword       string
 	SentinelSecretKey      string
 	SentinelAuditKey       string
+	// The challenge provider for the sign-in shield's middle tier, which sits
+	// between "no friction" and "this address is barred".
+	//
+	// Sentinel sets that tier's threshold by default (half the failure limit)
+	// whether or not a provider exists, and validates only for more than one
+	// provider configured, never for none. So with these empty the tier is
+	// configured, unreachable, and silent about it: set one of them and the
+	// tier starts doing the job it is already configured to do.
+	SentinelTurnstileSecret string
+	SentinelHCaptchaSecret  string
+	SentinelRecaptchaSecret string
 	// Sentinel v2.0 — CIDRs allowed to send X-Forwarded-For / X-Real-IP.
 	// Empty (default) means "ignore those headers entirely" — safe when
 	// the app speaks to the public internet directly; populate when
@@ -1039,6 +1058,7 @@ func Load() (*Config, error) {
 		// project would lock out every user at once, because they all have a
 		// NULL email_verified_at.
 		RequireEmailVerification: getEnv("REQUIRE_EMAIL_VERIFICATION", "false") == "true",
+		PasswordBreachCheck:      getEnv("PASSWORD_BREACH_CHECK", "false") == "true",
 		LoginMaxAttempts:   getEnvInt("LOGIN_MAX_ATTEMPTS", 10),
 		LoginLockoutWindow: getEnvDuration("LOGIN_LOCKOUT_MINUTES", 15, time.Minute),
 
@@ -1047,6 +1067,9 @@ func Load() (*Config, error) {
 		SentinelPassword:       getEnv("SENTINEL_PASSWORD", "sentinel"),
 		SentinelSecretKey:      getEnv("SENTINEL_SECRET_KEY", "sentinel-secret-change-me"),
 		SentinelAuditKey:       getEnv("SENTINEL_AUDIT_KEY", ""),
+		SentinelTurnstileSecret: getEnv("SENTINEL_TURNSTILE_SECRET", ""),
+		SentinelHCaptchaSecret:  getEnv("SENTINEL_HCAPTCHA_SECRET", ""),
+		SentinelRecaptchaSecret: getEnv("SENTINEL_RECAPTCHA_SECRET", ""),
 		` + configSentinelProxiesNew + `
 
 		PulseEnabled:    getEnv("PULSE_ENABLED", "true") == "true",
@@ -1079,6 +1102,11 @@ func Load() (*Config, error) {
 	if err := crypto.InitFieldKey(cfg.FieldEncryptionKey); err != nil {
 		return nil, err
 	}
+
+	// Advisory, and off unless asked for. Unlike the key above there is
+	// nothing to fail fast about: the check reports its own unavailability and
+	// carries on.
+	password.SetBreachCheck(cfg.PasswordBreachCheck)
 
 	// Parse durations
 	accessExpiry, err := time.ParseDuration(getEnv("JWT_ACCESS_EXPIRY", "15m"))
@@ -7435,8 +7463,20 @@ func mountSentinel(r *gin.Engine, db *gorm.DB, cfg *config.Config, svc *Services
 			AuthShield: sentinel.AuthShieldConfig{
 				Enabled:    !isDev,
 				LoginRoute: "/api/" + APIVersion + "/auth/login",
-				// v2.0 CAPTCHA tier sits between soft and hard thresholds.
-				// Wire a provider by setting CaptchaProvider in your app code.
+				// The CAPTCHA tier sits between "let it through" and "bar this
+				// address". Sentinel gives it a threshold of its own accord
+				// (half the failure limit), so it is configured whether or not
+				// a provider exists, and it validates only for more than one
+				// provider, never for none. Set SENTINEL_TURNSTILE_SECRET or
+				// one of its siblings below and the tier starts working; leave
+				// them empty and it stays configured and unreachable.
+			},
+			// Passing these is what makes the tier above reachable. Empty
+			// strings are the same as not setting them at all.
+			CAPTCHA: sentinel.CAPTCHAConfig{
+				TurnstileSecret: cfg.SentinelTurnstileSecret,
+				HCaptchaSecret:  cfg.SentinelHCaptchaSecret,
+				RecaptchaSecret: cfg.SentinelRecaptchaSecret,
 			},
 			Anomaly: sentinel.AnomalyConfig{Enabled: !isDev},
 			Geo:     sentinel.GeoConfig{Enabled: !isDev},

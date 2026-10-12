@@ -66,6 +66,86 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.396.0 */}
+            <div className="mb-12" id="v3.396.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.396.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A lockout you can get out of</h3>
+                <p>
+                  The account lockout bars an address after ten wrong passwords. It is keyed on an
+                  email address, which anybody can guess, so anybody could lock anybody else out.
+                  The victim&apos;s obvious move, resetting their password, left the lock in place:
+                  they were refused with the same &ldquo;invalid email or password&rdquo; as
+                  before, having just set the password themselves. The only ways out were waiting
+                  or an administrator.
+                </p>
+                <p>
+                  A completed reset now clears the lock. Proving you can read the mailbox is
+                  strictly stronger evidence than waiting fifteen minutes.
+                </p>
+                <p>
+                  The owner is also told. Over HTTP there is nothing to say, because
+                  &ldquo;this account is locked&rdquo; confirms the address exists and the sign-in
+                  route answers every failure identically on purpose. The mailbox is the one
+                  channel where saying it leaks nothing, so that is where it is said: somebody has
+                  been trying, here is a link that lets you back in now. It is sent off the request
+                  path, and keyed on the lock rather than the attempt, so a run of failures does
+                  not send a run of emails.
+                </p>
+
+                <h3>Passwords checked against the breach corpus</h3>
+                <p>
+                  The password rules measured shape: long enough, mixed enough, not one of a few
+                  hundred obvious ones. <code>Summer2024!</code> passes all of them and is in every
+                  credential-stuffing list in the world. Shape is a weak proxy for whether a
+                  password is actually compromised, because credential stuffing is not guessing, it
+                  is replaying known passwords.
+                </p>
+                <p>
+                  <code>PASSWORD_BREACH_CHECK=true</code> checks the chosen password against the
+                  public corpus when registering, changing and resetting. It uses k-anonymity: the
+                  password is hashed locally and only the first five characters of that hash are
+                  sent, so the service never learns which password was asked about and never sees
+                  the password.
+                </p>
+                <p>
+                  Off by default, and it fails open. It calls a third party, and failing closed
+                  would mean somebody else&apos;s outage stops every registration here, which is a
+                  self-inflicted incident caused by an advisory check. Five tests cover that
+                  behaviour, including the endpoint being unreachable.
+                </p>
+
+                <h3>The challenge tier can now fire</h3>
+                <p>
+                  Sentinel&apos;s sign-in shield has a middle tier that asks for a challenge before
+                  it starts barring addresses, and it sets that tier&apos;s threshold of its own
+                  accord whether or not a provider exists. No provider was ever wired in, and
+                  Sentinel validates only for more than one provider configured, never for none. So
+                  the tier was configured, unreachable, and silent about it.
+                </p>
+                <p>
+                  <code>SENTINEL_TURNSTILE_SECRET</code> and its hCaptcha and reCAPTCHA siblings are
+                  now passed through. Set one and the tier works; leave them empty and it stays
+                  dormant rather than looking like a defence.
+                </p>
+
+                <h3>Retry-After, where it is safe to send it</h3>
+                <p>
+                  The second-factor route refuses a locked account with a 429 and now says when to
+                  come back. The sign-in route deliberately does not: there, naming the wait would
+                  confirm the address exists, so a locked account still answers exactly like a wrong
+                  password. Once the password has been checked the caller already knows the account
+                  exists, and the header leaks nothing.
+                </p>
+              </div>
+            </div>
+
             {/* v3.395.0 */}
             <div className="mb-12" id="v3.395.0">
               <div className="flex items-center gap-3 mb-4">

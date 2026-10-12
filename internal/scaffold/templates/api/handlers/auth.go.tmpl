@@ -153,6 +153,14 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		respond.Fail(c, respond.CodeValidationError, password.Message(failed))
 		return
 	}
+	// The local rules judge shape. This asks whether the exact password is
+	// already on the lists attackers replay, which shape cannot tell you.
+	// Off unless PASSWORD_BREACH_CHECK is set, and it answers false whenever
+	// it cannot reach a definite yes.
+	if password.Breached(c.Request.Context(), req.Password) {
+		respond.Fail(c, respond.CodeValidationError, password.BreachMessage)
+		return
+	}
 
 	user := models.User{
 		FirstName:  req.FirstName,
