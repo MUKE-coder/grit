@@ -41,6 +41,8 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// passphrase, which is the error the ceiling exists to prevent.
 		filepath.Join(apiRoot, "internal", "password", "password.go"): apiPasswordRulesGo(),
 		filepath.Join(apiRoot, "internal", "password", "breach.go"): apiPasswordBreachGo(),
+		filepath.Join(apiRoot, "internal", "services", "jwtkeys.go"): apiJWTKeysGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "jwks.go"): apiJWKSHandlerGo(),
 
 		// The webhook cluster. The model, the receiver that builds it and the
 		// dispatch package all read the same columns, so upgrading one without

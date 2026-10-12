@@ -81,8 +81,12 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "activity_read_test.go"):   apiActivityReadTestGo(),
 		filepath.Join(apiRoot, "internal", "password", "password.go"):               apiPasswordRulesGo(),
 		filepath.Join(apiRoot, "internal", "password", "breach.go"):               apiPasswordBreachGo(),
+		filepath.Join(apiRoot, "internal", "services", "jwtkeys.go"):               apiJWTKeysGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "jwks.go"):               apiJWKSHandlerGo(),
 		filepath.Join(apiRoot, "internal", "password", "password_test.go"):          apiPasswordRulesTestGo(),
 		filepath.Join(apiRoot, "internal", "password", "breach_test.go"):            apiPasswordBreachTestGo(),
+		filepath.Join(apiRoot, "internal", "services", "jwtkeys_test.go"):            apiJWTKeysTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "jwks_test.go"):            apiJWKSHandlerTestGo(),
 		filepath.Join(apiRoot, "internal", "audit", "audit.go"):                     apiAuditGo(),
 		filepath.Join(apiRoot, "internal", "audit", "chain_test.go"):                apiAuditChainTestGo(),
 		filepath.Join(apiRoot, "internal", "cluster", "cluster.go"):                 apiClusterGo(),
@@ -890,6 +894,20 @@ type Config struct {
 	DatabaseURL string
 
 	JWTSecret        string
+	// Asymmetric signing, opt-in. With JWTPrivateKey set the API signs RS256
+	// and publishes the public half at /.well-known/jwks.json, so another
+	// service can verify without holding anything that can mint. Empty leaves
+	// signing on the shared secret above.
+	//
+	// Either a PEM block or a path to one. JWTPreviousPublicKey keeps tokens
+	// signed by the key being retired verifiable until they expire.
+	JWTPrivateKey        string
+	JWTPreviousPublicKey string
+	// Written into every token and checked on every token that carries them.
+	// Empty means neither is written, which is the behaviour before they
+	// existed.
+	JWTIssuer   string
+	JWTAudience string
 	JWTAccessExpiry  time.Duration
 	JWTRefreshExpiry time.Duration
 
@@ -1015,6 +1033,11 @@ func Load() (*Config, error) {
 		JWTSecret:   getEnv("JWT_SECRET", ""),
 		FieldEncryptionKey: getEnv("FIELD_ENCRYPTION_KEY", ""),
 		RedisURL:    resolveRedisURL(),
+
+		JWTPrivateKey:        getEnv("JWT_PRIVATE_KEY", ""),
+		JWTPreviousPublicKey: getEnv("JWT_PREVIOUS_PUBLIC_KEY", ""),
+		JWTIssuer:            getEnv("JWT_ISSUER", ""),
+		JWTAudience:          getEnv("JWT_AUDIENCE", ""),
 
 		StorageDriver: storageDriver,
 ` + configStorageDisksLoad + `
@@ -7642,9 +7665,20 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 ` + routesDocsBlock + llmsRoutesBlock + `
 	mountPulse(r, db, cfg, svc)
 
+	// How tokens are signed. A bad key fails the boot: signing with something
+	// other than what was configured is worse than refusing to start.
+	signingKeys, err := services.LoadSigningKeys(cfg.JWTSecret, cfg.JWTPrivateKey, cfg.JWTPreviousPublicKey, cfg.JWTIssuer, cfg.JWTAudience)
+	if err != nil {
+		log.Fatalf("token signing: %v", err)
+	}
+	if signingKeys.Algorithm == "RS256" {
+		log.Printf("Tokens signed RS256, key %s, published at /.well-known/jwks.json", signingKeys.CurrentKID())
+	}
+
 	// Auth service
 	authService := &services.AuthService{
 		Secret:        cfg.JWTSecret,
+		Keys:          signingKeys,
 		AccessExpiry:  cfg.JWTAccessExpiry,
 		RefreshExpiry: cfg.JWTRefreshExpiry,
 		// Sessions are checked on every access token, so logging out, signing out
@@ -7809,6 +7843,14 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// desktop client's heartbeat, which are configured outside this repo.
 ` + healthCheckBlock + `	r.GET("/api/health", healthCheck)
 	r.GET("/api/"+APIVersion+"/health", healthCheck)
+
+	// The public keys that verify this API's tokens, so another service can
+	// check them without holding anything that can mint one. Unauthenticated,
+	// because everything it serves is public by construction, and present even
+	// on a shared secret, where it serves an empty set: a verifier then learns
+	// "this issuer publishes nothing" rather than "this URL is wrong".
+	jwksHandler := &handlers.JWKSHandler{Keys: signingKeys}
+	r.GET("/.well-known/jwks.json", jwksHandler.Serve)
 
 ` + routesRealtimeRouteNew + `
 	// Public webhook receiver — no auth on the route itself; each

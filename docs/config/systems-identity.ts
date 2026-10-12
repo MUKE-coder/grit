@@ -106,8 +106,33 @@ export const AUTHENTICATION: SystemDesign = {
       },
       {
         q: 'How do other services check the token without calling your auth service?',
-        a: 'That is the property a JWT is bought for. The token carries its claims (who the user is, their role, when it expires) and a signature over them. Any service holding the key can recompute that signature and know the contents were not altered, using only processor time and the clock. Nothing is called and nothing is looked up. With a shared secret, as here, every service needs that secret, so the usual step for a larger estate is to sign with a private key and let services verify with the matching public one, which means a leaked verifier cannot mint tokens.',
+        a: 'That is the property a JWT is bought for. The token carries its claims (who the user is, their role, when it expires) and a signature over them. Any service holding the key can recompute that signature and know the contents were not altered, using only processor time and the clock. Nothing is called and nothing is looked up.',
         see: 'high-level-design',
+      },
+      {
+        q: 'With a shared secret, every service that can verify can also mint. Is that not a problem?',
+        a: 'It is the reason asymmetric signing exists. HMAC verification needs the same key that signs, so in an estate of a dozen services each one holds something that can forge an administrator token, and the blast radius of the least important one being compromised is all of them. Signing with a private key and verifying with the public half fixes it: a verifier holds something that provably cannot sign. Here a shared secret is the default, because for one service it is one environment variable and nothing to distribute, and setting a private key switches to RS256.',
+        see: 'stack',
+      },
+      {
+        q: 'How do services get the public key, and how do you rotate it?',
+        a: 'From a published key set, at /.well-known/jwks.json. Hardcoding the key into every service turns rotation into a synchronised redeploy of the whole estate, which in practice means it never happens. Services fetch the set, cache it, and refetch when a token names a key id they have not seen, so a new key propagates on its own. The key id is derived from the key itself rather than configured, so the id in a token and the id in the published set cannot disagree.',
+        see: 'stack',
+      },
+      {
+        q: 'During a rotation, what happens to tokens signed with the old key?',
+        a: 'They keep working until they expire, because the previous public key stays in the published set and stays accepted. Without that, the moment you switch keys every token in circulation becomes invalid and everybody is signed out. You drop the old key once one refresh lifetime has passed, which is the point at which nothing signed by it can still be live.',
+        see: 'stack',
+      },
+      {
+        q: 'What is the algorithm confusion attack?',
+        a: 'You publish a public key on purpose. An attacker takes it, signs a token using it as an HMAC secret, and sets the header to HS256. A verifier that reads the algorithm out of the token and picks its key accordingly then verifies an attacker-minted token with a key it was handed publicly. The defence is to pin the accepted algorithm to what you actually sign with rather than trusting the header, which is one line and the difference between a working system and a forgeable one.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'What stops a token minted for staging working on production?',
+        a: 'The issuer and audience claims, when they are set. Without them a token is valid anywhere that holds the same key, which is exactly what happens when a secret is copied between environments or two products share a signing key. They are written when configured and checked only when the token carries them, so switching them on does not invalidate tokens already in circulation.',
+        see: 'requirements',
       },
       {
         q: 'What is the difference between authentication and authorization?',
@@ -369,7 +394,10 @@ export const AUTHENTICATION: SystemDesign = {
   },
 
   stack: [
-    ['Token format', 'JWT, HS256, signed with JWT_SECRET'],
+    ['Token format', 'JWT, HS256 on a shared secret by default'],
+    ['Multi-service signing', 'RS256 with a private key, opt-in; the public half published at /.well-known/jwks.json'],
+    ['Key rotation', 'a kid per key derived from the key itself, with the previous public key accepted while tokens age out'],
+    ['Issuer and audience', 'written when configured, checked when present'],
     ['Password hashing', 'bcrypt, cost 10 (about 60 ms per hash)'],
     ['Session storage', 'the primary database, one row per device'],
     ['Transport', 'Authorization: Bearer, plus HttpOnly cookies for browsers'],
@@ -596,8 +624,8 @@ export const AUTHENTICATION: SystemDesign = {
         text: 'without a sweep, revoked and expired rows accumulate forever, and the unique index on token_hash grows along with them.',
       },
       {
-        label: 'Secret rotation',
-        text: 'changing JWT_SECRET invalidates every access token at once. With a single key there is no way to roll it without signing everybody out, which means in practice it never gets rotated.',
+        label: 'Rotating a shared secret signs everybody out',
+        text: 'changing JWT_SECRET invalidates every token at once, so in practice it never gets rotated. Asymmetric signing has an answer, since the previous public key can stay accepted while tokens age out, and a shared secret does not: there is only one value and it both signs and verifies.',
       },
       {
         label: 'Clock skew',
@@ -640,10 +668,6 @@ export const AUTHENTICATION: SystemDesign = {
       {
         label: 'A small leeway on expiry',
         text: 'allowing a few seconds of clock skew on the expiry comparison removes a whole class of failure that is otherwise invisible until a replica drifts.',
-      },
-      {
-        label: 'Asymmetric signing for many services',
-        text: 'with a shared secret, every service that verifies a token could also mint one. Signing with a private key and verifying with the public one means a compromised service can check tokens and not forge them.',
       },
       {
         label: 'Delay before you lock',

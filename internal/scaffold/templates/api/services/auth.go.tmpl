@@ -24,6 +24,11 @@ type AuthService struct {
 	AccessExpiry  time.Duration
 	RefreshExpiry time.Duration
 
+	// Keys decides how tokens are signed and verified. Nil falls back to
+	// Secret as an HS256 key, which is what a project that has never
+	// configured anything else gets, and what the test helpers construct.
+	Keys *SigningKeys
+
 	// DB is where sessions live. When it is set, an access token is refused as
 	// soon as its session is revoked, rather than when the token expires.
 	DB *gorm.DB
@@ -121,12 +126,19 @@ func (s *AuthService) ValidateRefreshToken(tokenString string) (*Claims, error) 
 // ValidateToken checks a token's signature and expiry, and nothing about what
 // kind of token it is. Prefer ValidateAccessToken or ValidateRefreshToken.
 func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
+	keys := s.keys()
+
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		// The method is pinned by WithValidMethods below, which is what closes
+		// algorithm confusion: without it, an attacker signs a token with the
+		// published public key as an HMAC secret and a parser that trusts the
+		// header's alg accepts it.
+		if token.Method.Alg() != keys.Method().Alg() {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(s.Secret), nil
-	}, jwt.WithValidMethods([]string{"HS256"}), jwt.WithExpirationRequired())
+		kid, _ := token.Header["kid"].(string)
+		return keys.VerifyKey(kid)
+	}, jwt.WithValidMethods(keys.ValidMethods()), jwt.WithExpirationRequired())
 
 	if err != nil {
 		return nil, fmt.Errorf("parsing token: %w", err)
@@ -137,7 +149,45 @@ func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
 		return nil, fmt.Errorf("invalid token")
 	}
 
+	// Issuer and audience, checked only when this deployment declares them and
+	// only when the token carries them.
+	//
+	// Tolerating a missing claim is what lets these be switched on without
+	// signing everybody out: tokens minted before the change have neither, and
+	// they age out within one refresh lifetime. A token that does carry one
+	// must match, which is the case that matters, because it is how a token
+	// minted for staging is refused by production.
+	if keys.Issuer != "" && claims.Issuer != "" && claims.Issuer != keys.Issuer {
+		return nil, fmt.Errorf("token issued by %q, not %q", claims.Issuer, keys.Issuer)
+	}
+	if keys.Audience != "" && len(claims.Audience) > 0 && !hasAudience(claims.Audience, keys.Audience) {
+		return nil, fmt.Errorf("token is not addressed to %q", keys.Audience)
+	}
+
 	return claims, nil
+}
+
+// hasAudience reports whether want is among the token's audiences. The claim is
+// a list because a token may legitimately address several services at once.
+func hasAudience(audiences jwt.ClaimStrings, want string) bool {
+	for _, a := range audiences {
+		if a == want {
+			return true
+		}
+	}
+	return false
+}
+
+// keys is the signing configuration, falling back to Secret as an HS256 key.
+//
+// The fallback is what keeps a zero-value AuthService working: the test
+// helpers build one with a Secret and nothing else, and so does any project
+// that has never configured signing.
+func (s *AuthService) keys() *SigningKeys {
+	if s.Keys != nil {
+		return s.Keys
+	}
+	return &SigningKeys{Algorithm: "HS256", secret: []byte(s.Secret)}
 }
 
 // GenerateResetToken creates a random hex token for password resets.
@@ -161,21 +211,40 @@ func (s *AuthService) generateToken(userID, email, role, tokenType, sessionID st
 		return "", 0, fmt.Errorf("generating token id: %w", err)
 	}
 
+	keys := s.keys()
+
+	registered := jwt.RegisteredClaims{
+		ID:        jti,
+		ExpiresAt: jwt.NewNumericDate(expiresAt),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+	}
+	// Who minted this and who it is for. Written only when configured, because
+	// a claim nobody checks is noise, and checked only when written, so turning
+	// them on does not invalidate tokens already in circulation.
+	if keys.Issuer != "" {
+		registered.Issuer = keys.Issuer
+	}
+	if keys.Audience != "" {
+		registered.Audience = jwt.ClaimStrings{keys.Audience}
+	}
+
 	claims := &Claims{
 		UserID:    userID,
 		Email:     email,
 		Role:      role,
 		TokenType: tokenType,
 		SessionID: sessionID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ID:        jti,
-			ExpiresAt: jwt.NewNumericDate(expiresAt),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
+		RegisteredClaims: registered,
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(s.Secret))
+	token := jwt.NewWithClaims(keys.Method(), claims)
+	// The key id, so a verifier holding several published keys knows which one
+	// to check against. Without it, rotation means trying every key in turn and
+	// a failure is indistinguishable from a forged token.
+	if kid := keys.CurrentKID(); kid != "" {
+		token.Header["kid"] = kid
+	}
+	tokenString, err := token.SignedString(keys.SignKey())
 	if err != nil {
 		return "", 0, err
 	}

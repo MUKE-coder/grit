@@ -251,6 +251,31 @@ JWT_SECRET=%s
 JWT_ACCESS_EXPIRY=15m
 JWT_REFRESH_EXPIRY=168h
 
+# Who minted a token and who it is for. Written into every token and checked
+# on every token that carries them, so a token from staging is refused by
+# production even if they share a secret. Safe to turn on at any time: tokens
+# already issued carry neither and keep working until they expire.
+JWT_ISSUER=
+JWT_AUDIENCE=
+
+# Asymmetric signing, for when another service has to verify these tokens.
+#
+# With a shared secret, every service that can verify can also mint, so one
+# compromised service can forge an administrator token for all of them. Set a
+# private key here and the API signs RS256 and publishes only the public half
+# at /.well-known/jwks.json, which verifies and cannot sign.
+#
+# Generate one with:
+#   openssl genrsa -out jwt-private.pem 2048
+# Then either point at the file or paste the PEM block inline.
+JWT_PRIVATE_KEY=
+# During a rotation, the public half of the key you are retiring. Tokens it
+# signed stay verifiable until they expire, instead of everyone being signed
+# out at the moment of the switch. Remove it once one refresh lifetime has
+# passed. Get it with:
+#   openssl rsa -in jwt-private-old.pem -pubout
+JWT_PREVIOUS_PUBLIC_KEY=
+
 # OAuth2 — Social Login (Google + GitHub)
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
@@ -566,6 +591,31 @@ JWT_SECRET=change-me-to-a-random-string-at-least-32-chars
 `+fieldEncryptionKeyComment+`FIELD_ENCRYPTION_KEY=CHANGE_ME
 JWT_ACCESS_EXPIRY=15m
 JWT_REFRESH_EXPIRY=168h
+
+# Who minted a token and who it is for. Written into every token and checked
+# on every token that carries them, so a token from staging is refused by
+# production even if they share a secret. Safe to turn on at any time: tokens
+# already issued carry neither and keep working until they expire.
+JWT_ISSUER=
+JWT_AUDIENCE=
+
+# Asymmetric signing, for when another service has to verify these tokens.
+#
+# With a shared secret, every service that can verify can also mint, so one
+# compromised service can forge an administrator token for all of them. Set a
+# private key here and the API signs RS256 and publishes only the public half
+# at /.well-known/jwks.json, which verifies and cannot sign.
+#
+# Generate one with:
+#   openssl genrsa -out jwt-private.pem 2048
+# Then either point at the file or paste the PEM block inline.
+JWT_PRIVATE_KEY=
+# During a rotation, the public half of the key you are retiring. Tokens it
+# signed stay verifiable until they expire, instead of everyone being signed
+# out at the moment of the switch. Remove it once one refresh lifetime has
+# passed. Get it with:
+#   openssl rsa -in jwt-private-old.pem -pubout
+JWT_PREVIOUS_PUBLIC_KEY=
 
 # ─── Redis (Upstash — https://upstash.com) ─────────────
 # Create a free Redis database at upstash.com, copy the Redis URL

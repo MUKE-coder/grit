@@ -66,6 +66,78 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.397.0 */}
+            <div className="mb-12" id="v3.397.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.397.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Tokens another service can verify but not forge</h3>
+                <p>
+                  Tokens were signed HS256 with a shared secret, which is right for one service
+                  and stops being right as soon as a second one has to verify them. HMAC
+                  verification needs the same key that signs, so every service that can check a
+                  token can also mint one: in an estate of a dozen services, each holds something
+                  that forges an administrator token, and the blast radius of the least important
+                  one being compromised is all of them.
+                </p>
+                <p>
+                  Set <code>JWT_PRIVATE_KEY</code> and the API signs RS256 and publishes only the
+                  public half at <code>/.well-known/jwks.json</code>. A verifier holding that can
+                  check every token and provably cannot sign one. The shared secret remains the
+                  default, because for a single service it is one environment variable with nothing
+                  to distribute.
+                </p>
+
+                <h3>Rotation that does not sign everybody out</h3>
+                <p>
+                  Each key gets an id derived from the key itself, per RFC 7638, so the id in a
+                  token and the id in the published set cannot disagree and a new key gets a new id
+                  without anybody remembering to change one. Tokens carry it in the header, and a
+                  verifier that meets an id it has not seen refetches the set.
+                </p>
+                <p>
+                  <code>JWT_PREVIOUS_PUBLIC_KEY</code> keeps the key you are retiring in the
+                  published set and accepted, so tokens it signed stay valid until they expire
+                  rather than everybody being signed out at the moment of the switch. Drop it once
+                  one refresh lifetime has passed.
+                </p>
+
+                <h3>Issuer and audience</h3>
+                <p>
+                  <code>JWT_ISSUER</code> and <code>JWT_AUDIENCE</code> are written into every token
+                  and checked on every token that carries them. That is what stops a token minted
+                  for staging being accepted by production when a secret has been copied between
+                  them. Checked only when present, so turning them on does not invalidate tokens
+                  already in circulation: those carry neither and age out within one refresh
+                  lifetime.
+                </p>
+
+                <h3>What the live check proved</h3>
+                <p>
+                  A generated project was stood up with an RSA key, a user registered, and the
+                  access token it issued verified using nothing but what the JWKS endpoint
+                  publishes. Then the algorithm confusion attack: a token signed HS256 using the
+                  published modulus as the shared secret, which a verifier that trusts the
+                  header&apos;s <code>alg</code> would accept. It is refused with a 401, because the
+                  accepted algorithm is pinned to what the deployment actually signs with rather
+                  than read out of the token.
+                </p>
+                <p>
+                  Using it also found a bad error message. A key path that does not resolve was
+                  reported as &ldquo;invalid key: must be PEM encoded&rdquo;, which says nothing
+                  about the real mistake, and the real mistake is nearly always a relative path
+                  resolved against the wrong directory: the server runs from the API directory, so
+                  a path that works for a CLI command from the project root does not. It now names
+                  the variable, the value and where it looked.
+                </p>
+              </div>
+            </div>
+
             {/* v3.396.0 */}
             <div className="mb-12" id="v3.396.0">
               <div className="flex items-center gap-3 mb-4">
