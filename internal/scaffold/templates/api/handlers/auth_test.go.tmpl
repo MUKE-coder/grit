@@ -61,6 +61,12 @@ func newTestDB(tb testing.TB) *gorm.DB {
 		&models.User{},
 		&models.Session{},
 		&models.UserActivity{},
+		// Registering issues a verification token. Without this table every
+		// register in the suite logged "no such table" and did the work twice
+		// over: the tests still passed, because a verification token that
+		// cannot be stored is logged rather than fatal, so the noise sat in
+		// the output for a long time looking like something else's problem.
+		&models.EmailVerificationToken{},
 	))
 	return db
 }

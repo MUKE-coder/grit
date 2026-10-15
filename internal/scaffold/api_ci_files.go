@@ -355,5 +355,20 @@ jobs:
         run: go vet ./...
       - name: Test
         run: go test -race ./...
+      # Allocation budgets, run without -race.
+      #
+      # The race detector allocates on its own account, so counts taken under
+      # it are not the counts your users get and would fail the budgets for a
+      # reason that has nothing to do with your code. The budgets live in
+      # internal/handlers/perf_test.go and say what each path costs and why it
+      # is worth watching.
+      - name: Allocation budgets
+        run: go test -run TestAllocationBudgets -count=1 ./internal/handlers/
+      # Benchmarks are compiled but not measured here. Timing a shared CI
+      # runner tells you about the runner, so this only proves they still
+      # build and run; the allocation budgets above are the part that can
+      # actually fail on a regression.
+      - name: Benchmarks compile and run
+        run: go test -run XXX -bench . -benchtime 1x ./internal/handlers/
 `+web)
 }

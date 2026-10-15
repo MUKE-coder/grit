@@ -66,6 +66,64 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.399.0 */}
+            <div className="mb-12" id="v3.399.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.399.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Allocation budgets, so a performance regression fails a build</h3>
+                <p>
+                  Generated projects shipped three benchmarks and nothing that ran them. A
+                  benchmark tells you how long something took on the machine that ran it, which on
+                  a shared CI runner is a number that moves on its own, so it cannot fail a build
+                  honestly. An allocation count can: the same code allocates the same number of
+                  times on every machine, every run.
+                </p>
+                <p>
+                  <code>internal/handlers/perf_test.go</code> now asserts a budget on three paths
+                  that run on every request or every list request: verifying an access token,
+                  binding list parameters, and writing a list response. They measure 41, 40 and 36
+                  allocations today, with budgets set above that so an ordinary refactor passes and
+                  a change in kind does not. CI runs them without <code>-race</code>, because the
+                  race detector allocates on its own account and the resulting counts are not the
+                  ones your users get.
+                </p>
+                <p>
+                  When one fails it names the path, both numbers, and why that path is worth
+                  watching, and says that raising the budget in the same commit is a legitimate
+                  answer. The point is to make the new number a decision somebody recorded rather
+                  than a drift nobody saw.
+                </p>
+
+                <h3>What the profiler actually found</h3>
+                <p>
+                  The budgets are not a guess. Profiling a freshly generated API with{' '}
+                  <code>-cpuprofile</code> and <code>-memprofile</code> put{' '}
+                  <code>runtime.mallocgc</code> at 15% cumulative and <code>scanObject</code> at
+                  11%, with JSON rendering at 14.75% and <code>reflect.unsafe_New</code> the
+                  largest single source of allocated objects. Excluding bcrypt, which is
+                  deliberately slow, allocation pressure and the garbage collection it causes are
+                  the dominant cost. That is the thing worth a budget, so that is what got one.
+                </p>
+
+                <h3>A benchmark that had been failing quietly</h3>
+                <p>
+                  The profiling run also showed <code>BenchmarkAuthRegister</code> logging{' '}
+                  <code>no such table: email_verification_tokens</code> on every iteration. The
+                  test helper migrated three tables and registering issues a verification token, so
+                  every register in the suite did the work and threw it away. The tests still
+                  passed, because a verification token that cannot be stored is logged rather than
+                  fatal, which is why the noise sat in the output looking like somebody
+                  else&apos;s problem. The table is now migrated with the others.
+                </p>
+              </div>
+            </div>
+
             {/* v3.398.0 */}
             <div className="mb-12" id="v3.398.0">
               <div className="flex items-center gap-3 mb-4">

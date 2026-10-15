@@ -148,6 +148,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "services", "email_verification_test.go"): apiEmailVerifyTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user_test.go"):               apiUserTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "bench_test.go"):              apiBenchTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "perf_test.go"):               apiPerfTestGo(),
 	}
 	// The checks behind the formatted field types (email, tel, json, ...).
 	for path, content := range fieldTypesFiles(apiRoot) {

@@ -1,0 +1,205 @@
+package handlers
+
+// Allocation budgets for the per-request hot path, and the benchmarks behind
+// them.
+//
+// A benchmark tells you how long something took on the machine that ran it,
+// which on a shared CI runner is a number that moves on its own. An allocation
+// count does not: the same code allocates the same number of times on every
+// machine, every run. That makes these assertions rather than measurements, and
+// it is why they can fail a build when a benchmark cannot.
+//
+// The paths here run on every request, or on every request that returns a list,
+// so an extra allocation in one of them is multiplied by your whole traffic.
+// Most Go performance work is allocation work: a change that doubles the
+// allocations on token verification will not show up in any test you have, and
+// will show up in your garbage collector.
+//
+// When one of these fails, it is telling you a change allocates more than it
+// used to. That is not automatically wrong. Read what you changed, decide
+// whether the cost is worth it, and if it is, raise the budget in the same
+// commit so the next person sees the new number was a decision.
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"github.com/gin-gonic/gin"
+
+	"{{MODULE}}/internal/paginate"
+	"{{MODULE}}/internal/respond"
+	"{{MODULE}}/internal/services"
+)
+
+// runsPerBudget is how many times AllocsPerRun exercises each path. Enough that
+// one unlucky garbage collection does not move the average, few enough that the
+// suite stays fast.
+const runsPerBudget = 200
+
+// budget is one hot path and what it is allowed to allocate.
+type budget struct {
+	name string
+	// max is the allocation count this path may not exceed. Set above the
+	// measured figure with room for an ordinary refactor, because the point is
+	// to catch a change in kind rather than to pin an exact number.
+	max  float64
+	why  string
+	run  func()
+}
+
+// benchAuthService verifies tokens without a database.
+//
+// Nil DB on purpose: ValidateAccessToken consults the session store only when
+// one is set, and this measures the cryptography and the parsing, which is the
+// part that runs before any lookup and on every single request.
+func benchAuthService() *services.AuthService {
+	return &services.AuthService{
+		Secret:        "a-benchmark-secret-at-least-32-characters",
+		AccessExpiry:  15 * time.Minute,
+		RefreshExpiry: 7 * 24 * time.Hour,
+	}
+}
+
+func benchAccessToken(tb testing.TB) (*services.AuthService, string) {
+	tb.Helper()
+	svc := benchAuthService()
+	pair, err := svc.GenerateTokenPair("01a11e82-d0bc-7367-9c39-5e9873953dde", "ada@example.com", "USER")
+	if err != nil {
+		tb.Fatalf("minting a token to measure against: %v", err)
+	}
+	return svc, pair.AccessToken
+}
+
+// listContext is a gin context for a list request carrying the query string a
+// real one does: a page, a size, a sort and a filter.
+func listContext() *gin.Context {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodGet,
+		"/api/v1/invoices?page=3&page_size=50&sort_by=created_at&sort_order=desc&search=acme&status=unpaid", nil)
+	return c
+}
+
+func budgets(tb testing.TB) []budget {
+	tb.Helper()
+
+	svc, token := benchAccessToken(tb)
+
+	// Shaped like a real list response rather than an empty struct, because an
+	// envelope that is cheap for nothing is not evidence of anything.
+	type row struct {
+		ID     string `json:"id"`
+		Name   string `json:"name"`
+		Amount int    `json:"amount"`
+	}
+	rows := make([]row, 0, 20)
+	for i := 0; i < 20; i++ {
+		rows = append(rows, row{ID: "01a11e82-d0bc-7367-9c39-5e9873953dde", Name: "Acme Corporation", Amount: 125000})
+	}
+
+	return []budget{
+		{
+			name: "verify an access token",
+			max:  50,
+			why:  "runs on every authenticated request, so this one is multiplied by all of your traffic",
+			run: func() {
+				if _, err := svc.ValidateAccessToken(token); err != nil {
+					panic("the token under measurement stopped verifying: " + err.Error())
+				}
+			},
+		},
+		{
+			name: "bind list parameters",
+			max:  50,
+			why:  "runs on every list request, and grows quietly as query parameters are added",
+			run: func() {
+				_ = paginate.Bind(listContext())
+			},
+		},
+		{
+			name: "write a list response",
+			max:  46,
+			why:  "runs on every response; serialisation is usually the largest single allocator in a request",
+			run: func() {
+				c, _ := gin.CreateTestContext(httptest.NewRecorder())
+				c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/invoices", nil)
+				respond.OK(c, rows)
+			},
+		},
+	}
+}
+
+// TestAllocationBudgets fails when a hot path starts allocating more than it
+// used to.
+func TestAllocationBudgets(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	for _, b := range budgets(t) {
+		b := b
+		t.Run(b.name, func(t *testing.T) {
+			// Warm up first. The first call through a path populates pools and
+			// caches, and counting those as the steady-state cost makes the
+			// number both wrong and unstable.
+			for i := 0; i < 20; i++ {
+				b.run()
+			}
+
+			got := testing.AllocsPerRun(runsPerBudget, b.run)
+			if got > b.max {
+				t.Errorf(
+					"%s now allocates %.0f times per call, over its budget of %.0f.\n"+
+						"Why this path has a budget: %s.\n"+
+						"If the extra allocations are a deliberate trade, raise the budget in the same commit so the new number is on the record.",
+					b.name, got, b.max, b.why)
+			}
+			t.Logf("%s: %.0f allocations (budget %.0f)", b.name, got, b.max)
+		})
+	}
+}
+
+// The benchmarks behind the budgets above. `go test -bench . -benchmem` reports
+// both time and allocations, and benchstat compares two runs of it, which is
+// what the perf job in CI does on every pull request.
+
+func BenchmarkVerifyAccessToken(b *testing.B) {
+	svc, token := benchAccessToken(b)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := svc.ValidateAccessToken(token); err != nil {
+			b.Fatalf("verifying: %v", err)
+		}
+	}
+}
+
+func BenchmarkBindListParams(b *testing.B) {
+	gin.SetMode(gin.TestMode)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = paginate.Bind(listContext())
+	}
+}
+
+func BenchmarkListEnvelope(b *testing.B) {
+	gin.SetMode(gin.TestMode)
+	type row struct {
+		ID     string `json:"id"`
+		Name   string `json:"name"`
+		Amount int    `json:"amount"`
+	}
+	rows := make([]row, 0, 20)
+	for i := 0; i < 20; i++ {
+		rows = append(rows, row{ID: "01a11e82-d0bc-7367-9c39-5e9873953dde", Name: "Acme Corporation", Amount: 125000})
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		c, _ := gin.CreateTestContext(httptest.NewRecorder())
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/invoices", nil)
+		respond.OK(c, rows)
+	}
+}
