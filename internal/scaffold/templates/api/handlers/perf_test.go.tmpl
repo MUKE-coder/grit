@@ -5,9 +5,17 @@ package handlers
 //
 // A benchmark tells you how long something took on the machine that ran it,
 // which on a shared CI runner is a number that moves on its own. An allocation
-// count does not: the same code allocates the same number of times on every
-// machine, every run. That makes these assertions rather than measurements, and
-// it is why they can fail a build when a benchmark cannot.
+// count does not move with the machine or the load, which is what makes these
+// assertions rather than measurements, and why they can fail a build when a
+// benchmark cannot.
+//
+// It does move with the Go toolchain, and by more than you would guess. Token
+// verification allocates 56 times under go1.26.9 and 41 under go1.27.2: the
+// newer runtime does the same work with fifteen fewer allocations. So a budget
+// is set from the OLDEST toolchain the project supports, because that is the
+// one that allocates most, and both figures go in the comment on the budget.
+// Set from whatever happens to be installed on your laptop, a budget passes
+// locally and fails in CI, which is how this file first failed.
 //
 // The paths here run on every request, or on every request that returns a list,
 // so an extra allocation in one of them is multiplied by your whole traffic.
@@ -23,6 +31,7 @@ package handlers
 import (
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"testing"
 	"time"
 
@@ -102,7 +111,9 @@ func budgets(tb testing.TB) []budget {
 	return []budget{
 		{
 			name: "verify an access token",
-			max:  50,
+			// 56 under go1.26.9, 41 under go1.27.2. Budgeted from the older
+			// one, since that is the figure CI measures.
+			max: 70,
 			why:  "runs on every authenticated request, so this one is multiplied by all of your traffic",
 			run: func() {
 				if _, err := svc.ValidateAccessToken(token); err != nil {
@@ -112,7 +123,8 @@ func budgets(tb testing.TB) []budget {
 		},
 		{
 			name: "bind list parameters",
-			max:  50,
+			// 40 under both go1.26.9 and go1.27.2.
+			max: 50,
 			why:  "runs on every list request, and grows quietly as query parameters are added",
 			run: func() {
 				_ = paginate.Bind(listContext())
@@ -120,7 +132,10 @@ func budgets(tb testing.TB) []budget {
 		},
 		{
 			name: "write a list response",
-			max:  46,
+			// 34 under go1.26.9, 36 under go1.27.2. The newer toolchain is the
+			// higher one here, which is why a budget is set from the range
+			// rather than from one run.
+			max: 46,
 			why:  "runs on every response; serialisation is usually the largest single allocator in a request",
 			run: func() {
 				c, _ := gin.CreateTestContext(httptest.NewRecorder())
@@ -147,14 +162,20 @@ func TestAllocationBudgets(t *testing.T) {
 			}
 
 			got := testing.AllocsPerRun(runsPerBudget, b.run)
+			// The toolchain is reported with the number because it is part of
+			// the number: the same code allocates differently under different
+			// Go releases, so a figure without its toolchain cannot be
+			// compared with anything.
+			where := runtime.Version() + " " + runtime.GOOS + "/" + runtime.GOARCH
 			if got > b.max {
 				t.Errorf(
-					"%s now allocates %.0f times per call, over its budget of %.0f.\n"+
+					"%s now allocates %.0f times per call under %s, over its budget of %.0f.\n"+
 						"Why this path has a budget: %s.\n"+
-						"If the extra allocations are a deliberate trade, raise the budget in the same commit so the new number is on the record.",
-					b.name, got, b.max, b.why)
+						"Before raising it, check whether this toolchain is simply different from the one the budget was set on: run the same test under the Go version CI uses (GOTOOLCHAIN=go1.X.Y go test ./internal/handlers/).\n"+
+						"If the extra allocations are a deliberate trade, raise the budget in the same commit, and put both figures in the comment so the new number is on the record with its context.",
+					b.name, got, where, b.max, b.why)
 			}
-			t.Logf("%s: %.0f allocations (budget %.0f)", b.name, got, b.max)
+			t.Logf("%s: %.0f allocations under %s (budget %.0f)", b.name, got, where, b.max)
 		})
 	}
 }

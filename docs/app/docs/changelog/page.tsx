@@ -66,6 +66,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.400.2 */}
+            <div className="mb-12" id="v3.400.2">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.400.2
+                </span>
+                <span className="text-sm text-muted-foreground">October 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An allocation budget is a figure about a toolchain, not about your code alone</h3>
+                <p>
+                  The allocation budgets added in v3.399.0 failed in CI, and the reason is worth
+                  more than the fix. That release argued that an allocation count is a fair thing
+                  to fail a build on because, unlike a timing, &quot;the same code allocates the
+                  same number of times on every machine, every run&quot;. The first half of that is
+                  true: the count does not move with the machine or the load. The second half is
+                  not, because it moves with the Go release.
+                </p>
+                <p>
+                  Verifying an access token allocates <strong>56</strong> times under go1.26.9 and{' '}
+                  <strong>41</strong> under go1.27.2. The newer runtime does the same work with
+                  fifteen fewer allocations. The budget was set at 50 from a local run on 1.27, and
+                  CI pins 1.26.9, so it passed on the machine that wrote it and failed on the
+                  machine that enforces it. Which is the oldest mistake in performance work: a
+                  number measured somewhere other than where it is judged.
+                </p>
+                <p>
+                  Budgets are now set from the oldest toolchain the project supports, because that
+                  is the one that allocates most, and each budget carries both figures in its
+                  comment. The budget for token verification is 70. The test reports the Go version
+                  and platform alongside every count, since a count without its toolchain cannot be
+                  compared with anything, and when one fails it now says to re-run under the Go
+                  version CI uses before concluding the code got worse.
+                </p>
+                <p>
+                  The v3.399.0 entry above has been corrected rather than quietly edited, because
+                  the claim was the argument for the feature.
+                </p>
+
+                <h3>Why it took two releases to read the failure</h3>
+                <p>
+                  Both the CI and Live workflows reported this as the word <code>FAIL</code> and
+                  nothing else, because they piped sixty packages of <code>go test</code> output
+                  through <code>tail -30</code>. v3.400.1 fixed those steps, and the next run named
+                  the test, the path, both numbers and the budget on the first line. The fix for
+                  the budget itself then took one command.
+                </p>
+              </div>
+            </div>
+
             {/* v3.400.1 */}
             <div className="mb-12" id="v3.400.1">
               <div className="flex items-center gap-3 mb-4">
@@ -233,8 +284,15 @@ export default function ChangelogPage() {
                   Generated projects shipped three benchmarks and nothing that ran them. A
                   benchmark tells you how long something took on the machine that ran it, which on
                   a shared CI runner is a number that moves on its own, so it cannot fail a build
-                  honestly. An allocation count can: the same code allocates the same number of
-                  times on every machine, every run.
+                  honestly. An allocation count can: it does not move with the machine or with the
+                  load.
+                </p>
+                <p className="not-prose rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm leading-relaxed text-foreground/90 dark:border-amber-400/30 dark:bg-amber-400/10">
+                  <strong>Corrected in v3.400.2.</strong> This entry originally said an allocation
+                  count is &quot;the same on every machine, every run&quot;. It is not the same
+                  across Go releases: token verification allocates 56 times under go1.26.9 and 41
+                  under go1.27.2. The budgets below were set from a local run on the newer
+                  toolchain and failed in CI on the older one.
                 </p>
                 <p>
                   <code>internal/handlers/perf_test.go</code> now asserts a budget on three paths
