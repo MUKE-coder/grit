@@ -1,11 +1,55 @@
 package doctor
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
+
+// atTheFloors is the require block of a project that is up to date, built from
+// the floors themselves rather than written out.
+//
+// Written out, it pinned whatever was current the day it was written, and the
+// next floor bump made three tests here fail for a reason that had nothing to
+// do with what they check: a clean project suddenly reported two findings, and
+// the message was about Sentinel's NAT handling. Derived, a bump cannot break
+// them, and the one test that wants a library behind its floor says which one.
+func atTheFloors() string {
+	var b strings.Builder
+	for _, d := range scaffold.FrameworkDepFloors() {
+		// Only the libraries the generated API mounts. The rest of the floors
+		// are transitive pins that this fixture's go.mod does not list, and
+		// listing them would make it a different project from the one the other
+		// cases here start from.
+		if !strings.HasPrefix(d.Path, "github.com/MUKE-coder/") {
+			continue
+		}
+		fmt.Fprintf(&b, "\t%s %s\n", d.Path, d.Floor)
+	}
+	return b.String()
+}
+
+// behindItsFloor returns that block with one library dropped to an older
+// version, named rather than matched on its current floor.
+func behindItsFloor(path, version string) string {
+	out := []string{}
+	for _, line := range strings.Split(strings.TrimRight(atTheFloors(), "\n"), "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), path+" ") {
+			line = "\t" + path + " " + version
+		}
+		out = append(out, line)
+	}
+	return strings.Join(out, "\n") + "\n"
+}
+
+// aGoMod is the fixture's go.mod around a require block.
+func aGoMod(requires string) string {
+	return "module shop/apps/api\n\ngo 1.25.0\n\nrequire (\n" + requires + ")\n"
+}
 
 // A project that is right must produce nothing at all. That is the half of a
 // linter that decides whether anyone leaves it switched on, so it is the first
@@ -23,16 +67,7 @@ GORM_STUDIO_USERNAME=admin
 GORM_STUDIO_PASSWORD=9d2b7e6053f1a8c4
 REDIS_HOST=localhost
 `,
-		"apps/api/go.mod": `module shop/apps/api
-
-go 1.25.0
-
-require (
-	github.com/MUKE-coder/gorm-studio v1.1.1
-	github.com/MUKE-coder/pulse v1.2.0
-	github.com/MUKE-coder/sentinel/v2 v2.6.0
-)
-`,
+		"apps/api/go.mod": aGoMod(atTheFloors()),
 		"apps/api/internal/models/invoice.go": "package models\n\n" +
 			"type Invoice struct {\n" +
 			"\tID     string                 `gorm:\"primaryKey\" json:\"id\"`\n" +
@@ -361,8 +396,9 @@ func TestDefaultCredentialsAndAWeakJWTSecret(t *testing.T) {
 }
 
 func TestFrameworkLibraryBehindItsFloor(t *testing.T) {
-	report := run(t, map[string]string{"apps/api/go.mod": strings.Replace(cleanProject()["apps/api/go.mod"],
-		"github.com/MUKE-coder/sentinel/v2 v2.6.0", "github.com/MUKE-coder/sentinel/v2 v2.2.1", 1)})
+	report := run(t, map[string]string{
+		"apps/api/go.mod": aGoMod(behindItsFloor("github.com/MUKE-coder/sentinel/v2", "v2.2.1")),
+	})
 	found := fired(report, "framework-library-behind")
 	if len(found) != 1 || !strings.Contains(found[0].Fix, "grit upgrade") {
 		t.Fatalf("want one finding pointing at grit upgrade, got %+v", found)

@@ -230,7 +230,20 @@ jobs:
           test ! -s /tmp/demo-unformatted
           go build ./...
           go vet ./...
-          go test ./... 2>&1 | tail -30
+          # The whole log is kept. tail -30 over sixty packages shows thirty
+          # "ok" lines and the word FAIL, which is what it did the one time it
+          # mattered: the failing test was never printed at all.
+          if go test ./... >/tmp/gotest.log 2>&1; then
+            tail -30 /tmp/gotest.log
+          else
+            echo "::group::failing tests"
+            grep -nE "FAIL|_test[.]go:[0-9]+" /tmp/gotest.log | head -80
+            echo "::endgroup::"
+            echo "::group::context around each failure"
+            grep -nE -B 4 -A 25 "^--- FAIL" /tmp/gotest.log | head -200
+            echo "::endgroup::"
+            exit 1
+          fi
 
   eject:
     name: A generated app survives Grit being deleted
@@ -297,10 +310,19 @@ jobs:
       - name: The Go API still builds, vets and tests
         working-directory: /tmp/eject/app/apps/api
         run: |
-          set -o pipefail
           go build ./...
           go vet ./...
-          go test ./... 2>&1 | tail -30
+          if go test ./... >/tmp/gotest.log 2>&1; then
+            tail -30 /tmp/gotest.log
+          else
+            echo "::group::failing tests"
+            grep -nE "FAIL|_test[.]go:[0-9]+" /tmp/gotest.log | head -80
+            echo "::endgroup::"
+            echo "::group::context around each failure"
+            grep -nE -B 4 -A 25 "^--- FAIL" /tmp/gotest.log | head -200
+            echo "::endgroup::"
+            exit 1
+          fi
 
       # The generated project must not depend on the CLI at runtime either.
       # A go.mod requiring the framework module would mean the application

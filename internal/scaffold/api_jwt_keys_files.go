@@ -245,17 +245,34 @@ func (k *SigningKeys) PublicJWKS() JWKS {
 }
 
 func jwkFor(kid string, pub *rsa.PublicKey) JWK {
-	e := make([]byte, 8)
-	binary.BigEndian.PutUint64(e, uint64(pub.E))
-	e = trimLeadingZeros(e)
 	return JWK{
 		Kty: "RSA",
 		Use: "sig",
 		Alg: "RS256",
 		Kid: kid,
 		N:   base64.RawURLEncoding.EncodeToString(pub.N.Bytes()),
-		E:   base64.RawURLEncoding.EncodeToString(e),
+		E:   base64.RawURLEncoding.EncodeToString(exponentBytes(pub.E)),
 	}
+}
+
+// exponentBytes is an RSA public exponent as the minimal big-endian bytes a
+// JWK's "e" member carries.
+//
+// The guard is why this is a function rather than two inline conversions. E is
+// an int, and uint64(E) on a negative int is a silent sign change into an
+// enormous number: the "e" published would then not be the exponent the key
+// signs with, and nothing would say so. No key x509 will parse has a
+// non-positive exponent, so this is unreachable rather than defensive, and an
+// unchecked sign conversion is still worth not writing. A zero byte is what
+// comes back, which every client rejects as an invalid key, which is the right
+// outcome for a key that should not have got this far.
+func exponentBytes(e int) []byte {
+	if e <= 0 {
+		return []byte{0}
+	}
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, uint64(e))
+	return trimLeadingZeros(b)
 }
 
 func trimLeadingZeros(b []byte) []byte {
@@ -271,10 +288,8 @@ func trimLeadingZeros(b []byte) []byte {
 // published set cannot disagree: both are computed from the same key. It also
 // means rotating a key changes its id without anybody having to remember to.
 func thumbprint(pub *rsa.PublicKey) string {
-	e := make([]byte, 8)
-	binary.BigEndian.PutUint64(e, uint64(pub.E))
 	canonical := fmt.Sprintf(` + "`" + `{"e":"%s","kty":"RSA","n":"%s"}` + "`" + `,
-		base64.RawURLEncoding.EncodeToString(trimLeadingZeros(e)),
+		base64.RawURLEncoding.EncodeToString(exponentBytes(pub.E)),
 		base64.RawURLEncoding.EncodeToString(pub.N.Bytes()))
 	sum := sha256.Sum256([]byte(canonical))
 	return base64.RawURLEncoding.EncodeToString(sum[:])

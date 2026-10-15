@@ -66,6 +66,64 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.400.1 */}
+            <div className="mb-12" id="v3.400.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.400.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Three things CI caught that the local test run did not</h3>
+                <p>
+                  v3.400.0 was tagged and did not publish, because the release workflow runs the
+                  whole test suite and three tests in <code>internal/doctor</code> failed. They
+                  failed on a fixture: a <code>go.mod</code> written out with the library versions
+                  that were current the day it was written, so raising the Pulse floor made a
+                  project that <em>is</em> up to date report two findings. The fixture now builds
+                  its require block from the floors themselves, which means a floor bump cannot
+                  break it again, and the one test that wants a library behind its floor says which
+                  library and which version.
+                </p>
+                <p>
+                  The lesson is that the floors have one declaration and had two readers, and only
+                  one of them was derived.
+                </p>
+
+                <h3>An unchecked sign conversion in the JWKS code</h3>
+                <p>
+                  gosec flagged <code>uint64(pub.E)</code> in <code>internal/services/jwtkeys.go</code>,
+                  twice: once where the JWK is built and once where the RFC 7638 thumbprint is
+                  computed. An RSA public exponent is an <code>int</code>, and a negative one would
+                  convert into an enormous positive number, so the published <code>e</code> would
+                  not be the exponent the key signs with and nothing would say so.
+                </p>
+                <p>
+                  No key <code>x509</code> will parse has a non-positive exponent, so this was
+                  unreachable rather than exploitable. It is now one guarded function used by both
+                  call sites, which is the shape that was worth having anyway: an exponent is
+                  encoded in one place, and an invalid one produces a zero byte that every client
+                  rejects rather than a silently wrong key.
+                </p>
+
+                <h3>A CI step that hid the failure it was reporting</h3>
+                <p>
+                  The generated-app jobs ran <code>go test ./... 2&gt;&amp;1 | tail -30</code>. Over
+                  sixty packages that prints thirty <code>ok</code> lines and the word{' '}
+                  <code>FAIL</code>, and nothing about which test failed or why, which is exactly
+                  what it did the one time it mattered. Those steps now keep the whole log, print
+                  the tail when everything passes, and print the failing tests with their context
+                  when something does not.
+                </p>
+                <p>
+                  A truncation that discards the only interesting part of the output is worse than
+                  no truncation, because it looks like it is reporting.
+                </p>
+              </div>
+            </div>
+
             {/* v3.400.0 */}
             <div className="mb-12" id="v3.400.0">
               <div className="flex items-center gap-3 mb-4">

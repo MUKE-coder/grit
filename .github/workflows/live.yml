@@ -108,10 +108,20 @@ jobs:
           cd /tmp/live/app/apps/api
           go build ./...
           go vet ./...
-          # pipefail: without it the step reports tail's exit code, and a
-          # failing generated test passes CI.
-          set -o pipefail
-          go test ./... 2>&1 | tail -30
+          # The whole log is kept, because tail -30 over sixty packages
+          # shows thirty "ok" lines and the word FAIL: the one time it
+          # mattered, the failing test was never printed at all.
+          if go test ./... >/tmp/gotest.log 2>&1; then
+            tail -30 /tmp/gotest.log
+          else
+            echo "::group::failing tests"
+            grep -nE "FAIL|_test[.]go:[0-9]+" /tmp/gotest.log | head -80
+            echo "::endgroup::"
+            echo "::group::context around each failure"
+            grep -nE -B 4 -A 25 "^--- FAIL" /tmp/gotest.log | head -200
+            echo "::endgroup::"
+            exit 1
+          fi
 
       - name: Audit the generated project
         run: |
