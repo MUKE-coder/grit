@@ -791,6 +791,8 @@ export default function HomePage() {
                 {[
                   'Fix errors and performance with recommended solutions',
                   'Trace requests, jobs, DB queries, cache hits, errors',
+                  'Read a route against its own baseline, so you see what got slower',
+                  'Pull a heap or CPU profile from a running process with go tool pprof',
                   'Wire k6 test runs into the live latency timeline',
                 ].map((line) => (
                   <li key={line} className="flex items-start gap-2.5 text-sm text-foreground/80">

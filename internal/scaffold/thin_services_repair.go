@@ -47,17 +47,24 @@ const (
 }`
 
 	verifyGoroutineCall = "\tgo h.deliverVerificationEmail(user)"
-	verifyDirectCall    = "\th.deliverVerificationEmail(c.Request.Context(), user)"
+	verifyDirectCall    = "\t_ = h.deliverVerificationEmail(c.Request.Context(), user)"
 
-	verifyFuncOld = "func (h *AuthHandler) deliverVerificationEmail(user models.User) {"
-	verifyFuncNew = "func (h *AuthHandler) deliverVerificationEmail(ctx context.Context, user models.User) {"
+	// Up to the closing paren and no further. These once ended at the opening
+	// brace, and when deliverVerificationEmail grew a string return neither
+	// anchor matched any more: the repair printed "not the file Grit wrote" and
+	// returned, on every project, including one Grit had just written. A return
+	// type is exactly the kind of thing that gets added later, so the anchor
+	// stops where the parameters do. TestThinServicesAnchorsMatchTemplates is
+	// what notices next time.
+	verifyFuncOld = "func (h *AuthHandler) deliverVerificationEmail(user models.User)"
+	verifyFuncNew = "func (h *AuthHandler) deliverVerificationEmail(ctx context.Context, user models.User)"
 
 	resetGoroutineCall = "\tgo h.deliverPasswordReset(user, c.ClientIP())"
 	resetDetachCall    = `	clientIP := c.ClientIP()
 	detach(func(ctx context.Context) { h.deliverPasswordReset(ctx, user, clientIP) })`
 
-	resetFuncOld = "func (h *AuthHandler) deliverPasswordReset(user models.User, clientIP string) {"
-	resetFuncNew = "func (h *AuthHandler) deliverPasswordReset(ctx context.Context, user models.User, clientIP string) {"
+	resetFuncOld = "func (h *AuthHandler) deliverPasswordReset(user models.User, clientIP string)"
+	resetFuncNew = "func (h *AuthHandler) deliverPasswordReset(ctx context.Context, user models.User, clientIP string)"
 )
 
 // repairQueuedAuthMail stops the auth handlers sending mail from goroutines.

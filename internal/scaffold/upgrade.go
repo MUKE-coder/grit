@@ -529,6 +529,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairTrustedProxies(root, opts); err != nil {
 			fmt.Printf("  ⚠ trusting forwarded headers only from TRUSTED_PROXIES: %v\n", err)
 		}
+		// Pulse v1.3.0's profile endpoints and the switches that gate them.
+		// config.go and routes.go are not framework-owned, so without this a new
+		// project would get profiling and every existing one would not.
+		if err := repairPulseProfiling(root, opts); err != nil {
+			fmt.Printf("  ⚠ adding the Pulse profiling switches: %v\n", err)
+		}
 		// The frontends: a tighter CSP, stored links limited to safe schemes, and
 		// the SSO redirect kept on the API's origin.
 		if err := repairFrontendLinkSafety(root, opts); err != nil {

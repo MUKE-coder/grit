@@ -127,7 +127,18 @@ PULSE_ENABLED=true
 PULSE_USERNAME=admin
 PULSE_PASSWORD=pulse
 PULSE_STORAGE=memory                 # "memory" (default) | "sqlite"
-PULSE_STORAGE_DSN=pulse.db           # path used when PULSE_STORAGE=sqlite`}
+PULSE_STORAGE_DSN=pulse.db           # path used when PULSE_STORAGE=sqlite
+
+# Runtime profiles: heap, allocations, goroutines, mutex, block and CPU.
+# Needs this AND PULSE_PROFILE_ENABLED in the server's environment, because a
+# profile describes your program and one forgotten setting should not expose it.
+PULSE_PROFILING=false
+PULSE_MUTEX_PROFILE_FRACTION=0       # 0 is off; 100 is a common starting point
+PULSE_BLOCK_PROFILE_RATE=0           # 0 is off; 10000 is a common starting point
+
+# The database's own plan for a slow SELECT, on the Database page. EXPLAIN only,
+# never EXPLAIN ANALYZE, so the slow query is not run a second time.
+PULSE_EXPLAIN_SLOW_QUERIES=false`}
                 />
 
                 <p className="text-muted-foreground leading-relaxed mt-6 mb-4">

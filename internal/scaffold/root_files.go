@@ -477,7 +477,7 @@ TOTP_ISSUER=%s
 PULSE_ENABLED=true
 PULSE_USERNAME=admin
 PULSE_PASSWORD=%s
-
+` + envPulseProfiling + `
 # Security — Sentinel WAF, rate limiting, threat detection
 # Same as Pulse: Sentinel refuses to mount in production with default
 # credentials. SECRET_KEY needs at least 32 bytes of entropy — both values
@@ -706,7 +706,7 @@ TOTP_ISSUER=%s
 PULSE_ENABLED=true
 PULSE_USERNAME=admin
 PULSE_PASSWORD=change-me-in-production
-
+` + envPulseProfiling + `
 # ─── Security (Sentinel) ─────────────────────────────
 SENTINEL_ENABLED=true
 SENTINEL_USERNAME=admin

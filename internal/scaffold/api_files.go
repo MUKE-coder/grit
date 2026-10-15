@@ -263,7 +263,7 @@ go 1.26.9
 require (
 	github.com/MUKE-coder/gin-docs v0.0.0-20260222113017-4d647cb4e7aa
 	github.com/MUKE-coder/gorm-studio v1.1.1
-	github.com/MUKE-coder/pulse v1.2.0
+	github.com/MUKE-coder/pulse v1.3.0
 	github.com/aws/aws-sdk-go-v2 v1.43.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.31
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.30
@@ -998,7 +998,7 @@ type Config struct {
 	// the new persistent backend (WAL, busy_timeout=5s, survives restart).
 	PulseStorage    string // "memory" (default) | "sqlite"
 	PulseStorageDSN string // path for sqlite, e.g. "pulse.db" or ":memory:"
-
+` + configPulseProfilingFields + `
 	// OAuth2 Social Login
 	GoogleClientID     string
 	GoogleClientSecret string
@@ -1107,7 +1107,7 @@ func Load() (*Config, error) {
 		PulsePassword:   getEnv("PULSE_PASSWORD", "pulse"),
 		PulseStorage:    getEnv("PULSE_STORAGE", "memory"),
 		PulseStorageDSN: resolveSQLitePath(getEnv("PULSE_STORAGE_DSN", "pulse.db")),
-
+` + configPulseProfilingLoad + `
 		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
 		GithubClientID:     getEnv("GITHUB_CLIENT_ID", ""),
@@ -7608,7 +7608,7 @@ func mountPulse(r *gin.Engine, db *gorm.DB, cfg *config.Config, svc *Services) {
 		if cfg.PulseStorage == "sqlite" && cfg.PulseStorageDSN != "" {
 			pulseOpts = append(pulseOpts, pulse.WithSQLite(cfg.PulseStorageDSN))
 		}
-		p := pulse.Mount(context.Background(), r, db, pulseOpts...)
+` + routesPulseProfilingBlock + `		p := pulse.Mount(context.Background(), r, db, pulseOpts...)
 
 		// Register health checks for connected services
 		if svc.Cache != nil {

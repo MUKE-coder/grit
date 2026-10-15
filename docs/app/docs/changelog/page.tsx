@@ -66,6 +66,100 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.400.0 */}
+            <div className="mb-12" id="v3.400.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.400.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Pulse v1.3.0, and 38MB of the heap back</h3>
+                <p>
+                  Two issues were raised against Pulse from here while profiling a generated
+                  project. Both are fixed and released, and Grit now floors at{' '}
+                  <code>v1.3.0</code>.
+                </p>
+                <p>
+                  The first was that the profiler was the largest thing in the heap. The in-memory
+                  backend reserved its whole ring-buffer capacity at startup, so a process serving
+                  almost nothing carried about 38MB of empty buffers in a 45MB heap, and anyone
+                  looking at their own memory graph was mostly looking at the tool. It now grows
+                  with what it actually holds. Profiling a freshly generated API after the
+                  upgrade, <code>inuse_space</code> totals 6.7MB and no Pulse allocation appears in
+                  the top nodes at all.
+                </p>
+                <p>
+                  The second was that Pulse could tell you a route is slow but not that it got
+                  slower. A route that went from 40ms to 90ms three deploys ago looks healthy,
+                  because 90ms is not slow in absolute terms and nothing in a point-in-time view
+                  remembers the 40. v1.3.0 keeps a rolling per-route baseline and reports the
+                  current figure as a ratio against it, with a lifecycle record so a step change
+                  can be attributed to the deploy it followed. That is the difference between an
+                  investigation and a fix.
+                </p>
+
+                <h3>Profiles you can fetch from a running process</h3>
+                <p>
+                  <code>PULSE_PROFILING=true</code> serves heap, allocation, goroutine, mutex,
+                  block and CPU profiles as standard pprof protobuf, so{' '}
+                  <code>go tool pprof http://host/pulse/api/profile/heap</code> works and{' '}
+                  <code>-diff_base</code> compares two captures. The dashboard says which route;
+                  these say which line.
+                </p>
+                <p>
+                  It is off by default and it takes two switches to turn on, the setting above and{' '}
+                  <code>PULSE_PROFILE_ENABLED</code> in the environment the server runs in. A
+                  profile is an unauthenticated description of your program, and a thirty second
+                  CPU profile anyone can ask for repeatedly is a denial of service, so one
+                  forgotten setting should not be enough to expose it. Mutex and block profiling
+                  cost the runtime something merely to collect, so they stay off until{' '}
+                  <code>PULSE_MUTEX_PROFILE_FRACTION</code> or{' '}
+                  <code>PULSE_BLOCK_PROFILE_RATE</code> is given a number. Asking for a block
+                  profile without one answers 409 and names the option to add, rather than
+                  returning an empty profile that reads as &quot;nothing is blocking&quot;.
+                </p>
+                <p>
+                  <code>PULSE_EXPLAIN_SLOW_QUERIES=true</code> puts the database&apos;s own plan
+                  for a slow SELECT on the Database page. Off by default because it issues extra
+                  queries against your database, and EXPLAIN only, never EXPLAIN ANALYZE, so the
+                  slow query is not run a second time.
+                </p>
+
+                <h3>Existing projects get the switches too</h3>
+                <p>
+                  The mount lives in <code>internal/routes/routes.go</code> and the settings in{' '}
+                  <code>internal/config/config.go</code>, and neither file is framework-owned on
+                  upgrade, because both are files a project edits. Left there, a new project would
+                  have profiling and every existing project would not. So <code>grit upgrade</code>{' '}
+                  now adds the four settings, the options on the mount and the documentation in{' '}
+                  <code>.env.example</code>, and refuses to touch a file somebody has rewritten,
+                  naming what to add by hand instead. An upgraded project and a freshly scaffolded
+                  one produce byte-identical <code>config.go</code> and <code>routes.go</code>.
+                </p>
+
+                <h3>A repair that had stopped working, and the test that now notices</h3>
+                <p>
+                  Running that upgrade turned up something else. <code>repairQueuedAuthMail</code>,
+                  which moves auth emails off bare goroutines and onto the queue, recognised a
+                  project by matching the full signature of{' '}
+                  <code>deliverVerificationEmail</code> up to its opening brace. The function later
+                  grew a <code>string</code> return, so the anchor stopped matching, and the repair
+                  printed &quot;not the file Grit wrote&quot; and returned early on every single
+                  project, including one Grit had just written.
+                </p>
+                <p>
+                  The anchors now stop where the parameter list does, which is the part a return
+                  type cannot move. More usefully, there is now a test asserting that every anchor
+                  a repair uses to decide it has nothing to do is still present in the template
+                  that is supposed to contain it. A repair whose anchor has drifted is worse than no
+                  repair, because it fails as a warning people learn to scroll past.
+                </p>
+              </div>
+            </div>
+
             {/* v3.399.0 */}
             <div className="mb-12" id="v3.399.0">
               <div className="flex items-center gap-3 mb-4">

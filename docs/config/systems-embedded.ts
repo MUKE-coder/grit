@@ -447,7 +447,7 @@ export const PULSE: SystemDesign = {
   tagline:
     'Request tracing, query profiling, runtime metrics and alerting that run inside the process, with no collector, no Redis and no second deployment.',
   group: 'Embedded',
-  packages: ['github.com/MUKE-coder/pulse/pulse', 'v1.2.0'],
+  packages: ['github.com/MUKE-coder/pulse/pulse', 'v1.3.0'],
 
   interview: {
     intro:
@@ -470,8 +470,18 @@ export const PULSE: SystemDesign = {
       },
       {
         q: 'How do you keep memory bounded under unexpected traffic?',
-        a: 'A fixed-size ring buffer, so the bound is the data structure rather than a cleanup goroutine that is supposed to keep up. The oldest entry is overwritten rather than memory growing. That is a much stronger guarantee than any policy, and it is what lets the thing run in a container with a limit.',
+        a: 'A fixed-size ring buffer, so the bound is the data structure rather than a cleanup goroutine that is supposed to keep up. The oldest entry is overwritten rather than memory growing. That is a much stronger guarantee than any policy, and it is what lets the thing run in a container with a limit. There is a trap inside that answer, and this product fell into it: a buffer bounded by its capacity can also allocate that whole capacity up front, so an idle process pays for history it does not have. Until v1.3.0 Pulse held about 38 MB of empty ring buffers in a 45 MB heap. Capacity should be the ceiling and the allocation should grow towards it, which is a different sentence from the one most people give in an interview.',
         see: 'requirements',
+      },
+      {
+        q: 'You can see that a route is slow. How do you know it got slower?',
+        a: 'From a current number alone, you do not. A route that went from 40ms to 90ms three deploys ago looks healthy, because 90ms is not slow in absolute terms and nothing in a point-in-time view remembers the 40. So keep a rolling baseline per route and per percentile over a window long enough to be stable, a week being the usual choice, and show today as a ratio against it rather than only as an absolute. Then pair it with the deploy marker: attributing a step change to the restart that preceded it turns "something got slower" into "this release got slower", which is the difference between an investigation and a fix. It is also cheap, because an hourly per-route per-percentile summary is tiny next to the request records it summarises, and it is the part worth keeping for months after the detail has aged out.',
+        see: 'low-level-design',
+      },
+      {
+        q: 'The dashboard says which route is slow. How do you find out which line?',
+        a: 'For a query, the profiler already records the file and line that issued it. For everything else it is pprof, which is in the Go runtime and needs no library: register the handlers and go tool pprof can pull a CPU, heap, allocation, goroutine, mutex or block profile over HTTP from the running process. The reason it is not simply on by default is that those endpoints are an unauthenticated description of your program, and a thirty second CPU profile is a denial of service if anyone can ask for one. So they sit behind the dashboard credentials, and the two that cost something merely to collect, mutex and block, stay off until you turn them on: asking for a block profile on a process that is not collecting one answers 409 and names the option to add, rather than returning an empty profile that reads as "nothing is blocking".',
+        see: 'high-level-design',
       },
       {
         q: 'You sample traces to control cost. Does that not make your error rate wrong?',
@@ -523,6 +533,9 @@ export const PULSE: SystemDesign = {
       'Capture every database query with its duration and the file and line that issued it.',
       'Detect N plus one patterns within a single request.',
       'Sample continuously: heap, goroutines, garbage collection pauses.',
+      'Serve CPU, heap, allocation, goroutine, mutex and block profiles to go tool pprof.',
+      'Show the database plan behind a slow query, with EXPLAIN and never EXPLAIN ANALYZE.',
+      'Compare a route against its own rolling baseline, so a regression is told apart from a route that was always slow.',
       'Capture panics and errors with a stack trace, fingerprinted so duplicates collapse.',
       'Run health checks on a schedule and answer Kubernetes probes.',
       'Alert on a threshold without firing on a single spike.',
@@ -538,6 +551,9 @@ export const PULSE: SystemDesign = {
     'A runtime sampler on a five second interval, with goroutine leak detection.',
     'Memory ring buffer storage, or SQLite for survival across restarts.',
     'Per-minute rollups of every request, independent of the sample rate.',
+    'Per-route rolling baselines, with the deploy a step change belongs to.',
+    'Authenticated pprof endpoints, with mutex and block profiling opt-in.',
+    'EXPLAIN plans for slow queries, opt-in because they are extra queries.',
     'A threshold alert engine with two-phase firing and a cooldown.',
     'Multiwindow burn-rate alerting on service level objectives.',
     'Secret redaction over captured bodies, errors and outbound URLs.',
@@ -554,7 +570,7 @@ export const PULSE: SystemDesign = {
     },
     {
       label: 'Bounded by construction',
-      text: 'fixed-size ring buffers with an atomic head index. Memory does not grow with traffic, which is what lets it run in a container with a limit.',
+      text: 'fixed-size ring buffers with an atomic head index. Capacity is the ceiling on history, and the allocation grows towards it rather than being reserved at startup, so an idle process does not pay for traffic it never had.',
     },
     {
       label: 'Exact counts despite sampling',
@@ -599,8 +615,9 @@ export const PULSE: SystemDesign = {
           '926 req/s x 500 bytes = ~460 KB/s of request records',
           'plus 926 x 8 queries x 300 bytes = ~2.2 MB/s of query records',
           'a ring buffer sized for 100,000 requests holds ~50 MB and about 2 minutes',
+          'and ~50 MB is a ceiling reached at that rate, not a cost paid at startup',
         ],
-        note: 'Which is exactly why the capacity warning exists. At this rate the buffer, not the 24 hour retention setting, is what decides how much history there is, and without being told nobody would know.',
+        note: 'Which is exactly why the capacity warning exists. At this rate the buffer, not the 24 hour retention setting, is what decides how much history there is, and without being told nobody would know. The last line of that sum used to be a bug rather than a design: the buffers were allocated at full size up front, so a process serving almost nothing carried about 38 MB of a 45 MB heap and looked like a leak. v1.3.0 grows them instead.',
       },
       {
         label: 'Sampling, and what it does not touch',
@@ -665,6 +682,14 @@ export const PULSE: SystemDesign = {
         label: 'Capacity watch',
         text: 'notices when the buffer rather than the retention setting bounds history, when writes were dropped, and when the last shutdown was unclean.',
       },
+      {
+        label: 'Baseline store',
+        text: 'a long, cheap per-route per-percentile summary, so the current figure can be read against what the route normally does rather than only against a threshold, and a step change can be attributed to the deploy it followed.',
+      },
+      {
+        label: 'Profile endpoints',
+        text: 'CPU, heap, allocation, goroutine, mutex and block profiles behind the dashboard credentials. The dashboard says which route; these say which line.',
+      },
     ],
     flow: {
       title: 'A request measured, and what it costs the request',
@@ -728,6 +753,10 @@ export const PULSE: SystemDesign = {
           { method: 'GET', path: '/pulse/api/requests', what: 'Traces, filtered by route, status and latency' },
           { method: 'GET', path: '/pulse/api/db/n1', what: 'N plus one findings grouped by route and pattern' },
           { method: 'GET', path: '/pulse/api/slos', what: 'Compliance, error budget and burn rates' },
+          { method: 'GET', path: '/pulse/api/routes/baselines', what: 'Each route against its own rolling baseline' },
+          { method: 'GET', path: '/pulse/api/lifecycle', what: 'Deploy time and instance identity, to attribute a step change' },
+          { method: 'GET', path: '/pulse/api/profile/heap', what: 'A heap profile, in pprof format' },
+          { method: 'GET', path: '/pulse/api/profile/block', what: '409 and the option to add, when block profiling is off' },
           { method: 'GET', path: '/pulse/metrics', what: 'Prometheus exposition' },
           { method: 'GET', path: '/pulse/live', what: 'Kubernetes liveness' },
           { method: 'GET', path: '/pulse/ready', what: 'Kubernetes readiness, composite over health checks' },
@@ -752,6 +781,20 @@ export const PULSE: SystemDesign = {
 }
 if cfg.PulseStorage == "sqlite" && cfg.PulseStorageDSN != "" {
     pulseOpts = append(pulseOpts, pulse.WithSQLite(cfg.PulseStorageDSN))
+}
+if cfg.PulseProfiling {
+    // Behind the dashboard credentials. A 30s CPU profile anyone can ask
+    // for is a denial of service, so this is opt-in and stays opt-in.
+    pulseOpts = append(pulseOpts, pulse.WithProfiling(), pulse.WithPprofHandlers())
+}
+// Mutex and block profiling cost something merely to collect, so they are
+// separate switches. Left off, asking for the profile answers 409 and names
+// the option, rather than returning an empty one that reads as "all clear".
+if cfg.PulseMutexProfileFraction > 0 {
+    pulseOpts = append(pulseOpts, pulse.WithMutexProfiling(cfg.PulseMutexProfileFraction))
+}
+if cfg.PulseBlockProfileRate > 0 {
+    pulseOpts = append(pulseOpts, pulse.WithBlockProfiling(cfg.PulseBlockProfileRate))
 }
 p := pulse.Mount(context.Background(), r, db, pulseOpts...)`,
       },
@@ -778,6 +821,10 @@ p := pulse.Mount(context.Background(), r, db, pulseOpts...)`,
         name: 'Capacity watch',
         file: 'pulse/capacity.go',
         what: 'Reports when a ring buffer rather than the retention setting is what bounds history. A monitor that silently holds two minutes of data while its settings claim a day is actively misleading.',
+      },
+      {
+        name: 'Route baselines',
+        what: 'A rolling per-route per-percentile summary over a long window, with the current figure expressed as a ratio against it. Cheap to keep, because it is a summary of records that have already aged out, and the only thing in the product that can tell a regression from a route that was always slow.',
       },
       {
         name: 'Pointer config fields',
@@ -819,6 +866,7 @@ p := pulse.Mount(context.Background(), r, db, pulseOpts...)`,
     'Overhead per request is microseconds and does not grow with traffic, because the work is a timer and a buffer push.',
     'Memory is fixed by the buffer sizes. The question is never how much memory it will use, it is how much history that memory buys, which is what the capacity warning answers.',
     'Sampling is the lever for storage volume, and it costs nothing in accuracy because the rollups count everything.',
+    'Baselines are the one thing kept long. A per-route per-percentile summary costs almost nothing next to the records it came from, which is what makes "slower than last week" affordable in a process whose detailed memory is minutes.',
     'The SQLite backend serialises on one writer, which is the right shape for SQLite and a lower ceiling than memory. Choose it for surviving restarts, not for throughput.',
     'Everything is per process. Behind several replicas each has its own dashboard and its own view, which is the main structural limit of an in-process design and the point at which a real collector earns its cost.',
     'The OpenTelemetry exporter is the bridge out: keep the in-process dashboard for the single-instance case and ship spans to a collector when there are enough instances for that to be worth running.',
@@ -858,7 +906,11 @@ p := pulse.Mount(context.Background(), r, db, pulseOpts...)`,
       },
       {
         label: 'Pin the version when capture is on',
-        text: 'v1.2.0 or later wraps the body and passes it through whole. Below v1.0.1, turn request body capture off.',
+        text: 'v1.2.0 or later wraps the body and passes it through whole, and v1.3.0 stops the memory backend reserving its whole capacity at startup. Below v1.0.1, turn request body capture off.',
+      },
+      {
+        label: 'Judge a route against itself, not against a threshold',
+        text: 'baselines give a ratio rather than an absolute, and the deploy marker attributes a step change to the release before it. A threshold cannot tell a route that doubled from a route that has always been that slow, and the first of those is the one worth waking up for.',
       },
       {
         label: 'Authenticate the dashboard and exclude it from itself',
