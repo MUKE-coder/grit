@@ -61,6 +61,17 @@ function categoryFor(tags: string[]): string {
   if (t.includes('auth') || t.includes('security')) return 'Security'
   if (t.includes('deploy') || t.includes('devops')) return 'Deploy'
   if (t.includes('crud') || t.includes('code-generation')) return 'Guide'
+  // Before Performance: a post about replication or correctness is an
+  // architecture piece even when it also carries a scaling tag.
+  if (
+    t.includes('distributed-systems') ||
+    t.includes('reliability') ||
+    t.includes('correctness') ||
+    t.includes('api-design') ||
+    t.includes('consistency') ||
+    t.includes('replication')
+  )
+    return 'Architecture'
   if (t.includes('performance') || t.includes('profiling') || t.includes('scaling')) return 'Performance'
   return 'Announcement'
 }
