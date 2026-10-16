@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 12 to 18, 2026",
-    count: 9,
+    count: 10,
     entries: [
+      { version: "3.402.0", title: "Offline sync never detected a conflict" },
       { version: "3.401.1", title: "No link to a profile that was never taken" },
       { version: "3.401.0", title: "Your load test now tells you which function fell over" },
       { version: "3.400.2", title: "An allocation budget is a figure about a toolchain, not about your code alone" },

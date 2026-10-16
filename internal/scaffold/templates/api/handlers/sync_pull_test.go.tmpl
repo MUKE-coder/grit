@@ -1,0 +1,215 @@
+package handlers
+
+// What a pull must carry, and in what order.
+//
+// Pull is the half of sync with no error path: when it is wrong it returns 200
+// with a page of rows, and the only symptom is a device quietly missing data
+// forever. These cover the three ways that happens.
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"testing"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/require"
+
+	"{{MODULE}}/internal/models"
+)
+
+// pullPage asks for one page and returns the rows and the next cursor.
+func pullPage(tb testing.TB, h *SyncHandler, model, since string, limit int) ([]map[string]interface{}, string) {
+	tb.Helper()
+	q := url.Values{}
+	q.Set("model", model)
+	if since != "" {
+		q.Set("since", since)
+	}
+	if limit > 0 {
+		q.Set("limit", itoa(limit))
+	}
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/sync/pull?"+q.Encode(), nil)
+	c.Set("user_role", "ADMIN")
+
+	h.Pull(c)
+	require.Equal(tb, http.StatusOK, w.Code, "pull should answer 200: %s", w.Body.String())
+
+	var out struct {
+		Data   []map[string]interface{} `json:"data"`
+		Cursor string                   `json:"cursor"`
+	}
+	require.NoError(tb, json.Unmarshal(w.Body.Bytes(), &out))
+	return out.Data, out.Cursor
+}
+
+func itoa(n int) string {
+	if n == 0 {
+		return "0"
+	}
+	var b []byte
+	for n > 0 {
+		b = append([]byte{byte('0' + n%10)}, b...)
+		n /= 10
+	}
+	return string(b)
+}
+
+// A delete has to leave something behind, or a client that already holds the
+// row keeps it forever: a hard delete is indistinguishable from "unchanged".
+func TestPullCarriesTombstones(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := syncVersionDB(t)
+	h := syncVersionHandler(db)
+
+	const id = "01a14381-0000-7000-8000-00000000010a"
+	pushOne(t, h, PushChange{
+		Op: "create", Model: "blogs", ID: id, Version: 0,
+		Data: map[string]interface{}{"title": "Doomed", "slug": "doomed-" + id, "content": "x"},
+	})
+	res := pushOne(t, h, PushChange{Op: "delete", Model: "blogs", ID: id, Version: 1})
+	require.True(t, res.OK, "delete should apply: %+v", res)
+
+	rows, _ := pullPage(t, h, "blogs", "", 100)
+	var tomb map[string]interface{}
+	for _, r := range rows {
+		if r["id"] == id {
+			tomb = r
+		}
+	}
+	require.NotNil(t, tomb, "a deleted row must still travel in a pull, or clients never hear about the delete")
+	require.Equal(t, true, tomb["_deleted"],
+		"the tombstone must be flagged; the model tags DeletedAt json:\"-\" so _deleted is the only marker a client gets")
+}
+
+// A live row must not look deleted.
+func TestPullDoesNotFlagLiveRows(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := syncVersionDB(t)
+	h := syncVersionHandler(db)
+
+	const id = "01a14381-0000-7000-8000-00000000010b"
+	pushOne(t, h, PushChange{
+		Op: "create", Model: "blogs", ID: id, Version: 0,
+		Data: map[string]interface{}{"title": "Alive", "slug": "alive-" + id, "content": "x"},
+	})
+
+	rows, _ := pullPage(t, h, "blogs", "", 100)
+	require.Len(t, rows, 1)
+	require.Equal(t, false, rows[0]["_deleted"])
+}
+
+// The one that loses data in silence.
+//
+// Rows that share an updated_at must not fall into the gap between two pages.
+// With a cursor of the timestamp alone, page two asks for updated_at > T and
+// every remaining row at exactly T is skipped, with no error anywhere. The
+// cursor is keyset on (updated_at, id) for this reason.
+func TestPullDoesNotDropRowsSharingATimestamp(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := syncVersionDB(t)
+	h := syncVersionHandler(db)
+
+	// Six rows on one instant, which a batch import or a seeder produces.
+	const n = 6
+	shared := time.Now().UTC().Truncate(time.Second)
+	for i := 0; i < n; i++ {
+		row := models.Blog{
+			ID:      "01a14381-0000-7000-8000-00000000020" + string(rune('a'+i)),
+			Title:   "Tied",
+			Slug:    "tied-" + string(rune('a'+i)),
+			Content: "x",
+			Version: 1,
+		}
+		require.NoError(t, db.Create(&row).Error)
+		require.NoError(t, db.Model(&models.Blog{}).Where("id = ?", row.ID).
+			UpdateColumns(map[string]interface{}{"created_at": shared, "updated_at": shared}).Error)
+	}
+
+	// Page through two at a time and collect every id exactly once.
+	seen := map[string]int{}
+	cursor := ""
+	for page := 0; page < 10; page++ {
+		rows, next := pullPage(t, h, "blogs", cursor, 2)
+		if len(rows) == 0 {
+			break
+		}
+		for _, r := range rows {
+			seen[r["id"].(string)]++
+		}
+		require.NotEqual(t, cursor, next, "the cursor must advance or paging never terminates")
+		cursor = next
+	}
+
+	require.Len(t, seen, n, "every row sharing the timestamp must be delivered across the pages, not dropped at a boundary")
+	for id, count := range seen {
+		require.Equal(t, 1, count, "row %s was delivered %d times; the keyset must not replay rows either", id, count)
+	}
+}
+
+// A cursor from the end of the data returns nothing, and then exactly the next
+// change. This is the steady state of a synced device: it asks constantly and
+// should almost always be told nothing happened.
+func TestPullFromTheLatestCursorReturnsOnlyWhatIsNew(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := syncVersionDB(t)
+	h := syncVersionHandler(db)
+
+	pushOne(t, h, PushChange{
+		Op: "create", Model: "blogs", ID: "01a14381-0000-7000-8000-00000000030a", Version: 0,
+		Data: map[string]interface{}{"title": "First", "slug": "c-first", "content": "x"},
+	})
+	_, cursor := pullPage(t, h, "blogs", "", 100)
+	require.NotEmpty(t, cursor)
+
+	rows, _ := pullPage(t, h, "blogs", cursor, 100)
+	require.Empty(t, rows, "nothing has changed since that cursor")
+
+	pushOne(t, h, PushChange{
+		Op: "create", Model: "blogs", ID: "01a14381-0000-7000-8000-00000000030b", Version: 0,
+		Data: map[string]interface{}{"title": "Second", "slug": "c-second", "content": "x"},
+	})
+	rows, _ = pullPage(t, h, "blogs", cursor, 100)
+	require.Len(t, rows, 1, "only the change made after the cursor")
+	require.Equal(t, "01a14381-0000-7000-8000-00000000030b", rows[0]["id"])
+}
+
+// Guard rails that are cheap to keep and expensive to lose.
+func TestPullRefusesAnUnknownModel(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := syncVersionHandler(syncVersionDB(t))
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/sync/pull?model=not_a_table", nil)
+	c.Set("user_role", "ADMIN")
+	h.Pull(c)
+	require.GreaterOrEqual(t, w.Code, 400, "an unregistered model must be refused, not answered with an empty page")
+}
+
+func TestPushRefusesAnOversizedBatch(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := syncVersionHandler(syncVersionDB(t))
+
+	changes := make([]PushChange, MaxPushChanges+1)
+	for i := range changes {
+		changes[i] = PushChange{Op: "create", Model: "blogs", ID: "x", Version: 0}
+	}
+	body, err := json.Marshal(SyncPushRequest{Changes: changes})
+	require.NoError(t, err)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/sync/push", bytes.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Set("user_role", "ADMIN")
+	h.Push(c)
+	require.GreaterOrEqual(t, w.Code, 400,
+		"an unbounded push is one request running tens of thousands of queries, which the client times out and sends again")
+}

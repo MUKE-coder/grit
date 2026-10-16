@@ -76,6 +76,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "settings.go"):               apiSettingsHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "event_subscribers.go"):      apiEventsSubscribersGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "sync.go"):                   apiSyncHandlerGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "sync_version_test.go"):      apiSyncVersionTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "sync_pull_test.go"):         apiSyncPullTestGo(),
 		filepath.Join(apiRoot, "internal", "models", "activity_log.go"):             apiActivityLogModelGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "activity.go"):             apiActivityMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "activity_read_test.go"):   apiActivityReadTestGo(),
@@ -3875,6 +3877,17 @@ func (r *Registry) Tables() []string {
 }
 
 func apiSyncHandlerGo() string { return tmpl("api/handlers/sync.go") }
+
+// apiSyncVersionTestGo emits internal/handlers/sync_version_test.go: the
+// regression for a sync update that left the row's version unchanged, which
+// made every conflict check pass and two devices overwrite each other in
+// silence.
+func apiSyncVersionTestGo() string { return tmpl("api/handlers/sync_version_test.go") }
+
+// apiSyncPullTestGo emits internal/handlers/sync_pull_test.go: tombstones,
+// and the keyset cursor that stops rows sharing a timestamp falling into the
+// gap between two pages, which loses them with no error anywhere.
+func apiSyncPullTestGo() string { return tmpl("api/handlers/sync_pull_test.go") }
 
 func apiActivityLogModelGo() string {
 	return `package models

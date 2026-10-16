@@ -271,9 +271,19 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange, rows currentRow
 		if !syncMayWrite(c, ch.Model, "edit", obj) {
 			return PushResult{OK: false, Code: "FORBIDDEN", Message: "you may not change who owns this row"}
 		}
-		// Seed Version with the server's value so the BeforeUpdate hook bumps it to
-		// serverVersion+1 regardless of what the client sent in the payload.
-		setIntField(obj, "Version", serverVersion)
+		// Set the new version here rather than leaving it to the BeforeUpdate
+		// hook, because for a full-struct Save the hook cannot win.
+		//
+		// The hook calls SetColumn("version", version + 1) and it does fire, but
+		// Save builds its SET clause from the struct's own fields, and the
+		// struct's Version value overwrites the expression. Seeding
+		// serverVersion here, as this line used to, therefore wrote the version
+		// back unchanged: the row stayed at v1 after every update, the response
+		// reported new_version 1 to match, and so a later push at v1 was accepted
+		// as current. Conflict detection, which is the whole point of the
+		// version, never fired once. The online update path is unaffected because
+		// it goes through Updates(map), where SetColumn does win.
+		setIntField(obj, "Version", serverVersion+1)
 		// Save writes every column (so cleared/zeroed fields persist) and runs the
 		// BeforeUpdate hook. Omit associations so the nested relation object is not
 		// upserted, and CreatedAt so the client can't rewind the original timestamp.

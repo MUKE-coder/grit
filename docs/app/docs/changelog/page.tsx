@@ -66,6 +66,72 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.402.0 */}
+            <div className="mb-12" id="v3.402.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.402.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Offline sync never detected a conflict</h3>
+                <p>
+                  Every update pushed through <code>/api/sync/push</code> left the row&apos;s
+                  version unchanged. Two devices editing the same record offline both pushed, both
+                  were accepted, and the second silently overwrote the first. The version is the
+                  entire mechanism of conflict detection in the offline protocol, and it had never
+                  once fired.
+                </p>
+                <p>
+                  The handler set the struct&apos;s <code>Version</code> to the server&apos;s value
+                  and relied on the model&apos;s <code>BeforeUpdate</code> hook to add one. The hook
+                  does fire, and calls <code>SetColumn</code>, but <code>Save</code> builds its SET
+                  clause from the struct&apos;s own fields and the struct&apos;s value overwrites
+                  the expression. So the row was written back at the version it already had, and
+                  the response reported that same version, which is why nothing looked wrong: the
+                  number the API returned always matched the number in the database.
+                </p>
+                <p>
+                  It is now set explicitly to <code>serverVersion + 1</code>. The online update path
+                  was never affected, because it goes through <code>Updates(map)</code>, where{' '}
+                  <code>SetColumn</code> does win.
+                </p>
+
+                <h3>Found by running it, not by reading it</h3>
+                <p>
+                  The sync engine had three tests, all on soft deletes. The 556-line push/pull
+                  handler had none. A probe driving the real endpoints against a live API returned
+                  26 checks with 9 failures, and the version bug was the first of them.
+                </p>
+                <p>
+                  There are now ten tests through the real handler, covering what the probe did:
+                  that an update advances the stored version and reports what it stored, that a
+                  second push at a stale version is refused with the server&apos;s row attached for
+                  a merge, that the version advances on every update, and that a version in the
+                  client&apos;s payload is ignored. On the pull side: tombstones travel and carry{' '}
+                  <code>_deleted</code>, live rows do not, an oversized batch is refused, an unknown
+                  model is refused, and the keyset cursor does not drop rows that share a timestamp.
+                </p>
+                <p>
+                  That last one is the test worth having. With a cursor of the timestamp alone, the
+                  second page asks for <code>updated_at &gt; T</code> and every remaining row at
+                  exactly <code>T</code> is skipped, forever, with no error anywhere. Both fixes
+                  were verified by reverting them and watching the tests fail.
+                </p>
+
+                <h3>And the handler is upgrade-delivered now</h3>
+                <p>
+                  <code>internal/services/sync.go</code> was framework-owned;{' '}
+                  <code>internal/handlers/sync.go</code> was not. A correctness fix in the sync
+                  protocol would have reached new projects only, leaving every existing project with
+                  conflict detection that never fires. Both files and their tests now arrive with{' '}
+                  <code>grit upgrade</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.401.1 */}
             <div className="mb-12" id="v3.401.1">
               <div className="flex items-center gap-3 mb-4">

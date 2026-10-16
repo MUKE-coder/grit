@@ -40,9 +40,9 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// 72-byte ceiling every existing project kept answering 500 for a long
 		// passphrase, which is the error the ceiling exists to prevent.
 		filepath.Join(apiRoot, "internal", "password", "password.go"): apiPasswordRulesGo(),
-		filepath.Join(apiRoot, "internal", "password", "breach.go"): apiPasswordBreachGo(),
-		filepath.Join(apiRoot, "internal", "services", "jwtkeys.go"): apiJWTKeysGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "jwks.go"): apiJWKSHandlerGo(),
+		filepath.Join(apiRoot, "internal", "password", "breach.go"):   apiPasswordBreachGo(),
+		filepath.Join(apiRoot, "internal", "services", "jwtkeys.go"):  apiJWTKeysGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "jwks.go"):     apiJWKSHandlerGo(),
 
 		// The webhook cluster. The model, the receiver that builds it and the
 		// dispatch package all read the same columns, so upgrading one without
@@ -85,6 +85,15 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		// The offline sync protocol's row store, which its handler stopped
 		// querying directly in v3.346.0.
 		filepath.Join(apiRoot, "internal", "services", "sync.go"): apiSyncServiceGo(),
+
+		// And the push/pull handler itself. The store was owned here and the
+		// handler was not, so a correctness fix in the protocol reached new
+		// projects only: every sync update left the row's version unchanged,
+		// which made conflict detection inert, and no existing project would
+		// ever have got the fix. The tests beside it are the regression.
+		filepath.Join(apiRoot, "internal", "handlers", "sync.go"):              apiSyncHandlerGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "sync_version_test.go"): apiSyncVersionTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "sync_pull_test.go"):    apiSyncPullTestGo(),
 
 		// The four states /api/health answers in, and the registry a plugin adds
 		// its own probe to. Here rather than in the API map because routes.go is
