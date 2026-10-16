@@ -143,6 +143,12 @@ func TestPerfPulseBridgeFailsSoft(t *testing.T) {
 			t.Errorf("the bridge does not print where to read the result: missing %q", want)
 		}
 	}
+	// But the profile link only when there is a profile. Printed
+	// unconditionally it is a 404 whenever profiling is off, and a tool that
+	// prints dead links stops being read.
+	if !strings.Contains(b, "if (run.profiling) {") {
+		t.Error("the bridge prints the flame graph link even when no profile was taken")
+	}
 }
 
 func TestPerfReadmeDocumentsPulse(t *testing.T) {

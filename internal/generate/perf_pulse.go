@@ -134,9 +134,14 @@ func perfPulseBridge() string {
 		"  }\n" +
 		"  console.log('');\n" +
 		"  console.log('  Pulse recorded this run:');\n" +
-		"  console.log(`    Comparison  ${base}/pulse/ui/test-runs`);\n" +
+		"  console.log(`    Comparison   ${base}/pulse/ui/test-runs`);\n" +
 		"  console.log(`    Before/after ${base}/pulse/api/test-runs/${run.id}/compare`);\n" +
-		"  console.log(`    Flame graph ${base}/pulse/api/test-runs/${run.id}/profile?format=svg`);\n" +
+		"  // Only when a profile was actually taken. Printing the link\n" +
+		"  // unconditionally hands you a 404 whenever profiling is off, and a\n" +
+		"  // tool that prints dead links stops being read.\n" +
+		"  if (run.profiling) {\n" +
+		"    console.log(`    Flame graph  ${base}/pulse/api/test-runs/${run.id}/profile?format=svg`);\n" +
+		"  }\n" +
 		"  console.log('');\n" +
 		"}\n"
 }

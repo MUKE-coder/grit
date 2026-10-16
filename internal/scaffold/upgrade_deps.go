@@ -32,7 +32,7 @@ var frameworkDeps = []FrameworkDep{
 		"a sign-in lockout bars the (address, account) pair rather than the address, so one person's mistakes behind an office or carrier NAT no longer lock out everybody sharing that egress; the CAPTCHA tier is no longer configured when no provider exists; MySQL is a real storage driver rather than a silent fall-through"},
 	{"github.com/MUKE-coder/gorm-studio", "v1.1.1",
 		"a table in TablePolicy.Hidden is refused by the raw SQL editor too, and a crafted XLSX import returns an error instead of panicking the request"},
-	{"github.com/MUKE-coder/pulse", "v1.5.0",
+	{"github.com/MUKE-coder/pulse", "v1.5.1",
 		"the N+1 table names the file and line that issued the query rather than hiding it in a CSV export, the flame graph defaults to real CPU time instead of goroutine stacks (where a parked connection counted on every tick and the hot code was a sliver), and a registered load-test run carries a CPU profile of its own window, which is what `grit generate perf` now records. Earlier, in v1.3.0: an idle process stopped carrying ~38MB of ring buffers reserved at startup, and per-route baselines tell a route that got slower from one that was always slow"},
 	{"golang.org/x/crypto", "v0.57.0", "govulncheck flags releases before v0.56.0"},
 	{"filippo.io/edwards25519", "v1.2.0", "govulncheck flags releases before v1.1.1"},

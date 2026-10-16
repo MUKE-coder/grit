@@ -66,6 +66,35 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.401.1 */}
+            <div className="mb-12" id="v3.401.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.401.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>No link to a profile that was never taken</h3>
+                <p>
+                  The k6 bridge added yesterday printed three links when a run finished, including
+                  the flame graph. With <code>PULSE_PROFILING</code> off there is no profile, so
+                  that third link was a 404, and a tool that prints dead links stops being read. It
+                  is now printed only when Pulse reports that it took one; the run is still recorded
+                  and still compared either way, and the script already said which you got.
+                </p>
+                <p>
+                  Pulse v1.5.1 landed the same two fixes in its own bundled bridge, from the report
+                  filed off this work: its own cookie jar, and a login that returns <code>null</code>{' '}
+                  instead of throwing. Both arrived at the same shape Grit generates, which is a
+                  good sign for the shape. The floor moves to <code>pulse v1.5.1</code>, though the
+                  library itself is byte-identical apart from its version constant: the change is in{' '}
+                  <code>examples/k6/</code> and the embedded dashboard build.
+                </p>
+              </div>
+            </div>
+
             {/* v3.401.0 */}
             <div className="mb-12" id="v3.401.0">
               <div className="flex items-center gap-3 mb-4">
