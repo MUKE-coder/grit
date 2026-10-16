@@ -61,6 +61,7 @@ function categoryFor(tags: string[]): string {
   if (t.includes('auth') || t.includes('security')) return 'Security'
   if (t.includes('deploy') || t.includes('devops')) return 'Deploy'
   if (t.includes('crud') || t.includes('code-generation')) return 'Guide'
+  if (t.includes('performance') || t.includes('profiling') || t.includes('scaling')) return 'Performance'
   return 'Announcement'
 }
 
