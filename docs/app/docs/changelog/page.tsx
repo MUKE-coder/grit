@@ -66,6 +66,52 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.402.1 */}
+            <div className="mb-12" id="v3.402.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.402.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The desktop sync engine has tests, and now they run</h3>
+                <p>
+                  The offline client had five tests covering the conflict path, and no CI job had
+                  ever executed them, because nothing in CI scaffolded a <code>--desktop</code>{' '}
+                  project. They pass, which was lucky rather than known.
+                </p>
+                <p>
+                  There is now an <strong>offline-sync</strong> job that scaffolds an app with the
+                  desktop client and runs both halves: push and pull on the server, outbox and
+                  conflicts on the client. It builds only <code>./sync</code> on the desktop side,
+                  because <code>main.go</code> imports Wails and that needs webkit2gtk on Linux,
+                  while the engine itself is plain Go and SQLite.
+                </p>
+
+                <h3>Eight more client tests, for the rules that squash the outbox</h3>
+                <p>
+                  The outbox holds at most one entry per row, so nine offline edits to the same
+                  record become one change to push. Six rules decide what the surviving entry looks
+                  like and none of them were tested. Each is a different bug if it is wrong: an
+                  update on top of an unsent create must stay a <code>create</code>, or the server
+                  gets an update for a row it has never seen and the entry sticks in the queue
+                  forever; a delete on top of an unsent create must remove the entry entirely,
+                  rather than making two round trips to arrive at having done nothing.
+                </p>
+                <p>
+                  Also covered: squashing is per row and keyed on{' '}
+                  <code>(model, id)</code>, so the same id in two tables stays two changes, and the
+                  outbox survives the app being reopened, which is the whole reason it is on disk.
+                </p>
+                <p>
+                  All eight were verified the same way as yesterday&apos;s server fixes: by
+                  reverting a rule and watching the test fail.
+                </p>
+              </div>
+            </div>
+
             {/* v3.402.0 */}
             <div className="mb-12" id="v3.402.0">
               <div className="flex items-center gap-3 mb-4">

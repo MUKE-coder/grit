@@ -274,5 +274,240 @@ func TestResolvingAConflictReplaysAtTheVersionTheUserSaw(t *testing.T) {
 		t.Errorf("the merged value was not stored: %v", data)
 	}
 }
+
+// ── Outbox squash ────────────────────────────────────────────────────────
+//
+// The outbox holds at most one entry per (model, entity_id), so a user who
+// edits the same row nine times offline sends one change rather than nine.
+// Six rules decide what the surviving entry looks like, and each one is a bug
+// with a different shape if it is wrong: a create that reaches the server as an
+// update 404s, a delete of a row the server never heard of is a round trip to
+// arrive at nothing, and an op that does not survive a later edit sends the
+// wrong verb entirely.
+//
+// None of this is visible from the outside. The outbox drains, the push
+// succeeds, and the damage is a row that exists on one device and not another.
+
+func outboxFor(t *testing.T, e *Engine, table, id string) (Outbox, bool) {
+	t.Helper()
+	var row Outbox
+	err := e.DB.Where("model = ? AND entity_id = ?", table, id).First(&row).Error
+	if err != nil {
+		return Outbox{}, false
+	}
+	return row, true
+}
+
+func outboxCount(t *testing.T, e *Engine) int64 {
+	t.Helper()
+	var n int64
+	if err := e.DB.Model(&Outbox{}).Count(&n).Error; err != nil {
+		t.Fatalf("counting outbox: %v", err)
+	}
+	return n
+}
+
+// Rule: new "update" + existing "create" keeps the op as create.
+//
+// The server has never heard of this row. Sending it an update would 404 and
+// the entry would stick in the outbox forever.
+func TestSquashUpdateOnTopOfCreateStaysACreate(t *testing.T) {
+	e, _ := engineFor(t, pushHandler(t))
+
+	if err := e.LocalCreate("notes", "n1", map[string]interface{}{"title": "first"}); err != nil {
+		t.Fatalf("LocalCreate: %v", err)
+	}
+	if err := e.LocalUpdate("notes", "n1", map[string]interface{}{"title": "second"}); err != nil {
+		t.Fatalf("LocalUpdate: %v", err)
+	}
+
+	if n := outboxCount(t, e); n != 1 {
+		t.Fatalf("outbox holds %d entries, want 1: edits to one row must squash", n)
+	}
+	row, ok := outboxFor(t, e, "notes", "n1")
+	if !ok {
+		t.Fatal("no outbox entry for the row")
+	}
+	if row.Op != "create" {
+		t.Errorf("op = %q, want create: the server has never seen this row, so an update would 404", row.Op)
+	}
+	var data map[string]interface{}
+	if err := json.Unmarshal(row.Data, &data); err != nil {
+		t.Fatalf("decoding outbox data: %v", err)
+	}
+	if data["title"] != "second" {
+		t.Errorf("title = %v, want second: the squashed entry carries the latest state", data["title"])
+	}
+}
+
+// Rule: new "update" + existing "update" keeps one entry with the latest data.
+func TestSquashRepeatedUpdatesCollapseToOne(t *testing.T) {
+	e, _ := engineFor(t, pushHandler(t))
+
+	e.LocalCreate("notes", "n2", map[string]interface{}{"title": "v1"})
+	// Pretend the create was already pushed, so the next edits are updates.
+	e.DB.Where("entity_id = ?", "n2").Delete(&Outbox{})
+
+	for _, title := range []string{"v2", "v3", "v4"} {
+		if err := e.LocalUpdate("notes", "n2", map[string]interface{}{"title": title}); err != nil {
+			t.Fatalf("LocalUpdate %s: %v", title, err)
+		}
+	}
+
+	if n := outboxCount(t, e); n != 1 {
+		t.Fatalf("outbox holds %d entries, want 1: three edits to one row are one change to push", n)
+	}
+	row, _ := outboxFor(t, e, "notes", "n2")
+	if row.Op != "update" {
+		t.Errorf("op = %q, want update", row.Op)
+	}
+	var data map[string]interface{}
+	json.Unmarshal(row.Data, &data)
+	if data["title"] != "v4" {
+		t.Errorf("title = %v, want v4: the last edit wins", data["title"])
+	}
+}
+
+// Rule: new "delete" + existing "create" removes the entry entirely.
+//
+// The user made something offline and changed their mind. The server never
+// knew. Sending a create followed by a delete is two round trips to arrive at
+// having done nothing, and a window where other devices see a row that was
+// never meant to exist.
+func TestSquashDeleteOfAnUnsentCreateCancelsBoth(t *testing.T) {
+	e, _ := engineFor(t, pushHandler(t))
+
+	if err := e.LocalCreate("notes", "n3", map[string]interface{}{"title": "regretted"}); err != nil {
+		t.Fatalf("LocalCreate: %v", err)
+	}
+	if n := outboxCount(t, e); n != 1 {
+		t.Fatalf("outbox holds %d entries after the create, want 1", n)
+	}
+
+	if err := e.LocalDelete("notes", "n3"); err != nil {
+		t.Fatalf("LocalDelete: %v", err)
+	}
+
+	if n := outboxCount(t, e); n != 0 {
+		t.Errorf("outbox holds %d entries, want 0: a create the server never saw, then deleted, is nothing to send", n)
+	}
+}
+
+// Rule: new "delete" + existing "update" becomes a delete and drops the data.
+func TestSquashDeleteAfterUpdateBecomesADelete(t *testing.T) {
+	e, _ := engineFor(t, pushHandler(t))
+
+	e.LocalCreate("notes", "n4", map[string]interface{}{"title": "v1"})
+	e.DB.Where("entity_id = ?", "n4").Delete(&Outbox{}) // the create was pushed
+
+	if err := e.LocalUpdate("notes", "n4", map[string]interface{}{"title": "v2"}); err != nil {
+		t.Fatalf("LocalUpdate: %v", err)
+	}
+	if err := e.LocalDelete("notes", "n4"); err != nil {
+		t.Fatalf("LocalDelete: %v", err)
+	}
+
+	if n := outboxCount(t, e); n != 1 {
+		t.Fatalf("outbox holds %d entries, want 1", n)
+	}
+	row, _ := outboxFor(t, e, "notes", "n4")
+	if row.Op != "delete" {
+		t.Errorf("op = %q, want delete: the edit is moot once the row is gone", row.Op)
+	}
+	if len(row.Data) != 0 {
+		t.Errorf("data = %q, want empty: a delete carries no payload", string(row.Data))
+	}
+}
+
+// Rule: a delete with no existing entry is inserted as a delete.
+func TestSquashDeleteOfASyncedRowQueuesADelete(t *testing.T) {
+	e, _ := engineFor(t, pushHandler(t))
+
+	e.LocalCreate("notes", "n5", map[string]interface{}{"title": "v1"})
+	e.DB.Where("entity_id = ?", "n5").Delete(&Outbox{}) // the create was pushed
+
+	if err := e.LocalDelete("notes", "n5"); err != nil {
+		t.Fatalf("LocalDelete: %v", err)
+	}
+
+	row, ok := outboxFor(t, e, "notes", "n5")
+	if !ok {
+		t.Fatal("deleting a synced row must queue a delete, or the server never hears about it")
+	}
+	if row.Op != "delete" {
+		t.Errorf("op = %q, want delete", row.Op)
+	}
+}
+
+// Squashing is per row. Two rows edited offline are two changes, not one.
+func TestSquashIsPerRowNotGlobal(t *testing.T) {
+	e, _ := engineFor(t, pushHandler(t))
+
+	e.LocalCreate("notes", "a", map[string]interface{}{"title": "A"})
+	e.LocalCreate("notes", "b", map[string]interface{}{"title": "B"})
+	e.LocalUpdate("notes", "a", map[string]interface{}{"title": "A2"})
+
+	if n := outboxCount(t, e); n != 2 {
+		t.Errorf("outbox holds %d entries, want 2: squashing collapses edits to one row, not the whole queue", n)
+	}
+}
+
+// The same id in two different models is two different rows.
+func TestSquashKeysOnModelAndID(t *testing.T) {
+	e, _ := engineFor(t, pushHandler(t))
+
+	e.LocalCreate("notes", "shared-id", map[string]interface{}{"title": "a note"})
+	e.LocalCreate("tasks", "shared-id", map[string]interface{}{"title": "a task"})
+
+	if n := outboxCount(t, e); n != 2 {
+		t.Errorf("outbox holds %d entries, want 2: the key is (model, id), so the same id in two tables is two rows", n)
+	}
+}
+
+// A local write is readable immediately and survives the engine being reopened,
+// which is the whole reason the outbox is on disk rather than in memory.
+func TestOutboxSurvivesAReopen(t *testing.T) {
+	dir := t.TempDir()
+	srv := httptest.NewServer(pushHandler(t))
+	t.Cleanup(srv.Close)
+
+	open := func() *Engine {
+		e, err := Open(filepath.Join(dir, "local.db"), srv.URL+"/api",
+			func() (string, error) { return "test-token", nil })
+		if err != nil {
+			t.Fatalf("Open: %v", err)
+		}
+		return e
+	}
+
+	first := open()
+	if err := first.LocalCreate("notes", "persist", map[string]interface{}{"title": "written offline"}); err != nil {
+		t.Fatalf("LocalCreate: %v", err)
+	}
+	if sqlDB, err := first.DB.DB(); err == nil {
+		_ = sqlDB.Close()
+	}
+
+	second := open()
+	t.Cleanup(func() {
+		if sqlDB, err := second.DB.DB(); err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	if n := outboxCount(t, second); n != 1 {
+		t.Errorf("outbox holds %d entries after reopening, want 1: an in-memory outbox loses the work it exists to protect", n)
+	}
+	row, err := second.LocalGet("notes", "persist")
+	if err != nil {
+		t.Fatalf("LocalGet after reopen: %v", err)
+	}
+	if row == nil {
+		t.Fatal("the local mirror lost the row across a reopen")
+	}
+	if row["title"] != "written offline" {
+		t.Errorf("title = %v, want the offline edit", row["title"])
+	}
+}
 `
 }
