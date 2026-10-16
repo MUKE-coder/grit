@@ -1,13 +1,13 @@
 ---
-title: "Your own post is missing: read-your-writes in a cookie"
-subtitle: "You add a read replica, latency drops, and one bug appears that nobody can reproduce: right after someone posts, their own post is gone from the list. The textbook fix puts Redis on every read. There is a smaller answer that costs nothing and cannot be stale, because it travels with the person who wrote."
+title: "Read Replica Lag Is Hiding Users' Own Posts: Fix It With a Cookie, Not Redis"
+subtitle: "You add a read replica, latency drops, and one bug appears that nobody can reproduce: right after someone posts, their own post is gone. The textbook fix puts a Redis round trip on every read to solve a one-second edge case. There is a smaller answer that costs nothing and cannot be stale."
 series: "The Daily Grit"
 edition: 22
 date: 2026-10-19
 readingTime: "12 min"
 author: "Muke JohnBaptist"
 tags: [grit, go, replication, consistency, scaling, postgres, caching]
-canonical: "https://gritframework.dev/blog/your-own-post-is-missing"
+canonical: "https://gritframework.dev/blog/read-your-writes-without-redis"
 ---
 
 You add a read replica. Reads go to the replica, writes go to the primary, and the primary stops being the bottleneck. Everything is faster and nothing breaks.

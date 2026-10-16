@@ -1,13 +1,13 @@
 ---
-title: "Save the row and tell the world, without losing one or the other"
-subtitle: "Publish then commit, and a webhook announces an order that does not exist. Commit then publish, and the order exists with nobody told. There is no correct order, which is why the transactional outbox exists. Here is the whole pattern, including the lease that stops two replicas sending the same message twice."
+title: "Your Webhook Fired but the Order Never Saved: The Transactional Outbox in Go"
+subtitle: "Publish then commit, and you announce an order that does not exist. Commit then publish, and the order exists with nobody told. There is no correct order for those two lines, which is the whole reason the outbox pattern exists. Including the lease that stops two replicas delivering the same message twice."
 series: "The Daily Grit"
 edition: 21
 date: 2026-10-18
 readingTime: "15 min"
 author: "Muke JohnBaptist"
 tags: [grit, go, distributed-systems, outbox, postgres, webhooks, reliability]
-canonical: "https://gritframework.dev/blog/save-the-row-and-tell-the-world"
+canonical: "https://gritframework.dev/blog/transactional-outbox-pattern-in-go"
 ---
 
 Here is a bug that is almost impossible to reproduce and very easy to write.

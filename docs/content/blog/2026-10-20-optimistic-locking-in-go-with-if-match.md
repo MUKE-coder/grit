@@ -1,13 +1,13 @@
 ---
-title: "The save that quietly ate your colleague's edit"
-subtitle: "Two people open the same record, both press Save, and the second one wins. Nothing errors, nothing is logged, and the first person's work is gone. The fix is one WHERE clause and an HTTP header that has been in the spec since 1999, and most APIs still do not use it."
+title: "Two Users Pressed Save, One Edit Vanished: Optimistic Locking in Go"
+subtitle: "The lost update is the most common data-integrity bug in CRUD apps, because the obvious handler has it and nobody is ever told it happened. A transaction will not help you: the race is between two humans and a stale form. The fix is one WHERE clause and an HTTP header from 1999."
 series: "The Daily Grit"
 edition: 23
 date: 2026-10-20
 readingTime: "13 min"
 author: "Muke JohnBaptist"
 tags: [grit, go, concurrency, http, api-design, optimistic-locking, correctness]
-canonical: "https://gritframework.dev/blog/the-save-that-ate-your-colleagues-edit"
+canonical: "https://gritframework.dev/blog/optimistic-locking-in-go-with-if-match"
 ---
 
 Two support agents open the same customer record. One fixes the phone number. The other, a minute later, fixes the address. Both press Save.

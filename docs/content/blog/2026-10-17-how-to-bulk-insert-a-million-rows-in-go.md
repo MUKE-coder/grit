@@ -1,13 +1,13 @@
 ---
-title: "A million rows, sixty seconds, and a ten megabyte heap"
-subtitle: "Grit's seeder is a two-pool pipeline: goroutines building rows on one side, goroutines writing batches on the other, a bounded channel between them. Here is why it is two pools and not one, why the batch size is computed rather than chosen, and why the heap stays flat at ten megabytes whether you ask for a thousand rows or a million."
+title: "How to Bulk Insert a Million Rows in Go Without Running Out of Memory"
+subtitle: "One row per INSERT takes an afternoon. Loading them all into a slice first runs the process out of memory. The answer is a two-pool pipeline with a bounded channel between it, and here is the whole thing: 999,800 rows in 59 seconds on a laptop, with the heap flat at 10 MB the entire time."
 series: "The Daily Grit"
 edition: 20
 date: 2026-10-17
 readingTime: "14 min"
 author: "Muke JohnBaptist"
 tags: [grit, go, concurrency, performance, database, seeding, pipelines]
-canonical: "https://gritframework.dev/blog/a-million-rows-and-a-ten-megabyte-heap"
+canonical: "https://gritframework.dev/blog/how-to-bulk-insert-a-million-rows-in-go"
 ---
 
 Somebody sent me [Kennedy Karoko's two-part series on processing a million transactions in under a second](https://blog.karoko.dev/processing-1-million-transactions-in-under-a-second-using-go-part-1-98c9079375ac) and asked whether it is the same thing Grit does when you run `grit seed Product --count 1000000`.
@@ -25,6 +25,12 @@ products: seeded 999800 rows in 59.718s (16742 rows/s), now 1000000; heap in use
 ```
 
 Sixty seconds, on SQLite, on a laptop. The number that matters is not 16,742 rows per second. **It is the 10 MB.**
+
+Because there are two obvious ways to write this and they fail in opposite directions.
+
+Insert one row per statement and memory is perfect, flat and tiny, while the job takes an afternoon: you are paying query parsing, a transaction and a round trip a million times over. Build all million rows into a slice first and insert them in one go, and the throughput is fine right up until the process is holding a million structs plus the driver's copy of them, at which point it either swaps or the OOM killer takes it.
+
+The pipeline below is how you get neither. The rows are built in chunks, written in batches, and the number of chunks in flight is capped by a channel, so the memory ceiling is a property of the data structure rather than of how many rows you asked for. Ask for ten thousand or ten million: the heap looks the same.
 
 ## The shape both pipelines share
 

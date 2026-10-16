@@ -1,13 +1,13 @@
 ---
-title: "A performance test that can actually fail a build"
-subtitle: "A benchmark on a shared CI runner is a number that moves on its own, so nobody dares gate on it. An allocation count does not move with the machine or the load, which makes it an assertion rather than a measurement. It does move with the Go release, which I found out the way everyone does."
+title: "Go Benchmarks Are Too Flaky to Fail a Build: Use Allocation Budgets Instead"
+subtitle: "A benchmark on a shared CI runner measures your code and the machine it landed on, so the threshold ends up too loose to catch a tenfold regression. An allocation count does not move with the machine or the load. It does move with the Go release, which I found out the way everyone does."
 series: "The Daily Grit"
 edition: 24
 date: 2026-10-21
 readingTime: "12 min"
 author: "Muke JohnBaptist"
 tags: [grit, go, performance, testing, ci, benchmarks, profiling]
-canonical: "https://gritframework.dev/blog/a-performance-test-that-can-fail-a-build"
+canonical: "https://gritframework.dev/blog/go-allocation-budgets-instead-of-benchmarks"
 ---
 
 Most projects have benchmarks nobody runs.
