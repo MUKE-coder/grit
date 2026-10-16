@@ -1,9 +1,11 @@
 package scaffold
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -67,7 +69,10 @@ require (
 	if err != nil {
 		t.Fatalf("raise: %v", err)
 	}
-	want := []string{"github.com/MUKE-coder/gorm-studio@v1.1.1", "github.com/MUKE-coder/pulse@v1.3.0"}
+	// Derived, not written out: a floor bump must not break a test about
+	// whether raising works at all.
+	want := []string{"github.com/MUKE-coder/gorm-studio@" + floorOf(t, "github.com/MUKE-coder/gorm-studio"),
+		"github.com/MUKE-coder/pulse@" + floorOf(t, "github.com/MUKE-coder/pulse")}
 	if !reflect.DeepEqual(fetched, want) {
 		t.Errorf("fetched %v, want %v (and never a lower Sentinel than the project has)", fetched, want)
 	}
@@ -77,16 +82,9 @@ require (
 
 	// Everything at or past its floor: go get is not run at all.
 	calls = 0
-	write(`module shop/apps/api
-
-go 1.24
-
-require (
-	github.com/MUKE-coder/gorm-studio v1.1.1
-	github.com/MUKE-coder/pulse v1.3.0
-	github.com/MUKE-coder/sentinel/v2 v2.7.0
-)
-`)
+	write("module shop/apps/api\n\ngo 1.24\n\nrequire (\n" +
+		requireAtFloors("github.com/MUKE-coder/gorm-studio",
+			"github.com/MUKE-coder/pulse", "github.com/MUKE-coder/sentinel/v2") + ")\n")
 	if raised, err := raiseFrameworkDeps(dir); err != nil || raised != nil || calls != 0 {
 		t.Errorf("an up-to-date project ran go get %d time(s): %v %v", calls, raised, err)
 	}
@@ -95,4 +93,31 @@ require (
 	if raised, err := raiseFrameworkDeps(t.TempDir()); err != nil || raised != nil {
 		t.Errorf("a directory with no go.mod: %v %v", raised, err)
 	}
+}
+
+// floorOf returns the current floor for path, so a test can say "the floor"
+// instead of naming a version that goes stale on the next bump.
+func floorOf(t *testing.T, path string) string {
+	t.Helper()
+	for _, d := range frameworkDeps {
+		if d.Path == path {
+			return d.Floor
+		}
+	}
+	t.Fatalf("%s is not a framework dependency", path)
+	return ""
+}
+
+// requireAtFloors renders go.mod require lines holding each path exactly at its
+// floor, for the case where nothing should be raised.
+func requireAtFloors(paths ...string) string {
+	var b strings.Builder
+	for _, path := range paths {
+		for _, d := range frameworkDeps {
+			if d.Path == path {
+				fmt.Fprintf(&b, "\t%s %s\n", d.Path, d.Floor)
+			}
+		}
+	}
+	return b.String()
 }

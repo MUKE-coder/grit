@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.400.2"
+var version = "3.401.0"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -530,8 +530,15 @@ Examples:
 			}
 
 			fmt.Println()
-			color.New(color.FgGreen).Println("  Load test created: perf/load.js")
-			color.New(color.FgHiBlack).Println("  Run it with: k6 run perf/load.js")
+			color.New(color.FgGreen).Println("  ✓ perf/load.js")
+			color.New(color.FgGreen).Println("  ✓ perf/pulse.js")
+			color.New(color.FgGreen).Println("  ✓ perf/README.md")
+			fmt.Println()
+			// Sourcing .env is what gets the run recorded, and it is the step
+			// people skip, so it is in the command rather than only the runbook.
+			color.New(color.FgHiBlack).Println("  Run it:  set -a; source .env; set +a && k6 run perf/load.js")
+			color.New(color.FgHiBlack).Println("  The run records itself in Pulse: before/after traffic per route,")
+			color.New(color.FgHiBlack).Println("  queries and N+1 findings per window, and a CPU profile of the run.")
 			return nil
 		},
 	}
@@ -539,7 +546,10 @@ Examples:
 	cmd.Flags().StringVar(&resource, "resource", "", "Also load-test this resource's list endpoint (e.g. Blog)")
 	cmd.Flags().IntVar(&vus, "vus", 20, "Peak number of virtual users")
 	cmd.Flags().StringVar(&duration, "duration", "30s", "How long to hold at peak (e.g. 30s, 2m)")
-	cmd.Flags().StringVar(&target, "target", "http://localhost:8080", "Default base URL (override at run time with BASE_URL)")
+	// Empty rather than a hardcoded localhost:8080: unset, the generator reads
+	// the project's own APP_URL from .env. A project on any other port used to
+	// get a load test that could not connect to it.
+	cmd.Flags().StringVar(&target, "target", "", "Default base URL (defaults to this project's APP_URL; override at run time with BASE_URL)")
 
 	return cmd
 }

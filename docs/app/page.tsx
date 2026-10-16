@@ -793,7 +793,7 @@ export default function HomePage() {
                   'Trace requests, jobs, DB queries, cache hits, errors',
                   'Read a route against its own baseline, so you see what got slower',
                   'Pull a heap or CPU profile from a running process with go tool pprof',
-                  'Wire k6 test runs into the live latency timeline',
+                  'Run k6 and get a CPU profile of exactly that load window',
                 ].map((line) => (
                   <li key={line} className="flex items-start gap-2.5 text-sm text-foreground/80">
                     <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" strokeWidth={2.5} />

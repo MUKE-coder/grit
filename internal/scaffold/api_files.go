@@ -263,7 +263,7 @@ go 1.26.9
 require (
 	github.com/MUKE-coder/gin-docs v0.0.0-20260222113017-4d647cb4e7aa
 	github.com/MUKE-coder/gorm-studio v1.1.1
-	github.com/MUKE-coder/pulse v1.3.0
+	github.com/MUKE-coder/pulse v1.5.0
 	github.com/aws/aws-sdk-go-v2 v1.43.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.31
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.30

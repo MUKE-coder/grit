@@ -79,3 +79,11 @@ func readDotEnv(path string) map[string]string {
 	}
 	return vals
 }
+
+// ReadDotEnv parses a .env file into a map, for callers outside this package.
+//
+// `grit generate perf` uses it so the k6 script it writes points at the
+// project's own APP_URL. It used to hardcode localhost:8080, so a project on
+// any other port produced a load test that could not connect, which is what
+// happened the first time the generated test was run against a real project.
+func ReadDotEnv(path string) map[string]string { return readDotEnv(path) }

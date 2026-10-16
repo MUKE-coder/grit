@@ -1,12 +1,12 @@
 ---
 title: "Finding the line that is burning your CPU"
-subtitle: "I built a shop, wrote two slow endpoints on purpose, and then went looking for them the way you would in production. One was 356ms of wasted CPU in a function nobody would suspect. The other ran 200 queries per request and did not register as slow anywhere. Here is exactly which screen found which, and the file and line number each one gave me."
+subtitle: "I built a shop, wrote two slow endpoints on purpose, and then went looking for them the way you would in production. One was wasted CPU in a function nobody would suspect. The other ran 200 queries per request and did not register as slow anywhere. Then I put 20 virtual users on both and got a flame graph of exactly that window. Here is which screen found which, and the file and line number each one gave me."
 series: "The Daily Grit"
 edition: 19
 date: 2026-10-16
-readingTime: "16 min"
+readingTime: "19 min"
 author: "Muke JohnBaptist"
-tags: [grit, profiling, pulse, performance, pprof, n+1, observability, go]
+tags: [grit, profiling, pulse, performance, pprof, n+1, observability, go, k6, load-testing]
 canonical: "https://gritframework.dev/blog/finding-the-line-that-is-burning-your-cpu"
 ---
 
@@ -14,7 +14,7 @@ Every Grit project ships with Pulse mounted at `/pulse/ui`. People see the dashb
 
 So let me make something not fine.
 
-I am going to build a shop, write two slow endpoints into it deliberately, and then find them. Not by remembering where I put them. By starting from "something is slow" and following the tooling until it names a file and a line number. The two endpoints are slow in completely different ways, which is the point: one of them is invisible to the screen that catches the other.
+I am going to build a shop, write two slow endpoints into it deliberately, and then find them. Not by remembering where I put them. By starting from "something is slow" and following the tooling until it names a file and a line number. The two endpoints are slow in completely different ways, which is the point: one of them is invisible to the screen that catches the other. Then I am going to put twenty concurrent users on both and get a CPU profile of exactly those fifty seconds.
 
 Everything below is a real run. Every number is copied out of the terminal or read off a screenshot taken while it was happening.
 
@@ -144,28 +144,19 @@ So: `suggestions` is slow. Pulse has taken me as far as the route. Now I need th
 
 ## Step two: which line? (the CPU one)
 
-Here is where I have to tell you about a trap, because I walked into it.
+The dashboard has a **Flame Graph** page. Click it, pick **CPU**, hit Sample:
 
-The dashboard has a **Flame Graph** page. It is the obvious thing to click. I drove load at the slow endpoint and sampled for ten seconds at 200 Hz:
+![The Pulse Flame Graph page in CPU mode. The stack reads bottom-up through the gin middleware into handlers.CatalogReportHandler.Suggestions, services.similarity, and a wide tower of services.normalise into runtime.concatstrings](/blog/profiling/flame.png)
 
-![The Pulse Flame Graph page. The graph is dominated by wide frames reading runtime.netpollblock, poll.runtime_pollWait, net.(*conn).Read, runtime.chanrecv and pulse.startBackground](/blog/profiling/flame.png)
+Read it bottom-up and the whole chain is there: the gin middleware, then `handlers.(*CatalogReportHandler).Suggestions`, then `services.(*CatalogReportService).Suggestions`, then `services.similarity`, and then the widest tower on the page, `services.normalise` opening into `runtime.concatstrings` and `runtime.concatstring2`.
 
-Almost the entire picture is `runtime.netpollblock`, `net.(*conn).Read` and `runtime.chanrecv`. If you did not know better you would conclude your application is doing nothing at all.
+That is the answer, and the page tells you how to read it: *"Width is CPU time, so the widest frame is the one burning the machine."*
 
-The reason is in the page's own description: it samples **goroutine stacks**, not CPU time. A goroutine parked in a network read for the whole window contributes a sample on every tick while using no CPU whatsoever. Width is proportional to samples, so the widest bars on the flame graph are by construction the things consuming none of the resource you came to look at. My hot code *is* in that image, as a sliver you have to hunt for. Hovering it confirms the stack:
+> **This page was useless a day before I wrote this.** It sampled **goroutine stacks** rather than CPU time, so a goroutine parked in a network read counted on every tick while using no CPU at all, and the widest towers were `runtime.netpollblock` and `net.(*conn).Read`. The hot code was a sliver you had to hunt for. [I filed it](https://github.com/MUKE-coder/pulse/issues/10) and Pulse v1.5.0 added the CPU/Goroutines toggle with **CPU as the default**. Goroutine mode kept its own job, finding leaks and stuck workers, and now folds away parked stacks unless you ask for them.
 
-```
-services.similarity    402 samples
-services.normalise     384 samples
-runtime.intstring      205 samples (self)
-runtime.concatstring2  137 samples (self)
-```
+### Going from the function to the line
 
-Right answer, unreadable presentation. [I filed that as an issue against Pulse](https://github.com/MUKE-coder/pulse/issues/10), because the CPU profile already exists in the product and the page should offer it as a mode.
-
-### What to do instead
-
-Pull the CPU profile and open it in the tool Go ships with. This is the part worth memorising:
+The flame graph names the function. For the line, pull the profile and open it in the tool Go ships with:
 
 ```bash
 # authenticate once
@@ -227,26 +218,30 @@ Which brings us to the second mistake, the one the profile makes obvious and rea
 
 Now the digest endpoint. Open **Database**.
 
-![The Pulse Database page: Total Queries 27,320, Query Patterns 30, Slow Queries 0 in amber, N+1 Detected 131 in red](/blog/profiling/database.png)
-
-Stop and look at those two numbers together:
+Stop and look at two of its numbers together:
 
 ```
-SLOW QUERIES    0
-N+1 DETECTED  131
+SLOW QUERIES     0
+N+1 DETECTED   606
 ```
 
 **Not one single slow query.** Every one of those 201 queries per request is a primary-key-indexed lookup returning ten rows in a quarter of a millisecond. No slow query log on earth will flag them. No threshold you can set will catch them, because nothing is over any threshold. The problem is not that a query is slow, it is that there are two hundred of them, and that is a fundamentally different measurement: it requires counting queries *within a single request*, which is something only a profiler living inside the process can do.
 
-The **N+1 Detections** tab:
+The **N+1 detections** tab, which is where this ends:
 
-![The N+1 Detections tab showing repeated rows of "select * from reviews where product_id = ? and reviews.deleted_at is null" each marked 200x with a trace id](/blog/profiling/n1.png)
+![The Pulse Database page. Four tiles read Total queries 50,000, Query patterns 9, Slow queries 0 Healthy, N+1 detected 606 Needs attention. Below, the N+1 table has columns Route, Repeated query, Issued from, Calls per req, Added latency and Severity, with one row: GET /api/v1/reports/digest, select from reviews, services/catalog_report.go:148, 200 calls, +123ms](/blog/profiling/n1.png)
 
-```
-select * from `reviews` where product_id = ? and `reviews`.`deleted_at` is null   200x
-```
+One row, and it answers every question at once:
 
-And the ranked view, which is the one to read, because it sorts by what the problem actually costs you:
+| Route | Issued from | Calls / req | Added latency |
+|---|---|---|---|
+| `GET /api/v1/reports/digest` | `services/catalog_report.go:148` | 200 | +123ms |
+
+**`catalog_report.go:148`** is the `Where("product_id = ?", p.ID)` line, exactly. The suggested fix sits under the SQL: *"Batch-load the children. GORM: `db.Preload("<Children>")`"*.
+
+> **This column did not exist a day before I wrote this either.** The table showed a SQL pattern, a repetition count and a truncated trace id, and the only way to the file was a 7MB CSV export, because Pulse recorded the caller of every query and surfaced it in exactly one place. [I filed it](https://github.com/MUKE-coder/pulse/issues/9) and v1.5.0 put `caller_file` and `caller_line` on the detection, the ranked view and the query spans in a trace.
+
+The ranked view sorts by what the problem actually costs:
 
 ```json
 {
@@ -262,30 +257,115 @@ And the ranked view, which is the one to read, because it sorts by what the prob
 
 41 requests, 200 queries each, 2.07 seconds of database time between them.
 
-### Getting the file for the N+1
+One honest rough edge while I am here: the **Query plans** tab, which runs `EXPLAIN` on slow queries when `PULSE_EXPLAIN_SLOW_QUERIES=true`, sits at zero. Correct behaviour, and a neat illustration of the same point: it is keyed on slow queries, and this problem has none.
 
-The dashboard gives me the route and the SQL, not the file. The API does not have it either, which surprised me, because Pulse's GORM plugin records `runtime.Caller` on every single query and `TrackCallers` defaults to on.
+## Step four: the same thing, under load
 
-It turns out the field exists and reaches exactly one place: the CSV export.
+Everything above was me hitting the endpoints by hand. The question that actually matters is what happens at twenty concurrent users, or five hundred, and that is a different measurement: contention, connection pools, and the N+1 that was merely wasteful at one request a second.
+
+Grit generates a k6 load test:
 
 ```bash
-curl -s -X POST -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' \
-  -d '{"type":"queries","format":"csv","range":"1h"}' \
-  localhost:8211/pulse/api/data/export -o queries.csv
-
-grep reviews queries.csv | head -1
+grit generate perf --resource Product
 ```
 
 ```
-sql,operation,table,duration_ms,rows_affected,error,caller,trace_id,timestamp
-SELECT * FROM `reviews` WHERE product_id = ? ...,SELECT,reviews,17.71,11,,
-  .../internal/services/catalog_report.go:148,5fc2e2a6...
+  ✓ perf/load.js
+  ✓ perf/pulse.js
+  ✓ perf/README.md
 ```
 
-**`catalog_report.go:148`.** That is the `Where("product_id = ?", p.ID)` line, exactly. So the answer exists today, it is just behind a 7MB CSV download instead of in the column next to the detection. [Filed that one too.](https://github.com/MUKE-coder/pulse/issues/9)
+The second file is the interesting one, and it is new. k6 can tell you p95 went from 40ms to 310ms at 500 VUs. It cannot tell you which function, and neither can an external APM at the resolution that matters. Pulse can, because it is inside the process. So the generated script registers the run with Pulse before the load starts and closes it after:
 
-While I am being honest about rough edges: the **Query Plans** tab, which runs `EXPLAIN` on slow queries when `PULSE_EXPLAIN_SLOW_QUERIES=true`, said *"Capturing. No slow query has needed a plan yet."* Correct behaviour, and a neat illustration of the same point: it is keyed on slow queries, and this problem has none.
+```js
+export function setup() {
+  // ... mint a token ...
+  const pulse = pulseBase(BASE);
+  const pulseToken = pulseLogin(pulse);
+  const run = pulseStartRun(pulse, pulseToken, {
+    name: 'grit generate perf: 20 VUs for 30s',
+    type: 'k6.average-load',
+    metadata: { vus_peak: 20, hold: '30s', base_url: BASE },
+  });
+  return { token, staff, pulse, pulseToken, run };
+}
+
+export function teardown(data) {
+  pulseEndRun(data.pulse, data.pulseToken, data.run, { completed: true });
+}
+```
+
+Run it:
+
+```bash
+set -a; source .env; set +a      # PULSE_USERNAME / PULSE_PASSWORD
+k6 run perf/load.js
+```
+
+```
+pulse: recording run 52a909962ff59a2c5bcbd812087febb2 with a CPU profile
+
+  █ THRESHOLDS
+    http_req_duration  ✓ 'p(95)<500' p(95)=347.29ms
+    http_req_failed    ✓ 'rate<0.01' rate=0.00%
+
+  Pulse recorded this run:
+    Comparison   http://localhost:8211/pulse/ui/test-runs
+    Flame graph  http://localhost:8211/pulse/api/test-runs/52a9.../profile?format=svg
+```
+
+### What the run knows that k6 does not
+
+![The Pulse Test Runs page. One row: "grit generate perf: 20 VUs for 30s", type k6.average-load, duration 50.3s, with metadata chips for base_url, completed, hold and vus_peak](/blog/profiling/test-runs.png)
+
+Hit **Compare**:
+
+![The test run comparison. Before/during/after columns show p50 2ms, p95 336ms, p99 401ms during the run. A per-route table gives avg during for each endpoint. A database block reads: queries per request 16.23 during, N+1 detections 606 during, slow queries during 0. At the bottom, "CPU profile of the run" with Show flame graph and Download .pprof, 174 KB](/blog/profiling/run-compare.png)
+
+Three things on that screen are measured from inside the API process, and no load generator can produce any of them.
+
+**Before, during and after, from exact counts.** p50 2ms, p95 336ms, p99 401ms during the run, computed from per-minute rollups that count every request rather than the ones k6 happened to sample. It also measures recovery: how long after the load stops before p95 returns within 10% of its pre-run baseline and stays there. My run has no "before" because the process was idle, and the page says so plainly rather than inventing a comparison.
+
+**Per route.** A global average is dominated by whichever endpoint carried the most volume. Here `/api/v1/profile` took 1,212 requests at 2ms and `/api/v1/reports/suggestions` took 606 at 211ms, and averaging those together would have hidden exactly the thing worth seeing. The page is honest that these are averages, not percentiles, because per-route percentiles are not kept per minute. A mislabelled number would be worse.
+
+**The database block, which is the one I would put on a poster:**
+
+```
+Queries per request   0.00 before   16.23 during
+N+1 detections           0 before      606 during
+Slow queries during                       0
+```
+
+Sixteen queries per request. Six hundred and six N+1 detections. **Zero slow queries.** The exact signature from earlier, except now it is attached to a load test, which is where it actually costs you: 50,000 queries went to the database in fifty seconds, and 71,851 connection waits piled up behind a pool of one.
+
+And at the bottom, **CPU profile of the run**, 174 KB, scoped to precisely that window:
+
+```
+Duration: 50.26s, Total samples = 145.81s (290.09%)
+      flat  flat%   cum   cum%
+    20.55s 14.09%  30.68s 21.04%  services.editDistance
+     9.14s  6.27%  30.06s 20.62%  runtime.concatstrings
+```
+
+Same culprit as the hand-driven profile, now with the authority of fifty seconds at twenty concurrent users behind it. `Show flame graph` renders it in the page; `Download .pprof` gives you the raw profile for `go tool pprof -list`.
+
+### One bug I hit wiring this up
+
+Worth reporting because it will bite anyone who writes this integration themselves. The first run recorded nothing, and said so:
+
+```
+pulse: login failed (403), so this run will not be recorded
+```
+
+403, not 401, and the body said `CSRF_INVALID`. The cause is that `setup()` logs into the API first, which sets a session cookie, and **k6 keeps one cookie jar per virtual user**. So the Pulse login carried the app's session cookie, and Grit's double-submit CSRF middleware correctly refused a cookie-bearing POST with no `X-CSRF-Token`. The same k6 request in isolation worked fine, which is what made it confusing.
+
+The fix is one line, and it is semantically right rather than a workaround: the Pulse dashboard authenticates with a bearer token and wants no cookies at all, so it gets an empty jar of its own.
+
+```js
+const jar = new http.CookieJar();
+```
+
+The whole bridge is also fail-soft. Unset `PULSE_PASSWORD`, disable Pulse, point it at an unreachable host, and every call returns null and prints a warning. A load test must never fail because its observability sidecar had a bad day, and the first version of this failed *silently*, which is worse.
 
 ## Fixing both
 
@@ -340,41 +420,58 @@ func normalise(s string) string {
 
 ## What changed
 
+Both numbers below come from the same k6 run, 20 virtual users for 30 seconds, read off the same Test Runs comparison. Like for like:
+
 | | before | after |
 |---|---|---|
-| `digest` avg / p95 | 71ms / 92ms | **10ms / 13ms** |
-| `suggestions` avg / p95 | 356ms / 419ms | **133ms / 148ms** |
-| N+1 detections | 131 | **0** |
-| queries, `reviews` table | 8,200 | **a handful** |
-| total queries, 64 requests | thousands | **294** |
+| p95 during the run | 336ms | **100ms** |
+| p99 during the run | 401ms | **125ms** |
+| `digest` avg | 130ms | **9ms** |
+| `suggestions` avg | 211ms | **89ms** |
+| queries per request | 16.23 | **1.62** |
+| N+1 detections | 606 | **0** |
+| requests served in the window | 3,032 | **3,692** |
+
+The N+1 fix is the dramatic one: ten times fewer queries per request, six hundred and six detections down to none, and a fifth of the latency on that endpoint. It is also the one that would have hurt most in production, where every one of those 200 queries costs a network round trip rather than a quarter of a millisecond on the same disk.
 
 And the profile, re-taken under the same load:
 
 ```
-Duration: 12s, Total samples = 7210ms (60.08%)      (was 9850ms, 82.08%)
+Duration: 50.77s, Total samples = 79.83s (157.23%)    (was 145.81s, 290.09%)
       flat  flat%   cum   cum%
-    2990ms 41.47%  4070ms 56.45%  services.editDistance
-     410ms  5.69%   410ms  5.69%  runtime.memmove
-     320ms  4.44%   320ms  4.44%  services.min3 (inline)
+    33.39s 41.83%  45.46s 56.95%  services.editDistance
+     4.63s  5.80%   4.63s  5.80%  runtime.semasleep
+     4.52s  5.66%   4.52s  5.66%  runtime.memmove
 ```
 
-`normalise` has vanished from the listing entirely. `concatstrings` and `mallocgcTinySC2` are gone with it.
+`normalise` has vanished from the listing entirely, and `runtime.concatstrings` with it. Total CPU across the same fifty seconds of the same load went from 145.81s to 79.83s, which is a little over half the machine handed back.
 
 And now the profile tells the truth it could not tell before: `editDistance` is 56% of CPU. That was always the real cost of comparing 200 names against each other, it was just hidden behind a bigger, dumber problem. The remaining fix is not a micro-optimisation, it is a design decision: cache the result, compute it in a background job, or stop comparing everything to everything. Which is the right place for a profiler to leave you.
 
 ## What I would actually tell you to do
 
-Four things, in order, and the order is the whole method:
+Five things, in order, and the order is the whole method:
 
 1. **Routes page first.** It is ten seconds and it tells you which endpoint. Everything else is wasted until you know that. Once your app has a week of history, read the **VS USUAL** column rather than the absolute, because "90ms" means nothing and "2.1x its baseline since Tuesday" means everything.
 
-2. **For slow: pull a CPU profile and run `pprof -list`.** Not the flame graph page, which samples goroutines and will show you a wall of idle connections. `-top` tells you the function, read the `cum` column; `-list` tells you the line. Expect to be surprised about which function it is. I wrote that code an hour earlier and I would have bet on the Levenshtein.
+2. **For slow: the flame graph in CPU mode, then `pprof -list` for the line.** The graph names the function, `-top` confirms it (read the `cum` column, not `flat`), and `-list` puts a number on each line. Expect to be surprised about which function it is. I wrote that code an hour earlier and I would have bet on the Levenshtein distance; it was the string normaliser, at twice the cost.
 
-3. **For "not slow but somehow slow": the Database page.** `Slow Queries 0` next to `N+1 Detected 131` is the signature of a problem no threshold will ever find, and it is overwhelmingly the most common performance bug in a CRUD application. A profiler cannot find it either, because the process is not burning CPU, it is making two hundred round trips.
+3. **For "not slow but somehow slow": the Database page.** `Slow queries 0` next to `N+1 detected 606` is the signature of a problem no threshold will ever find, and it is overwhelmingly the most common performance bug in a CRUD application. A profiler cannot find it either, because the process is not burning CPU, it is making two hundred round trips. Read the **Issued from** column and you are done.
 
-4. **Do it on your laptop before production does it to you.** The digest endpoint took 71ms locally against SQLite on the same machine. Put a real database one network hop away, where each of those 201 queries costs a millisecond of round trip instead of a quarter of one, and the same code takes well over a second. The N+1 detector found it at 71ms, which is precisely when you want to know.
+4. **Then put load on it, and let the run record itself.** `grit generate perf` writes the k6 script and the Pulse bridge together. One command and a `source .env` gets you before/during/after per route, queries per request, N+1 findings for that window, and a CPU profile scoped to exactly the seconds the load was running. Guessing which of your handlers falls over first is a worse use of an afternoon than measuring it.
 
-The tools are already in your project. `grit new` mounted them. The only thing standing between you and the line number is knowing which screen answers which question, and the honest summary is: **the dashboard tells you which route, and `go tool pprof` tells you which line.**
+5. **Do it on your laptop before production does it to you.** The digest endpoint took 71ms locally against SQLite on the same machine, which is to say it looked fine. Put a real database one network hop away, where each of those 201 queries costs a millisecond of round trip instead of a quarter of one, and the same code takes well over a second. The N+1 detector found it at 71ms, which is precisely when you want to know.
+
+The tools are already in your project. `grit new` mounted them and `grit generate perf` wires the load test into them. The only thing standing between you and the line number is knowing which screen answers which question:
+
+| Question | Where |
+|---|---|
+| Which endpoint is slow? | Routes, and the **vs usual** column once you have a week of history |
+| Which function is burning CPU? | Flame Graph, CPU mode |
+| Which **line**? | `go tool pprof -list` on the profile |
+| Why is it slow when no query is slow? | Database, **N+1 detections**, read **Issued from** |
+| What happens at 20x the traffic? | `grit generate perf`, then Test Runs → Compare |
+| What was burning during *that* load? | The CPU profile attached to the run |
 
 ---
 

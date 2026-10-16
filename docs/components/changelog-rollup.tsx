@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 12 to 18, 2026",
-    count: 7,
+    count: 8,
     entries: [
+      { version: "3.401.0", title: "Your load test now tells you which function fell over" },
       { version: "3.400.2", title: "An allocation budget is a figure about a toolchain, not about your code alone" },
       { version: "3.400.1", title: "Three things CI caught that the local test run did not" },
       { version: "3.400.0", title: "Pulse v1.3.0, and 38MB of the heap back" },
