@@ -77,6 +77,7 @@ func blogServiceGo() string {
 	return `package services
 
 import (
+	"context"
 	"fmt"
 	"math"
 
@@ -95,6 +96,30 @@ func NewBlogService(db *gorm.DB) *BlogService {
 	return &BlogService{DB: db}
 }
 
+// searchScope is what searching a blog means, written once.
+//
+// The list and the admin's stat cards both narrow by the same text, and when
+// each built its own WHERE they could answer different questions: add a column
+// to one clause and the table filtered by it while the counts above it did
+// not. One definition, two callers, so that cannot happen.
+func (s *BlogService) searchScope(query *gorm.DB, search string) *gorm.DB {
+	if search == "" {
+		return query
+	}
+	// Portable case-insensitive search, ILIKE is Postgres-only.
+	return query.Where("LOWER(title) LIKE LOWER(?) OR LOWER(content) LIKE LOWER(?)", "%"+search+"%", "%"+search+"%")
+}
+
+// CountQuery is the list's query for a search, without paging or ordering.
+//
+// It exists for the handler's stat cards, which need to count the same rows
+// the list is about to return. Exported so the handler can ask the service for
+// it rather than reaching past the service to the database and rebuilding the
+// search by hand, which is the version that drifts.
+func (s *BlogService) CountQuery(ctx context.Context, search string) *gorm.DB {
+	return s.searchScope(s.DB.WithContext(ctx).Model(&models.Blog{}), search)
+}
+
 // List returns a paginated list of all blogs (admin).
 func (s *BlogService) List(page, pageSize int, search, sortKey, sortDir string) ([]models.Blog, int64, int, error) {
 	if page < 1 {
@@ -110,12 +135,7 @@ func (s *BlogService) List(page, pageSize int, search, sortKey, sortDir string) 
 		sortKey = "created_at"
 	}
 
-	query := s.DB.Model(&models.Blog{})
-
-	if search != "" {
-		// Portable case-insensitive search — ILIKE is Postgres-only.
-		query = query.Where("LOWER(title) LIKE LOWER(?) OR LOWER(content) LIKE LOWER(?)", "%"+search+"%", "%"+search+"%")
-	}
+	query := s.searchScope(s.DB.Model(&models.Blog{}), search)
 
 	var total int64
 	query.Count(&total)

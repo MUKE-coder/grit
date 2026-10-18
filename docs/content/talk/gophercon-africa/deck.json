@@ -1,0 +1,142 @@
+{
+  "v": 8,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-16T10:00:00Z"
+  },
+  "lists": "css",
+  "title": "Grit at GopherCon Africa",
+  "order": [
+    "cover",
+    "hook",
+    "sec-dev",
+    "d-all",
+    "d1",
+    "d1-ex",
+    "d2",
+    "d3",
+    "d3-ex",
+    "d4",
+    "d4-ex",
+    "d5",
+    "d6",
+    "d7",
+    "d7-ex",
+    "d8",
+    "d9",
+    "d10",
+    "d11",
+    "d11-ex",
+    "d12",
+    "d12-ex",
+    "sec-biz",
+    "b-all",
+    "b1",
+    "b2",
+    "b3",
+    "b4",
+    "b5",
+    "b6",
+    "b7",
+    "b8",
+    "b8-ex",
+    "b9",
+    "b10",
+    "b11",
+    "b12",
+    "b13",
+    "b14",
+    "why-libraries",
+    "why-templates",
+    "why-phase-two",
+    "the-question",
+    "sec-solution",
+    "solution",
+    "solution-cmd",
+    "solution-output",
+    "sec-concepts",
+    "c1",
+    "c1-ex",
+    "c2",
+    "c2-ex",
+    "c3",
+    "c3-ex",
+    "c4",
+    "sec-built",
+    "built-apps",
+    "built-clients",
+    "sec-features",
+    "f-n1-stat",
+    "f-n1-line",
+    "f-offline",
+    "f-security",
+    "f-audit",
+    "f-uploads",
+    "f-backups",
+    "f-scale-stat",
+    "f-correctness",
+    "sec-build",
+    "build-1",
+    "build-2",
+    "build-3",
+    "build-running",
+    "build-wrote",
+    "scorecard-d",
+    "scorecard-b",
+    "closing-statement",
+    "close"
+  ],
+  "sections": {
+    "opening": {
+      "description": "The question the talk answers.",
+      "start": "cover"
+    },
+    "problem-dev": {
+      "description": "Twelve problems that cost the developer the first two weeks.",
+      "start": "sec-dev"
+    },
+    "problem-biz": {
+      "description": "Fourteen questions the client asks before anyone mentions the feature.",
+      "start": "sec-biz"
+    },
+    "why": {
+      "description": "Why twenty-six problems survive a decade of excellent libraries.",
+      "start": "why-libraries"
+    },
+    "solution": {
+      "description": "Describe a resource, get the whole vertical slice.",
+      "start": "sec-solution"
+    },
+    "concepts": {
+      "description": "The four ideas the framework is built on.",
+      "start": "sec-concepts"
+    },
+    "built": {
+      "description": "What people ship with it.",
+      "start": "sec-built"
+    },
+    "features": {
+      "description": "The answers already in the box.",
+      "start": "sec-features"
+    },
+    "build": {
+      "description": "An application from an empty folder to a running stack.",
+      "start": "sec-build"
+    },
+    "close": {
+      "description": "Twenty-six problems accounted for, and where to get it.",
+      "start": "scorecard-d"
+    }
+  },
+  "faces": {
+    "geist": {
+      "family": "Geist",
+      "href": "https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap"
+    },
+    "geist-mono": {
+      "family": "Geist Mono",
+      "href": "https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap"
+    }
+  },
+  "designSystems": []
+}

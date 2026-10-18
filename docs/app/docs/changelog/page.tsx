@@ -66,6 +66,51 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.403.0 */}
+            <div className="mb-12" id="v3.403.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.403.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 18, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The blog list and its stat cards held two copies of the same search</h3>
+                <p>
+                  The admin blog list narrowed by a search, and the four stat cards above it
+                  counted rows over the same search. Each built its own <code>WHERE</code>: the
+                  service in <code>blog_service.go</code>, and the handler again in{' '}
+                  <code>blog_handler.go</code>, where it skipped the service and queried the
+                  database directly. Two definitions of the same thing, in two files, so nobody
+                  editing one would see the other.
+                </p>
+                <p>
+                  Nothing was visibly broken, which is why it survived. It breaks the first time
+                  someone adds a searchable column: the table filters by it and the counts above
+                  it do not, and the numbers are quietly wrong rather than missing.
+                </p>
+                <p>
+                  <code>BlogService</code> now states the search once in <code>searchScope</code>,
+                  used by <code>List</code> and by a new <code>CountQuery(ctx, search)</code>. The
+                  handler asks the service for that query instead of rebuilding it, and no longer
+                  touches the database at all, which is what the layering said all along.
+                </p>
+                <p>
+                  Existing projects get both halves on <code>grit upgrade</code>. That ordering
+                  matters: the blog files are written for a new project and do not travel on
+                  upgrade, so the handler repair is skipped, with a warning naming the method to
+                  add, whenever the service repair could not run. A handler calling a method that
+                  is not there would not compile.
+                </p>
+                <p>
+                  Four tests hold the property: the clause appears exactly once, the handler never
+                  queries the database directly, the repair is idempotent, and it warns rather
+                  than guessing when the file has been edited.
+                </p>
+              </div>
+            </div>
+
             {/* v3.402.1 */}
             <div className="mb-12" id="v3.402.1">
               <div className="flex items-center gap-3 mb-4">

@@ -1,0 +1,25 @@
+<section id="f-correctness" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:112px 128px;display:flex;flex-direction:column;justify-content:center;gap:44px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">B12 &middot; the refusal is the feature</p>
+
+<div style="background:#0a0a0a;border:1px solid #333333;border-radius:8px;display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;gap:12px;padding:20px 28px;border-bottom:1px solid #333333">
+<x-shape kind="ellipse" style="width:14px;height:14px;background:#333333"></x-shape>
+<x-shape kind="ellipse" style="width:14px;height:14px;background:#333333"></x-shape>
+<x-shape kind="ellipse" style="width:14px;height:14px;background:#333333"></x-shape>
+<p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888;padding-left:14px">409 Conflict</p>
+</div>
+<div style="padding:40px 48px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:28px;color:#ffffff;line-height:1.7">{<br>&nbsp;&nbsp;<span style="color:#0070f3">"code"</span>: <span style="color:#888888">"VERSION_CONFLICT"</span>,<br>&nbsp;&nbsp;<span style="color:#0070f3">"message"</span>: <span style="color:#888888">"this invoice changed while you were editing it"</span>,<br>&nbsp;&nbsp;<span style="color:#0070f3">"current_version"</span>: 9<br>}</p>
+</div>
+</div>
+
+<p style="font-size:36px;color:#888888;line-height:1.45;width:1660px">A number, not a string. The interface can offer to reload, show the difference, or retry, because it was told enough to act.</p>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Point at the nine and say it is a number. That sounds like a joke and it is a real bug that shipped: it went out as a quoted string, so every client that compared versions compared text, and the comparison was silently wrong.
+
+The shape matters more than the mechanism. A 409 that just says conflict leaves the frontend with nowhere to go but an alert box. A 409 that carries the version the server actually holds lets the interface do something useful, and that is the difference between handling a conflict and reporting one.
+
+Underneath it is an If-Match header and a conditional update. Two people, one record, and the second save is refused rather than silently winning.</aside>
+</section>

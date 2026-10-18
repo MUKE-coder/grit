@@ -1,0 +1,25 @@
+<section id="c2-ex" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:112px 128px;display:flex;flex-direction:column;justify-content:center;gap:40px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">C2 &middot; generated, unedited</p>
+
+<div style="background:#0a0a0a;border:1px solid #333333;border-radius:8px;display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;gap:12px;padding:20px 28px;border-bottom:1px solid #333333">
+<x-shape kind="ellipse" style="width:14px;height:14px;background:#333333"></x-shape>
+<x-shape kind="ellipse" style="width:14px;height:14px;background:#333333"></x-shape>
+<x-shape kind="ellipse" style="width:14px;height:14px;background:#333333"></x-shape>
+<p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888;padding-left:14px">internal/services/contact_service.go</p>
+</div>
+<div style="padding:40px 48px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:26px;color:#ffffff;line-height:1.7"><span style="color:#888888">// ContactService owns every database read and write for contacts.</span><br><span style="color:#888888">//</span><br><span style="color:#888888">// A job, a command or a test calls the same methods with no request</span><br><span style="color:#888888">// at all, so a rule enforced here is enforced everywhere.</span><br><span style="color:#0070f3">type</span> ContactService <span style="color:#0070f3">struct</span> {<br>&nbsp;&nbsp;&nbsp;&nbsp;DB *gorm.DB<br>}</p>
+</div>
+</div>
+
+<p style="font-size:32px;color:#888888;line-height:1.5;width:1620px">One dependency, and it is GORM. The comment was generated too, because why a thing is shaped this way is worth more than the shape.</p>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Read the struct, not the comment. Four lines, one dependency.
+
+Then point at the comment and make the smaller claim, which lands with this audience: the generated code is commented, and the comments explain why rather than what. A generator that emits uncommented code hands you a maintenance problem dressed up as a head start.
+
+The sentence in the comment is also the architecture: the rule lives in the service, so the HTTP route, the job and the test all get it.</aside>
+</section>

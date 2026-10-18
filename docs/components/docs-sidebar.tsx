@@ -84,6 +84,7 @@ const navItems: NavItem[] = [
     icon: <Box className="h-3.5 w-3.5" />,
     items: [
       { title: 'Architecture Overview', href: '/docs/concepts/architecture' },
+      { title: 'Architecture Style', href: '/docs/concepts/architecture-style' },
       { title: 'Architecture Modes', href: '/docs/concepts/architecture-modes' },
       { title: 'Triple (Web+Admin+API)', href: '/docs/concepts/architecture-modes/triple' },
       { title: 'Double (Web+API)', href: '/docs/concepts/architecture-modes/double' },

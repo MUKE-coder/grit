@@ -1,0 +1,32 @@
+<section id="d1-ex" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:center;gap:56px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">D1 &middot; what copying actually costs</p>
+
+<div style="display:flex;gap:24px;align-items:center">
+<div style="flex:1;background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:38px;display:flex;flex-direction:column;gap:10px">
+<p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888">project-one</p>
+<p style="font-size:30px;font-weight:500">auth has the bug</p>
+</div>
+<div style="flex:1;background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:38px;display:flex;flex-direction:column;gap:10px">
+<p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888">project-two</p>
+<p style="font-size:30px;font-weight:500">auth has the bug</p>
+</div>
+<div style="flex:1;background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:38px;display:flex;flex-direction:column;gap:10px">
+<p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888">project-three</p>
+<p style="font-size:30px;font-weight:500;color:#000000">you fixed it here</p>
+</div>
+<div style="flex:1;background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:38px;display:flex;flex-direction:column;gap:10px">
+<p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888">project-four</p>
+<p style="font-size:30px;font-weight:500">copied from two</p>
+</div>
+</div>
+
+<p style="font-size:40px;font-weight:500;line-height:1.35;width:1500px">The fix exists. It is in one repository, and there is no mechanism to move it to the other three.</p>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Point at project three. That is where you fixed refresh token replay. It is a real commit.
+
+Now point at four. It was started from project two, before the fix, so it still has the bug. Nobody will ever notice.
+
+This is the slide that makes grit upgrade land later. Hold the thought: there is no mechanism. Keep that phrase.</aside>
+</section>

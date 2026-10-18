@@ -1,0 +1,21 @@
+<section id="f-scale-stat" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:center;gap:56px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">D9 and B6 &middot; grit seed Product --count 1000000</p>
+
+<div style="display:flex;gap:72px;align-items:end">
+<div><p style="font-size:144px;font-weight:700;letter-spacing:-6px;line-height:1">1M</p><p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">rows</p></div>
+<div style="width:1px;height:140px;background:#e5e5e5"></div>
+<div><p style="font-size:144px;font-weight:700;letter-spacing:-6px;line-height:1">59<span style="font-size:52px">s</span></p><p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">on a laptop</p></div>
+<div style="width:1px;height:140px;background:#e5e5e5"></div>
+<div><p style="font-size:144px;font-weight:700;letter-spacing:-6px;line-height:1;color:#0070f3">10<span style="font-size:52px"> MB</span></p><p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">heap, the whole way</p></div>
+</div>
+
+<p style="font-size:40px;font-weight:500;line-height:1.35;width:1660px">The number that matters is the third one. Ask for ten thousand or ten million and the heap looks the same.</p>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Three numbers, and tell them which one to care about, because they will instinctively care about the second.
+
+Sixteen thousand rows a second is a fine number and it is not the point. The point is that the ceiling is a property of the pipeline rather than of how many rows you asked for: rows are built in chunks, written in batches, and the number of batches in flight is capped by a channel.
+
+The practical reason this exists is D9. A list page with ten rows is a lie. You find your pagination bug, your missing index and your N+1 at a million rows, in a minute, before a client does.</aside>
+</section>

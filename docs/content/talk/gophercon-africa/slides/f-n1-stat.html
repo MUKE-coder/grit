@@ -1,0 +1,21 @@
+<section id="f-n1-stat" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:center;gap:56px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">B4 &middot; one page, measured</p>
+
+<div style="display:flex;gap:80px;align-items:end">
+<div><p style="font-size:144px;font-weight:700;letter-spacing:-6px;line-height:1">201</p><p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">queries per request</p></div>
+<div style="width:1px;height:140px;background:#e5e5e5"></div>
+<div><p style="font-size:144px;font-weight:700;letter-spacing:-6px;line-height:1">606</p><p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">N+1 detections</p></div>
+<div style="width:1px;height:140px;background:#e5e5e5"></div>
+<div><p style="font-size:144px;font-weight:700;letter-spacing:-6px;line-height:1">0</p><p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">slow queries</p></div>
+</div>
+
+<p style="font-size:44px;font-weight:500;line-height:1.3;letter-spacing:-1px;width:1620px">No threshold on earth catches this. Nothing is over any threshold.</p>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Three numbers. Let the zero land on its own.
+
+Every one of those 201 queries is a primary key lookup that returns in a quarter of a millisecond. A slow query log will never show you one of them. An alert on p95 tells you the page is slow and nothing about why.
+
+The measurement that finds it is queries counted inside a single request, which only something living in the process can do. That is the whole argument for observability being in the framework rather than bolted on.</aside>
+</section>

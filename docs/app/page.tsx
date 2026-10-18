@@ -1411,6 +1411,7 @@ grit new my-app`} />
                 <li><Link href="/courses" className="text-muted-foreground hover:text-foreground transition-colors">Courses</Link></li>
                 <li><Link href="/sponsors" className="text-muted-foreground hover:text-foreground transition-colors">Sponsors</Link></li>
                 <li><Link href="/pitch" className="text-muted-foreground hover:text-foreground transition-colors">Pitch</Link></li>
+                <li><Link href="/talk" className="text-muted-foreground hover:text-foreground transition-colors">The Talk</Link></li>
                 <li>
                   <Link href={WHATSAPP_COMMUNITY_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-emerald-500/90 hover:text-emerald-500 transition-colors">
                     <WhatsAppIcon className="h-3 w-3" />

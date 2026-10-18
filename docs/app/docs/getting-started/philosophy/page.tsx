@@ -34,8 +34,12 @@ export default function PhilosophyPage() {
                 <Link href="/pitch" className="text-primary hover:underline">
                   pitch
                 </Link>{' '}
-                states the six trade-offs in short form. The long-form founder story is on the
-                blog:{' '}
+                states the trade-offs in short form, and{' '}
+                <Link href="/talk" className="text-primary hover:underline">
+                  the GopherCon Africa talk
+                </Link>{' '}
+                argues the whole case, slide by slide, with the speaker notes attached. The
+                long-form founder story is on the blog:{' '}
                 <Link href="/blog/why-i-built-grit" className="text-primary hover:underline">
                   Why I built Grit &rarr;
                 </Link>
@@ -96,28 +100,57 @@ export default function PhilosophyPage() {
               {/* ============================================================ */}
               <h2>Why Grit exists</h2>
               <p>
-                Building a full-stack application today means stitching together fifteen or more
-                tools: a framework, an ORM, an auth library, a validation library, a data-fetching
-                library, an S3 client, a mailer, a queue, an admin panel. Every project starts with
-                days of wiring. Every developer wires it differently, and the result is a codebase
-                where the interesting decisions are buried under the boring ones.
+                Every project runs into two separate sets of problems, and they belong to different
+                people. One set costs the developer the first two weeks. The other belongs to the
+                client and decides whether there is a project at all.
               </p>
               <p>
-                Go has an excellent performance and deployment story, but its web ecosystem is
-                deliberately unopinionated &mdash; Gin, Echo, Fiber and Chi for routing; GORM, sqlc
-                and sqlx for data; dozens of auth libraries. That is a genuine strength for
-                infrastructure work and a genuine cost for product work, where you would rather
-                inherit good defaults than assemble them.
+                <strong>The developer&apos;s twelve</strong> are the ones you can name from memory:
+                the copy-paste start, where auth and file storage get lifted out of the last
+                repository along with their bugs; wiring the monorepo; the same invoice described
+                four times, in Go, in TypeScript, in the validation schema and in the mobile
+                client, kept in step by memory; CRUD hell, where twenty tables become twenty
+                slightly different list pages; no window into the database and nothing realistic to
+                develop against; an API nobody wrote down; a migration that half ran with no way
+                back; and a React frontend that a backend engineer ends up building because nobody
+                funds a frontend developer for an internal admin panel. And now a twelfth: a
+                model will write all of it for you, differently each time, for a fee you pay
+                again on the next project, leaving you seventy-four thousand lines to review
+                and no way to carry a fix from one project to the next.
               </p>
               <p>
-                And then there is the admin panel. Laravel has <strong>Filament</strong>: define a
-                resource, get a real dashboard with tables, filters, forms and widgets. The Go +
-                React world has no equivalent, so every team rebuilds the same CRUD screens.
+                <strong>The client&apos;s fourteen</strong> are the questions asked before anyone
+                mentions your actual feature. Can different people see different things. What
+                happens if we get hacked. Does it work without internet. How will we know when it
+                breaks, and is any of it backed up. Who changed this. Can two of our clients use
+                one system. What if two people edit the same record. Each is real work with no demo
+                attached, so each is promised for later, and offline, audit and observability are
+                the three that never arrive.
               </p>
               <p>
-                <strong>Grit exists to close that gap</strong> &mdash; convention over
-                configuration, batteries included, and code generation, applied to Go on the
-                backend and React on the front.
+                They survive a decade of excellent libraries for a reason. Go&apos;s ecosystem is
+                superb at solving one problem each: a router, a queue, a migration tool. What
+                nobody hands you is <em>the shape of the application</em>, so the shape is
+                hand-carved on every project. And a boilerplate repository rots the day you clone
+                it: a fix made on project five never reaches projects one to four, and you cannot
+                tell which repository has which.
+              </p>
+              <p>
+                So the question Grit exists to answer is not <em>which library</em>. It is whether
+                the shape of an application can be generated, owned outright by the team that
+                generated it, and <strong>still improve after they own it</strong>. Generated is
+                easy. Generated and owned is harder. Generated, owned and still improving is the
+                actual problem, and <code>grit upgrade</code> is the answer to the third clause.
+              </p>
+              <p>
+                There is a shorter version of all of this. Laravel has{' '}
+                <strong>Filament</strong>: define a resource, get a real dashboard with tables,
+                filters, forms and widgets. The Go and React world has no equivalent, so every team
+                rebuilds the same screens.{' '}
+                <Link href="/talk" className="text-primary hover:underline">
+                  The talk
+                </Link>{' '}
+                walks all twenty-six problems one at a time.
               </p>
 
               {/* ============================================================ */}
@@ -161,7 +194,9 @@ export default function PhilosophyPage() {
               <p>
                 One auth system. One folder structure. One naming convention. Any developer can
                 open any Grit project and know where things live, and an AI agent does not have to
-                infer which of six patterns you chose.
+                infer which of six patterns you chose. The shape that convention produces is a
+                modular monolith with a layered API, which has its own page:{' '}
+                <Link href="/docs/concepts/architecture-style">architecture style</Link>.
               </p>
               <p>
                 <strong>The cost:</strong> if your application genuinely does not fit the
@@ -179,9 +214,18 @@ export default function PhilosophyPage() {
               </p>
               <p>
                 <strong>The cost:</strong> generated code is yours to maintain from the moment it
-                lands. Upgrading Grit does not retroactively improve resources you generated six
-                months ago &mdash; new templates apply to new code. That is the honest trade for
-                never being blocked by a framework internal you cannot see.
+                lands. The split is worth being precise about, because it is the whole design.
+                Files the framework owns, such as the password rules, session rotation, the sync
+                engine and the image pipeline, travel on <code>grit upgrade</code> and come
+                forward with the framework. Your models, services, handlers, pages and migrations
+                never do. Every generated file is hashed into a manifest when it is written, so a
+                framework file you have edited is reported as a conflict rather than overwritten,
+                and the decision stays yours.
+              </p>
+              <p>
+                What that leaves is the resource code itself: regenerating does not retrofit a
+                better template onto a resource you generated six months ago. That is the honest
+                trade for never being blocked by a framework internal you cannot see.
               </p>
 
               <h3>3. Own your code</h3>

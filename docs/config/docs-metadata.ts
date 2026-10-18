@@ -108,6 +108,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Understand Grit architecture: monorepo layout, Go API with handler-service-model pattern, Next.js frontend, shared types, and code generation.',
   },
+  '/docs/concepts/architecture-style': {
+    title: 'Architecture Style',
+    description:
+      'Which architecture style Grit is: a modular monolith with a layered Go API, an in-process event bus, a transactional outbox and sagas. Which styles it deliberately is not, and what it costs to refactor a Grit project from one style to another.',
+  },
   '/docs/concepts/architecture-modes': {
     title: 'Architecture Modes',
     description:

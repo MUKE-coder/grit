@@ -1,0 +1,31 @@
+<section id="c1-ex" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:center;gap:48px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">C1 &middot; a field type is a decision made once</p>
+
+<div style="display:flex;flex-wrap:wrap;gap:14px;width:1660px">
+<p style="font-size:30px;border:1px solid #e5e5e5;border-radius:999px;padding:14px 30px;font-weight:500">money</p>
+<p style="font-size:30px;border:1px solid #e5e5e5;border-radius:999px;padding:14px 30px;font-weight:500">belongs_to</p>
+<p style="font-size:30px;border:1px solid #e5e5e5;border-radius:999px;padding:14px 30px;font-weight:500">many_to_many</p>
+<p style="font-size:30px;border:1px solid #e5e5e5;border-radius:999px;padding:14px 30px;font-weight:500">files</p>
+<p style="font-size:30px;border:1px solid #e5e5e5;border-radius:999px;padding:14px 30px;font-weight:500">richtext</p>
+<p style="font-size:30px;border:1px solid #e5e5e5;border-radius:999px;padding:14px 30px;color:#888888;filter:blur(3px);opacity:0.45">slug</p>
+<p style="font-size:30px;border:1px solid #e5e5e5;border-radius:999px;padding:14px 30px;color:#888888;filter:blur(3px);opacity:0.45">select</p>
+<p style="font-size:30px;border:1px solid #e5e5e5;border-radius:999px;padding:14px 30px;color:#888888;filter:blur(3px);opacity:0.45">percent</p>
+<p style="font-size:30px;border:1px solid #e5e5e5;border-radius:999px;padding:14px 30px;color:#888888;filter:blur(3px);opacity:0.45">rating</p>
+<p style="font-size:30px;border:1px solid #e5e5e5;border-radius:999px;padding:14px 30px;color:#888888;filter:blur(3px);opacity:0.45">country</p>
+<p style="font-size:30px;border:1px solid #e5e5e5;border-radius:999px;padding:14px 30px;color:#888888;filter:blur(3px);opacity:0.45">datetime</p>
+<p style="font-size:30px;border:1px solid #e5e5e5;border-radius:999px;padding:14px 30px;color:#888888;filter:blur(3px);opacity:0.45">json</p>
+<p style="font-size:30px;border:1px solid #e5e5e5;border-radius:999px;padding:14px 30px;color:#888888;filter:blur(3px);opacity:0.45">tel</p>
+<p style="font-size:30px;border:1px solid #e5e5e5;border-radius:999px;padding:14px 30px;color:#888888;filter:blur(3px);opacity:0.45">color</p>
+<p style="font-size:30px;border:1px solid #e5e5e5;border-radius:999px;padding:14px 30px;color:#888888;filter:blur(3px);opacity:0.45">string_array</p>
+</div>
+
+<p style="font-size:40px;font-weight:500;line-height:1.35;width:1620px"><span style="font-family:'Geist Mono', monospace;font-size:40px">money</span> decides a column type, a Go type, a Zod rule, an input mask, and how the number is formatted in a table cell.</p>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Thirty-one field types ship. Five in focus, the rest blurred on purpose, because nobody needs the list.
+
+Take money, because it is the one everyone gets wrong. Say float and you have shipped a rounding bug that will surface in a total months later. Say money once and the decision is correct in five places you never visit.
+
+belongs_to is the other one worth naming: one word, and you get the foreign key, the constraint, the preload, the nested type, and a searchable dropdown in the form.</aside>
+</section>

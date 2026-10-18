@@ -1,6 +1,7 @@
 package scaffold
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -55,17 +56,89 @@ const blogListAnchorLegacy = `	blogs, total, pages, err := h.Service.List(page, 
 
 const blogListCounts = `
 	// The admin's stat cards ask for their counts on this request, over the
-	// same search as the list.
-	countQuery := h.DB.WithContext(c.Request.Context()).Model(&models.Blog{})
-	if search != "" {
-		countQuery = countQuery.Where("LOWER(title) LIKE LOWER(?) OR LOWER(content) LIKE LOWER(?)", "%"+search+"%", "%"+search+"%")
-	}
-	counts, err := paginate.Counts(c, countQuery)
+	// same search as the list. The query comes from the service so that the
+	// search is defined in one place rather than rebuilt here.
+	counts, err := paginate.Counts(c, h.Service.CountQuery(c.Request.Context(), search))
 	if err != nil {
 		respond.Fail(c, respond.CodeInternalError, "Failed to count blogs")
 		return
 	}
 `
+
+// blogServiceAnchor is the blog service's constructor, which the search pair
+// follows.
+const blogServiceAnchor = `func NewBlogService(db *gorm.DB) *BlogService {
+	return &BlogService{DB: db}
+}
+`
+
+// blogServiceCountQuery gives an existing project's blog service the single
+// definition of its search.
+//
+// It is here rather than only in the template because the blog files are
+// written for a new project and do not travel on upgrade, and the handler
+// block below calls CountQuery. Delivering one without the other would be a
+// project that no longer builds.
+const blogServiceCountQuery = `
+// searchScope is what searching a blog means, written once.
+//
+// The list and the admin's stat cards both narrow by the same text, and when
+// each built its own WHERE they could answer different questions: add a column
+// to one clause and the table filtered by it while the counts above it did
+// not. One definition, two callers, so that cannot happen.
+func (s *BlogService) searchScope(query *gorm.DB, search string) *gorm.DB {
+	if search == "" {
+		return query
+	}
+	// Portable case-insensitive search, ILIKE is Postgres-only.
+	return query.Where("LOWER(title) LIKE LOWER(?) OR LOWER(content) LIKE LOWER(?)", "%"+search+"%", "%"+search+"%")
+}
+
+// CountQuery is the list's query for a search, without paging or ordering.
+//
+// It exists for the handler's stat cards, which need to count the same rows
+// the list is about to return. Exported so the handler can ask the service for
+// it rather than reaching past the service to the database and rebuilding the
+// search by hand, which is the version that drifts.
+func (s *BlogService) CountQuery(ctx context.Context, search string) *gorm.DB {
+	return s.searchScope(s.DB.WithContext(ctx).Model(&models.Blog{}), search)
+}
+`
+
+// repairBlogServiceCountQuery adds that pair, and moves List onto it so the
+// clause really does exist once rather than twice.
+func repairBlogServiceCountQuery(src, module string) (string, []string, []string) {
+	if !strings.Contains(src, "func NewBlogService(") {
+		return src, nil, nil
+	}
+	if strings.Contains(src, "func (s *BlogService) CountQuery(") {
+		return src, nil, nil
+	}
+	if strings.Count(src, blogServiceAnchor) != 1 {
+		return src, nil, []string{"blog_service.go is not the file Grit wrote: add CountQuery(ctx, search) returning the list's query, or the blog stat cards keep their own copy of the search"}
+	}
+	at := strings.Index(src, blogServiceAnchor) + len(blogServiceAnchor)
+	out := src[:at] + blogServiceCountQuery + src[at:]
+
+	// List keeping its own inline clause would leave two definitions, which is
+	// the thing being fixed. Only rewrite the one this file shipped with.
+	const listClause = `	query := s.DB.Model(&models.Blog{})
+
+	if search != "" {
+		// Portable case-insensitive search — ILIKE is Postgres-only.
+		query = query.Where("LOWER(title) LIKE LOWER(?) OR LOWER(content) LIKE LOWER(?)", "%"+search+"%", "%"+search+"%")
+	}
+`
+	if strings.Count(out, listClause) == 1 {
+		out = strings.Replace(out, listClause, "\tquery := s.searchScope(s.DB.Model(&models.Blog{}), search)\n", 1)
+	}
+
+	var ok bool
+	if out, ok = addImportGroup(out, "context"); !ok {
+		return src, nil, []string{"could not add the context import to blog_service.go"}
+	}
+	return out, []string{"blog_service.go defines the blog search once, for the list and the stat cards"}, nil
+}
 
 // listCountsMetaAnchor is the last key of a hand-written list's meta map, and
 // listCountsMeta the key that follows it.
@@ -87,6 +160,20 @@ func repairListCounts(root string, opts Options) error {
 		return err
 	}
 	module := opts.Module()
+
+	// The service first, because the blog handler's block calls CountQuery.
+	// If this leaves the service alone the handler is skipped below, rather
+	// than written with a call to a method that is not there.
+	servicePath := filepath.Join(apiRoot, "internal", "services", "blog_service.go")
+	if fileExists(servicePath) {
+		if err := repairSourceFile(root, m, servicePath, func(src string) (string, []string, []string) {
+			return repairBlogServiceCountQuery(src, module)
+		}); err != nil {
+			return err
+		}
+	}
+	blogServiceReady := fileContains(servicePath, "func (s *BlogService) CountQuery(")
+
 	handlers := []struct {
 		file string
 		fix  func(src, module string) (string, []string, []string)
@@ -97,6 +184,10 @@ func repairListCounts(root string, opts Options) error {
 	for _, h := range handlers {
 		path := filepath.Join(apiRoot, "internal", "handlers", h.file)
 		if !fileExists(path) {
+			continue
+		}
+		if h.file == "blog_handler.go" && !blogServiceReady {
+			fmt.Printf("  ⚠ %s: left alone, because blog_service.go has no CountQuery for it to call. Add CountQuery(ctx, search) there and run grit upgrade again, or the blog page's stat cards show a dash\n", h.file)
 			continue
 		}
 		fix := h.fix

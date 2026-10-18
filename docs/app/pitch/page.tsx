@@ -277,41 +277,91 @@ export default function PitchPage() {
         </p>
       </PitchSection>
 
-      {/* ═══ THE PROBLEM ═══ */}
+      {/* ═══ THE PROBLEM ═══
+          The twenty-six canonical problems, abbreviated. The IDs are the ones
+          used in the docs, the talk and the README: D for what the developer
+          pays, B for what the client asks. Do not invent new wording here; if a
+          problem needs rephrasing it gets rephrased everywhere at once. */}
       <PitchSection className="py-20 md:py-24 border-b border-border/40">
-        <p className="tag-mono text-muted-foreground mb-4">The machinery tax</p>
+        <p className="tag-mono text-muted-foreground mb-4">Twenty-six problems</p>
         <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-6 leading-tight">
-          The first month is rarely about your product
+          Two sets of problems, and they belong to different people
         </h2>
-        <p className="text-lg text-muted-foreground leading-relaxed mb-8">
-          Before you write the feature that matters, you re-solve the problems you solved on the
-          last project, and the one before that. None of it is hard. All of it is slow, and with
-          every extra client you pay for it again.
+        <p className="text-lg text-muted-foreground leading-relaxed mb-10">
+          One set costs the developer the first two weeks. The other decides whether there is a
+          project at all, and it is always promised for later. Everything Grit ships closes one of
+          them, and a feature that closes none of them needs an argument.
         </p>
-        <div className="grid sm:grid-cols-2 gap-3">
-          {[
-            'Auth: JWT, refresh, OAuth, 2FA, password reset',
-            'An admin panel with tables, forms, and filters',
-            'File uploads to S3 / R2 with presigned URLs',
-            'Background jobs, queues, and a scheduler',
-            'Email templates and a transactional sender',
-            'Rate limiting, CORS, security headers, audit logs',
-            'The same model again in the mobile app',
-            'And again in the desktop app',
-          ].map((item) => (
-            <div
-              key={item}
-              className="flex items-start gap-3 rounded-xl border border-border/40 bg-card/40 px-4 py-3 text-sm text-foreground/80"
-            >
-              <X className="h-4 w-4 text-rose-400/80 mt-0.5 shrink-0" strokeWidth={2.5} />
-              {item}
+
+        <div className="grid gap-8 lg:grid-cols-2">
+          <div>
+            <div className="mb-4 flex items-baseline gap-3">
+              <span className="font-mono text-xs uppercase tracking-[0.2em] text-primary">
+                D1 &ndash; D12
+              </span>
+              <span className="text-sm font-medium text-foreground">
+                What it costs the developer
+              </span>
             </div>
-          ))}
+            <div className="flex flex-col gap-2.5">
+              {[
+                'The copy-paste start: auth and storage lifted from the last project',
+                'Wiring the monorepo before anything runs',
+                'The same type written in Go, TypeScript, Zod and the mobile client',
+                'CRUD hell: twenty tables, twenty slightly different list pages',
+                'No window into the data, and nothing realistic to develop against',
+                'An API nobody wrote down, and migrations with no way back',
+                'A React frontend you did not want to be the one building',
+                'And a model that will write all of it again, differently, for a fee',
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-start gap-3 rounded-xl border border-border/40 bg-card/40 px-4 py-3 text-sm text-foreground/80"
+                >
+                  <X className="h-4 w-4 text-rose-400/80 mt-0.5 shrink-0" strokeWidth={2.5} />
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-4 flex items-baseline gap-3">
+              <span className="font-mono text-xs uppercase tracking-[0.2em] text-primary">
+                B1 &ndash; B14
+              </span>
+              <span className="text-sm font-medium text-foreground">What the client asks</span>
+            </div>
+            <div className="flex flex-col gap-2.5">
+              {[
+                '“Can different people see different things?”',
+                '“What happens if we get hacked?”',
+                '“Does it work without internet?”',
+                '“How will we know when it breaks, and is it backed up?”',
+                '“Who changed this?”',
+                '“Can two of our clients use one system?”',
+                '“What if two people edit the same record?”',
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-start gap-3 rounded-xl border border-border/40 bg-card/40 px-4 py-3 text-sm text-foreground/80"
+                >
+                  <X className="h-4 w-4 text-rose-400/80 mt-0.5 shrink-0" strokeWidth={2.5} />
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+
         <p className="text-base text-muted-foreground leading-relaxed mt-8">
           That is months of work that produces <span className="text-foreground font-medium">zero</span>{' '}
           product differentiation. Grit treats all of it as solved: generated, wired, and hardened
-          the moment you scaffold.
+          the moment you scaffold.{' '}
+          <Link href="/talk" className="text-primary hover:underline">
+            The talk walks all twenty-six
+          </Link>
+          , and is honest about the one it cannot close for you.
         </p>
       </PitchSection>
 
@@ -709,6 +759,12 @@ grit generate resource Product \\
               >
                 Get started
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+              <Link
+                href="/talk"
+                className="inline-flex items-center h-11 px-7 rounded-full border border-border/60 text-foreground font-medium text-sm hover:bg-accent/30 transition-colors"
+              >
+                Watch the talk
               </Link>
               <Link
                 href="/courses"

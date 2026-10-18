@@ -1,0 +1,24 @@
+<section id="solution-cmd" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:center;gap:52px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">One line</p>
+
+<div style="background:#0a0a0a;border:1px solid #333333;border-radius:8px;padding:0;display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;gap:12px;padding:22px 30px;border-bottom:1px solid #333333">
+<x-shape kind="ellipse" style="width:16px;height:16px;background:#333333"></x-shape>
+<x-shape kind="ellipse" style="width:16px;height:16px;background:#333333"></x-shape>
+<x-shape kind="ellipse" style="width:16px;height:16px;background:#333333"></x-shape>
+</div>
+<div style="padding:44px 48px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:32px;color:#ffffff;line-height:1.6"><span style="color:#888888">$</span> grit generate resource Invoice \<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888888">--fields</span> <span style="color:#0070f3">"number:string, total:money, due:date, client:belongs_to"</span></p>
+</div>
+</div>
+
+<p style="font-size:32px;color:#888888;line-height:1.5;width:1400px">Four field types. One of them is a relationship. That is the entire input.</p>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Read the command out loud, slowly.
+
+Point at belongs_to. One word, and you get the foreign key, the constraint, the preload, the nested TypeScript type and a searchable dropdown in the form that loads the related rows.
+
+Point at money. That is the bug from D3, solved by the type system rather than by discipline.</aside>
+</section>

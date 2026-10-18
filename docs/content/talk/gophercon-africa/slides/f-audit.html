@@ -1,0 +1,24 @@
+<section id="f-audit" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:112px 128px;display:flex;flex-direction:column;justify-content:center;gap:44px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">B7 &middot; two logs, on purpose</p>
+
+<div style="display:flex;gap:28px;align-items:stretch">
+<div style="flex:1;background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:44px;display:flex;flex-direction:column;gap:18px">
+<p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">The timeline</p>
+<p style="font-size:34px;font-weight:500;line-height:1.35">What an operator reads. Named events, deletable, human.</p>
+</div>
+<div style="flex:1;background:#0a0a0a;border:1px solid #333333;border-radius:8px;padding:44px;display:flex;flex-direction:column;gap:18px">
+<p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">The evidence</p>
+<p style="font-size:34px;font-weight:500;line-height:1.35;color:#ffffff">Every authenticated write. Append-only. Each row hashes the row before it.</p>
+</div>
+</div>
+
+<p style="font-size:40px;font-weight:500;line-height:1.35;width:1620px">And a verify button, because a hash chain nobody can inspect is indistinguishable from a table with a hash column.</p>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>The distinction between the two cards is the slide. An operator's timeline and a reviewer's evidence are different products, and trying to serve both with one table serves neither.
+
+Then the last line, which is a mistake worth confessing: the chain was implemented, the verify endpoint was implemented, and for a while nothing in the interface called either. So the one feature a compliance reviewer actually asks to see was invisible.
+
+The verify walk is deliberately a button rather than something that runs on page load, because it reads the whole table, and firing that on every visit is how an audit feature becomes a performance incident.</aside>
+</section>

@@ -1,0 +1,21 @@
+<section id="f-uploads" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:center;gap:56px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">B8 &middot; one phone photo through the pipeline</p>
+
+<div style="display:flex;gap:72px;align-items:end">
+<div><p style="font-size:144px;font-weight:700;letter-spacing:-6px;line-height:1">5.3<span style="font-size:52px"> MB</span></p><p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">in</p></div>
+<div style="width:1px;height:140px;background:#e5e5e5"></div>
+<div><p style="font-size:144px;font-weight:700;letter-spacing:-6px;line-height:1;color:#0070f3">147<span style="font-size:52px"> KB</span></p><p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">out, thumbnail included</p></div>
+</div>
+
+<p style="font-size:36px;color:#888888;line-height:1.5;width:1660px">Orientation applied on decode, then the EXIF is gone, because the output is encoded from pixels. And an image whose decoded size would exceed the budget is refused before the memory is committed.</p>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Two numbers and one sentence. Say the numbers, then take the sentence in three pieces.
+
+Orientation first: the rotation lives in metadata, so a naive resize produces the sideways thumbnail everyone has shipped once.
+
+Then privacy, and this one is free rather than clever: the output is re-encoded from decoded pixels, so there is nowhere for the GPS to survive. You get the right answer by doing the work in the right order.
+
+Then the attack. A solid-colour PNG can be 165 kilobytes on disk and a gigabyte decoded, so the limit has to be on the decoded pixel count and it has to be checked before decode. Once Decode runs, the memory is already yours.</aside>
+</section>

@@ -1,0 +1,29 @@
+<section id="c3-ex" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:112px 128px;display:flex;flex-direction:column;justify-content:center;gap:44px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">C3 &middot; the line is a list, not a guess</p>
+
+<div style="display:flex;gap:28px;align-items:stretch">
+<div style="flex:1;background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:44px;display:flex;flex-direction:column;gap:20px">
+<p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">The framework owns</p>
+<p style="font-size:30px;line-height:1.7">password rules<br>session rotation<br>the sync engine<br>the storage drivers<br>the image pipeline<br>the audit chain</p>
+<p style="font-size:28px;color:#888888;line-height:1.5">rewritten on upgrade</p>
+</div>
+<div style="flex:1;background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:44px;display:flex;flex-direction:column;gap:20px">
+<p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">You own</p>
+<p style="font-size:30px;line-height:1.7">your models<br>your services<br>your handlers<br>your pages<br>your migrations<br>your tests</p>
+<p style="font-size:28px;color:#888888;line-height:1.5">never touched</p>
+</div>
+<div style="flex:1;background:#0a0a0a;border:1px solid #333333;border-radius:8px;padding:44px;display:flex;flex-direction:column;gap:20px">
+<p style="font-family:'Geist Mono', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">If you edited one of ours</p>
+<p style="font-size:30px;color:#ffffff;line-height:1.5">a manifest of hashes notices, and it is reported as a conflict.</p>
+<p style="font-size:28px;color:#888888;line-height:1.5">not overwritten, not silent</p>
+</div>
+</div>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Three cards. The first two are the easy part of the idea, the third is the part that makes it safe.
+
+A list of framework-owned files is how upgrade knows what it may rewrite. That alone is not enough, because you might have edited one of them.
+
+So every generated file is hashed into a manifest when it is written. On upgrade, a file whose hash has moved is not rewritten. It is reported. You get told that your edit and the framework fix disagree, which is the only honest thing a tool can do there.</aside>
+</section>

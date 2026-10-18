@@ -53,6 +53,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/showcase', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/donate', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/pitch', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/talk', priority: 0.7, changeFrequency: 'yearly' as const },
     { path: '/blog', priority: 0.8, changeFrequency: 'daily' as const },
 
     // Getting Started
@@ -71,6 +72,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     // Concepts
     { path: '/docs/concepts/architecture', priority: 0.7, changeFrequency: 'monthly' as const },
+    { path: '/docs/concepts/architecture-style', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/docs/concepts/cli', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/docs/concepts/code-generation', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/docs/concepts/naming-conventions', priority: 0.5, changeFrequency: 'yearly' as const },
