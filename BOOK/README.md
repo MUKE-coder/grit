@@ -73,7 +73,7 @@ sized at roughly 50 chapters.
 ### Part II: the ideas that make Go different
 
 10. Interfaces, and why Go's point the other way
-11. Errors are values, not exceptions
+11. Designing with errors: what a package should return
 12. `defer`, `panic` and `recover`
 13. Goroutines, against the event loop
 14. Channels, and the select statement

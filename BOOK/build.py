@@ -57,11 +57,51 @@ def chapter_report():
     return rows
 
 
+def lint_prose():
+    """Find bare # in prose, which Typst reads as the start of an expression.
+
+    Written after 'C#' broke the build twice. Typst's own error points at the
+    character after the hash and says 'unexpected comma', which does not lead
+    anybody to the real problem quickly. Code blocks are exempt: Typst leaves
+    their contents alone, so a shell comment is fine.
+    """
+    chdir = os.path.join(HERE, "chapters")
+    if not os.path.isdir(chdir):
+        return []
+    known = ("import", "bridge", "gotcha", "project", "tryit", "compare",
+             "table", "link", "raw", "text", "set", "show", "let", "block",
+             "grid", "align", "upper", "line", "counter", "outline", "include",
+             "v(", "h(", "pagebreak")
+    problems = []
+    for name in sorted(os.listdir(chdir)):
+        if not name.endswith(".typ"):
+            continue
+        in_code = False
+        with open(os.path.join(chdir, name), encoding="utf-8") as fh:
+            for n, line in enumerate(fh, 1):
+                if line.lstrip().startswith("```"):
+                    in_code = not in_code
+                    continue
+                if in_code:
+                    continue
+                for m in re.finditer(r"(?<!\\)#(\w*)", line):
+                    word = m.group(1)
+                    if any(word.startswith(k.rstrip("(")) for k in known):
+                        continue
+                    if line.count('"') >= 2 and m.start() > line.find('"'):
+                        continue  # inside a string, e.g. rgb("#e3e6ea")
+                    problems.append("%s:%d  %s" % (name, n, line.strip()[:60]))
+    return problems
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pages", type=int, default=0,
                     help="also render this many leading pages as PNGs")
     args = ap.parse_args()
+
+    for p in lint_prose():
+        print("  bare # in prose (escape it as \\#): " + p)
 
     r = run(["typst", "compile", "book.typ", "book.pdf"])
     if r.returncode != 0:

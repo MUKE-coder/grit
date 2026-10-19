@@ -20,3 +20,6 @@
 
 // Part II: the ideas that separate Go from what the reader knows.
 #include "chapters/10-interfaces.typ"
+#include "chapters/11-error-design.typ"
+#include "chapters/12-defer-panic-recover.typ"
+#include "chapters/13-goroutines.typ"
