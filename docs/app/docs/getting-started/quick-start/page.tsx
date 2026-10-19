@@ -7,6 +7,7 @@ import { CodeBlock } from "@/components/code-block";
 import { Steps, Step } from "@/components/steps";
 import { CommunityCTA } from "@/components/community-cta";
 import { getDocMetadata } from '@/config/docs-metadata'
+import { BookDownload } from '@/components/book-download'
 
 export const metadata = getDocMetadata('/docs/getting-started/quick-start')
 
@@ -40,6 +41,8 @@ export default function QuickStartPage() {
                 first.
               </p>
             </div>
+
+            <BookDownload className="mb-8" />
 
             {/* Prerequisites */}
             <div className="prose-grit mb-10">

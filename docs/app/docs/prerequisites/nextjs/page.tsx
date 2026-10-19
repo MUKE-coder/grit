@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from "@/components/code-block";
 import { getDocMetadata } from '@/config/docs-metadata'
+import { BookDownload } from '@/components/book-download'
 
 export const metadata = getDocMetadata('/docs/prerequisites/nextjs')
 
@@ -501,6 +502,8 @@ export default function NextjsForGritPage() {
                 -- the building blocks behind Grit&apos;s admin panel and web app.
               </p>
             </div>
+
+            <BookDownload className="mb-8" />
 
             <div className="prose-grit">
               {/* 1. React Basics */}

@@ -5,6 +5,7 @@ import { GridFrame } from "@/components/grid-frame"
 import { Reveal } from "@/components/reveal"
 import type { Metadata } from "next"
 import { COURSES, flatLessons, courseTotalMinutes } from "@/config/courses"
+import { BookDownload } from '@/components/book-download'
 
 export const metadata: Metadata = {
   title: "Grit Courses",
@@ -142,6 +143,10 @@ export default function CoursesPage() {
                 how to build web, desktop, and mobile applications with the Grit framework.
                 Pick a track and start building.
               </p>
+            </div>
+
+            <div className="mx-auto mt-10 max-w-3xl text-left">
+              <BookDownload />
             </div>
           </div>
         </section>

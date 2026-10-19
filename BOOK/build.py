@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""Build the book and report progress against the 500 page target.
+
+    python build.py            compile book.pdf and print the page count
+    python build.py --pages 6  also render pages 1..6 as PNGs to look at
+
+Page count comes from Typst's own PNG pagination rather than from counting
+/Type /Page in the PDF: that regex double counts on this writer, which made an
+early draft look twice as long as it was.
+"""
+
+import argparse
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+TARGET_PAGES = 500
+
+
+def run(cmd, **kw):
+    return subprocess.run(cmd, cwd=HERE, capture_output=True, text=True, **kw)
+
+
+def page_count():
+    """Pages, counted by asking Typst to paginate into a throwaway directory."""
+    tmp = tempfile.mkdtemp(prefix="bookpages")
+    try:
+        r = run(["typst", "compile", "book.typ",
+                 os.path.join(tmp, "p-{n}.png"), "--format", "png", "--ppi", "40"])
+        if r.returncode != 0:
+            return None
+        return len([f for f in os.listdir(tmp) if f.endswith(".png")])
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def chapter_report():
+    """Lines of source per chapter, so a stub is obvious at a glance."""
+    chdir = os.path.join(HERE, "chapters")
+    if not os.path.isdir(chdir):
+        return []
+    rows = []
+    for name in sorted(os.listdir(chdir)):
+        if not name.endswith(".typ"):
+            continue
+        path = os.path.join(chdir, name)
+        with open(path, encoding="utf-8") as fh:
+            body = fh.read()
+        lines = len(body.splitlines())
+        # A chapter that is still a placeholder says so in one line.
+        stub = "Placeholder." in body or lines < 25
+        rows.append((name, lines, stub))
+    return rows
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--pages", type=int, default=0,
+                    help="also render this many leading pages as PNGs")
+    args = ap.parse_args()
+
+    r = run(["typst", "compile", "book.typ", "book.pdf"])
+    if r.returncode != 0:
+        print(r.stdout)
+        print(r.stderr, file=sys.stderr)
+        return 1
+    if r.stderr.strip():
+        print(r.stderr.strip())
+
+    size = os.path.getsize(os.path.join(HERE, "book.pdf"))
+    pages = page_count()
+
+    # Publish straight to the docs site. Two copies of a PDF in one repository
+    # is two copies that drift, so the one under docs/public is the only one
+    # committed and this is the only thing that writes it.
+    published = os.path.join(
+        HERE, "..", "docs", "public", "book", "go-for-javascript-developers.pdf")
+    os.makedirs(os.path.dirname(published), exist_ok=True)
+    shutil.copyfile(os.path.join(HERE, "book.pdf"), published)
+    print("published  docs/public/book/go-for-javascript-developers.pdf")
+
+    rows = chapter_report()
+    written = [r for r in rows if not r[2]]
+    stubs = [r for r in rows if r[2]]
+
+    print("book.pdf   %d KB" % (size // 1024))
+    if pages:
+        pct = 100.0 * pages / TARGET_PAGES
+        per = (pages / len(written)) if written else 0
+        print("pages      %d of %d target (%.0f%%)" % (pages, TARGET_PAGES, pct))
+        print("chapters   %d written, %d stubs" % (len(written), len(stubs)))
+        if per:
+            print("density    %.1f pages per written chapter" % per)
+            need = TARGET_PAGES - pages
+            print("remaining  about %d more chapters at this density"
+                  % round(need / per))
+    if stubs:
+        print("stubs      " + ", ".join(s[0] for s in stubs))
+
+    if args.pages:
+        for f in os.listdir(HERE):
+            if re.match(r"page-\d+\.png$", f):
+                os.remove(os.path.join(HERE, f))
+        run(["typst", "compile", "book.typ", "page-{n}.png",
+             "--format", "png", "--ppi", "110", "--pages", "1-%d" % args.pages])
+        print("rendered   page-01.png .. page-%02d.png" % args.pages)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

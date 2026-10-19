@@ -8,6 +8,7 @@ import { CopyPromptButton } from '@/components/copy-prompt-button'
 import { CodeBlock } from '@/components/code-block'
 import { PageHelp } from '@/components/page-help'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { BookDownload } from '@/components/book-download'
 
 export const metadata = getDocMetadata('/docs')
 
@@ -36,6 +37,8 @@ export default function DocsIntroductionPage() {
                 integration, and a visual database browser all wired together out of the box.
               </p>
             </div>
+
+            <BookDownload className="mb-8" />
 
             {/* The other way to start, offered before the reading begins
                 rather than after it: a lot of people arriving here intend

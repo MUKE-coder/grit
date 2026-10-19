@@ -7,6 +7,7 @@ import { CodeBlock } from "@/components/code-block";
 import { TableOfContents } from "@/components/table-of-contents";
 import { PlaygroundChallenge } from "@/components/playground-challenge";
 import { getDocMetadata } from '@/config/docs-metadata'
+import { BookDownload } from '@/components/book-download'
 
 export const metadata = getDocMetadata('/docs/prerequisites/golang')
 
@@ -57,6 +58,8 @@ export default function GoForGritPage() {
                 full-stack applications with Grit.
               </p>
             </div>
+
+            <BookDownload className="mb-8" />
 
             <TableOfContents items={tocItems} />
 

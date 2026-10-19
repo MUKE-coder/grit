@@ -56,3 +56,7 @@ YOUTUBE_CONTENT_CALENDAR.md
 CLAUDE.md
 /.claude/
 __pycache__/
+
+# The book: the PDF is a build artifact, published to docs/public by build.py
+BOOK/book.pdf
+BOOK/page-*.png
