@@ -15,3 +15,8 @@
 #include "chapters/05-structs.typ"
 #include "chapters/06-slices.typ"
 #include "chapters/07-maps.typ"
+#include "chapters/08-pointers.typ"
+#include "chapters/09-packages.typ"
+
+// Part II: the ideas that separate Go from what the reader knows.
+#include "chapters/10-interfaces.typ"
