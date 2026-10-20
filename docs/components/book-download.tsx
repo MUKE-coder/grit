@@ -13,8 +13,8 @@ import { cn } from '@/lib/utils'
  *
  * Update BOOK_PAGES and BOOK_CHAPTERS when BOOK/build.py reports new numbers.
  */
-export const BOOK_PAGES = 217
-export const BOOK_CHAPTERS = 26
+export const BOOK_PAGES = 235
+export const BOOK_CHAPTERS = 29
 export const BOOK_TARGET_PAGES = 500
 export const BOOK_HREF = '/book/go-for-javascript-developers.pdf'
 export const BOOK_TITLE = 'Go for JavaScript Developers'

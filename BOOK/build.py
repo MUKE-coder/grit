@@ -124,6 +124,28 @@ def lint_code_width():
     return problems
 
 
+def lint_markdown_bold():
+    """Find Markdown's ** in prose. Typst's bold is a single star, so ** is a
+    habit from writing Markdown and renders as an empty emphasis plus a stray
+    star. Typst warns rather than failing, so it is easy to ship."""
+    chdir = os.path.join(HERE, "chapters")
+    if not os.path.isdir(chdir):
+        return []
+    out = []
+    for name in sorted(os.listdir(chdir)):
+        if not name.endswith(".typ"):
+            continue
+        in_code = False
+        with open(os.path.join(chdir, name), encoding="utf-8") as fh:
+            for n, line in enumerate(fh, 1):
+                if line.lstrip().startswith("```"):
+                    in_code = not in_code
+                    continue
+                if not in_code and "**" in line:
+                    out.append("%s:%d  %s" % (name, n, line.strip()[:50]))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pages", type=int, default=0,
@@ -132,6 +154,8 @@ def main():
 
     for p in lint_prose():
         print("  bare # in prose (escape it as \\#): " + p)
+    for p in lint_markdown_bold():
+        print("  Markdown ** in prose (Typst bold is *single*): " + p)
     wide = lint_code_width()
     for p in wide[:12]:
         print("  code too wide: " + p)

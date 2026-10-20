@@ -40,3 +40,6 @@
 
 // Part IV: Grit, now that the reader can read what it generates.
 #include "chapters/26-the-problems.typ"
+#include "chapters/27-grit-new.typ"
+#include "chapters/28-architecture.typ"
+#include "chapters/29-the-resource.typ"

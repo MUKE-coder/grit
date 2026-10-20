@@ -45,6 +45,7 @@ Two rules learned the hard way:
 ## House style
 
 - **No em dashes.** Project-wide rule. Use a colon, a comma or a full stop.
+- **Typst bold is `*one star*`, not Markdown's `**two**`.** `build.py` checks.
 - Say what a thing costs, not only what it does. A chapter that only lists
   advantages is marketing.
 - Every project must be finished and runnable, never a toy that stops before
@@ -100,9 +101,9 @@ routing and middleware are covered inside chapter 21 rather than split out.
 ### Part IV: Grit fundamentals
 
 26. The twenty six problems, and what a framework is for **(written)**
-27. `grit new`: what lands, and the shape of a project
-28. The architecture: a modular monolith, layer by layer
-29. The resource, and why it is the unit of generation
+27. `grit new`: what lands, and the shape of a project **(written)**
+28. The architecture: a modular monolith, layer by layer **(written)**
+29. The resource, and why it is the unit of generation **(written)**
 30. Field types: all thirty one, and what each one decides
 31. Models, migrations and seeding at scale
 32. Services: where the rules live, and why not the handler
