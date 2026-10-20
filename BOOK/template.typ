@@ -20,6 +20,11 @@
 // the setup chapter, and Part I has to start at 1.
 #let chapternum = counter("chapter")
 
+// Back matter opens like a chapter and carries no number, because "59
+// Afterword" is not a thing anybody says. The counter still steps; only the
+// number is hidden, so nothing later depends on where this was set.
+#let backmatter = state("backmatter", false)
+
 // The four teaching devices, each with its own colour so a reader learns the
 // shapes rather than reading the label every time.
 #let bridgecol = rgb("#f0b429") // yellow: you already know this
@@ -141,10 +146,15 @@
     pagebreak(weak: true, to: "odd")
     chapternum.step()
     block(above: 0pt, below: 22pt)[
-      #set text(font: "Cambria")
-      #context text(size: 42pt, fill: accent.lighten(55%), weight: "bold")[
-        #(chapternum.get().first() - 1)
-      ]
+      // No hyphenation in a chapter title: "phrase-book" split across two
+      // lines reads as a different word, and a title is short enough that a
+      // ragged break is always the better one.
+      #set text(font: "Cambria", hyphenate: false)
+      #context if not backmatter.get() {
+        text(size: 42pt, fill: accent.lighten(55%), weight: "bold")[
+          #(chapternum.get().first() - 1)
+        ]
+      }
       #v(-14pt)
       #text(size: 21pt, weight: "bold")[#it.body]
       #v(3pt)

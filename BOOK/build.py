@@ -69,7 +69,7 @@ def lint_prose():
     if not os.path.isdir(chdir):
         return []
     known = ("import", "bridge", "gotcha", "project", "tryit", "assignment",
-             "compare",
+             "backmatter", "compare",
              "table", "link", "raw", "text", "set", "show", "let", "block",
              "grid", "align", "upper", "line", "counter", "outline", "include",
              "v(", "h(", "pagebreak")

@@ -75,3 +75,12 @@
 #include "chapters/51-kv-store.typ"
 #include "chapters/52-btree-index.typ"
 #include "chapters/53-redis-resp.typ"
+#include "chapters/54-http-from-tcp.typ"
+#include "chapters/55-build-git.typ"
+#include "chapters/56-reverse-proxy.typ"
+#include "chapters/57-job-queue.typ"
+#include "chapters/58-test-runner.typ"
+
+// Back matter: unnumbered, per the backmatter state in template.typ.
+#include "chapters/90-phrasebook.typ"
+#include "chapters/91-afterword.typ"

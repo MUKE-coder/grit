@@ -169,11 +169,11 @@ somebody else's book is. Nothing in this part is adapted from them.
 51. Build your own key-value store: a write-ahead log and crash recovery **(written)**
 52. Build your own on-disk index: pages and a B-tree **(written)**
 53. Build your own Redis: RESP over raw TCP **(written)**
-54. Build your own HTTP server: from a TCP socket to a routed response
-55. Build your own Git: content addressing, objects, trees and commits
-56. Build your own reverse proxy and load balancer, with health checks
-57. Build your own job queue: durable, retrying, at least once
-58. Build your own test runner, and what `go test` is really doing
+54. Build your own HTTP server, from a TCP socket **(written)**
+55. Build your own Git **(written)**
+56. Build your own reverse proxy and load balancer **(written)**
+57. Build your own job queue **(written)**
+58. Build your own test runner **(written)**
 
 Chapter 48 comes first because it needs only Parts I to III and it is the one
 build every reader will recognise from work. It also sets up Part IV: having
@@ -182,3 +182,20 @@ a measured claim rather than a demo.
 
 File names carry the plan number, so `51-kv-store.typ` is chapter 51. A chapter
 written out of order keeps its planned number rather than its writing order.
+
+### Back matter
+
+Unnumbered, via the `backmatter` state in `template.typ`: the chapter counter
+still steps and only the number is hidden, so nothing later depends on where it
+was set.
+
+- Appendix: the JavaScript to Go phrasebook **(written)**
+- Afterword: what to do on Monday **(written)**
+
+## Status
+
+**503 pages, 61 chapters. The 500-page target is met and every chapter in the
+plan is written.** What remains is revision rather than drafting: tightening
+Part I now that the later parts exist, checking every Grit claim against the
+current codebase, and a pass for repetition across chapters that were written
+weeks apart.
