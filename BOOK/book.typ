@@ -52,6 +52,13 @@
 #include "chapters/33-handlers.typ"
 #include "chapters/34-admin-panel.typ"
 #include "chapters/35-auth.typ"
+#include "chapters/36-shared-package.typ"
+
+// Part V: building with Grit.
+#include "chapters/37-task-tracker.typ"
+#include "chapters/38-relationships.typ"
+#include "chapters/39-publication.typ"
+#include "chapters/40-money-and-time.typ"
 
 // Part VI: builds from first principles. Written out of order because the
 // chapter format needed proving; the rest of Part IV slots in above.

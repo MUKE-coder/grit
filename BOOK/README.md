@@ -136,14 +136,14 @@ routing and middleware are covered inside chapter 21 rather than split out.
 33. Handlers and the HTTP contract **(written)**
 34. The generated admin panel **(written)**
 35. Authentication, roles and per-record ownership **(written)**
-36. The shared package: one definition, four outputs
+36. The shared package: one definition, four outputs **(written)**
 
 ### Part V: building with Grit
 
-37. Project: a task tracker, end to end
-38. Relationships: `belongs_to`, `many_to_many` and the forms they generate
-39. Project: a blog with a working admin
-40. Money, dates and the types that prevent bugs
+37. Project: a task tracker, end to end **(written)**
+38. Relationships, and the forms they generate **(written)**
+39. Project: a publication, from draft to public page **(written)**
+40. Money, dates and the types that prevent bugs **(written)**
 41. Project: an invoicing application
 42. File uploads and the image pipeline
 43. Background jobs, cron and transactional email
