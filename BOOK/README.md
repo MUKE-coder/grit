@@ -125,3 +125,25 @@ routing and middleware are covered inside chapter 21 rather than split out.
 45. Observability: Studio, Pulse and Sentinel
 46. Testing a Grit application
 47. `grit upgrade`, deployment, and where to go next
+
+### Part VI: build it from scratch
+
+Ten builds in the spirit of the build-your-own-x list. They deepen Go rather
+than teach Grit, and they depend only on Parts I to III, so a reader who wants
+them early can jump here straight after chapter 25.
+
+**Written from first principles.** Two third-party books on the same theme sit
+in the author's reference folder and are deliberately not drawn from. The idea
+of building a database from scratch is nobody's property; the prose and code of
+somebody else's book is. Nothing in this part is adapted from them.
+
+48. Build your own CLI framework: flags, subcommands and help
+49. Build your own JSON parser: a lexer and a recursive descent parser
+50. Build your own key-value store: a write-ahead log and crash recovery **(written)**
+51. Build your own on-disk index: pages, and a B-tree that survives restart
+52. Build your own Redis: the RESP protocol over raw TCP
+53. Build your own HTTP server: from a TCP socket to a routed response
+54. Build your own Git: content addressing, objects, trees and commits
+55. Build your own reverse proxy and load balancer, with health checks
+56. Build your own job queue: durable, retrying, at least once
+57. Build your own test runner, and what `go test` is really doing

@@ -43,3 +43,7 @@
 #include "chapters/27-grit-new.typ"
 #include "chapters/28-architecture.typ"
 #include "chapters/29-the-resource.typ"
+
+// Part VI: builds from first principles. Written out of order because the
+// chapter format needed proving; the rest of Part IV slots in above.
+#include "chapters/50-kv-store.typ"
