@@ -29,3 +29,7 @@
 #include "chapters/17-generics.typ"
 #include "chapters/18-testing.typ"
 #include "chapters/19-json.typ"
+
+// Part III: building real things with the standard library.
+#include "chapters/20-io.typ"
+#include "chapters/21-http-server.typ"

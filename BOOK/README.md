@@ -85,40 +85,40 @@ sized at roughly 50 chapters.
 
 ### Part III: building real things in plain Go
 
-20. Reading files, streams and the `io` interfaces
-21. Project: a JSON formatting CLI
-22. `net/http`: a server with no framework
-23. Routing, middleware and handlers
-24. Project: a JSON API, standard library only
-25. Talking to a database with `database/sql`
-26. Project: a URL shortener with SQLite
-27. Configuration, environment and secrets
-28. Building, cross compiling and shipping one binary
+20. Files, streams and the `io` interfaces **(written)**
+21. `net/http`: a server with no framework **(written)**
+22. Talking to a database with `database/sql`
+23. Project: a URL shortener with SQLite
+24. Configuration, environment and secrets
+25. Building, cross compiling and shipping one binary
+
+The JSON CLI that was planned here is now the project in chapter 19, and
+routing and middleware are covered inside chapter 21 rather than split out.
 
 ### Part IV: Grit fundamentals
 
-29. The twenty six problems, and what a framework is for
-30. `grit new`: what lands, and the shape of a project
-31. The architecture: a modular monolith, layer by layer
-32. The resource, and why it is the unit of generation
-33. Field types: all thirty one, and what each one decides
-34. Models, migrations and seeding at scale
-35. Services: where the rules live, and why not the handler
-36. Handlers and the HTTP contract
-37. The generated admin panel
-38. Authentication, roles and per-record ownership
-39. The shared package: one definition, four outputs
+26. The twenty six problems, and what a framework is for
+27. `grit new`: what lands, and the shape of a project
+28. The architecture: a modular monolith, layer by layer
+29. The resource, and why it is the unit of generation
+30. Field types: all thirty one, and what each one decides
+31. Models, migrations and seeding at scale
+32. Services: where the rules live, and why not the handler
+33. Handlers and the HTTP contract
+34. The generated admin panel
+35. Authentication, roles and per-record ownership
+36. The shared package: one definition, four outputs
 
 ### Part V: building with Grit
 
-40. Project: a task tracker, end to end
-41. Relationships: `belongs_to`, `many_to_many` and the forms they generate
-42. Project: a blog with a working admin
-43. Money, dates and the types that prevent bugs
-44. Project: an invoicing application
-45. File uploads and the image pipeline
-46. Background jobs, cron and transactional email
-47. Realtime, the event bus and webhooks
-48. Observability: Studio, Pulse and Sentinel
-49. Testing a Grit application
-50. `grit upgrade`, deployment, and where to go next
+37. Project: a task tracker, end to end
+38. Relationships: `belongs_to`, `many_to_many` and the forms they generate
+39. Project: a blog with a working admin
+40. Money, dates and the types that prevent bugs
+41. Project: an invoicing application
+42. File uploads and the image pipeline
+43. Background jobs, cron and transactional email
+44. Realtime, the event bus and webhooks
+45. Observability: Studio, Pulse and Sentinel
+46. Testing a Grit application
+47. `grit upgrade`, deployment, and where to go next
