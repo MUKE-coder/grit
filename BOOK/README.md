@@ -164,11 +164,11 @@ of building a database from scratch is nobody's property; the prose and code of
 somebody else's book is. Nothing in this part is adapted from them.
 
 48. Build your own CRUD API from scratch **(written)**
-49. Build your own CLI framework: flags, subcommands and help
-50. Build your own JSON parser: a lexer and a recursive descent parser
+49. Build your own CLI framework: flags, subcommands and help **(written)**
+50. Build your own JSON parser: a lexer and a recursive descent parser **(written)**
 51. Build your own key-value store: a write-ahead log and crash recovery **(written)**
-52. Build your own on-disk index: pages, and a B-tree that survives restart
-53. Build your own Redis: the RESP protocol over raw TCP
+52. Build your own on-disk index: pages and a B-tree **(written)**
+53. Build your own Redis: RESP over raw TCP **(written)**
 54. Build your own HTTP server: from a TCP socket to a routed response
 55. Build your own Git: content addressing, objects, trees and commits
 56. Build your own reverse proxy and load balancer, with health checks

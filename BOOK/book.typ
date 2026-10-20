@@ -70,4 +70,8 @@
 // Part VI: builds from first principles. Written out of order because the
 // chapter format needed proving; the rest of Part IV slots in above.
 #include "chapters/48-crud-api.typ"
+#include "chapters/49-cli-framework.typ"
+#include "chapters/50-json-parser.typ"
 #include "chapters/51-kv-store.typ"
+#include "chapters/52-btree-index.typ"
+#include "chapters/53-redis-resp.typ"
