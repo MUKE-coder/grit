@@ -319,3 +319,23 @@ Then register it in the routes file, next to the generated ones.
   fails and the test catches it. That is a four line test guarding a bug that
   shipped once and was invisible.
 ]
+
+#assignment(name: "Handlers - Assignment One")[
+  Drive every branch of the contract and keep the evidence.
+
+  In `API.md`, record the request and the response for each of these against
+  your own project.
+
+  *One.* A 201 with its `message`, and a list with all four `meta` keys.
+
+  *Two.* A 400 and a 422, with the 422 carrying `details` naming the field.
+  Say in one line what a form would do differently with each.
+
+  *Three.* A 401 and a 403, from the same endpoint, by changing only who is
+  asking.
+
+  *Four.* A 404 for a record that exists but is not yours, confirmed in
+  `/studio` so you know it is scoping rather than absence.
+
+  *Five.* A 409 from a stale version, and a test asserting `current_version`
+  decodes into an `int`. That test guards a bug that shipped once.]

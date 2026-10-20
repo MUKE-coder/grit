@@ -308,3 +308,19 @@ which is what `internal/saga` exists for.
   in the service do not mention it. Fix them, and you will not forget what
   those whitelists are for again.
 ]
+
+#assignment(name: "Services - Assignment One")[
+  Put a rule in the right place and prove it holds from two directions.
+
+  *One.* Add a method to a generated service that enforces something real:
+  stock cannot go below zero, an invoice cannot be paid twice, a booking cannot
+  overlap. Return a typed error, not a string.
+
+  *Two.* Call it from a handler. Then call the same method from a second
+  caller: a CLI command, a seeder or a job. Both must be refused the same way,
+  and that is the whole argument of the chapter.
+
+  *Three.* Add the new sortable and filterable columns to both whitelists, then
+  deliberately leave one out and watch the admin column quietly do nothing.
+
+  *Four.* A test for the rule that does not go through HTTP at all.]

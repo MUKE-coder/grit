@@ -494,3 +494,24 @@ whatever your project uses, and keep the query log open.
   error, and prove with a test that the row is unchanged after the failure.
   That last test is the one that proves you understand `defer tx.Rollback()`.
 ]
+
+#assignment(name: "Database - Assignment One")[
+  Move the notes API onto a real database.
+
+  In `part3-standard-library/22-database`, use SQLite through `database/sql`.
+
+  *One.* A schema, an `Open`, and the pool settings configured rather than
+  defaulted.
+
+  *Two.* All four operations with placeholders. Then write one query by
+  concatenating a string, put a quote in the input, and keep the result in
+  `NOTES.md` as the reason you will not do it again.
+
+  *Three.* A nullable column read into `sql.NullString`, and a decision about
+  what the API returns for it.
+
+  *Four.* A transaction that writes two rows and rolls back on the second
+  failing, with a test that proves the first row is gone.
+
+  *Five.* Create the N+1: list notes, then fetch each note's tags in a loop.
+  Count the queries, fix it with one query, and record both counts.]

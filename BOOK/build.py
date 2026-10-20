@@ -68,7 +68,8 @@ def lint_prose():
     chdir = os.path.join(HERE, "chapters")
     if not os.path.isdir(chdir):
         return []
-    known = ("import", "bridge", "gotcha", "project", "tryit", "compare",
+    known = ("import", "bridge", "gotcha", "project", "tryit", "assignment",
+             "compare",
              "table", "link", "raw", "text", "set", "show", "let", "block",
              "grid", "align", "upper", "line", "counter", "outline", "include",
              "v(", "h(", "pagebreak")

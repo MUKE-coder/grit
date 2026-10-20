@@ -238,3 +238,24 @@ a command rather than a runbook page nobody has followed.
   That is a bug most applications ship, discovered by a user who deleted
   something and could not re-add it.
 ]
+
+#assignment(name: "Migrations - Assignment One")[
+  Make the data real, then prove you could get it back.
+
+  *One.* Add three fields to an existing model with `grit generate field`, then
+  migrate. Record what the migration refused to do and why.
+
+  *Two.* Seed a hundred thousand rows and watch the memory while it runs:
+
+  ```bash
+  grit seed Reading --count 100000
+  ```
+
+  Put the peak in `DATA.md`.
+
+  *Three.* Now the half that counts. Take a backup, drop a table, restore it,
+  and confirm the rows are back. Write the exact commands in `DATA.md`.
+
+  *Four.* Write one paragraph on what you would still lose if the machine died
+  between the backup and the drop. Every honest backup story has that
+  paragraph.]

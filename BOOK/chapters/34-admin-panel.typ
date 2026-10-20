@@ -232,3 +232,20 @@ Go struct, the validation, the TypeScript type and this hook all move together.
   whether this part of the framework is worth it for your project, because if
   your application has three tables the answer might genuinely be no.
 ]
+
+#assignment(name: "Admin Panel - Assignment One")[
+  Customise one screen, then write the page the screen could not be.
+
+  *One.* In one resource's `index.tsx`, add a computed cell, reorder the
+  columns, and render one field as something other than text.
+
+  *Two.* Re-run the generator for that resource and confirm your edits
+  survived. Note which files the manifest reported instead.
+
+  *Three.* Write a real page under the dashboard that uses the generated hooks
+  to show something no table could: a chart, a comparison, a daily summary.
+
+  *Four.* In `NOTES.md`, price it honestly. Count the lines you wrote, list
+  what the table does for free, and say whether this part of the framework
+  earns its place in your application. If your app has three tables, "no" is a
+  respectable answer.]

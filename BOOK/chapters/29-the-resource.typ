@@ -236,3 +236,24 @@ What has gone is the two weeks before you got to any of it.
   `fmt.Println(0.1 + 0.2)`, and decide for yourself whether a `money` type is
   pedantry or the single most valuable field type in the list.
 ]
+
+#assignment(name: "Resources - Assignment One")[
+  Generate the domain you described in chapter twenty six.
+
+  *One.* Three resources, with their fields chosen rather than defaulted:
+
+  ```bash
+  grit generate resource Site --fields "name:string, code:slug"
+  ```
+
+  *Two.* Before running the command, write down what you expect it to create.
+  Then run it with the diff open and check. The list you did not predict is the
+  list worth reading.
+
+  *Three.* Edit one generated service by hand, re-run the generator for that
+  resource, and show what happened to your edit. Record it in `NOTES.md`,
+  because trusting a generator you have not tested this on is how edits get
+  lost.
+
+  *Four.* Commit the whole diff as one commit, so the history shows what one
+  command produced.]

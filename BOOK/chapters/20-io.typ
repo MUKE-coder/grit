@@ -492,3 +492,22 @@ func TestWrite(t *testing.T) {
   tags from the last chapter. Finally, feed it a file with a 100KB single line
   and watch where the buffer limit bites if you remove the `sc.Buffer` call.
 ]
+
+#assignment(name: "Files - Assignment One")[
+  Write `wc`, then make it testable without touching the disk.
+
+  In `part3-standard-library/20-io`:
+
+  *One.* Count lines, words and bytes in a file with `bufio.Scanner`. Handle
+  the scanner's error, which is the line everybody forgets.
+
+  *Two.* Change the signature to take an `io.Reader` rather than a filename,
+  and have `main` pass the file. Now the test passes a `strings.Reader` and
+  there are no fixtures.
+
+  *Three.* Add a mode that copies input to output with `io.Copy` and reports
+  the bytes moved, with the writes buffered and the buffer flushed in a
+  `defer`.
+
+  *Four.* Feed it a file with a very long single line and fix the scanner error
+  you get. Record the fix in `NOTES.md`.]

@@ -435,3 +435,25 @@ would panic a worker still writing.
   goroutine whose only job is `wg.Wait()` then `close(out)` is the piece people
   forget, and forgetting it is a deadlock rather than a wrong answer.
 ]
+
+#assignment(name: "Channels - Assignment One")[
+  A worker pool that shuts down cleanly, which is the part people skip.
+
+  In `part2-ideas/14-channels`:
+
+  *One.* A pool of five workers reading jobs from one channel and writing
+  results to another. Close the jobs channel to end it, and `range` in the
+  workers.
+
+  *Two.* A `select` with a timeout, so a job that takes too long is abandoned
+  rather than waited on.
+
+  *Three.* A done channel that stops everything from outside, and a run where
+  you trigger it halfway. No goroutine may be left behind: check with
+
+  ```go
+  fmt.Println(runtime.NumGoroutine())
+  ```
+
+  *Four.* Send on a closed channel on purpose, read the panic, and write in
+  `NOTES.md` the rule about who closes a channel.]

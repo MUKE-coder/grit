@@ -267,3 +267,29 @@ putting those parts first.
   cannot give you. Then run `grit version` and note it, because the next
   chapters describe this version and the framework moves quickly.
 ]
+
+#assignment(name: "Grit New - Assignment One")[
+  Create the project you described in the last chapter, and read what arrived.
+
+  ```bash
+  grit new fieldbook
+  ```
+
+  *One.* Run it, open the admin panel, log in, and confirm the three apps are
+  up. Record the commands that did it in `part4-grit/27-new/RUN.md`.
+
+  *Two.* Walk `apps/api/internal/` and write one line per package saying what
+  it is for. Guess first, then check. The guesses you get wrong are the
+  conventions worth knowing.
+
+  *Three.* Count what landed:
+
+  ```bash
+  git -C fieldbook ls-files | wc -l
+  ```
+
+  Put the number in `RUN.md` next to the time it took.
+
+  *Four.* Switch one module off in `grit.json`, restart, and say what stopped
+  working. Commit the project itself: it is the thing the rest of Part IV
+  edits.]

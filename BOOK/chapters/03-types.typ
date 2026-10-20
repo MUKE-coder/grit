@@ -284,3 +284,49 @@ if err := doSomething(); err != nil {
   header over it. Then make the step size a variable at the top of `main` and
   confirm the table still lines up when you change it to 10.
 ]
+
+#assignment(name: "Variables - Assignment One")[
+  Make the zero values concrete, because `undefined` is the habit that takes
+  longest to drop.
+
+  In `part1-language/03-types`, write a program that declares a variable of
+  every type in this chapter's table, with no initial value, and prints each
+  one with its type:
+
+  ```go
+  fmt.Printf("%-10T %q\n", s, s)
+  ```
+
+  *One.* Print the zero value of a string, an int, a float64, a bool, a slice,
+  a map, a pointer and a struct. Note in a comment which of them you can use
+  immediately and which panic if you write to them.
+
+  *Two.* Write three lines that each fail to compile, and keep them commented
+  out with the exact error: an int assigned to a float64, a string compared to
+  a number, and an `if` on a non-boolean.
+
+  *Three.* In `NOTES.md`, answer in two sentences: which of these would
+  JavaScript have accepted, and what would it have done instead?]
+
+#assignment(name: "Variables - Assignment Two")[
+  Strings are bytes, and the day that matters is the day somebody types their
+  own name into your form.
+
+  In `part1-language/03-types/strings`:
+
+  *One.* Take a string with characters outside ASCII in it, your own name or
+  a word with an accent on it, and print `len(s)` next to
+  `utf8.RuneCountInString(s)`. Explain the difference in a comment.
+
+  *Two.* Index it with `s[0]` and print what comes back. It is a number, and
+  the type is the explanation.
+
+  *Three.* Loop over it twice, once with an index loop over bytes and once with
+  `range`, printing each item. Only one of them produces characters.
+
+  *Four.* Reverse the string, correctly. The byte-wise reversal that works for
+  `"hello"` will produce nonsense for your test string, and both versions
+  belong in the commit.
+
+  *Five.* In `NOTES.md`, write the one sentence you would put in a code review
+  when somebody slices a string to truncate it for display.]

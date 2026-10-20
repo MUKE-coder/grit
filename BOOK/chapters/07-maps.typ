@@ -288,3 +288,23 @@ func (c *Counter) Inc(key string) {
   decision, made consciously once, is the difference between copying Go idioms
   and understanding them.
 ]
+
+#assignment(name: "Maps - Assignment One")[
+  A word counter, which is the smallest program that forces every map lesson.
+
+  In `part1-language/07-maps`, read a text file and report the ten most common
+  words.
+
+  *One.* Count with a `map[string]int`, using the fact that a missing key reads
+  as zero rather than checking first.
+
+  *Two.* Sort the results before printing, and say in a comment why printing
+  straight from the map would make the output differ between runs.
+
+  *Three.* Group with a `map[string][]string`: words by first letter. Note what
+  happens when you append to a key that does not exist yet.
+
+  *Four.* Try to assign to a field of a struct stored in a map, keep the
+  compiler error in a comment, and fix it the way the chapter says.
+
+  The website's *Grouping With a Map of Slices* is the same shape, smaller.]

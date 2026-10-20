@@ -388,3 +388,31 @@ rather than the fifteen a real mail client has.
   always errors. That test is four lines and needs no library, which is the
   point of the chapter.
 ]
+
+#assignment(name: "Interfaces - Assignment One")[
+  Declare an interface where it is used, and feel the difference.
+
+  In `part2-ideas/10-interfaces`, write a `notify` package that sends a
+  message.
+
+  *One.* The package defines what it needs, not what anybody provides:
+
+  ```go
+  type Sender interface {
+      Send(ctx context.Context, to, body string) error
+  }
+  ```
+
+  *Two.* Two implementations in other packages: one printing to stdout, one
+  collecting into a slice. Neither imports `notify` to say it implements
+  anything.
+
+  *Three.* A test that uses the collecting one and asserts on what was sent.
+  No mocking library, no interface file, no registration.
+
+  *Four.* Add a third method to the interface and watch both implementations
+  break at compile time. Then decide whether the method belonged there, and say
+  so in `NOTES.md`.
+
+  The website's *Interfaces* and *Swapping Implementations* cover the mechanics
+  if this is new.]

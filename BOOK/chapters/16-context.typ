@@ -318,3 +318,22 @@ the cancellation.
   afterwards", and getting the context wrong there is why audit records go
   missing under load.
 ]
+
+#assignment(name: "Context - Assignment One")[
+  Make a cancellation actually reach the bottom of a call stack.
+
+  In `part2-ideas/16-context`, write a handler that calls a service that calls
+  a slow HTTP endpoint.
+
+  *One.* Thread one `context.Context` from the handler to the request. Use
+  `http.NewRequestWithContext`, not the plain one.
+
+  *Two.* Give the handler a two second timeout and point it at a server that
+  takes five. Show the error chain reporting the deadline.
+
+  *Three.* Write a worker loop that honours cancellation with a `select` on
+  `ctx.Done()`, and one that ignores it. Cancel both and time how long each
+  takes to stop.
+
+  *Four.* Put a request ID in the context with a typed key, read it two layers
+  down, and write one sentence on why the key is not a string.]

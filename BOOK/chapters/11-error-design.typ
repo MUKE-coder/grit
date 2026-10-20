@@ -377,3 +377,21 @@ are expected, and expected failures are values.
   should `Update` quietly succeed? There is a defensible answer either way, and
   the act of choosing is the skill this chapter is teaching.
 ]
+
+#assignment(name: "Errors - Assignment One")[
+  Design the errors of a package before writing its happy path.
+
+  In `part2-ideas/11-errors`, write a `store` package with `Get`, `Create` and
+  `Delete` over an in-memory map.
+
+  *One.* A sentinel `ErrNotFound`, a typed `ValidationError` carrying the field
+  name, and an unexpected error wrapped with context.
+
+  *Two.* A boundary function that maps any of them to an HTTP status and a
+  code, using `errors.Is` and `errors.As` rather than string matching.
+
+  *Three.* Check every error string against the chapter's rule: lowercase, no
+  full stop, no "failed to". Fix the ones that fail.
+
+  *Four.* Write a test for the boundary that asserts the status for each kind.
+  That test is the contract your handlers will rely on in Part IV.]

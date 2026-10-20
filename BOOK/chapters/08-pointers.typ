@@ -306,3 +306,22 @@ it has the same two fixes: read-modify-write, or store `*User` in the map.
   lets a caller change your inventory by accident, which might be exactly what
   you want or exactly what you do not.
 ]
+
+#assignment(name: "Pointers - Assignment One")[
+  Three programs, each one line different.
+
+  In `part1-language/08-pointers`:
+
+  *One.* A `Counter` with `Inc()` on a value receiver. Call it ten times and
+  print zero. Then change one character and print ten. Commit both, the broken
+  one as `value_receiver.go.txt` so it does not compile into the build.
+
+  *Two.* A function taking a struct by value and another taking a pointer.
+  Print the addresses with `%p` to show what was copied.
+
+  *Three.* Cause a nil pointer panic deliberately, read the stack trace, and
+  write in `NOTES.md` which line of it actually told you where the bug was.
+
+  *Four.* Write a function returning `*User` that returns `nil` for not found,
+  and a caller that checks before dereferencing. That shape is everywhere in
+  Part III.]

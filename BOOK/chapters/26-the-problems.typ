@@ -184,3 +184,22 @@ cannot tell you which of them your bottleneck needs.
   to buy from you, and whether the trade is worth it depends almost entirely on
   how large it is.
 ]
+
+#assignment(name: "The Problems - Assignment One")[
+  Hold the twenty six problems against something you actually want to build.
+
+  Create `part4-grit/26-problems/PROBLEMS.md`.
+
+  *One.* Describe the application in five sentences. A real one, with a user
+  who is not you.
+
+  *Two.* Go through D1 to D12 and mark each one as applies, does not apply, or
+  not yet. For every one that applies, write the sentence you would say to a
+  client about what it costs you.
+
+  *Three.* Do the same for B1 to B14, which are the ones you get asked about
+  rather than the ones you feel.
+
+  *Four.* Count them. Then open the `NOTES.md` you wrote in chapter one and
+  compare: the thing that pushed you to Go is usually two or three of these,
+  and the rest are the ones you were going to meet anyway.]

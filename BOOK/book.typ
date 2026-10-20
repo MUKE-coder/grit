@@ -7,6 +7,9 @@
   version: "Written against Grit v3.403.0 and Go 1.25",
 )
 
+// Chapter 0: the repository and the leaderboard, before any Go.
+#include "chapters/00-before-you-start.typ"
+
 // Part I: the language, taught against what the reader already knows.
 #include "chapters/01-why-go.typ"
 #include "chapters/02-hello-go.typ"
@@ -52,4 +55,5 @@
 
 // Part VI: builds from first principles. Written out of order because the
 // chapter format needed proving; the rest of Part IV slots in above.
-#include "chapters/50-kv-store.typ"
+#include "chapters/48-crud-api.typ"
+#include "chapters/51-kv-store.typ"

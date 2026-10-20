@@ -13,11 +13,20 @@ import { cn } from '@/lib/utils'
  *
  * Update BOOK_PAGES and BOOK_CHAPTERS when BOOK/build.py reports new numbers.
  */
-export const BOOK_PAGES = 289
-export const BOOK_CHAPTERS = 36
+export const BOOK_PAGES = 321
+export const BOOK_CHAPTERS = 38
 export const BOOK_TARGET_PAGES = 500
 export const BOOK_HREF = '/book/go-for-javascript-developers.pdf'
 export const BOOK_TITLE = 'Go for JavaScript Developers'
+
+/**
+ * The leaderboard the book's assignments are scored on. Chapter 0 sets it up,
+ * and the join code is the same one printed there: if it ever changes, both
+ * have to change together, so the code lives next to the link rather than
+ * inside a sentence.
+ */
+export const LEAGUE_CODE = '5TCLJ27Z'
+export const LEAGUE_JOIN_HREF = `https://committed-api.gritframework.dev/join/${LEAGUE_CODE}`
 
 export function BookDownload({
   className,
@@ -62,6 +71,20 @@ export function BookDownload({
             A textbook that teaches Go from scratch to someone who already ships React and
             Next.js, then builds real applications with Grit. Every concept starts from the
             JavaScript you already know, and every chapter ends with something you build.
+          </p>
+          <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+            Every chapter ends with an assignment you push to your own GitHub repository.
+            Chapter 0 sets that up and gets you onto{' '}
+            <a
+              href={LEAGUE_JOIN_HREF}
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-primary hover:underline"
+            >
+              Gopher League
+            </a>
+            , a leaderboard for developers learning Go together, where every commit,
+            review and merged pull request scores.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Link

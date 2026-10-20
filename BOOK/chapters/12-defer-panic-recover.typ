@@ -360,3 +360,22 @@ legitimate and rare.
   "a boundary" means: it has to be inside the unit of work you want to isolate,
   not outside it.
 ]
+
+#assignment(name: "Defer - Assignment One")[
+  Copy a file correctly, which is harder than it looks.
+
+  In `part2-ideas/12-defer`, write `CopyFile(dst, src string) (err error)`.
+
+  *One.* Open both files, `defer` both closes, and copy with `io.Copy`.
+
+  *Two.* Return the error from closing the destination, because a failed flush
+  is a failed copy. Use the named return and the deferred assignment from this
+  chapter.
+
+  *Three.* Write the loop version that opens a hundred files and defers every
+  close inside the loop. Watch the file descriptors, then fix it, and write the
+  rule in a comment.
+
+  *Four.* Add a `recover` boundary to a tiny handler, log the panic with the
+  stack, and return a 500. Then panic on purpose and confirm the process
+  survives.]

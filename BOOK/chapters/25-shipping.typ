@@ -350,3 +350,25 @@ without further thought.
   round trip, from build flag to running container to HTTP response, is the
   whole deployment story in one check.
 ]
+
+#assignment(name: "Shipping - Assignment One")[
+  Ship the shortener as if somebody else had to run it.
+
+  *One.* Build with the version embedded, and have `-version` print it:
+
+  ```bash
+  go build -ldflags "-X main.version=$(git describe --always)" .
+  ```
+
+  *Two.* Cross compile for Linux, macOS and Windows, and record the three
+  sizes in `RELEASE.md`.
+
+  *Three.* A two-stage `Dockerfile` ending in a minimal image. Record the image
+  size next to the binary sizes.
+
+  *Four.* Embed the static files with `embed`, so one file is genuinely the
+  whole program.
+
+  *Five.* A GitHub Actions workflow that does all of it on a tag and attaches
+  the binaries to the release. Push a tag and let it run. That workflow file,
+  in your repository, is the assignment.]

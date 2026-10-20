@@ -281,3 +281,22 @@ work, and no amount of clean code makes it cheaper.
   That is the thin-handler rule paying off, and proving it once is worth more
   than reading the argument for it.
 ]
+
+#assignment(name: "Architecture - Assignment One")[
+  Trace one request all the way down and write what you saw.
+
+  In your generated project, pick `GET` on any resource and follow it.
+
+  *One.* `ARCHITECTURE.md` listing every file the request touches in order,
+  from the route to the query, with one line each on what that layer decided.
+
+  *Two.* Break the rule on purpose: put a business rule in the handler. Then
+  write the sentence that says why it is wrong, which is the test from the
+  chapter: would it still have to be true if a background job called this?
+
+  *Three.* Subscribe to one event on the bus and log it. Trigger it through the
+  admin panel and show the log line.
+
+  *Four.* Answer the refactoring question for your own application in a
+  paragraph: if this had to become two services in two years, which seam would
+  you cut, and what makes that seam cuttable today?]

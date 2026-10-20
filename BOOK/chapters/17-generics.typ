@@ -367,3 +367,21 @@ which is what interfaces cannot do.
   map would have been clearer. That question, asked honestly every time, is the
   whole discipline of generics in Go.
 ]
+
+#assignment(name: "Generics - Assignment One")[
+  Write the generic versions of what you already wrote, then judge them.
+
+  In `part2-ideas/17-generics`:
+
+  *One.* Rewrite chapter six's `Filter`, `Chunk` and `Dedupe` to work for any
+  element type. `Dedupe` needs `comparable`, which is the constraint doing real
+  work.
+
+  *Two.* A generic `Set[T comparable]` with `Add`, `Has` and `Items`.
+
+  *Three.* A `Map[T, U any]` that changes the element type, and one use of it
+  that would have needed `any` and a cast before.
+
+  *Four.* Now the honest part. In `NOTES.md`, name one place in your own code
+  where an interface is the better answer than a type parameter, and say why.
+  A chapter on generics that does not leave you more careful has failed.]

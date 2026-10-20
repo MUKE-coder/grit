@@ -338,3 +338,29 @@ patterns in Go, and it is how the language avoids the cleanup bugs that
   check `info.IsDir()`, which is portable and is the version you should
   probably ship.
 ]
+
+#assignment(name: "Functions - Assignment One")[
+  Write a small parser that fails well, which is most of what error handling
+  is for.
+
+  In `part1-language/04-functions`, write `ParseRange(s string) (int, int,
+  error)` that accepts `"10-20"` and returns the two numbers.
+
+  *One.* Return a sentinel for the shape being wrong:
+
+  ```go
+  var ErrNotARange = errors.New("not a range")
+  ```
+
+  *Two.* When a side does not parse as a number, wrap the error from
+  `strconv.Atoi` with `%w` and enough context to say which side failed.
+
+  *Three.* In `main`, call it with `"10-20"`, `"ten-20"`, `"10"` and `""`, and
+  use `errors.Is` to tell the sentinel apart from a number failure. Print a
+  different message for each.
+
+  *Four.* Make one function return a named result and set it in a `defer`, then
+  write one sentence in `NOTES.md` on whether it read better or worse.
+
+  The website's *Functions & Errors* and *Sentinel Errors* exercises are the
+  short version of this.]

@@ -389,3 +389,23 @@ environment variables is awkward to use.
   precedence order right, and writing a test for each layer, is most of what
   configuration libraries do for you.
 ]
+
+#assignment(name: "Config - Assignment One")[
+  Make a program refuse to start rather than fail at midnight.
+
+  Take your chapter twenty two API and give it real configuration.
+
+  *One.* One `Config` struct, parsed once at startup, with defaults for
+  everything that has a sensible one.
+
+  *Two.* Validation that fails loudly: a missing database URL exits with a
+  message naming the variable, before any connection is attempted.
+
+  *Three.* A `String()` method that redacts secrets, and a startup log line
+  that uses it. Then log the raw struct once to see what you would have leaked.
+
+  *Four.* The same binary started twice with different environments, proving
+  nothing is compiled in.
+
+  The website's *Config With Defaults* and *Validating Config at Start-up*
+  exercises are the compressed version.]

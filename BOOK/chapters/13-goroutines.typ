@@ -407,3 +407,27 @@ follow step one, write them in sequence.
   by the servers themselves. Finding the point where more concurrency stops
   helping is the actual skill, and it is measured rather than guessed.
 ]
+
+#assignment(name: "Goroutines - Assignment One")[
+  Fetch many things at once, correctly, and prove it with the race detector.
+
+  In `part2-ideas/13-goroutines`, fetch twenty URLs and report each status.
+
+  *One.* Sequentially first. Time it with `time.Since` and keep the number.
+
+  *Two.* Concurrently with a `sync.WaitGroup`, collecting into a slice indexed
+  by position so there is no shared counter. Time it again.
+
+  *Three.* Now write the broken version that appends to one slice from every
+  goroutine, and run it:
+
+  ```bash
+  go run -race .
+  ```
+
+  Paste the detector's output into `NOTES.md`. It names both goroutines and
+  both lines, which is the thing worth remembering.
+
+  *Four.* Bound it to four at a time with a buffered channel, and explain in
+  one sentence why twenty thousand goroutines against one host is rude rather
+  than fast.]

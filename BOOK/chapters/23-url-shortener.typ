@@ -552,3 +552,22 @@ go test -race -cover ./...
   `UNIQUE` constraint violation rather than the random collision retry, and
   that is a different error path entirely.
 ]
+
+#assignment(name: "URL Shortener - Assignment One")[
+  Finish the project, then push it past the chapter.
+
+  Build the shortener as written, in `part3-standard-library/23-shortener`,
+  with the tests passing. Then add three things of your own.
+
+  *One.* Expiry: a link that stops working after a given time, with the expiry
+  checked on read rather than by a sweeper.
+
+  *Two.* Hit counting that does not slow the redirect down. The redirect is the
+  hot path, so the count should not be on it synchronously.
+
+  *Three.* A custom alias (`/go/standup`) that refuses to overwrite an existing
+  one, with the race between two creators handled by the database rather than
+  by a check.
+
+  *Four.* A README with the one command that builds it and the one that runs
+  it. This is the first thing in the repository somebody else could use.]

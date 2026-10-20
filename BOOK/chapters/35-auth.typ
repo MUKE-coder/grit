@@ -231,3 +231,23 @@ mess.
   one you cannot apologise your way out of. Grit's own repository keeps one for
   exactly this reason.
 ]
+
+#assignment(name: "Auth - Assignment One")[
+  Try to break your own isolation, then stop yourself from ever regressing it.
+
+  *One.* Generate a resource with `--owned-by user`, and create one record as
+  each of two users.
+
+  *Two.* As the second user, request the first user's record by ID. You want a
+  404. Confirm in `/studio` that the row is there.
+
+  *Three.* Try the same through every other door: the list total, the export,
+  the import, a background job. One of them is where a hand-written
+  application would have leaked.
+
+  *Four.* Break it on purpose, in one character, and watch the data appear.
+  Then put it back.
+
+  *Five.* Write the isolation test as a Go test and add it to CI. In a
+  multi-user application it is the highest-value test you will ever write,
+  because the bug it catches is silent.]

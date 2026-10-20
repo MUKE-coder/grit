@@ -337,3 +337,22 @@ setup called from `main` is almost always better.
   by exporting the field, and notice that the package boundary just forced you
   into a better API than you would have written in one file.
 ]
+
+#assignment(name: "Packages - Assignment One")[
+  Take one of your earlier programs apart.
+
+  Copy your chapter seven word counter into `part1-language/09-packages` and
+  split it.
+
+  *One.* `internal/count` holds the counting, `internal/report` holds the
+  printing, and `main` wires them. Nothing in `internal/` may import `main`.
+
+  *Two.* Name the exported functions so the call site reads well:
+  `count.Words(r)` rather than `count.CountWords(r)`.
+
+  *Three.* Try to import your `internal/count` from a second module on disk,
+  and keep the error in `NOTES.md`. That rule is enforced by the compiler
+  rather than by review, which is the whole point.
+
+  *Four.* Add one `init()` and then remove it, writing one sentence on what you
+  replaced it with.]

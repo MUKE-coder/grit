@@ -229,3 +229,19 @@ a convenience.
   test, and assert it equals `0.3`. Watch it fail. That failing test is the
   entire argument of this chapter in four lines.
 ]
+
+#assignment(name: "Field Types - Assignment One")[
+  Use the type system the generator actually has.
+
+  *One.* Generate one resource using at least twelve different field types,
+  including a relationship, a money, an enum, a slug and a file.
+
+  *Two.* Open the admin form and record, in a table in `FIELDS.md`, what each
+  type produced: the input, the validation, the column type and the list cell.
+
+  *Three.* Find one that chose wrong for your domain, change it, migrate, and
+  note what moved with it. A field type is a decision made once, so the cost of
+  changing it is worth measuring yourself.
+
+  *Four.* Pick the two types you had never considered before reading the list,
+  and say where you would have used a plain string instead.]

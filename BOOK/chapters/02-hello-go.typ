@@ -223,3 +223,27 @@ and it runs.
   piece of that line, so guessing now is fine and the compiler will tell you
   when you are wrong.
 ]
+
+#assignment(name: "Hello Go - Assignment One")[
+  A module, a program, and a binary you can hand to somebody.
+
+  *One.* In `part1-language/02-hello`, run `go mod init`, write a program that
+  prints a greeting, and run it with `go run .`.
+
+  *Two.* Add a second file in the same package with one exported and one
+  unexported function. Call both from `main`. Then try to call the unexported
+  one from a different package and keep the compiler error in a comment.
+
+  *Three.* Build a real binary and commit its size, not the binary itself:
+
+  ```bash
+  go build -o hello .
+  ls -lh hello > BUILD.txt
+  ```
+
+  *Four.* Cross compile the same program for another operating system and add
+  that line to `BUILD.txt`. You now have the one-file deployment this chapter
+  claimed, and you did it in two commands.
+
+  The website's *Your First Program* and *Print/Println and Raw Strings*
+  exercises cover the same ground in the browser if you want the warm-up.]

@@ -523,3 +523,25 @@ point leaves either the old log or the new one, and both are valid.
   store gain ordered range queries, which is the step from a key-value store
   to something you could call a database.
 ]
+
+#assignment(name: "Key Value Store - Assignment One")[
+  Finish the store, then try to corrupt it.
+
+  *One.* Complete the write-ahead log, the replay and the compaction as
+  written, with tests for each.
+
+  *Two.* Crash it for real. Write a test that starts the store in a subprocess,
+  writes, and kills it with no chance to clean up:
+
+  ```bash
+  go test -run TestCrashRecovery -v
+  ```
+
+  Reopen and confirm every acknowledged write is present.
+
+  *Three.* Truncate the log file mid-record, on purpose, and show the store
+  recovering to the last whole record rather than refusing to start.
+
+  *Four.* Benchmark with and without the sync on every write, and put both
+  numbers in `NOTES.md` with one sentence on which you would default to. That
+  trade, durability against throughput, is the one every database makes.]

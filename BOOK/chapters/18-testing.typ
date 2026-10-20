@@ -420,3 +420,27 @@ harder to get wrong, because it stops the compiler optimising your work away.
   and the nanoseconds per operation will both move, and seeing a design change
   show up as a number is the habit this chapter is really teaching.
 ]
+
+#assignment(name: "Testing - Assignment One")[
+  Go back and test something you already wrote.
+
+  Take your chapter eleven `store` package and bring it to a state you would
+  defend in review.
+
+  *One.* Table-driven tests for every exported function, including the error
+  cases, with the table naming each case.
+
+  *Two.* A failure message that says what it wanted and what it got. Break one
+  test on purpose and check the output names the case.
+
+  *Three.* A `t.Helper()` assertion helper, and `t.Cleanup` for anything the
+  test created.
+
+  *Four.* Coverage, recorded rather than chased:
+
+  ```bash
+  go test -cover ./... | tee COVERAGE.txt
+  ```
+
+  *Five.* One benchmark, with `-benchmem`, and one sentence on whether the
+  allocations surprised you.]

@@ -30,7 +30,25 @@ do not style anything inline, or the book stops looking like one book.
 | `#gotcha[...]` | A trap that will cost the reader an hour |
 | `#project[...]` | A small thing to build, complete and runnable |
 | `#tryit[...]` | A short exercise, left to the reader |
+| `#assignment(name: "...")[...]` | The chapter's assignment, with the exact commit message |
 | `#compare(js, go)` | The same task in both languages, stacked |
+
+### Assignments
+
+Every chapter ends with exactly one `#assignment`, and chapter 0 explains the
+system to the reader: one public GitHub repository for the whole book, one
+commit per assignment, scored on the Gopher League leaderboard in the Committed
+app.
+
+The `name:` argument is the commit message, and it is not decoration. The
+leaderboard matches on it, so it must follow `<Topic> - Assignment <Number>`
+exactly, in words rather than digits, and it must never change once a chapter
+has shipped. Chapter 3 carries two, which is why the numbering exists.
+
+The website's Go guide at `/docs/prerequisites/golang` has 46 browser exercises
+over the same ground. Where one lines up with a chapter, say so at the end of
+that chapter's assignment. They are for practising a concept; an assignment is
+for building something and pushing it, and only the second one earns points.
 
 Two rules learned the hard way:
 
@@ -60,6 +78,14 @@ time of writing it runs about **8.5 pages per chapter**, so the plan below is
 sized at roughly 50 chapters.
 
 ## Plan
+
+### Before Part I
+
+0. Before you start: a repository, and a leaderboard **(written)**
+
+Numbered 0 so Part I still opens at chapter 1, which is what every
+cross-reference in the book says. `template.typ` prints the chapter number from
+its own counter and subtracts one.
 
 ### Part I: Go for the JavaScript developer
 
@@ -128,7 +154,7 @@ routing and middleware are covered inside chapter 21 rather than split out.
 
 ### Part VI: build it from scratch
 
-Ten builds in the spirit of the build-your-own-x list. They deepen Go rather
+Eleven builds in the spirit of the build-your-own-x list. They deepen Go rather
 than teach Grit, and they depend only on Parts I to III, so a reader who wants
 them early can jump here straight after chapter 25.
 
@@ -137,13 +163,22 @@ in the author's reference folder and are deliberately not drawn from. The idea
 of building a database from scratch is nobody's property; the prose and code of
 somebody else's book is. Nothing in this part is adapted from them.
 
-48. Build your own CLI framework: flags, subcommands and help
-49. Build your own JSON parser: a lexer and a recursive descent parser
-50. Build your own key-value store: a write-ahead log and crash recovery **(written)**
-51. Build your own on-disk index: pages, and a B-tree that survives restart
-52. Build your own Redis: the RESP protocol over raw TCP
-53. Build your own HTTP server: from a TCP socket to a routed response
-54. Build your own Git: content addressing, objects, trees and commits
-55. Build your own reverse proxy and load balancer, with health checks
-56. Build your own job queue: durable, retrying, at least once
-57. Build your own test runner, and what `go test` is really doing
+48. Build your own CRUD API from scratch **(written)**
+49. Build your own CLI framework: flags, subcommands and help
+50. Build your own JSON parser: a lexer and a recursive descent parser
+51. Build your own key-value store: a write-ahead log and crash recovery **(written)**
+52. Build your own on-disk index: pages, and a B-tree that survives restart
+53. Build your own Redis: the RESP protocol over raw TCP
+54. Build your own HTTP server: from a TCP socket to a routed response
+55. Build your own Git: content addressing, objects, trees and commits
+56. Build your own reverse proxy and load balancer, with health checks
+57. Build your own job queue: durable, retrying, at least once
+58. Build your own test runner, and what `go test` is really doing
+
+Chapter 48 comes first because it needs only Parts I to III and it is the one
+build every reader will recognise from work. It also sets up Part IV: having
+written six hundred lines for one resource by hand, `grit generate resource` is
+a measured claim rather than a demo.
+
+File names carry the plan number, so `51-kv-store.typ` is chapter 51. A chapter
+written out of order keeps its planned number rather than its writing order.

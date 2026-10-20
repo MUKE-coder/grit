@@ -358,3 +358,23 @@ after lowercase fields.
   a document with no struct to compare against. The answer tells you something
   real about what that option is actually for.
 ]
+
+#assignment(name: "JSON - Assignment One")[
+  Round-trip something awkward, because the easy cases never bite.
+
+  In `part2-ideas/19-json`:
+
+  *One.* Marshal your chapter five `Invoice`, then unmarshal it back and
+  compare. Any field that does not survive is a missing tag or a lowercase
+  name.
+
+  *Two.* The `omitempty` trap: a `bool` field that is deliberately `false`.
+  Show it disappearing, then fix it with a pointer, and write in a comment
+  which choice you would make in an API.
+
+  *Three.* Decode into `map[string]any` for a payload whose shape you do not
+  control, and pull one nested value out with a type assertion that does not
+  panic on the wrong type.
+
+  *Four.* A custom `MarshalJSON` for a type that must serialise as a date
+  rather than a timestamp, with a test for both directions.]

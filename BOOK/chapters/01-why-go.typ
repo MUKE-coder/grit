@@ -219,3 +219,20 @@ recognising Go and writing it.
   problems that every project runs into, and you will want to know which of
   them is yours.
 ]
+
+#assignment(name: "Why Go - Assignment One")[
+  Before any Go, write down why you are here, because chapter twenty six will
+  ask you to check the answer.
+
+  Create `part1-language/01-why-go/NOTES.md` and answer three things in a
+  paragraph each.
+
+  *One.* Which of the four pressures in this chapter is yours: the deployment,
+  the long-running work, the late errors, or the word "backend"? Name the
+  actual system it happened on.
+
+  *Two.* What did you try first, and why did it not settle the matter? There is
+  almost always a library or a rewrite that nearly worked.
+
+  *Three.* What would have to be true in six months for this book to have been
+  worth the time? Be specific enough that you could be wrong.]

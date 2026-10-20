@@ -280,3 +280,25 @@ sorting use `slices.SortStableFunc`.
   holding those stop words. The next chapter will tell you whether you chose
   right.
 ]
+
+#assignment(name: "Slices - Assignment One")[
+  Write the three helpers you miss from JavaScript, then prove the trap.
+
+  In `part1-language/06-slices`:
+
+  *One.* `Filter`, `Chunk` and `Dedupe` over `[]string`, each with a
+  table-driven test. You will write these generically in chapter seventeen, so
+  keep them.
+
+  *Two.* Reproduce the aliasing bug on purpose. Take a slice of a slice, append
+  to it, and show the original changing. Then fix it with a copy, and write the
+  one-line rule in a comment.
+
+  *Three.* Sort a slice of structs by two keys, falling back to the second when
+  the first ties.
+
+  ```go
+  sort.Slice(xs, func(i, j int) bool { ... })
+  ```
+
+  *Four.* In `NOTES.md`, state in one sentence what `append` does not promise.]

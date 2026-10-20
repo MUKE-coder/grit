@@ -483,3 +483,24 @@ random port.
   `telnet localhost 8080` without sending anything, to see for yourself what
   the default costs you.
 ]
+
+#assignment(name: "HTTP Server - Assignment One")[
+  A JSON API with no framework at all, so you know what one is for.
+
+  In `part3-standard-library/21-http`, build a notes API with `net/http`.
+
+  *One.* `GET /notes`, `POST /notes`, `GET /notes/{id}` on a `ServeMux`,
+  returning JSON with the right status codes.
+
+  *Two.* A `Server` with read, write and idle timeouts set. Say in a comment
+  what the default is and why it is a problem on the open internet.
+
+  *Three.* Two middlewares, logging and a request ID, composed as functions
+  that wrap a handler. Put the ID in the request context and log it from the
+  handler.
+
+  *Four.* Graceful shutdown on `SIGINT`, with an in-flight request finishing
+  rather than being cut.
+
+  *Five.* Tests with `httptest`, no port bound. These are the four steps a
+  generated Grit handler performs, which is worth having done by hand once.]

@@ -11,6 +11,15 @@
 #let codebg = rgb("#f6f7f9")
 #let codeline = rgb("#e3e6ea")
 
+// The chapter number on a chapter opener.
+//
+// Not counter(heading): headings here are set numbering: none, and an
+// unnumbered heading does not step its counter, so every chapter printed the
+// same number. This one is stepped by the level 1 show rule itself. The
+// display is the count minus one, because the book opens with a chapter 0,
+// the setup chapter, and Part I has to start at 1.
+#let chapternum = counter("chapter")
+
 // The four teaching devices, each with its own colour so a reader learns the
 // shapes rather than reading the label every time.
 #let bridgecol = rgb("#f0b429") // yellow: you already know this
@@ -54,6 +63,43 @@
   fill: trycol, title: title, body,
 )
 
+// The assignment: the one device in the book that leaves the page.
+//
+// Every chapter ends with one. It is work the reader pushes to their own
+// repository under an exact commit message, which is what the Committed app
+// scores for the Gopher League leaderboard. The commit name is part of the
+// device rather than prose, because a leaderboard that cannot match the
+// message gives no points, and a reader who has to invent the name will
+// invent a different one every time.
+#let assignment(name: "", body) = block(
+  width: 100%,
+  inset: (left: 12pt, right: 12pt, top: 10pt, bottom: 11pt),
+  radius: 3pt,
+  fill: accent.lighten(92%),
+  stroke: (left: 3pt + accent),
+  breakable: true,
+  [
+    #text(fill: accent.darken(20%), weight: "bold", size: 9pt)[ASSIGNMENT]
+    #v(-4pt)
+    #set text(size: 9.8pt)
+    #show raw: set text(size: 7.6pt)
+    #body
+    #v(3pt)
+    #block(
+      width: 100%,
+      fill: rgb("#ffffff"),
+      stroke: 0.5pt + accent.lighten(60%),
+      radius: 2pt,
+      inset: (x: 8pt, y: 6pt),
+      [
+        #text(size: 8pt, fill: muted, weight: "bold")[COMMIT AS]
+        #v(-5pt)
+        #raw("git commit -m \"" + name + "\"", lang: "bash", block: true)
+      ],
+    )
+  ],
+)
+
 // A JavaScript / Go comparison, stacked rather than side by side.
 //
 // Two columns was the first attempt and it was wrong at this trim size: half
@@ -93,10 +139,11 @@
   // flicking through the printed book lands you on a boundary.
   show heading.where(level: 1): it => {
     pagebreak(weak: true, to: "odd")
+    chapternum.step()
     block(above: 0pt, below: 22pt)[
       #set text(font: "Cambria")
-      #text(size: 42pt, fill: accent.lighten(55%), weight: "bold")[
-        #counter(heading).display("1")
+      #context text(size: 42pt, fill: accent.lighten(55%), weight: "bold")[
+        #(chapternum.get().first() - 1)
       ]
       #v(-14pt)
       #text(size: 21pt, weight: "bold")[#it.body]
@@ -193,7 +240,7 @@
     footer: none,
   )
   counter(page).update(1)
-  counter(heading).update(0)
+  chapternum.update(0)
 
   set heading(numbering: none)
   body

@@ -370,3 +370,25 @@ want. *Sharing a number is not communication.*
   need to make it fast, and notice you are now designing an LRU, which is why
   real cache libraries exist.
 ]
+
+#assignment(name: "Sync - Assignment One")[
+  Build a cache, then find out which lock it wanted.
+
+  In `part2-ideas/15-sync`, write a concurrent cache with `Get` and `Set`.
+
+  *One.* A `sync.Mutex` version with the mutex embedded, and a test that hits
+  it from fifty goroutines under `-race`.
+
+  *Two.* A `sync.RWMutex` version. Benchmark both at ninety percent reads:
+
+  ```bash
+  go test -bench . -benchmem
+  ```
+
+  Commit the numbers in `NOTES.md` and say which you would ship.
+
+  *Three.* A `sync.Once` that loads the cache the first time anybody asks, no
+  matter how many ask at once.
+
+  *Four.* Replace the counter inside it with `atomic.Int64` and note what you
+  gave up by doing so.]

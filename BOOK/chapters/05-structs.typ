@@ -316,3 +316,20 @@ That is deep equality for free, and it is a genuine surprise if you are used to
   add a `Count()` method and decide, with a reason you can say out loud,
   whether it takes a value or a pointer receiver.
 ]
+
+#assignment(name: "Structs - Assignment One")[
+  Model something real, with the receiver choice made deliberately.
+
+  In `part1-language/05-structs`, build an `Invoice` with a `Customer`, a slice
+  of `Line` items, and a `Status`.
+
+  *One.* A constructor `NewInvoice` that returns a usable zero-free value.
+
+  *Two.* `Total()` on a value receiver, and `AddLine()` on a pointer receiver.
+  Then call `AddLine` on a value and show, in a comment, why the line vanished.
+
+  *Three.* Embed an `Audit` struct with `CreatedAt` and `UpdatedAt` and reach
+  the fields directly, which is composition doing what inheritance was for.
+
+  *Four.* Add JSON tags, marshal one invoice, and commit the output in
+  `sample.json`. Chapter nineteen will come back to those tags.]
