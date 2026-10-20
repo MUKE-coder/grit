@@ -35,3 +35,8 @@
 #include "chapters/21-http-server.typ"
 #include "chapters/22-database.typ"
 #include "chapters/23-url-shortener.typ"
+#include "chapters/24-config.typ"
+#include "chapters/25-shipping.typ"
+
+// Part IV: Grit, now that the reader can read what it generates.
+#include "chapters/26-the-problems.typ"

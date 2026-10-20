@@ -89,17 +89,17 @@ sized at roughly 50 chapters.
 
 20. Files, streams and the `io` interfaces **(written)**
 21. `net/http`: a server with no framework **(written)**
-22. Talking to a database with `database/sql`
-23. Project: a URL shortener with SQLite
-24. Configuration, environment and secrets
-25. Building, cross compiling and shipping one binary
+22. Talking to a database with `database/sql` **(written)**
+23. Project: a URL shortener **(written)**
+24. Configuration, environment and secrets **(written)**
+25. Building, cross compiling and shipping one binary **(written)**
 
 The JSON CLI that was planned here is now the project in chapter 19, and
 routing and middleware are covered inside chapter 21 rather than split out.
 
 ### Part IV: Grit fundamentals
 
-26. The twenty six problems, and what a framework is for
+26. The twenty six problems, and what a framework is for **(written)**
 27. `grit new`: what lands, and the shape of a project
 28. The architecture: a modular monolith, layer by layer
 29. The resource, and why it is the unit of generation
