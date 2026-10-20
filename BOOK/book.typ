@@ -26,3 +26,6 @@
 #include "chapters/14-channels.typ"
 #include "chapters/15-sync.typ"
 #include "chapters/16-context.typ"
+#include "chapters/17-generics.typ"
+#include "chapters/18-testing.typ"
+#include "chapters/19-json.typ"
