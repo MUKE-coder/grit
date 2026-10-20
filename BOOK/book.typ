@@ -46,6 +46,9 @@
 #include "chapters/30-field-types.typ"
 #include "chapters/31-migrations.typ"
 #include "chapters/32-services.typ"
+#include "chapters/33-handlers.typ"
+#include "chapters/34-admin-panel.typ"
+#include "chapters/35-auth.typ"
 
 // Part VI: builds from first principles. Written out of order because the
 // chapter format needed proving; the rest of Part IV slots in above.

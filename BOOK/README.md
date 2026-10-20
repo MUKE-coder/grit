@@ -107,9 +107,9 @@ routing and middleware are covered inside chapter 21 rather than split out.
 30. Field types: all thirty one, and what each one decides **(written)**
 31. Models, migrations and seeding at scale **(written)**
 32. Services: where the rules live, and why not the handler **(written)**
-33. Handlers and the HTTP contract
-34. The generated admin panel
-35. Authentication, roles and per-record ownership
+33. Handlers and the HTTP contract **(written)**
+34. The generated admin panel **(written)**
+35. Authentication, roles and per-record ownership **(written)**
 36. The shared package: one definition, four outputs
 
 ### Part V: building with Grit
