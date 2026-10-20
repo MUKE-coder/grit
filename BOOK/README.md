@@ -104,9 +104,9 @@ routing and middleware are covered inside chapter 21 rather than split out.
 27. `grit new`: what lands, and the shape of a project **(written)**
 28. The architecture: a modular monolith, layer by layer **(written)**
 29. The resource, and why it is the unit of generation **(written)**
-30. Field types: all thirty one, and what each one decides
-31. Models, migrations and seeding at scale
-32. Services: where the rules live, and why not the handler
+30. Field types: all thirty one, and what each one decides **(written)**
+31. Models, migrations and seeding at scale **(written)**
+32. Services: where the rules live, and why not the handler **(written)**
 33. Handlers and the HTTP contract
 34. The generated admin panel
 35. Authentication, roles and per-record ownership

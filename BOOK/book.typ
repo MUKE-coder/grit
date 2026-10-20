@@ -43,6 +43,9 @@
 #include "chapters/27-grit-new.typ"
 #include "chapters/28-architecture.typ"
 #include "chapters/29-the-resource.typ"
+#include "chapters/30-field-types.typ"
+#include "chapters/31-migrations.typ"
+#include "chapters/32-services.typ"
 
 // Part VI: builds from first principles. Written out of order because the
 // chapter format needed proving; the rest of Part IV slots in above.
