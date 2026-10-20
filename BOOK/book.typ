@@ -59,6 +59,10 @@
 #include "chapters/38-relationships.typ"
 #include "chapters/39-publication.typ"
 #include "chapters/40-money-and-time.typ"
+#include "chapters/41-invoicing.typ"
+#include "chapters/42-uploads.typ"
+#include "chapters/43-jobs-and-mail.typ"
+#include "chapters/44-events-realtime-webhooks.typ"
 
 // Part VI: builds from first principles. Written out of order because the
 // chapter format needed proving; the rest of Part IV slots in above.
