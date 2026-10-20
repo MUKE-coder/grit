@@ -52,7 +52,8 @@ A constraint says what you may *do* with a value of that type.
 func Sum[T any](items []T) T {
     var total T
     for _, v := range items {
-        total += v          // invalid operation: operator + not defined on total
+        // invalid operation: operator + not defined on total
+        total += v
     }
     return total
 }
@@ -302,7 +303,8 @@ which is what interfaces cannot do.
 
   // GetOrLoad is where the design earns itself: the loader returns a V and
   // the caller receives a V, with no any and no type assertion anywhere.
-  func (c *Cache[K, V]) GetOrLoad(k K, load func(K) (V, error)) (V, error) {
+  func (c *Cache[K, V]) GetOrLoad(k K,
+      load func(K) (V, error)) (V, error) {
       if v, ok := c.Get(k); ok {
           return v, nil
       }

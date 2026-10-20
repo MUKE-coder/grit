@@ -98,7 +98,8 @@ retry-after. A conflict needs the version that is current.
 boundary. Do not. The result is a message like:
 
 ```
-handling request: getting user: loading user: querying users: executing query:
+handling request: getting user: loading user: querying users:
+executing query:
 scanning row: sql: no rows in result set
 ```
 
@@ -291,15 +292,18 @@ are expected, and expected failures are values.
 
   func (s *Store) Create(name, email string) (*User, error) {
       if strings.TrimSpace(name) == "" {
-          return nil, &ValidationError{Field: "name", Reason: "must not be empty"}
+          return nil, &ValidationError{
+              Field: "name", Reason: "must not be empty"}
       }
       if !strings.Contains(email, "@") {
-          return nil, &ValidationError{Field: "email", Reason: "must be an email address"}
+          return nil, &ValidationError{
+              Field: "email", Reason: "must be an email"}
       }
       for _, u := range s.users {
           if u.Email == email {
               // Wrapped, so the caller gets the identity and the detail.
-              return nil, fmt.Errorf("creating user %s: %w", email, ErrConflict)
+              return nil, fmt.Errorf("creating user %s: %w",
+                  email, ErrConflict)
           }
       }
       u := &User{ID: s.nextID, Name: name, Email: email}
@@ -316,7 +320,8 @@ are expected, and expected failures are values.
       return u, nil
   }
 
-  // The boundary. The only place that decides what a failure means, and the
+  // The boundary. The only place that decides what a failure means, and
+  // the
   // only place that logs.
   func describe(err error) string {
       var ve *ValidationError

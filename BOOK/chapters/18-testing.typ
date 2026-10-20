@@ -121,7 +121,8 @@ func TestSlugify(t *testing.T) {
 ```
 --- FAIL: TestSlugify (0.00s)
     --- FAIL: TestSlugify/unicode (0.00s)
-        slug_test.go:21: Slugify("Café Noir") = "caf-noir", want "cafe-noir"
+        slug_test.go:21: Slugify("Café Noir") =
+            "caf-noir", want "cafe-noir"
 ```
 
 You can run one case directly:
@@ -317,7 +318,8 @@ harder to get wrong, because it stops the compiler optimising your work away.
       s := NewStore()
       t.Cleanup(func() {
           // Nothing to close here, but the hook is where a real test would
-          // drop a temp database. Wire it now so it is not retrofitted later.
+          // drop a temp database. Wire it now so it is not retrofitted
+          // later.
       })
       return s
   }
@@ -357,7 +359,8 @@ harder to get wrong, because it stops the compiler optimising your work away.
               }
 
               if err == nil {
-                  t.Fatalf("Create(%q, %q): want error, got nil", tt.user, tt.email)
+                  t.Fatalf("Create(%q, %q): want error, got nil",
+                      tt.user, tt.email)
               }
               var ve *ValidationError
               if !errors.As(err, &ve) {

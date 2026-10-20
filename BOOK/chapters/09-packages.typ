@@ -243,7 +243,8 @@ setup called from `main` is almost always better.
       Stock int
   }
 
-  // low is unexported, so only this package can call it. item.go and store.go
+  // low is unexported, so only this package can call it. item.go and
+  // store.go
   // are the same package, so store.go can use it with no import.
   func (i *Item) low(threshold int) bool {
       return i.Stock < threshold
@@ -275,7 +276,8 @@ setup called from `main` is almost always better.
           return fmt.Errorf("taking %s: not found", sku)
       }
       if it.Stock < n {
-          return fmt.Errorf("taking %d of %s: %w", n, sku, ErrInsufficientStock)
+          return fmt.Errorf("taking %d of %s: %w",
+              n, sku, ErrInsufficientStock)
       }
       it.Stock -= n
       return nil
@@ -310,7 +312,8 @@ setup called from `main` is almost always better.
       inv.Add("A1", "Blue widget", 10)
 
       if err := inv.Take("A1", 99); err != nil {
-          fmt.Println(errors.Is(err, inventory.ErrInsufficientStock))  // true
+          // true
+          fmt.Println(errors.Is(err, inventory.ErrInsufficientStock))
       }
 
       for _, it := range inv.Low(20) {

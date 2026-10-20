@@ -161,7 +161,8 @@ type User struct {
 }
 
 json.Unmarshal([]byte(`{"NAME": "Ada"}`), &u)   // works: case-insensitive
-json.Unmarshal([]byte(`{"nope": 1}`), &u)       // works: unknown fields ignored
+// works: unknown fields ignored
+json.Unmarshal([]byte(`{"nope": 1}`), &u)
 ```
 
 Unknown fields are silently dropped. For an API that should reject nonsense,
@@ -265,8 +266,10 @@ after lowercase fields.
 
   func main() {
       indent := flag.String("indent", "  ", "indent string")
-      compact := flag.Bool("c", false, "compact output instead of indented")
-      path := flag.String("get", "", "dotted path to extract, e.g. user.name")
+      compact := flag.Bool("c", false,
+          "compact output instead of indented")
+      path := flag.String("get", "",
+          "dotted path to extract, e.g. user.name")
       flag.Parse()
 
       // Read from a named file, or standard input when piped.

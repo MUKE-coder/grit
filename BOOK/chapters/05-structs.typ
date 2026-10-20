@@ -286,7 +286,8 @@ That is deep equality for free, and it is a genuine surprise if you are used to
 
   func main() {
       var book Book
-      if err := book.Add(Contact{Name: "Ada", Email: "ada@example.com"}); err != nil {
+      ada := Contact{Name: "Ada", Email: "ada@example.com"}
+      if err := book.Add(ada); err != nil {
           fmt.Println(err)
           return
       }

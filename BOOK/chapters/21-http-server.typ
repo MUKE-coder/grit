@@ -19,7 +19,8 @@ import (
 )
 
 func main() {
-    http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
+    http.HandleFunc("/hello",
+        func(w http.ResponseWriter, r *http.Request) {
         fmt.Fprintln(w, "hello")
     })
     http.ListenAndServe(":8080", nil)
@@ -164,7 +165,8 @@ The outermost runs first. Reading that line right to left gives you the request
 path, which is why many codebases add a small helper:
 
 ```go
-func Chain(h http.Handler, m ...func(http.Handler) http.Handler) http.Handler {
+func Chain(h http.Handler,
+    m ...func(http.Handler) http.Handler) http.Handler {
     for i := len(m) - 1; i >= 0; i-- {
         h = m[i](h)
     }
@@ -181,10 +183,12 @@ handler := Chain(mux, Logger, Recover, Auth)   // now reads in order
 
   ```go
   func Auth(next http.Handler) http.Handler {
-      return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+      return http.HandlerFunc(
+          func(w http.ResponseWriter, r *http.Request) {
           if r.Header.Get("Authorization") == "" {
               http.Error(w, "unauthorized", http.StatusUnauthorized)
-              return                      // next is never called: stop here
+              // next is never called: stop here
+              return
           }
           next.ServeHTTP(w, r)
       })
@@ -211,7 +215,8 @@ func Auth(next http.Handler) http.Handler {
             return
         }
         ctx := context.WithValue(r.Context(), userKey, u)
-        next.ServeHTTP(w, r.WithContext(ctx))   // a new request, with the value
+        // a new request, with the value
+        next.ServeHTTP(w, r.WithContext(ctx))
     })
 }
 
@@ -250,7 +255,8 @@ func main() {
     <-stop
 
     log.Println("shutting down")
-    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    ctx, cancel := context.WithTimeout(
+        context.Background(), 10*time.Second)
     defer cancel()
 
     if err := srv.Shutdown(ctx); err != nil {
@@ -361,7 +367,8 @@ random port.
   }
 
   func logger(next http.Handler) http.Handler {
-      return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+      return http.HandlerFunc(
+          func(w http.ResponseWriter, r *http.Request) {
           start := time.Now()
           next.ServeHTTP(w, r)
           log.Printf("%s %s %v", r.Method, r.URL.Path, time.Since(start))
@@ -369,7 +376,8 @@ random port.
   }
 
   func recoverer(next http.Handler) http.Handler {
-      return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+      return http.HandlerFunc(
+          func(w http.ResponseWriter, r *http.Request) {
           defer func() {
               if rec := recover(); rec != nil {
                   log.Printf("panic: %v", rec)
@@ -385,11 +393,13 @@ random port.
       s := newStore()
       mux := http.NewServeMux()
 
-      mux.HandleFunc("GET /notes", func(w http.ResponseWriter, r *http.Request) {
+      mux.HandleFunc("GET /notes",
+          func(w http.ResponseWriter, r *http.Request) {
           writeJSON(w, http.StatusOK, s.list())
       })
 
-      mux.HandleFunc("POST /notes", func(w http.ResponseWriter, r *http.Request) {
+      mux.HandleFunc("POST /notes",
+          func(w http.ResponseWriter, r *http.Request) {
           var in struct {
               Text string `json:"text"`
           }
@@ -408,7 +418,8 @@ random port.
           writeJSON(w, http.StatusCreated, s.add(in.Text))
       })
 
-      mux.HandleFunc("GET /panic", func(w http.ResponseWriter, r *http.Request) {
+      mux.HandleFunc("GET /panic",
+          func(w http.ResponseWriter, r *http.Request) {
           panic("deliberate")      // proves the recoverer works
       })
 
@@ -433,7 +444,8 @@ random port.
       signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
       <-stop
 
-      ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+      ctx, cancel := context.WithTimeout(
+          context.Background(), 10*time.Second)
       defer cancel()
       if err := srv.Shutdown(ctx); err != nil {
           log.Printf("forced: %v", err)
@@ -447,10 +459,13 @@ random port.
   ```bash
   curl localhost:8080/notes
   curl -X POST localhost:8080/notes -d '{"text":"buy milk"}'
-  curl -X POST localhost:8080/notes -d '{"txt":"typo"}'     # 400, unknown field
+  # 400, unknown field
+  curl -X POST localhost:8080/notes -d '{"txt":"typo"}'
   curl -X POST localhost:8080/notes -d '{"text":""}'        # 422
-  curl -X DELETE localhost:8080/notes                        # 405, automatic
-  curl localhost:8080/panic                                  # 500, server survives
+  # 405, automatic
+  curl -X DELETE localhost:8080/notes
+  # 500, and the server survives
+  curl localhost:8080/panic
   ```
 
   Then press Ctrl+C and watch it log `stopped cleanly` rather than dying.

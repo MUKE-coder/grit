@@ -142,8 +142,10 @@ func fetchAll(urls []string) []result {
                 return
             }
             defer resp.Body.Close()
-            io.Copy(io.Discard, resp.Body)    // read it, or the connection leaks
-            results[i] = result{url: url, ms: time.Since(start).Milliseconds()}
+            // Read it, or the connection leaks.
+            io.Copy(io.Discard, resp.Body)
+            results[i] = result{
+                url: url, ms: time.Since(start).Milliseconds()}
         })
     }
 

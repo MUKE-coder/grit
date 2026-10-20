@@ -19,7 +19,8 @@ of the time.
 ```go
 var name string = "Ada"   // the long form, type stated
 var age = 36              // type inferred, still a var
-name := "Ada"             // short form: declare and infer, inside functions
+// short form: declare and infer, inside functions
+name := "Ada"
 ```
 
 The `:=` operator is the one you want. It declares a new variable and infers

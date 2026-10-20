@@ -124,7 +124,8 @@ client disconnects:
 
 ```go
 func handler(w http.ResponseWriter, r *http.Request) {
-    ctx := r.Context()                   // cancelled if the client goes away
+    // cancelled if the client goes away
+    ctx := r.Context()
     rows, err := db.QueryContext(ctx, "SELECT ...")
     ...
 }
@@ -227,9 +228,11 @@ the cancellation.
       Hits   int
   }
 
-  // search simulates a backend that takes an unpredictable amount of time and
+  // search simulates a backend that takes an unpredictable amount of time
+  // and
   // respects cancellation.
-  func search(ctx context.Context, source string, slow time.Duration) (Result, error) {
+  func search(ctx context.Context, source string,
+      slow time.Duration) (Result, error) {
       select {
       case <-time.After(slow):
           return Result{Source: source, Hits: rand.Intn(100)}, nil
@@ -285,7 +288,8 @@ the cancellation.
       // Tight budget: both are cancelled.
       r, err = first(context.Background(), 50*time.Millisecond)
       fmt.Printf("got %+v err=%v\n", r, err)
-      fmt.Println("deadline exceeded:", errors.Is(err, context.DeadlineExceeded))
+      fmt.Println("deadline:",
+          errors.Is(err, context.DeadlineExceeded))
   }
   ```
 

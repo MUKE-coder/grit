@@ -91,7 +91,8 @@ Memory stays constant regardless of file size.
 "check something" with `Create` destroys it. To append:
 
 ```go
-f, err := os.OpenFile("app.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+f, err := os.OpenFile("app.log",
+    os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 ```
 
 == Buffer your writes
@@ -163,7 +164,8 @@ Useful companions:
 
 ```go
 io.Discard                       // a Writer that throws everything away
-io.LimitReader(r, 1<<20)         // read at most 1MB: use on untrusted input
+// read at most 1MB: use on untrusted input
+io.LimitReader(r, 1<<20)
 io.MultiWriter(f, os.Stdout)     // write to both at once, like tee
 io.TeeReader(r, logFile)         // read from r while copying to logFile
 ```
@@ -228,7 +230,8 @@ No temp files, no cleanup, no filesystem. `strings.NewReader` and
 ```go
 import "path/filepath"
 
-filepath.Join("data", "users", "ada.json")   // data/users/ada.json or data\users\ada.json
+// data/users/ada.json or data\users\ada.json
+filepath.Join("data", "users", "ada.json")
 filepath.Ext("report.pdf")                   // ".pdf"
 filepath.Base("/tmp/report.pdf")             // "report.pdf"
 filepath.Dir("/tmp/report.pdf")              // "/tmp"
@@ -327,7 +330,8 @@ func TestWrite(t *testing.T) {
       for sc.Scan() {
           f := strings.Fields(sc.Text())
           if len(f) < 5 {
-              continue              // skip malformed lines rather than failing
+              // skip malformed lines rather than failing
+              continue
           }
           status, err := strconv.Atoi(f[3])
           if err != nil {
@@ -382,7 +386,8 @@ func TestWrite(t *testing.T) {
           return
       }
 
-      // One goroutine per file, each with its own stats to avoid any shared
+      // One goroutine per file, each with its own stats to avoid any
+      // shared
       // state, merged at the end under a mutex.
       total := newStats()
       var mu sync.Mutex

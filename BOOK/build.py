@@ -94,6 +94,36 @@ def lint_prose():
     return problems
 
 
+def lint_code_width():
+    """Find code lines too wide for the measure they are set in.
+
+    Body code is Consolas 8.8pt in a 5.35in column, which fits 80 characters, so 78 leaves a safety margin.
+    Inside a callout the inset takes 27pt off, and the type drops to 8.2pt to
+    compensate, so the budget is the same. Anything longer wraps mid-token and
+    reads as nonsense, which is worse in a listing than small type.
+    """
+    chdir = os.path.join(HERE, "chapters")
+    if not os.path.isdir(chdir):
+        return []
+    LIMIT = 75
+    problems = []
+    for name in sorted(os.listdir(chdir)):
+        if not name.endswith(".typ"):
+            continue
+        in_code = False
+        with open(os.path.join(chdir, name), encoding="utf-8") as fh:
+            for n, line in enumerate(fh, 1):
+                stripped = line.rstrip("\n")
+                if stripped.lstrip().startswith("```"):
+                    in_code = not in_code
+                    continue
+                if in_code and len(stripped) > LIMIT:
+                    problems.append("%s:%d  %d cols  %s"
+                                    % (name, n, len(stripped),
+                                       stripped.strip()[:46]))
+    return problems
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pages", type=int, default=0,
@@ -102,6 +132,11 @@ def main():
 
     for p in lint_prose():
         print("  bare # in prose (escape it as \\#): " + p)
+    wide = lint_code_width()
+    for p in wide[:12]:
+        print("  code too wide: " + p)
+    if len(wide) > 12:
+        print("  ... and %d more over 75 columns" % (len(wide) - 12))
 
     r = run(["typst", "compile", "book.typ", "book.pdf"])
     if r.returncode != 0:

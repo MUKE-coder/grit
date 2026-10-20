@@ -296,7 +296,8 @@ want. *Sharing a number is not communication.*
               c.mu.Lock()
               for k, e := range c.items {
                   if now.After(e.expires) {
-                      delete(c.items, k)     // deleting while ranging is legal
+                      // deleting while ranging is legal
+                      delete(c.items, k)
                   }
               }
               c.mu.Unlock()

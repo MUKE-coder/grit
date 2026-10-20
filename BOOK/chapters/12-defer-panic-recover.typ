@@ -311,7 +311,9 @@ legitimate and rare.
   func main() {
       jobs := []Job{
           {Name: "ok", Run: func() error { return nil }},
-          {Name: "fails", Run: func() error { return errors.New("disk full") }},
+          {Name: "fails", Run: func() error {
+              return errors.New("disk full")
+          }},
           {Name: "panics", Run: func() error {
               var m map[string]int
               m["boom"] = 1              // panic: assignment to nil map

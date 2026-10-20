@@ -29,11 +29,9 @@
     #text(fill: fill.darken(25%), weight: "bold", size: 9pt)[#upper(title)]
     #v(-4pt)
     #set text(size: 9.8pt)
-    // Code inside a callout has less room than code in the body: the inset
-    // takes 24pt and the rule another 3. At the body's 8.8pt the 62-column
-    // examples wrapped mid-token, which in a project listing is worse than
-    // small type. Scaled to fit the same 62 columns in the narrower measure.
-    #show raw: set text(size: 8.2pt)
+    // A callout has 27pt less measure than the body, so its code is scaled
+    // by the same ratio to keep one column budget across the whole book.
+    #show raw: set text(size: 7.6pt)
     #body
   ],
 )
@@ -115,9 +113,10 @@
     #it.body
   ]
 
-  // Code. Consolas at 8.8pt fits 78 columns inside this trim size, which is
-  // why the examples in this book never exceed that width.
-  show raw: set text(font: "Consolas", size: 8.8pt)
+  // Code. Measured rather than calculated: at 8.8pt a 72 column line wrapped
+  // on the page, so the font-metric estimate of 80 was wrong by a tenth. At
+  // 8.2pt the budget is 75 columns, which every listing in the book fits.
+  show raw: set text(font: "Consolas", size: 8.2pt)
   show raw.where(block: true): it => block(
     width: 100%,
     fill: codebg,

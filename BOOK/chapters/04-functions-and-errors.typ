@@ -108,7 +108,8 @@ func (e ValidationError) Error() string {
 
 func validate(age int) error {
     if age < 0 {
-        return ValidationError{Field: "age", Message: "must not be negative"}
+        return ValidationError{
+            Field: "age", Message: "must not be negative"}
     }
     return nil
 }
@@ -132,7 +133,8 @@ func loadConfig(path string) (*Config, error) {
 The message becomes a trail that reads from the outside in:
 
 ```
-loading config from /etc/app.json: open /etc/app.json: no such file or directory
+loading config from /etc/app.json: open /etc/app.json:
+  no such file or directory
 ```
 
 Use `%w`, not `%v`. `%v` formats the error as text and throws the original
@@ -166,7 +168,8 @@ if errors.As(err, &ve) {
   ```go
   func bad() error {
       var e *ValidationError   // nil pointer
-      return e                 // not nil! it is a non-nil interface holding a nil pointer
+      // Not nil: a non-nil interface holding a nil pointer.
+      return e
   }
   ```
 

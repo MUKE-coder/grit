@@ -246,7 +246,8 @@ it has the same two fixes: read-modify-write, or store `*User` in the map.
       inv.items[sku] = &Item{SKU: sku, Name: name, Stock: stock}
   }
 
-  // Get returns nil when absent, so callers must check. The bool makes that
+  // Get returns nil when absent, so callers must check. The bool makes
+  // that
   // impossible to forget by accident.
   func (inv *Inventory) Get(sku string) (*Item, bool) {
       it, ok := inv.items[sku]
@@ -261,7 +262,8 @@ it has the same two fixes: read-modify-write, or store `*User` in the map.
           return fmt.Errorf("taking %s: not found", sku)
       }
       if it.Stock < n {
-          return fmt.Errorf("taking %d of %s: %w", n, sku, ErrInsufficientStock)
+          return fmt.Errorf("taking %d of %s: %w",
+              n, sku, ErrInsufficientStock)
       }
       it.Stock -= n       // through the pointer, so the map sees it
       return nil
@@ -276,7 +278,8 @@ it has the same two fixes: read-modify-write, or store `*User` in the map.
       }
       if err := inv.Take("A1", 99); err != nil {
           fmt.Println("expected:", err)
-          fmt.Println("is stock error:", errors.Is(err, ErrInsufficientStock))
+          fmt.Println("is stock error:",
+              errors.Is(err, ErrInsufficientStock))
       }
 
       if it, ok := inv.Get("A1"); ok {

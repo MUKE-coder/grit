@@ -58,7 +58,8 @@ type Writer interface {
 
 func Generate(w Writer, data []Row) error {
     for _, r := range data {
-        if _, err := fmt.Fprintf(w, "%s,%d\n", r.Name, r.Count); err != nil {
+        _, err := fmt.Fprintf(w, "%s,%d\n", r.Name, r.Count)
+        if err != nil {
             return err
         }
     }

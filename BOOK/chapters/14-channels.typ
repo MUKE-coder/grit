@@ -257,7 +257,8 @@ The canonical channel program: a fixed number of workers pulling from a jobs
 channel.
 
 ```go
-func worker(id int, jobs <-chan int, results chan<- string, wg *sync.WaitGroup) {
+func worker(id int, jobs <-chan int, results chan<- string,
+    wg *sync.WaitGroup) {
     defer wg.Done()
     for j := range jobs {           // ends when jobs is closed
         results <- fmt.Sprintf("worker %d did job %d", id, j)
@@ -315,7 +316,8 @@ would panic a worker still writing.
       "time"
   )
 
-  // Stage 1: produce lines. Returns a channel rather than taking one, which
+  // Stage 1: produce lines. Returns a channel rather than taking one,
+  // which
   // is the convention: the producer owns and closes what it creates.
   func generate(done <-chan struct{}, lines []string) <-chan string {
       out := make(chan string)
@@ -349,7 +351,8 @@ would panic a worker still writing.
   }
 
   // Stage 3: count words, fanned out across several goroutines.
-  func count(done <-chan struct{}, in <-chan string, workers int) <-chan int {
+  func count(done <-chan struct{}, in <-chan string,
+      workers int) <-chan int {
       out := make(chan int)
       var wg sync.WaitGroup
 
@@ -387,11 +390,14 @@ would panic a worker still writing.
 
       start := time.Now()
       total := 0
-      for n := range count(done, normalise(done, generate(done, lines)), 3) {
+      pipeline := count(done, normalise(done, generate(done, lines)), 3)
+      for n := range pipeline {
           total += n
       }
 
-      fmt.Printf("%d words in %v\n", total, time.Since(start).Round(time.Millisecond))
+      fmt.Printf("%d words in %v
+", total,
+          time.Since(start).Round(time.Millisecond))
   }
   ```
 

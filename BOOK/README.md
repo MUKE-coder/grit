@@ -34,8 +34,10 @@ do not style anything inline, or the book stops looking like one book.
 
 Two rules learned the hard way:
 
-- **Code must fit 62 characters.** The text block is 5.35in and code is Consolas
-  8.8pt. Anything wider wraps mid-token and reads as nonsense.
+- **Code must fit 75 columns**, enforced by `build.py`. Measured, not
+  calculated: the font-metric estimate said 80 and a 72 column line wrapped on
+  the page. Body code is Consolas 8.2pt and callout code 7.6pt, scaled so one
+  budget holds everywhere.
 - **`#compare` stacks, it does not sit side by side.** Two columns was the first
   attempt; half the measure is about thirty characters and indented Go does not
   survive it.

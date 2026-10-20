@@ -33,3 +33,5 @@
 // Part III: building real things with the standard library.
 #include "chapters/20-io.typ"
 #include "chapters/21-http-server.typ"
+#include "chapters/22-database.typ"
+#include "chapters/23-url-shortener.typ"
