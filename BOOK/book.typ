@@ -63,6 +63,9 @@
 #include "chapters/42-uploads.typ"
 #include "chapters/43-jobs-and-mail.typ"
 #include "chapters/44-events-realtime-webhooks.typ"
+#include "chapters/45-observability.typ"
+#include "chapters/46-testing-grit.typ"
+#include "chapters/47-upgrade-and-deploy.typ"
 
 // Part VI: builds from first principles. Written out of order because the
 // chapter format needed proving; the rest of Part IV slots in above.

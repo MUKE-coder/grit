@@ -148,9 +148,9 @@ routing and middleware are covered inside chapter 21 rather than split out.
 42. File uploads and the image pipeline **(written)**
 43. Background jobs, cron and transactional email **(written)**
 44. The event bus, realtime, and webhooks **(written)**
-45. Observability: Studio, Pulse and Sentinel
-46. Testing a Grit application
-47. `grit upgrade`, deployment, and where to go next
+45. Observability: Studio, Pulse and Sentinel **(written)**
+46. Testing a Grit application **(written)**
+47. Upgrading, deploying, and handing it over **(written)**
 
 ### Part VI: build it from scratch
 
