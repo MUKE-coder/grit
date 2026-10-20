@@ -29,6 +29,11 @@
     #text(fill: fill.darken(25%), weight: "bold", size: 9pt)[#upper(title)]
     #v(-4pt)
     #set text(size: 9.8pt)
+    // Code inside a callout has less room than code in the body: the inset
+    // takes 24pt and the rule another 3. At the body's 8.8pt the 62-column
+    // examples wrapped mid-token, which in a project listing is worse than
+    // small type. Scaled to fit the same 62 columns in the narrower measure.
+    #show raw: set text(size: 8.2pt)
     #body
   ],
 )

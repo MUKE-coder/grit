@@ -23,3 +23,6 @@
 #include "chapters/11-error-design.typ"
 #include "chapters/12-defer-panic-recover.typ"
 #include "chapters/13-goroutines.typ"
+#include "chapters/14-channels.typ"
+#include "chapters/15-sync.typ"
+#include "chapters/16-context.typ"
