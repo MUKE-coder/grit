@@ -176,7 +176,12 @@ func (g *Generator) crud(names Names) crudParts {
 		goType := f.GoType()
 		jsonTag := toSnakeCase(f.Name)
 		bindingTag := ""
-		if f.Required {
+		// A conditional field is never required at the binding stage. Binding
+		// runs before anything has looked at the row, so it cannot know
+		// whether the condition holds, and insisting here refuses every record
+		// the field does not apply to. The requirement is the model's
+		// requiredif tag, which internal/fieldtypes evaluates against the row.
+		if f.Required && f.ShowWhen == nil {
 			bindingTag = ` binding:"required"`
 		}
 		p.createFields += fmt.Sprintf("\t\t%s %s `json:\"%s\"%s`\n", goName, goType, jsonTag, bindingTag)

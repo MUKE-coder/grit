@@ -310,6 +310,12 @@ func (g *Generator) writeGoModel(names Names) error {
 			// it on every write.
 			tags += ` sanitize:"html"`
 		}
+		// The choices of a choice column, so anything reading the model back
+		// knows the closed set: a seeder generated later, the API reference,
+		// and a person opening the file.
+		if enum := f.EnumTag(); enum != "" {
+			tags += fmt.Sprintf(` enum:"%s"`, enum)
+		}
 		// internal/fieldtypes checks and normalises the column on every write
 		// that has a model, and the OpenAPI reference reads the docs tag.
 		if format := f.FormatTag(); format != "" {

@@ -1,0 +1,19 @@
+<section id="cmd-anatomy" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:104px 128px;display:flex;flex-direction:column;justify-content:center;gap:38px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">The command, before the fields</p>
+<h2 style="font-size:62px;font-weight:700;line-height:1.1;letter-spacing:-2px;width:1620px">One verb, one noun, one description.</h2>
+
+<div style="background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:38px 44px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:27px;line-height:1.7;color:#000000">grit <span style="color:#1f9d55">generate resource</span> <span style="color:#0070f3">Invoice</span> <span style="color:#b8860b">--fields</span> <span style="color:#888888">"..."</span> <span style="color:#d1343c">--owned-by user</span></p>
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;line-height:1.9;color:#888888;margin-top:14px"><span style="color:#1f9d55">what to make</span>&nbsp;&nbsp;resource, field, job, sequence, workflow, mail<br><span style="color:#0070f3">the name</span>&nbsp;&nbsp;singular and PascalCase. The plural is derived<br><span style="color:#b8860b">the description</span>&nbsp;&nbsp;the fields, comma separated<br><span style="color:#d1343c">what kind of thing it is</span>&nbsp;&nbsp;owned, tenant-owned, append-only, public, tree</p>
+</div>
+
+<p style="font-size:30px;color:#888888;line-height:1.5;width:1660px">The last group is the one worth knowing. It does not add columns: it decides who may read a row, whether a row can ever change, and whether the internet can see it.</p>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Thirty seconds on this, then the fields.
+
+The name is singular and PascalCase, and everything else is derived from it: the table is invoices, the route is /api/v1/invoices, the file is invoice.go, the screen is Invoices. You name it once.
+
+Then the part people miss, so say it slowly: the flags on the end are not more columns. --owned-by user scopes every query to the person who made the row. --append-only means the rows can never be edited or deleted. --public adds a read-only surface for the internet. They change what kind of thing the resource is, which is why they are flags and not fields.</aside>
+</section>

@@ -516,7 +516,7 @@ Response:
             </div>
 
             <div className="mt-4 mb-8">
-              <CodeBlock filename="Generated from name:string,status:select:open|closed,urgent:bool" code={`stats: {
+              <CodeBlock filename="Generated from name:string,status:select[open, closed],urgent:bool" code={`stats: {
   countBy: [
     {
       field: "status",

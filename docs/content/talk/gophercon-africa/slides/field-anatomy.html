@@ -1,0 +1,21 @@
+<section id="field-anatomy" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:104px 128px;display:flex;flex-direction:column;justify-content:center;gap:40px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">How to read one of these</p>
+<h2 style="font-size:62px;font-weight:700;line-height:1.1;letter-spacing:-2px;width:1620px">A field describes itself, left to right.</h2>
+
+<div style="background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:40px 46px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:30px;line-height:1.7;color:#000000"><span style="color:#0070f3">cycle</span> : <span style="color:#1f9d55">select</span><span style="color:#b8860b">[monthly, annually]</span> <span style="color:#d1343c">if kind == recurring</span></p>
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:25px;line-height:1.9;color:#888888;margin-top:14px"><span style="color:#0070f3">the name</span>&nbsp;&nbsp;the column, and the JSON key<br><span style="color:#1f9d55">the type</span>&nbsp;&nbsp;decides the column, the input, the validation<br><span style="color:#b8860b">its argument</span>&nbsp;&nbsp;in brackets. Only some types take one<br><span style="color:#d1343c">the condition</span>&nbsp;&nbsp;when this field applies at all</p>
+</div>
+
+<p style="font-size:30px;color:#888888;line-height:1.5;width:1660px">Labels come from the values: monthly reads as Monthly. Write one only when it differs. And <span style="color:#000000">kind</span> is another field on this resource, <span style="color:#000000">recurring</span> one of the values it stores.</p>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Put this up before you type anything, because the commands on the next slides are unreadable until somebody has seen this once.
+
+Read it out loud as a sentence: a cycle, which is a choice of monthly or annually, if the kind is recurring.
+
+Then the two things people ask. Labels are derived, so you write the values and the forms say Monthly. And the condition names a sibling field and one of its stored values, which is why it is kind and recurring rather than Kind and Recurring.
+
+If somebody asks what it was before: three more colons, a pipe that the shell eats, and two equals signs in a row. This syntax is a week old and the old one still parses.</aside>
+</section>

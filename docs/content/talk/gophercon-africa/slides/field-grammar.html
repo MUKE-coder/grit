@@ -1,0 +1,41 @@
+<section id="field-grammar" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:88px 128px;display:flex;flex-direction:column;justify-content:center;gap:28px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">The ones you will actually type</p>
+
+<div style="display:flex;gap:22px;align-items:stretch">
+<div style="flex:1;background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:30px 32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'Geist Mono', monospace;font-size:23px;color:#888888;letter-spacing:2px;text-transform:uppercase">Relationships</p>
+<p style="font-family:'Geist Mono', monospace;font-size:21px;line-height:1.85;color:#000000">client:<span style="color:#0070f3">belongs_to</span><br>author:<span style="color:#0070f3">belongs_to</span>[User]<br>profile:<span style="color:#0070f3">one_to_one</span>[User]<br>tags:<span style="color:#0070f3">many_to_many</span>[Tag]<br>parent:<span style="color:#0070f3">belongs_to</span>[Category]</p>
+<p style="font-size:22px;color:#888888;line-height:1.45">The model is inferred from the name, or named. Pointing at itself is a tree.</p>
+</div>
+
+<div style="flex:1;background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:30px 32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'Geist Mono', monospace;font-size:23px;color:#888888;letter-spacing:2px;text-transform:uppercase">Arguments</p>
+<p style="font-family:'Geist Mono', monospace;font-size:21px;line-height:1.85;color:#000000">kind:select<span style="color:#b8860b">[draft, sent]</span><br>slug:slug<span style="color:#b8860b">[title]</span><br>photo:file<span style="color:#b8860b">[image]</span><br>docs:files<span style="color:#b8860b">[pdf, doc]</span><br>phone:tel<span style="color:#b8860b">[UG]</span><br>score:rating<span style="color:#b8860b">[10]</span></p>
+<p style="font-size:22px;color:#888888;line-height:1.45">In brackets, and only for the types that take one.</p>
+</div>
+
+<div style="flex:1;background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:30px 32px;display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'Geist Mono', monospace;font-size:23px;color:#888888;letter-spacing:2px;text-transform:uppercase">Modifiers</p>
+<p style="font-family:'Geist Mono', monospace;font-size:21px;line-height:1.85;color:#000000">email:email:<span style="color:#d1343c">unique</span><br>notes:text:<span style="color:#d1343c">optional</span><br>number:string:<span style="color:#d1343c">auto</span>:INV<br>ssn:string:<span style="color:#d1343c">encrypted</span><br>cycle:select[...] <span style="color:#d1343c">if kind == recurring</span></p>
+<p style="font-size:22px;color:#888888;line-height:1.45">After the argument. Any number of them.</p>
+</div>
+</div>
+
+<div style="background:#0a0a0a;border:1px solid #333333;border-radius:8px;padding:28px 32px">
+<p style="font-family:'Geist Mono', monospace;font-size:21px;line-height:1.8;color:#ffffff"><span style="color:#888888">$</span> grit generate resource Invoice <span style="color:#888888">--fields</span> <span style="color:#0070f3">"..."</span>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888888">$</span> grit generate field Invoice <span style="color:#0070f3">"paid_on:date"</span><br><span style="color:#888888">$</span> grit generate resource Invoice <span style="color:#888888">--items</span> <span style="color:#0070f3">"InvoiceItem:qty:int,unit:money"</span><br><span style="color:#888888">$</span> grit generate resource Note <span style="color:#888888">--owned-by user</span>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888888">$</span> grit generate resource Entry <span style="color:#888888">--append-only</span>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888888">$</span> grit generate resource Article <span style="color:#888888">--public</span></p>
+</div>
+
+<div style="position:absolute;left:128px;bottom:40px;width:1100px" data-solution="field-grammar"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:21px;letter-spacing:1px;color:#888888">All thirty one types&nbsp;&nbsp;<a href="https://gritframework.dev/docs/concepts/field-types" style="color:#0070f3;text-decoration:none">gritframework.dev/docs/concepts/field-types</a></p></div>
+
+<div style="position:absolute;top:50px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Do not read this slide. It is a reference, and the only reason it is in the deck is that somebody always photographs it.
+
+Say three things and move on.
+
+One: a relationship is a word, not a migration. belongs_to with no brackets infers the model from the field name, and a field pointing at its own model is a tree.
+
+Two: the flags on the bottom row change what kind of resource it is rather than what columns it has. owned-by scopes every query to the person who made the row. append-only means no update and no delete, enforced in three places. public adds a read-only surface for the internet.
+
+Three: every one of these is in the docs, and the link is on the slide.</aside>
+</section>

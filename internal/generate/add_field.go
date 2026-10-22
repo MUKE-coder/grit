@@ -249,6 +249,9 @@ func (g *Generator) injectModelField(names Names, f Field) error {
 	if FieldType(f.Type) == FieldRichtext && !f.Encrypted {
 		tags += ` sanitize:"html"`
 	}
+	if enum := f.EnumTag(); enum != "" {
+		tags += fmt.Sprintf(` enum:"%s"`, enum)
+	}
 	if format := f.FormatTag(); format != "" {
 		tags += fmt.Sprintf(` format:"%s"`, format)
 		if docs := f.DocsTag(); docs != "" {

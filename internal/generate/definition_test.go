@@ -406,3 +406,83 @@ func TestWhenModifier(t *testing.T) {
 		}
 	}
 }
+
+// Modifiers after a type's own argument, on every type that takes one.
+//
+// Five branches read their argument and returned, so a belongs_to could not be
+// made optional and when= did nothing on a relationship, with no error either
+// time. Each shape is pinned here because the failure is silence.
+func TestModifiersFollowEveryTypeArgument(t *testing.T) {
+	for name, c := range map[string]struct {
+		spec  string
+		check func(t *testing.T, f Field)
+	}{
+		"belongs_to with a model": {
+			"owner:belongs_to:User:optional",
+			func(t *testing.T, f Field) {
+				if f.RelatedModel != "User" || f.Required {
+					t.Errorf("model=%q required=%v", f.RelatedModel, f.Required)
+				}
+			},
+		},
+		"belongs_to with a modifier in the model's place": {
+			"client:belongs_to:optional",
+			func(t *testing.T, f Field) {
+				if f.RelatedModel != "" || f.Required {
+					t.Errorf("model=%q required=%v", f.RelatedModel, f.Required)
+				}
+			},
+		},
+		"belongs_to with nothing after it": {
+			"client:belongs_to",
+			func(t *testing.T, f Field) {
+				if !f.Required {
+					t.Error("a plain belongs_to stopped being required")
+				}
+			},
+		},
+		"many_to_many": {
+			"tags:many_to_many:Tag:required",
+			func(t *testing.T, f Field) {
+				if f.RelatedModel != "Tag" || !f.Required {
+					t.Errorf("model=%q required=%v", f.RelatedModel, f.Required)
+				}
+			},
+		},
+		"file": {
+			"photo:file:image:required",
+			func(t *testing.T, f Field) {
+				if len(f.FileAccepts) != 1 || f.FileAccepts[0] != "image" || !f.Required {
+					t.Errorf("accepts=%v required=%v", f.FileAccepts, f.Required)
+				}
+			},
+		},
+		"slug with a source": {
+			"code:slug:title:required",
+			func(t *testing.T, f Field) {
+				if f.SlugSource != "title" || !f.Required {
+					t.Errorf("source=%q required=%v", f.SlugSource, f.Required)
+				}
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			def, err := ParseFieldsUnvalidated("Thing", c.spec)
+			if err != nil {
+				t.Fatalf("%s: %v", c.spec, err)
+			}
+			c.check(t, def.Fields[0])
+		})
+	}
+
+	// And a condition on a relationship, which is where one is most often
+	// wanted and where it did nothing at all.
+	def, err := ParseInlineFields("Invoice",
+		"kind:select:one_off=One-off|recurring=Recurring, plan:belongs_to:Plan:when=kind=recurring")
+	if err != nil {
+		t.Fatalf("when= on a belongs_to: %v", err)
+	}
+	if def.Fields[1].ShowWhen == nil {
+		t.Fatal("when= was dropped on a belongs_to")
+	}
+}

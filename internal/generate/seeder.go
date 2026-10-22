@@ -278,6 +278,13 @@ func definitionFromModelFile(apiRoot, name string) (*ResourceDefinition, error) 
 			def.Fields = append(def.Fields, f)
 			continue
 		}
+		// A choice column says what it may hold in its enum tag. Without
+		// this the field falls through as a plain string and the seeder
+		// fills it with words the form cannot offer.
+		if f, ok := fieldFromEnumTag(jn, gf.Enum); ok {
+			def.Fields = append(def.Fields, f)
+			continue
+		}
 		ft := goTypeToFieldType(gf.GoType)
 		if ft == "" {
 			continue // relation / unknown type — user wires it up
@@ -295,6 +302,29 @@ func definitionFromModelFile(apiRoot, name string) (*ResourceDefinition, error) 
 		def.Fields = append(def.Fields, Field{Name: jn, Type: ft})
 	}
 	return def, nil
+}
+
+// fieldFromEnumTag rebuilds a choice field from its model's enum tag.
+//
+// The type is select rather than radio or check, because the three are the
+// same column and the seeder only cares that the value comes from the list.
+func fieldFromEnumTag(jsonName, enum string) (Field, bool) {
+	enum = strings.TrimSpace(enum)
+	if enum == "" {
+		return Field{}, false
+	}
+	var options []FieldOption
+	for _, value := range strings.Split(enum, "|") {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
+		options = append(options, FieldOption{Value: value, Label: humanizeLabel(value)})
+	}
+	if len(options) == 0 {
+		return Field{}, false
+	}
+	return Field{Name: jsonName, Type: string(FieldSelect), Options: options}, true
 }
 
 // fieldFromFormatTag rebuilds a formatted field from its model's format tag:

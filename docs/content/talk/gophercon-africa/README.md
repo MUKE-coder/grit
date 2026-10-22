@@ -1,6 +1,6 @@
 # The GopherCon Africa deck, as the website serves it
 
-86 slides on a fixed 1920x1080 canvas, every style inline. `/talk` reads them
+90 slides on a fixed 1920x1080 canvas, every style inline. `/talk` reads them
 from here at build time, so this directory is what the site shows: nothing is
 fetched at runtime.
 

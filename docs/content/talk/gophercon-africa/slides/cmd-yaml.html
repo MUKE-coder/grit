@@ -1,0 +1,31 @@
+<section id="cmd-yaml" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:96px 128px;display:flex;flex-direction:column;justify-content:center;gap:34px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">Or put it in a file</p>
+<h2 style="font-size:58px;font-weight:700;line-height:1.1;letter-spacing:-2px;width:1620px">A long command is a file you have not written yet.</h2>
+
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="flex:1;background:#0a0a0a;border:1px solid #333333;border-radius:8px;padding:30px 34px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:22px;line-height:1.75;color:#ffffff"><span style="color:#888888"># project.yaml</span><br>name: <span style="color:#0070f3">Project</span><br>owned_by: <span style="color:#0070f3">user</span><br>fields:<br>&nbsp;&nbsp;- <span style="color:#0070f3">client:belongs_to</span><br>&nbsp;&nbsp;- <span style="color:#0070f3">name:string</span><br>&nbsp;&nbsp;- <span style="color:#0070f3">brief:richtext</span><br>&nbsp;&nbsp;- <span style="color:#0070f3">kind:select[one_off, recurring]</span><br>&nbsp;&nbsp;- <span style="color:#0070f3">cycle:select[monthly, annually]</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#fdcb6e">if kind == recurring</span><br>&nbsp;&nbsp;- <span style="color:#0070f3">amount:money</span><br>&nbsp;&nbsp;- <span style="color:#0070f3">starts:date</span><br>&nbsp;&nbsp;- <span style="color:#0070f3">gallery:files[image]</span></p>
+</div>
+
+<div style="flex:1;display:flex;flex-direction:column;gap:20px">
+<div style="background:#0a0a0a;border:1px solid #333333;border-radius:8px;padding:26px 30px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:23px;line-height:1.6;color:#ffffff"><span style="color:#888888">$</span> grit generate resource Project \<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888888">--from</span> <span style="color:#0070f3">project.yaml</span></p>
+</div>
+<div style="background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:28px 32px;flex:1;display:flex;flex-direction:column;gap:14px">
+<p style="font-size:27px;color:#000000;line-height:1.45">Same syntax, one field per line.</p>
+<p style="font-size:25px;color:#888888;line-height:1.5">It goes in the repository, so the shape of the resource is reviewed in a pull request like everything else, and regenerating it a year later is one command rather than archaeology.</p>
+<p style="font-size:25px;color:#888888;line-height:1.5">A field with more to say than one line holds can still be written as keys.</p>
+</div>
+</div>
+</div>
+
+<div style="position:absolute;left:128px;bottom:44px;width:1000px" data-solution="cmd-yaml"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:21px;letter-spacing:1px;color:#888888">The schema&nbsp;&nbsp;<a href="https://gritframework.dev/docs/concepts/code-generation" style="color:#0070f3;text-decoration:none">gritframework.dev/docs/concepts/code-generation</a></p></div>
+
+<div style="position:absolute;top:56px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Short slide, and it answers the question somebody is already forming: that command is getting long.
+
+The file takes exactly the same field syntax, one per line, so nothing new to learn. The reason to prefer it is not the typing. It is that the description of your domain ends up in the repository, reviewed in a pull request, next to the code it generated.
+
+Mention the practical one: this is how you regenerate a resource a year later without reconstructing a command from your shell history.</aside>
+</section>

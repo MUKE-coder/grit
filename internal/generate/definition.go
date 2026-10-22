@@ -426,6 +426,16 @@ func splitTopLevelCommas(s string) []string {
 }
 
 // parseFieldInput parses a field definition string.
+// modsAfter returns the parts after index n, or nothing when the spec is
+// shorter than that. A bare name:type has no third part, and slicing past the
+// end of it panicked on the first belongs_to written without a model.
+func modsAfter(parts []string, n int) []string {
+	if len(parts) <= n {
+		return nil
+	}
+	return parts[n:]
+}
+
 // applyFieldModifiers reads the modifiers that follow a type's own argument,
 // for the branches that parse their argument and return early.
 //
@@ -481,6 +491,170 @@ func cutPrefixFold(s, prefix string) (string, bool) {
 	return s[len(prefix):], true
 }
 
+// normalizeFieldSpec rewrites the readable field syntax into the positional
+// one, so there is one parser rather than two.
+//
+//	cycle:select[monthly, annually] if kind == recurring
+//	cycle:select:monthly|annually:when=kind=recurring
+//
+// Both are accepted, and the second is what the rest of this file sees. The
+// brackets say "this type's argument" in the one place a reader looks for it,
+// and the condition reads as a sentence instead of as a third colon.
+func normalizeFieldSpec(input string) (string, error) {
+	spec, cond, err := cutCondition(input)
+	if err != nil {
+		return "", err
+	}
+	spec, err = expandBracketArgument(spec)
+	if err != nil {
+		return "", err
+	}
+	if cond != "" {
+		spec += ":" + cond
+	}
+	return spec, nil
+}
+
+// parseCondition reads "<field> == <value>", the body of an if.
+func parseCondition(text string) (*FieldCondition, error) {
+	field, value, ok := strings.Cut(text, "==")
+	if !ok {
+		return nil, fmt.Errorf("a condition reads <field> == <value>, got %q", strings.TrimSpace(text))
+	}
+	field, value = strings.TrimSpace(field), unquote(strings.TrimSpace(value))
+	if field == "" || value == "" {
+		return nil, fmt.Errorf("a condition reads <field> == <value>, got %q", strings.TrimSpace(text))
+	}
+	return &FieldCondition{Field: field, Value: value}, nil
+}
+
+// cutCondition takes a trailing "if <field> == <value>" off a spec and returns
+// it as the when= modifier it is equivalent to.
+func cutCondition(input string) (spec, cond string, err error) {
+	at := indexOutsideBrackets(input, " if ")
+	if at < 0 {
+		return input, "", nil
+	}
+	spec, rest := input[:at], strings.TrimSpace(input[at+len(" if "):])
+
+	field, value, ok := strings.Cut(rest, "==")
+	if !ok {
+		return "", "", fmt.Errorf("a condition reads if <field> == <value>, got %q", strings.TrimSpace(rest))
+	}
+	field, value = strings.TrimSpace(field), unquote(strings.TrimSpace(value))
+	if field == "" || value == "" {
+		return "", "", fmt.Errorf("a condition reads if <field> == <value>, got %q", strings.TrimSpace(rest))
+	}
+	if strings.ContainsAny(field+value, ":=|") {
+		return "", "", fmt.Errorf("a condition cannot contain : = or | , got %q", strings.TrimSpace(rest))
+	}
+	return strings.TrimSpace(spec), "when=" + field + "=" + value, nil
+}
+
+// expandBracketArgument turns type[...] into the third segment that type
+// already takes.
+//
+// What goes in the brackets depends on the type, exactly as the third segment
+// always has: options for a select, the accept list for a file, the related
+// model for a relationship, the source for a slug.
+func expandBracketArgument(spec string) (string, error) {
+	open := indexOutsideQuotes(spec, '[')
+	if open < 0 {
+		return spec, nil
+	}
+	close := strings.LastIndexByte(spec, ']')
+	if close < open {
+		return "", fmt.Errorf("a [ with no closing ] in %q", spec)
+	}
+	head, inner, tail := spec[:open], spec[open+1:close], spec[close+1:]
+	if tail != "" && !strings.HasPrefix(tail, ":") {
+		return "", fmt.Errorf("unexpected %q after the ] in %q", tail, spec)
+	}
+	// Already positional: files:[pdf,doc] puts its list in the third segment
+	// with a colon of its own, and that spelling predates this one.
+	if strings.HasSuffix(head, ":") {
+		return spec, nil
+	}
+
+	typ := head
+	if i := strings.LastIndexByte(head, ':'); i >= 0 {
+		typ = head[i+1:]
+	}
+
+	items := splitTopLevelCommas(inner)
+	for i := range items {
+		items[i] = strings.TrimSpace(items[i])
+	}
+
+	switch typ {
+	case "select", "radio", "check":
+		// value, or value="Label" when the label is not just the value
+		// capitalised. Joined with the pipe the option parser reads.
+		opts := make([]string, 0, len(items))
+		for _, item := range items {
+			if value, label, ok := strings.Cut(item, "="); ok {
+				opts = append(opts, strings.TrimSpace(value)+"="+unquote(strings.TrimSpace(label)))
+				continue
+			}
+			opts = append(opts, item)
+		}
+		return head + ":" + strings.Join(opts, "|") + tail, nil
+	case "file", "files":
+		// The accept list is already written in brackets, so it goes back the
+		// way it came.
+		return head + ":[" + strings.Join(items, ",") + "]" + tail, nil
+	default:
+		if len(items) != 1 {
+			return "", fmt.Errorf("%s takes one value in its brackets, got %d", typ, len(items))
+		}
+		return head + ":" + items[0] + tail, nil
+	}
+}
+
+// indexOutsideBrackets finds sub outside any [ ] pair, so a label holding the
+// word it looks for is not mistaken for the real thing.
+func indexOutsideBrackets(s, sub string) int {
+	depth := 0
+	for i := 0; i+len(sub) <= len(s); i++ {
+		switch s[i] {
+		case '[':
+			depth++
+		case ']':
+			if depth > 0 {
+				depth--
+			}
+		}
+		if depth == 0 && strings.HasPrefix(s[i:], sub) {
+			return i
+		}
+	}
+	return -1
+}
+
+// indexOutsideQuotes finds a byte that is not inside a quoted label.
+func indexOutsideQuotes(s string, want byte) int {
+	quoted := false
+	for i := 0; i < len(s); i++ {
+		if s[i] == '"' {
+			quoted = !quoted
+			continue
+		}
+		if !quoted && s[i] == want {
+			return i
+		}
+	}
+	return -1
+}
+
+// unquote strips one pair of surrounding double quotes, which a label needs
+// when it holds a space.
+func unquote(s string) string {
+	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' {
+		return s[1 : len(s)-1]
+	}
+	return s
+}
+
 // Format: "name:type" or "name:type:modifier1:modifier2"
 // Valid modifiers: unique, required, optional
 //
@@ -492,6 +666,12 @@ func cutPrefixFold(s, prefix string) (string, bool) {
 //	attachment:file:[pdf,doc,image,video,zip]
 //	gallery_images:files:image
 func parseFieldInput(input string) (Field, error) {
+	// The readable form is rewritten into the positional one first, so
+	// everything below sees a single syntax.
+	input, err := normalizeFieldSpec(strings.TrimSpace(input))
+	if err != nil {
+		return Field{}, err
+	}
 	parts := splitFieldParts(input)
 	if len(parts) < 2 {
 		return Field{}, fmt.Errorf("expected format name:type[:modifiers], got %q", input)
@@ -519,12 +699,16 @@ func parseFieldInput(input string) (Field, error) {
 		if err != nil {
 			return Field{}, fmt.Errorf("field %q: %w", name, err)
 		}
-		return Field{
+		f := Field{
 			Name:        name,
 			Type:        typ,
 			Required:    false,
 			FileAccepts: accepts,
-		}, nil
+		}
+		if err := applyFieldModifiers(&f, modsAfter(parts, 3)); err != nil {
+			return Field{}, err
+		}
+		return f, nil
 	}
 
 	// Slug fields: third part is the source field name, not a modifier
@@ -533,13 +717,19 @@ func parseFieldInput(input string) (Field, error) {
 		if len(parts) >= 3 && strings.TrimSpace(parts[2]) != "" {
 			slugSource = strings.TrimSpace(parts[2])
 		}
-		return Field{
+		f := Field{
 			Name:       name,
 			Type:       typ,
 			Required:   false,
 			Unique:     true,
 			SlugSource: slugSource,
-		}, nil
+		}
+		// A slug names its source in the third position, so its modifiers
+		// start at the fourth even when there is no source.
+		if err := applyFieldModifiers(&f, modsAfter(parts, 3)); err != nil {
+			return Field{}, err
+		}
+		return f, nil
 	}
 
 	// belongs_to and one_to_one: third part is the related model name, optional
@@ -555,12 +745,23 @@ func parseFieldInput(input string) (Field, error) {
 		if len(parts) >= 3 && strings.TrimSpace(parts[2]) != "" {
 			relatedModel = strings.TrimSpace(parts[2])
 		}
-		return Field{
+		f := Field{
 			Name:         name,
 			Type:         typ,
 			Required:     true,
 			RelatedModel: relatedModel,
-		}, nil
+		}
+		// The related model is optional here, so a modifier may sit in its
+		// place: client:belongs_to:optional names no model and is not one.
+		rest := modsAfter(parts, 3)
+		if relatedModel != "" && isFieldModifier(relatedModel) {
+			f.RelatedModel = ""
+			rest = modsAfter(parts, 2)
+		}
+		if err := applyFieldModifiers(&f, rest); err != nil {
+			return Field{}, err
+		}
+		return f, nil
 	}
 
 	// many_to_many: third part is the related model name (required)
@@ -570,12 +771,16 @@ func parseFieldInput(input string) (Field, error) {
 			return Field{}, fmt.Errorf("many_to_many requires a related model name (e.g., tags:many_to_many:Tag)")
 		}
 		relatedModel := strings.TrimSpace(parts[2])
-		return Field{
+		f := Field{
 			Name:         name,
 			Type:         typ,
 			Required:     false,
 			RelatedModel: relatedModel,
-		}, nil
+		}
+		if err := applyFieldModifiers(&f, modsAfter(parts, 3)); err != nil {
+			return Field{}, err
+		}
+		return f, nil
 	}
 
 	// select / check: third part is the value=Label option list, pipe-separated
@@ -599,7 +804,7 @@ func parseFieldInput(input string) (Field, error) {
 		// here, so status:select:a=A|b=B:optional silently stayed required and
 		// a when= on a select, which is the commonest place to want one, did
 		// nothing at all.
-		if err := applyFieldModifiers(&f, parts[3:]); err != nil {
+		if err := applyFieldModifiers(&f, modsAfter(parts, 3)); err != nil {
 			return Field{}, err
 		}
 		return f, nil
@@ -715,6 +920,9 @@ func parseFieldInput(input string) (Field, error) {
 
 // isFieldModifier reports a word parseFieldInput reads as a modifier.
 func isFieldModifier(s string) bool {
+	if _, ok := cutPrefixFold(strings.TrimSpace(s), "when="); ok {
+		return true
+	}
 	switch strings.ToLower(s) {
 	case "unique", "required", "optional", "auto", "encrypted":
 		return true

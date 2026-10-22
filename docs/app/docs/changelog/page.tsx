@@ -66,6 +66,88 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.406.0 */}
+            <div className="mb-12" id="v3.406.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.406.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A field syntax you can read out loud</h3>
+                <p>
+                  The positional spelling asked a lot of four characters. The colon meant the type,
+                  the type&apos;s argument and every modifier; the pipe separating options is a
+                  shell pipe, so an unquoted example silently lost half of them; and{' '}
+                  <code>=</code> was both &quot;this label&quot; and &quot;this value&quot;, which
+                  is how a condition ended up with two of them in a row.
+                </p>
+                <pre><code># before
+cycle:select:monthly=Monthly|annually=Annually:when=kind=recurring
+
+# now
+cycle:select[monthly, annually] if kind == recurring</code></pre>
+                <p>
+                  An argument goes in brackets, which is where a reader already looks for one:{' '}
+                  <code>belongs_to[User]</code>, <code>slug[title]</code>,{' '}
+                  <code>files[pdf, doc]</code>, <code>tel[UG]</code>, <code>rating[10]</code>.
+                  Labels are derived from the values, so <code>monthly</code> renders as
+                  &quot;Monthly&quot; and you write one only when it differs:{' '}
+                  <code>[monthly, annually=&quot;Every year&quot;]</code>. A condition reads as a
+                  sentence.
+                </p>
+                <p>
+                  The same syntax now works in a YAML definition, one field per line, so the file
+                  and the command stopped being two notations for one idea:
+                </p>
+                <pre><code>fields:
+  - kind:select[one_off, recurring]
+  - cycle:select[monthly, annually] if kind == recurring</code></pre>
+                <p>
+                  A field with more to say than a line holds is still written as keys, and that
+                  form now understands <code>if:</code> too. The two can be mixed in one file.
+                </p>
+                <p>
+                  Both spellings parse, and produce identical fields: there is one parser, and the
+                  readable form is rewritten into the positional one before anything else sees it.
+                  Existing commands, tutorials and YAML files keep working.
+                </p>
+                <p>
+                  Writing the grammar down found the rest of a bug fixed two releases ago. Five
+                  branches read their type&apos;s argument and returned, so every modifier after
+                  it was dropped in silence: a <code>belongs_to</code> could not be made optional,
+                  a <code>file</code> could not be made required, and a condition on a
+                  relationship, which is where one is most often wanted, did nothing at all.
+                </p>
+                <p>
+                  Then building a billing application with these commands, start to finish, found
+                  two more.
+                </p>
+                <p>
+                  <strong>A conditional field could not be left out.</strong> The model dropped{' '}
+                  <code>binding:&quot;required&quot;</code> for a conditional field, and the
+                  generated request struct did not, so a one-off project was refused at the
+                  binding stage for having no billing cycle: the exact failure the feature exists
+                  to prevent, one layer above where it was fixed. Binding runs before anything has
+                  looked at the row, so it cannot evaluate a condition, and the requirement now
+                  belongs entirely to the model&apos;s <code>requiredif</code> tag.
+                </p>
+                <p>
+                  <strong>A choice column kept its choices to itself.</strong> Generating a seeder
+                  for a resource that already exists rebuilds the field list from the Go struct,
+                  where a select is just a string, so the options were lost and the seeder fell
+                  through to <code>gofakeit.Word()</code>. A freshly seeded demo opened on
+                  projects whose kind was &quot;Thatcherite&quot; and whose billing cycle was
+                  &quot;sail&quot;, values the form&apos;s own dropdown cannot offer. A choice
+                  column now records its values in an <code>enum</code> tag, the way a formatted
+                  column records its format. Resources generated before this release keep seeding
+                  words into those columns until they are regenerated.
+                </p>
+              </div>
+            </div>
+
             {/* v3.405.1 */}
             <div className="mb-12" id="v3.405.1">
               <div className="flex items-center gap-3 mb-4">

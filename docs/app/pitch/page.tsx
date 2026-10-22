@@ -390,7 +390,7 @@ export default function PitchPage() {
                 filename="One command"
                 className="!m-0"
                 code={`grit generate resource Invoice \\
-  --fields "number:string:unique,customer:belongs_to:Customer,total:money,due:date,status:select:draft=Draft|paid=Paid"`}
+  --fields "number:string:unique,customer:belongs_to[Customer],total:money,due:date,status:select[draft, paid]"`}
               />
             </div>
 

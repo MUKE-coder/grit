@@ -73,7 +73,7 @@ Before any feature code. Get the field types right the first time; they are what
 
 \`\`\`bash
 grit generate resource Customer --fields "name:string,email:email,phone:tel,notes:text:optional"
-grit generate resource Invoice  --fields "number:string:unique,total:money,status:select:draft=Draft|paid=Paid,customer:belongs_to:Customer"
+grit generate resource Invoice  --fields "number:string:unique,total:money,status:select[draft, paid],customer:belongs_to[Customer]"
 \`\`\`
 
 Field type reference (read it, do not guess): https://gritframework.dev/docs/concepts/field-types

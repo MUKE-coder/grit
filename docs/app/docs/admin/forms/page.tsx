@@ -280,24 +280,26 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <CodeBlock language="bash" filename="One modifier, both halves" code={`grit generate resource Project --fields "name:string, kind:select:one_off=One-off|recurring=Recurring, cycle:select:monthly=Monthly|annually=Annually:when=kind=recurring"
+              <CodeBlock language="bash" filename="One modifier, both halves" code={`grit generate resource Project --fields "name:string, kind:select[one_off, recurring], cycle:select[monthly, annually] if kind == recurring"
 
 # or on a resource that already exists
-grit generate field Project "cycle:select:monthly=Monthly|annually=Annually:when=kind=recurring"`} />
+grit generate field Project "cycle:select[monthly, annually] if kind == recurring"`} />
             </div>
 
             <div className="prose-grit">
               <p>
-                <code>when=&lt;field&gt;=&lt;value&gt;</code> names another field of the same
-                resource and the value that makes this one apply. The value is compared as text,
-                so it reads a select&apos;s value, a number or a boolean without the syntax having
-                to carry a type. A condition naming a field that does not exist is refused when
-                you type the command, because the predicate it would produce reads an undefined
-                property and the input simply never appears, with nothing saying why.
+                <code>if &lt;field&gt; == &lt;value&gt;</code> names another field of the same
+                resource and the value that makes this one apply. The field is a sibling, written
+                as it appears in the spec. The value is the <em>stored</em> value, which for a
+                select is <code>recurring</code> rather than the label &quot;Recurring&quot;, and
+                it is compared as text, so it reads a number or a boolean without the syntax
+                having to carry a type. A condition naming a field that does not exist is refused
+                when you type the command, because the predicate it would produce reads an
+                undefined property and the input simply never appears, with nothing saying why.
               </p>
               <p>
-                In a shell, quote a spec containing <code>|</code>, or the shell reads it as a
-                pipe and the generator sees half of it.
+                Quote the spec in a shell. The readable form has spaces in it, and the
+                older pipe-separated one is a shell pipe.
               </p>
             </div>
 

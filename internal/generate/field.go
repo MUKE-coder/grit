@@ -2,6 +2,7 @@ package generate
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"strings"
 )
 
@@ -69,6 +70,88 @@ const (
 const DefaultRatingMax = 5
 
 // Field describes a single field in a resource.
+// UnmarshalYAML accepts a field as either the one-line spec the CLI takes or
+// the mapping of keys this file has always had.
+//
+//	fields:
+//	  - name:string:unique
+//	  - cycle:select[monthly, annually] if kind == recurring
+//	  - name: notes
+//	    type: richtext
+//	    required: false
+//
+// The scalar form is the same string --fields takes, parsed by the same
+// function, so the two cannot drift. The mapping form stays for anything with
+// more to say than one line holds, and understands "if" for a condition.
+func (f *Field) UnmarshalYAML(node *yaml.Node) error {
+	if node.Kind == yaml.ScalarNode {
+		parsed, err := parseFieldInput(node.Value)
+		if err != nil {
+			return fmt.Errorf("line %d: %w", node.Line, err)
+		}
+		*f = parsed
+		return nil
+	}
+
+	// An alias, or decoding the mapping calls this method again forever.
+	type fieldMapping Field
+	var raw struct {
+		fieldMapping `yaml:",inline"`
+		If           string `yaml:"if"`
+	}
+	if err := node.Decode(&raw); err != nil {
+		return err
+	}
+	*f = Field(raw.fieldMapping)
+
+	if strings.TrimSpace(raw.If) != "" {
+		cond, err := parseCondition(raw.If)
+		if err != nil {
+			return fmt.Errorf("field %q: %w", f.Name, err)
+		}
+		f.ShowWhen = cond
+	}
+	return nil
+}
+
+// MarshalYAML writes the condition back as "if", so a file this package writes
+// reads the way the documentation says one is written.
+func (f Field) MarshalYAML() (interface{}, error) {
+	type fieldMapping Field
+	out := struct {
+		fieldMapping `yaml:",inline"`
+		If           string `yaml:"if,omitempty"`
+	}{fieldMapping: fieldMapping(f)}
+	if f.ShowWhen != nil {
+		out.If = f.ShowWhen.Field + " == " + f.ShowWhen.Value
+		out.fieldMapping.ShowWhen = nil
+	}
+	return out, nil
+}
+
+// EnumTag is the options of a choice column, recorded on the model so they
+// survive being read back out of it.
+//
+// A select is a string in Go, so a definition rebuilt from the struct has no
+// idea what the column may hold. That is how a generated seeder came to fill a
+// status column with dictionary words. Only the values go in: a label is for a
+// screen, and this is for code that has to know the closed set.
+func (f Field) EnumTag() string {
+	switch FieldType(f.Type) {
+	case FieldSelect, FieldRadio, FieldCheck:
+	default:
+		return ""
+	}
+	if len(f.Options) == 0 {
+		return ""
+	}
+	values := make([]string, 0, len(f.Options))
+	for _, o := range f.Options {
+		values = append(values, o.Value)
+	}
+	return strings.Join(values, "|")
+}
+
 // FieldCondition is the other field, and the value of it, that a conditional
 // field depends on. Compared as text, so a condition can name a select's value,
 // a number or a boolean without the syntax having to carry a type.

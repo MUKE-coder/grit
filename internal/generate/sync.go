@@ -145,6 +145,9 @@ type GoField struct {
 	// Format is the formatted field type the column was generated as (email,
 	// tel:UG, rating:10, ...), read from its format tag. Empty for the rest.
 	Format string
+	// Enum is the pipe-separated values a choice column may hold, read from
+	// its enum tag. Empty for every other column.
+	Enum string
 }
 
 // parseGoStructs parses all struct declarations from a Go file.
@@ -200,6 +203,7 @@ func parseGoStructs(filePath string) ([]GoStruct, error) {
 					goField.JSONName = extractTag(tag, "json")
 					goField.GORMTag = extractTag(tag, "gorm")
 					goField.Format = extractTag(tag, "format")
+					goField.Enum = extractTag(tag, "enum")
 				}
 
 				// Skip fields with json:"-"

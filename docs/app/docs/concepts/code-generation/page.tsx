@@ -443,8 +443,47 @@ export const postResource = defineResource({
                   YAML Definition Format
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  For complex resources, use a YAML file to define the fields. This gives you
-                  more control over field properties like required, unique, and default values.
+                  A long <code>--fields</code> string is a file you have not written yet. The same
+                  description in YAML goes in the repository, gets reviewed in a pull request like
+                  everything else, and regenerating the resource a year later is one command
+                  rather than archaeology through your shell history.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  A field is written either as the one-line spec the command line takes, or as the
+                  mapping of keys below. They can be mixed in one file: use a line for the fields
+                  that fit on one, and keys for the ones with more to say.
+                </p>
+                <CodeBlock language="yaml" filename="project.yaml" code={`name: Project
+owned_by: user
+fields:
+  - client:belongs_to
+  - name:string
+  - brief:richtext
+  - kind:select[one_off, recurring]
+  - cycle:select[monthly, annually] if kind == recurring
+  - amount:money
+  - starts:date
+  - gallery:files[image]
+
+  # the same field, said the long way
+  - name: notes
+    type: text
+    required: false
+    description: Anything the client should see on the invoice`} />
+                <CodeBlock
+                  terminal
+                  code={`grit generate resource Project --from project.yaml`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+                  A condition is <code>if &lt;field&gt; == &lt;value&gt;</code> on the one-line
+                  form, and an <code>if:</code> key on the mapping form. A file may also set{' '}
+                  <code>owned_by</code>, <code>tree</code>, <code>public</code>,{' '}
+                  <code>append_only</code> and <code>tenant_owned</code>; a flag on the command
+                  adds to those and never removes one the file set.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The mapping form gives you the properties below, and is what you want for a
+                  field with a default, a description or a long option list.
                 </p>
                 <CodeBlock language="yaml" filename="invoice.yaml" code={`name: Invoice
 fields:
@@ -540,7 +579,7 @@ fields:
                 />
 
                 <CodeBlock language="bash" code={`grit g field Product sku:string
-grit g field Invoice status:select:draft=Draft|sent=Sent|paid=Paid
+grit g field Invoice status:select[draft, sent, paid]
 grit g field Invoice paid:toggle
 
 # the model is the source of truth, so the column lands on the next migrate

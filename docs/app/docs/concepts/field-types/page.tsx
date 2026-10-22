@@ -29,25 +29,25 @@ const ROWS: Row[] = [
   { type: 'money', syntax: 'price:money', go: 'money.Money', ts: 'Money', zod: 'MoneySchema' },
   { type: 'bool', syntax: 'active:bool', go: 'bool', ts: 'boolean', zod: 'z.boolean()' },
   { type: 'toggle', syntax: 'active:toggle', go: 'bool', ts: 'boolean', zod: 'z.boolean()' },
-  { type: 'select', syntax: 'status:select:draft=Draft|paid=Paid', go: 'string', ts: '"draft" | "paid"', zod: 'z.enum([...])' },
-  { type: 'radio', syntax: 'plan:radio:free=Free|pro=Pro', go: 'string', ts: '"free" | "pro"', zod: 'z.enum([...])' },
-  { type: 'check', syntax: 'tags:check:news=News|ops=Ops', go: 'datatypes.JSONSlice[string]', ts: '("news" | "ops")[]', zod: 'z.array(z.enum([...]))' },
+  { type: 'select', syntax: 'status:select[draft, paid]', go: 'string', ts: '"draft" | "paid"', zod: 'z.enum([...])' },
+  { type: 'radio', syntax: 'plan:radio[free, pro]', go: 'string', ts: '"free" | "pro"', zod: 'z.enum([...])' },
+  { type: 'check', syntax: 'tags:check[news, ops]', go: 'datatypes.JSONSlice[string]', ts: '("news" | "ops")[]', zod: 'z.array(z.enum([...]))' },
   { type: 'datetime', syntax: 'published_at:datetime', go: '*time.Time', ts: 'string | null', zod: 'z.string().nullable()' },
   { type: 'date', syntax: 'due:date', go: '*time.Time', ts: 'string | null', zod: 'z.string().nullable()' },
-  { type: 'slug', syntax: 'slug:slug:title', go: 'string', ts: 'string', zod: 'z.string()' },
+  { type: 'slug', syntax: 'slug:slug[title]', go: 'string', ts: 'string', zod: 'z.string()' },
   { type: 'belongs_to', syntax: 'category:belongs_to', go: 'string (FK)', ts: 'string', zod: 'z.string().uuid()' },
-  { type: 'many_to_many', syntax: 'tags:many_to_many:Tag', go: '[]string', ts: 'string[]', zod: 'z.array(z.string().uuid())' },
+  { type: 'many_to_many', syntax: 'tags:many_to_many[Tag]', go: '[]string', ts: 'string[]', zod: 'z.array(z.string().uuid())' },
   { type: 'string_array', syntax: 'sizes:string_array', go: 'datatypes.JSONSlice[string]', ts: 'string[]', zod: 'z.array(z.string())' },
-  { type: 'file', syntax: 'image:file:image', go: '*files.FileRef', ts: 'FileRef | null', zod: 'FileRefSchema.nullable()' },
-  { type: 'files', syntax: 'gallery:files:image', go: 'files.FileRefs', ts: 'FileRef[]', zod: 'z.array(FileRefSchema)' },
+  { type: 'file', syntax: 'image:file[image]', go: '*files.FileRef', ts: 'FileRef | null', zod: 'FileRefSchema.nullable()' },
+  { type: 'files', syntax: 'gallery:files[image]', go: 'files.FileRefs', ts: 'FileRef[]', zod: 'z.array(FileRefSchema)' },
   { type: 'email', syntax: 'email:email:unique', go: 'string (size 254)', ts: 'string', zod: 'EmailSchema' },
   { type: 'url', syntax: 'website:url', go: 'string (size 2048)', ts: 'string', zod: 'UrlSchema' },
   { type: 'domain', syntax: 'host:domain', go: 'string (size 253)', ts: 'string', zod: 'DomainSchema' },
-  { type: 'tel', syntax: 'phone:tel:UG', go: 'string (size 32, E.164)', ts: 'string', zod: 'PhoneSchema' },
-  { type: 'country', syntax: 'country:country:UG', go: 'string (size 2)', ts: 'string', zod: 'CountrySchema' },
+  { type: 'tel', syntax: 'phone:tel[UG]', go: 'string (size 32, E.164)', ts: 'string', zod: 'PhoneSchema' },
+  { type: 'country', syntax: 'country:country[UG]', go: 'string (size 2)', ts: 'string', zod: 'CountrySchema' },
   { type: 'color', syntax: 'brand:color', go: 'string (size 7)', ts: 'string', zod: 'ColorSchema' },
   { type: 'percent', syntax: 'discount:percent', go: 'float64 (decimal 5,2)', ts: 'number', zod: 'PercentSchema' },
-  { type: 'rating', syntax: 'score:rating:10', go: 'int', ts: 'number', zod: 'ratingSchema(10)' },
+  { type: 'rating', syntax: 'score:rating[10]', go: 'int', ts: 'number', zod: 'ratingSchema(10)' },
   { type: 'time', syntax: 'opens_at:time', go: 'string (HH:MM)', ts: 'string', zod: 'TimeSchema' },
   { type: 'json', syntax: 'settings:json', go: 'datatypes.JSON', ts: 'unknown', zod: 'JsonValueSchema' },
 ]
@@ -127,22 +127,68 @@ export default function FieldTypesPage() {
                 </p>
                 <CodeBlock
                   terminal
-                  code={`grit generate resource Product --fields "name:string,price:money,category:belongs_to:Category,gallery:files:image"`}
+                  code={`grit generate resource Product --fields "name:string,price:money,category:belongs_to[Category],gallery:files[image]"`}
                 />
+
+                <p className="text-muted-foreground leading-relaxed mt-6 mb-4">
+                  A type that takes an argument takes it in brackets, and a field that only
+                  applies sometimes says so in words. Read one left to right and it tells you
+                  everything about itself.
+                </p>
+                <CodeBlock
+                  code={`cycle : select[monthly, annually] if kind == recurring
+  │         │             │                    │
+  │         │             │                    └─ when this field applies
+  │         │             └─ this type's argument: the options
+  │         └─ the type
+  └─ the name: the column, and the JSON key`}
+                />
+                <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+                  Labels are derived from the values, so <code>monthly</code> renders as
+                  &quot;Monthly&quot; and <code>in_progress</code> as &quot;In Progress&quot;.
+                  Give one explicitly only when it differs:{' '}
+                  <code>[monthly, annually=&quot;Every year&quot;]</code>.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Only some types take an argument: <code>select</code>, <code>radio</code> and{' '}
+                  <code>check</code> take their options, <code>slug</code> takes the field to
+                  slugify, <code>belongs_to</code>, <code>one_to_one</code> and{' '}
+                  <code>many_to_many</code> take the related model, <code>file</code> and{' '}
+                  <code>files</code> take what they accept, <code>tel</code> and{' '}
+                  <code>country</code> take a country code, and <code>rating</code> takes a number
+                  of stars. Every other type goes straight from its name to its modifiers, which
+                  are appended with colons: <code>email:email:unique</code>.
+                </p>
+
+                <CodeBlock
+                  terminal
+                  code={`grit generate resource Project --fields "name:string, kind:select[one_off, recurring], cycle:select[monthly, annually] if kind == recurring, owner:belongs_to[User]"`}
+                />
+
+                <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+                  The older positional spelling still parses, and a great deal of existing
+                  documentation and tutorials use it:{' '}
+                  <code>cycle:select:monthly|annually:when=kind=recurring</code>. The two produce
+                  identical fields. Prefer the readable one in anything new: the colon means four
+                  different things in the positional form, and the pipe is a shell pipe, so an
+                  unquoted example silently loses half its options.
+                </p>
+
                 <ul className="space-y-2.5 mt-4 mb-4">
                   {[
-                    ['Modifiers', 'name:string:unique — append :unique, :required, or :optional. String fields default to required; everything else defaults to optional.'],
+                    ['Modifiers', 'name:string:unique — append :unique, :required, :optional or :when=. They always come last, after whatever argument the type takes: phone:tel[UG]:unique, category:belongs_to[Category]:optional. String fields default to required; everything else defaults to optional.'],
+                    ['Conditional', 'cycle:select[monthly, annually] if kind == recurring — the field applies only while another field of the same resource holds a particular value. kind is a sibling field, named as it appears in the spec; recurring is one of its stored values, not a label. The admin hides the input and drops its required rule when the condition is false; the model gets requiredif:"kind=recurring", which the API enforces on every write. See conditional fields.'],
                     ['Auto-number', 'number:string:auto:INV (string only) — the server fills it from an atomic, gap-free counter (INV-202607-0001) in BeforeCreate. Optional and hidden from the form; the prefix is optional. Shorthand for grit generate sequence; use that command directly for yearly/never resets or a custom width.'],
                     ['Encrypted', 'notes:text:encrypted (string, text and richtext only). Stored with AES-256-GCM at rest, plaintext in code and over the API; needs FIELD_ENCRYPTION_KEY. Cannot be :unique, and is left out of search, sorting and filters, because ciphertext changes on every write.'],
-                    ['Options', 'status:select:draft=Draft|sent=Sent (select / radio / check) — pipe-separated choices. Labels are OPTIONAL: status:select:draft|sent|paid generates the labels by capitalizing each value (in_progress → In Progress). Use value=Label only when the label differs from the stored value.'],
-                    ['Slug source', 'slug:slug:title — the 3rd segment is the field to slugify. Slugs are auto-unique and generated on save.'],
-                    ['belongs_to', 'category:belongs_to (model inferred → Category) or author:belongs_to:User (explicit). Creates a <name>_id UUID foreign-key column.'],
-                    ['many_to_many', 'tags:many_to_many:Tag — the related model is required. GORM builds the join table.'],
-                    ['File accepts', 'image:file:image, doc:file:all, or att:file:[pdf,doc,image,video]. Aliases: image, video, audio, pdf, doc, all — or a bracketed list.'],
+                    ['Options', 'status:select[draft, sent, paid] (select / radio / check). Labels are derived by capitalising each word (in_progress → In Progress); give one only when it differs: [draft, sent="Sent to client"]. The positional spelling status:select:draft=Draft|sent=Sent still parses.'],
+                    ['Slug source', 'slug:slug[title] — the argument is the field to slugify. Slugs are auto-unique and generated on save.'],
+                    ['belongs_to', 'category:belongs_to (model inferred → Category) or author:belongs_to[User] (explicit). Creates a <name>_id UUID foreign-key column.'],
+                    ['many_to_many', 'tags:many_to_many[Tag] — the related model is required. GORM builds the join table.'],
+                    ['File accepts', 'image:file[image], doc:file[all], or att:files[pdf, doc, image]. Aliases: image, video, audio, pdf, doc, all — or a bracketed list.'],
                     ['Money', 'price:money — stores an integer count of minor units plus an ISO 4217 currency code, in two columns (price_amount, price_currency). Use it for anything you will add up. See the money page.'],
-                    ['tel option', 'phone:tel:UG sets the country the picker starts on and a local number is read in. Without it the picker starts on the browser\'s country. Modifiers follow the option: phone:tel:UG:unique.'],
-                    ['country option', 'country:country:UG makes UG the value a new record starts with.'],
-                    ['rating option', 'score:rating:10 gives the field 10 stars, from 2 to 10. The default is 5.'],
+                    ['tel option', 'phone:tel[UG] sets the country the picker starts on and a local number is read in. Without it the picker starts on the browser\'s country. Modifiers follow the option: phone:tel[UG]:unique.'],
+                    ['country option', 'country:country[UG] makes UG the value a new record starts with.'],
+                    ['rating option', 'score:rating[10] gives the field 10 stars, from 2 to 10. The default is 5.'],
                   ].map(([k, v]) => (
                     <li key={k} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
                       <span className="text-primary mt-1 font-mono text-xs shrink-0">{k}</span>
@@ -150,6 +196,31 @@ export default function FieldTypesPage() {
                     </li>
                   ))}
                 </ul>
+
+                <h3 className="text-lg font-semibold tracking-tight mt-8 mb-3">
+                  When is a field conditional, rather than just optional?
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Optional means the answer may be blank. Conditional means the question does not
+                  apply. The test: if you asked it about a record where the condition is false,
+                  would the answer be <em>meaningless</em> rather than merely empty? A billing
+                  cycle on a one-off project is meaningless, so it is conditional. A phone number
+                  nobody gave you is empty, so it is optional.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Two things to get right in <code>when=kind=recurring</code>. The field name is a
+                  sibling on the same resource, written as it appears in the spec, and it must
+                  exist, or the command is refused. The value is the <em>stored</em> value, which
+                  for a select is the left-hand side of <code>recurring=Recurring</code>, not the
+                  label; it is compared as text, so case matters.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  It works on any field type, including a relationship: a plan that only applies to
+                  a recurring project is{' '}
+                  <code>plan:belongs_to[Plan]:when=kind=recurring</code>. For a condition that is
+                  more than one field equalling one value, write the predicate by hand in the
+                  resource definition and the rule in the service.
+                </p>
               </div>
 
               {/* Master table */}
@@ -256,7 +327,7 @@ export default function FieldTypesPage() {
                 </p>
                 <CodeBlock
                   terminal
-                  code={`grit generate resource Company --fields "name:string,email:email:unique,website:url,host:domain,phone:tel:UG,country:country,brand:color,discount:percent,score:rating:10,opens_at:time,settings:json" --seed --faker`}
+                  code={`grit generate resource Company --fields "name:string,email:email:unique,website:url,host:domain,phone:tel[UG],country:country,brand:color,discount:percent,score:rating[10],opens_at:time,settings:json" --seed --faker`}
                 />
                 <div className="overflow-x-auto mt-4 mb-4">
                   <table className="w-full text-sm border border-border rounded-lg">

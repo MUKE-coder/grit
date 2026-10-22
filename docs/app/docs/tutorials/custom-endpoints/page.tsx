@@ -221,13 +221,13 @@ cd shop`}
                 <CodeBlock
                   terminal
                   code={`grit generate resource Category \\
-  --fields "name:string,slug:slug:name,image:file:image" \\
+  --fields "name:string,slug:slug[name],image:file[image]" \\
   --tree --public`}
                 />
                 <P>Three things there are worth slowing down on.</P>
                 <ul className="space-y-2.5 mb-4">
                   {[
-                    ['slug:slug:name', 'A URL-safe version of another field. The third segment names the source, so this slugifies name. Filled on save, unique, and never shown in the form: it is not something a person types.'],
+                    ['slug:slug[name]', 'A URL-safe version of another field. The brackets name the source, so this slugifies name. Filled on save, unique, and never shown in the form: it is not something a person types.'],
                     ['--tree', 'Makes the resource hierarchical. Adds parent_id, plus path, depth and position, and five endpoints for moving rows around. A category can now sit under another category.'],
                     ['--public', 'Adds a second, read-only copy of the list and detail endpoints under /api/v1/public/, outside the login. This is what a storefront reads.'],
                   ].map(([k, v]) => (
@@ -354,7 +354,7 @@ grit seed      # run every seeder
 grit seed`} />
                 <P>
                   <code>toggle</code> is a bool that renders as a switch. For anything richer, the
-                  same command takes <code>status:select:draft=Draft|live=Live</code>,{' '}
+                  same command takes <code>status:select[draft, live]</code>,{' '}
                   <code>notes:text</code>, and the other scalar types. Relationships, files and
                   slugs are the exception: those change too much, so regenerate the resource
                   instead.
@@ -367,11 +367,11 @@ grit seed`} />
                 <CodeBlock
                   terminal
                   code={`grit generate resource Product \\
-  --fields "name:string,slug:slug:name,description:text,price:money,stock:int,image:file:image,category:belongs_to:Category" \\
+  --fields "name:string,slug:slug[name],description:text,price:money,stock:int,image:file[image],category:belongs_to[Category]" \\
   --public`}
                 />
                 <P>
-                  <code>category:belongs_to:Category</code> is the whole relationship. Everything
+                  <code>category:belongs_to[Category]</code> is the whole relationship. Everything
                   else follows from it.
                 </P>
                 <H3>What belongs_to actually does</H3>
@@ -430,7 +430,7 @@ db.Preload("Category").Find(&products)`}
                 <CodeBlock
                   terminal
                   code={`grit generate resource Campaign \\
-  --fields "title:string,subtitle:string,slug:slug:title,description:text,image:file:image,products:many_to_many:Product" \\
+  --fields "title:string,subtitle:string,slug:slug[title],description:text,image:file[image],products:many_to_many[Product]" \\
   --public`}
                 />
                 <P>
