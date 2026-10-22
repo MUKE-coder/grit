@@ -9,6 +9,7 @@
   "order": [
     "cover",
     "hook",
+    "hook-ai",
     "sec-dev",
     "d-all",
     "d1",
