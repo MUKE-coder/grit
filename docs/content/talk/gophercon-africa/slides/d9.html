@@ -9,20 +9,20 @@
 <p style="font-size:32px;font-weight:600;letter-spacing:-1px;filter:blur(4px);opacity:0.3">D7&nbsp;&nbsp;The undocumented API</p>
 <p style="font-size:32px;font-weight:600;letter-spacing:-1px;filter:blur(4px);opacity:0.3">D8&nbsp;&nbsp;Import and export</p>
 <p style="font-size:32px;font-weight:600;letter-spacing:-1px"><span style="color:#888888">D9</span>&nbsp;&nbsp;Nothing to develop against</p>
-<p style="font-size:32px;font-weight:600;letter-spacing:-1px;filter:blur(4px);opacity:0.3">D10&nbsp;&nbsp;Changing the schema</p>
+<p style="font-size:32px;font-weight:600;letter-spacing:-1px;filter:blur(4px);opacity:0.3">D10&nbsp;&nbsp;Migrations with no way back</p>
 <p style="font-size:32px;font-weight:600;letter-spacing:-1px;filter:blur(4px);opacity:0.3">D11&nbsp;&nbsp;The frontend nobody wants</p>
 <p style="font-size:32px;font-weight:600;letter-spacing:-1px;filter:blur(4px);opacity:0.3">D12&nbsp;&nbsp;Paying a model to write it</p>
 </div>
 
 <div style="flex:1;display:flex;flex-direction:column;gap:36px">
 <p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">D9</p>
-<h2 style="font-size:96px;font-weight:700;line-height:1.05;letter-spacing:-3px">Ten rows hide every bug you have.</h2>
-<p style="font-size:32px;color:#888888;line-height:1.5">Empty tables, and mail that goes somewhere you cannot read. Pagination, sorting, N+1 and the slow query are all invisible until real data arrives.</p>
+<h2 style="font-size:88px;font-weight:700;line-height:1.08;letter-spacing:-3px">You test on ten rows. The client has fifty thousand.</h2>
+<p style="font-size:30px;color:#888888;line-height:1.5">Writing a seeder that produces realistic volume is a day's work nobody budgets, so every list page is judged on hand-typed rows. Pagination, sorting, the N+1 query and the missing index all look fine until the real data lands. Development email has the same hole: it goes to a provider you cannot open.</p>
 </div>
 
 <div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
 
-<aside>Two halves of the same problem: you cannot see your data because there is none, and you cannot see your email because it went to a provider.
+<aside>This one is about seed data, and say that word early or the room will not follow you.
 
 Everything in a list page works at ten rows. Sorting is instant, pagination has one page, and the N+1 costs ten queries instead of ten thousand. You find out at the same moment your client does.
 

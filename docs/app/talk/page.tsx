@@ -19,12 +19,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Grit at GopherCon Africa',
   description:
-    'The GopherCon Africa talk, all 74 slides with the speaker notes: the twenty-four problems every project runs into, ten the developer pays for and fourteen the client asks about, and what it takes to generate the shape of an application you still own afterwards.',
+    'The GopherCon Africa talk, with the speaker notes: the twenty problems every project runs into, twelve the developer pays for and eight the client asks about, what it takes to generate the shape of an application you still own afterwards, and a client billing system built and deployed from an empty folder.',
   alternates: { canonical: 'https://gritframework.dev/talk' },
   openGraph: {
     title: 'Grit at GopherCon Africa',
     description:
-      'Twenty-four problems every full-stack project runs into, and what a framework can honestly do about them. The full deck, with speaker notes.',
+      'Twenty problems every full-stack project runs into, and what a framework can honestly do about them. The full deck, with speaker notes.',
     url: 'https://gritframework.dev/talk',
   },
 }

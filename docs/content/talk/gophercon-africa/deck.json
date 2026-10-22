@@ -41,12 +41,6 @@
     "b7",
     "b8",
     "b8-ex",
-    "b9",
-    "b10",
-    "b11",
-    "b12",
-    "b13",
-    "b14",
     "why-libraries",
     "why-templates",
     "why-phase-two",
@@ -55,6 +49,19 @@
     "solution",
     "solution-cmd",
     "solution-output",
+    "gen-model",
+    "gen-service",
+    "gen-handler",
+    "gen-policies",
+    "gen-factory",
+    "gen-test",
+    "gen-import",
+    "gen-routes",
+    "gen-types",
+    "gen-schemas",
+    "gen-hooks",
+    "gen-resource",
+    "gen-pages",
     "sec-concepts",
     "c1",
     "c1-ex",
@@ -63,25 +70,25 @@
     "c3",
     "c3-ex",
     "c4",
-    "sec-built",
-    "built-apps",
-    "built-clients",
-    "sec-features",
-    "f-n1-stat",
-    "f-n1-line",
-    "f-offline",
-    "f-security",
-    "f-audit",
-    "f-uploads",
-    "f-backups",
-    "f-scale-stat",
-    "f-correctness",
     "sec-build",
+    "build-0",
     "build-1",
+    "build-modules",
     "build-2",
+    "build-2b",
+    "build-cycle",
     "build-3",
     "build-running",
+    "tool-studio",
+    "tool-pulse",
+    "tool-sentinel",
+    "tool-docs",
     "build-wrote",
+    "sec-deploy",
+    "deploy-push",
+    "deploy-dokploy",
+    "deploy-domains",
+    "deploy-done",
     "scorecard-d",
     "scorecard-b",
     "closing-statement",
@@ -97,11 +104,11 @@
       "start": "sec-dev"
     },
     "problem-biz": {
-      "description": "Fourteen questions the client asks before anyone mentions the feature.",
+      "description": "Eight questions the client asks before anyone mentions the feature.",
       "start": "sec-biz"
     },
     "why": {
-      "description": "Why twenty-six problems survive a decade of excellent libraries.",
+      "description": "Why twenty problems survive a decade of excellent libraries.",
       "start": "why-libraries"
     },
     "solution": {
@@ -112,21 +119,21 @@
       "description": "The four ideas the framework is built on.",
       "start": "sec-concepts"
     },
-    "built": {
-      "description": "What people ship with it.",
-      "start": "sec-built"
-    },
-    "features": {
-      "description": "The answers already in the box.",
-      "start": "sec-features"
-    },
     "build": {
-      "description": "An application from an empty folder to a running stack.",
+      "description": "A client billing system, from an empty folder to a running stack.",
       "start": "sec-build"
     },
     "close": {
-      "description": "Twenty-six problems accounted for, and where to get it.",
+      "description": "Twenty problems accounted for, and where to get it.",
       "start": "scorecard-d"
+    },
+    "generated": {
+      "description": "Every file one description produced, one at a time.",
+      "start": "gen-model"
+    },
+    "deploy": {
+      "description": "The last mile: a VPS you own, with TLS.",
+      "start": "sec-deploy"
     }
   },
   "faces": {

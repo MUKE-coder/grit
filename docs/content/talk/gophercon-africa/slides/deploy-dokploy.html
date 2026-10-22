@@ -1,0 +1,18 @@
+<section id="deploy-dokploy" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:112px 128px;display:flex;flex-direction:column;justify-content:center;gap:36px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">Step two &middot; one service on the box</p>
+<div style="background:#0a0a0a;border:1px solid #333333;border-radius:8px;display:flex;flex-direction:column"><div style="display:flex;align-items:center;gap:12px;padding:22px 30px;border-bottom:1px solid #333333"><x-shape kind="ellipse" style="width:16px;height:16px;background:#333333"></x-shape><x-shape kind="ellipse" style="width:16px;height:16px;background:#333333"></x-shape><x-shape kind="ellipse" style="width:16px;height:16px;background:#333333"></x-shape></div><div style="padding:40px 48px"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:28px;color:#ffffff;line-height:1.7"><span style="color:#888888">$</span> curl -sSL https://dokploy.com/install.sh | sh&nbsp;&nbsp;<span style="color:#888888"># once, per server</span></p></div></div>
+
+<div style="background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:36px 44px;display:flex;flex-direction:column;gap:18px">
+<p style="font-size:28px;line-height:1.5"><span style="font-family:'Geist Mono', 'Courier New', monospace;color:#0070f3">Add Service &rarr; Compose</span><br><span style="color:#888888">not Stack: Stack is Swarm, and three of these services build from a Dockerfile</span></p>
+<p style="font-size:28px;line-height:1.5"><span style="font-family:'Geist Mono', 'Courier New', monospace;color:#0070f3">Provider &rarr; GitHub &rarr; your repo</span><br><span style="color:#888888">it clones and builds on the server</span></p>
+<p style="font-size:28px;line-height:1.5"><span style="font-family:'Geist Mono', 'Courier New', monospace;color:#0070f3">Compose Path: ./docker-compose.prod.yml</span><br><span style="color:#888888">the file that was already in the project</span></p>
+</div>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Two of the three settings have a trap behind them, so say them rather than clicking past.
+
+Compose rather than Stack, because Stack targets Swarm and does not support the build key.
+
+And the one that costs people an evening: Dokploy writes your dashboard variables into a .env beside the compose file rather than injecting them into containers. They reach a container through Compose substitution, so keep the ${VAR} in every environment block or add env_file. Skipping it is why a stack boots with an empty DATABASE_URL and a dashboard full of values.</aside>
+</section>

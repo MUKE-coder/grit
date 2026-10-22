@@ -1,0 +1,17 @@
+<section id="deploy-domains" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:112px 128px;display:flex;flex-direction:column;justify-content:center;gap:36px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">Step three &middot; environment, domains, TLS</p>
+<div style="background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:36px 44px;display:flex;flex-direction:column;gap:18px">
+<p style="font-size:28px;line-height:1.5"><span style="font-family:'Geist Mono', 'Courier New', monospace;color:#0070f3">Environment</span><br><span style="color:#888888">DATABASE_URL, REDIS_URL, JWT_SECRET, APP_URL</span></p>
+<p style="font-size:28px;line-height:1.5"><span style="font-family:'Geist Mono', 'Courier New', monospace;color:#0070f3">Build arguments</span><br><span style="color:#888888">NEXT_PUBLIC_API_URL, because the frontend bakes it at build time</span></p>
+<p style="font-size:28px;line-height:1.5"><span style="font-family:'Geist Mono', 'Courier New', monospace;color:#0070f3">Domains, per service</span><br><span style="color:#888888">api.example.com and app.example.com, each pointed at its own container</span></p>
+<p style="font-size:28px;line-height:1.5"><span style="font-family:'Geist Mono', 'Courier New', monospace;color:#0070f3">Certificates</span><br><span style="color:#888888">Traefik issues them. Behind Cloudflare, set SSL to Full (strict)</span></p>
+</div>
+
+<p style="font-size:30px;color:#888888;line-height:1.5;width:1660px">Two of these are the ones that fail quietly: a public variable set at runtime instead of build time is simply absent from the built frontend, and Cloudflare on Flexible gives you a redirect loop that looks exactly like an application bug.</p>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Say the build-time distinction clearly, because it is the single most common deployment failure in any Next.js stack and nothing warns you.
+
+APP_URL matters more here than people expect: with local disk storage every uploaded file's URL is built from it, so a wrong value means every image on the site is broken while the upload itself succeeded.</aside>
+</section>

@@ -1,0 +1,14 @@
+<section id="build-cycle" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:112px 128px;display:flex;flex-direction:column;justify-content:center;gap:44px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">Step three &middot; the part the generator does not know</p>
+<p style="font-size:34px;color:#000000;line-height:1.5;width:1660px">A billing cycle only makes sense on a recurring project. That is a rule about your business, so it lives in your code, in the two places the framework leaves for exactly this.</p>
+
+<div style="background:#0a0a0a;border:1px solid #333333;border-radius:8px;display:flex;flex-direction:column"><div style="display:flex;align-items:center;gap:12px;padding:22px 30px;border-bottom:1px solid #333333"><x-shape kind="ellipse" style="width:16px;height:16px;background:#333333"></x-shape><x-shape kind="ellipse" style="width:16px;height:16px;background:#333333"></x-shape><x-shape kind="ellipse" style="width:16px;height:16px;background:#333333"></x-shape></div><div style="padding:40px 48px"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;color:#ffffff;line-height:1.7"><span style="color:#888888">// internal/services/project.go</span> &mdash; the rule, for every caller<br>if p.Kind == <span style="color:#0070f3">"recurring"</span> && p.Cycle == <span style="color:#0070f3">""</span> {<br>&nbsp;&nbsp;&nbsp;&nbsp;return ErrCycleRequired<br>}<br><br><span style="color:#888888">// resources/projects/custom.tsx</span> &mdash; the form, for the human<br>hidden: (form) => form.kind !== <span style="color:#0070f3">"recurring"</span></p></div></div>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>This is the most honest slide in the demo, so do not rush it.
+
+The generator gives you the field. It cannot know that one field only applies when another has a particular value, because that is domain knowledge.
+
+Two places, and they are different jobs. The service refuses it for every caller: the API, the CSV import, a job, a script. The form hides it so a person is never asked a question that does not apply. Doing only the second one is how bad data gets in through an import.</aside>
+</section>

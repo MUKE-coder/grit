@@ -1,0 +1,17 @@
+<section id="build-modules" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:112px 128px;display:flex;flex-direction:column;justify-content:center;gap:44px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">What we are building &middot; a client billing system</p>
+<div style="display:flex;gap:18px;align-items:stretch">
+<div style="flex:1;background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:30px 32px;display:flex;flex-direction:column;gap:14px"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">Clients</p><p style="font-size:25px;line-height:1.55">name<br>company<br>email<br>phone<br>address<br>photo</p></div>
+<div style="flex:1;background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:30px 32px;display:flex;flex-direction:column;gap:14px"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">Projects</p><p style="font-size:25px;line-height:1.55">the client<br>name and brief<br>one-off or recurring<br>billing cycle<br>amount<br>start date<br>a gallery</p></div>
+<div style="flex:1;background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:30px 32px;display:flex;flex-direction:column;gap:14px"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">Invoices</p><p style="font-size:25px;line-height:1.55">the project<br>amount<br>due date<br>notes</p></div>
+<div style="flex:1;background:#f2f2f2;border:1px solid #e5e5e5;border-radius:8px;padding:30px 32px;display:flex;flex-direction:column;gap:14px"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;color:#888888;letter-spacing:2px;text-transform:uppercase">Payments</p><p style="font-size:25px;line-height:1.55">the invoice<br>amount paid<br>paid on<br>method<br>notes</p></div>
+</div>
+
+<p style="font-size:32px;color:#888888;line-height:1.5;width:1660px">Four tables and three relationships. Small enough to build in front of you, and real enough that every one of the twenty problems shows up in it.</p>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Introduce the domain in one sentence: an agency bills clients for projects, and some of those projects bill every month.
+
+Point at the chain: a payment belongs to an invoice, which belongs to a project, which belongs to a client. Three belongs_to fields, and each one is a word in a command rather than a migration and a form.</aside>
+</section>

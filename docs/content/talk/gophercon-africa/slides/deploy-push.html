@@ -1,0 +1,12 @@
+<section id="deploy-push" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:112px 128px;display:flex;flex-direction:column;justify-content:center;gap:44px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">Step one &middot; it is already a repository</p>
+<div style="background:#0a0a0a;border:1px solid #333333;border-radius:8px;display:flex;flex-direction:column"><div style="display:flex;align-items:center;gap:12px;padding:22px 30px;border-bottom:1px solid #333333"><x-shape kind="ellipse" style="width:16px;height:16px;background:#333333"></x-shape><x-shape kind="ellipse" style="width:16px;height:16px;background:#333333"></x-shape><x-shape kind="ellipse" style="width:16px;height:16px;background:#333333"></x-shape></div><div style="padding:40px 48px"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:32px;color:#ffffff;line-height:1.7"><span style="color:#888888">$</span> git init && git add -A<br><span style="color:#888888">$</span> git commit -m <span style="color:#0070f3">"the billing app"</span><br><span style="color:#888888">$</span> git push -u origin main</p></div></div>
+
+<p style="font-size:32px;color:#888888;line-height:1.5;width:1660px">Nothing is bundled and nothing is proprietary. A Grit project is a Go module and two Next apps with a production compose file beside them.</p>
+
+<div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
+
+<aside>Short slide. The only thing worth saying is what is in the repository: docker-compose.prod.yml, a Dockerfile per app, and the .env.example that lists every variable.
+
+If somebody asks about a private registry, the answer is that Dokploy builds from the repository, so there is nothing to push anywhere else.</aside>
+</section>
