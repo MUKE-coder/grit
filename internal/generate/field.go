@@ -69,6 +69,14 @@ const (
 const DefaultRatingMax = 5
 
 // Field describes a single field in a resource.
+// FieldCondition is the other field, and the value of it, that a conditional
+// field depends on. Compared as text, so a condition can name a select's value,
+// a number or a boolean without the syntax having to carry a type.
+type FieldCondition struct {
+	Field string `yaml:"field"`
+	Value string `yaml:"value"`
+}
+
 type Field struct {
 	Name         string `yaml:"name"`
 	Type         string `yaml:"type"`
@@ -82,6 +90,21 @@ type Field struct {
 	// rest, plaintext in code and over the wire. Set by the :encrypted
 	// modifier, on string, text and richtext fields only.
 	Encrypted bool `yaml:"encrypted,omitempty"`
+
+	// ShowWhen makes the field conditional: it belongs to the record only
+	// while another field holds a particular value. From the when= modifier,
+	// cycle:select:...:when=kind=recurring.
+	//
+	// It is two things at once, which is the point of declaring it once. In
+	// the admin it hides the input and drops its required rule, so nobody is
+	// asked a question that does not apply and a stale answer is cleared. On
+	// the model it is a requiredif tag, which internal/fieldtypes enforces on
+	// every write that has a model: the API, a PATCH, a CSV import, a job.
+	//
+	// A field with a condition never carries binding:"required", whatever
+	// Required says: that would refuse every row the condition does not hold
+	// for. Required means "required while it is shown".
+	ShowWhen *FieldCondition `yaml:"show_when,omitempty"`
 
 	// FileAccepts is the resolved list of accept-aliases for a file/files
 	// field. Source: the third position of name:file:<accept-list>. May be

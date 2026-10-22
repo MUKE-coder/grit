@@ -248,7 +248,41 @@ func PromptInteractive(name string) (*ResourceDefinition, error) {
 		return nil, fmt.Errorf("at least one field is required")
 	}
 
+	if err := validateConditions(def.Fields); err != nil {
+		return nil, err
+	}
+
 	return def, nil
+}
+
+// validateConditions checks that every when= names a field of this resource.
+//
+// Caught here rather than at render time, because a condition on a field that
+// does not exist produces a predicate reading an undefined property: the input
+// is simply never shown, with nothing anywhere saying why.
+func validateConditions(fields []Field) error {
+	known := make(map[string]bool, len(fields))
+	for _, f := range fields {
+		known[toSnakeCase(f.Name)] = true
+		// A belongs_to is written as category and stored as category_id, and
+		// a condition may reasonably name either.
+		if f.IsBelongsTo() {
+			known[f.FKColumnName()] = true
+		}
+	}
+	for _, f := range fields {
+		if f.ShowWhen == nil {
+			continue
+		}
+		on := toSnakeCase(f.ShowWhen.Field)
+		if on == toSnakeCase(f.Name) {
+			return fmt.Errorf("field %q: when= cannot depend on itself", f.Name)
+		}
+		if !known[on] {
+			return fmt.Errorf("field %q: when= names %q, which is not a field of this resource", f.Name, f.ShowWhen.Field)
+		}
+	}
+	return nil
 }
 
 // ParseInlineFields parses a comma-separated list of field definitions.
@@ -282,8 +316,41 @@ func ParseInlineFields(name string, fieldStr string) (*ResourceDefinition, error
 		return nil, fmt.Errorf("at least one field is required")
 	}
 
+	if err := validateConditions(def.Fields); err != nil {
+		return nil, err
+	}
+
 	return def, nil
 }
+
+// ParseFieldsUnvalidated is ParseInlineFields without the cross-field checks.
+//
+// For grit generate field, where the spec holds the one field being added and
+// a when= on it names a column that is already on the model. The caller
+// validates against the union, because here there is nothing to validate
+// against and refusing would make the modifier unusable on an existing
+// resource.
+func ParseFieldsUnvalidated(name string, fieldStr string) (*ResourceDefinition, error) {
+	def := &ResourceDefinition{Name: name}
+	for _, part := range splitTopLevelCommas(fieldStr) {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		field, err := parseFieldInput(part)
+		if err != nil {
+			return nil, err
+		}
+		def.Fields = append(def.Fields, field)
+	}
+	if len(def.Fields) == 0 {
+		return nil, fmt.Errorf("at least one field is required")
+	}
+	return def, nil
+}
+
+// ValidateConditions is validateConditions for callers outside this file.
+func ValidateConditions(fields []Field) error { return validateConditions(fields) }
 
 // ParseItems parses the `--items Child:"field:type,..."` spec into an inline
 // child ResourceDefinition owned by the parent. The child gets a synthesized
@@ -359,6 +426,61 @@ func splitTopLevelCommas(s string) []string {
 }
 
 // parseFieldInput parses a field definition string.
+// applyFieldModifiers reads the modifiers that follow a type's own argument,
+// for the branches that parse their argument and return early.
+//
+// Deliberately a subset: unique, required, optional and when=. The positional
+// ones (auto and its prefix) belong to the main loop, where the position is
+// meaningful.
+func applyFieldModifiers(f *Field, mods []string) error {
+	for _, mod := range mods {
+		switch strings.ToLower(strings.TrimSpace(mod)) {
+		case "":
+			continue
+		case "unique":
+			f.Unique = true
+		case "required":
+			f.Required = true
+		case "optional":
+			f.Required = false
+		default:
+			cond, ok := parseWhenModifier(mod)
+			if !ok {
+				return fmt.Errorf("invalid modifier %q for field %q (valid here: unique, required, optional, when=<field>=<value>)", strings.TrimSpace(mod), f.Name)
+			}
+			f.ShowWhen = cond
+		}
+	}
+	return nil
+}
+
+// parseWhenModifier reads when=<field>=<value>.
+//
+// The value may hold anything but a colon, which the field syntax already
+// reserves. An empty field name or an empty value is not a condition anyone
+// meant, so it is reported as an invalid modifier rather than silently
+// matching everything.
+func parseWhenModifier(mod string) (*FieldCondition, bool) {
+	rest, ok := cutPrefixFold(strings.TrimSpace(mod), "when=")
+	if !ok {
+		return nil, false
+	}
+	field, value, ok := strings.Cut(rest, "=")
+	field, value = strings.TrimSpace(field), strings.TrimSpace(value)
+	if !ok || field == "" || value == "" {
+		return nil, false
+	}
+	return &FieldCondition{Field: field, Value: value}, true
+}
+
+// cutPrefixFold is strings.CutPrefix, ignoring case on the prefix.
+func cutPrefixFold(s, prefix string) (string, bool) {
+	if len(s) < len(prefix) || !strings.EqualFold(s[:len(prefix)], prefix) {
+		return s, false
+	}
+	return s[len(prefix):], true
+}
+
 // Format: "name:type" or "name:type:modifier1:modifier2"
 // Valid modifiers: unique, required, optional
 //
@@ -467,12 +589,20 @@ func parseFieldInput(input string) (Field, error) {
 		if err != nil {
 			return Field{}, fmt.Errorf("field %q: %w", name, err)
 		}
-		return Field{
+		f := Field{
 			Name:     name,
 			Type:     typ,
 			Required: typ == "select" || typ == "radio", // single-choice fields default to required
 			Options:  options,
-		}, nil
+		}
+		// Anything after the options is a modifier. This branch used to return
+		// here, so status:select:a=A|b=B:optional silently stayed required and
+		// a when= on a select, which is the commonest place to want one, did
+		// nothing at all.
+		if err := applyFieldModifiers(&f, parts[3:]); err != nil {
+			return Field{}, err
+		}
+		return f, nil
 	}
 
 	// Default: string fields are required
@@ -484,6 +614,7 @@ func parseFieldInput(input string) (Field, error) {
 	// Parse optional modifiers (parts[2], parts[3], etc.). Index-based so `auto`
 	// can consume an optional prefix that follows it (name:string:auto:INV).
 	encrypted := false
+	var showWhen *FieldCondition
 	mods := parts[2:]
 
 	// tel, country and rating take an option in the third position, the same
@@ -536,7 +667,16 @@ func parseFieldInput(input string) (Field, error) {
 		case "":
 			// ignore empty modifiers
 		default:
-			return Field{}, fmt.Errorf("invalid modifier %q for field %q (valid: unique, required, optional, auto, encrypted)", mod, name)
+			// when=<field>=<value>, which is a modifier with an argument
+			// rather than a keyword. Matched on the original rather than the
+			// lowered copy, because the value it compares against is the
+			// select option the person wrote and "Recurring" is not
+			// "recurring" to a string comparison.
+			if cond, ok := parseWhenModifier(mods[i]); ok {
+				showWhen = cond
+				continue
+			}
+			return Field{}, fmt.Errorf("invalid modifier %q for field %q (valid: unique, required, optional, auto, encrypted, when=<field>=<value>)", mod, name)
 		}
 	}
 
@@ -567,6 +707,7 @@ func parseFieldInput(input string) (Field, error) {
 		Auto:           auto,
 		AutoPrefix:     autoPrefix,
 		Encrypted:      encrypted,
+		ShowWhen:       showWhen,
 		DefaultCountry: defaultCountry,
 		Max:            ratingMax,
 	}, nil

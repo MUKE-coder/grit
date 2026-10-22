@@ -66,6 +66,61 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.405.0 */}
+            <div className="mb-12" id="v3.405.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.405.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>when=: a conditional field, declared once, enforced in both places</h3>
+                <p>
+                  The last release made a field conditional in the admin panel. Declaring one
+                  still meant editing two files by hand, and the half people would skip is the
+                  server half, because the form already looks right without it.
+                </p>
+                <p>
+                  A field now takes a <code>when=</code> modifier, and the generator writes both:
+                </p>
+                <pre><code>grit generate field Project \
+  &quot;cycle:select:monthly=Monthly|annually=Annually:when=kind=recurring&quot;</code></pre>
+                <p>
+                  In the resource definition that becomes <code>visibleWhen</code> and{' '}
+                  <code>requiredWhen</code>, so the input is hidden on a one-off project and a
+                  cycle left behind by a project that used to be recurring is cleared. On the model
+                  it becomes <code>requiredif:&quot;kind=recurring&quot;</code>, which{' '}
+                  <code>internal/fieldtypes</code> enforces on every write that has a model:
+                  create, update, PATCH, bulk edit, CSV import and sync push. A recurring project
+                  with no cycle comes back as a 422 naming the field.
+                </p>
+                <p>
+                  A conditional field deliberately never carries{' '}
+                  <code>binding:&quot;required&quot;</code>. Binding runs before anything has
+                  looked at the row, so it would refuse every record the condition does not hold
+                  for, which is the trap that makes people give up and leave the column optional
+                  everywhere.
+                </p>
+                <p>
+                  Two things this found. Modifiers after a select&apos;s options were being
+                  dropped, so <code>status:select:a=A|b=B:optional</code> had silently stayed
+                  required since selects were added. And a condition naming a field that does not
+                  exist is now refused when you type the command rather than producing a predicate
+                  that reads an undefined property, which shows up as an input that never appears
+                  and nothing anywhere saying why.
+                </p>
+                <p>
+                  The limit, stated in the{' '}
+                  <a href="/docs/admin/forms#conditional-fields">forms documentation</a>: a PATCH
+                  naming only the field a condition depends on is left alone, because the dependent
+                  column&apos;s stored value is not in the request and reading the row there would
+                  make every PATCH two queries.
+                </p>
+              </div>
+            </div>
+
             {/* v3.404.1 */}
             <div className="mb-12" id="v3.404.1">
               <div className="flex items-center gap-3 mb-4">

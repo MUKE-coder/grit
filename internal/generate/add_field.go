@@ -31,7 +31,10 @@ var addFieldSupported = map[FieldType]bool{
 // The database column itself is added by GORM on the next `grit migrate` (the
 // model is the source of truth), so no migration file is written.
 func AddField(resourceName, spec string) error {
-	def, err := ParseInlineFields(resourceName, spec)
+	// Unvalidated: a when= here names a column the model already has, which is
+	// not in this spec. Checked against the union below, once the existing
+	// fields have been read.
+	def, err := ParseFieldsUnvalidated(resourceName, spec)
 	if err != nil {
 		return err
 	}
@@ -50,6 +53,9 @@ func AddField(resourceName, spec string) error {
 	existing, err := DefinitionFromModel(resourceName)
 	if err != nil {
 		return fmt.Errorf("resource %q not found (generate it first): %w", resourceName, err)
+	}
+	if err := ValidateConditions(append(append([]Field{}, existing.Fields...), f)); err != nil {
+		return err
 	}
 	g, err := NewGenerator(existing)
 	if err != nil {
@@ -230,7 +236,14 @@ func (g *Generator) injectModelField(names Names, f Field) error {
 	if gt := f.GORMTag(); gt != "" {
 		tags = fmt.Sprintf(`gorm:"%s" %s`, gt, tags)
 	}
-	if f.Required && f.GoType() == "string" {
+	// The same rule the struct builder uses: a conditional field carries its
+	// requirement as requiredif, which is evaluated against the row, and never
+	// as binding:"required", which is evaluated against nothing.
+	if f.ShowWhen != nil {
+		if f.Required {
+			tags += fmt.Sprintf(` requiredif:"%s=%s"`, toSnakeCase(f.ShowWhen.Field), f.ShowWhen.Value)
+		}
+	} else if f.Required && f.GoType() == "string" {
 		tags += ` binding:"required"`
 	}
 	if FieldType(f.Type) == FieldRichtext && !f.Encrypted {
@@ -294,8 +307,18 @@ func (g *Generator) injectAdminField(names Names, f Field) error {
 		fmt.Sprintf(`label: "%s"`, label),
 		fmt.Sprintf(`type: "%s"`, f.FormFieldType()),
 	}
-	if f.Required {
+	// Same rule as a field generated with its resource: a conditional field's
+	// requirement is a predicate, not a flag, or the form refuses to submit
+	// over an input nobody can see.
+	if f.Required && f.ShowWhen == nil {
 		formParts = append(formParts, "required: true")
+	}
+	if f.ShowWhen != nil {
+		pred := fmt.Sprintf(`(v) => v.%s === %q`, toSnakeCase(f.ShowWhen.Field), f.ShowWhen.Value)
+		formParts = append(formParts, "visibleWhen: "+pred)
+		if f.Required {
+			formParts = append(formParts, "requiredWhen: "+pred)
+		}
 	}
 	if f.HasOptions() {
 		formParts = append(formParts, "options: "+f.OptionsLiteral())

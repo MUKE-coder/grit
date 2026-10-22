@@ -411,7 +411,60 @@ type formatted struct {
 	format string
 }
 
+// conditional is a field that is required only while another field holds a
+// particular value, declared as requiredif:"kind=recurring".
+//
+// A billing cycle belongs to a recurring project and means nothing on a
+// one-off one, so it cannot carry binding:"required": that would refuse every
+// one-off project. The requirement is about the row rather than the field, so
+// it is checked here, where every writer passes.
+type conditional struct {
+	field *schema.Field
+	on    *schema.Field
+	value string
+}
+
 var fieldCache sync.Map // *schema.Schema -> []formatted
+var condCache sync.Map  // *schema.Schema -> []conditional
+
+// conditionalFields reads the requiredif tags on a model.
+//
+// A tag naming a field that does not exist is skipped rather than fatal: the
+// alternative is a panic at the first write of a model somebody renamed a
+// column on, and a rule that quietly does not apply is easier to find than a
+// server that will not start.
+func conditionalFields(s *schema.Schema) []conditional {
+	if cached, ok := condCache.Load(s); ok {
+		return cached.([]conditional)
+	}
+	var out []conditional
+	for _, f := range s.Fields {
+		tag := f.Tag.Get("requiredif")
+		if tag == "" {
+			continue
+		}
+		name, value, ok := strings.Cut(tag, "=")
+		if !ok {
+			continue
+		}
+		if on := fieldByAnyName(s, strings.TrimSpace(name)); on != nil {
+			out = append(out, conditional{field: f, on: on, value: strings.TrimSpace(value)})
+		}
+	}
+	condCache.Store(s, out)
+	return out
+}
+
+// fieldByAnyName finds a field by its column, its Go name or its JSON name, so
+// a tag can say whichever the person writing it had in mind.
+func fieldByAnyName(s *schema.Schema, name string) *schema.Field {
+	for _, f := range s.Fields {
+		if f.DBName == name || f.Name == name || jsonName(f) == name {
+			return f
+		}
+	}
+	return nil
+}
 
 func formattedFields(s *schema.Schema) []formatted {
 	if cached, ok := fieldCache.Load(s); ok {
@@ -442,7 +495,8 @@ func check(tx *gorm.DB) {
 		return
 	}
 	fields := formattedFields(stmt.Schema)
-	if len(fields) == 0 {
+	conds := conditionalFields(stmt.Schema)
+	if len(fields) == 0 && len(conds) == 0 {
 		return
 	}
 	// An update that names its columns in a map is checked for those columns
@@ -451,16 +505,122 @@ func check(tx *gorm.DB) {
 	switch dest := stmt.Dest.(type) {
 	case map[string]interface{}:
 		checkMap(tx, fields, dest)
+		checkConditionalMap(tx, conds, dest)
 		return
 	case *map[string]interface{}:
 		if dest != nil {
 			checkMap(tx, fields, *dest)
+			checkConditionalMap(tx, conds, *dest)
 		}
 		return
 	}
 	if stmt.Dest != nil {
-		checkValue(tx, fields, reflect.ValueOf(stmt.Dest))
+		checkValue(tx, fields, stmt.Schema, reflect.ValueOf(stmt.Dest))
+		checkConditional(tx, conds, stmt.Schema, reflect.ValueOf(stmt.Dest))
 	}
+}
+
+// checkConditional refuses a row whose conditional field is empty while the
+// field it depends on holds the value that requires it.
+func checkConditional(tx *gorm.DB, conds []conditional, sch *schema.Schema, v reflect.Value) {
+	if len(conds) == 0 || !v.IsValid() {
+		return
+	}
+	v = reflect.Indirect(v)
+	switch v.Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < v.Len(); i++ {
+			checkConditional(tx, conds, sch, v.Index(i))
+		}
+	case reflect.Struct:
+		if !v.CanAddr() || v.Type() != sch.ModelType {
+			return
+		}
+		ctx := tx.Statement.Context
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		for _, c := range conds {
+			on, _ := c.on.ValueOf(ctx, v)
+			if !sameValue(on, c.value) {
+				continue
+			}
+			if _, zero := c.field.ValueOf(ctx, v); zero {
+				_ = tx.AddError(requiredIfError(c))
+				return
+			}
+		}
+	}
+}
+
+// checkConditionalMap is the PATCH and bulk-edit path.
+//
+// A map names the columns it writes and nothing else, so the rule can only be
+// decided when the map carries both of them. Setting the condition alone is
+// left alone deliberately: the dependent column's stored value is not in the
+// map, and reading the row here would turn every PATCH into two queries.
+func checkConditionalMap(tx *gorm.DB, conds []conditional, values map[string]interface{}) {
+	for _, c := range conds {
+		on, hasOn := mapValue(values, c.on)
+		dep, hasDep := mapValue(values, c.field)
+		if !hasOn || !hasDep {
+			continue
+		}
+		if sameValue(on, c.value) && isEmptyValue(dep) {
+			_ = tx.AddError(requiredIfError(c))
+			return
+		}
+	}
+}
+
+func requiredIfError(c conditional) *Error {
+	return &Error{
+		Field:   jsonName(c.field),
+		Message: "is required when " + label(jsonName(c.on)) + " is " + c.value,
+	}
+}
+
+// mapValue finds a column in an update map under any of its names.
+func mapValue(values map[string]interface{}, f *schema.Field) (interface{}, bool) {
+	for _, key := range []string{f.DBName, f.Name, jsonName(f)} {
+		if v, ok := values[key]; ok {
+			return v, true
+		}
+	}
+	return nil, false
+}
+
+// sameValue compares a column's value with the string in the tag. Compared as
+// text, so a tag can say kind=recurring, status=2 or active=true without the
+// tag format having to carry a type.
+func sameValue(value interface{}, want string) bool {
+	if value == nil {
+		return want == ""
+	}
+	return fmt.Sprintf("%v", derefValue(value)) == want
+}
+
+func derefValue(value interface{}) interface{} {
+	v := reflect.ValueOf(value)
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			return nil
+		}
+		return v.Elem().Interface()
+	}
+	return value
+}
+
+// isEmptyValue reports whether a value counts as "not filled in". A false bool
+// and a zero number are empty here, which is the same answer the form gives an
+// untouched input.
+func isEmptyValue(value interface{}) bool {
+	value = derefValue(value)
+	if value == nil {
+		return true
+	}
+	v := reflect.ValueOf(value)
+	return v.IsZero()
 }
 
 func checkMap(tx *gorm.DB, fields []formatted, values map[string]interface{}) {
@@ -479,18 +639,18 @@ func checkMap(tx *gorm.DB, fields []formatted, values map[string]interface{}) {
 	}
 }
 
-func checkValue(tx *gorm.DB, fields []formatted, v reflect.Value) {
-	if !v.IsValid() {
+func checkValue(tx *gorm.DB, fields []formatted, sch *schema.Schema, v reflect.Value) {
+	if len(fields) == 0 || !v.IsValid() {
 		return
 	}
 	v = reflect.Indirect(v)
 	switch v.Kind() {
 	case reflect.Slice, reflect.Array:
 		for i := 0; i < v.Len(); i++ {
-			checkValue(tx, fields, v.Index(i))
+			checkValue(tx, fields, sch, v.Index(i))
 		}
 	case reflect.Struct:
-		if !v.CanAddr() || v.Type() != fields[0].field.Schema.ModelType {
+		if !v.CanAddr() || v.Type() != sch.ModelType {
 			return
 		}
 		ctx := tx.Statement.Context
@@ -653,6 +813,7 @@ func apiFieldTypesTestGo() string {
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/glebarez/sqlite"
@@ -802,6 +963,62 @@ func TestEveryWriteIsChecked(t *testing.T) {
 	// An untagged column is not touched.
 	if err := db.Model(&row).Update("comment", "anything").Error; err != nil {
 		t.Errorf("an untagged column was checked: %v", err)
+	}
+}
+
+// A billing cycle belongs to a recurring project and means nothing on a
+// one-off one, which is a requirement about the row rather than the column.
+type project struct {
+	ID    uint   ` + "`" + `gorm:"primarykey"` + "`" + `
+	Kind  string ` + "`" + `json:"kind"` + "`" + `
+	Cycle string ` + "`" + `json:"cycle" requiredif:"kind=recurring"` + "`" + `
+}
+
+func TestRequiredIf(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := Install(db); err != nil {
+		t.Fatalf("install: %v", err)
+	}
+	if err := db.AutoMigrate(&project{}); err != nil {
+		t.Fatalf("migrate: %v", err)
+	}
+
+	// The condition does not hold, so the empty column is fine.
+	oneOff := project{Kind: "one_off"}
+	if err := db.Create(&oneOff).Error; err != nil {
+		t.Fatalf("a one-off project with no cycle was refused: %v", err)
+	}
+
+	// It does hold, and the column is empty.
+	var fe *Error
+	err = db.Create(&project{Kind: "recurring"}).Error
+	if !errors.As(err, &fe) || fe.Field != "cycle" {
+		t.Fatalf("a recurring project with no cycle was accepted: %v", err)
+	}
+	if !strings.Contains(fe.Message, "is required when") {
+		t.Errorf("the message does not say why: %q", fe.Message)
+	}
+
+	// It holds and the column is filled in.
+	ok := project{Kind: "recurring", Cycle: "monthly"}
+	if err := db.Create(&ok).Error; err != nil {
+		t.Fatalf("a recurring project with a cycle was refused: %v", err)
+	}
+
+	// A PATCH carrying both columns is checked.
+	err = db.Model(&ok).Updates(map[string]interface{}{"kind": "recurring", "cycle": ""}).Error
+	if !errors.As(err, &fe) || fe.Field != "cycle" {
+		t.Errorf("a PATCH that empties the cycle was accepted: %v", err)
+	}
+
+	// A PATCH carrying one of them is left alone: the other column's stored
+	// value is not in the map, and reading the row here would make every
+	// PATCH two queries.
+	if err := db.Model(&oneOff).Updates(map[string]interface{}{"kind": "recurring"}).Error; err != nil {
+		t.Errorf("a PATCH naming only the condition was refused: %v", err)
 	}
 }
 `

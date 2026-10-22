@@ -361,3 +361,48 @@ func writeTempYAML(t *testing.T, content string) string {
 	}
 	return path
 }
+
+// A field that only applies when another field holds a particular value.
+//
+// One modifier produces both halves: the admin predicates that hide the input,
+// and the model tag internal/fieldtypes enforces for every other writer. A
+// condition naming a field that does not exist is refused here, because the
+// predicate it would produce reads an undefined property and the input simply
+// never appears, with nothing saying why.
+func TestWhenModifier(t *testing.T) {
+	def, err := ParseInlineFields("Project",
+		"kind:select:one_off=One-off|recurring=Recurring, "+
+			"cycle:select:monthly=Monthly|annually=Annually:when=kind=recurring")
+	if err != nil {
+		t.Fatalf("a valid condition was refused: %v", err)
+	}
+	cycle := def.Fields[1]
+	if cycle.ShowWhen == nil {
+		t.Fatal("when= did not reach the field")
+	}
+	if cycle.ShowWhen.Field != "kind" || cycle.ShowWhen.Value != "recurring" {
+		t.Errorf("parsed %+v", *cycle.ShowWhen)
+	}
+
+	// Modifiers used to be ignored on a select, which returned as soon as it
+	// had read its options.
+	def, err = ParseInlineFields("Project",
+		"kind:select:a=A|b=B, note:select:x=X|y=Y:optional:when=kind=a")
+	if err != nil {
+		t.Fatalf("optional plus when= on a select: %v", err)
+	}
+	if def.Fields[1].Required {
+		t.Error("optional was ignored on a select")
+	}
+
+	for name, spec := range map[string]string{
+		"unknown field": "kind:select:a=A|b=B, cycle:string:when=nosuch=a",
+		"itself":        "cycle:string:when=cycle=a",
+		"no value":      "kind:select:a=A|b=B, cycle:string:when=kind",
+		"empty value":   "kind:select:a=A|b=B, cycle:string:when=kind=",
+	} {
+		if _, err := ParseInlineFields("Project", spec); err == nil {
+			t.Errorf("%s: accepted %q", name, spec)
+		}
+	}
+}

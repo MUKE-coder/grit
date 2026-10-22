@@ -270,15 +270,62 @@ export default defineResource({
                 Some questions only make sense once another has been answered. A billing cycle
                 belongs to a recurring project and means nothing on a one-off one, and asking for
                 it anyway is both a confusing form and a column that fills up with values nobody
-                meant. Give the field a <code>visibleWhen</code> predicate and it is shown only
-                while that predicate holds.
+                meant.
               </p>
               <p>
-                <code>requiredWhen</code> is the matching half. It takes precedence over{' '}
-                <code>required</code>, and neither applies while the field is hidden: a question
-                nobody can see must never be the reason a form will not submit. Both run over the
-                current form values and are re-evaluated as they change, in all three layouts,
-                including a wizard where the answer is on step one and the field is on step three.
+                Declare it on the field with <code>when=</code> and the generator writes both
+                halves: the predicates that hide the input, and the tag that refuses the row for
+                every other writer.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock language="bash" filename="One modifier, both halves" code={`grit generate resource Project --fields "\\
+  name:string, \\
+  kind:select:one_off=One-off|recurring=Recurring, \\
+  cycle:select:monthly=Monthly|annually=Annually:when=kind=recurring"
+
+# or on a resource that already exists
+grit generate field Project "cycle:select:monthly=Monthly|annually=Annually:when=kind=recurring"`} />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                <code>when=&lt;field&gt;=&lt;value&gt;</code> names another field of the same
+                resource and the value that makes this one apply. The value is compared as text,
+                so it reads a select&apos;s value, a number or a boolean without the syntax having
+                to carry a type. A condition naming a field that does not exist is refused when
+                you type the command, because the predicate it would produce reads an undefined
+                property and the input simply never appears, with nothing saying why.
+              </p>
+              <p>
+                In a shell, quote a spec containing <code>|</code>, or the shell reads it as a
+                pipe and the generator sees half of it.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="What it writes into the resource definition" code={`{
+  key: 'cycle',
+  label: 'Billing cycle',
+  type: 'select',
+  options: [
+    { value: 'monthly', label: 'Monthly' },
+    { value: 'annually', label: 'Annually' },
+  ],
+  visibleWhen: (v) => v.kind === 'recurring',
+  requiredWhen: (v) => v.kind === 'recurring',
+}`} />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                Written by hand, the two predicates are the whole interface. <code>visibleWhen</code>{' '}
+                decides whether the field is shown; <code>requiredWhen</code> takes precedence over{' '}
+                <code>required</code>, and neither applies while the field is hidden, because a
+                question nobody can see must never be the reason a form will not submit. Both are
+                re-evaluated as the form changes, in all three layouts, including a wizard where
+                the answer is on step one and the field is on step three.
               </p>
               <p>
                 A hidden field is <em>cleared</em> rather than left alone. Omitting it from the
@@ -287,42 +334,50 @@ export default defineResource({
                 sent as the empty value its type uses on a fresh form, which is a shape the API
                 already accepts.
               </p>
+              <p>
+                Reach for the predicates directly when the condition is more than one field
+                equalling one value: a range, two fields together, anything computed. The CLI
+                modifier writes the common case and then gets out of the way.
+              </p>
+            </div>
+
+            <div className="prose-grit">
+              <h3 id="conditional-fields-server">The server half</h3>
+              <p>
+                A predicate in the resource definition is the admin panel&apos;s behaviour and
+                nothing else. The API, a CSV import, a background job and anyone holding a token
+                never see it. That is why <code>when=</code> also writes a tag on the model:
+              </p>
             </div>
 
             <div className="mt-4 mb-8">
-              <CodeBlock filename="A field that depends on another" code={`// The field it depends on.
-{
-  key: 'kind',
-  label: 'Project type',
-  type: 'select',
-  required: true,
-  options: [
-    { value: 'one_off', label: 'One-off' },
-    { value: 'recurring', label: 'Recurring' },
-  ],
-},
-
-// Shown and required only while the project is recurring. Hidden, it is
-// submitted as "" so an old cycle does not survive the change.
-{
-  key: 'cycle',
-  label: 'Billing cycle',
-  type: 'select',
-  options: [
-    { value: 'monthly', label: 'Monthly' },
-    { value: 'annually', label: 'Annually' },
-  ],
-  visibleWhen: (values) => values.kind === 'recurring',
-  requiredWhen: (values) => values.kind === 'recurring',
-}`} />
+              <CodeBlock
+                language="go"
+                filename="apps/api/internal/models/project.go"
+                code={`Kind  string \`json:"kind"\`
+Cycle string \`json:"cycle" requiredif:"kind=recurring"\``}
+              />
             </div>
 
             <div className="prose-grit">
               <p>
-                <strong>The form is one half of the rule.</strong> A predicate in the resource
-                definition is the admin panel&apos;s behaviour and nothing else. The public API, a
-                CSV import, a background job and anyone holding a token never see it. Put the same
-                rule in the service, where every caller meets it:
+                <code>internal/fieldtypes</code> enforces it on every write that has a model:
+                create, update, PATCH, bulk edit, CSV import and sync push. A recurring project
+                with no cycle is refused with a 422 naming the field, so the form puts the message
+                under the right input. A conditional field never carries{' '}
+                <code>binding:&quot;required&quot;</code>: binding runs before anything has looked
+                at the row, so it would refuse every record the condition does not hold for.
+              </p>
+              <p>
+                One limit worth knowing. A PATCH names the columns it writes and nothing else, so
+                the rule is checked when the request carries both the field and the one it depends
+                on. A PATCH that sets only the condition is left alone, because the dependent
+                column&apos;s stored value is not in the request and reading the row there would
+                make every PATCH two queries.
+              </p>
+              <p>
+                For a rule that is more than one field being present, write it in the service,
+                where every caller meets it:
               </p>
             </div>
 
@@ -330,16 +385,19 @@ export default defineResource({
               <CodeBlock
                 language="go"
                 filename="apps/api/internal/services/project.go"
-                code={`func (s *ProjectService) validate(p *models.Project) error {
-    if p.Kind == "recurring" && p.Cycle == "" {
-        return respond.Invalid("cycle", "a recurring project needs a billing cycle")
-    }
-    if p.Kind != "recurring" {
-        p.Cycle = "" // one-off projects do not carry a cycle, whoever wrote the row
-    }
-    return nil
+                code={`if p.Kind == "recurring" && p.Cycle == "" {
+    return respond.Rule("a recurring project needs a billing cycle")
 }`}
               />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                <code>respond.Rule</code> becomes a 422 carrying that sentence. To put the message
+                under a particular input instead, return a{' '}
+                <code>&amp;fieldtypes.Error{'{'}Field: &quot;cycle&quot;, Message: ...{'}'}</code>,
+                which answers 422 with the per-field detail a form reads.
+              </p>
             </div>
 
             <div className="prose-grit">

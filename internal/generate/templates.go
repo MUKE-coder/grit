@@ -291,7 +291,18 @@ func (g *Generator) writeGoModel(names Names) error {
 			tags = fmt.Sprintf(`gorm:"%s" %s`, gormTag, tags)
 		}
 
-		if f.Required && (f.GoType() == "string") && !f.IsSlug() {
+		// A conditional field is never unconditionally required: binding runs
+		// before anything has looked at the row, so binding:"required" here
+		// would refuse every record the condition does not hold for. The
+		// requirement travels as requiredif instead, which internal/fieldtypes
+		// evaluates against the row on every write that has a model.
+		if f.ShowWhen != nil {
+			// Only when it is required while shown. A field that is merely
+			// conditional, and optional when it appears, has nothing to enforce.
+			if f.Required {
+				tags += fmt.Sprintf(` requiredif:"%s=%s"`, toSnakeCase(f.ShowWhen.Field), f.ShowWhen.Value)
+			}
+		} else if f.Required && (f.GoType() == "string") && !f.IsSlug() {
 			tags += ` binding:"required"`
 		}
 		if FieldType(f.Type) == FieldRichtext && !f.Encrypted {
@@ -1164,8 +1175,18 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 			fmt.Sprintf(`label: "%s"`, fieldLabel),
 			fmt.Sprintf(`type: "%s"`, fieldType),
 		}
-		if f.Required {
+		// A conditional field's requirement is a predicate rather than a flag:
+		// required: true here would hold even while the field is hidden, which
+		// is a form that will not submit and does not say why.
+		if f.Required && f.ShowWhen == nil {
 			parts = append(parts, `required: true`)
+		}
+		if f.ShowWhen != nil {
+			pred := fmt.Sprintf(`(v) => v.%s === %q`, toSnakeCase(f.ShowWhen.Field), f.ShowWhen.Value)
+			parts = append(parts, "visibleWhen: "+pred)
+			if f.Required {
+				parts = append(parts, "requiredWhen: "+pred)
+			}
 		}
 		// Carried into the admin so bulk edit can skip it. A slug is unique
 		// too, but it is excluded by type rather than by this flag.

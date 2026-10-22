@@ -362,6 +362,11 @@ export interface FieldDefinition {
    *     visibleWhen: (v) => v.kind === "recurring",
    *     requiredWhen: (v) => v.kind === "recurring" },
    *
+   * The generator writes both of these, and the model tag that enforces the
+   * same rule for every other writer, from one modifier:
+   *
+   *   grit generate field Project "cycle:select:...:when=kind=recurring"
+   *
    * This is the form's half. The rule still belongs in the service as well,
    * because the API, a CSV import and a job never see this predicate.
    */

@@ -1,6 +1,6 @@
 <section id="build-cycle" data-transition="fade" style="background:#ffffff;color:#000000;font-family:'Geist', Arial, sans-serif;padding:104px 128px;display:flex;flex-direction:column;justify-content:center;gap:38px">
-<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">Step three &middot; the part only you know</p>
-<p style="font-size:34px;color:#000000;line-height:1.45;width:1660px">A billing cycle belongs to a recurring project and means nothing on a one-off one. That is a rule about the business, and it goes in the two places that exist for it.</p>
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#888888">Step three &middot; a field that only sometimes applies</p>
+<p style="font-size:34px;color:#000000;line-height:1.45;width:1660px">A billing cycle belongs to a recurring project and means nothing on a one-off one. Six words in the command, and both halves of that rule are written for you.</p>
 
 <div style="background:#0a0a0a;border:1px solid #333333;border-radius:8px;display:flex;flex-direction:column">
 <div style="display:flex;align-items:center;gap:12px;padding:20px 30px;border-bottom:1px solid #333333">
@@ -9,17 +9,19 @@
 <x-shape kind="ellipse" style="width:16px;height:16px;background:#333333"></x-shape>
 </div>
 <div style="padding:34px 44px">
-<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:23px;color:#ffffff;line-height:1.65"><span style="color:#888888">// resources/projects/projects.ts</span> &mdash; the form, for the person<br>{ key: <span style="color:#0070f3">"cycle"</span>, label: <span style="color:#0070f3">"Billing cycle"</span>, type: <span style="color:#0070f3">"select"</span>, options: [...],<br>&nbsp;&nbsp;visibleWhen:&nbsp;&nbsp;(v) =&gt; v.kind === <span style="color:#0070f3">"recurring"</span>,<br>&nbsp;&nbsp;requiredWhen: (v) =&gt; v.kind === <span style="color:#0070f3">"recurring"</span> }<br><br><span style="color:#888888">// internal/services/project.go</span> &mdash; the rule, for every caller<br>if p.Kind == <span style="color:#0070f3">"recurring"</span> &amp;&amp; p.Cycle == <span style="color:#0070f3">""</span> {<br>&nbsp;&nbsp;&nbsp;&nbsp;return respond.Invalid(<span style="color:#0070f3">"cycle"</span>, <span style="color:#0070f3">"a recurring project needs one"</span>)<br>}</p>
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;color:#ffffff;line-height:1.7"><span style="color:#888888">$</span> grit generate field Project \<br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#0070f3">"cycle:select:monthly=Monthly|annually=Annually</span><span style="color:#fdcb6e">:when=kind=recurring"</span><br><br><span style="color:#888888">// the form, for the person</span><br>visibleWhen:&nbsp;&nbsp;(v) =&gt; v.kind === <span style="color:#0070f3">"recurring"</span><br>requiredWhen: (v) =&gt; v.kind === <span style="color:#0070f3">"recurring"</span><br><br><span style="color:#888888">// the model, for every other writer</span><br>Cycle string <span style="color:#0070f3">`json:"cycle" requiredif:"kind=recurring"`</span></p>
 </div>
 </div>
+
+<div style="position:absolute;left:128px;bottom:52px;width:900px" data-solution="build-cycle"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:22px;letter-spacing:1px;color:#888888">The modifier&nbsp;&nbsp;<a href="https://gritframework.dev/docs/admin/forms#conditional-fields" style="color:#0070f3;text-decoration:none">gritframework.dev/docs/admin/forms</a></p></div>
 
 <div style="position:absolute;top:60px;right:128px;width:700px;display:flex;justify-content:flex-end" data-corner="site"><p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#888888">gritframework.dev</p></div>
 
-<aside>This is the most honest slide in the demo, so do not rush it.
+<aside>Slow down here. This is the slide where the demo stops being a scaffold and starts being a domain.
 
-The generator gives you the field. It cannot know that one field only applies when another holds a particular value, because that is domain knowledge, not schema.
+Point at the yellow part, which is the whole slide: when=kind=recurring.
 
-Two places, and they are different jobs. The form stops asking a question that does not apply, and a cycle left behind by a project that used to be recurring is cleared rather than kept. The service refuses it for every caller: the API, the CSV import, a job, a script. Doing only the first one is how bad data arrives through an import.
+Then point at the two things under it, because they are different jobs. The form stops asking a question that does not apply, and clears a cycle left behind by a project that used to be recurring. The tag refuses the row for every other writer: the API, a CSV import, a job, a script. Doing only the first is how bad data arrives through an import.
 
-Worth saying out loud: this landed in the framework because building this demo found it missing. That is the whole feedback loop, in one field.</aside>
+The honest bit, and say it: this modifier did not exist a week ago. Building this demo is what found it missing. That is the whole feedback loop, in one field.</aside>
 </section>
