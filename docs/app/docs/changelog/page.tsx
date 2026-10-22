@@ -66,6 +66,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.404.0 */}
+            <div className="mb-12" id="v3.404.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.404.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A form field that only applies when another field says so</h3>
+                <p>
+                  A billing cycle belongs to a recurring project and means nothing on a one-off
+                  one. There was no way to say that. A field was shown always or never, so the
+                  choice was to ask a question that does not apply, or to leave the field out of
+                  the resource and lose it for the rows that need it.
+                </p>
+                <p>
+                  Fields now take <code>visibleWhen</code> and <code>requiredWhen</code>, each a
+                  predicate over the current form values. A hidden field drops its required rule,
+                  because a question nobody can see must never be the reason a form will not
+                  submit, and <code>requiredWhen</code> takes precedence over{' '}
+                  <code>required</code> while the field is shown.
+                </p>
+                <p>
+                  A hidden field is cleared rather than left alone. Omitting it would be a PATCH
+                  that keeps what was there, so a project moved from recurring to one-off would go
+                  on billing monthly on a column nobody can see. It is submitted as the empty
+                  value its type uses on a fresh form, which is a shape the API already accepts.
+                </p>
+                <p>
+                  All three layouts honour it: the plain form, the stepped wizard and the grouped
+                  per-card editor, which each have their own field loop. In the wizard the
+                  predicate reads the whole form, so a field on step three can depend on an answer
+                  given on step one. Forms with no conditional field do not subscribe to the
+                  watcher at all, so nothing pays for this that does not use it.
+                </p>
+                <p>
+                  The form is one half of the rule. The predicate is the admin panel&apos;s
+                  behaviour and nothing else: the API, a CSV import and a background job never see
+                  it, so the same rule still belongs in the service. The{' '}
+                  <a href="/docs/admin/forms#conditional-fields">forms documentation</a> shows both
+                  halves.
+                </p>
+              </div>
+            </div>
+
             {/* v3.403.0 */}
             <div className="mb-12" id="v3.403.0">
               <div className="flex items-center gap-3 mb-4">

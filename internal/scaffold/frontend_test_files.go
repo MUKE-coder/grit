@@ -36,6 +36,7 @@ func writeFrontendTestFiles(root string, opts Options) error {
 		if opts.Frontend != FrontendTanStack {
 			files[filepath.Join(adminRoot, "__tests__", "dropzone.test.tsx")] = adminDropzoneTest()
 			files[filepath.Join(adminRoot, "__tests__", "field-inputs.test.tsx")] = adminFieldInputsTest()
+			files[filepath.Join(adminRoot, "__tests__", "conditional-fields.test.tsx")] = adminConditionalFieldsTest()
 			files[filepath.Join(adminRoot, "__tests__", "password-strength.test.tsx")] = adminPasswordStrengthTest()
 		}
 	}

@@ -41,6 +41,65 @@ func TestDisplayOnlyFieldsAreNeverSubmitted(t *testing.T) {
 			}
 		}
 	}
+}
+
+// A field that only applies when another field holds a particular value.
+//
+// Three layouts render a form and each one has its own field loop, so a
+// condition honoured by the plain form and not by the wizard is a feature that
+// breaks the moment somebody adds steps. Every layout is pinned here, along
+// with the clearing rule: a hidden field is submitted empty rather than left
+// alone, or a project moved off recurring keeps billing monthly on a column
+// nobody can see.
+func TestConditionalFieldsAreHonouredByEveryLayout(t *testing.T) {
+	for name, c := range map[string]struct {
+		src   string
+		wants []string
+	}{
+		"lib/resource.ts": {adminResourceTypes(), []string{
+			"visibleWhen?: (values: Record<string, unknown>) => boolean;",
+			"requiredWhen?: (values: Record<string, unknown>) => boolean;",
+		}},
+		"lib/form-values.ts": {adminFormValues(), []string{
+			"export function isVisible(",
+			"export function isRequired(",
+			"export function emptyValueFor(",
+			"if (!isVisible(field, values)) return false;",
+			"out[key] = clear.has(key) ? clear.get(key) : value;",
+		}},
+		"form-builder": {adminFormBuilder(), []string{
+			"export function useConditionalFields(",
+			"useWatch({ control, disabled: !conditional })",
+			"{visibleFields.map((field) => (",
+		}},
+		"form-stepper": {adminFormStepper(), []string{
+			"useConditionalFields(",
+			"{visibleIn(step.fields).map((field) => (",
+		}},
+		"update-groups": {adminUpdateGroups(), []string{
+			"useConditionalFields(groupFields, control)",
+			"{visibleGroupFields.map((field) => (",
+		}},
+		// The suite every new project gets. It does not reach a project that
+		// already exists: frontend test files are written by scaffold and not
+		// by upgrade, so an existing project gets the behaviour and keeps its
+		// older copy of this file.
+		"__tests__/conditional-fields.test.tsx": {adminConditionalFieldsTest(), []string{
+			"visibleWhen: (v) => v.kind === \"recurring\"",
+			"expect(onSubmit.mock.calls[0][0].cycle).toBe(\"\")",
+		}},
+		"__tests__/form-values.test.ts": {adminFormValuesTest("@/lib"), []string{
+			"describe(\"conditional fields\"",
+			"clears a hidden field instead of keeping the stale value",
+			"never requires a hidden field, whatever required says",
+		}},
+	} {
+		for _, want := range c.wants {
+			if !strings.Contains(c.src, want) {
+				t.Errorf("%s is missing %s", name, want)
+			}
+		}
+	}
 
 	// No submit path may hand raw form data to its caller any more.
 	if strings.Contains(adminFormBuilder(), "handleSubmit(onSubmit)") ||

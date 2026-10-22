@@ -12,7 +12,7 @@ import { useT } from "@/lib/i18n";
 import { useForm, Controller, useWatch, type FieldErrors } from "react-hook-form";
 import { useUnsavedGuard, UnsavedBadge } from "@/components/forms/unsaved-guard";
 import type { FieldDefinition, FormDefinition } from "@/lib/resource";
-import { displayFormat, displayValue, isDisplayOnly, writableValues } from "@/lib/form-values";
+import { displayFormat, displayValue, isDisplayOnly, isRequired, isVisible, writableValues } from "@/lib/form-values";
 import { renderCell } from "@/components/tables/cell-renderers";
 import { TextField } from "./fields/text-field";
 import { TextareaField } from "./fields/textarea-field";
@@ -111,13 +111,14 @@ export function FormBuilder({
   useUnsavedGuard(isDirty && !isSubmitting);
 
   const isTwoColumn = formDef.layout === "two-column";
+  const visibleFields = useConditionalFields(formDef.fields, control);
 
   return (
     <form onSubmit={handleSubmit((data) => onSubmit(writableValues(formDef.fields, data)))} className="space-y-6">
       <div
         className={` + "`" + `grid gap-4 ${isTwoColumn ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}` + "`" + `}
       >
-        {formDef.fields.map((field) => (
+        {visibleFields.map((field) => (
           <div
             key={field.key}
             className={field.colSpan === 2 && isTwoColumn ? "sm:col-span-2" : ""}
@@ -174,6 +175,35 @@ function DisplayOnlyField({
       {field.description && <p className="text-xs text-text-muted">{field.description}</p>}
     </div>
   );
+}
+
+/**
+ * The fields a form shows right now, with the required mark each one carries
+ * right now.
+ *
+ * One subscription for the whole form rather than one per field, and none at
+ * all when no field in this form has a condition: useWatch re-renders on every
+ * keystroke, and a form of thirty inputs should not pay for a feature it does
+ * not use.
+ */
+export function useConditionalFields(
+  fields: FieldDefinition[],
+  control: ReturnType<typeof useForm>["control"],
+): FieldDefinition[] {
+  const conditional = fields.some((f) => f.visibleWhen || f.requiredWhen);
+  const watched = useWatch({ control, disabled: !conditional }) as
+    | Record<string, unknown>
+    | undefined;
+
+  if (!conditional) return fields;
+  const values = watched ?? {};
+
+  return fields
+    .filter((field) => isVisible(field, values))
+    .map((field) => {
+      const required = isRequired(field, values);
+      return required === Boolean(field.required) ? field : { ...field, required };
+    });
 }
 
 export function FieldRenderer({
@@ -894,7 +924,7 @@ import { useMemo, useState } from "react";
 import { useForm, useWatch, type UseFormTrigger, type FieldValues } from "react-hook-form";
 import type { FieldDefinition, FormDefinition } from "@/lib/resource";
 import { writableValues } from "@/lib/form-values";
-import { FieldRenderer, buildDefaults } from "./form-builder";
+import { FieldRenderer, buildDefaults, useConditionalFields } from "./form-builder";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Check, ChevronLeft, ChevronRight, Loader2 } from "@/lib/icons";
 
@@ -1062,6 +1092,17 @@ export function FormStepper({
 
   const handleFinalSubmit = handleSubmit((data) => onSubmit(writableValues(formDef.fields, data)));
 
+  // Conditions are resolved over the whole form, not per step: a field on
+  // step three can depend on an answer given on step one.
+  const conditionallyVisible = useConditionalFields(
+    steps.flatMap((s) => s.fields),
+    control,
+  );
+  const visibleIn = (fields: FieldDefinition[]) => {
+    const live = new Map(conditionallyVisible.map((f) => [f.key, f] as const));
+    return fields.filter((f) => live.has(f.key)).map((f) => live.get(f.key) as FieldDefinition);
+  };
+
   return (
     <div className={isVertical ? "flex gap-8" : "space-y-6"}>
       {/* Step Indicator */}
@@ -1083,7 +1124,7 @@ export function FormStepper({
                 <p className="text-sm text-text-secondary mb-4">{step.description}</p>
               )}
               <div className={` + "`" + `grid gap-4 ${isTwoColumn ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}` + "`" + `}>
-                {step.fields.map((field) => (
+                {visibleIn(step.fields).map((field) => (
                   <div
                     key={field.key}
                     className={field.colSpan === 2 && isTwoColumn ? "sm:col-span-2" : ""}
@@ -1436,7 +1477,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { ResourceDefinition, FieldDefinition, GroupDefinition } from "@/lib/resource";
 import { writableValues } from "@/lib/form-values";
-import { FieldRenderer } from "@/components/forms/form-builder";
+import { FieldRenderer, useConditionalFields } from "@/components/forms/form-builder";
 import { useResourceItem, usePatchResource } from "@/hooks/use-resource";
 import { ChevronLeft, Loader2 } from "@/lib/icons";
 import { buttonClasses } from "@/components/ui/button";
@@ -1540,6 +1581,8 @@ function GroupCard({ resource, group, record, id }: GroupCardProps) {
     if (!isDirty) setIsDirty(true);
   });
 
+  const visibleGroupFields = useConditionalFields(groupFields, control);
+
   const onSave = handleSubmit((values) => {
     // Send only the values belonging to this group — that's the whole
     // point of PATCH-per-group.
@@ -1556,7 +1599,7 @@ function GroupCard({ resource, group, record, id }: GroupCardProps) {
       </header>
 
       <form onSubmit={onSave} className="space-y-4">
-        {groupFields.map((field) => (
+        {visibleGroupFields.map((field) => (
           <FieldRenderer key={field.key} field={field} control={control} errors={errors} getValues={getValues} />
         ))}
 

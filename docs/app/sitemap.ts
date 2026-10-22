@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next'
 import fs from 'fs'
 import path from 'path'
 import { COURSES } from '@/config/courses'
+import { PROBLEMS } from '@/config/problems'
 import { getAllPosts } from '@/lib/blog'
 
 const baseUrl = 'https://gritframework.dev'
@@ -54,6 +55,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/donate', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/pitch', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/talk', priority: 0.7, changeFrequency: 'yearly' as const },
+    { path: '/problems', priority: 0.8, changeFrequency: 'monthly' as const },
+    // One per problem, from the same config the pages render from, so a new
+    // problem is listed by adding it there and nowhere else.
+    ...PROBLEMS.map((problem) => ({
+      path: `/problems/${problem.slug}`,
+      priority: 0.6,
+      changeFrequency: 'monthly' as const,
+    })),
     { path: '/blog', priority: 0.8, changeFrequency: 'daily' as const },
 
     // Getting Started

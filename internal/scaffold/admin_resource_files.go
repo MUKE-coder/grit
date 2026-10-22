@@ -349,6 +349,32 @@ export interface FieldDefinition {
   generate?: (values: Record<string, unknown>) => string | number | Promise<string | number>;
 
   /**
+   * Whether this field applies at all, given what the rest of the form holds.
+   *
+   * A billing cycle belongs to a recurring project and means nothing on a
+   * one-off one. Returning false hides the input, drops the field's required
+   * rule, and sends the field's empty value rather than whatever it was last
+   * set to, so switching a project from recurring to one-off clears the cycle
+   * instead of leaving a stale one behind.
+   *
+   *   { key: "kind",  type: "select", options: [...] },
+   *   { key: "cycle", type: "select", options: [...],
+   *     visibleWhen: (v) => v.kind === "recurring",
+   *     requiredWhen: (v) => v.kind === "recurring" },
+   *
+   * This is the form's half. The rule still belongs in the service as well,
+   * because the API, a CSV import and a job never see this predicate.
+   */
+  visibleWhen?: (values: Record<string, unknown>) => boolean;
+
+  /**
+   * Required, but only sometimes. Takes precedence over required, and never
+   * applies while visibleWhen says the field is hidden: a question nobody
+   * can see must not be the reason a form will not submit.
+   */
+  requiredWhen?: (values: Record<string, unknown>) => boolean;
+
+  /**
    * Shown, never sent. The value comes from the record, a column the server
    * computes or a status another process owns, and the form displays it the way
    * the table would. It is left out of what the form submits, so saving cannot

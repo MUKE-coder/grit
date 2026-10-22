@@ -265,6 +265,84 @@ export default defineResource({
             </div>
 
             <div className="prose-grit">
+              <h3 id="conditional-fields">Fields that only sometimes apply</h3>
+              <p>
+                Some questions only make sense once another has been answered. A billing cycle
+                belongs to a recurring project and means nothing on a one-off one, and asking for
+                it anyway is both a confusing form and a column that fills up with values nobody
+                meant. Give the field a <code>visibleWhen</code> predicate and it is shown only
+                while that predicate holds.
+              </p>
+              <p>
+                <code>requiredWhen</code> is the matching half. It takes precedence over{' '}
+                <code>required</code>, and neither applies while the field is hidden: a question
+                nobody can see must never be the reason a form will not submit. Both run over the
+                current form values and are re-evaluated as they change, in all three layouts,
+                including a wizard where the answer is on step one and the field is on step three.
+              </p>
+              <p>
+                A hidden field is <em>cleared</em> rather than left alone. Omitting it from the
+                submission would be a PATCH that keeps what was there, so a project moved from
+                recurring to one-off would keep billing monthly on a column nobody can see. It is
+                sent as the empty value its type uses on a fresh form, which is a shape the API
+                already accepts.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="A field that depends on another" code={`// The field it depends on.
+{
+  key: 'kind',
+  label: 'Project type',
+  type: 'select',
+  required: true,
+  options: [
+    { value: 'one_off', label: 'One-off' },
+    { value: 'recurring', label: 'Recurring' },
+  ],
+},
+
+// Shown and required only while the project is recurring. Hidden, it is
+// submitted as "" so an old cycle does not survive the change.
+{
+  key: 'cycle',
+  label: 'Billing cycle',
+  type: 'select',
+  options: [
+    { value: 'monthly', label: 'Monthly' },
+    { value: 'annually', label: 'Annually' },
+  ],
+  visibleWhen: (values) => values.kind === 'recurring',
+  requiredWhen: (values) => values.kind === 'recurring',
+}`} />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                <strong>The form is one half of the rule.</strong> A predicate in the resource
+                definition is the admin panel&apos;s behaviour and nothing else. The public API, a
+                CSV import, a background job and anyone holding a token never see it. Put the same
+                rule in the service, where every caller meets it:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock
+                language="go"
+                filename="apps/api/internal/services/project.go"
+                code={`func (s *ProjectService) validate(p *models.Project) error {
+    if p.Kind == "recurring" && p.Cycle == "" {
+        return respond.Invalid("cycle", "a recurring project needs a billing cycle")
+    }
+    if p.Kind != "recurring" {
+        p.Cycle = "" // one-off projects do not carry a cycle, whoever wrote the row
+    }
+    return nil
+}`}
+              />
+            </div>
+
+            <div className="prose-grit">
               <h3>Select</h3>
               <p>
                 A dropdown select menu. The <code>options</code> property accepts either an

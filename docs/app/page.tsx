@@ -552,8 +552,8 @@ export default function HomePage() {
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
               The generator writes a resource definition; after that it is ordinary TypeScript
               you own. Columns, filters, row and bulk actions, twenty field types, wizards,
-              dropzone variants, changed by editing a file, not by fighting a generator
-              that wants to overwrite it.
+              dropzone variants, fields that appear only when another answer calls for them,
+              changed by editing a file, not by fighting a generator that wants to overwrite it.
             </p>
           </div>
 
