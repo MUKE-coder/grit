@@ -81,7 +81,7 @@ jobs:
       # is silent: the hand-written search index had drifted to 94 of 224 pages
       # before anyone noticed, and what they noticed was "the search is buggy".
       - name: Every page is in the search index
-        run: python scripts/check-search-index.py
+        run: python3 scripts/check-search-index.py
         working-directory: docs
 
   flows:
