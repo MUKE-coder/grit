@@ -16,8 +16,9 @@ import (
 // carry standard library vulnerabilities the API reaches: Go 1.26.4 and below,
 // eight of them (H11 in the contact-app review), including the encoding/xml
 // behind SAML sign-in; Go 1.26.8 and below, GO-2026-6617, an HPACK encoder race
-// that crashes an HTTP/2 server.
-const goToolchainFloor = "1.26.9"
+// that crashes an HTTP/2 server; Go 1.26.9 and below, GO-2026-6809 in
+// crypto/x509, which govulncheck reaches through ordinary formatting.
+const goToolchainFloor = "1.26.10"
 
 // goModEdit runs go mod edit in dir. A variable, so a test can see the call
 // without a Go toolchain.

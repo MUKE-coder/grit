@@ -66,6 +66,41 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.404.1 */}
+            <div className="mb-12" id="v3.404.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.404.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The Go floor moves to 1.26.10 for a crypto/x509 advisory</h3>
+                <p>
+                  GO-2026-6809 is a standard library vulnerability in{' '}
+                  <code>crypto/x509</code>, fixed in Go 1.26.10. It is not theoretical for this
+                  code: govulncheck reaches it through ordinary formatting, and the same standard
+                  library is compiled into every generated API.
+                </p>
+                <p>
+                  The floor, the templates a new project is built from, this repository&apos;s
+                  workflows and the three checked-in example applications all move together. An
+                  existing project is raised by <code>grit upgrade</code>, which rewrites the{' '}
+                  <code>go</code> directive in the API&apos;s <code>go.mod</code> along with the
+                  Go pinned in its Dockerfiles and CI workflows.
+                </p>
+                <p>
+                  One thing this release fixed on the way past: the test covering that repair
+                  restated the floor as a literal instead of reading the constant, so it had to be
+                  edited by hand on every security bump. It now follows the constant. The version
+                  comparison itself is per segment and numeric, which this bump is the first to
+                  actually exercise: 1.26.9 sorts after 1.26.10 as text, and a lexical comparison
+                  would have left every project on the vulnerable patch.
+                </p>
+              </div>
+            </div>
+
             {/* v3.404.0 */}
             <div className="mb-12" id="v3.404.0">
               <div className="flex items-center gap-3 mb-4">

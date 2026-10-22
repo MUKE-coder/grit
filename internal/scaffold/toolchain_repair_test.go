@@ -15,6 +15,10 @@ func TestGoVersionLess(t *testing.T) {
 		{"1.25.0", "1.26.9", true},
 		{"1.26", "1.26.9", true},
 		{"1.26.9", "1.26.9", false},
+		// Numeric per segment, not lexical: "1.26.9" sorts after "1.26.10"
+		// as text, which would leave a project on the vulnerable patch.
+		{"1.26.9", "1.26.10", true},
+		{"1.26.10", "1.26.9", false},
 		{"1.27", "1.26.9", false},
 		{"1.21", "1.26.9", true},
 	} {
@@ -49,7 +53,13 @@ func TestRepairGoVersionPins(t *testing.T) {
 	src := "FROM golang:1.26-alpine AS builder\nFROM golang:1.27-alpine AS later\n" +
 		"      - uses: actions/setup-go@v5\n        with:\n          go-version: '1.24'\n"
 	out, fixed, _ := repairGoVersionPinsSource(src)
-	for _, want := range []string{"golang:1.26.9-alpine AS builder", "golang:1.27-alpine AS later", "go-version: '1.26.9'"} {
+	// Built from the floor rather than written out: a security bump moves the
+	// constant, and a test that restates it just has to be edited every time.
+	for _, want := range []string{
+		"golang:" + goToolchainFloor + "-alpine AS builder",
+		"golang:1.27-alpine AS later",
+		"go-version: '" + goToolchainFloor + "'",
+	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("missing %q in:\n%s", want, out)
 		}

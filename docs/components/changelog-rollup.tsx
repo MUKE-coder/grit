@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 19 to 25, 2026",
-    count: 1,
+    count: 2,
     entries: [
+      { version: "3.404.1", title: "The Go floor moves to 1.26.10 for a crypto/x509 advisory" },
       { version: "3.404.0", title: "A form field that only applies when another field says so" },
     ],
   },

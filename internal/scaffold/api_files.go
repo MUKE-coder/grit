@@ -253,14 +253,14 @@ func importJobHandlerGo() string { return tmpl("api/handlers/import_job.go") }
 func apiGoMod(opts Options) string {
 	return fmt.Sprintf(`module %s
 
-// Go 1.26.9, and not an earlier patch. Earlier ones carry standard library
+// Go 1.26.10, and not an earlier patch. Earlier ones carry standard library
 // vulnerabilities this code reaches before anyone has signed in: Go 1.26.4 and
 // below, eight of them, among them net/http and the encoding/xml behind the
 // SAML sign-in path; Go 1.26.8 and below, GO-2026-6617, an HPACK encoder race
 // that crashes an HTTP/2 server. The go directive is also what CI, setup-go and
 // the release workflow install, and an older Go downloads this one, so raising
 // it here raises it everywhere.
-go 1.26.9
+go 1.26.10
 
 require (
 	github.com/MUKE-coder/gin-docs v0.0.0-20260222113017-4d647cb4e7aa
@@ -372,7 +372,7 @@ require (
 	github.com/russellhaering/goxmldsig v1.6.0 // CVE-2026-33487
 	golang.org/x/image v0.45.0 // GO-2026-5066, -5062, -5032, -5031, -4815, CVE-2026-46603
 	// HTTP/2 again, and reached from the API's own server: GO-2026-6617 is the
-	// HPACK encoder race that go1.26.9 fixes in the standard library's copy,
+	// HPACK encoder race that go1.26.10 fixes in the standard library's copy,
 	// and this module carries its own. Raising the toolchain does not raise it.
 	golang.org/x/net v0.60.0 // GO-2026-6617, -6612, -6611, -6603
 	golang.org/x/oauth2 v0.27.0 // CVE-2025-22868
