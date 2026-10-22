@@ -280,10 +280,7 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <CodeBlock language="bash" filename="One modifier, both halves" code={`grit generate resource Project --fields "\\
-  name:string, \\
-  kind:select:one_off=One-off|recurring=Recurring, \\
-  cycle:select:monthly=Monthly|annually=Annually:when=kind=recurring"
+              <CodeBlock language="bash" filename="One modifier, both halves" code={`grit generate resource Project --fields "name:string, kind:select:one_off=One-off|recurring=Recurring, cycle:select:monthly=Monthly|annually=Annually:when=kind=recurring"
 
 # or on a resource that already exists
 grit generate field Project "cycle:select:monthly=Monthly|annually=Annually:when=kind=recurring"`} />

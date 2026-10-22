@@ -66,6 +66,38 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.405.1 */}
+            <div className="mb-12" id="v3.405.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.405.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The docs checker could not read a condition that points at an existing column</h3>
+                <p>
+                  Every field spec printed in the documentation is parsed by a test, because &quot;the
+                  docs said to do X and X did not work&quot; is the most repeated line in this
+                  changelog. The <code>when=</code> modifier broke it in a way worth recording.
+                </p>
+                <p>
+                  A spec for <code>grit generate field</code> describes the one field being added,
+                  and its condition names a column the model already has. The checker parsed it
+                  standalone and refused it for naming a field that was not in the snippet, which
+                  is correct for a whole resource and wrong for a single field. It now checks a{' '}
+                  <code>--fields</code> spec whole, conditions included, and checks only the syntax
+                  of a single added field.
+                </p>
+                <p>
+                  The release that carried the modifier therefore never published: its own test
+                  caught it. The documentation example was also written across continuation lines,
+                  which the extractor reads as separate fragments, so it is one line now.
+                </p>
+              </div>
+            </div>
+
             {/* v3.405.0 */}
             <div className="mb-12" id="v3.405.0">
               <div className="flex items-center gap-3 mb-4">

@@ -156,25 +156,39 @@ func isPlaceholder(token string) bool {
 func CheckFieldSpecs(samples []Sample) []Problem {
 	var problems []Problem
 	for _, sample := range samples {
-		spec, resource, ok := fieldSpec(sample.Command)
+		spec, resource, whole, ok := fieldSpec(sample.Command)
 		if !ok || spec == "" {
 			continue
 		}
 		if strings.ContainsAny(spec, "<>{}") {
 			continue // a placeholder, not a spec
 		}
-		if _, err := generate.ParseInlineFields(resource, spec); err != nil {
+		// A whole resource is checked whole, conditions included: every field a
+		// when= names has to be in the same spec.
+		//
+		// A single field added to an existing resource is not. Its when= names
+		// a column the model already has, which is not in this snippet and not
+		// something the docs can carry, so the syntax is checked and the
+		// cross-field part is left to the command.
+		var err error
+		if whole {
+			_, err = generate.ParseInlineFields(resource, spec)
+		} else {
+			_, err = generate.ParseFieldsUnvalidated(resource, spec)
+		}
+		if err != nil {
 			problems = append(problems, Problem{sample, "field spec is not valid: " + err.Error()})
 		}
 	}
 	return problems
 }
 
-// fieldSpec returns the field spec a command carries, and the resource it is for.
-func fieldSpec(command string) (spec, resource string, ok bool) {
+// fieldSpec returns the field spec a command carries, the resource it is for,
+// and whether it describes a whole resource rather than one added field.
+func fieldSpec(command string) (spec, resource string, whole, ok bool) {
 	tokens, err := Tokenize(command)
 	if err != nil || len(tokens) < 3 {
-		return "", "", false
+		return "", "", false, false
 	}
 	// grit generate resource <Name> --fields "..."  (g is the documented alias)
 	if (tokens[1] == "generate" || tokens[1] == "g") && tokens[2] == "resource" {
@@ -182,15 +196,15 @@ func fieldSpec(command string) (spec, resource string, ok bool) {
 			resource = tokens[3]
 		}
 		if value, found := Fields(command, "fields"); found {
-			return value, orDefault(resource, "Thing"), true
+			return value, orDefault(resource, "Thing"), true, true
 		}
-		return "", "", false
+		return "", "", false, false
 	}
 	// grit generate field <Resource> <spec>
 	if (tokens[1] == "generate" || tokens[1] == "g") && tokens[2] == "field" && len(tokens) > 4 {
-		return tokens[4], orDefault(tokens[3], "Thing"), true
+		return tokens[4], orDefault(tokens[3], "Thing"), false, true
 	}
-	return "", "", false
+	return "", "", false, false
 }
 
 func orDefault(value, fallback string) string {
