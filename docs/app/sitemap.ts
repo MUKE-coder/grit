@@ -4,6 +4,7 @@ import path from 'path'
 import { COURSES } from '@/config/courses'
 import { PROBLEMS } from '@/config/problems'
 import { getAllPosts } from '@/lib/blog'
+import { SEARCH_INDEX } from '@/config/search-index.generated'
 
 const baseUrl = 'https://gritframework.dev'
 
@@ -247,6 +248,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: p.startsWith('/docs') ? 0.6 : 0.5,
       changeFrequency: 'monthly' as const,
     })
+  }
+
+  // Three docs sections render from a config file through one [param]
+  // template: Systems, the deployment providers, the per-framework
+  // benchmarks. The walk above cannot see them, because on disk they are one
+  // directory with a bracket in its name, so 43 pages were in no sitemap at
+  // all. The search index already enumerates them, so it is the list rather
+  // than a second reader of the same configs that can disagree with the first.
+  for (const item of SEARCH_INDEX) {
+    if (!item.href.startsWith('/docs') || item.href.includes('#')) continue
+    if (known.has(item.href)) continue
+    known.add(item.href)
+    routes.push({ path: item.href, priority: 0.6, changeFrequency: 'monthly' as const })
   }
 
   return routes.map((route) => ({

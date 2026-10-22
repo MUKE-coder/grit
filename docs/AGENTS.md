@@ -22,6 +22,11 @@ what a release did, and the homepage is what they read to find out what Grit is.
 - **The shared visual language**: `styles/` and the grid, crosshair, card and
   glow utilities. There is deliberately **no** shared docs layout component;
   pages compose the utilities.
+- **The search index**: `config/search-index.generated.json`, written by
+  `scripts/search-index.py`. Generated from the pages on disk plus the three
+  config-driven sections. **Never hand-edit it.** What people type when hunting
+  for a page goes in `config/search-keywords.json`, which is hand-maintained
+  and merged in by href.
 
 ## Boundary rules
 
@@ -65,4 +70,10 @@ Then:
    build again.
 4. If you touched a tutorial that is generated: re-run its script and build.
    Editing the generated file directly means your change is lost on the next run.
-5. Search your diff for an em dash before you commit.
+5. If you added or renamed a page: `python scripts/search-index.py`, then search
+   for it in the dialog. `python scripts/check-search-index.py` is what CI runs,
+   and it fails on a stale index. A page nothing can find is a page that does
+   not exist, and the failure is silent: the index this replaced had drifted to
+   94 of 224 pages, and what finally surfaced it was somebody reporting that the
+   search was buggy.
+6. Search your diff for an em dash before you commit.

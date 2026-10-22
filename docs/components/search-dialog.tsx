@@ -26,15 +26,13 @@ import {
   Plug,
   GraduationCap,
 } from 'lucide-react'
+import { SEARCH_INDEX, type SearchItem as GeneratedSearchItem } from '@/config/search-index.generated'
 import { COURSES } from '@/config/courses'
 import { DEPLOYMENT_PROVIDERS } from '@/config/deployment-providers'
 
-interface SearchItem {
-  title: string
-  href: string
-  section: string
-  keywords: string
-}
+// The shape is declared with the generated index, which is the only thing
+// that fills it for doc pages; courses and providers build items too.
+type SearchItem = GeneratedSearchItem
 
 // Auto-generated course entries: every course, every chapter, every lesson
 // becomes searchable. Pulls from courses.ts so a new lesson just needs to
@@ -94,152 +92,22 @@ function buildDeploymentSearchItems(): SearchItem[] {
   }))
 }
 
-const searchIndex: SearchItem[] = [
-  // Getting Started
-  { title: 'Introduction', href: '/docs', section: 'Getting Started', keywords: 'overview what is grit start begin home introduction welcome' },
-  { title: 'Stack Selector, Pick a Combo', href: '/docs/stack-selector', section: 'Getting Started', keywords: 'choose stack combo architecture which what should I pick build single double triple api mobile desktop offline web portal saas internal tool dashboard kitchen sink multi-platform decision tree recommendation capability matrix vite next nextjs tanstack' },
-  { title: 'Philosophy & Inspiration', href: '/docs/getting-started/philosophy', section: 'Getting Started', keywords: 'why design decisions laravel rails inspiration manifesto principles' },
-  { title: 'Quick Start', href: '/docs/getting-started/quick-start', section: 'Getting Started', keywords: 'setup first project tutorial begin hello new install run dev' },
-  { title: 'Installation', href: '/docs/getting-started/installation', section: 'Getting Started', keywords: 'install go node pnpm setup requirements prerequisites cli go install brew' },
-  { title: 'Project Structure', href: '/docs/getting-started/project-structure', section: 'Getting Started', keywords: 'folders files directory layout monorepo apps tree organization' },
-  { title: 'Configuration', href: '/docs/getting-started/configuration', section: 'Getting Started', keywords: 'env config environment variables settings dotenv' },
-  { title: 'Troubleshooting', href: '/docs/getting-started/troubleshooting', section: 'Getting Started', keywords: 'errors fix debug issues problems help broken stuck' },
-  { title: 'CLI Cheatsheet', href: '/docs/getting-started/cli-cheatsheet', section: 'Getting Started', keywords: 'cli commands cheatsheet reference grit new generate sync migrate seed' },
-
-  // Core Concepts
-  { title: 'Architecture Overview', href: '/docs/concepts/architecture', section: 'Core Concepts', keywords: 'design monorepo api frontend shared structure' },
-  { title: 'CLI Commands', href: '/docs/concepts/cli', section: 'Core Concepts', keywords: 'grit new generate sync migrate seed add role start client server command' },
-  { title: 'Code Generation', href: '/docs/concepts/code-generation', section: 'Core Concepts', keywords: 'generate resource crud scaffold model handler' },
-  { title: 'Type System', href: '/docs/concepts/type-system', section: 'Core Concepts', keywords: 'typescript go types shared zod schema sync' },
-  { title: 'Naming Conventions', href: '/docs/concepts/naming-conventions', section: 'Core Concepts', keywords: 'case snake camel pascal kebab naming style' },
-  { title: 'Style Variants', href: '/docs/concepts/styles', section: 'Core Concepts', keywords: 'style variant theme modern minimal glass default auth dashboard layout design' },
-
-  // Backend
-  { title: 'Models & Database', href: '/docs/backend/models', section: 'Backend (Go API)', keywords: 'gorm model struct database table fields columns version belongsto manytomany uuid pk' },
-  { title: 'Handlers', href: '/docs/backend/handlers', section: 'Backend (Go API)', keywords: 'api endpoint handler controller request response gin paginate list' },
-  { title: 'Services', href: '/docs/backend/services', section: 'Backend (Go API)', keywords: 'business logic service layer repository getByID update delete' },
-  { title: 'Middleware', href: '/docs/backend/middleware', section: 'Backend (Go API)', keywords: 'auth cors logger rate limit middleware idempotency activity audit cache gzip security headers' },
-  { title: 'Authentication', href: '/docs/backend/authentication', section: 'Backend (Go API)', keywords: 'jwt login register auth token password 2fa totp oauth google github trusted devices backup codes refresh' },
-  { title: 'API Response Format', href: '/docs/backend/response-format', section: 'Backend (Go API)', keywords: 'json response error pagination format api envelope respond meta data message error code apiErrorMessage' },
-  { title: 'Migrations', href: '/docs/backend/migrations', section: 'Backend (Go API)', keywords: 'migrate database schema table create alter fresh automigrate column diff verbose' },
-  { title: 'Seeders', href: '/docs/backend/seeders', section: 'Backend (Go API)', keywords: 'seed data demo users populate database initial fixtures' },
-  { title: 'Append-only Records', href: '/docs/backend/append-only', section: 'Backend (Go API)', keywords: 'append only immutable ledger journal audit trail trigger never update delete regulator correction reversal studio sql' },
-  { title: 'RBAC & Roles', href: '/docs/backend/rbac', section: 'Backend (Go API)', keywords: 'roles rbac admin editor user permissions access control require role middleware' },
-
-  // Admin Panel
-  { title: 'Admin Overview', href: '/docs/admin/overview', section: 'Admin Panel', keywords: 'admin panel dashboard overview filament' },
-  { title: 'Resource Definitions', href: '/docs/admin/resources', section: 'Admin Panel', keywords: 'resource define crud table form config columns fields' },
-  { title: 'DataTable', href: '/docs/admin/datatable', section: 'Admin Panel', keywords: 'admin table list sort filter search pagination columns rows bulk actions' },
-  { title: 'Grid Data Entry (Bulk Create)', href: '/docs/admin/datatable#grid-data-entry', section: 'Admin Panel', keywords: 'bulk create bulk edit grid spreadsheet excel many rows at once paste fill down tab data entry' },
-  { title: 'Stats and Insights', href: '/docs/admin/datatable#stats-and-insights', section: 'Admin Panel', keywords: 'stat cards charts insights breakdown series count by status active graph collapsed panel analytics' },
-  { title: 'Form Builder', href: '/docs/admin/forms', section: 'Admin Panel', keywords: 'form create edit fields input select toggle checkbox' },
-  { title: 'Relationships', href: '/docs/admin/relationships', section: 'Admin Panel', keywords: 'relationship belongs_to many_to_many foreign key association preload select' },
-  { title: 'Dashboard & Widgets', href: '/docs/admin/widgets', section: 'Admin Panel', keywords: 'dashboard stats chart widget cards analytics' },
-  { title: 'Roles & Permissions UI', href: '/docs/admin/roles', section: 'Admin Panel', keywords: 'roles permissions rbac grants matrix usePermissions can gating authorization' },
-
-  // Frontend
-  { title: 'Web App', href: '/docs/frontend/web-app', section: 'Frontend (Next.js)', keywords: 'nextjs react web app pages routes components vite tanstack router' },
-  { title: 'React Query Hooks', href: '/docs/frontend/hooks', section: 'Frontend (Next.js)', keywords: 'react query hooks tanstack fetch data mutation cache useQuery useMutation' },
-  { title: 'Shared Package', href: '/docs/frontend/shared-package', section: 'Frontend (Next.js)', keywords: 'shared types schemas constants zod validation packages monorepo apiErrorMessage' },
-
-  // Batteries
-  { title: 'File Storage', href: '/docs/batteries/storage', section: 'Batteries', keywords: 's3 minio upload file image storage cloudflare r2 presigned url thumbnail' },
-  { title: 'Email System', href: '/docs/batteries/email', section: 'Batteries', keywords: 'email resend mail template send smtp transactional html' },
-  { title: 'Background Jobs', href: '/docs/batteries/jobs', section: 'Batteries', keywords: 'jobs queue background worker asynq redis async dlq retry' },
-  { title: 'Cron Scheduler', href: '/docs/batteries/cron', section: 'Batteries', keywords: 'cron schedule periodic task timer recurring' },
-  { title: 'Redis Caching', href: '/docs/batteries/caching', section: 'Batteries', keywords: 'redis cache middleware ttl performance' },
-  { title: 'AI Integration', href: '/docs/batteries/ai', section: 'Batteries', keywords: 'ai claude openai gemini llm chat stream completion sonnet anthropic gateway' },
-  { title: 'Idempotency Middleware', href: '/docs/backend/middleware', section: 'Batteries', keywords: 'idempotency idempotency-key safe retry replay 24h cache stripe-style middleware unsafe methods POST PUT PATCH DELETE' },
-  { title: 'Activity Log + Hash Chain', href: '/docs/backend/middleware', section: 'Batteries', keywords: 'activity log audit trail tamper evident hash chain sha256 SOC2 mutation tracking compliance integrity verification' },
-  { title: 'Feature Flags + A/B Testing', href: '/docs/backend/middleware', section: 'Batteries', keywords: 'feature flags ab testing rollout percentage allowlist blocklist sticky bucketing variants launchdarkly posthog kill switch experiments' },
-  { title: 'Webhook Receiver', href: '/docs/backend/middleware', section: 'Batteries', keywords: 'webhook receiver inbound stripe github twilio whatsapp signature verification HMAC verify replay deduplication' },
-  { title: 'Realtime WebSocket Hub', href: '/docs/backend/middleware', section: 'Batteries', keywords: 'realtime websocket hub broadcast SendToUser fan-out chat notifications useRealtimeEvent' },
-  { title: 'PDF Generation', href: '/docs/batteries/storage', section: 'Batteries', keywords: 'pdf generation invoice receipt lease fpdf go-pdf doc primitives header table totals' },
-  { title: 'CSV / Excel Export', href: '/docs/batteries/storage', section: 'Batteries', keywords: 'csv excel xlsx export resource download streaming excelize' },
-  { title: 'Cursor-based Pagination', href: '/docs/backend/response-format', section: 'Batteries', keywords: 'cursor pagination offset paginate next_cursor has_more sticky pages stable' },
-  { title: 'Data & Backup', href: '/docs/batteries/backups', section: 'Batteries', keywords: 'backup restore database dump schedule automatic snapshot download grit restore disaster recovery data export s3 minio scheduled cron daily' },
-
-  // Plugins
-  { title: 'What are plugins', href: '/docs/plugins/overview', section: 'Plugins', keywords: 'plugin plugins overview extend extension codegen code generation lockfile reversible install remove grit plugin add' },
-  { title: 'Multi-tenancy plugin', href: '/docs/plugins/multitenant', section: 'Plugins', keywords: 'plugin multitenant multi-tenancy organizations org tenant scoping gorm callback per-org roles saas' },
-  { title: 'Impersonate plugin', href: '/docs/plugins/impersonate', section: 'Plugins', keywords: 'plugin impersonate impersonation admin login as user sign in support debug audit trail return to yourself session swap' },
-  { title: 'Command palette plugin', href: '/docs/plugins/command-palette', section: 'Plugins', keywords: 'plugin command palette cmdk ctrl-k cmd-k keyboard navigation search jump quick actions spotlight' },
-  { title: 'Saved views plugin', href: '/docs/plugins/saved-views', section: 'Plugins', keywords: 'plugin saved views table filters sort columns advanced tables named view per-user query string' },
-  { title: 'Writing a plugin', href: '/docs/plugins/authoring', section: 'Plugins', keywords: 'plugin authoring write build create custom plugin injection marker lockfile files context' },
-
-  // Security & Testing
-  { title: 'Security Guide', href: '/docs/security', section: 'Security & Testing', keywords: 'security owasp top 10 2025 idor sqli xss csrf ssrf broken access control authentication authorization injection cryptography secrets headers csp hsts dependabot supply chain audit log hardening checklist sentinel waf rate limiting' },
-  { title: "Defender's Handbook ↔ Grit", href: '/docs/security/defenders-handbook', section: 'Security & Testing', keywords: 'defenders handbook jb desishub hackers break in attack defense nmap reconnaissance gobuster directory brute force hydra login credential stuffing username enumeration sql injection union select blind time based password hash cracking bcrypt argon2 salt rainbow table totp seed theft sim swap adversary in the middle aitm evilginx phishing reverse shell meterpreter mimikatz browser saved passwords mitm ssl strip evil twin arp poisoning dns hijacking ddos mirai botnet least privilege defense in depth' },
-  { title: 'Performance & Pentest Testing', href: '/docs/testing', section: 'Security & Testing', keywords: 'testing k6 load test smoke average stress spike soak breakpoint pentest penetration test methodology burp ffuf nmap sqlmap nuclei cvss audit report vulnerability scan govulncheck pnpm audit codeql ptes owasp wstg' },
-
-  // Demo
-  { title: 'Demo Application, Grit Motors', href: '/docs/demo', section: 'Demo', keywords: 'demo application grit motors kayula motorcycle dealership pos sales loans repayments borrowers spares stock multi-tenant rbac sentinel pulse security observability self host live demo source code' },
-
-  // Tech Kits
-  { title: 'Tech Kits, All', href: '/docs/tech-kits', section: 'Tech Kits', keywords: 'tech kits starter kits starter pack scaffold templates single double triple api mobile desktop wails expo nextjs vite tanstack architecture modes' },
-  { title: 'Build with AI', href: '/docs/ai-integration', section: 'Tech Kits', keywords: 'build with ai copy prompt skill agent integration helper wizard claude code cursor codex lovable bolt v0 windsurf copilot aider cline prompt generator starter prompt project description phases design style guide planning files coding agent' },
-
-  // Learnings — engineering journal
-  { title: 'Learnings, Overview', href: '/docs/learnings', section: 'Learnings', keywords: 'learnings journal engineering challenges write-ups load testing security performance tuning grit framework experiments' },
-  { title: 'Stateless Service + k6 Load Test', href: '/docs/learnings/stateless-service-load-test', section: 'Learnings', keywords: 'k6 load test stateless service health check api p50 p95 p99 latency percentile grafana autocannon throughput rps requests per second chart milestone benchmark performance smoke spike soak threshold vus virtual users iterations http duration ttfb tls connecting blocked sending waiting receiving' },
-  { title: 'Single Tech Kit', href: '/docs/tech-kits/single', section: 'Tech Kits', keywords: 'single binary embedded spa nextjs go embed single file deploy fastest small monolith' },
-  { title: 'Single + Vite Tech Kit', href: '/docs/tech-kits/single-vite', section: 'Tech Kits', keywords: 'single vite tanstack router spa fast cold start refresh on 401 auth refresh' },
-  { title: 'Double Tech Kit', href: '/docs/tech-kits/double', section: 'Tech Kits', keywords: 'double monorepo turborepo apps web apps api nextjs go shared zod schemas types two apps deploy separate' },
-  { title: 'Triple Tech Kit', href: '/docs/tech-kits/triple', section: 'Tech Kits', keywords: 'triple monorepo web admin api filament-style panel rbac roles invitation flow audit log saas full' },
-  { title: 'API Tech Kit', href: '/docs/tech-kits/api', section: 'Tech Kits', keywords: 'api only headless go gin gorm openapi swagger scalar pure backend no frontend' },
-  { title: 'Mobile Tech Kit', href: '/docs/tech-kits/mobile', section: 'Tech Kits', keywords: 'mobile expo react native eas build ota updates push notifications shared types ios android' },
-  { title: 'Desktop Tech Kit', href: '/docs/tech-kits/desktop', section: 'Tech Kits', keywords: 'desktop wails offline-first sqlite local auth bcrypt pdf excel export frameless window draggable native binary' },
-
-  // Infrastructure
-  { title: 'Docker Setup', href: '/docs/infrastructure/docker', section: 'Infrastructure', keywords: 'docker compose container postgresql redis minio' },
-  { title: 'Docker Cheat Sheet', href: '/docs/infrastructure/docker-cheatsheet', section: 'Infrastructure', keywords: 'docker commands cheat sheet reference' },
-  { title: 'Database & Migrations', href: '/docs/infrastructure/database', section: 'Infrastructure', keywords: 'postgresql database connection pool config' },
-
-  // Design System
-  { title: 'Theme & Colors', href: '/docs/design/theme', section: 'Design System', keywords: 'theme dark light colors palette tailwind design' },
-
-  // Tutorials
-  { title: 'Learn Grit Step by Step', href: '/docs/tutorials/learn', section: 'Tutorials', keywords: 'tutorial beginner learn first getting started task manager step by step curriculum' },
-  { title: 'Build a Blog', href: '/docs/tutorials/blog', section: 'Tutorials', keywords: 'tutorial blog post article example walkthrough' },
-  { title: 'Build a SaaS', href: '/docs/tutorials/saas', section: 'Tutorials', keywords: 'tutorial saas subscription billing example' },
-  { title: 'Build an E-Commerce', href: '/docs/tutorials/ecommerce', section: 'Tutorials', keywords: 'tutorial ecommerce store products orders cart' },
-
-  // AI
-  { title: 'LLM Skill Guide', href: '/docs/ai-skill', section: 'For AI Assistants', keywords: 'ai llm claude skill guide assistant prompt' },
-
-  // AI Workflows
-  { title: 'Using Grit with Claude', href: '/docs/ai-workflows/claude', section: 'AI Workflows', keywords: 'claude code ai spec workflow plan build prompt project description phases' },
-  { title: 'Using Grit with Antigravity', href: '/docs/ai-workflows/antigravity', section: 'AI Workflows', keywords: 'antigravity cursor ide ai spec workflow plan build composer inline' },
-
-  // Desktop (Wails)
-  { title: 'Desktop Overview', href: '/docs/desktop', section: 'Desktop (Wails)', keywords: 'desktop wails native overview windows macos linux electron' },
-  { title: 'Desktop Getting Started', href: '/docs/desktop/getting-started', section: 'Desktop (Wails)', keywords: 'desktop install wails prerequisites setup new-desktop' },
-  { title: 'Your First Desktop App', href: '/docs/desktop/first-app', section: 'Desktop (Wails)', keywords: 'desktop first app tutorial wails dev hello hands on' },
-  { title: 'Build a POS App', href: '/docs/desktop/pos-app', section: 'Desktop (Wails)', keywords: 'desktop pos point of sale tutorial wails inventory receipts sales transactions' },
-  { title: 'Desktop Resource Generation', href: '/docs/desktop/resource-generation', section: 'Desktop (Wails)', keywords: 'desktop generate resource wails crud model service tanstack injection' },
-  { title: 'Offline-First Desktop Apps', href: '/docs/desktop/offline', section: 'Desktop (Wails)', keywords: 'offline desktop sync local sqlite outbox conflict resolution wails git push pull versioned mirror' },
-  { title: 'Building & Distribution', href: '/docs/desktop/building', section: 'Desktop (Wails)', keywords: 'desktop build distribution wails package executable nsis installer cross compile' },
-  { title: 'Auto-Update + Installers', href: '/docs/desktop/auto-update', section: 'Desktop (Wails)', keywords: 'auto update updater self update binary swap wails github releases installer nsis full slim webview2 evergreen bootstrapper standalone offline online progress modal banner version bump release script makensis signtool code signing smartscreen gatekeeper notarization download exe portable msi inconshreveable go-update' },
-  { title: '20 Desktop Project Ideas', href: '/docs/desktop/project-ideas', section: 'Desktop (Wails)', keywords: 'desktop project ideas examples inspiration 20 wails grit' },
-  { title: 'Desktop LLM Reference', href: '/docs/desktop/llm-reference', section: 'Desktop (Wails)', keywords: 'desktop llm ai reference assistant wails complete cheat sheet' },
-
-  // Plugins
-  { title: 'Plugins Overview', href: '/docs/plugins', section: 'Plugins', keywords: 'plugins extensions websockets stripe oauth grit-websockets grit-stripe grit-oauth packages' },
-
-  // Deployment — everything about getting a Grit app live, in one section.
-  { title: 'Choosing a host', href: '/docs/deployment', section: 'Deployment', keywords: 'deploy deployment hosting host provider compare comparison which where paas vps managed self-host pick choose railway render fly orbita dokploy coolify aws ec2 lightsail cost price' },
-  { title: 'Deploy from GitHub', href: '/docs/deployment/from-github', section: 'Deployment', keywords: 'deploy github repository push continuous ci cd actions auto deploy branch main pipeline' },
-  { title: 'Environment variables', href: '/docs/deployment/environment', section: 'Deployment', keywords: 'env environment variables secrets config production database url redis s3 smtp jwt secret dotenv' },
-  { title: 'Test the build locally', href: '/docs/deployment/build-locally', section: 'Deployment', keywords: 'build locally test docker image compile verify before deploy dry run production build' },
-  { title: 'Go-live checklist', href: '/docs/deployment/checklist', section: 'Deployment', keywords: 'checklist go live launch production ready pre-flight verify backups migrations health check domain tls' },
-  { title: 'Deploy command', href: '/docs/deployment/deploy-command', section: 'Deployment', keywords: 'grit deploy command cli one command ship push release' },
-  { title: 'VPS walkthrough', href: '/docs/deployment/vps', section: 'Deployment', keywords: 'vps server ubuntu linux nginx caddy systemd tls certbot ssh manual self host droplet hetzner digitalocean walkthrough' },
-  // One entry per provider, from the same config the pages use.
-  ...buildDeploymentSearchItems(),
-
-  // Auto-generated learning-path entries (every course, chapter, lesson, assignment)
-  ...buildCourseSearchItems(),
-]
+/**
+ * Everything searchable: the generated page index, plus the two sets built
+ * live from the configs they belong to.
+ *
+ * The deployment providers are in both. The generated entry is there so the
+ * sitemap can enumerate pages that have no file of their own, and the one
+ * built here also carries what a provider costs, what it runs and who it
+ * suits, so that is the one worth keeping. Later wins, hence the map.
+ */
+const searchIndex: SearchItem[] = Array.from(
+  new Map(
+    [...SEARCH_INDEX, ...buildDeploymentSearchItems(), ...buildCourseSearchItems()].map(
+      (item) => [item.href, item] as const
+    )
+  ).values()
+)
 
 const sectionIcons: Record<string, React.ReactNode> = {
   'Getting Started': <Rocket className="h-3.5 w-3.5" />,
@@ -288,17 +156,95 @@ function startsWord(haystack: string, term: string) {
   return new RegExp(`\\b${escapeRegExp(term)}`).test(haystack)
 }
 
-function scoreTerm(title: string, keywords: string, term: string) {
+/**
+ * The singular and plural of a term, so one spelling finds the other.
+ *
+ * "fields" scored zero against "Field Types", because a substring match is
+ * exact and the page is singular. The best the scorer could then do was course
+ * lessons with the plural in their titles, which is what people were getting
+ * back instead of the reference page about the thing.
+ *
+ * Deliberately crude: an -s/-es/-ies pair, not a stemmer. A stemmer would also
+ * fold "testing" into "test" and "generated" into "generate", which changes
+ * what a search means. This only says that one of a thing and several of it
+ * are the same word.
+ */
+function variants(term: string): string[] {
+  const forms = [term]
+  const add = (value: string) => {
+    if (value !== term && value.length > 2 && !forms.includes(value)) forms.push(value)
+  }
+  if (term.endsWith('ies')) add(term.slice(0, -3) + 'y')
+  if (term.endsWith('es')) add(term.slice(0, -2))
+  if (term.endsWith('s')) add(term.slice(0, -1))
+  if (term.endsWith('y')) add(term.slice(0, -1) + 'ies')
+  if (!term.endsWith('s')) {
+    add(term + 's')
+    add(term + 'es')
+  }
+  return forms
+}
+
+/**
+ * How early in the keywords the term appears, as a number from 1 down to 0.9.
+ *
+ * Keywords are written most important first: the curated words for a page come
+ * before the ones derived from its description. So two pages that both mention
+ * a word are not equally about it, and without this the tie broke on the
+ * alphabet. A search for "upload" put "Deploy to Railway" above "File Storage"
+ * because D comes before F.
+ *
+ * Kept inside a tenth, so it only ever separates pages that already scored the
+ * same way. It is a tie-break, not a rank.
+ */
+function keywordPosition(keywords: string, term: string) {
+  const at = keywords.indexOf(term)
+  if (at < 0 || keywords.length === 0) return 1
+  return 1 - 0.1 * (at / keywords.length)
+}
+
+function scoreOneForm(title: string, keywords: string, term: string) {
   if (title === term) return 1
   if (title.startsWith(term)) return 0.9
   if (startsWord(title, term)) return 0.8
   if (title.includes(term)) return 0.6
-  if (startsWord(keywords, term)) return 0.4
-  if (keywords.includes(term)) return 0.2
+  const position = keywordPosition(keywords, term)
+  if (startsWord(keywords, term)) return 0.4 * position
+  if (keywords.includes(term)) return 0.2 * position
   return 0
 }
 
-export function scoreItem(title: string, keywords: string, search: string) {
+function scoreTerm(title: string, keywords: string, term: string) {
+  let best = 0
+  for (const [i, form] of variants(term).entries()) {
+    // The typed spelling at full value; a singular or plural of it slightly
+    // behind, so an exact match still sorts first.
+    const score = scoreOneForm(title, keywords, form) * (i === 0 ? 1 : 0.95)
+    if (score > best) best = score
+  }
+  return best
+}
+
+/**
+ * How much a section's pages are worth, as a tie-breaker.
+ *
+ * A course lesson and a reference page can both match a word honestly, and
+ * when they do the reference page is the one somebody searching a docs site
+ * wants. This does not let a weak match beat a strong one: it is a nudge, far
+ * smaller than the gap between a title hit and a keyword hit.
+ */
+function sectionWeight(section: string) {
+  if (section === 'Courses') return 0.9
+  // Systems (Design) is a design-interview essay per subsystem, and for most
+  // words there is a reference page about the same thing: "fields" matched
+  // "Field Encryption at Rest" and "Field Types Reference" equally, and the
+  // alphabet decided. The essays stay findable, which matters because a few
+  // things, GORM Studio among them, are documented nowhere else.
+  if (section === 'Learnings' || section === 'Demo' || section === 'Systems (Design)') return 0.95
+  return 1
+}
+
+export function scoreItem(title: string, keywords: string, search: string, section = '') {
   const query = search.trim().toLowerCase()
   if (!query) return 1
 
@@ -314,7 +260,7 @@ export function scoreItem(title: string, keywords: string, search: string) {
     if (score === 0) return 0
     total += score
   }
-  return total / terms.length
+  return (total / terms.length) * sectionWeight(section)
 }
 
 /** Cap on a result list. Past this nobody is reading, they are retyping. */
@@ -355,7 +301,7 @@ export function SearchDialog() {
   const results = useMemo(() => {
     if (!query.trim()) return null
     return searchIndex
-      .map((item) => ({ item, score: scoreItem(item.title, item.keywords, query) }))
+      .map((item) => ({ item, score: scoreItem(item.title, item.keywords, query, item.section) }))
       .filter((entry) => entry.score > 0)
       .sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title))
       .slice(0, MAX_RESULTS)

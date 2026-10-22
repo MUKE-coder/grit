@@ -1,0 +1,1352 @@
+[
+  {
+    "title": "Introduction",
+    "href": "/docs",
+    "section": "Getting Started",
+    "keywords": "overview what is grit start begin home introduction welcome started full stack meta framework combines go gin gorm react next js filament like admin panel docs"
+  },
+  {
+    "title": "Custom Pages & Tables",
+    "href": "/docs/admin/custom-pages",
+    "section": "Admin Panel",
+    "keywords": "replace grit admin table form whole page own components useresourcecontroller keep url synced sorting filters paging selection bulk delete docs custom pages tables"
+  },
+  {
+    "title": "DataTable",
+    "href": "/docs/admin/datatable",
+    "section": "Admin Panel",
+    "keywords": "admin table list sort filter search pagination columns rows bulk actions csv excel xlsx export resource download streaming excelize advanced datatable grit sorting filtering column visibility row selection custom cell renderers docs"
+  },
+  {
+    "title": "Forms",
+    "href": "/docs/admin/forms",
+    "section": "Admin Panel",
+    "keywords": "form create edit fields input select toggle checkbox conditional field show hide depends visible when required formbuilder grit admin text number date radio textarea richtext relationship docs forms"
+  },
+  {
+    "title": "Multi-Step Forms",
+    "href": "/docs/admin/multi-step-forms",
+    "section": "Admin Panel",
+    "keywords": "multi step forms grit modal steps page variants indicators per validation progress tracking docs admin"
+  },
+  {
+    "title": "Admin Panel Overview",
+    "href": "/docs/admin/overview",
+    "section": "Admin Panel",
+    "keywords": "admin panel dashboard overview filament grit like runtime resource definitions datatable formbuilder widgets dark light theme docs"
+  },
+  {
+    "title": "Relationships & Trees",
+    "href": "/docs/admin/relationships",
+    "section": "Admin Panel",
+    "keywords": "relationship belongs_to many_to_many foreign key association preload select fields grit belongs many inline items self referential hierarchies tree includes render level categories page single request docs admin relationships trees"
+  },
+  {
+    "title": "Resources",
+    "href": "/docs/admin/resources",
+    "section": "Admin Panel",
+    "keywords": "resource define crud table form config columns fields admin resources grit defineresource filters sorting search forms permissions docs"
+  },
+  {
+    "title": "Roles & Permissions UI",
+    "href": "/docs/admin/roles",
+    "section": "Admin Panel",
+    "keywords": "roles permissions rbac grants matrix usePermissions can gating authorization grit admin permission editor system tri state crud wildcard preserving saves locked built own ui usepermissions docs"
+  },
+  {
+    "title": "Standalone Usage",
+    "href": "/docs/admin/standalone-usage",
+    "section": "Admin Panel",
+    "keywords": "grit components datatable formbuilder formstepper any page web admin apps resource system docs standalone usage"
+  },
+  {
+    "title": "Trash & Deleted Accounts",
+    "href": "/docs/admin/trash",
+    "section": "Admin Panel",
+    "keywords": "recycle bin system trash closed accounts deleted thirty day retention nightly purge restore delete forever administrator cannot close their own account docs admin"
+  },
+  {
+    "title": "Dashboard Widgets",
+    "href": "/docs/admin/widgets",
+    "section": "Admin Panel",
+    "keywords": "dashboard stats chart widget cards analytics widgets grit admin statscard chartwidget recharts activitywidget widgetgrid building custom dashboards docs"
+  },
+  {
+    "title": "AI Integration: Generate a Grit Prompt for Your AI Agent",
+    "href": "/docs/ai-integration",
+    "section": "Tech Kits",
+    "keywords": "build with ai copy prompt skill agent integration helper wizard claude code cursor codex lovable bolt v0 windsurf copilot aider cline generator starter project description phases design style guide planning files coding four question produces complete any pick platform tech kit shape back paste ready tells exactly scaffold idea grit produce md docs generate"
+  },
+  {
+    "title": "AI Skill",
+    "href": "/docs/ai-skill",
+    "section": "For AI Assistants",
+    "keywords": "ai llm claude skill guide assistant prompt grit teach assistants about conventions architecture code patterns better generation docs"
+  },
+  {
+    "title": "Complete LLM Reference",
+    "href": "/docs/ai-skill/llm-guide",
+    "section": "For AI Assistants",
+    "keywords": "complete grit reference ai assistants llms framework overview full project structure every cli command all field types code patterns api conventions markers naming rules batteries performance features golden never break docs skill llm guide"
+  },
+  {
+    "title": "Using Grit with Antigravity",
+    "href": "/docs/ai-workflows/antigravity",
+    "section": "AI Workflows",
+    "keywords": "antigravity cursor ide ai spec workflow plan build composer inline assistant grit projects faster development code generation docs workflows"
+  },
+  {
+    "title": "Using Grit with Claude",
+    "href": "/docs/ai-workflows/claude",
+    "section": "AI Workflows",
+    "keywords": "claude code ai spec workflow plan build prompt project description phases grit projects faster prompting strategies generation assisted development docs workflows"
+  },
+  {
+    "title": "llms.txt",
+    "href": "/docs/ai-workflows/llms-txt",
+    "section": "AI Workflows",
+    "keywords": "llmstxt org index framework api build gritframework dev llms txt full contain pair scaffolded serves openapi spec still contract docs ai workflows"
+  },
+  {
+    "title": "MCP Server",
+    "href": "/docs/ai-workflows/mcp",
+    "section": "AI Workflows",
+    "keywords": "expose grit project ai coding agents model context protocol ten tools real routes models resources permissions file ownership doctor findings parsed source default server read only because write files not docs workflows mcp"
+  },
+  {
+    "title": "Account Security",
+    "href": "/docs/backend/account-security",
+    "section": "Backend (Go API)",
+    "keywords": "account security page recovery contact flow behind hashed single codes password required every write masked address even person reading docs backend"
+  },
+  {
+    "title": "API Documentation",
+    "href": "/docs/backend/api-docs",
+    "section": "Backend (Go API)",
+    "keywords": "auto generated api documentation grit gin docs zero annotation openapi spec interactive scalar swagger ui postman insomnia export gorm model schemas backend"
+  },
+  {
+    "title": "Append-only records",
+    "href": "/docs/backend/append-only",
+    "section": "Backend (Go API)",
+    "keywords": "append only immutable ledger journal audit trail trigger never update delete regulator correction reversal studio sql grit generate resource rows created read changed deleted create routes gorm guard database stops raw too docs backend records"
+  },
+  {
+    "title": "Authentication",
+    "href": "/docs/backend/authentication",
+    "section": "Backend (Go API)",
+    "keywords": "jwt login register auth token password 2fa totp oauth google github trusted devices backup codes refresh implement authentication grit hashing bcrypt protected routes docs backend"
+  },
+  {
+    "title": "Error codes",
+    "href": "/docs/backend/errors",
+    "section": "Backend (Go API)",
+    "keywords": "every error grit api returns status always carries client should do about generated one catalogue also generates typed codes go union type typescript docs backend errors"
+  },
+  {
+    "title": "Feature Flags & A/B Testing",
+    "href": "/docs/backend/feature-flags",
+    "section": "Backend (Go API)",
+    "keywords": "ship behind flags grit featureflag model memory engine isenabled variant percentage rollouts allow block lists date windows sticky per user bucketing variants exposure log admin crud docs backend feature testing"
+  },
+  {
+    "title": "Handlers",
+    "href": "/docs/backend/handlers",
+    "section": "Backend (Go API)",
+    "keywords": "api endpoint handler controller request response gin paginate list write http handlers grit parsing validation binding tags json responses pagination error handling docs backend"
+  },
+  {
+    "title": "Health checks",
+    "href": "/docs/backend/health",
+    "section": "Backend (Go API)",
+    "keywords": "api health four states rather than boolean ok degraded off unknown so dependency nobody configured stops reading one down each component probed response carries register own docs backend checks"
+  },
+  {
+    "title": "Invoices & Line Items",
+    "href": "/docs/backend/invoices",
+    "section": "Backend (Go API)",
+    "keywords": "generate parent resource inline line items create child separately auto number records grit sequence docs backend invoices"
+  },
+  {
+    "title": "Middleware",
+    "href": "/docs/backend/middleware",
+    "section": "Batteries",
+    "keywords": "realtime websocket hub broadcast SendToUser fan-out chat notifications useRealtimeEvent built grit middleware authentication cors logging rate limiting cache write custom gin docs backend"
+  },
+  {
+    "title": "Migrations",
+    "href": "/docs/backend/migrations",
+    "section": "Backend (Go API)",
+    "keywords": "migrate database schema table create alter fresh automigrate column diff verbose migrations grit gorm adding fields creating tables managing changes docs backend"
+  },
+  {
+    "title": "Models",
+    "href": "/docs/backend/models",
+    "section": "Backend (Go API)",
+    "keywords": "gorm model struct database table fields columns version belongsto manytomany uuid pk define models grit tags field types relationships belongs many hooks soft deletes docs backend"
+  },
+  {
+    "title": "Social Login (OAuth2)",
+    "href": "/docs/backend/oauth",
+    "section": "Backend (Go API)",
+    "keywords": "up google github oauth2 social login grit provider configuration callback urls account linking production deployment docs backend oauth"
+  },
+  {
+    "title": "The transactional outbox",
+    "href": "/docs/backend/outbox",
+    "section": "Backend (Go API)",
+    "keywords": "enqueue message same transaction write about let relay deliver keys idempotency retries backoff parked failures doctor check topic no covers docs backend outbox transactional"
+  },
+  {
+    "title": "Passkeys",
+    "href": "/docs/backend/passkeys",
+    "section": "Backend (Go API)",
+    "keywords": "webauthn sign fingerprint face device pin pure go usernameless ceremony stored server side management card admin docs backend passkeys"
+  },
+  {
+    "title": "The public surface",
+    "href": "/docs/backend/public-api",
+    "section": "Backend (Go API)",
+    "keywords": "grit generate resource public read only endpoints behind api key allowlist response one scope deciding live typed layer apps web docs backend surface"
+  },
+  {
+    "title": "Pulse (Observability)",
+    "href": "/docs/backend/pulse",
+    "section": "Backend (Go API)",
+    "keywords": "self hosted observability grit apis pulse request tracing database monitoring runtime metrics error tracking health checks alerting prometheus export docs backend"
+  },
+  {
+    "title": "RBAC",
+    "href": "/docs/backend/rbac",
+    "section": "Backend (Go API)",
+    "keywords": "roles rbac admin editor user permissions access control require role middleware based grit requirerole restricted routes add docs backend"
+  },
+  {
+    "title": "Realtime (WebSockets)",
+    "href": "/docs/backend/realtime",
+    "section": "Backend (Go API)",
+    "keywords": "push live updates clients grit realtime hub api ws websocket endpoint jwt handshake auth sendtouser vs broadcast multi device fan out json event envelope worked notify job finish example docs backend websockets"
+  },
+  {
+    "title": "The Request Lifecycle: What Runs, In What Order",
+    "href": "/docs/backend/request-lifecycle",
+    "section": "Backend (Go API)",
+    "keywords": "every middleware request passes through grit api exact order they execute maintenance mode security headers body limit id logging panic recovery cors gzip csrf idempotency then sentinel waf pulse tracing per group auth role checks activity logger explains hook own logic only enforces cookie authenticated mutations matters specific ordering mistakes cause csp bugs people actually hit docs backend lifecycle runs"
+  },
+  {
+    "title": "API Response Format",
+    "href": "/docs/backend/response-format",
+    "section": "Batteries",
+    "keywords": "cursor pagination offset paginate next_cursor has_more sticky pages stable standard api response format grit success responses data message paginated lists meta error codes docs backend"
+  },
+  {
+    "title": "Sagas",
+    "href": "/docs/backend/sagas",
+    "section": "Backend (Go API)",
+    "keywords": "steps cross systems have either all finish undone each do undo run persisted so resumes after crash compensation newest first three rules step has follow generated grit generate workflow docs backend sagas"
+  },
+  {
+    "title": "Seeders",
+    "href": "/docs/backend/seeders",
+    "section": "Backend (Go API)",
+    "keywords": "seed data demo users populate database initial fixtures grit admin sample records built blog example posts docs backend seeders"
+  },
+  {
+    "title": "Services",
+    "href": "/docs/backend/services",
+    "section": "Backend (Go API)",
+    "keywords": "business logic service layer repository getByID update delete pattern grit separation gorm queries pagination filtering services struct docs backend"
+  },
+  {
+    "title": "Product Variants",
+    "href": "/docs/backend/variants",
+    "section": "Backend (Go API)",
+    "keywords": "five table variant schema options shop wide affects price lives option resolved rather than stored installed grit add variants docs backend product"
+  },
+  {
+    "title": "Webhooks",
+    "href": "/docs/backend/webhooks",
+    "section": "Backend (Go API)",
+    "keywords": "receive inbound webhooks grit universal post provider endpoint built stripe github hmac signature verifiers event extraction idempotent dedupe via webhookevent handler dispatch admin replay writing custom verifier docs backend"
+  },
+  {
+    "title": "Workflows (State Machines)",
+    "href": "/docs/backend/workflows",
+    "section": "Backend (Go API)",
+    "keywords": "turn status select process server enforces named transitions per transition permissions endpoints make illegal jump unrepresentable domain event action docs backend workflows state machines"
+  },
+  {
+    "title": "Batteries Included",
+    "href": "/docs/batteries",
+    "section": "Batteries",
+    "keywords": "everything grit ships out box one card per battery jwt authentication rbac roles s3 r2 minio file storage resend email background jobs cron scheduling redis caching ai via vercel gateway sentinel waf pulse observability gorm studio feature flags webhooks realtime websockets no add ons install all wired every scaffolded project docs batteries included"
+  },
+  {
+    "title": "AI Integration",
+    "href": "/docs/batteries/ai",
+    "section": "Batteries",
+    "keywords": "ai claude openai gemini llm chat stream completion sonnet anthropic gateway integration grit support streaming responses configurable providers handler docs batteries"
+  },
+  {
+    "title": "Data & Backup",
+    "href": "/docs/batteries/backups",
+    "section": "Batteries",
+    "keywords": "backup restore database dump schedule automatic snapshot download grit disaster recovery data export s3 minio scheduled cron daily docs batteries backups"
+  },
+  {
+    "title": "Caching",
+    "href": "/docs/batteries/caching",
+    "section": "Batteries",
+    "keywords": "redis cache middleware ttl performance caching grit service api responses configuration invalidation docs batteries"
+  },
+  {
+    "title": "Cron Jobs",
+    "href": "/docs/batteries/cron",
+    "section": "Batteries",
+    "keywords": "cron schedule periodic task timer recurring scheduling grit asynq define tasks expressions admin dashboard monitoring schedules docs batteries jobs"
+  },
+  {
+    "title": "Email",
+    "href": "/docs/batteries/email",
+    "section": "Batteries",
+    "keywords": "email resend mail template send smtp transactional html emails grit welcome password reset verification notification templates layouts docs batteries"
+  },
+  {
+    "title": "Background Jobs",
+    "href": "/docs/batteries/jobs",
+    "section": "Batteries",
+    "keywords": "jobs queue background worker asynq redis async dlq retry job processing grit email image cleanup workers admin monitoring docs batteries"
+  },
+  {
+    "title": "Image Optimisation",
+    "href": "/docs/batteries/media",
+    "section": "Batteries",
+    "keywords": "mb phone photo stored 150 kb no configuration resized re encoded per image exif oriented then stripped thumbnail alongside profiles field wants something different docs batteries media optimisation"
+  },
+  {
+    "title": "Modules",
+    "href": "/docs/batteries/modules",
+    "section": "Batteries",
+    "keywords": "docs batteries modules"
+  },
+  {
+    "title": "Security",
+    "href": "/docs/batteries/security",
+    "section": "Batteries",
+    "keywords": "security grit sentinel waf rate limiting brute force protection anomaly detection ip geolocation threat dashboard docs batteries"
+  },
+  {
+    "title": "File Storage",
+    "href": "/docs/batteries/storage",
+    "section": "Batteries",
+    "keywords": "upload uploads file files storage s3 minio r2 bucket attachment image photo avatar presigned local disk driver media compatible grit handler processing development cloudflare aws production docs batteries"
+  },
+  {
+    "title": "Benchmarks: Grit vs Laravel, Django, Next.js, Express, Bun and Encore.ts",
+    "href": "/docs/benchmarks",
+    "section": "Benchmarks",
+    "keywords": "reproducible k6 benchmarks grit against laravel 13 django next js 15 express bun encore ts same public crud resource postgres identical container limits 10 000 rows restored before every run three repetitions medians reported framework own orm includes full harness cpu evidence results bound database scenario loses bugs benchmark found itself docs vs"
+  },
+  {
+    "title": "Changelog",
+    "href": "/docs/changelog",
+    "section": "Changelog",
+    "keywords": "all notable changes grit features bug fixes breaking each release docs changelog"
+  },
+  {
+    "title": "Command Explorer",
+    "href": "/docs/cli",
+    "section": "Core Concepts",
+    "keywords": "every grit cli command simulated run exact files creates modifies deletes searchable case file path docs explorer"
+  },
+  {
+    "title": "Architecture",
+    "href": "/docs/concepts/architecture",
+    "section": "Core Concepts",
+    "keywords": "design monorepo api frontend shared structure understand grit architecture layout go handler service model pattern next js types code generation docs concepts"
+  },
+  {
+    "title": "Architecture Modes",
+    "href": "/docs/concepts/architecture-modes",
+    "section": "Core Concepts",
+    "keywords": "grit supports architecture modes triple web admin api double single embedded spa only mobile choose one fits project docs concepts"
+  },
+  {
+    "title": "API Only Architecture: Headless Go Backend",
+    "href": "/docs/concepts/architecture-modes/api-only",
+    "section": "Core Concepts",
+    "keywords": "api only architecture grit pure go backend no frontend all batteries included auth storage email jobs ai perfect mobile backends microservices docs concepts modes headless"
+  },
+  {
+    "title": "Double Architecture: Web + API",
+    "href": "/docs/concepts/architecture-modes/double",
+    "section": "Core Concepts",
+    "keywords": "streamlined turborepo monorepo apps web api admin features live role protected routes app best blogs portfolios simpler saas applications docs concepts architecture modes double"
+  },
+  {
+    "title": "Mobile Architecture: API + Expo React Native",
+    "href": "/docs/concepts/architecture-modes/mobile",
+    "section": "Core Concepts",
+    "keywords": "mobile architecture grit go api paired expo react native turborepo monorepo securestore tokens router navigation shared types between backend docs concepts modes"
+  },
+  {
+    "title": "Multi-Client: API + Mobile + Desktop",
+    "href": "/docs/concepts/architecture-modes/multi-client",
+    "section": "Core Concepts",
+    "keywords": "combine desktop other flags scaffold shared api multi client saas one go backend serving expo mobile wails optional web admin linear notion slack pattern docs concepts architecture modes"
+  },
+  {
+    "title": "Single Architecture: One Binary",
+    "href": "/docs/concepts/architecture-modes/single",
+    "section": "Core Concepts",
+    "keywords": "single architecture grit one go binary serves both api embedded react frontend via embed flat project structure no monorepo simplest deployment docs concepts modes"
+  },
+  {
+    "title": "Triple Architecture: Web + Admin + API",
+    "href": "/docs/concepts/architecture-modes/triple",
+    "section": "Core Concepts",
+    "keywords": "default most feature rich grit architecture turborepo monorepo apps web admin api sharing types via packages shared best saas marketplaces content platforms docs concepts modes triple"
+  },
+  {
+    "title": "Architecture Style",
+    "href": "/docs/concepts/architecture-style",
+    "section": "Core Concepts",
+    "keywords": "architecture style grit modular monolith layered go api process event bus transactional outbox sagas styles deliberately not costs refactor project one another docs concepts"
+  },
+  {
+    "title": "CLI Commands",
+    "href": "/docs/concepts/cli",
+    "section": "Core Concepts",
+    "keywords": "grit new generate sync migrate seed add role start client server command complete reference cli commands resource remove docs concepts"
+  },
+  {
+    "title": "Code Generation",
+    "href": "/docs/concepts/code-generation",
+    "section": "Core Concepts",
+    "keywords": "generate resource crud scaffold model handler grit code generation works generating full stack resources models handlers services zod schemas typescript types hooks admin pages docs concepts"
+  },
+  {
+    "title": "Field Types Reference",
+    "href": "/docs/concepts/field-types",
+    "section": "Core Concepts",
+    "keywords": "conditional condition if when visible hidden show hide depends on another field requiredif visiblewhen requiredwhen select options every type grit generate resource fields go typescript zod schema default admin form control table column single source truth mapping docs concepts types reference"
+  },
+  {
+    "title": "Generated File Map",
+    "href": "/docs/concepts/generated-files",
+    "section": "Core Concepts",
+    "keywords": "definitive index every file grit generate resource writes across api shared package web admin mobile desktop apps including files yours edit versus regenerated sync docs concepts generated map"
+  },
+  {
+    "title": "Money",
+    "href": "/docs/concepts/money",
+    "section": "Core Concepts",
+    "keywords": "money field type integer minor units plus iso 4217 currency stored two columns float loses cents zero decimal currencies like ugx jpy handled json shape admin form table column migrate existing price docs concepts"
+  },
+  {
+    "title": "Naming Conventions",
+    "href": "/docs/concepts/naming-conventions",
+    "section": "Core Concepts",
+    "keywords": "case snake camel pascal kebab naming style conventions grit go files typescript react components pascalcase api routes plural lowercase docs concepts"
+  },
+  {
+    "title": "Offline Sync",
+    "href": "/docs/concepts/offline-sync",
+    "section": "Core Concepts",
+    "keywords": "local mirror outbox version checked conflict handling shared web admin mobile desktop clients installed grit add offline docs concepts sync"
+  },
+  {
+    "title": "Performance",
+    "href": "/docs/concepts/performance",
+    "section": "Core Concepts",
+    "keywords": "all performance optimisations built every grit project gzip request id connection pool tuning cache control presigned uploads background jobs redis caching server components isr react query next image turborepo docs concepts"
+  },
+  {
+    "title": "Style Variants",
+    "href": "/docs/concepts/styles",
+    "section": "Core Concepts",
+    "keywords": "style variant theme modern minimal glass default auth dashboard layout design choose admin panel variants grit themes docs concepts styles"
+  },
+  {
+    "title": "Type System",
+    "href": "/docs/concepts/type-system",
+    "section": "Core Concepts",
+    "keywords": "typescript go types shared zod schema sync grit shares between structs schemas interfaces keeping frontend backend docs concepts type system"
+  },
+  {
+    "title": "Demo Application: Grit Motors",
+    "href": "/docs/demo",
+    "section": "Demo",
+    "keywords": "demo application grit motors kayula motorcycle dealership pos sales loans repayments borrowers spares stock multi-tenant rbac sentinel pulse security observability self host live source code full stack built single vite management daily boda fleet tracking multi tenant app dashboards github login pre filled database reset nightly docs"
+  },
+  {
+    "title": "Deployment",
+    "href": "/docs/deployment",
+    "section": "Deployment",
+    "keywords": "deploy deployment hosting host provider compare comparison which where paas vps managed self-host pick choose railway render fly orbita dokploy coolify aws ec2 lightsail cost price grit app io plain docker compose effort trade offs each docs"
+  },
+  {
+    "title": "Test the production build locally",
+    "href": "/docs/deployment/build-locally",
+    "section": "Deployment",
+    "keywords": "build locally test docker image compile verify before deploy dry run production reproduce deployment own machine shipping catches type errors missing time variables cgo problems two minutes docs"
+  },
+  {
+    "title": "Go-live checklist",
+    "href": "/docs/deployment/checklist",
+    "section": "Deployment",
+    "keywords": "checklist go live launch production ready pre-flight verify backups migrations health check domain tls secrets access data operations checks work through before grit app takes real traffic docs deployment"
+  },
+  {
+    "title": "Deploy command",
+    "href": "/docs/deployment/deploy-command",
+    "section": "Deployment",
+    "keywords": "grit deploy command cli one ship push release docs deployment"
+  },
+  {
+    "title": "Docker address pools: \"all predefined address pools have been fully subnetted\"",
+    "href": "/docs/deployment/docker-networks",
+    "section": "Deployment",
+    "keywords": "every image builds deploy dies last step creating network docker hands out bridge subnets 172 17 12 16 blocks about sixteen whole daemon does not return them fails project deleted grit generates production stack declares no own because compose implicit default gives same dns isolation one fewer subnet pins container name so second copy run beside first upgrade applies both"
+  },
+  {
+    "title": "Environment variables",
+    "href": "/docs/deployment/environment",
+    "section": "Deployment",
+    "keywords": "env environment variables secrets config production database url redis s3 smtp jwt secret dotenv required conditional grit deployment build time vs runtime distinction fails silently docs"
+  },
+  {
+    "title": "Deploy from GitHub",
+    "href": "/docs/deployment/from-github",
+    "section": "Deployment",
+    "keywords": "deploy github repository push continuous ci cd actions auto branch main pipeline production docker compose file explained line grit project onto committing secrets deployment platforms differ some run real engine others translate their own model changes hostnames drops depends ordering docs"
+  },
+  {
+    "title": "Running More Than One Instance: Replicas Behind a Load Balancer",
+    "href": "/docs/deployment/multiple-instances",
+    "section": "Deployment",
+    "keywords": "takes run several copies grit api behind load balancer same database redis jwt secret field encryption key migrations once per deploy no sticky sessions shared between cache idempotency keys rate limits realtime events through backplane activity log chain jobs permission changes sso connections scheduled one copy still counted docs deployment multiple instances running more than instance replicas"
+  },
+  {
+    "title": "Deploy to Railway",
+    "href": "/docs/deployment/railway",
+    "section": "Deployment",
+    "keywords": "grit deploy railway links project adds postgres redis provision pushes variables actually needs uploads api apps generates url cannot accept local source so their cli does upload drives hundred odd entries generated env sends around sixty empty placeholders port minio mailhog compose database settings held back app forced production urls become references rather than copies dry run prints whole plan"
+  },
+  {
+    "title": "Deployment",
+    "href": "/docs/deployment/vps",
+    "section": "Deployment",
+    "keywords": "vps server ubuntu linux nginx caddy systemd tls certbot ssh manual self host droplet hetzner digitalocean walkthrough deploy grit projects docker production builds environment configuration database setup hosting options docs deployment"
+  },
+  {
+    "title": "Theme",
+    "href": "/docs/design/theme",
+    "section": "Design System",
+    "keywords": "theme dark light colors palette tailwind design grit system mode default color typography onest jetbrains mono component styling css docs"
+  },
+  {
+    "title": "Desktop App Development",
+    "href": "/docs/desktop",
+    "section": "Desktop (Wails)",
+    "keywords": "desktop wails native overview windows macos linux electron build applications grit scaffold complete projects go backend react frontend sqlite authentication crud docs app development"
+  },
+  {
+    "title": "Desktop Auto-Update + Installers: Binary Swap, NSIS Full + Slim",
+    "href": "/docs/desktop/auto-update",
+    "section": "Desktop (Wails)",
+    "keywords": "auto update updater self binary swap wails github releases installer nsis full slim webview2 evergreen bootstrapper standalone offline online progress modal banner version bump release script makensis signtool code signing smartscreen gatekeeper notarization download exe portable msi inconshreveable go-update every grit desktop project ships app bound windows posix inode linux macos two installers 150 mb bundled runtime 22 one shot builds publishes both adapted jb production walkthrough docs"
+  },
+  {
+    "title": "Building & Distribution",
+    "href": "/docs/desktop/building",
+    "section": "Desktop (Wails)",
+    "keywords": "desktop build distribution wails package executable nsis installer cross compile grit apps native executables platform builds installers tips docs building"
+  },
+  {
+    "title": "Your First Desktop App",
+    "href": "/docs/desktop/first-app",
+    "section": "Desktop (Wails)",
+    "keywords": "desktop first app tutorial wails dev hello hands on step build task manager grit scaffold generate resources browse gorm studio compile distribution docs"
+  },
+  {
+    "title": "Getting Started with Desktop",
+    "href": "/docs/desktop/getting-started",
+    "section": "Desktop (Wails)",
+    "keywords": "desktop install wails prerequisites setup new-desktop scaffolding development workflow grit apps go react docs getting started"
+  },
+  {
+    "title": "Desktop LLM Reference",
+    "href": "/docs/desktop/llm-reference",
+    "section": "Desktop (Wails)",
+    "keywords": "desktop llm ai reference assistant wails complete cheat sheet grit assistants llms architecture bindings cli commands resource generation field types code markers datatable formbuilder building executables golden rules docs"
+  },
+  {
+    "title": "Building an Offline-First Desktop App",
+    "href": "/docs/desktop/offline",
+    "section": "Desktop (Wails)",
+    "keywords": "offline desktop sync local sqlite outbox conflict resolution wails git push pull versioned mirror grit docs building first app"
+  },
+  {
+    "title": "Build a POS App",
+    "href": "/docs/desktop/pos-app",
+    "section": "Desktop (Wails)",
+    "keywords": "desktop pos point of sale tutorial wails inventory receipts sales transactions advanced build application grit product catalog tracking daily reports single native binary docs app"
+  },
+  {
+    "title": "20 Desktop Project Ideas",
+    "href": "/docs/desktop/project-ideas",
+    "section": "Desktop (Wails)",
+    "keywords": "desktop project ideas examples inspiration 20 wails grit ready build application each includes resources field definitions generate commands started immediately docs"
+  },
+  {
+    "title": "Desktop Resource Generation",
+    "href": "/docs/desktop/resource-generation",
+    "section": "Desktop (Wails)",
+    "keywords": "desktop generate resource wails crud model service tanstack injection full stack resources apps models services router route files 10 automatic code injections docs generation"
+  },
+  {
+    "title": "React Hooks",
+    "href": "/docs/frontend/hooks",
+    "section": "Frontend (Next.js)",
+    "keywords": "react query hooks tanstack fetch data mutation cache useQuery useMutation generated grit uselist useget usecreate useupdate usedelete every resource type safety docs frontend"
+  },
+  {
+    "title": "Internationalisation: One Cookie for the API, Web App and Admin",
+    "href": "/docs/frontend/i18n",
+    "section": "Frontend (Next.js)",
+    "keywords": "grit i18n add translate project locale cookie api web app admin share next intl catalogues english french swahili language switcher translating through key fallback resources labels slug adding upgrade repairs projects before v3 222 docs frontend internationalisation one"
+  },
+  {
+    "title": "Shared Package",
+    "href": "/docs/frontend/shared-package",
+    "section": "Frontend (Next.js)",
+    "keywords": "shared types schemas constants zod validation packages monorepo apiErrorMessage module grit typescript api route between web admin apps docs frontend package"
+  },
+  {
+    "title": "Tanstack Router",
+    "href": "/docs/frontend/tanstack-router",
+    "section": "Frontend (Next.js)",
+    "keywords": "docs frontend tanstack router"
+  },
+  {
+    "title": "UI Components",
+    "href": "/docs/frontend/ui-components",
+    "section": "Frontend (Next.js)",
+    "keywords": "grit ui ndash 100 ready made react components marketing saas ecommerce auth layout install add npx shadcn any project docs frontend"
+  },
+  {
+    "title": "Web App",
+    "href": "/docs/frontend/web-app",
+    "section": "Frontend (Next.js)",
+    "keywords": "nextjs react web app pages routes components vite tanstack router next js grit authentication flow dashboard layout api client query setup docs frontend"
+  },
+  {
+    "title": "CLI Cheatsheet",
+    "href": "/docs/getting-started/cli-cheatsheet",
+    "section": "Getting Started",
+    "keywords": "cli commands cheatsheet reference grit new generate sync migrate seed complete every command flag field type quick copy recipes scaffolding code generation migrations seeding more docs getting started"
+  },
+  {
+    "title": "Coming from Laravel, Django, or Next.js",
+    "href": "/docs/getting-started/coming-from",
+    "section": "Getting Started",
+    "keywords": "translation guide laravel django next js developers models migrations seeders admin panel cli commands map grit one real mindset shift shared go typescript types docs getting started coming"
+  },
+  {
+    "title": "Configuration",
+    "href": "/docs/getting-started/configuration",
+    "section": "Getting Started",
+    "keywords": "env config environment variables settings dotenv configure grit project database connections jwt secrets redis s3 storage more docs getting started configuration"
+  },
+  {
+    "title": "Create a project",
+    "href": "/docs/getting-started/create-a-project",
+    "section": "Getting Started",
+    "keywords": "scaffold run first grit app install cli then pick building api mobile expo desktop wails full web admin stack complete copy pasteable command sequence each docs getting started create project"
+  },
+  {
+    "title": "Using Grit with an existing project",
+    "href": "/docs/getting-started/existing-projects",
+    "section": "Getting Started",
+    "keywords": "grit scaffolds projects rather than converting old ones but pulse sentinel gorm studio ui blocks all work standalone honest brownfield options docs getting started existing project"
+  },
+  {
+    "title": "Installation",
+    "href": "/docs/getting-started/installation",
+    "section": "Getting Started",
+    "keywords": "install go node pnpm setup requirements prerequisites cli brew grit up development environment requires 21+ js 18+ docker docs getting started installation"
+  },
+  {
+    "title": "Performance & Benchmarks",
+    "href": "/docs/getting-started/performance",
+    "section": "Getting Started",
+    "keywords": "grit fast compiled go binary gzip connection pooling redis cache presigned uploads async jobs isr turbo full batteries included list out box auth storage email cron ai sentinel pulse feature flags webhooks realtime honest capability comparison against laravel django next js rails t3 including not docs getting started performance benchmarks"
+  },
+  {
+    "title": "Philosophy",
+    "href": "/docs/getting-started/philosophy",
+    "section": "Getting Started",
+    "keywords": "why design decisions laravel rails inspiration manifesto principles grit exists borrows django each costs including go react itself wrong answer docs getting started philosophy"
+  },
+  {
+    "title": "Prerequisites",
+    "href": "/docs/getting-started/prerequisites",
+    "section": "Getting Started",
+    "keywords": "need before building grit go next js react docker playground experiment short primers each skip straight creating project docs getting started prerequisites"
+  },
+  {
+    "title": "Project Structure",
+    "href": "/docs/getting-started/project-structure",
+    "section": "Getting Started",
+    "keywords": "folders files directory layout monorepo apps tree organization understand grit structure api go web next js admin packages shared docs getting started project"
+  },
+  {
+    "title": "Quick Start",
+    "href": "/docs/getting-started/quick-start",
+    "section": "Getting Started",
+    "keywords": "setup first project tutorial begin hello new install run dev create grit minutes scaffold full stack app go api next js frontend admin panel docs getting started quick start"
+  },
+  {
+    "title": "Troubleshooting",
+    "href": "/docs/getting-started/troubleshooting",
+    "section": "Getting Started",
+    "keywords": "errors fix debug issues problems help broken stuck common solutions working grit projects including docker database build docs getting started troubleshooting"
+  },
+  {
+    "title": "Governance & risk",
+    "href": "/docs/governance",
+    "section": "Security & Testing",
+    "keywords": "who maintains grit happens if they stop reduce exposure written person signing off adoption docs governance risk"
+  },
+  {
+    "title": "Database",
+    "href": "/docs/infrastructure/database",
+    "section": "Infrastructure",
+    "keywords": "postgresql database connection pool config setup grit production sqlite development gorm studio visual browser configuration docs infrastructure"
+  },
+  {
+    "title": "Docker",
+    "href": "/docs/infrastructure/docker",
+    "section": "Infrastructure",
+    "keywords": "docker compose container postgresql redis minio setup grit mailhog production dockerfiles go api next js apps docs infrastructure"
+  },
+  {
+    "title": "Docker Cheatsheet",
+    "href": "/docs/infrastructure/docker-cheatsheet",
+    "section": "Infrastructure",
+    "keywords": "docker commands cheat sheet reference quick grit container management volumes networking troubleshooting docs infrastructure cheatsheet"
+  },
+  {
+    "title": "Learnings: Engineering Journal",
+    "href": "/docs/learnings",
+    "section": "Learnings",
+    "keywords": "learnings journal engineering challenges write-ups load testing security performance tuning grit framework experiments running log hands built top each entry walks through problem solution numbers was learned tests drills more docs"
+  },
+  {
+    "title": "Stateless Service + k6 Load Test: Recording p50 / p95 / p99",
+    "href": "/docs/learnings/stateless-service-load-test",
+    "section": "Learnings",
+    "keywords": "k6 load test stateless service health check api p50 p95 p99 latency percentile grafana autocannon throughput rps requests per second chart milestone benchmark performance smoke spike soak threshold vus virtual users iterations http duration ttfb tls connecting blocked sending waiting receiving scaffold go grit myapp endpoint capture commit run every command script metric explained scratch docs learnings recording"
+  },
+  {
+    "title": "Building & Publishing",
+    "href": "/docs/mobile/building",
+    "section": "Mobile (Expo)",
+    "keywords": "ship grit mobile apps eas build configure json ios android binaries submit app store google play push javascript only ota updates update docs building publishing"
+  },
+  {
+    "title": "Your First Mobile App",
+    "href": "/docs/mobile/first-app",
+    "section": "Mobile (Expo)",
+    "keywords": "step tutorial build notes app grit expo scaffold project generate resource migrate seed then run generated crud screens phone go docs mobile first"
+  },
+  {
+    "title": "Getting Started with Mobile",
+    "href": "/docs/mobile/getting-started",
+    "section": "Mobile (Expo)",
+    "keywords": "prerequisites scaffolding development workflow grit mobile apps expo covers project structure start device vs emulator api url matrix docs getting started"
+  },
+  {
+    "title": "Offline & Caching",
+    "href": "/docs/mobile/offline",
+    "section": "Mobile (Expo)",
+    "keywords": "grit mobile apps behave offline react query memory caching securestore token persistence fast fail networking refresh layer true first support docs"
+  },
+  {
+    "title": "Mobile Resource Generation",
+    "href": "/docs/mobile/resource-generation",
+    "section": "Mobile (Expo)",
+    "keywords": "deep dive six expo files grit generate resource emits typed react query hook list detail create edit screens shared form belongs renders picker file fields native uploads docs mobile generation"
+  },
+  {
+    "title": "Plugins",
+    "href": "/docs/plugins",
+    "section": "Plugins",
+    "keywords": "plugins extensions websockets stripe oauth grit-websockets grit-stripe grit-oauth packages grit drop go payments notifications search video processing conferencing webhooks i18n data export docs"
+  },
+  {
+    "title": "Writing a plugin",
+    "href": "/docs/plugins/authoring",
+    "section": "Plugins",
+    "keywords": "plugin authoring write build create custom injection marker lockfile files context docs plugins writing"
+  },
+  {
+    "title": "Command palette plugin",
+    "href": "/docs/plugins/command-palette",
+    "section": "Plugins",
+    "keywords": "plugin command palette cmdk ctrl-k cmd-k keyboard navigation search jump quick actions spotlight docs plugins"
+  },
+  {
+    "title": "Device Pairing",
+    "href": "/docs/plugins/device-pairing",
+    "section": "Plugins",
+    "keywords": "docs plugins device pairing"
+  },
+  {
+    "title": "Impersonate plugin",
+    "href": "/docs/plugins/impersonate",
+    "section": "Plugins",
+    "keywords": "plugin impersonate impersonation admin login as user sign in support debug audit trail return to yourself session swap docs plugins"
+  },
+  {
+    "title": "Multi-tenancy plugin",
+    "href": "/docs/plugins/multitenant",
+    "section": "Plugins",
+    "keywords": "plugin multitenant multi-tenancy organizations org tenant scoping gorm callback per-org roles saas docs plugins multi tenancy"
+  },
+  {
+    "title": "What are plugins",
+    "href": "/docs/plugins/overview",
+    "section": "Plugins",
+    "keywords": "plugin plugins overview extend extension codegen code generation lockfile reversible install remove grit add docs"
+  },
+  {
+    "title": "Push",
+    "href": "/docs/plugins/push",
+    "section": "Plugins",
+    "keywords": "docs plugins push"
+  },
+  {
+    "title": "Saved views plugin",
+    "href": "/docs/plugins/saved-views",
+    "section": "Plugins",
+    "keywords": "plugin saved views table filters sort columns advanced tables named view per-user query string docs plugins"
+  },
+  {
+    "title": "Stripe",
+    "href": "/docs/plugins/stripe",
+    "section": "Plugins",
+    "keywords": "docs plugins stripe"
+  },
+  {
+    "title": "Video",
+    "href": "/docs/plugins/video",
+    "section": "Plugins",
+    "keywords": "docs plugins video"
+  },
+  {
+    "title": "Docker for Grit Developers",
+    "href": "/docs/prerequisites/docker",
+    "section": "Getting Started",
+    "keywords": "learn docker fundamentals running grit infrastructure containers images compose postgresql redis minio docs prerequisites developers"
+  },
+  {
+    "title": "Go for Grit Developers",
+    "href": "/docs/prerequisites/golang",
+    "section": "Getting Started",
+    "keywords": "learn go fundamentals building grit backends variables structs functions error handling interfaces pointers goroutines gin routing gorm middleware jwt authentication docs prerequisites golang developers"
+  },
+  {
+    "title": "Next.js for Grit Developers",
+    "href": "/docs/prerequisites/nextjs",
+    "section": "Getting Started",
+    "keywords": "learn next js fundamentals building grit frontends app router server client components data fetching routing react query docs prerequisites nextjs developers"
+  },
+  {
+    "title": "Scaling a Grit app, one break at a time",
+    "href": "/docs/scaling",
+    "section": "Scaling",
+    "keywords": "ten stages one server sharding grit app actually starts config env database module uploads object storage health endpoint sessions rows cron elected instance graceful shutdown pgbouncer asynq workers transactional outbox all ship first commit done before have user scale measures running deployment request percentiles connection against ceiling slowest queries cache hit rate names thing do next usually nothing read replicas"
+  },
+  {
+    "title": "Security Guide: OWASP Top 10:2025 defences",
+    "href": "/docs/security",
+    "section": "Security & Testing",
+    "keywords": "security owasp top 10 2025 idor sqli xss csrf ssrf broken access control authentication authorization injection cryptography secrets headers csp hsts dependabot supply chain audit log hardening checklist sentinel waf rate limiting grit defends every category default via authz mustown safefetch package parameterised gorm queries react escaping auth flaws jwt algorithm pinning totp misconfiguration securityheaders middleware govulncheck tamper evident logging docs guide defences"
+  },
+  {
+    "title": "The audit log: a record you can prove was not edited",
+    "href": "/docs/security/audit-log",
+    "section": "Security & Testing",
+    "keywords": "every authenticated write grit api accepts recorded each entry hashed together one before hash sha 256 prev canonical row editing deleting inserting forged history breaks point forward verify chain names first disagrees bodies stored digest rather than verbatim so log proves payload was sent becoming most sensitive table database reads opt per resource audit recording records were returned many weekly"
+  },
+  {
+    "title": "Authorization",
+    "href": "/docs/security/authorization",
+    "section": "Security & Testing",
+    "keywords": "docs security authorization"
+  },
+  {
+    "title": "Privacy & Compliance: GDPR Toolkit + Access Reviews",
+    "href": "/docs/security/compliance",
+    "section": "Security & Testing",
+    "keywords": "two admin only compliance surfaces every grit app ships exactly each gets populated gdpr toolkit exports user full data bundle erases hard deleting child pii anonymizing row erasure written tamper evident hash chained deletion journal access reviews snapshot current role assignment point time recertification campaign works item keep revoke deletes real grant then signs off nothing scheduled seeded both demand"
+  },
+  {
+    "title": "Defender's Handbook ↔ Grit: Attack-by-Attack Defence Map",
+    "href": "/docs/security/defenders-handbook",
+    "section": "Security & Testing",
+    "keywords": "walks jb defender handbook chapter nmap recon gobuster brute force hydra login spray sql injection union blind time based hash cracking totp seed theft sim swap aitm phishing proxies mitm ssl strip evil twin wi fi ddos shows exactly grit defends each one default file paths code plus bonus list defences ships beyond ssrf safefetch idor authz mustown csrf middleware"
+  },
+  {
+    "title": "Project audit: grit doctor",
+    "href": "/docs/security/doctor",
+    "section": "Security & Testing",
+    "keywords": "grit doctor audits project mistakes fail silently encrypted field no encryption key resource nothing scopes owner method lost scoping accepted request body table shared across organizations multitenant plugin pii plain column append only still mounting writes gorm studio login default password dashboard credentials weak jwt secret framework libraries behind their security floors sentinel counting rate limits per process public allowlist"
+  },
+  {
+    "title": "Enterprise SSO: OpenID Connect Single Sign-On",
+    "href": "/docs/security/sso",
+    "section": "Security & Testing",
+    "keywords": "let each customer team sign their own identity provider one oidc connection per organisation routed email domain configured runtime admin works okta entra id auth0 keycloak google workspace ping onelogin users provisioned first login roles derived idp groups re applied every identities linked immutable subject rather than client secrets encrypted rest never returned api docs security sso enterprise openid connect"
+  },
+  {
+    "title": "Stability and hardening matrix",
+    "href": "/docs/stability",
+    "section": "Security & Testing",
+    "keywords": "honest status per subsystem stable beta grit guarantees test proves stays responsibility went wrong once covers auth two factor passkeys rbac generated crud owned resources optimistic locking encryption rest multitenancy money import export trees public api append only realtime durable events backups offline sync workflows feature flags desktop mobile plus tested 492 cli tests 256 shipped each project 57 live"
+  },
+  {
+    "title": "Stack Selector: Pick the Right Grit Combo",
+    "href": "/docs/stack-selector",
+    "section": "Getting Started",
+    "keywords": "choose stack combo architecture which what should I pick build single double triple api mobile desktop offline web portal saas internal tool dashboard kitchen sink multi-platform decision tree recommendation capability matrix vite next nextjs tanstack eleven grit combos cases exact commands trade offs helps humans ai assistants right scaffold they docs selector"
+  },
+  {
+    "title": "Start here",
+    "href": "/docs/start",
+    "section": "Getting Started",
+    "keywords": "ordered path nothing deployed create project generate resource model relationships secure ship about ninety minutes docs start here"
+  },
+  {
+    "title": "Systems: How Grit Is Built",
+    "href": "/docs/systems",
+    "section": "Systems (Design)",
+    "keywords": "system design pages every subsystem grit problem statement functional non requirements capacity estimation high low level data model api surface scaling bottlenecks one page per docs systems built"
+  },
+  {
+    "title": "Tech Kits: Starter Kits",
+    "href": "/docs/tech-kits",
+    "section": "Tech Kits",
+    "keywords": "tech kits starter pack scaffold templates single double triple api mobile desktop wails expo nextjs vite tanstack architecture modes pick kit matches shape next app go binary web monorepo admin only each ships authentication audit log security observability dashboards same code generator docs"
+  },
+  {
+    "title": "API Tech Kit: Go backend only",
+    "href": "/docs/tech-kits/api",
+    "section": "Tech Kits",
+    "keywords": "api only headless go gin gorm openapi swagger scalar pure backend no frontend bring own auto served docs jwt oauth 2fa jobs ai audit log same batteries full kits tech kit"
+  },
+  {
+    "title": "Desktop Tech Kit: Wails + GORM",
+    "href": "/docs/tech-kits/desktop",
+    "section": "Tech Kits",
+    "keywords": "desktop wails offline-first sqlite local auth bcrypt pdf excel export frameless window draggable native binary v2 react tailwind front go gorm postgres back panels docs tech kits kit"
+  },
+  {
+    "title": "Double Tech Kit: Web + API monorepo",
+    "href": "/docs/tech-kits/double",
+    "section": "Tech Kits",
+    "keywords": "double monorepo turborepo apps web api nextjs go shared zod schemas types two deploy separate next js ts packages each app own schedule docs tech kits kit"
+  },
+  {
+    "title": "Mobile Tech Kit: Expo + API",
+    "href": "/docs/tech-kits/mobile",
+    "section": "Tech Kits",
+    "keywords": "mobile expo react native eas build ota updates push notifications shared types ios android frontend grit api zod schemas friendly auth refresh tokens asyncstorage configuration ready docs tech kits kit"
+  },
+  {
+    "title": "Single Tech Kit: Go + embedded SPA",
+    "href": "/docs/tech-kits/single",
+    "section": "Tech Kits",
+    "keywords": "single binary embedded spa nextjs go embed file deploy fastest small monolith react next js via smallest possible jwt auth oauth 2fa pulse sentinel code generator all one docs tech kits kit"
+  },
+  {
+    "title": "Single + Vite Tech Kit: TanStack Router SPA",
+    "href": "/docs/tech-kits/single-vite",
+    "section": "Tech Kits",
+    "keywords": "single vite tanstack router spa fast cold start refresh on 401 auth same binary shape but instead next js sub second starts smaller bundle lib ts baked docs tech kits kit"
+  },
+  {
+    "title": "Triple Tech Kit: Web + Admin + API",
+    "href": "/docs/tech-kits/triple",
+    "section": "Tech Kits",
+    "keywords": "triple monorepo web admin api filament-style panel rbac roles invitation flow audit log saas full shape public marketing site filament style go one app security observability dashboards pre wired docs tech kits kit"
+  },
+  {
+    "title": "Performance & Security Testing",
+    "href": "/docs/testing",
+    "section": "Security & Testing",
+    "keywords": "testing k6 load test smoke average stress spike soak breakpoint pentest penetration methodology burp ffuf nmap sqlmap nuclei cvss audit report vulnerability scan govulncheck pnpm codeql ptes owasp wstg run tests driven against grit app includes phase attack catalogue scoring structure justifies 2k 10k engagement docs performance security"
+  },
+  {
+    "title": "Tutorials",
+    "href": "/docs/tutorials",
+    "section": "Tutorials",
+    "keywords": "learn grit through guided courses follow multi lesson track web desktop mobile pick focused 30 minute tutorial specific topic auth realtime payments offline first more docs tutorials"
+  },
+  {
+    "title": "Build a Blog Tutorial",
+    "href": "/docs/tutorials/blog",
+    "section": "Tutorials",
+    "keywords": "tutorial blog post article example walkthrough step build full stack grit including go api next js pages admin panel seo friendly urls docs tutorials"
+  },
+  {
+    "title": "Your First App",
+    "href": "/docs/tutorials/contact-app",
+    "section": "Tutorials",
+    "keywords": "step tutorial build contact manager grit create group resources explore admin panel gorm studio api docs tutorials app first"
+  },
+  {
+    "title": "Contacts: API only",
+    "href": "/docs/tutorials/contacts/api",
+    "section": "Tutorials",
+    "keywords": "build contacts api alone go auth migrations generated reference docs no frontend all tutorials only"
+  },
+  {
+    "title": "Contacts: desktop app",
+    "href": "/docs/tutorials/contacts/desktop",
+    "section": "Tutorials",
+    "keywords": "build contacts app wails desktop client beside web apps ship installable binary docs tutorials"
+  },
+  {
+    "title": "Contacts: everything",
+    "href": "/docs/tutorials/contacts/full",
+    "section": "Tutorials",
+    "keywords": "build contacts app every client grit scaffolds web admin desktop mobile docs against one api tutorials full everything"
+  },
+  {
+    "title": "Contacts: mobile app",
+    "href": "/docs/tutorials/contacts/mobile",
+    "section": "Tutorials",
+    "keywords": "build contacts app expo client sharing api types grit stores docs tutorials mobile"
+  },
+  {
+    "title": "Contacts: one binary",
+    "href": "/docs/tutorials/contacts/single",
+    "section": "Tutorials",
+    "keywords": "build contacts app single executable frontend embedded deploy copying one file docs tutorials binary"
+  },
+  {
+    "title": "Contacts: web app",
+    "href": "/docs/tutorials/contacts/web",
+    "section": "Tutorials",
+    "keywords": "build contacts app next js site admin panel go api grit deployed server docs tutorials web"
+  },
+  {
+    "title": "Custom API Endpoints",
+    "href": "/docs/tutorials/custom-endpoints",
+    "section": "Tutorials",
+    "keywords": "build shop three resources see every endpoint grit generates free then write own public protected endpoints handlers services explained scratch gorm cheat sheet seeding adding fields relationships consuming all next js tanstack start docs tutorials custom api"
+  },
+  {
+    "title": "Build an E-Commerce App",
+    "href": "/docs/tutorials/ecommerce",
+    "section": "Tutorials",
+    "keywords": "tutorial ecommerce store products orders cart build full stack commerce application grit including categories admin management docs tutorials app"
+  },
+  {
+    "title": "Learn Grit Step by Step",
+    "href": "/docs/tutorials/learn",
+    "section": "Tutorials",
+    "keywords": "tutorial beginner learn first getting started task manager step by curriculum grit scratch building complete full stack application go api react frontend docs tutorials"
+  },
+  {
+    "title": "Build a Product Catalog",
+    "href": "/docs/tutorials/product-catalog",
+    "section": "Tutorials",
+    "keywords": "tutorial build product catalog grit code generation multi step forms standalone datatable formbuilder docs tutorials"
+  },
+  {
+    "title": "Build a SaaS App",
+    "href": "/docs/tutorials/saas",
+    "section": "Tutorials",
+    "keywords": "tutorial saas subscription billing example build multi tenant application grit including authentication teams admin dashboard docs tutorials app"
+  },
+  {
+    "title": "Upgrading a project",
+    "href": "/docs/upgrades",
+    "section": "Upgrades",
+    "keywords": "grit upgrade brings existing project up current templates overwriting edits manifest knows files still docs upgrades upgrading"
+  },
+  {
+    "title": "Versioning & breaking changes",
+    "href": "/docs/versioning",
+    "section": "Upgrades",
+    "keywords": "grit version numbers mean change minor upgrading cli cannot break running application docs versioning breaking changes"
+  },
+  {
+    "title": "Multitenancy",
+    "href": "/docs/systems/multitenancy",
+    "section": "Systems (Design)",
+    "keywords": "one deployment serving many organisations missing predicate data breach rather than bug docs systems multitenancy"
+  },
+  {
+    "title": "Rate Limiting and Abuse Control",
+    "href": "/docs/systems/rate-limiting",
+    "section": "Systems (Design)",
+    "keywords": "keeping one caller consuming capacity all them making password guessing attack cost something docs systems rate limiting abuse control"
+  },
+  {
+    "title": "Authorization",
+    "href": "/docs/systems/authorization",
+    "section": "Systems (Design)",
+    "keywords": "deciding known caller may do way fails closed listed route docs systems authorization"
+  },
+  {
+    "title": "Data Isolation",
+    "href": "/docs/systems/data-isolation",
+    "section": "Systems (Design)",
+    "keywords": "making invoices mean yours query rather than handler so forgotten check not breach docs systems data isolation"
+  },
+  {
+    "title": "Schema Migrations",
+    "href": "/docs/systems/schema-migrations",
+    "section": "Systems (Design)",
+    "keywords": "changing shape live database being able undo run framework has no migration files docs systems schema migrations"
+  },
+  {
+    "title": "Pagination and Search",
+    "href": "/docs/systems/pagination-and-search",
+    "section": "Systems (Design)",
+    "keywords": "returning slice large table total sort filter search box query getting slower grows docs systems pagination"
+  },
+  {
+    "title": "Field Encryption at Rest",
+    "href": "/docs/systems/encryption-at-rest",
+    "section": "Systems (Design)",
+    "keywords": "making column unreadable key while handler model carry treating string docs systems encryption rest field"
+  },
+  {
+    "title": "Caching",
+    "href": "/docs/systems/caching",
+    "section": "Systems (Design)",
+    "keywords": "serving repeated answer asking again while keeping cache failure slowdown rather than outage docs systems caching"
+  },
+  {
+    "title": "Concurrency Control",
+    "href": "/docs/systems/concurrency-control",
+    "section": "Systems (Design)",
+    "keywords": "two people editing same record second one finding out rather than silently winning docs systems concurrency control"
+  },
+  {
+    "title": "Realtime Updates",
+    "href": "/docs/systems/realtime-updates",
+    "section": "Systems (Design)",
+    "keywords": "pushing change browsers care about across replicas fallback proxies eat websockets docs systems realtime updates"
+  },
+  {
+    "title": "Webhooks",
+    "href": "/docs/systems/webhooks",
+    "section": "Systems (Design)",
+    "keywords": "receiving call someone else system believing making one theirs survives their outage docs systems webhooks"
+  },
+  {
+    "title": "Transactional Email",
+    "href": "/docs/systems/transactional-email",
+    "section": "Systems (Design)",
+    "keywords": "getting password reset inbox through whichever provider configured request waiting docs systems transactional email"
+  },
+  {
+    "title": "Background Jobs",
+    "href": "/docs/systems/background-jobs",
+    "section": "Systems (Design)",
+    "keywords": "getting slow work out request path having survive retry duplicate deploy docs systems background jobs"
+  },
+  {
+    "title": "Scheduled Tasks",
+    "href": "/docs/systems/scheduled-tasks",
+    "section": "Systems (Design)",
+    "keywords": "running something every night exactly once across however many replicas happen up docs systems scheduled tasks"
+  },
+  {
+    "title": "Transactional Outbox",
+    "href": "/docs/systems/transactional-outbox",
+    "section": "Systems (Design)",
+    "keywords": "saving row telling world about one atomic act database message broker cannot share transaction docs systems transactional outbox"
+  },
+  {
+    "title": "GORM Studio",
+    "href": "/docs/systems/gorm-studio",
+    "section": "Systems (Design)",
+    "keywords": "database browser ships inside binary reads schema both models cannot talked dropping table docs systems gorm studio"
+  },
+  {
+    "title": "Pulse",
+    "href": "/docs/systems/pulse",
+    "section": "Systems (Design)",
+    "keywords": "request tracing query profiling runtime metrics alerting run inside process no collector redis second deployment docs systems pulse"
+  },
+  {
+    "title": "Sentinel",
+    "href": "/docs/systems/sentinel",
+    "section": "Systems (Design)",
+    "keywords": "web application firewall threat intelligence audit layer mounts one call accuracy numbers say often wrong docs systems sentinel"
+  },
+  {
+    "title": "Session Management",
+    "href": "/docs/systems/session-management",
+    "section": "Systems (Design)",
+    "keywords": "turning stateless token something revoke list device expire two different ways docs systems session management"
+  },
+  {
+    "title": "Multi-Factor Authentication",
+    "href": "/docs/systems/multi-factor-auth",
+    "section": "Systems (Design)",
+    "keywords": "second factor survives leaked password locking out user who loses their phone docs systems multi auth authentication"
+  },
+  {
+    "title": "Passkeys",
+    "href": "/docs/systems/passkeys",
+    "section": "Systems (Design)",
+    "keywords": "credential cannot phished reused across sites leaves nothing worth stealing database docs systems passkeys"
+  },
+  {
+    "title": "Authentication",
+    "href": "/docs/systems/authentication",
+    "section": "Systems (Design)",
+    "keywords": "proving who caller every request asking them password more than once docs systems authentication"
+  },
+  {
+    "title": "Observability",
+    "href": "/docs/systems/observability",
+    "section": "Systems (Design)",
+    "keywords": "being able answer happened time went whether thing actually working outside process docs systems observability"
+  },
+  {
+    "title": "Audit Logging",
+    "href": "/docs/systems/audit-logging",
+    "section": "Systems (Design)",
+    "keywords": "recording who did form shown afterwards not have been edited docs systems audit logging"
+  },
+  {
+    "title": "File Storage",
+    "href": "/docs/systems/file-storage",
+    "section": "Systems (Design)",
+    "keywords": "accepting upload keeping somewhere survives redeploy serving back people allowed see docs systems file storage"
+  },
+  {
+    "title": "Import and Export",
+    "href": "/docs/systems/import-and-export",
+    "section": "Systems (Design)",
+    "keywords": "taking spreadsheet somebody has turning rows giving them file back either one application down docs systems import export"
+  },
+  {
+    "title": "Code Generation",
+    "href": "/docs/systems/code-generation",
+    "section": "Systems (Design)",
+    "keywords": "turning one field list model service handler routes schema types hooks admin page being able take all back out docs systems code generation"
+  },
+  {
+    "title": "API Contract",
+    "href": "/docs/systems/api-contract",
+    "section": "Systems (Design)",
+    "keywords": "one response envelope table error codes reason client written against endpoint works all them docs systems api contract"
+  },
+  {
+    "title": "Feature Flags",
+    "href": "/docs/systems/feature-flags",
+    "section": "Systems (Design)",
+    "keywords": "turning feature ten per cent users deploy having same user stay group docs systems flags"
+  },
+  {
+    "title": "Fly.io",
+    "href": "/docs/deployment/fly-io",
+    "section": "Deployment",
+    "keywords": "runs docker image close users real disk if need one docs deployment fly io"
+  },
+  {
+    "title": "Render",
+    "href": "/docs/deployment/render",
+    "section": "Deployment",
+    "keywords": "managed postgres real backups free tier demo docs deployment render"
+  },
+  {
+    "title": "Orbita",
+    "href": "/docs/deployment/orbita",
+    "section": "Deployment",
+    "keywords": "self hosted paas already knows grit app reads json derives rest docs deployment orbita"
+  },
+  {
+    "title": "Dokploy",
+    "href": "/docs/deployment/dokploy",
+    "section": "Deployment",
+    "keywords": "heroku like panel own server grit sites run docs deployment dokploy"
+  },
+  {
+    "title": "Coolify",
+    "href": "/docs/deployment/coolify",
+    "section": "Deployment",
+    "keywords": "open source self hosted paas similar shape dokploy larger ecosystem docs deployment coolify"
+  },
+  {
+    "title": "AWS EC2",
+    "href": "/docs/deployment/aws-ec2",
+    "section": "Deployment",
+    "keywords": "bare linux box plus application load balancer doing tls host based routing docs deployment aws ec2"
+  },
+  {
+    "title": "AWS Lightsail",
+    "href": "/docs/deployment/aws-lightsail",
+    "section": "Deployment",
+    "keywords": "aws flat monthly price static ip snapshots fronted caddy automatic https docs deployment lightsail"
+  },
+  {
+    "title": "Bun",
+    "href": "/docs/benchmarks/bun",
+    "section": "Benchmarks",
+    "keywords": "bun serve reuseport workers drizzle native sql client docs benchmarks"
+  },
+  {
+    "title": "Encore.ts",
+    "href": "/docs/benchmarks/encore",
+    "section": "Benchmarks",
+    "keywords": "rust http runtime compiled encore own cli drizzle sqldatabase docs benchmarks ts"
+  },
+  {
+    "title": "Express",
+    "href": "/docs/benchmarks/express",
+    "section": "Benchmarks",
+    "keywords": "express node 22 one cluster worker per cpu prisma orm docs benchmarks"
+  },
+  {
+    "title": "Next.js",
+    "href": "/docs/benchmarks/nextjs",
+    "section": "Benchmarks",
+    "keywords": "app router route handlers standalone production build prisma postgres docs benchmarks nextjs next js"
+  },
+  {
+    "title": "Django",
+    "href": "/docs/benchmarks/django",
+    "section": "Benchmarks",
+    "keywords": "gunicorn gevent workers drf shaped views django orm connection pooling docs benchmarks"
+  },
+  {
+    "title": "Laravel",
+    "href": "/docs/benchmarks/laravel",
+    "section": "Benchmarks",
+    "keywords": "nginx php fpm opcache tracing jit production only vendor eloquent docs benchmarks laravel"
+  },
+  {
+    "title": "Grid Data Entry (Bulk Create)",
+    "href": "/docs/admin/datatable#grid-data-entry",
+    "section": "Admin Panel",
+    "keywords": "bulk create bulk edit grid spreadsheet excel many rows at once paste fill down tab data entry"
+  },
+  {
+    "title": "Stats and Insights",
+    "href": "/docs/admin/datatable#stats-and-insights",
+    "section": "Admin Panel",
+    "keywords": "stat cards charts insights breakdown series count by status active graph collapsed panel analytics"
+  }
+]
