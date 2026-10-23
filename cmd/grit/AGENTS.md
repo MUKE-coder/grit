@@ -79,6 +79,12 @@ In order, every time:
    the index and `var version` disagree, so a forgotten rebuild is caught
    rather than shipped, but it is caught *after* you have bumped the version
    and that is a worse place to find out.
+   There are **two** generated indexes and this is only one of them. If the
+   release adds or renames a docs page, also run
+   `python docs/scripts/search-index.py`, which rebuilds the index the website's
+   search box reads. That one is keyed by the pages on disk rather than by the
+   version, so the Docs workflow catches it on any push; this one is keyed by
+   the version, so only a release can catch it.
 5. `cd docs && npx next build`.
 6. Stage **explicitly**, including new files, and verify with
    `git diff --cached --stat` before committing. A ` M` in `git status` means
