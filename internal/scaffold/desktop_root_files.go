@@ -52,7 +52,7 @@ require (
 	gorm.io/gorm v1.31.1
 	github.com/glebarez/sqlite v1.11.0
 	gorm.io/driver/postgres v1.6.0
-	golang.org/x/crypto v0.31.0
+	golang.org/x/crypto v0.57.0
 	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/xuri/excelize/v2 v2.11.1-0.20260930021559-01a9ff32fb3c
 	github.com/joho/godotenv v1.5.1

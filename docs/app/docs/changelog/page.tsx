@@ -66,6 +66,40 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.408.2 */}
+            <div className="mb-12" id="v3.408.2">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.408.2
+                </span>
+                <span className="text-sm text-muted-foreground">October 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The desktop app was also 26 versions behind on x/crypto</h3>
+                <p>
+                  v3.408.1 fixed one drifted pin in the desktop scaffold and added a test for
+                  that one package. The test was too narrow, and it missed the other one:{' '}
+                  <code>golang.org/x/crypto</code>, scaffolded at <code>v0.31.0</code> against a{' '}
+                  <code>grit upgrade</code> floor of <code>v0.57.0</code> that exists because
+                  govulncheck flags anything older.
+                </p>
+                <p>
+                  The pin is fixed, and the test is now the general rule rather than one
+                  package: every dependency that both the API and the desktop go.mod declare
+                  must carry the same version, and every library with an upgrade floor must be
+                  scaffolded at exactly that floor. Both assertions fail on both of the real
+                  drifts, which is how they were checked.
+                </p>
+                <p>
+                  Neither drift was ever going to fail anything. The generated-app scan builds
+                  an API project and never builds a desktop one, so a desktop-only
+                  vulnerability is invisible to it, and a green scan was evidence about the
+                  thing being scanned rather than about the framework.
+                </p>
+              </div>
+            </div>
+
             {/* v3.408.1 */}
             <div className="mb-12" id="v3.408.1">
               <div className="flex items-center gap-3 mb-4">
