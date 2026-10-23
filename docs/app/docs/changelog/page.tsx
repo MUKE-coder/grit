@@ -66,6 +66,48 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.410.1 */}
+            <div className="mb-12" id="v3.410.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.410.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The saga page answers the question people arrive with</h3>
+                <p>
+                  Anyone reading about sagas has usually just read about Temporal, and the first
+                  thing they want to know is whether this is that. The page did not say.
+                </p>
+                <p>
+                  It does now, with the honest answer: the same pattern, the same flavour of it
+                  (orchestrated, one coordinator calling each step, compensations in reverse), and
+                  a different thing to operate. Temporal keeps progress as an event history in a
+                  cluster and rebuilds workflow state by replaying your code, which is why that
+                  code may not call <code>time.Now()</code> or <code>rand</code>. Grit keeps
+                  progress in two rows and replays nothing: it reads which step is next and calls
+                  it, so a step is ordinary Go and the only rule is that running it twice is safe.
+                  Durable timers, signals and child workflows are Temporal&apos;s, and a cluster is
+                  a lot of infrastructure for one application whose checkout touches four APIs.
+                </p>
+                <p>
+                  Also added: a whole four-step saga written out with its compensations, and the
+                  three design points underneath it that the short example could not carry. Why
+                  the receipt goes last (a step with no undo makes every step after it a trap),
+                  why every <code>Undo</code> checks before it acts (compensation runs precisely
+                  when you do not know whether the thing happened), and why state goes through{' '}
+                  <code>r.Set</code> rather than a closure (the process that charged the card is
+                  usually gone by the time the refund runs).
+                </p>
+                <p>
+                  Plus what the runner actually does, the retry defaults, every command, and the
+                  four admin endpoints for watching a run and pushing a stuck one on.
+                </p>
+              </div>
+            </div>
+
             {/* v3.410.0 */}
             <div className="mb-12" id="v3.410.0">
               <div className="flex items-center gap-3 mb-4">

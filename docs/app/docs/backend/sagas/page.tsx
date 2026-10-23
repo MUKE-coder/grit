@@ -184,6 +184,284 @@ export default function SagasPage() {
                 <code>saga_runs</code>, which means nobody finds one until a customer complains.
               </p>
 
+              <h2 id="worked-example">A whole saga, end to end</h2>
+              <p>
+                Checkout: take the money, hold the stock, book the courier, email the receipt.
+                Four systems, none of which rolls back because another one failed. The order
+                matters and is explained under it.
+              </p>
+
+              <CodeBlock
+                language="go"
+                filename="internal/sagas/checkout.go"
+                code={`package sagas
+
+import (
+    "context"
+
+    "myapp/apps/api/internal/saga"
+)
+
+type CheckoutInput struct {
+    OrderID string \`json:"order_id"\`
+    Email   string \`json:"email"\`
+}
+
+func Checkout() saga.Definition {
+    return saga.Definition{
+        Name: "checkout",
+        Steps: []saga.Step{
+            {
+                Name: "charge",
+                Do: func(ctx context.Context, r *saga.Run) error {
+                    var in CheckoutInput
+                    if err := r.Input(&in); err != nil {
+                        return err
+                    }
+                    // IdempotencyKey is stable for this run and this step, so a
+                    // replay after a crash reaches the same charge rather than a
+                    // second one.
+                    charge, err := payments.Charge(ctx, in.OrderID,
+                        payments.Idempotency(r.IdempotencyKey()))
+                    if err != nil {
+                        if payments.Declined(err) {
+                            // Retrying a declined card spends five attempts to
+                            // arrive at the same answer.
+                            return saga.Fatal(err)
+                        }
+                        return err
+                    }
+                    r.Set("charge_id", charge.ID)
+                    return nil
+                },
+                Undo: func(ctx context.Context, r *saga.Run) error {
+                    id := r.GetString("charge_id")
+                    if id == "" {
+                        // The Do never got far enough to charge anything.
+                        return nil
+                    }
+                    return payments.Refund(ctx, id)
+                },
+            },
+            {
+                Name: "reserve_stock",
+                Do: func(ctx context.Context, r *saga.Run) error {
+                    var in CheckoutInput
+                    if err := r.Input(&in); err != nil {
+                        return err
+                    }
+                    ref, err := inventory.Reserve(ctx, in.OrderID)
+                    if err != nil {
+                        return err
+                    }
+                    r.Set("reservation", ref)
+                    return nil
+                },
+                Undo: func(ctx context.Context, r *saga.Run) error {
+                    ref := r.GetString("reservation")
+                    if ref == "" {
+                        return nil
+                    }
+                    return inventory.Release(ctx, ref)
+                },
+            },
+            {
+                Name:        "book_courier",
+                MaxAttempts: 8, // their API is flaky in a way ours is not
+                Do: func(ctx context.Context, r *saga.Run) error {
+                    var in CheckoutInput
+                    if err := r.Input(&in); err != nil {
+                        return err
+                    }
+                    booking, err := courier.Book(ctx, in.OrderID)
+                    if err != nil {
+                        return err
+                    }
+                    r.Set("booking", booking.Reference)
+                    return nil
+                },
+                Undo: func(ctx context.Context, r *saga.Run) error {
+                    ref := r.GetString("booking")
+                    if ref == "" {
+                        return nil
+                    }
+                    return courier.Cancel(ctx, ref)
+                },
+            },
+            {
+                Name: "send_receipt",
+                // No Undo: an email cannot be unsent. That is why it is last.
+                Do: func(ctx context.Context, r *saga.Run) error {
+                    var in CheckoutInput
+                    if err := r.Input(&in); err != nil {
+                        return err
+                    }
+                    return mail.Receipt(ctx, in.Email, r.GetString("charge_id"))
+                },
+            },
+        },
+    }
+}`}
+              />
+
+              <p>
+                <strong>Why the receipt is last.</strong> A step with no{' '}
+                <code>Undo</code> is allowed, and the ordering is the design. Put the receipt
+                second and a courier failure compensates the charge and the stock, and leaves a
+                customer holding an email for an order that no longer exists. The rule is: the
+                things you cannot take back go after the things you can.
+              </p>
+
+              <p>
+                <strong>Why every Undo checks first.</strong> Compensation exists because
+                something went wrong, and &quot;went wrong&quot; includes &quot;I do not know
+                whether the charge landed&quot;. Each <code>Undo</code> above reads what the{' '}
+                <code>Do</code> recorded and returns cleanly when it finds nothing, because it
+                will be called for steps that never finished.
+              </p>
+
+              <p>
+                <strong>Why state goes through <code>r.Set</code>.</strong> By the time a
+                compensation runs, the process that charged the card is usually gone. The run&apos;s
+                state is a column, so <code>r.Get</code> is the only thing an <code>Undo</code>{' '}
+                has. A closure variable would be a different process&apos;s memory.
+              </p>
+
+              <h2 id="mechanics">What the runner actually does</h2>
+              <p>
+                A background runner ticks every five seconds, claims the runs that are due, and
+                advances each by one step. The claim is a row update, so with four replicas
+                exactly one of them is advancing a given run: a step is never racing another copy
+                of itself. The runner does not start at all when no saga is registered, rather
+                than polling an empty table for the life of the process.
+              </p>
+              <p>
+                A failing step is retried with exponential backoff, five attempts by default,
+                starting at five seconds and doubling to a fifteen-minute ceiling, with jitter so
+                a thousand runs waiting on one outage do not retry in the same millisecond. Those
+                are defaults on the definition; a step can override{' '}
+                <code>MaxAttempts</code> for itself, and <code>1</code> means do not retry.
+              </p>
+              <p>
+                Past its attempts the run turns to compensating and the completed steps are undone
+                newest first. If a compensation itself fails past its attempts the run goes{' '}
+                <strong>stuck</strong>, which is the status that needs a person. A compensation is
+                never skipped on the way past, because skipping one is how money goes missing.
+              </p>
+
+              <h2 id="temporal">Is this Temporal?</h2>
+              <p>
+                No, and the difference is worth being precise about, because the word
+                &quot;saga&quot; names a <em>pattern</em> and Temporal is a <em>product</em>.
+              </p>
+              <p>
+                Both implement the same pattern, and the same flavour of it:{' '}
+                <strong>orchestrated</strong>, where one coordinator calls each step in turn and
+                decides when to compensate. The alternative is choreography, where services react
+                to each other&apos;s events and no single component knows the whole sequence.
+                Grit&apos;s engine and Temporal are both the first kind, so the shape of the code
+                is recognisably similar: steps, compensations registered as you go, compensations
+                run in reverse.
+              </p>
+              <p>
+                What differs is where the durability lives, and what you have to run.
+              </p>
+
+              <div className="overflow-x-auto my-6">
+                <table className="w-full text-sm table-fixed">
+                  <colgroup>
+                    <col className="w-[22%]" />
+                    <col className="w-[39%]" />
+                    <col className="w-[39%]" />
+                  </colgroup>
+                  <thead>
+                    <tr className="border-b border-border/40 text-left">
+                      <th className="px-3 py-2 font-medium" />
+                      <th className="px-3 py-2 font-medium text-primary">internal/saga</th>
+                      <th className="px-3 py-2 font-medium text-primary">Temporal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ['To run it', 'Nothing. Two tables in the database you already have.', 'A Temporal cluster, plus worker processes polling a task queue.'],
+                      ['Where progress lives', 'A saga_runs row and a saga_steps row per step.', 'An event history in the cluster, replayed to rebuild workflow state.'],
+                      ['How code resumes', 'The next step is read from the row and called.', 'The whole workflow function is replayed from its history.'],
+                      ['Constraints on your code', 'A step must be idempotent. Nothing else.', 'Workflow code must be deterministic: no time.Now, no rand, no direct I/O.'],
+                      ['Waiting and timers', 'Retry backoff. No durable sleeps or signals.', 'Durable timers, signals, queries, child workflows, versioning.'],
+                      ['Scale it is built for', 'One application\u2019s processes, sharing one database.', 'Many services and languages, millions of concurrent executions.'],
+                    ].map(([label, grit, temporal]) => (
+                      <tr key={label} className="border-b border-border/20 align-top">
+                        <td className="px-3 py-2 font-medium text-foreground/80">{label}</td>
+                        <td className="px-3 py-2 text-muted-foreground leading-relaxed">{grit}</td>
+                        <td className="px-3 py-2 text-muted-foreground leading-relaxed">{temporal}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <p>
+                The determinism row is the one that bites people. Temporal rebuilds a
+                workflow&apos;s state by replaying its code against a recorded history, so that
+                code may not do anything that could answer differently the second time: no{' '}
+                <code>time.Now()</code>, no <code>rand</code>, no database calls outside an
+                activity. Grit replays nothing. It reads which step is next out of a row and calls
+                it, so a step is ordinary Go that may do whatever it likes, and the single rule
+                is that running it twice must be safe.
+              </p>
+              <p>
+                That is the trade in both directions. If you need durable timers, signals into a
+                running process, child workflows or many services in several languages sharing one
+                engine, that is what Temporal is for and this is not a substitute. If what you
+                have is one Go application whose checkout touches four APIs, a cluster is a large
+                piece of infrastructure to operate for a problem two tables solve.
+              </p>
+
+              <h2 id="commands">Every command</h2>
+              <CodeBlock
+                language="bash"
+                code={`# Write a saga with its steps stubbed out, and register it
+grit generate workflow Checkout --steps "charge,reserve_stock,book_courier,send_receipt"
+
+# Create the two tables (saga_runs, saga_steps)
+grit migrate
+
+# What the project has, and what is running
+grit routes | grep sagas`}
+              />
+              <p>
+                There is no command to start a run: a saga is started from your own code, because
+                the thing that knows an order was placed is the handler that placed it.
+              </p>
+              <CodeBlock
+                language="go"
+                code={`run, err := saga.Start(ctx, db, "checkout", sagas.CheckoutInput{
+    OrderID: order.ID,
+    Email:   order.Email,
+})`}
+              />
+
+              <h2 id="watching">Watching a run</h2>
+              <p>
+                The admin has a screen at <strong>System &rarr; Sagas</strong>, listing runs by
+                status with each run&apos;s steps and the error that stopped it. It is behind{' '}
+                <code>ADMIN</code> or <code>jobs.view</code>. Finding a stuck run should not mean
+                writing SQL against <code>saga_runs</code>, because nobody does that until a
+                customer complains.
+              </p>
+              <CodeBlock
+                language="bash"
+                code={`GET  /api/v1/admin/sagas              # runs, filterable by status
+GET  /api/v1/admin/sagas/definitions  # what this project has registered
+GET  /api/v1/admin/sagas/:id          # one run, with its steps
+POST /api/v1/admin/sagas/:id/retry    # push a stuck run on again`}
+              />
+              <p>
+                <code>retry</code> is for the stuck ones: you have fixed whatever made the
+                compensation fail, and you want the run to carry on undoing rather than stay
+                half-undone forever.
+              </p>
+
               <h2>Not the same as a workflow field</h2>
               <p>
                 <a href="/docs/backend/workflows">Workflows</a> turn a status column into a state
