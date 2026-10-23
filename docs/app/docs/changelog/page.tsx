@@ -66,6 +66,44 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.409.1 */}
+            <div className="mb-12" id="v3.409.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.409.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The money field groups as you type, not when you leave</h3>
+                <p>
+                  v3.409.0 added the separators on blur, which misses the point: the moment you
+                  need to read the number is while you are entering it. Nobody can tell{' '}
+                  <code>50000000</code> from <code>5000000</code> by looking, and finding out
+                  after you tab away is finding out too late.
+                </p>
+                <p>
+                  Now every keystroke regroups. The reason it was not done that way is real,
+                  though: reformatting a controlled input sends the caret to the end, so typing
+                  into the middle of a number becomes impossible. The fix is to put the caret
+                  back, counting the characters that are <em>not</em> separators rather than
+                  counting characters. Type <code>7</code> after the <code>50</code> of{' '}
+                  <code>50,000,000</code> and you get <code>507,000,000</code> with the caret
+                  still sitting after your 7.
+                </p>
+                <p>
+                  Only the integer part is grouped while typing. Grouping the whole number means
+                  deciding how many decimals it has, and mid-typing there is no answer:{' '}
+                  <code>19.</code> is on its way to <code>19.99</code>, and settling it to{' '}
+                  <code>19.00</code> takes the decimal point out from under the caret. So{' '}
+                  <code>1234.5</code> reads <code>1,234.5</code> as you type it and becomes{' '}
+                  <code>1,234.50</code> when you leave, which is the one thing blur is still
+                  good for.
+                </p>
+              </div>
+            </div>
+
             {/* v3.409.0 */}
             <div className="mb-12" id="v3.409.0">
               <div className="flex items-center gap-3 mb-4">
