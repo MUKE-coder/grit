@@ -709,6 +709,31 @@ func checkCredentials(p *project) []Finding {
 			})
 		}
 	}
+	// Scout is opt-in, so its absence says nothing and only an enabled one is
+	// worth a word. Its two failures are opposite: with no password it does
+	// not mount at all, and somebody who set SCOUT_ENABLED=true believes they
+	// have a scanner running. With a guessable one, its dashboard is a list of
+	// where this application is weakest, handed to whoever finds the URL.
+	if strings.EqualFold(strings.TrimSpace(p.env["SCOUT_ENABLED"]), "true") {
+		pw := strings.TrimSpace(p.env["SCOUT_PASSWORD"])
+		switch {
+		case pw == "":
+			out = append(out, Finding{
+				Level:    "warning",
+				Resource: "SCOUT_PASSWORD",
+				Message:  "is empty while SCOUT_ENABLED=true, so Scout logs a line and does not mount: there is no scanner running",
+				Fix:      "set SCOUT_PASSWORD in .env: openssl rand -hex 32",
+			})
+		case pw == "scout" || strings.Contains(pw, "change-me") || len(pw) < 12:
+			out = append(out, Finding{
+				Level:    level,
+				Resource: "SCOUT_PASSWORD",
+				Message:  "is guessable, and it guards the Scout dashboard, which lists every weakness Scout has found in this application",
+				Fix:      "set SCOUT_PASSWORD in .env: openssl rand -hex 32",
+			})
+		}
+	}
+
 	// The JWT secret signs access tokens. Short or empty, they can be forged.
 	if jwt := strings.TrimSpace(p.env["JWT_SECRET"]); len(jwt) < 32 || strings.Contains(jwt, "change-me") {
 		out = append(out, Finding{

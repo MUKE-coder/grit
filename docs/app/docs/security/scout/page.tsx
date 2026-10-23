@@ -93,6 +93,14 @@ SCOUT_DB=scout.db`}
               everywhere your application is weakest, which is the one page you least want to
               serve to anybody who finds the URL.
             </p>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              <Link href="/docs/security/doctor" className="text-primary hover:underline">
+                <code>grit doctor</code>
+              </Link>{' '}
+              reports both ways of getting this wrong: enabled with no password, where you think
+              a scanner is running and none is, and enabled with a guessable one, which is an
+              error in production. A project that has not added Scout reports nothing.
+            </p>
 
             <h2 className="text-2xl font-semibold mt-12 mb-4">
               The part Grit can give it that a scanner usually cannot

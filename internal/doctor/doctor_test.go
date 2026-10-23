@@ -642,3 +642,55 @@ func TestNextPinnedExactlyIsFine(t *testing.T) {
 		t.Fatalf("an exact pin was reported: %s", found[0].Message)
 	}
 }
+
+// Scout is opt-in, so a project that never added it must stay silent: a check
+// that fires on every project is a check people learn to scroll past.
+func TestScoutAbsentIsNotAFinding(t *testing.T) {
+	report := run(t, nil)
+	for _, f := range fired(report, "default-credentials") {
+		if strings.Contains(f.Resource, "SCOUT") {
+			t.Fatalf("a project without Scout reported %s: %s", f.Resource, f.Message)
+		}
+	}
+}
+
+// Enabled with no password is the quiet failure: Scout logs a line, does not
+// mount, and whoever set SCOUT_ENABLED=true believes a scanner is running.
+func TestScoutEnabledWithNoPasswordDoesNotMount(t *testing.T) {
+	report := run(t, map[string]string{".env": cleanProject()[".env"] +
+		"\nSCOUT_ENABLED=true\nSCOUT_PASSWORD=\n"})
+	var found []Finding
+	for _, f := range fired(report, "default-credentials") {
+		if f.Resource == "SCOUT_PASSWORD" {
+			found = append(found, f)
+		}
+	}
+	if len(found) != 1 || !strings.Contains(found[0].Message, "does not mount") {
+		t.Fatalf("want one finding saying Scout does not mount, got %+v", found)
+	}
+}
+
+func TestScoutEnabledWithAGuessablePassword(t *testing.T) {
+	report := run(t, map[string]string{".env": cleanProject()[".env"] +
+		"\nSCOUT_ENABLED=true\nSCOUT_PASSWORD=scout\n"})
+	var found []Finding
+	for _, f := range fired(report, "default-credentials") {
+		if f.Resource == "SCOUT_PASSWORD" {
+			found = append(found, f)
+		}
+	}
+	if len(found) != 1 || !strings.Contains(found[0].Message, "guessable") {
+		t.Fatalf("want one finding about a guessable password, got %+v", found)
+	}
+}
+
+// A real password is the configuration this check exists to allow.
+func TestScoutProperlyConfiguredIsSilent(t *testing.T) {
+	report := run(t, map[string]string{".env": cleanProject()[".env"] +
+		"\nSCOUT_ENABLED=true\nSCOUT_PASSWORD=ac3f91b20d7e4a658cc1\n"})
+	for _, f := range fired(report, "default-credentials") {
+		if f.Resource == "SCOUT_PASSWORD" {
+			t.Fatalf("a configured Scout still reported: %s", f.Message)
+		}
+	}
+}

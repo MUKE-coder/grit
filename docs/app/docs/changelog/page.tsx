@@ -66,6 +66,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.407.1 */}
+            <div className="mb-12" id="v3.407.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.407.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit doctor checks the Scout password too</h3>
+                <p>
+                  <code>grit doctor</code> already reports a GORM Studio with no login, a
+                  Sentinel or Pulse dashboard still on its default password, and a weak JWT
+                  secret. Scout shipped yesterday without joining that list, which left the one
+                  dashboard whose whole content is a list of this application&apos;s weaknesses
+                  as the only one nothing checked.
+                </p>
+                <p>
+                  Its two failures point in opposite directions, so they read differently:
+                </p>
+                <p>
+                  <strong>Enabled with no password</strong> is the quiet one. Scout logs a line
+                  and does not mount, so somebody who set <code>SCOUT_ENABLED=true</code> believes
+                  a scanner is running and nothing is. That is a warning whatever the environment,
+                  because it is a missing scanner rather than an exposed one.
+                </p>
+                <p>
+                  <strong>Enabled with a guessable password</strong> is the loud one, and it is an
+                  error in production, matching how the other dashboards are treated.
+                </p>
+                <p>
+                  A project that never ran <code>grit add scout</code> reports nothing. Scout is
+                  opt-in, so its absence says nothing worth saying, and a check that fires on
+                  every project is one people learn to scroll past.
+                </p>
+              </div>
+            </div>
+
             {/* v3.407.0 */}
             <div className="mb-12" id="v3.407.0">
               <div className="flex items-center gap-3 mb-4">
