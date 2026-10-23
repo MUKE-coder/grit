@@ -232,8 +232,8 @@ export default function LLMGuidePage() {
                   {[
                     {
                       cmd: 'grit generate resource <Name> --fields "field:type,..."',
-                      desc: 'Generate a full-stack resource: Go model + GORM migration, handler, service, routes, Zod schema, TypeScript types, React Query hook, and admin page — all wired together. Fields are comma-separated name:type[:extra] triples. Special types: slug:slug:title (auto-generated from the title field), file/files with an accept-list (image:file:image, gallery:files:image, doc:file:all), category:belongs_to (one-to-many parent, model inferred), tags:many_to_many:Tag (join table), sizes:string_array (JSON array). Extra flags: --seed (also emit a seeder), --faker + --count N (seed many realistic rows), --from schema.yaml (fields from YAML), -i / --interactive (prompt per field), --roles "ADMIN,EDITOR" (restrict to roles).',
-                      example: 'grit generate resource Product --fields "name:string,slug:slug:name,price:money,image:file:image"',
+                      desc: 'Generate a full-stack resource: Go model + GORM migration, handler, service, routes, Zod schema, TypeScript types, React Query hook, and admin page — all wired together. Fields are comma-separated name:type[argument] specs, with any modifiers after. Examples: slug:slug[title] (generated from the title field), photo:file[image] and gallery:files[image] (an accept-list), doc:file[all], category:belongs_to[Category] (one-to-many parent), tags:many_to_many[Tag] (join table), profile:one_to_one[User], sizes:string_array (JSON array). Extra flags: --seed (also emit a seeder), --faker + --count N (seed many realistic rows), --from schema.yaml (fields from YAML), -i / --interactive (prompt per field), --roles "ADMIN,EDITOR" (restrict to roles).',
+                      example: 'grit generate resource Product --fields "name:string,slug:slug[name],price:money,image:file[image]"',
                     },
                     {
                       cmd: 'grit generate seeder <Resource> [<Resource2> ...]',
@@ -394,12 +394,12 @@ export default function LLMGuidePage() {
                         { type: 'bool', go: 'bool', admin: 'toggle / checkbox', note: 'Active, published, featured' },
                         { type: 'datetime', go: '*time.Time', admin: 'date-time picker', note: 'Timestamps (published_at). Use datetime, never time.' },
                         { type: 'date', go: '*time.Time', admin: 'date picker', note: 'Calendar date only (due dates)' },
-                        { type: 'slug', go: 'string (uniqueIndex)', admin: 'text input (auto-generated)', note: 'slug:slug:title — 3rd part is the source field. Auto-unique.' },
-                        { type: 'belongs_to', go: 'string FK + Model field', admin: 'relationship select', note: 'category:belongs_to or author:belongs_to:User. FK column <name>_id. Required by default.' },
-                        { type: 'many_to_many', go: '[]Model (GORM M2M)', admin: 'multi-relationship select', note: 'tags:many_to_many:Tag — related model required as 3rd part.' },
+                        { type: 'slug', go: 'string (uniqueIndex)', admin: 'text input (auto-generated)', note: 'slug:slug[title] — 3rd part is the source field. Auto-unique.' },
+                        { type: 'belongs_to', go: 'string FK + Model field', admin: 'relationship select', note: 'category:belongs_to[Category] or author:belongs_to[User]. FK column <name>_id. Required by default.' },
+                        { type: 'many_to_many', go: '[]Model (GORM M2M)', admin: 'multi-relationship select', note: 'tags:many_to_many[Tag] — related model required as 3rd part.' },
                         { type: 'string_array', go: 'datatypes.JSONSlice[string]', admin: 'tag / multi-text input', note: 'sizes:string_array — JSON array of strings' },
-                        { type: 'file', go: '*files.FileRef', admin: 'file upload (dropzone)', note: 'image:file:image · doc:file:all · att:file:[pdf,doc,image]' },
-                        { type: 'files', go: 'files.FileRefs', admin: 'multi-file dropzone', note: 'gallery:files:image — multiple files with an accept-list' },
+                        { type: 'file', go: '*files.FileRef', admin: 'file upload (dropzone)', note: 'image:file[image] · doc:file[all] · att:file:[pdf,doc,image]' },
+                        { type: 'files', go: 'files.FileRefs', admin: 'multi-file dropzone', note: 'gallery:files[image] — multiple files with an accept-list' },
                       ].map((row) => (
                         <tr key={row.type}>
                           <td className="px-4 py-2 text-primary/80">{row.type}</td>
@@ -419,7 +419,7 @@ export default function LLMGuidePage() {
                     A <strong className="text-foreground/80">slug</strong> is a URL-friendly string derived from a title.
                     Instead of <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/blog/42</code>, you get{' '}
                     <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/blog/my-first-post</code>.
-                    In Grit, use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:slug:title</code> (not <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:string</code>) — the third part names the source field to slugify.
+                    In Grit, use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:slug[title]</code> (not <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:string</code>) — the third part names the source field to slugify.
                     The model&apos;s <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">BeforeCreate</code> hook auto-generates the slug before saving, and GORM adds a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">uniqueIndex</code> automatically.
                   </p>
                   <CodeBlock language="go" filename="apps/api/internal/models/post.go (generated)" code={`type Post struct {
@@ -444,7 +444,7 @@ func (m *Post) BeforeCreate(tx *gorm.DB) error {
 }
 // The public GetBySlug handler route: GET /api/posts/slug/:slug`} />
                   <p className="text-sm text-muted-foreground/60 mt-2">
-                    Always use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:slug:title</code> (not <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:string</code>) — the dedicated type adds a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">uniqueIndex</code> and wires up auto-generation from the source field automatically.
+                    Always use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:slug[title]</code> (not <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:string</code>) — the dedicated type adds a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">uniqueIndex</code> and wires up auto-generation from the source field automatically.
                   </p>
                 </div>
 
@@ -465,17 +465,17 @@ func (m *Post) BeforeCreate(tx *gorm.DB) error {
                       <tbody className="divide-y divide-border/20 font-mono">
                         <tr>
                           <td className="px-4 py-2 text-foreground/70 font-sans">One-to-Many (belongs_to)</td>
-                          <td className="px-4 py-2 text-primary/80">name:belongs_to  or  name:belongs_to:Model</td>
+                          <td className="px-4 py-2 text-primary/80">field:belongs_to[Model]</td>
                           <td className="px-4 py-2 text-muted-foreground/60 font-sans">Searchable single select</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-2 text-foreground/70 font-sans">One-to-One</td>
-                          <td className="px-4 py-2 text-primary/80">name:belongs_to:Model (add uniqueIndex manually)</td>
+                          <td className="px-4 py-2 text-primary/80">field:one_to_one[Model]</td>
                           <td className="px-4 py-2 text-muted-foreground/60 font-sans">Searchable single select</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-2 text-foreground/70 font-sans">Many-to-Many</td>
-                          <td className="px-4 py-2 text-primary/80">name:many_to_many:Model</td>
+                          <td className="px-4 py-2 text-primary/80">field:many_to_many[Model]</td>
                           <td className="px-4 py-2 text-muted-foreground/60 font-sans">Multi-select tag input</td>
                         </tr>
                       </tbody>
@@ -492,17 +492,17 @@ func (m *Post) BeforeCreate(tx *gorm.DB) error {
                         <p className="text-xs text-muted-foreground/70 leading-relaxed">
                           A child record belongs to one parent. Syntax:{' '}
                           <code className="font-mono bg-accent/50 px-1 rounded">name:belongs_to</code> (parent inferred from the field name) or{' '}
-                          <code className="font-mono bg-accent/50 px-1 rounded">name:belongs_to:Model</code> to name it explicitly.
+                          <code className="font-mono bg-accent/50 px-1 rounded">field:belongs_to[Model]</code> to name it explicitly, which is the form to prefer: it survives the field being renamed.
                           This adds a <code className="font-mono bg-accent/50 px-1 rounded">CategoryID string</code> FK column (varchar(36), matching the parent&apos;s UUID) and a{' '}
                           <code className="font-mono bg-accent/50 px-1 rounded">Category Category</code> preload field to the struct. belongs_to is <strong>required by default</strong>.
                           The admin form renders a <strong>searchable single-select dropdown</strong> populated from <code className="font-mono bg-accent/50 px-1 rounded">/api/categories</code>.
                         </p>
                         <CodeBlock language="bash" filename="Example — Post belongs to Category" code={`# 1. Generate the parent first
-grit generate resource Category --fields "name:string,slug:slug:name,description:text"
+grit generate resource Category --fields "name:string,slug:slug[name],description:text"
 
 # 2. Generate the child referencing it (category → Category)
 grit generate resource Post \\
-  --fields "title:string,slug:slug:title,content:richtext,category:belongs_to,is_published:bool"
+  --fields "title:string,slug:slug[title],content:richtext,category:belongs_to[Category],is_published:bool"
 
 grit migrate`} />
                       </div>
@@ -515,17 +515,21 @@ grit migrate`} />
                       </div>
                       <div className="p-4 space-y-3">
                         <p className="text-xs text-muted-foreground/70 leading-relaxed">
-                          Exactly one child per parent. Uses the <strong>same belongs_to syntax</strong> —{' '}
-                          <code className="font-mono bg-accent/50 px-1 rounded">name:belongs_to:Model</code> — which produces a{' '}
-                          <code className="font-mono bg-accent/50 px-1 rounded">UserID string</code> FK column.
-                          To enforce one-to-one, add a <code className="font-mono bg-accent/50 px-1 rounded">uniqueIndex</code> to that FK column in the generated Go model, then run <code className="font-mono bg-accent/50 px-1 rounded">grit migrate</code>.
-                          The admin form also renders a single-select dropdown (same as belongs_to).
+                          Exactly one child per parent:{' '}
+                          <code className="font-mono bg-accent/50 px-1 rounded">field:one_to_one[Model]</code>.
+                          It is a type of its own, not belongs_to with extra steps. The column it
+                          writes carries <code className="font-mono bg-accent/50 px-1 rounded">uniqueIndex</code>{' '}
+                          rather than <code className="font-mono bg-accent/50 px-1 rounded">index</code>, and
+                          that is the entire difference between the two relationships: without it the
+                          database accepts a second row pointing at the same parent and &quot;one to
+                          one&quot; is a comment rather than a constraint.
+                          The admin form renders a single-select dropdown, as belongs_to does.
                         </p>
                         <CodeBlock language="bash" filename="Example — Profile has one User" code={`# 1. User model already exists (built in)
 
 # 2. Generate Profile with a belongs_to to User
 grit generate resource Profile \\
-  --fields "bio:text,avatar:file:image,website:string,user:belongs_to:User"
+  --fields "bio:text,avatar:file[image],website:string,user:belongs_to[User]"
 
 # For strict one-to-one, add uniqueIndex to the UserID gorm tag in
 # apps/api/internal/models/profile.go, then run grit migrate
@@ -542,17 +546,17 @@ grit migrate`} />
                       <div className="p-4 space-y-3">
                         <p className="text-xs text-muted-foreground/70 leading-relaxed">
                           A record can belong to many of another, and vice versa. Syntax:{' '}
-                          <code className="font-mono bg-accent/50 px-1 rounded">name:many_to_many:Model</code>.
-                          The related model is <strong>required</strong> as the third part (e.g. <code className="font-mono bg-accent/50 px-1 rounded">tags:many_to_many:Tag</code>) — Grit does not infer it.
+                          <code className="font-mono bg-accent/50 px-1 rounded">field:many_to_many[Model]</code>.
+                          The related model is <strong>required</strong> as the third part (e.g. <code className="font-mono bg-accent/50 px-1 rounded">tags:many_to_many[Tag]</code>) — Grit does not infer it.
                           GORM creates a join table automatically (e.g. <code className="font-mono bg-accent/50 px-1 rounded">product_tags</code>).
                           The admin form renders a <strong>multi-select tag input</strong> populated from <code className="font-mono bg-accent/50 px-1 rounded">/api/tags</code>.
                         </p>
                         <CodeBlock language="bash" filename="Example — Product has many Tags" code={`# 1. Generate the related model first
-grit generate resource Tag --fields "name:string,slug:slug:name,color:string"
+grit generate resource Tag --fields "name:string,slug:slug[name],color:string"
 
 # 2. Generate Product with an M2M relationship
 grit generate resource Product \\
-  --fields "name:string,slug:slug:name,price:money,thumbnail:file:image,tags:many_to_many:Tag,is_active:bool"
+  --fields "name:string,slug:slug[name],price:money,thumbnail:file[image],tags:many_to_many[Tag],is_active:bool"
 
 # GORM auto-creates the product_tags join table
 
@@ -592,11 +596,11 @@ grit migrate`} />
                 <div className="mb-8">
                   <h3 className="text-base font-semibold text-foreground/80 mb-2">Blog Post — Slug + Single Image + Rich Text</h3>
                   <p className="text-sm text-muted-foreground/70 mb-3">
-                    Use <code className="font-mono bg-accent/50 px-1 rounded">slug:slug:title</code> for SEO-friendly URLs (the third part is the source field).
+                    Use <code className="font-mono bg-accent/50 px-1 rounded">slug:slug[title]</code> for SEO-friendly URLs (the third part is the source field).
                     A single image is a <code className="font-mono bg-accent/50 px-1 rounded">file:image</code> field, and a timestamp is <code className="font-mono bg-accent/50 px-1 rounded">datetime</code>.
                   </p>
                   <CodeBlock language="bash" code={`grit generate resource Post \\
-  --fields "title:string,slug:slug:title,excerpt:text,content:richtext,cover_image:file:image,status:string,published_at:datetime,views:int"
+  --fields "title:string,slug:slug[title],excerpt:text,content:richtext,cover_image:file[image],status:string,published_at:datetime,views:int"
 
 grit migrate`} />
                 </div>
@@ -609,7 +613,7 @@ grit migrate`} />
                     Prices are <code className="font-mono bg-accent/50 px-1 rounded">float</code>, and the status is a plain <code className="font-mono bg-accent/50 px-1 rounded">string</code>.
                   </p>
                   <CodeBlock language="bash" code={`grit generate resource Product \\
-  --fields "name:string,slug:slug:name,description:text,price:money,compare_price:float,sku:string,stock:int,thumbnail:file:image,gallery:files:image,is_featured:bool,is_active:bool,status:string"
+  --fields "name:string,slug:slug[name],description:text,price:money,compare_price:float,sku:string,stock:int,thumbnail:file[image],gallery:files[image],is_featured:bool,is_active:bool,status:string"
 
 grit migrate`} />
                 </div>
@@ -621,12 +625,12 @@ grit migrate`} />
                     Generate Category first (parent), then Product referencing it. Tags are many-to-many.
                   </p>
                   <CodeBlock language="bash" code={`# Step 1: generate parent models first
-grit generate resource Category --fields "name:string,slug:slug:name,description:text,image:file:image"
-grit generate resource Tag --fields "name:string,slug:slug:name,color:string"
+grit generate resource Category --fields "name:string,slug:slug[name],description:text,image:file[image]"
+grit generate resource Tag --fields "name:string,slug:slug[name],color:string"
 
 # Step 2: generate the child with belongs_to and many_to_many
 grit generate resource Article \\
-  --fields "title:string,slug:slug:title,content:richtext,cover_image:file:image,category:belongs_to,tags:many_to_many:Tag,author:belongs_to:User,is_published:bool,published_at:datetime"
+  --fields "title:string,slug:slug[title],content:richtext,cover_image:file[image],category:belongs_to[Category],tags:many_to_many[Tag],author:belongs_to[User],is_published:bool,published_at:datetime"
 
 grit migrate`} />
                   <p className="text-sm text-muted-foreground/60 mt-2">
@@ -640,17 +644,17 @@ grit migrate`} />
                 <div className="mb-8">
                   <h3 className="text-base font-semibold text-foreground/80 mb-2">Course + Lessons — Video Uploads + belongs_to</h3>
                   <p className="text-sm text-muted-foreground/70 mb-3">
-                    Video is a file accept-alias: <code className="font-mono bg-accent/50 px-1 rounded">intro_video:file:video</code> for a single video,{' '}
-                    <code className="font-mono bg-accent/50 px-1 rounded">lesson_videos:files:video</code> for a set.
+                    Video is a file accept-alias: <code className="font-mono bg-accent/50 px-1 rounded">intro_video:file[video]</code> for a single video,{' '}
+                    <code className="font-mono bg-accent/50 px-1 rounded">lesson_videos:files[video]</code> for a set.
                     These use presigned URL uploads directly to R2/S3 — the API never handles the binary.
                   </p>
                   <CodeBlock language="bash" code={`# Course (parent)
 grit generate resource Course \\
-  --fields "title:string,slug:slug:title,description:text,thumbnail:file:image,intro_video:file:video,price:money,level:string,is_published:bool"
+  --fields "title:string,slug:slug[title],description:text,thumbnail:file[image],intro_video:file[video],price:money,level:string,is_published:bool"
 
 # Lesson (child — belongs to Course via course:belongs_to)
 grit generate resource Lesson \\
-  --fields "title:string,slug:slug:title,description:text,video:file:video,duration:int,position:int,is_preview:bool,course:belongs_to:Course,attachments:files:all"
+  --fields "title:string,slug:slug[title],description:text,video:file[video],duration:int,position:int,is_preview:bool,course:belongs_to[Course],attachments:files[all]"
 
 grit migrate`} />
                 </div>
@@ -663,7 +667,7 @@ grit migrate`} />
                     money is <code className="font-mono bg-accent/50 px-1 rounded">float</code>, timestamps are <code className="font-mono bg-accent/50 px-1 rounded">datetime</code>, and the customer is <code className="font-mono bg-accent/50 px-1 rounded">belongs_to:User</code>.
                   </p>
                   <CodeBlock language="bash" code={`grit generate resource Order \\
-  --fields "order_number:string,status:string,subtotal:float,tax:float,shipping_fee:float,total:money,notes:text,shipping_address:text,payment_method:string,payment_status:string,paid_at:datetime,shipped_at:datetime,delivered_at:datetime,customer:belongs_to:User"
+  --fields "order_number:string,status:string,subtotal:float,tax:float,shipping_fee:float,total:money,notes:text,shipping_address:text,payment_method:string,payment_status:string,paid_at:datetime,shipped_at:datetime,delivered_at:datetime,customer:belongs_to[User]"
 
 grit migrate`} />
                 </div>
@@ -1392,7 +1396,7 @@ grit start client          # web http://localhost:3000 · admin http://localhost
                     { rule: 'Keep handlers thin — no DB queries in handlers', detail: 'All GORM queries belong in service files. Handlers only parse requests and call services. This keeps the pattern consistent with generated code.' },
                     { rule: 'Import types from @shared/schemas, never duplicate them', detail: 'Zod schemas and TypeScript types live in packages/shared. Both web and admin import from there. Duplicating schemas causes drift.' },
                     { rule: 'Run grit sync after manually editing Go models', detail: 'The shared package is generated from Go structs. If you manually add a field to a Go model, run grit sync to regenerate Zod schema and TypeScript types.' },
-                    { rule: 'Generate parent models before child models', detail: 'When using relationships (category:belongs_to, tags:many_to_many:Tag), generate the parent (Category, Tag) first so the referenced model exists when you generate the child. This also lets --faker seeders link to real parent rows.' },
+                    { rule: 'Generate parent models before child models', detail: 'When using relationships (category:belongs_to[Category], tags:many_to_many[Tag]), generate the parent (Category, Tag) first so the referenced model exists when you generate the child. This also lets --faker seeders link to real parent rows.' },
                     { rule: 'Disable GORM Studio and Pulse in production', detail: 'Both expose internal data. Set GORM_STUDIO_ENABLED=false and PULSE_ENABLED=false in production .env.' },
                     { rule: 'For low-spec machines: suggest the no-Docker setup', detail: 'Users with limited RAM should use Neon + Upstash + Cloudflare R2 + Resend instead of Docker. See Section 14 above or /docs/getting-started/installation.' },
                   ].map((item, i) => (
@@ -1439,9 +1443,9 @@ grit migrate && grit seed
 grit start server
 # Terminal 2 — Next.js web + admin:
 grit start client`} />
-                  <CodeBlock language="bash" filename="Add a full-stack resource (seed parents first)" code={`grit generate resource Category --fields "name:string,slug:slug:name" --seed
+                  <CodeBlock language="bash" filename="Add a full-stack resource (seed parents first)" code={`grit generate resource Category --fields "name:string,slug:slug[name]" --seed
 grit generate resource Product \\
-  --fields "name:string,slug:slug:name,price:money,thumbnail:file:image,gallery:files:image,category:belongs_to,status:string" \\
+  --fields "name:string,slug:slug[name],price:money,thumbnail:file[image],gallery:files[image],category:belongs_to[Category],status:string" \\
   --seed --faker --count 50
 grit migrate && grit seed`} />
                   <CodeBlock language="bash" filename="Start servers independently" code={`grit start server    # Go API only (no hot-reload)

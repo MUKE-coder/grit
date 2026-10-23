@@ -318,9 +318,9 @@ Execute these steps in order:
 
 4. Generate core resources:
    grit generate resource Category --fields "name:string,slug:slug,description:text"
-   grit generate resource Company --fields "name:string,slug:slug,logo:string,website:string,description:text,user_id:belongs_to"
-   grit generate resource Job --fields "title:string,slug:slug,description:text,location:string,salary_min:int,salary_max:int,job_type:string,published:bool,company_id:belongs_to,category_id:belongs_to"
-   grit generate resource Application --fields "cover_letter:text,resume_url:string,status:string,job_id:belongs_to,user_id:belongs_to"
+   grit generate resource Company --fields "name:string,slug:slug,logo:string,website:string,description:text,user_id:belongs_to[User]"
+   grit generate resource Job --fields "title:string,slug:slug,description:text,location:string,salary_min:int,salary_max:int,job_type:string,published:bool,company_id:belongs_to[Company],category_id:belongs_to[Category]"
+   grit generate resource Application --fields "cover_letter:text,resume_url:string,status:string,job_id:belongs_to[Job],user_id:belongs_to[User]"
 
 5. Verify the build:
    cd apps/api && go build ./... && cd ../..
@@ -566,7 +566,7 @@ grit add role <ROLE>               # Add a new role
 
 string, text, richtext, int, uint, float, bool, datetime, date, slug
 string_array (e.g., sizes:string_array)
-belongs_to (e.g., category:belongs_to or author:belongs_to:User)
+belongs_to (e.g., category:belongs_to[Category] or author:belongs_to:User)
 many_to_many (e.g., tags:many_to_many:Tag)
 file  (e.g., image:file:image, doc:file:all)
 files (e.g., gallery:files:image)

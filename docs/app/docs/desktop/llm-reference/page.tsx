@@ -2008,7 +2008,7 @@ wails build -nsis`}
                     {
                       rule: "Generate parent models before child models (belongs_to)",
                       detail:
-                        "When using belongs_to relationships, generate the parent resource first so the referenced model exists. For example, generate Category before generating Product with a category_id:belongs_to field.",
+                        "When using belongs_to relationships, generate the parent resource first so the referenced model exists. For example, generate Category before generating Product with a category_id:belongs_to[Category] field.",
                     },
                   ].map((item, i) => (
                     <div

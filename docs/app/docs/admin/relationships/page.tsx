@@ -34,7 +34,7 @@ export default function RelationshipsPage() {
                 id="admin-rel"
                 lanes={['Relationship', 'Generated across the stack']}
                 nodes={[
-                  { id: 'bt', lane: 0, row: 0, title: 'belongs_to', sub: 'category:belongs_to', tone: 'cyan' },
+                  { id: 'bt', lane: 0, row: 0, title: 'belongs_to', sub: 'category:belongs_to[Category]', tone: 'cyan' },
                   { id: 'mtm', lane: 0, row: 3, title: 'many_to_many', sub: 'tags:many_to_many', tone: 'violet' },
                   { id: 'fk', lane: 1, row: 0, title: 'FK column', sub: '<name>_id', tone: 'green' },
                   { id: 'eager', lane: 1, row: 1, title: 'Eager loading', sub: 'Preload', tone: 'blue' },
@@ -91,7 +91,7 @@ export default function RelationshipsPage() {
                 </div>
                 <div className="p-5 font-mono text-sm">
                   <div className="mb-1 text-muted-foreground/50 text-xs"># Infer related model from field name</div>
-                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Product --fields &quot;name:string,category:belongs_to,price:float&quot;</span></div>
+                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Product --fields &quot;name:string,category:belongs_to[Category],price:float&quot;</span></div>
                   <div className="mt-4 mb-1 text-muted-foreground/50 text-xs"># Explicit related model (when FK name differs)</div>
                   <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Post --fields &quot;title:string,author:belongs_to:User,content:text&quot;</span></div>
                 </div>
@@ -225,7 +225,7 @@ db.Preload("Category").First(&product, product.ID)`} />
                   <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                 </div>
                 <div className="p-5 font-mono text-sm">
-                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Product --fields &quot;name:string,category:belongs_to,tags:many_to_many:Tag,price:float&quot;</span></div>
+                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Product --fields &quot;name:string,category:belongs_to[Category],tags:many_to_many:Tag,price:float&quot;</span></div>
                 </div>
               </div>
             </div>
@@ -720,7 +720,7 @@ GET /api/v1/public/products?category_id=<electronics>,<cameras>,<laptops>
                   <div className="mt-4 mb-1 text-muted-foreground/50 text-xs"># Step 2: Generate Tag</div>
                   <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Tag --fields &quot;name:string:unique&quot;</span></div>
                   <div className="mt-4 mb-1 text-muted-foreground/50 text-xs"># Step 3: Generate Product with relationships</div>
-                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Product --fields &quot;name:string,category:belongs_to,tags:many_to_many:Tag,price:float,published:bool&quot;</span></div>
+                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Product --fields &quot;name:string,category:belongs_to[Category],tags:many_to_many:Tag,price:float,published:bool&quot;</span></div>
                 </div>
               </div>
             </div>

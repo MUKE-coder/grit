@@ -397,7 +397,7 @@ grit add role <ROLE>               # Add a new role
 
 string, text, richtext, int, uint, float, bool, datetime,
 date, slug, string_array
-belongs_to (e.g., category:belongs_to or author:belongs_to:User)
+belongs_to (e.g., category:belongs_to[Category] or author:belongs_to:User)
 many_to_many (e.g., tags:many_to_many:Tag)
 file  (e.g., image:file:image, doc:file:all)
 files (e.g., gallery:files:image)

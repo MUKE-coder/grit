@@ -62,7 +62,7 @@ export default function MobileResourceGenerationPage() {
                 files alongside everything else:
               </p>
             </div>
-            <CodeBlock language="text" filename="grit generate resource Product" code={`grit generate resource Product --fields "name:string,price:float,category:belongs_to"
+            <CodeBlock language="text" filename="grit generate resource Product" code={`grit generate resource Product --fields "name:string,price:float,category:belongs_to[Category]"
    │
    ├─ Go backend        → model + service + handler + routes
    ├─ packages/shared   → schemas/product.ts + types/product.ts

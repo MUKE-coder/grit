@@ -580,12 +580,12 @@ type Task struct {
                   the Task resource with a category relationship:
                 </p>
 
-                <CodeBlock terminal code={`grit generate resource Task --fields "title:string,description:text,category:belongs_to,status:string,priority:int,due_date:date,completed:bool"`} className="glow-purple-sm mb-4" />
+                <CodeBlock terminal code={`grit generate resource Task --fields "title:string,description:text,category:belongs_to[Category],status:string,priority:int,due_date:date,completed:bool"`} className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
                   The{" "}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
-                    category:belongs_to
+                    category:belongs_to[Category]
                   </code>{" "}
                   syntax tells Grit to create a foreign key relationship.
                   Here&apos;s what changed in the Go model:
@@ -772,7 +772,7 @@ h.DB.Preload("Category").First(&item, id)`} />
                   Let&apos;s regenerate Task to add this:
                 </p>
 
-                <CodeBlock terminal code={`grit generate resource Task --fields "title:string,description:text,category:belongs_to,tags:many_to_many:Tag,status:string,priority:int,due_date:date,completed:bool"`} className="glow-purple-sm mb-4" />
+                <CodeBlock terminal code={`grit generate resource Task --fields "title:string,description:text,category:belongs_to[Category],tags:many_to_many:Tag,status:string,priority:int,due_date:date,completed:bool"`} className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
                   The{" "}

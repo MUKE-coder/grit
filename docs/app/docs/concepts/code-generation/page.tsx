@@ -456,7 +456,7 @@ export const postResource = defineResource({
                 <CodeBlock language="yaml" filename="project.yaml" code={`name: Project
 owned_by: user
 fields:
-  - client:belongs_to
+  - client:belongs_to[Client]
   - name:string
   - brief:richtext
   - kind:select[one_off, recurring]

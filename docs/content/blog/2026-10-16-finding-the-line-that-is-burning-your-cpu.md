@@ -24,7 +24,7 @@ Everything below is a real run. Every number is copied out of the terminal or re
 grit new slowshop --triple --next --db sqlite
 cd slowshop
 grit generate resource Product --fields "name:string,price:money,stock:int,sku:string" --faker --count 200
-grit generate resource Review  --fields "body:text,rating:int,product:belongs_to" --faker --count 2000
+grit generate resource Review  --fields "body:text,rating:int,product:belongs_to[Product]" --faker --count 2000
 grit migrate
 grit seed
 ```

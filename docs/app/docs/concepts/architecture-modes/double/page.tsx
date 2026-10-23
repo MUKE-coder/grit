@@ -406,7 +406,7 @@ export default function AdminLayout() {
               files and shared types are identical — the difference is the absence of admin resource definitions
               and admin pages.
             </p>
-            <CodeBlock language="bash" filename="example command" code={`grit generate resource Product --fields "name:string, price:float, description:text, category_id:belongs_to, is_active:bool"`} />
+            <CodeBlock language="bash" filename="example command" code={`grit generate resource Product --fields "name:string, price:float, description:text, category_id:belongs_to[Category], is_active:bool"`} />
 
             <div className="mt-6 space-y-4">
               <h3 className="text-lg font-semibold text-foreground">Files Created</h3>

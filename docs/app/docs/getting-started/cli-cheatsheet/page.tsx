@@ -1658,7 +1658,7 @@ grit migrate`}
 grit g resource Category --fields "name:string,description:text"
 
 # Generate Product that belongs to Category
-grit g resource Product --fields "name:string,price:float,category:belongs_to"
+grit g resource Product --fields "name:string,price:float,category:belongs_to[Category]"
 
 # Apply database changes
 grit migrate`}
