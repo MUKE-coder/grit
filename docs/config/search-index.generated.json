@@ -540,6 +540,12 @@
     "keywords": "vps server ubuntu linux nginx caddy systemd tls certbot ssh manual self host droplet hetzner digitalocean walkthrough deploy grit projects docker production builds environment configuration database setup hosting options docs deployment"
   },
   {
+    "title": "Styles and themes",
+    "href": "/docs/design/styles-and-themes",
+    "section": "Design System",
+    "keywords": "theme themes style styles variant variants atlas aurora pulse coral amber sky mono emerald midnight modern minimal glass default centered look colours colors fonts sign-in login layout dashboard appearance branding swap screenshots difference between grit admin screenshot each sets sign through css variables changed later env only decides page contains fixed project generated they compose replaces single component docs design"
+  },
+  {
     "title": "Theme",
     "href": "/docs/design/theme",
     "section": "Design System",

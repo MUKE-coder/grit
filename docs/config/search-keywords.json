@@ -227,6 +227,11 @@
     "section": "Deployment",
     "title": "VPS walkthrough"
   },
+  "/docs/design/styles-and-themes": {
+    "keywords": "theme themes style styles variant variants atlas aurora pulse coral amber sky mono emerald midnight modern minimal glass default centered look colours colors fonts sign-in login layout dashboard appearance branding swap screenshots difference between",
+    "section": "Design System",
+    "title": "Styles and themes"
+  },
   "/docs/design/theme": {
     "keywords": "theme dark light colors palette tailwind design",
     "section": "Design System",

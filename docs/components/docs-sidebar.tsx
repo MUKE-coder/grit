@@ -361,6 +361,7 @@ const navItems: NavItem[] = [
     title: 'Design System',
     icon: <Palette className="h-3.5 w-3.5" />,
     items: [
+      { title: 'Styles & Themes', href: '/docs/design/styles-and-themes' },
       { title: 'Theme & Colors', href: '/docs/design/theme' },
     ],
   },

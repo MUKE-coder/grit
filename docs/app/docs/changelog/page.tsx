@@ -66,6 +66,51 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.410.0 */}
+            <div className="mb-12" id="v3.410.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.410.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Styles and themes, on one page, with a screenshot of each</h3>
+                <p>
+                  <code>--style modern</code> and <code>--theme aurora</code> both change the
+                  first screen you see, they were documented on two pages with similar names,
+                  and one of those pages described behaviour that has not been true since
+                  v3.28. So the question &quot;which one do I want&quot; had no good answer.
+                </p>
+                <p>
+                  There is one page now, at{' '}
+                  <code>/docs/design/styles-and-themes</code>, and it shows rather than
+                  asserts: the same dashboard with the same data under all eight themes, and
+                  the four dashboard styles under one theme, so the only thing differing in
+                  each set is the thing being explained. Twelve screenshots, captured from a
+                  running admin.
+                </p>
+                <p>
+                  The short version: <strong>a theme</strong> is colours, fonts and the
+                  sign-in layout, it reaches every screen through CSS variables, and you can
+                  change it later with <code>THEME</code> in <code>.env</code>.{' '}
+                  <strong>A style</strong> decides what the dashboard page contains and
+                  nothing else, and it is fixed when the project is generated because it picks
+                  which file gets written.
+                </p>
+                <p>
+                  Writing it turned up two things worth saying out loud, both now stated on the
+                  page. <code>--style</code> has not changed the sign-in screen since v3.28,
+                  when the theme-aware auth shells took over, so{' '}
+                  <code>--style glass</code> does not give you a glass login page; the scaffold
+                  comment says the style switches are &quot;bypassed when a theme is set&quot;,
+                  and a theme is always set. And <code>--style centered</code> produces the
+                  same dashboard as <code>default</code>, byte for byte.
+                </p>
+              </div>
+            </div>
+
             {/* v3.409.1 */}
             <div className="mb-12" id="v3.409.1">
               <div className="flex items-center gap-3 mb-4">

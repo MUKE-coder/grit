@@ -32,6 +32,18 @@ export default function StyleVariantsPage() {
             </div>
 
             <div className="prose-grit">
+              <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 mb-8">
+                <p className="text-sm text-muted-foreground leading-relaxed m-0">
+                  <strong className="text-foreground">Looking for the difference between a style and a theme?</strong>{' '}
+                  <Link href="/docs/design/styles-and-themes" className="text-primary hover:underline">
+                    Styles and themes
+                  </Link>{' '}
+                  has both, side by side, with a screenshot of each. In short: a theme sets the
+                  colours, the fonts and the sign-in layout and can be changed later; a style
+                  only decides what the dashboard page contains.
+                </p>
+              </div>
+
               {/* Usage */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">

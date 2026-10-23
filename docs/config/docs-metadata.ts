@@ -719,6 +719,11 @@ export const docsMetadata: Record<string, DocPage> = {
   },
 
   // Design
+  '/docs/design/styles-and-themes': {
+    title: 'Styles and themes',
+    description:
+      'The difference between --theme and --style in a Grit admin, with a screenshot of each. --theme (atlas, aurora, pulse, coral, amber, sky, mono, emerald) sets the colours, the fonts and the sign-in layout through CSS variables, and can be changed later with THEME in .env. --style (default, modern, minimal, glass) only decides what the dashboard page contains and is fixed when the project is generated. They compose, and grit swap replaces a single component.',
+  },
   '/docs/design/theme': {
     title: 'Theme',
     description:
