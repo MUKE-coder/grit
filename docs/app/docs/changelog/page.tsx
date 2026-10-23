@@ -66,6 +66,79 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.407.0 */}
+            <div className="mb-12" id="v3.407.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.407.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit add scout: a scanner that knows which of your routes are protected</h3>
+                <p>
+                  Scout is a security scanner that mounts inside your API, the way GORM Studio
+                  and Pulse do. It checks response headers, the TLS handshake, DNS records,
+                  whether a <code>.git</code> or <code>.env</code> is reachable, secrets committed
+                  to the repository, Dockerfile practice, reachable CVEs in your Go modules, and
+                  configuration such as Gin left in debug mode.
+                </p>
+                <pre><code>grit add scout</code></pre>
+                <p>
+                  Opt-in, unlike Sentinel and Pulse, which every project gets. A scanner that
+                  appears because you ran <code>grit new</code> is one nobody decided to run, and
+                  an undecided scanner is either ignored or trusted without being read. It also
+                  installs disabled, and refuses to mount without a password: its dashboard is a
+                  list of where your application is weakest.
+                </p>
+                <h4>The route table is the part worth having</h4>
+                <p>
+                  A scanner looking at an application from outside sees URLs, so when it wants to
+                  report &quot;this endpoint has no authentication&quot; it has to infer that from
+                  the shape of the path. The path does not say.{' '}
+                  <code>/api/v1/auth/login</code> and <code>/api/v1/auth/me</code> sit in the same
+                  place and want opposite things.
+                </p>
+                <p>
+                  Nor can it ask the router. Gin&apos;s route table carries a route&apos;s method,
+                  path and last handler, and nothing about the middleware in front of it; the
+                  running process genuinely does not know. That is why the admin&apos;s Routes
+                  screen has never had an access column.
+                </p>
+                <p>
+                  Grit already solved this elsewhere. <code>grit</code> parses the route files,
+                  resolves each group&apos;s middleware chain and writes{' '}
+                  <code>internal/access</code>, which <code>grit doctor</code> fails on when it
+                  goes stale. <code>grit add scout</code> hands that table over, so Scout reads
+                  what each route requires rather than guessing:
+                </p>
+                <pre><code>POST /api/v1/auth/login     []
+GET  /api/v1/auth/me        [AuthRequired]
+GET  /api/v1/admin/blogs    [AuthRequired, RequireRole(ADMIN),
+                             RequirePermission(blogs.view)]</code></pre>
+                <p>
+                  Verified against a real project: 233 routes, each with its true chain. A route
+                  that should sit behind a role and does not is then something Scout can state
+                  rather than suspect, and it finds it without sending a request.
+                </p>
+                <h4>Two notes</h4>
+                <p>
+                  The dashboard is signed with a key derived from your JWT secret rather than with
+                  the secret itself. One signing key shared between two auth systems means a token
+                  minted by either is valid to the other, and the two disagree about who may hold
+                  one. Derived rather than random, because a random key signs everybody out on
+                  every deploy, which is how a warning becomes something people route around.
+                </p>
+                <p>
+                  Adding Scout raises a project to gin v1.12.0 and GORM v1.31.2, which Go would
+                  have done silently on the first build. Doing it in the command puts it in the
+                  diff instead. The one genuinely new dependency is <code>coder/websocket</code>;
+                  eight of Scout&apos;s eleven were already there.
+                </p>
+              </div>
+            </div>
+
             {/* v3.406.0 */}
             <div className="mb-12" id="v3.406.0">
               <div className="flex items-center gap-3 mb-4">

@@ -397,6 +397,11 @@
     "section": "Security & Testing",
     "title": "Security Guide"
   },
+  "/docs/security/scout": {
+    "keywords": "scout scan scanner security scanning pentest penetration test vulnerability vulnerabilities cve govulncheck headers tls dns exposed files secrets dockerfile audit owasp findings route table middleware unprotected endpoint add scout",
+    "section": "Security & Testing",
+    "title": "Scout: scanning your own app"
+  },
   "/docs/stack-selector": {
     "keywords": "choose stack combo architecture which what should I pick build single double triple api mobile desktop offline web portal saas internal tool dashboard kitchen sink multi-platform decision tree recommendation capability matrix vite next nextjs tanstack",
     "section": "Getting Started",

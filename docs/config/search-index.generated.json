@@ -906,6 +906,12 @@
     "keywords": "grit doctor audits project mistakes fail silently encrypted field no encryption key resource nothing scopes owner method lost scoping accepted request body table shared across organizations multitenant plugin pii plain column append only still mounting writes gorm studio login default password dashboard credentials weak jwt secret framework libraries behind their security floors sentinel counting rate limits per process public allowlist"
   },
   {
+    "title": "Scout: scanning your own app",
+    "href": "/docs/security/scout",
+    "section": "Security & Testing",
+    "keywords": "scout scan scanner security scanning pentest penetration test vulnerability vulnerabilities cve govulncheck headers tls dns exposed files secrets dockerfile audit owasp findings route table middleware unprotected endpoint add mounted inside api added grit checks response records like reachable git env committed repository practice cves go dependencies via configuration such gin left debug mode hands generated access so reads each real chain instead guessing endpoints protected shape url four modes passive intrusive safe default"
+  },
+  {
     "title": "Enterprise SSO: OpenID Connect Single Sign-On",
     "href": "/docs/security/sso",
     "section": "Security & Testing",
