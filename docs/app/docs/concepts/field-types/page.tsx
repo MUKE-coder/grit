@@ -59,8 +59,9 @@ const COLUMNS: { type: string; tag: string; note: string }[] = [
   { type: 'string', tag: 'size:255', note: 'A name containing "url" or "link" gets size:500, and a long-form one such as "description" gets type:text. Guessed from the field name, because a 255-character limit on a tracking URL fails in production and not in testing.' },
   { type: 'text', tag: 'type:text', note: 'No length limit. Rendered as a textarea.' },
   { type: 'richtext', tag: 'type:text', note: 'Also gets sanitize:"html": it is rendered as HTML wherever it is shown, so every write is cleaned before it is stored.' },
-  { type: 'int / uint', tag: '(none)', note: 'uint refuses a negative at the Zod and binding layers, not only in the column.' },
-  { type: 'float', tag: 'type:decimal(12,2) when the name looks like money', note: 'A field called price or amount gets fixed precision, because 1.99 + 0.01 in float64 is not 2.00. Prefer the money type, which does not guess.' },
+  { type: 'int', tag: '(none)', note: 'A signed integer. Negative values are allowed.' },
+  { type: 'uint', tag: '(none)', note: 'Refuses a negative at the Zod and binding layers, not only in the column, so the API answers 422 rather than storing a wrapped value.' },
+  { type: 'float', tag: 'type:decimal(12,2)', note: 'Only when the name looks like money. A field called price or amount gets fixed precision, because 1.99 + 0.01 in float64 is not 2.00. Prefer the money type, which does not guess.' },
   { type: 'money', tag: '(two columns)', note: 'price_amount BIGINT in minor units plus price_currency. One column holding "19.99 USD" is not something you can SUM, and a float is not something you can trust.' },
   { type: 'bool / toggle', tag: '(none)', note: 'Same column. toggle is a switch in the form, bool is a checkbox.' },
   { type: 'select / radio', tag: 'size:255 + enum:"a|b"', note: 'The enum tag records the allowed values on the model, so a seeder generated later fills the column from the list instead of with dictionary words.' },
@@ -304,7 +305,12 @@ export default function FieldTypesPage() {
                   hand keeps whatever you put there.
                 </p>
                 <div className="overflow-x-auto mb-8">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm table-fixed">
+                    <colgroup>
+                      <col className="w-[13%]" />
+                      <col className="w-[25%]" />
+                      <col className="w-[62%]" />
+                    </colgroup>
                     <thead>
                       <tr className="border-b border-border/40 text-left">
                         <th className="px-3 py-2 font-medium">Type</th>
@@ -315,8 +321,8 @@ export default function FieldTypesPage() {
                     <tbody>
                       {COLUMNS.map((row) => (
                         <tr key={row.type} className="border-b border-border/20 align-top">
-                          <td className="px-3 py-2 font-mono text-xs text-primary whitespace-nowrap">{row.type}</td>
-                          <td className="px-3 py-2 font-mono text-xs text-muted-foreground whitespace-nowrap">{row.tag}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-primary break-words">{row.type}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-muted-foreground break-words">{row.tag}</td>
                           <td className="px-3 py-2 text-muted-foreground leading-relaxed">{row.note}</td>
                         </tr>
                       ))}
@@ -326,7 +332,12 @@ export default function FieldTypesPage() {
 
                 <h3 className="text-xl font-semibold tracking-tight mb-3">Modifiers, and the tags they add</h3>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm table-fixed">
+                    <colgroup>
+                      <col className="w-[18%]" />
+                      <col className="w-[24%]" />
+                      <col className="w-[58%]" />
+                    </colgroup>
                     <thead>
                       <tr className="border-b border-border/40 text-left">
                         <th className="px-3 py-2 font-medium">Modifier</th>
@@ -337,8 +348,8 @@ export default function FieldTypesPage() {
                     <tbody>
                       {MODIFIER_TAGS.map((row) => (
                         <tr key={row.modifier} className="border-b border-border/20 align-top">
-                          <td className="px-3 py-2 font-mono text-xs text-primary whitespace-nowrap">{row.modifier}</td>
-                          <td className="px-3 py-2 font-mono text-xs text-muted-foreground whitespace-nowrap">{row.tag}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-primary break-words">{row.modifier}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-muted-foreground break-words">{row.tag}</td>
                           <td className="px-3 py-2 text-muted-foreground leading-relaxed">{row.note}</td>
                         </tr>
                       ))}
@@ -356,7 +367,11 @@ export default function FieldTypesPage() {
                   them change the generated code in more than one place at once.
                 </p>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm table-fixed">
+                    <colgroup>
+                      <col className="w-[22%]" />
+                      <col className="w-[78%]" />
+                    </colgroup>
                     <thead>
                       <tr className="border-b border-border/40 text-left">
                         <th className="px-3 py-2 font-medium">Flag</th>
@@ -366,7 +381,7 @@ export default function FieldTypesPage() {
                     <tbody>
                       {FLAGS.map((row) => (
                         <tr key={row.flag} className="border-b border-border/20 align-top">
-                          <td className="px-3 py-2 font-mono text-xs text-primary whitespace-nowrap">{row.flag}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-primary break-words">{row.flag}</td>
                           <td className="px-3 py-2 text-muted-foreground leading-relaxed">{row.what}</td>
                         </tr>
                       ))}
