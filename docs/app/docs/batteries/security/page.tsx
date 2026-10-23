@@ -66,21 +66,255 @@ export default function SecurityPage() {
 
                 <div className="grid gap-3 sm:grid-cols-2 mb-6">
                   {[
-                    { title: 'Web Application Firewall', desc: 'Detects SQL injection, XSS, path traversal, command injection, SSRF, XXE, and more' },
-                    { title: 'Rate Limiting', desc: 'Per-IP, per-user, per-route, and global limits with sliding window strategy' },
-                    { title: 'Auth Shield', desc: 'Brute-force protection with per-IP lockouts and credential stuffing detection' },
-                    { title: 'Security Headers', desc: 'CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy' },
-                    { title: 'Anomaly Detection', desc: 'Off-hours access, velocity anomalies, impossible travel, data exfiltration' },
-                    { title: 'IP Geolocation', desc: 'Automatic geo-lookup for every request with country and city data' },
-                    { title: 'Threat Dashboard', desc: 'Embedded React dashboard with real-time WebSocket updates at /sentinel/ui' },
-                    { title: 'Performance Monitoring', desc: 'Per-route latency tracking with p50/p95/p99 metrics' },
+                    { title: 'Web Application Firewall', href: '#waf', desc: 'Fourteen threat classes, matched against the URL, query, headers, cookies and body' },
+                    { title: 'Rate Limiting', href: '#rate-limits', desc: 'Per-IP, per-user, per-route and global, with three counting strategies' },
+                    { title: 'Auth Shield', href: '#auth-shield-detail', desc: 'Brute force and credential stuffing, locked on the pair rather than the address' },
+                    { title: 'Security Headers', href: '#security-headers', desc: 'Six headers, and the CSP reports come back as findings' },
+                    { title: 'Anomaly Detection', href: '#anomaly-detection', desc: 'Six behavioural checks: what this account does, not what this request contains' },
+                    { title: 'IP Geolocation', href: '#ip-geolocation', desc: 'Country and city per request, which is what makes impossible travel possible' },
+                    { title: 'Threat Dashboard', href: '#threat-dashboard', desc: 'Live at /sentinel/ui, backed by the store you point it at' },
+                    { title: 'Performance Monitoring', href: '#performance-monitoring', desc: 'Per-route p50, p95 and p99, measured where the WAF already sits' },
                   ].map((item) => (
-                    <div key={item.title} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
+                    <a
+                      key={item.title}
+                      href={item.href}
+                      className="rounded-lg border border-border/30 bg-card/30 px-4 py-3 block hover:border-primary/40 transition-colors"
+                    >
                       <h3 className="text-sm font-semibold text-foreground mb-1">{item.title}</h3>
                       <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              {/* Every feature, in detail */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Every feature, in detail
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-8">
+                  What each part actually covers, and where it stops. The lists below are the
+                  ones Sentinel compiles in, not a summary of them: if a threat class or a
+                  behavioural check is not named here, Sentinel does not look for it.
+                </p>
+
+                <h3 id="waf" className="text-xl font-semibold tracking-tight mb-3">
+                  Web Application Firewall
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Every request is matched against fourteen threat classes before your handler
+                  runs. The matching covers the path, the query string, headers, cookies and the
+                  body, and payloads are decoded first, so an attack hidden in URL encoding,
+                  double encoding, base64 or mixed case is compared in the same form as a plain
+                  one.
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2 mb-4">
+                  {[
+                    ['SQLi', 'SQL injection, including UNION, boolean and time-based forms'],
+                    ['XSS', 'Script injection in markup, attributes and javascript: URLs'],
+                    ['PathTraversal', '../ and its encodings, reaching outside the intended directory'],
+                    ['CommandInjection', 'Shell metacharacters that would run a second command'],
+                    ['SSRF', 'URLs aimed back at your own network or cloud metadata'],
+                    ['XXE', 'XML external entities, which read files or make requests for you'],
+                    ['LFI', 'Local file inclusion: reading a file the handler never meant to serve'],
+                    ['OpenRedirect', 'A redirect target an attacker chose, used to make a phish look like you'],
+                    ['PrototypePollution', '__proto__ and constructor keys that rewrite object behaviour'],
+                    ['Scanning', 'The shape of an automated probe rather than one bad request'],
+                    ['RateLimitExceeded', 'Raised by the limiter below, recorded as a threat like any other'],
+                    ['BruteForce', 'Raised by Auth Shield'],
+                    ['AnomalyDetected', 'Raised by the behavioural checks'],
+                    ['CSPViolation', 'Reported by the browser, back to your own endpoint'],
+                  ].map(([name, what]) => (
+                    <div key={name} className="rounded-lg border border-border/30 bg-card/20 px-3 py-2">
+                      <code className="text-xs text-primary">{name}</code>
+                      <p className="text-xs text-muted-foreground/70 leading-relaxed mt-1">{what}</p>
                     </div>
                   ))}
                 </div>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Each rule has a sensitivity of <code>off</code>, <code>low</code>,{' '}
+                  <code>medium</code> or <code>strict</code>, so a rule that costs you false
+                  positives can be loosened or turned off without turning off the WAF. What
+                  happens on a match is the <a href="#waf-modes" className="text-primary hover:underline">WAF mode</a>:
+                  log it, block it, or challenge the caller. Your own patterns go in{' '}
+                  <a href="#custom-rules" className="text-primary hover:underline">custom rules</a>, and{' '}
+                  <a href="#waf-blind-spots" className="text-primary hover:underline">what the WAF does not inspect</a>{' '}
+                  is worth reading before you rely on it.
+                </p>
+
+                <h3 id="rate-limits" className="text-xl font-semibold tracking-tight mb-3">
+                  Rate Limiting
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Limits apply per IP, per authenticated user, per route, and globally, and the
+                  four compose: a route limit does not replace the global one. Three counting
+                  strategies are available, and the difference between them matters at the edges.
+                </p>
+                <ul className="text-muted-foreground leading-relaxed mb-4 space-y-2">
+                  <li>
+                    <code>fixed_window</code>: counts per clock window. Cheapest, and lets through
+                    up to twice the limit across a window boundary.
+                  </li>
+                  <li>
+                    <code>sliding_window</code>: counts the last N seconds continuously. No
+                    boundary burst, which is why it is the default.
+                  </li>
+                  <li>
+                    <code>token_bucket</code>: refills at a steady rate and allows a burst up to
+                    the bucket size. The right one when normal traffic is bursty by nature.
+                  </li>
+                </ul>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  A limited response is a 429 carrying <code>Retry-After</code>, and every
+                  response carries <code>X-RateLimit-Limit</code> and{' '}
+                  <code>X-RateLimit-Remaining</code>, so a client can back off before it is
+                  refused rather than after. Exceeding a limit is recorded as a{' '}
+                  <code>RateLimitExceeded</code> threat against that actor, which is how a
+                  scraper shows up on the dashboard as one caller rather than as noise.
+                </p>
+
+                <h3 id="auth-shield-detail" className="text-xl font-semibold tracking-tight mb-3">
+                  Auth Shield
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Sign-in gets its own protection, because the generic limiter cannot tell a
+                  wrong password from a slow typist. Two things are watched: repeated failures
+                  against one account, and one password tried across many accounts, which is
+                  credential stuffing and looks nothing like brute force from the account&apos;s
+                  side.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  A lockout bars the <strong>(address, account) pair</strong> rather than the
+                  address. Behind an office or a carrier NAT one address is thousands of people,
+                  and barring it meant one person&apos;s typing locked out everybody sharing that
+                  egress. Addresses that are known to be shared can be exempted from the
+                  per-address bar entirely with <code>SENTINEL_LOCKOUT_EXEMPT_IPS</code>, and they
+                  are still counted and still subject to the pair lockout.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Between &quot;no friction&quot; and &quot;you are barred&quot; there is a
+                  challenge tier, which asks for a CAPTCHA instead of refusing. It needs a
+                  provider configured (Turnstile, hCaptcha or reCAPTCHA); with none set the tier
+                  exists and can never fire.
+                </p>
+
+                <h3 id="security-headers" className="text-xl font-semibold tracking-tight mb-3">
+                  Security Headers
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Six response headers, set on every response:
+                </p>
+                <ul className="text-muted-foreground leading-relaxed mb-4 space-y-2">
+                  <li>
+                    <code>Content-Security-Policy</code>: which origins may supply scripts,
+                    styles, images and frames. There is a report-only variant, so you can watch
+                    what a policy would have blocked before it blocks anything.
+                  </li>
+                  <li>
+                    <code>Strict-Transport-Security</code>: this host is HTTPS only, for the next
+                    N seconds, remembered by the browser.
+                  </li>
+                  <li>
+                    <code>X-Frame-Options: DENY</code>: your pages cannot be put in someone
+                    else&apos;s iframe, which is what clickjacking needs.
+                  </li>
+                  <li>
+                    <code>X-Content-Type-Options: nosniff</code>: the browser believes your
+                    Content-Type instead of guessing, so an uploaded file cannot be guessed into
+                    a script.
+                  </li>
+                  <li>
+                    <code>Referrer-Policy</code>: how much of the current URL is sent when a user
+                    follows a link away. The default leaks the path to third parties.
+                  </li>
+                  <li>
+                    <code>Permissions-Policy</code>: which browser features (camera, microphone,
+                    geolocation) the page and its frames may ask for.
+                  </li>
+                </ul>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  CSP is the one with a feedback loop: browsers post violations back, and
+                  Sentinel records them as <code>CSPViolation</code> findings. A sudden run of
+                  them usually means a policy that is too tight rather than an attack, and either
+                  way you learn it from the dashboard rather than from a user.
+                </p>
+
+                <h3 id="anomaly-detection" className="text-xl font-semibold tracking-tight mb-3">
+                  Anomaly Detection
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The WAF asks whether a request looks like an attack. These six ask whether this
+                  account is behaving like itself, which catches the case where every individual
+                  request is perfectly valid, because the credentials are real and stolen.
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2 mb-4">
+                  {[
+                    ['impossible_travel', 'Signed in from two places further apart than anyone could travel between in the time elapsed'],
+                    ['unusual_access', 'Reaching records or endpoints this account has never touched'],
+                    ['data_exfiltration', 'Reading far more rows than this account normally reads'],
+                    ['off_hours_access', 'Activity outside this account\u2019s established working pattern'],
+                    ['velocity_anomaly', 'Acting faster than a person does, without tripping a rate limit'],
+                    ['credential_stuffing', 'One password tried across many accounts, seen across the whole application'],
+                  ].map(([name, what]) => (
+                    <div key={name} className="rounded-lg border border-border/30 bg-card/20 px-3 py-2">
+                      <code className="text-xs text-primary">{name}</code>
+                      <p className="text-xs text-muted-foreground/70 leading-relaxed mt-1">{what}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Sensitivity is <code>low</code>, <code>medium</code> or <code>high</code>.
+                  These checks compare against a baseline, so they are quiet on a new deployment
+                  and get sharper as there is more history to be unlike. A match is recorded as an{' '}
+                  <code>AnomalyDetected</code> threat with the check that fired.
+                </p>
+
+                <h3 id="ip-geolocation" className="text-xl font-semibold tracking-tight mb-3">
+                  IP Geolocation
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Every request is resolved to a country and city, from GeoLite2 (free) or GeoIP2
+                  (paid). This is less a feature than a prerequisite: impossible travel cannot be
+                  computed without it, and a threat actor on the dashboard reads very differently
+                  with a country beside it.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The address it resolves is the one Sentinel decided to trust. Behind a proxy
+                  that means <code>SENTINEL_TRUSTED_PROXIES</code>: with it unset, forwarded
+                  headers are ignored entirely and every request geolocates to your load
+                  balancer.
+                </p>
+
+                <h3 id="threat-dashboard" className="text-xl font-semibold tracking-tight mb-3">
+                  Threat Dashboard
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  A dashboard at <code>/sentinel/ui</code>, updating over a WebSocket as requests
+                  arrive. It is organised by actor rather than by event: an address or account
+                  accumulates findings and carries a status of Active, Blocked or Whitelisted, so
+                  the question &quot;what is this one caller doing&quot; has an answer, and
+                  whitelisting the pen-tester is one action rather than a config change.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Findings are Low, Medium, High or Critical. They are kept in the store you
+                  point Sentinel at: <code>sqlite</code>, <code>postgres</code>, <code>mysql</code>{' '}
+                  or <code>memory</code>. Memory is genuinely in-memory, so a restart loses the
+                  history, which is a reasonable choice on a laptop and the wrong one in
+                  production.
+                </p>
+
+                <h3 id="performance-monitoring" className="text-xl font-semibold tracking-tight mb-3">
+                  Performance Monitoring
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Per-route latency as p50, p95 and p99. It is here because the WAF is already in
+                  the request path and already knows which route this was, so the measurement is
+                  free; it is not a replacement for{' '}
+                  <Link href="/docs/backend/pulse" className="text-primary hover:underline">Pulse</Link>,
+                  which traces a request through its queries and tells you which line issued
+                  them. Use these numbers to notice that something got slower, and Pulse to find
+                  out why.
+                </p>
               </div>
 
               {/* Configuration */}
@@ -243,7 +477,7 @@ if cfg.SentinelEnabled {
 
               {/* What the WAF does not inspect */}
               <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                <h2 id="waf-blind-spots" className="text-2xl font-semibold tracking-tight mb-4">
                   What the WAF does not inspect
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
@@ -342,7 +576,7 @@ if cfg.SentinelEnabled {
 
               {/* WAF Modes */}
               <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                <h2 id="waf-modes" className="text-2xl font-semibold tracking-tight mb-4">
                   WAF Modes
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
@@ -449,7 +683,7 @@ if cfg.SentinelEnabled {
 
               {/* Custom WAF Rules */}
               <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                <h2 id="custom-rules" className="text-2xl font-semibold tracking-tight mb-4">
                   Custom WAF Rules
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">

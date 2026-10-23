@@ -347,6 +347,11 @@
     "section": "Infrastructure",
     "title": "Docker Cheat Sheet"
   },
+  "/docs/infrastructure/studio": {
+    "keywords": "gorm studio database browser db viewer tables rows sql editor erd export import excel csv dbml schema discovery scoping audit /studio admin data grid",
+    "section": "Infrastructure",
+    "title": "GORM Studio (Database Browser)"
+  },
   "/docs/learnings": {
     "keywords": "learnings journal engineering challenges write-ups load testing security performance tuning grit framework experiments",
     "section": "Learnings",

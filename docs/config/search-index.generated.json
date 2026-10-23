@@ -330,7 +330,7 @@
     "keywords": "docs batteries modules"
   },
   {
-    "title": "Security",
+    "title": "Sentinel (Security)",
     "href": "/docs/batteries/security",
     "section": "Batteries",
     "keywords": "security grit sentinel waf rate limiting brute force protection anomaly detection ip geolocation threat dashboard docs batteries"
@@ -736,6 +736,12 @@
     "href": "/docs/infrastructure/docker-cheatsheet",
     "section": "Infrastructure",
     "keywords": "docker commands cheat sheet reference quick grit container management volumes networking troubleshooting docs infrastructure cheatsheet"
+  },
+  {
+    "title": "GORM Studio (Database Browser)",
+    "href": "/docs/infrastructure/studio",
+    "section": "Infrastructure",
+    "keywords": "gorm studio database browser db viewer tables rows sql editor erd export import excel csv dbml schema discovery scoping audit /studio admin data grid mounted every grit project both structs paginated sorting search record editing foreign key navigation raw ddl blocking json yaml go struct generation row level hidden read only logger login page whose token never touches storage docs infrastructure"
   },
   {
     "title": "Learnings: Engineering Journal",

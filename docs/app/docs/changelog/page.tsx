@@ -66,6 +66,63 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.408.0 */}
+            <div className="mb-12" id="v3.408.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.408.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The four embedded tools, documented feature by feature</h3>
+                <p>
+                  Sentinel, Pulse, GORM Studio and Scout each sit in every request path or every
+                  database of a Grit project, and each was documented as a grid of eight cards
+                  with one line apiece. A line is enough to know a thing exists and not enough to
+                  know what it covers, which is the question you have when you are deciding
+                  whether to rely on it.
+                </p>
+                <p>
+                  Every feature on all four pages now has a section of its own, and the overview
+                  cards link to them. The content is read out of the libraries rather than
+                  recalled: the fourteen threat classes are Sentinel&apos;s{' '}
+                  <code>ThreatType</code>, the six behavioural checks are its{' '}
+                  <code>AnomalyCheckType</code>, the six response headers are the ones its
+                  middleware sets, and Scout&apos;s check ids are the ones its registry reports
+                  findings under.
+                </p>
+                <p>
+                  <strong>GORM Studio had no reference page at all.</strong> It is mounted in
+                  every project and was documented in passing on the database page and in a
+                  design essay. It now has one at{' '}
+                  <code>/docs/infrastructure/studio</code>, covering schema discovery from both
+                  the database and your structs, the SQL editor and why it cannot be row-scoped,
+                  export and import, code generation, and the three access controls that compose:
+                  row scoping, hidden and read-only tables, and the audit logger.
+                </p>
+                <h4>And they can be found</h4>
+                <p>
+                  Searching &quot;sentinel&quot; did not return the Sentinel page. It was titled
+                  &quot;Security&quot;, so the word was not in its title at all and a design essay
+                  about Sentinel outranked it. Each page is now titled for the thing it
+                  documents, and the Systems essays sit a little further back than a reference
+                  page, because their titles are the bare product name and an exact-title match
+                  was beating the page that tells you how to use it. All four now answer their
+                  own name.
+                </p>
+                <h4>Also: excelize pinned past four advisories</h4>
+                <p>
+                  GO-2026-6684, 6685, 6688 and 6689 are panics and unbounded allocation on a
+                  crafted workbook, all reachable from the spreadsheet import, and all fixed
+                  upstream with no tag cut since. Generated projects now pin the commit carrying
+                  the last of the four, and <code>grit upgrade</code> raises an existing project
+                  to it. Moves to v2.11.1 when it is released.
+                </p>
+              </div>
+            </div>
+
             {/* v3.407.2 */}
             <div className="mb-12" id="v3.407.2">
               <div className="flex items-center gap-3 mb-4">

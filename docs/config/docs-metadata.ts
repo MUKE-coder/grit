@@ -604,10 +604,19 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Background job processing in Grit with asynq and Redis: email jobs, image processing, cleanup workers, and admin monitoring.',
   },
+  // Named for the thing it documents. Titled "Security", a search for
+  // "sentinel" could not hit it in the title at all and the page ranked below
+  // a design essay about Sentinel. The sidebar has said "Security (Sentinel)"
+  // all along.
   '/docs/batteries/security': {
-    title: 'Security',
+    title: 'Sentinel (Security)',
     description:
       'Security in Grit with Sentinel: WAF, rate limiting, brute-force protection, anomaly detection, IP geolocation, and threat dashboard.',
+  },
+  '/docs/infrastructure/studio': {
+    title: 'GORM Studio (Database Browser)',
+    description:
+      'GORM Studio is the database browser mounted at /studio in every Grit project: schema discovery from both the database and your GORM structs, a paginated grid with sorting and search, record editing, foreign-key navigation, a raw SQL editor with DDL blocking, schema and data export (SQL, JSON, YAML, DBML, ERD, CSV), import from JSON, CSV, SQL or Excel, Go struct generation, row-level scoping, hidden and read-only tables, an audit logger, and a login page whose token never touches browser storage.',
   },
   '/docs/batteries/media': {
     title: 'Image Optimisation',

@@ -275,6 +275,7 @@ const navItems: NavItem[] = [
       { title: 'Docker Setup', href: '/docs/infrastructure/docker' },
       { title: 'Docker Cheat Sheet', href: '/docs/infrastructure/docker-cheatsheet' },
       { title: 'Database & Migrations', href: '/docs/infrastructure/database' },
+      { title: 'Database Browser (GORM Studio)', href: '/docs/infrastructure/studio' },
     ],
   },
   // Deployment is its own top-level section rather than a page under

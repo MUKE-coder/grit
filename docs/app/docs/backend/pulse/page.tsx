@@ -74,40 +74,183 @@ export default function PulsePage() {
                     </thead>
                     <tbody>
                       <tr className="border-b border-border/20">
-                        <td className="py-2 pr-4 font-medium text-foreground/80">Request Tracing</td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#tracing" className="hover:text-primary transition-colors">Request Tracing</a></td>
                         <td className="py-2 text-muted-foreground">Automatic trace IDs, slow request detection, latency tracking</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="py-2 pr-4 font-medium text-foreground/80">Database Monitoring</td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#database" className="hover:text-primary transition-colors">Database Monitoring</a></td>
                         <td className="py-2 text-muted-foreground">GORM query capture, N+1 detection, connection pool stats</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="py-2 pr-4 font-medium text-foreground/80">Runtime Metrics</td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#runtime" className="hover:text-primary transition-colors">Runtime Metrics</a></td>
                         <td className="py-2 text-muted-foreground">Heap memory, goroutines, GC pauses, leak detection</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="py-2 pr-4 font-medium text-foreground/80">Error Tracking</td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#errors" className="hover:text-primary transition-colors">Error Tracking</a></td>
                         <td className="py-2 text-muted-foreground">Panic recovery, stack traces, request body capture, error fingerprinting</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="py-2 pr-4 font-medium text-foreground/80">Health Checks</td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#health" className="hover:text-primary transition-colors">Health Checks</a></td>
                         <td className="py-2 text-muted-foreground">Kubernetes-compatible <code>/live</code> and <code>/ready</code> endpoints</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="py-2 pr-4 font-medium text-foreground/80">Alerting</td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#alerting-detail" className="hover:text-primary transition-colors">Alerting</a></td>
                         <td className="py-2 text-muted-foreground">Threshold-based rules with Slack, Discord, email, and webhook notifications</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="py-2 pr-4 font-medium text-foreground/80">Prometheus</td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#prometheus-detail" className="hover:text-primary transition-colors">Prometheus</a></td>
                         <td className="py-2 text-muted-foreground">18+ metrics at <code>/pulse/metrics</code></td>
                       </tr>
                       <tr>
-                        <td className="py-2 pr-4 font-medium text-foreground/80">Dashboard</td>
-                        <td className="py-2 text-muted-foreground">React 19 UI with 8 pages: Overview, Routes, Database, Errors, Runtime, Health, Alerts, Settings</td>
+                        <td className="py-2 pr-4 font-medium text-foreground/80"><a href="#dashboard-detail" className="hover:text-primary transition-colors">Dashboard</a></td>
+                        <td className="py-2 text-muted-foreground">React UI, embedded in the binary. Twelve pages: Overview, Routes, Database, Errors, Runtime, Health, Alerts, SLOs, USE, Test Runs, Flame Graph, Settings</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+              {/* Every feature, in detail */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Every feature, in detail
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-8">
+                  What each part measures, and what it will not tell you. Everything below runs
+                  in your process: no Redis, no collector, no agent.
+                </p>
+
+                <h3 id="tracing" className="text-xl font-semibold tracking-tight mb-3">
+                  Request Tracing
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Every request gets latency, throughput and a trace ID, propagated as the W3C{' '}
+                  <code>traceparent</code> header. If a request arrives already carrying a valid
+                  one, Pulse adopts the upstream trace rather than starting a new one, so a trace
+                  survives crossing a service boundary. Outbound calls made through{' '}
+                  <code>pulse.WrapHTTPClient</code> carry it onward.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  A request slower than the threshold (1s by default) is marked slow. Sampling
+                  thins what is <em>stored</em>, never what is <em>counted</em>: at 50% sampling
+                  the request counts, error rates and SLO compliance still reflect every request,
+                  and errors and slow requests are stored whatever the rate. That is the
+                  difference between sampling you can trust at 3am and sampling that quietly
+                  halves your error count.
+                </p>
+
+                <h3 id="database" className="text-xl font-semibold tracking-tight mb-3">
+                  Database Monitoring
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  A GORM plugin captures every query with its duration and the{' '}
+                  <strong>file and line that issued it</strong>, which is the difference between
+                  knowing a query is slow and knowing where it comes from. Queries are aggregated
+                  by pattern, so a thousand lookups with different ids read as one row.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  N+1s are detected and ranked by total impact rather than by count, because
+                  twenty queries in a hot endpoint matter more than two hundred in a nightly job.
+                  Connection pool stats sit beside them, since an exhausted pool and a slow query
+                  look identical from the outside. Slow <code>SELECT</code>s can optionally be
+                  explained: Pulse asks the database why, reads the sequential scan or the
+                  filesort off the plan, and does it at most once per pattern per hour, off the
+                  request path.
+                </p>
+
+                <h3 id="runtime" className="text-xl font-semibold tracking-tight mb-3">
+                  Runtime Metrics
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Heap, goroutine count and GC pauses, sampled continuously, with goroutine leak
+                  detection on top: a count that only ever rises is the shape of a leak, and it
+                  is reported as one rather than left for you to notice on a graph.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  A flame graph is available when profiling is enabled, defaulting to real CPU
+                  time rather than goroutine stacks. The distinction matters: with goroutine
+                  stacks, a parked database connection is counted on every tick and the code
+                  actually burning CPU shows up as a sliver.
+                </p>
+
+                <h3 id="errors" className="text-xl font-semibold tracking-tight mb-3">
+                  Error Tracking
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Panics are recovered and recorded with a stack trace and the request body that
+                  caused them. Errors are fingerprinted, so the same failure from ten thousand
+                  requests is one entry with a count, and classified automatically (validation,
+                  database, timeout, auth and so on) so the shape of an outage is visible before
+                  you read a single trace.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Captured context is redacted before it is stored: passwords, tokens, card
+                  numbers, JWTs and keys are stripped from request bodies, error messages and
+                  outbound URLs, whatever the field is called. The capture is the point, and a
+                  capture that stores a password is a liability rather than a tool.
+                </p>
+
+                <h3 id="health" className="text-xl font-semibold tracking-tight mb-3">
+                  Health Checks
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  <code>/live</code> and <code>/ready</code>, shaped for Kubernetes: liveness
+                  says the process is not wedged, readiness says it can serve. Your own checks
+                  plug in, and a Grit project registers its Redis connection automatically. The
+                  composite status is the worst of its parts, and flapping is detected, so a
+                  dependency that fails every other probe reads as unstable instead of alternating
+                  between fine and down.
+                </p>
+
+                <h3 id="alerting-detail" className="text-xl font-semibold tracking-tight mb-3">
+                  Alerting
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Threshold rules fire in two phases, which is the part that makes them usable: a
+                  condition has to hold, not merely occur, so one slow second does not page
+                  anybody. Cooldowns stop a firing rule repeating. Notifications go to Slack,
+                  Discord, email or a webhook, and webhooks are HMAC signed so the receiver can
+                  tell they came from you.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Above simple thresholds there are two more useful things. <strong>SLOs with
+                  multiwindow burn-rate alerting</strong>, following the Google SRE workbook,
+                  computed from exact per-minute counts so sampling never skews compliance. And{' '}
+                  <strong>per-route baselines</strong>: each route&apos;s hourly p95 is kept for
+                  30 days, so Pulse can say a route <em>got slower</em> rather than only that it
+                  is slow, and a sustained regression against last week&apos;s median pages once,
+                  with the numbers you would want before deciding to roll back.
+                </p>
+
+                <h3 id="prometheus-detail" className="text-xl font-semibold tracking-tight mb-3">
+                  Prometheus
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Standard exposition format at <code>/pulse/metrics</code>, for Grafana or
+                  anything else that scrapes. Pulse counts its own failures and exports those
+                  too: dropped writes, and the case where buffer capacity rather than your
+                  retention setting is what limits how far back you can see. A monitoring tool
+                  that quietly stops recording is worse than one that is plainly off.
+                </p>
+
+                <h3 id="dashboard-detail" className="text-xl font-semibold tracking-tight mb-3">
+                  Dashboard
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Twelve pages at <code>/pulse/ui/</code>, embedded in the Go binary with{' '}
+                  <code>go:embed</code>, so there is no second thing to deploy: Overview, Routes,
+                  Database, Errors, Runtime, Health, Alerts, SLOs, USE, Test Runs, Flame Graph
+                  and Settings. It updates over a WebSocket, and the API behind it is protected
+                  with HS256 JWTs.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Two pages are worth knowing about before you need them. <strong>USE</strong> is
+                  the utilisation / saturation / errors grid for the host. <strong>Test
+                  Runs</strong> overlays a load test onto the timelines: run k6 against the app
+                  and the run appears as a band, with a before, during and after comparison per
+                  route, query and N+1 deltas, time to recovery, and a CPU profile captured over
+                  that window.
+                </p>
               </div>
 
               {/* Configuration */}

@@ -235,12 +235,15 @@ function scoreTerm(title: string, keywords: string, term: string) {
  */
 function sectionWeight(section: string) {
   if (section === 'Courses') return 0.9
+  if (section === 'Learnings' || section === 'Demo') return 0.95
   // Systems (Design) is a design-interview essay per subsystem, and for most
-  // words there is a reference page about the same thing: "fields" matched
-  // "Field Encryption at Rest" and "Field Types Reference" equally, and the
-  // alphabet decided. The essays stay findable, which matters because a few
-  // things, GORM Studio among them, are documented nowhere else.
-  if (section === 'Learnings' || section === 'Demo' || section === 'Systems (Design)') return 0.95
+  // words there is a reference page about the same thing. Its titles are the
+  // bare product name ("Pulse", "Sentinel"), so an exact-title match beat the
+  // reference page that actually tells you how to use the thing: searching
+  // "pulse" put the essay above Pulse (Observability). Far enough back that a
+  // reference page wins, near enough that the essays are still the first hit
+  // for anything only they cover.
+  if (section === 'Systems (Design)') return 0.85
   return 1
 }
 
