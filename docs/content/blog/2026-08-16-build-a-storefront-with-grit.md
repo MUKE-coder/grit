@@ -171,7 +171,7 @@ Grit has `--items` for exactly this:
 
 ```bash
 grit g resource Order \
-  --fields "number:string:auto:ORD,customer_name:string,customer_email:string,shipping_address:text,phone:string,subtotal:float,shipping:float,total:float,payment_intent:string,status:select:pending=Pending|paid=Paid|packed=Packed|shipped=Shipped|delivered=Delivered|cancelled=Cancelled" \
+  --fields "number:string:auto:ORD,customer_name:string,customer_email:string,shipping_address:text,phone:string,subtotal:float,shipping:float,total:float,payment_intent:string,status:select[pending, paid, packed, shipped, delivered, cancelled]" \
   --items "OrderItem:product:belongs_to:Product,product_name:string,quantity:int,unit_price:float,line_total:float"
 ```
 

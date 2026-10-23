@@ -34,11 +34,11 @@ Then the one resource:
 
 ```bash
 grit generate resource Contact \
-  --fields "name:string,email:email,phone:tel,company:string,status:select:lead|customer|churned,starred:bool,notes:text" \
+  --fields "name:string,email:email,phone:tel,company:string,status:select[lead, customer, churned],starred:bool,notes:text" \
   --faker --count 60
 ```
 
-Two of those fields are doing more work than the rest, and it is worth knowing which before you see the result. **`status:select:lead|customer|churned` and `starred:bool`** are the only two columns in that list with a small, known set of values. Hold that thought.
+Two of those fields are doing more work than the rest, and it is worth knowing which before you see the result. **`status:select[lead, customer, churned]` and `starred:bool`** are the only two columns in that list with a small, known set of values. Hold that thought.
 
 ```bash
 grit migrate

@@ -37,7 +37,7 @@ cd crm
 ## 2. Companies: six field types in one command
 
 ```bash
-grit generate resource Company --fields "name:string,website:url,domain:domain:unique,brand:color,country:country:UG,industry:select:tech=Technology|retail=Retail|health=Health|finance=Finance,profile:json" --faker --count 50
+grit generate resource Company --fields "name:string,website:url,domain:domain:unique,brand:color,country:country:UG,industry:select[tech=Technology, retail, health, finance],profile:json" --faker --count 50
 ```
 
 Here is what each field became:
@@ -58,7 +58,7 @@ The third part of a field is its option: `country:UG` sets the default, `:unique
 ## 3. Contacts: phone numbers from every country
 
 ```bash
-grit generate resource Contact --fields "first_name:string,last_name:string,email:email:unique,phone:tel:UG:unique,company:belongs_to:Company,rating:rating,best_time:time,win_chance:percent,stage:select:lead=Lead|qualified=Qualified|customer=Customer|lost=Lost" --faker --count 100
+grit generate resource Contact --fields "first_name:string,last_name:string,email:email:unique,phone:tel:UG:unique,company:belongs_to:Company,rating:rating,best_time:time,win_chance:percent,stage:select[lead, qualified, customer, lost]" --faker --count 100
 grit migrate
 ```
 

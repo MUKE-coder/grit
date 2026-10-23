@@ -66,6 +66,79 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.409.0 */}
+            <div className="mb-12" id="v3.409.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.409.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>What each field becomes, what each flag does, and one syntax everywhere</h3>
+                <p>
+                  The field types page listed what every type maps to in Go, TypeScript and Zod,
+                  and stopped there. It now also says what each one becomes in the database and
+                  the thing about it that the Go type does not tell you: that a{' '}
+                  <code>string</code> named something with &quot;url&quot; in it gets{' '}
+                  <code>size:500</code> because a tracking link does not fit in 255, that{' '}
+                  <code>one_to_one</code> gets <code>uniqueIndex</code> rather than{' '}
+                  <code>index</code> and that this is the entire difference between it and{' '}
+                  <code>belongs_to</code>, that <code>money</code> is two columns because one
+                  column holding &quot;19.99 USD&quot; is not something you can SUM. Modifiers
+                  have the same treatment, including which struct tag each one adds.
+                </p>
+                <p>
+                  <strong>The flags are documented.</strong> <code>--faker</code>,{' '}
+                  <code>--seed</code>, <code>--public</code>, <code>--items</code>,{' '}
+                  <code>--owned-by</code>, <code>--append-only</code>,{' '}
+                  <code>--audit-reads</code>, <code>--roles</code>, <code>--tree</code> and{' '}
+                  <code>--tenant-owned</code>, each with what it actually changes. Most of them
+                  change the generated code in more than one place, which is why knowing one
+                  exists is not the same as knowing what it does.
+                </p>
+                <h4>One syntax</h4>
+                <p>
+                  The talk showed the readable form in a slide&apos;s preview and the positional
+                  form in the terminal beneath it, which reads as two ways of saying the same
+                  thing rather than as one replacing the other. Every slide is on the readable
+                  form now, and so are the four blog tutorials, which are the worst place for the
+                  older spelling because they are followed line by line.
+                </p>
+                <p>
+                  Every argument is written out, too: <code>client:belongs_to[Client]</code>{' '}
+                  rather than <code>client:belongs_to</code>, <code>photo:file[image]</code>{' '}
+                  rather than <code>photo:file</code>. Both work. The explicit one keeps working
+                  when somebody renames the field, and says what the upload accepts.
+                </p>
+                <p>
+                  The conversion was mechanical and it damaged three passages, which is the
+                  normal outcome: a label containing a space was cut in half twice, and a
+                  deliberate &quot;these two are equivalent&quot; comparison became the same line
+                  printed twice. Repaired by hand, and then every converted spec was fed through
+                  the real parser rather than read: 27 of them, all parsing, with the derived
+                  labels checked (<code>past_due</code> becomes &quot;Past Due&quot;).
+                </p>
+                <h4>The money field groups its digits</h4>
+                <p>
+                  A money column in a table has always read <code>$1,234,567.89</code>, because
+                  it renders through <code>Intl.NumberFormat</code>, which groups. The input
+                  beside it read <code>1234567.89</code>. Telling six figures from seven by
+                  counting digits is the mistake that field exists to prevent.
+                </p>
+                <p>
+                  Grouping happens when you leave the box and when a value arrives from
+                  elsewhere, never on a keystroke: reformatting while someone types is what moves
+                  the caret, and the field already held its draft separately for that reason.
+                  Commas are stripped on the way in, so a pasted <code>1,234.56</code> works, and
+                  the guard that decides whether to rewrite the box now reads the draft through a
+                  parser that understands them, because <code>Number.parseFloat(&quot;1,234.56&quot;)</code>{' '}
+                  is 1.
+                </p>
+              </div>
+            </div>
+
             {/* v3.408.2 */}
             <div className="mb-12" id="v3.408.2">
               <div className="flex items-center gap-3 mb-4">

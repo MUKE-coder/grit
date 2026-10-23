@@ -65,7 +65,7 @@ uses the new option-backed field types for its status and a flag:
 ```bash
 grit g resource Invoice --fields \
   "number:string:auto:INV,\
-   status:select:draft=Draft|sent=Sent|paid=Paid,\
+   status:select[draft, sent, paid],\
    sent:toggle,\
    customer:belongs_to:Customer" \
   --items "InvoiceItem:description:string,qty:int,unit_rate:float"
@@ -106,9 +106,9 @@ generates the control, the validation, and the types to match. Here's each one:
 
 | You write | Renders in the form as | Stored as | Types generated |
 |-----------|------------------------|-----------|-----------------|
-| `status:select:draft=Draft\|paid=Paid` | a **dropdown** (`<select>`) | Go `string` | Zod `z.enum([...])`, TS `"draft" \| "paid"` |
-| `rating:radio:low=Low\|high=High` | a **radio-button group** (single choice) | Go `string` | Zod `z.enum([...])`, TS `"low" \| "high"` |
-| `channels:check:email=Email\|sms=SMS` | a **checkbox group** (multi-select) | Go `datatypes.JSONSlice[string]` (JSON array) | Zod `z.array(z.enum([...]))`, TS `("email" \| "sms")[]` |
+| `status:select[draft, paid]` | a **dropdown** (`<select>`) | Go `string` | Zod `z.enum([...])`, TS `"draft" \| "paid"` |
+| `rating:radio[low, high]` | a **radio-button group** (single choice) | Go `string` | Zod `z.enum([...])`, TS `"low" \| "high"` |
+| `channels:check[email, sms=SMS]` | a **checkbox group** (multi-select) | Go `datatypes.JSONSlice[string]` (JSON array) | Zod `z.array(z.enum([...]))`, TS `("email" \| "sms")[]` |
 | `sent:toggle` | a **switch** | Go `bool` | Zod `z.boolean()`, TS `boolean` |
 
 So in our invoice, **`status:select:…`** becomes a dropdown with Draft / Sent /
@@ -125,7 +125,7 @@ are just a few choices you want visible at once (a plan tier, a priority), and
 
 Want *multiple* choices instead of one? That's `check`: it renders a checkbox
 group and stores the ticked values as a JSON array. For example, if invoices could
-be delivered several ways: `channels:check:email=Email|sms=SMS|push=Push`.
+be delivered several ways: `channels:check[email, sms=SMS, push]`.
 
 ### Labels are optional
 
@@ -134,16 +134,16 @@ optional**. Give just the values and Grit generates the labels for you by
 capitalizing each one:
 
 ```bash
-# These two are equivalent:
-status:select:draft=Draft|sent=Sent|paid=Paid
-status:select:draft|sent|paid          # labels auto-generated: Draft, Sent, Paid
+# A label only where it differs from the value:
+status:select[draft, sent, paid="Paid in full"]
+status:select[draft, sent, paid]          # labels derived: Draft, Sent, Paid
 ```
 
 Multi-word values are humanized, not just capitalized: `in_progress` becomes
 **In Progress**, `awaiting_payment` becomes **Awaiting Payment**. You only reach
 for `value=Label` when the label needs to differ from the stored value (say
 `net_30=Net 30`, or a value that's an abbreviation you want spelled out). Mix and
-match freely: `status:select:draft|sent=Sent to client|paid` works.
+match freely: `status:select[draft, sent="Sent to client", paid]` works.
 
 📖 **Docs:** [Field types](/docs/concepts/field-types), the full table mapping
 every type to its Go, GORM, TypeScript, Zod, and form representation.
@@ -160,8 +160,8 @@ each one command, each leaning on the new field types the same way:
 ```bash
 grit g resource Order --fields \
   "number:string,\
-   status:select:pending|paid|shipped|delivered,\
-   fulfillment:radio:standard|express,\
+   status:select[pending, paid, shipped, delivered],\
+   fulfillment:radio[standard, express],\
    customer:belongs_to:Customer" \
   --items "OrderLine:product:string,qty:int,unit_price:float"
 ```
@@ -172,8 +172,8 @@ grit g resource Order --fields \
 ```bash
 grit g resource Loan --fields \
   "reference:string,\
-   status:select:pending|active|closed|defaulted,\
-   risk:radio:low|medium|high,\
+   status:select[pending, active, closed, defaulted],\
+   risk:radio[low, medium, high],\
    borrower:belongs_to:Customer" \
   --items "Repayment:due_date:date,amount:float,paid:toggle"
 ```
@@ -183,8 +183,8 @@ billing state) and an `auto_renew` `toggle`; line charges are the children.
 
 ```bash
 grit g resource Subscription --fields \
-  "plan:select:starter|pro|enterprise,\
-   status:select:trialing|active|past_due|canceled,\
+  "plan:select[starter, pro, enterprise],\
+   status:select[trialing, active, past_due, canceled],\
    auto_renew:toggle,\
    customer:belongs_to:Customer" \
   --items "LineCharge:description:string,qty:int,unit_price:float"
@@ -196,8 +196,8 @@ status, a `radio` for priority, and the prescribed drugs as line items.
 ```bash
 grit g resource Prescription --fields \
   "code:string,\
-   status:select:draft|issued|dispensed,\
-   priority:radio:routine|urgent,\
+   status:select[draft, issued, dispensed],\
+   priority:radio[routine, urgent],\
    patient:belongs_to:Customer" \
   --items "Medication:name:string,dose:string,quantity:int"
 ```
@@ -302,7 +302,7 @@ Migration done: 0 table(s) created, 1 altered (+1 column(s))
 ```
 
 The same command adds a dropdown just as easily, labels-optional and all:
-`grit g field Invoice terms:select:net_15=Net 15|net_30=Net 30`.
+`grit g field Invoice terms:select[net_15="Net 15", net_30="Net 30"]`.
 
 📖 **Docs:** [grit g field](/docs/concepts/cli) ·
 [Migrations](/docs/backend/migrations)

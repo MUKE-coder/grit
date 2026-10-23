@@ -4433,6 +4433,22 @@ const DEFAULT_CURRENCIES = ["USD", "EUR", "GBP", "UGX", "KES", "NGN", "ZAR", "JP
  * typing, so "19." disappears mid-keystroke and the caret jumps; and its
  * spinner steps by 1, which is wrong for every currency at once.
  */
+// The amount with its thousands separators, in the viewer's locale.
+// Grouping is what the table has always done: formatMoney is Intl, and Intl
+// groups by default.
+function groupMajor(major: number, digits: number): string {
+  return major.toLocaleString(undefined, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+}
+
+// Read a draft back as a number. Number.parseFloat("1,234.56") is 1, so every
+// place that compares the draft to the stored value has to come through here.
+function parseDraft(draft: string): number {
+  return Number.parseFloat(draft.replace(/,/g, ""));
+}
+
 export function MoneyField({ field, value, onChange, error }: MoneyFieldProps) {
   const fieldId = useId();
   const currencies = field.currencies ?? DEFAULT_CURRENCIES;
@@ -4447,20 +4463,22 @@ export function MoneyField({ field, value, onChange, error }: MoneyFieldProps) {
   // disagrees with the value keeps "19." on screen while it is still being
   // typed, and still picks up an edit-mode load or a form reset.
   const [draft, setDraft] = useState(() =>
-    value ? toMajor(value).toFixed(digits) : ""
+    value ? groupMajor(toMajor(value), digits) : ""
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs on an outside change of value only, never on typing.
   useEffect(() => {
-    const shown = Number.parseFloat(draft);
+    const shown = parseDraft(draft);
     const held = value ? toMajor(value) : NaN;
     if (!Number.isNaN(shown) && shown === held) return;
-    setDraft(value ? toMajor(value).toFixed(digits) : "");
+    setDraft(value ? groupMajor(toMajor(value), digits) : "");
   }, [value]);
 
   const handleAmount = (raw: string) => {
     // One leading minus, one decimal point, digits. Anything else never
     // reaches the box, so there is no invalid state to report.
+    // Commas are stripped rather than refused, so a pasted 1,234.56 and a
+    // grouped value the user has clicked back into both read correctly.
     const cleaned = raw
       .replace(/[^0-9.-]/g, "")
       .replace(/(?!^)-/g, "")
@@ -4479,7 +4497,7 @@ export function MoneyField({ field, value, onChange, error }: MoneyFieldProps) {
   // box. Doing it any earlier is what makes the field fight back.
   const handleBlur = () => {
     if (draft === "") return;
-    setDraft(toMajor(value ?? { amount: 0, currency }).toFixed(digits));
+    setDraft(groupMajor(toMajor(value ?? { amount: 0, currency }), digits));
   };
 
   // Switching currency keeps the figure the user is looking at, not the minor
@@ -4488,7 +4506,7 @@ export function MoneyField({ field, value, onChange, error }: MoneyFieldProps) {
   const handleCurrency = (next: string) => {
     const major = toMajor(value ?? { amount: 0, currency });
     onChange(fromMajor(major, next));
-    setDraft(major.toFixed(currencyExponent(next)));
+    setDraft(groupMajor(major, currencyExponent(next)));
   };
 
   return (

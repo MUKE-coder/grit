@@ -52,6 +52,63 @@ const ROWS: Row[] = [
   { type: 'json', syntax: 'settings:json', go: 'datatypes.JSON', ts: 'unknown', zod: 'JsonValueSchema' },
 ]
 
+// What each type becomes in the database, and the thing about it that is not
+// obvious from the Go type. Source of truth: internal/generate/field.go
+// (GORMTag) and internal/generate/templates.go (the tags beside it).
+const COLUMNS: { type: string; tag: string; note: string }[] = [
+  { type: 'string', tag: 'size:255', note: 'A name containing "url" or "link" gets size:500, and a long-form one such as "description" gets type:text. Guessed from the field name, because a 255-character limit on a tracking URL fails in production and not in testing.' },
+  { type: 'text', tag: 'type:text', note: 'No length limit. Rendered as a textarea.' },
+  { type: 'richtext', tag: 'type:text', note: 'Also gets sanitize:"html": it is rendered as HTML wherever it is shown, so every write is cleaned before it is stored.' },
+  { type: 'int / uint', tag: '(none)', note: 'uint refuses a negative at the Zod and binding layers, not only in the column.' },
+  { type: 'float', tag: 'type:decimal(12,2) when the name looks like money', note: 'A field called price or amount gets fixed precision, because 1.99 + 0.01 in float64 is not 2.00. Prefer the money type, which does not guess.' },
+  { type: 'money', tag: '(two columns)', note: 'price_amount BIGINT in minor units plus price_currency. One column holding "19.99 USD" is not something you can SUM, and a float is not something you can trust.' },
+  { type: 'bool / toggle', tag: '(none)', note: 'Same column. toggle is a switch in the form, bool is a checkbox.' },
+  { type: 'select / radio', tag: 'size:255 + enum:"a|b"', note: 'The enum tag records the allowed values on the model, so a seeder generated later fills the column from the list instead of with dictionary words.' },
+  { type: 'check', tag: 'type:json', note: 'Several of the allowed values, stored as a JSON array.' },
+  { type: 'date', tag: 'type:date', note: 'A day with no time and no zone. datetime keeps both, as *time.Time.' },
+  { type: 'slug', tag: 'size:255 uniqueIndex', note: 'Always unique: a slug that repeats is two URLs for one thing. Generated from the named field on write.' },
+  { type: 'belongs_to', tag: 'size:36 index', note: 'Matches the parent UUID primary key, and indexed because every list filtered by it would otherwise scan.' },
+  { type: 'one_to_one', tag: 'size:36 uniqueIndex', note: 'uniqueIndex rather than index is the whole difference. Without it the database accepts a second row pointing at the same parent and "one to one" is a comment rather than a constraint.' },
+  { type: 'many_to_many', tag: '(join table)', note: 'GORM builds and owns the join table. No column on this model.' },
+  { type: 'string_array', tag: 'type:json', note: 'Free text values rather than a closed set. Use check when the set is closed.' },
+  { type: 'file / files', tag: 'type:json', note: 'A FileRef carries the key, name, size and type, not just a path. type:json means jsonb on Postgres, so it stays queryable.' },
+  { type: 'email', tag: 'size:254 + format:"email"', note: 'The longest address SMTP allows. The format tag is what normalises and validates it on write.' },
+  { type: 'url', tag: 'size:2048 + format:"url"', note: 'http and https only.' },
+  { type: 'domain', tag: 'size:253 + format:"domain"', note: 'The longest name DNS allows. Stored as lowercase punycode.' },
+  { type: 'tel', tag: 'size:32 + format:"tel"', note: 'E.164 with the plus, which is at most 16 characters; the rest is headroom.' },
+  { type: 'country', tag: 'size:2 + format:"country"', note: 'ISO 3166-1 alpha-2.' },
+  { type: 'color', tag: 'size:7 + format:"color"', note: '#rrggbb.' },
+  { type: 'percent', tag: 'type:decimal(5,2)', note: '0.00 to 100.00 exactly, which a float column does not promise.' },
+  { type: 'rating', tag: '(none)', note: 'An int bounded by the argument, enforced in Zod rather than in the column.' },
+  { type: 'time', tag: 'size:5', note: 'HH:MM. A clock time with no date, for opening hours and the like.' },
+  { type: 'json', tag: 'datatypes.JSON', note: 'Anything. Nothing validates its shape, which is the point and the risk.' },
+]
+
+// Modifiers that change the tags rather than the type.
+const MODIFIER_TAGS: { modifier: string; tag: string; note: string }[] = [
+  { modifier: ':unique', tag: 'uniqueIndex', note: 'On a slug it is already implied.' },
+  { modifier: ':required', tag: 'binding:"required" + not null', note: 'String fields are required by default; everything else is optional by default.' },
+  { modifier: ':optional', tag: 'default:null', note: 'Drops the binding tag and allows null.' },
+  { modifier: 'if x == y', tag: 'requiredif:"x=y"', note: 'Required only when the other field has that value, checked where the row is, not at binding. Binding runs before anything has looked at the row, so it cannot evaluate a condition.' },
+  { modifier: ':encrypted', tag: 'type:text', note: 'Ciphertext is longer than its plaintext, so a sized column would reject a value that fits.' },
+  { modifier: ':searchable', tag: 'search:"trigram"', note: 'A trigram index, so a LIKE %term% stops being a scan.' },
+]
+
+// The flags, from `grit generate resource --help`.
+const FLAGS: { flag: string; what: string }[] = [
+  { flag: '--fields', what: 'The fields, inline. The alternative is --from with a YAML file, which is the same grammar one field per line and survives being read six months later.' },
+  { flag: '--faker', what: 'Also writes a seeder that fills many rows with believable fake data, and implies --seed. Use it on anything you want to look at a real list of; an empty table hides every layout problem. --count sets how many (10 by default).' },
+  { flag: '--seed', what: 'Writes a seeder with one example record. Enough to prove the resource works, not enough to see a table under load.' },
+  { flag: '--public', what: 'Also exposes read-only list and detail endpoints under /api/v1/public/, behind an API key. Read-only is the whole contract: a public endpoint that writes is hand-written, and must not go on this group, which is URL-cached.' },
+  { flag: '--items', what: 'An inline has-many child, rendered as a line-items table inside this resource\u2019s form rather than as its own screen. An invoice with its lines, an order with its items: the parent is meaningless without them and nobody wants two screens to enter one document.' },
+  { flag: '--owned-by', what: 'Scopes the resource to its owner: the named belongs_to-User field decides who may read or write each row, and the field is added if it is absent. ADMIN is exempt. This is enforced in the service, not in the handler, so it holds for every route.' },
+  { flag: '--append-only', what: 'Rows are created and read, never changed or deleted. No update or delete routes, a GORM guard, and a database trigger installed by grit migrate, so the rule survives somebody with a SQL client. For ledgers, audit trails and consent records.' },
+  { flag: '--audit-reads', what: 'Records every read in the tamper-evident activity log: who read which rows, when, from where. For data where access itself must be accountable.' },
+  { flag: '--roles', what: 'Restricts the routes to named roles.' },
+  { flag: '--tree', what: 'Makes the resource hierarchical: a self-referential parent, a materialized path, depth and sibling order, the tree queries and a move endpoint.' },
+  { flag: '--tenant-owned', what: 'Scopes the resource to an organization, with the multitenant plugin: queries are filtered by the active org and OrgID is stamped on insert.' },
+]
+
 // The formatted types: what the API stores, and what it refuses.
 const FORMATTED: { type: string; stored: string; refused: string }[] = [
   { type: 'email', stored: 'Lowercased and trimmed: ada@example.com', refused: 'Anything that is not a bare address, including "Ada <ada@example.com>"' },
@@ -166,21 +223,34 @@ export default function FieldTypesPage() {
                 />
 
                 <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
-                  The older positional spelling still parses, and a great deal of existing
-                  documentation and tutorials use it:{' '}
-                  <code>cycle:select:monthly|annually:when=kind=recurring</code>. The two produce
-                  identical fields. Prefer the readable one in anything new: the colon means four
-                  different things in the positional form, and the pipe is a shell pipe, so an
-                  unquoted example silently loses half its options.
+                  <strong>Name the argument, even when it can be guessed.</strong>{' '}
+                  <code>client:belongs_to</code> infers the model from the field name and works;{' '}
+                  <code>client:belongs_to[Client]</code> says which model, and keeps saying it
+                  when somebody renames the field. The same goes for the upload types:{' '}
+                  <code>photo:file[image]</code> and <code>gallery:files[image]</code> declare
+                  what is accepted, where a bare <code>file</code> accepts anything. Every
+                  example in these docs is written out in full for that reason.
                 </p>
+
+                <Callout type="note" title="The older positional spelling">
+                  It still parses, and older tutorials use it:{' '}
+                  <code>cycle:select:monthly=Monthly|annually=Annually:when=kind=recurring</code>.
+                  The two produce identical fields, and there is one parser: the readable form is
+                  rewritten into the positional one before anything else sees it.
+                  <br />
+                  <br />
+                  Prefer the readable form in anything new. In the positional one the colon means
+                  four different things, and the pipe separating options is a shell pipe, so an
+                  unquoted example silently loses half of them.
+                </Callout>
 
                 <ul className="space-y-2.5 mt-4 mb-4">
                   {[
-                    ['Modifiers', 'name:string:unique — append :unique, :required, :optional or :when=. They always come last, after whatever argument the type takes: phone:tel[UG]:unique, category:belongs_to[Category]:optional. String fields default to required; everything else defaults to optional.'],
+                    ['Modifiers', 'name:string:unique — append :unique, :required, :optional, :encrypted or :searchable. They always come last, after whatever argument the type takes: phone:tel[UG]:unique, category:belongs_to[Category]:optional. A condition is written if kind == recurring and goes last of all; :when=kind=recurring is the older spelling of the same thing. String fields default to required; everything else defaults to optional.'],
                     ['Conditional', 'cycle:select[monthly, annually] if kind == recurring — the field applies only while another field of the same resource holds a particular value. kind is a sibling field, named as it appears in the spec; recurring is one of its stored values, not a label. The admin hides the input and drops its required rule when the condition is false; the model gets requiredif:"kind=recurring", which the API enforces on every write. See conditional fields.'],
                     ['Auto-number', 'number:string:auto:INV (string only) — the server fills it from an atomic, gap-free counter (INV-202607-0001) in BeforeCreate. Optional and hidden from the form; the prefix is optional. Shorthand for grit generate sequence; use that command directly for yearly/never resets or a custom width.'],
                     ['Encrypted', 'notes:text:encrypted (string, text and richtext only). Stored with AES-256-GCM at rest, plaintext in code and over the API; needs FIELD_ENCRYPTION_KEY. Cannot be :unique, and is left out of search, sorting and filters, because ciphertext changes on every write.'],
-                    ['Options', 'status:select[draft, sent, paid] (select / radio / check). Labels are derived by capitalising each word (in_progress → In Progress); give one only when it differs: [draft, sent="Sent to client"]. The positional spelling status:select:draft=Draft|sent=Sent still parses.'],
+                    ['Options', 'status:select[draft, sent, paid] (select / radio / check). Labels are derived by capitalising each word (in_progress → In Progress); give one only when it differs: [draft, sent="Sent to client"]. The positional spelling status:select:draft=Draft|sent=Sent is the older form of the same thing.'],
                     ['Slug source', 'slug:slug[title] — the argument is the field to slugify. Slugs are auto-unique and generated on save.'],
                     ['belongs_to', 'category:belongs_to (model inferred → Category) or author:belongs_to[User] (explicit). Creates a <name>_id UUID foreign-key column.'],
                     ['many_to_many', 'tags:many_to_many[Tag] — the related model is required. GORM builds the join table.'],
@@ -224,6 +294,87 @@ export default function FieldTypesPage() {
               </div>
 
               {/* Master table */}
+              <div className="mb-12">
+                <h2 id="columns-and-tags" className="text-2xl font-semibold tracking-tight mb-4">
+                  Columns and tags
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  What each type becomes in the database, and the thing about it that the Go type
+                  does not tell you. These are the tags the generator writes; a model you edit by
+                  hand keeps whatever you put there.
+                </p>
+                <div className="overflow-x-auto mb-8">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/40 text-left">
+                        <th className="px-3 py-2 font-medium">Type</th>
+                        <th className="px-3 py-2 font-medium">Tag</th>
+                        <th className="px-3 py-2 font-medium">Note</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {COLUMNS.map((row) => (
+                        <tr key={row.type} className="border-b border-border/20 align-top">
+                          <td className="px-3 py-2 font-mono text-xs text-primary whitespace-nowrap">{row.type}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-muted-foreground whitespace-nowrap">{row.tag}</td>
+                          <td className="px-3 py-2 text-muted-foreground leading-relaxed">{row.note}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <h3 className="text-xl font-semibold tracking-tight mb-3">Modifiers, and the tags they add</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/40 text-left">
+                        <th className="px-3 py-2 font-medium">Modifier</th>
+                        <th className="px-3 py-2 font-medium">Tag</th>
+                        <th className="px-3 py-2 font-medium">Note</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {MODIFIER_TAGS.map((row) => (
+                        <tr key={row.modifier} className="border-b border-border/20 align-top">
+                          <td className="px-3 py-2 font-mono text-xs text-primary whitespace-nowrap">{row.modifier}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-muted-foreground whitespace-nowrap">{row.tag}</td>
+                          <td className="px-3 py-2 text-muted-foreground leading-relaxed">{row.note}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="mb-12">
+                <h2 id="flags" className="text-2xl font-semibold tracking-tight mb-4">
+                  The flags
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The fields say what the resource holds. These say what it is for, and most of
+                  them change the generated code in more than one place at once.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/40 text-left">
+                        <th className="px-3 py-2 font-medium">Flag</th>
+                        <th className="px-3 py-2 font-medium">What it does</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {FLAGS.map((row) => (
+                        <tr key={row.flag} className="border-b border-border/20 align-top">
+                          <td className="px-3 py-2 font-mono text-xs text-primary whitespace-nowrap">{row.flag}</td>
+                          <td className="px-3 py-2 text-muted-foreground leading-relaxed">{row.what}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">Type mapping</h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
