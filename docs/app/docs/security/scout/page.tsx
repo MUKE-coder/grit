@@ -82,7 +82,7 @@ export default function ScoutPage() {
             </p>
             <CodeBlock
               language="bash"
-              code={`# apps/api/.env
+              code={`# .env, beside grit.json
 SCOUT_ENABLED=true
 SCOUT_USERNAME=admin
 SCOUT_PASSWORD=something-long

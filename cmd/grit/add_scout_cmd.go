@@ -30,7 +30,7 @@ func addScoutCmd() *cobra.Command {
 			"hands that table over, so \"this route has no auth gate\" becomes\n" +
 			"something Scout reads rather than infers.\n\n" +
 			"It mounts disabled. Set SCOUT_ENABLED=true and SCOUT_PASSWORD in\n" +
-			"apps/api/.env to start it. The default mode is safe: it sends no\n" +
+			"the project's .env to start it. The default mode is safe: it sends no\n" +
 			"attack payloads. Raising the mode sends real ones, so raise it\n" +
 			"only against a target you own.",
 		RunE: func(cmd *cobra.Command, args []string) error {

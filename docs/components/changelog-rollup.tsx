@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 19 to 25, 2026",
-    count: 7,
+    count: 8,
     entries: [
+      { version: "3.407.2", title: "grit add scout printed a tick beside a file it never wrote" },
       { version: "3.407.1", title: "grit doctor checks the Scout password too" },
       { version: "3.407.0", title: "grit add scout: a scanner that knows which of your routes are protected" },
       { version: "3.406.0", title: "A field syntax you can read out loud" },

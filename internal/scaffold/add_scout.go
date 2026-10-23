@@ -93,10 +93,11 @@ func AddScout(root string, force bool) error {
 	}
 
 	dim.Printf("  → Adding config fields...\n")
-	if err := addScoutConfig(apiDir); err != nil {
+	envFile, err := addScoutConfig(root, apiDir)
+	if err != nil {
 		return err
 	}
-	green.Printf("  ✓ internal/config/config.go, .env.example\n")
+	green.Printf("  ✓ internal/config/config.go, %s\n", envFile)
 
 	dim.Printf("  → go get %s@%s...\n", scoutModule, scoutVersion)
 	if err := scoutGoGet(apiDir); err != nil {
@@ -107,7 +108,7 @@ func AddScout(root string, force bool) error {
 	fmt.Println()
 	cyan.Printf("  Scout is mounted at /scout.\n\n")
 	fmt.Printf("  Set a password before you start it:\n")
-	dim.Printf("      SCOUT_PASSWORD=...        in apps/api/.env\n\n")
+	dim.Printf("      SCOUT_PASSWORD=...        in .env, beside grit.json\n\n")
 	fmt.Printf("  It runs in safe mode: headers, TLS, DNS, exposed files and config.\n")
 	fmt.Printf("  Nothing it sends by default is an attack payload. Raising the mode\n")
 	fmt.Printf("  sends real ones, so raise it only against a target you own.\n\n")
@@ -136,13 +137,14 @@ func scoutGoGet(apiDir string) error {
 }
 
 // addScoutConfig adds the four settings to the config struct, its loader and
-// .env.example. Each edit is skipped when it is already there, so running the
-// command twice changes nothing.
-func addScoutConfig(apiDir string) error {
+// the project's .env.example. Each edit is skipped when it is already there,
+// so running the command twice changes nothing. It returns the env file it
+// wrote, for the line the command prints.
+func addScoutConfig(root, apiDir string) (string, error) {
 	cfgPath := filepath.Join(apiDir, "internal", "config", "config.go")
 	content := readFileOrEmpty(cfgPath)
 	if content == "" {
-		return fmt.Errorf("reading %s", cfgPath)
+		return "", fmt.Errorf("reading %s", cfgPath)
 	}
 
 	if !strings.Contains(content, "ScoutEnabled") {
@@ -159,7 +161,7 @@ func addScoutConfig(apiDir string) error {
 			"\t// you triaged re-reports it every run until you stop reading it.\n" +
 			"\tScoutDBPath string\n\n"
 		if !strings.Contains(content, anchor) {
-			return fmt.Errorf("could not find the config struct's Pulse block in %s", cfgPath)
+			return "", fmt.Errorf("could not find the config struct's Pulse block in %s", cfgPath)
 		}
 		content = strings.Replace(content, anchor, fields+anchor, 1)
 	}
@@ -171,18 +173,28 @@ func addScoutConfig(apiDir string) error {
 			"\t\tScoutPassword: getEnv(\"SCOUT_PASSWORD\", \"\"),\n" +
 			"\t\tScoutDBPath:   resolveSQLitePath(getEnv(\"SCOUT_DB\", \"scout.db\")),\n\n"
 		if !strings.Contains(content, anchor) {
-			return fmt.Errorf("could not find the config loader's Pulse block in %s", cfgPath)
+			return "", fmt.Errorf("could not find the config loader's Pulse block in %s", cfgPath)
 		}
 		content = strings.Replace(content, anchor, load+anchor, 1)
 	}
 
 	if err := writeEdit(cfgPath, content); err != nil {
-		return fmt.Errorf("writing %s: %w", cfgPath, err)
+		return "", fmt.Errorf("writing %s: %w", cfgPath, err)
 	}
 
-	envPath := filepath.Join(apiDir, ".env.example")
+	// The project root, not apps/api. That is where `grit new` writes
+	// .env.example, where the developer's .env sits, and where `grit doctor`
+	// reads its settings from; the API only ever finds one by walking up
+	// (".env", "../.env", "../../.env"). Writing to apps/api/.env.example
+	// instead meant writing to a file that does not exist, which this
+	// function did silently while the command printed a tick beside it.
+	envPath := filepath.Join(root, ".env.example")
 	env := readFileOrEmpty(envPath)
-	if env != "" && !strings.Contains(env, "SCOUT_ENABLED") {
+	if env == "" {
+		return "", fmt.Errorf("no .env.example at %s: Scout's settings have nowhere to go", envPath)
+	}
+	label := ".env.example"
+	if !strings.Contains(env, "SCOUT_ENABLED") {
 		block := "\n# Scout security scanning (grit add scout)\n" +
 			"# Off by default. SCOUT_PASSWORD has no default: Scout refuses to\n" +
 			"# serve its dashboard without one rather than picking a weak one.\n" +
@@ -191,10 +203,10 @@ func addScoutConfig(apiDir string) error {
 			"SCOUT_PASSWORD=\n" +
 			"SCOUT_DB=scout.db\n"
 		if err := writeEdit(envPath, strings.TrimRight(env, "\n")+"\n"+block); err != nil {
-			return fmt.Errorf("writing %s: %w", envPath, err)
+			return "", fmt.Errorf("writing %s: %w", envPath, err)
 		}
 	}
-	return nil
+	return label, nil
 }
 
 // scoutModulePath reads the API module's import path out of its go.mod, which

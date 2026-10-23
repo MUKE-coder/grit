@@ -66,6 +66,48 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.407.2 */}
+            <div className="mb-12" id="v3.407.2">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.407.2
+                </span>
+                <span className="text-sm text-muted-foreground">October 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit add scout printed a tick beside a file it never wrote</h3>
+                <p>
+                  It appended Scout&apos;s four settings to{' '}
+                  <code>apps/api/.env.example</code>, and a Grit project does not have one.{' '}
+                  <code>.env.example</code> sits at the project root, beside{' '}
+                  <code>grit.json</code>. The write was guarded by &quot;only if the file has
+                  something in it&quot;, so a missing file read as empty and the whole step was
+                  skipped in silence, while the command printed{' '}
+                  <code>✓ internal/config/config.go, .env.example</code>.
+                </p>
+                <p>
+                  The effect was small and annoying in the usual way: everything else worked, so
+                  Scout was installed and wired, and the one thing that tells you which settings
+                  exist was missing. The closing instructions pointed at the same wrong path, and
+                  so did the docs page.
+                </p>
+                <p>
+                  Found by checking that <code>grit doctor</code>&apos;s new Scout check fired on
+                  a real project. It did not, and the reason was the same root: doctor reads the
+                  project&apos;s <code>.env</code>, the API only ever finds one by walking up
+                  (<code>.env</code>, <code>../.env</code>, <code>../../.env</code>), and both
+                  land on the root. Only the file this command wrote to was in the wrong place.
+                </p>
+                <p>
+                  A missing <code>.env.example</code> is now an error that says so rather than a
+                  step that quietly does nothing, and two tests cover it: one that the settings
+                  land in the root file and no <code>apps/api/.env.example</code> is invented,
+                  one that running the command twice changes nothing.
+                </p>
+              </div>
+            </div>
+
             {/* v3.407.1 */}
             <div className="mb-12" id="v3.407.1">
               <div className="flex items-center gap-3 mb-4">
