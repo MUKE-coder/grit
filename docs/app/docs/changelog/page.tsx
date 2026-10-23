@@ -66,6 +66,35 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.408.1 */}
+            <div className="mb-12" id="v3.408.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.408.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 23, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The desktop app had the Excel bug the API just stopped having</h3>
+                <p>
+                  v3.408.0 pinned excelize past four advisories in the API scaffold. The desktop
+                  scaffold pins it separately, for the same Excel export, and was on{' '}
+                  <code>v2.8.1</code>: old enough to carry those four plus GO-2026-6452. So the
+                  release that fixed this fixed half of it, and a desktop project kept the
+                  vulnerable export.
+                </p>
+                <p>
+                  Both scaffolds are on the same pin now, and a test holds them there. It
+                  compares the two go.mod templates against each other and against the{' '}
+                  <code>grit upgrade</code> floor, because three places that have to agree and
+                  nothing checking is how they came to disagree by three years in the first
+                  place. It fails on the exact drift that existed, which is the only way to know
+                  a guard works.
+                </p>
+              </div>
+            </div>
+
             {/* v3.408.0 */}
             <div className="mb-12" id="v3.408.0">
               <div className="flex items-center gap-3 mb-4">
