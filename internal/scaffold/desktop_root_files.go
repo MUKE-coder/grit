@@ -54,7 +54,7 @@ require (
 	gorm.io/driver/postgres v1.6.0
 	golang.org/x/crypto v0.57.0
 	github.com/jung-kurt/gofpdf v1.16.2
-	github.com/xuri/excelize/v2 v2.11.1-0.20260930021559-01a9ff32fb3c
+	github.com/xuri/excelize/v2 v2.11.1-0.20261003002531-6258dcebc4e2
 	github.com/joho/godotenv v1.5.1
 	github.com/gin-gonic/gin v1.11.0
 	github.com/google/uuid v1.6.0

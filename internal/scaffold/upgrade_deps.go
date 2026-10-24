@@ -34,13 +34,17 @@ var frameworkDeps = []FrameworkDep{
 		"a table in TablePolicy.Hidden is refused by the raw SQL editor too, and a crafted XLSX import returns an error instead of panicking the request"},
 	{"github.com/MUKE-coder/pulse", "v1.5.1",
 		"the N+1 table names the file and line that issued the query rather than hiding it in a CSV export, the flame graph defaults to real CPU time instead of goroutine stacks (where a parked connection counted on every tick and the hot code was a sliver), and a registered load-test run carries a CPU profile of its own window, which is what `grit generate perf` now records. Earlier, in v1.3.0: an idle process stopped carrying ~38MB of ring buffers reserved at startup, and per-route baselines tell a route that got slower from one that was always slow"},
-	// Four advisories against the XLSX reader, all reachable from the import
+	// Five advisories against the XLSX reader, all reachable from the import
 	// endpoint, all fixed upstream and none of them in a tag yet: v2.11.0 is
-	// still the newest release. The pin is the commit that carries the last of
-	// the four (GO-2026-6685, 30 September); the other three landed earlier on
-	// the same history. Move to v2.11.1 when it is cut.
-	{"github.com/xuri/excelize/v2", "v2.11.1-0.20260930021559-01a9ff32fb3c",
-		"GO-2026-6684, 6685, 6688 and 6689: a crafted workbook panics the request or exhausts memory through unbounded CFB stream allocation, and every one of them is reachable from the spreadsheet import"},
+	// still the newest release. The pin is the commit carrying the last of the
+	// five (GO-2026-6695, 3 October); the other four landed earlier on the same
+	// history. Move to v2.11.1 when it is cut.
+	//
+	// They arrive in ones and twos, so this is worth re-checking rather than
+	// assuming settled: the 30 September pin was correct for four of them and
+	// a fifth was published against it three days later.
+	{"github.com/xuri/excelize/v2", "v2.11.1-0.20261003002531-6258dcebc4e2",
+		"GO-2026-6684, 6685, 6688, 6689 and 6695: a crafted workbook panics the request or exhausts memory through unbounded CFB stream allocation, and every one of them is reachable from the spreadsheet import"},
 	{"golang.org/x/crypto", "v0.57.0", "govulncheck flags releases before v0.56.0"},
 	{"filippo.io/edwards25519", "v1.2.0", "govulncheck flags releases before v1.1.1"},
 	{"github.com/gorilla/mux", "v1.8.1", "goth's gothic links it in and still asks for v1.6.2, from 2018"},

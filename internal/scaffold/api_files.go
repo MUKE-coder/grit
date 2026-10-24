@@ -311,7 +311,7 @@ require (
 	// CVE-2026-54063 and CVE-2026-59161: the worksheet and streaming
 	// parsers could be made to allocate without bound, and this is what
 	// the CSV/XLSX importer hands user uploads to.
-	github.com/xuri/excelize/v2 v2.11.1-0.20260930021559-01a9ff32fb3c
+	github.com/xuri/excelize/v2 v2.11.1-0.20261003002531-6258dcebc4e2
 	// OpenTelemetry, for internal/tracing. Four modules and no more: the
 	// OTLP/HTTP exporter rather than both transports, and a hand-written gin
 	// middleware rather than otelgin, because the span has to be named after

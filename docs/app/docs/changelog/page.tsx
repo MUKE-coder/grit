@@ -66,6 +66,49 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.0 */}
+            <div className="mb-12" id="v3.411.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The API key seeder stops printing a live secret outside development</h3>
+                <p>
+                  Seeding mints a server-to-server API key, and that is the only moment its
+                  plaintext exists, so it was printed. In development that is the right call. In
+                  production a log line outlives the terminal: it is shipped to an aggregator,
+                  kept for ninety days, and readable by everyone who can read logs.
+                </p>
+                <p>
+                  The same codebase already makes this judgement twice. The password reset
+                  handler refuses to print a reset link outside development, with a comment
+                  saying a live link in a log file is a credential, and the users seeder refuses
+                  the development password outside development. The API key seeder was the one
+                  that still printed. Outside development it now says the key was created and
+                  why it is not shown, so nobody reads the silence as a failure.
+                </p>
+                <h4>And a fifth excelize advisory</h4>
+                <p>
+                  v3.408.0 pinned past four of them and said the family was worth re-checking
+                  rather than assuming settled. GO-2026-6695 was published against that exact
+                  pin three days after it. The pin moves to the 3 October commit, which carries
+                  all five, in the three places that must agree, and the test that holds them
+                  together now also rejects the superseded September pin.
+                </p>
+                <p>
+                  Both came out of a Scout scan of a generated app: 160 findings, grade D, of
+                  which two were real. The other 158 are reported upstream as{' '}
+                  <a href="https://github.com/MUKE-coder/scout/issues/4" className="text-primary hover:underline">scout#4</a>,{' '}
+                  <a href="https://github.com/MUKE-coder/scout/issues/5" className="text-primary hover:underline">#5</a> and{' '}
+                  <a href="https://github.com/MUKE-coder/scout/issues/6" className="text-primary hover:underline">#6</a>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.410.1 */}
             <div className="mb-12" id="v3.410.1">
               <div className="flex items-center gap-3 mb-4">

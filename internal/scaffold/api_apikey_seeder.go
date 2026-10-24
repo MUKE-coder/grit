@@ -75,8 +75,23 @@ func SeedAPIKeys(db *gorm.DB) error {
 			log.Println("               endpoints marked public, and nothing else.")
 		}
 		if secret != "" {
-			log.Printf("  Secret       %s", secret)
-			log.Println("               Server side only. Shown once, right now.")
+			// Outside development the secret is not printed. It is a live
+			// server-to-server credential, and a log line is a place it
+			// outlives the terminal: shipped to an aggregator, kept for
+			// ninety days, readable by everyone who can read logs.
+			//
+			// The same judgement the password reset handler already makes
+			// about a reset link, and the users seeder about the development
+			// password. This was the one that still printed.
+			if seedDevDefaults() {
+				log.Printf("  Secret       %s", secret)
+				log.Println("               Server side only. Shown once, right now.")
+			} else {
+				log.Println("  Secret       created, and not printed: APP_ENV is not")
+				log.Println("               development and a live key in a log file is a")
+				log.Println("               credential. Issue one you can see in the admin,")
+				log.Println("               at Settings, API Keys.")
+			}
 		}
 		log.Println("  Manage both in the admin at Settings, API Keys.")
 		log.Println("================================================================")

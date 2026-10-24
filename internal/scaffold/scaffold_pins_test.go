@@ -107,7 +107,7 @@ func TestExcelizeIsPinnedPastItsAdvisories(t *testing.T) {
 			t.Errorf("%s does not pin excelize at all", name)
 			continue
 		}
-		for _, bad := range []string{"v2.11.0", "v2.10", "v2.9", "v2.8"} {
+		for _, bad := range []string{"v2.11.0", "v2.10", "v2.9", "v2.8", "v2.11.1-0.202609"} {
 			if strings.HasPrefix(version, bad) {
 				t.Errorf("%s pins excelize %s, which is affected by GO-2026-6684, "+
 					"6685, 6688 and 6689: panics and unbounded allocation on a "+
