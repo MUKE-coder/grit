@@ -66,6 +66,52 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.1 */}
+            <div className="mb-12" id="v3.411.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit remove left the project not compiling, and said it had succeeded</h3>
+                <p>
+                  <code>grit generate resource</code> writes two things for a resource&apos;s
+                  policy: the file <code>internal/policies/&lt;name&gt;.go</code>, and a register
+                  call inside <code>policies.go</code>. <code>grit remove resource</code> took
+                  back neither. It printed{' '}
+                  <code>✅ Resource Widget removed successfully!</code> and left a project that
+                  does not build: the policy file still names <code>models.Widget</code>, and
+                  <code> policies.go</code> still calls <code>registerWidgets()</code>.
+                </p>
+                <p>
+                  Both halves are removed now, which is the point: deleting one without the
+                  other swaps one compile error for a different one. The round-trip test that
+                  existed reversed each injection by hand rather than calling the remover, so it
+                  could not have caught this; the new tests check that the remover&apos;s idea of
+                  what generate wrote still matches what generate writes.
+                </p>
+                <h4>Scout is on a tag again</h4>
+                <p>
+                  <code>grit add scout</code> pinned a commit for two days, because{' '}
+                  <code>scout.WithRoutes</code> landed after v0.3.0 was cut and no tag could
+                  compile the file the command writes. v0.4.6 contains it, and a generated
+                  project builds against it.
+                </p>
+                <h4>And CI is green again</h4>
+                <p>
+                  It had been red since v3.410.1, on a docs-only commit, which is the shape of a
+                  failure that is not yours: <code>gosec@latest</code> picked up a release that
+                  flags two <code>math/rand</code> uses in <code>demo/</code>. A request id for
+                  log correlation, and a deliberately fixed seed so the demo cohort is the same
+                  after every reset. Both are annotated with the reason, the way the rest of the
+                  repository already handles SHA-1 that a protocol requires.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.0 */}
             <div className="mb-12" id="v3.411.0">
               <div className="flex items-center gap-3 mb-4">

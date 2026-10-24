@@ -47,6 +47,9 @@ func SeedDemo(db *gorm.DB) error {
 	}
 
 	// Deterministic RNG so the demo cohort looks the same across resets.
+	// #nosec G404 -- the fixed seed is the point: the demo has to produce the
+	// same people and the same numbers every time it is reset, which a
+	// cryptographic source exists to prevent.
 	rng := rand.New(rand.NewSource(20260529))
 
 	staff, err := seedStaff(db, business, mainBranch)

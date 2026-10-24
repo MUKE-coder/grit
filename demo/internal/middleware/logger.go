@@ -17,6 +17,9 @@ func RequestID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		requestID := c.GetHeader("X-Request-ID")
 		if requestID == "" {
+			// #nosec G404 -- a correlation id for the logs, not a credential.
+			// It is paired with a nanosecond timestamp and never authorises
+			// anything, so being guessable costs nothing.
 			requestID = fmt.Sprintf("%d-%d", time.Now().UnixNano(), rand.Int63())
 		}
 		c.Set("request_id", requestID)

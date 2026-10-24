@@ -17,11 +17,10 @@ import (
 // generated project. Scout is also pre-1.0, so a minor bump may move more than
 // a minor bump usually does.
 //
-// This is a commit rather than a tag, which is not where it should stay.
-// scout.WithRoutes is what the whole integration rests on, and it landed
-// after v0.3.0 was cut, so the newest tag cannot compile the file this
-// command writes. Move to the tag as soon as there is one that contains it.
-const scoutVersion = "v0.3.1-0.20261022234642-81b4c54b2740"
+// A tag again. It was a commit for two days: scout.WithRoutes, which the
+// whole integration rests on, landed after v0.3.0 was cut, so no tag could
+// compile the file this command writes. v0.4.6 contains it.
+const scoutVersion = "v0.4.6"
 
 // Scout needs these, and a project generated before now is below them. Go
 // would raise them silently on the first build; doing it here means the

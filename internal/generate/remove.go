@@ -70,6 +70,11 @@ func RemoveResource(name string) error {
 		filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_handler.go"),
 		filepath.Join(apiRoot, "internal", "services", names.Snake+"_service.go"),
 		filepath.Join(apiRoot, "internal", "database", names.PluralSnake+"_seeder.go"),
+		// The policy file names the model in its signature, so leaving it
+		// behind stops the project compiling the moment the model goes. Its
+		// register call is taken out of policies.go below; deleting one
+		// without the other leaves a different compile error.
+		filepath.Join(apiRoot, "internal", "policies", names.Snake+".go"),
 		// --- shared package ---
 		filepath.Join(sharedRoot, "schemas", names.Kebab+".ts"),
 		filepath.Join(sharedRoot, "types", names.Kebab+".ts"),
@@ -190,6 +195,19 @@ func RemoveResource(name string) error {
 	typesIndex := filepath.Join(sharedRoot, "types", "index.ts")
 	constantsIndex := filepath.Join(sharedRoot, "constants", "index.ts")
 	registryFile := filepath.Join(adminRoot, "resources", "index.ts")
+
+	// 0. Remove the policy registration.
+	//
+	// generate writes internal/policies/<snake>.go and a register call in
+	// policies.go; remove deleted neither until v3.411.1, so a removed
+	// resource left the project not compiling while reporting success.
+	policiesFile := filepath.Join(apiRoot, "internal", "policies", "policies.go")
+	if fileExists(policiesFile) {
+		if removeLinesContaining(policiesFile,
+			fmt.Sprintf("register%s()", names.PluralPascal)) == nil {
+			fmt.Println("  ✗ Removed policy registration")
+		}
+	}
 
 	// 1. Remove model from AutoMigrate
 	if fileExists(modelFile) {
