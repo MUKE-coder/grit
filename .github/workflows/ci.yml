@@ -462,15 +462,46 @@ jobs:
       # excluded: writing files at paths built from its own inputs is what a
       # scaffolder is, and an email template that says "password" is not a
       # credential. Those rules produced 500 findings and would have taught
-      # everyone to ignore the scanner. What is left is zero across 317 files,
-      # so anything it reports next is new: SQL building, weak crypto, weak
-      # randomness, unsafe TLS, a conversion that can truncate.
+      # everyone to ignore the scanner. What is left is zero across every
+      # tracked module, so anything it reports next is new: SQL building,
+      # weak crypto, weak randomness, unsafe TLS, a conversion that can
+      # truncate.
       #
       # The generated application is scanned separately, in scan.yml.
+      #
+      # Pinned, not @latest. A scanner that changes under a build means a
+      # red CI on a commit that changed nothing: v3.410.1 was a docs-only
+      # commit and went red because a new gosec release started flagging two
+      # math/rand uses in demo/. Bump it deliberately.
+      #
+      # Run from inside each package, because gosec hands go/packages the
+      # package's files as a command line rather than a pattern, and
+      # go/packages silently splits a list longer than 16383 characters into
+      # chunks that are then type-checked separately. internal/scaffold is
+      # 392 files, so its absolute paths are about 26KB and it split in two:
+      # the half holding scaffold.go went one way and the half using Options
+      # went the other, and gosec reported `undefined: Options` for code that
+      # go build and go vet both accept. From inside the directory the same
+      # list is basenames, which is 8KB and fits. scaffoldGosecBudget in
+      # internal/scaffold/gosec_budget_test.go fails before that stops being
+      # true, because the error it produces explains nothing.
       - name: gosec
         run: |
-          go install github.com/securego/gosec/v2/cmd/gosec@latest
-          gosec -exclude=G104,G301,G302,G304,G306,G703,G706,G122,G204,G101 ./...
+          go install github.com/securego/gosec/v2/cmd/gosec@v2.30.0
+          status=0
+          # Every tracked module, because demo/ is one of its own and the old
+          # `gosec ./...` walked into it: the math/rand findings that went red
+          # on v3.410.1 were in demo/, and a `go list ./...` from the root
+          # cannot see it. Discovered rather than listed, so the next nested
+          # module is scanned without anyone remembering to add it.
+          while IFS= read -r mod; do
+            module=$(dirname "$mod")
+            while IFS= read -r dir; do
+              ( cd "$dir" && gosec -quiet \
+                  -exclude=G104,G301,G302,G304,G306,G703,G706,G122,G204,G101 . ) || status=1
+            done < <(cd "$module" && go list -f '{{.Dir}}' ./...)
+          done < <(git ls-files '*go.mod' 'go.mod')
+          exit $status
 
   build:
     name: Build

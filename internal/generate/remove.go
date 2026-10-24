@@ -69,7 +69,19 @@ func RemoveResource(name string) error {
 		// --- Go API: scaffolded demo-resource naming ---
 		filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_handler.go"),
 		filepath.Join(apiRoot, "internal", "services", names.Snake+"_service.go"),
+		// Both spellings. seeder.go writes PluralKebab, and this deleted only
+		// PluralSnake, which are the same string for a one-word resource and
+		// different for every other: `grit remove BlogPost` left
+		// blog-posts_seeder.go behind and the project would not build. The
+		// snake form stays because projects generated before carry it.
+		filepath.Join(apiRoot, "internal", "database", names.PluralKebab+"_seeder.go"),
 		filepath.Join(apiRoot, "internal", "database", names.PluralSnake+"_seeder.go"),
+		// --- --tree ---
+		filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_tree.go"),
+		filepath.Join(apiRoot, "internal", "services", names.Snake+"_tree.go"),
+		filepath.Join(apiRoot, "internal", "services", names.Snake+"_tree_test.go"),
+		// --- the resource's workflow, from a status field ---
+		filepath.Join(apiRoot, "internal", "services", names.Snake+"_workflow.go"),
 		// The policy file names the model in its signature, so leaving it
 		// behind stops the project compiling the moment the model goes. Its
 		// register call is taken out of policies.go below; deleting one

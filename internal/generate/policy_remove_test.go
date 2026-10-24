@@ -57,3 +57,52 @@ func TestRemoveHandlesBothHalvesOfThePolicy(t *testing.T) {
 			"the project stops compiling on an undefined register<Name>s")
 	}
 }
+
+// The seeder is written as PluralKebab and was deleted as PluralSnake. Those
+// are the same string for a one-word resource and different for every other,
+// so `grit remove Widget` was fine and `grit remove BlogPost` left
+// blog-posts_seeder.go behind and the project would not build. Every test
+// anyone writes uses a one-word name, which is why it lasted.
+//
+// The general rule: a path built from a name variant has to be deleted using
+// the same variant, and a one-word fixture cannot tell two variants apart.
+func TestRemoveDeletesTheSeederTheGeneratorActuallyWrote(t *testing.T) {
+	names := MakeNames("BlogPost")
+	if names.PluralKebab == names.PluralSnake {
+		t.Fatal("BlogPost should spell kebab and snake differently; " +
+			"this test cannot detect the bug it exists for")
+	}
+
+	src, err := os.ReadFile("remove.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(src)
+
+	// seeder.go writes PluralKebab.
+	if !strings.Contains(body, `names.PluralKebab+"_seeder.go"`) {
+		t.Error("remove does not delete the kebab-spelled seeder, which is the " +
+			"one the generator writes")
+	}
+}
+
+// The files --tree and a status field add are per-resource too, and each one
+// names the model, so leaving any of them behind stops the build the same way.
+func TestRemoveDeletesTheTreeAndWorkflowFiles(t *testing.T) {
+	src, err := os.ReadFile("remove.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(src)
+
+	for _, want := range []string{
+		`filepath.Join(apiRoot, "internal", "handlers", names.Snake+"_tree.go")`,
+		`filepath.Join(apiRoot, "internal", "services", names.Snake+"_tree.go")`,
+		`filepath.Join(apiRoot, "internal", "services", names.Snake+"_tree_test.go")`,
+		`filepath.Join(apiRoot, "internal", "services", names.Snake+"_workflow.go")`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("remove leaves behind %s", want)
+		}
+	}
+}

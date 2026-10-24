@@ -66,6 +66,67 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.2 */}
+            <div className="mb-12" id="v3.411.2">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.2
+                </span>
+                <span className="text-sm text-muted-foreground">October 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Four more files grit remove left behind, and the fixture that hid one of them</h3>
+                <p>
+                  v3.411.1 fixed the policy half of this. Reading the generator against the
+                  remover file by file found four more: the seeder, the two tree files and the
+                  tree test, and the workflow service a status field writes. Each one names the
+                  model in its own source, so any one of them left behind is a project that does
+                  not compile after a command that printed a tick.
+                </p>
+                <p>
+                  The seeder is the interesting one. <code>seeder.go</code> writes{' '}
+                  <code>&lt;plural-kebab&gt;_seeder.go</code> and the remover deleted{' '}
+                  <code>&lt;plural_snake&gt;_seeder.go</code>. Those are the same string for a
+                  one-word resource and a different one for every other, so{' '}
+                  <code>grit remove Widget</code> was always clean and{' '}
+                  <code>grit remove BlogPost</code> left <code>blog-posts_seeder.go</code> sitting
+                  next to a model that no longer exists. Every test and every demo used a
+                  one-word name, which is why it survived this long. The snake spelling is still
+                  deleted too, because projects generated before now carry it.
+                </p>
+                <p>
+                  The general rule, now written down in{' '}
+                  <code>internal/generate/AGENTS.md</code>: a path built from a name variant has
+                  to be removed using the same variant, and a one-word fixture cannot tell two
+                  variants apart.
+                </p>
+                <h4>And the security scan was failing on code that compiles</h4>
+                <p>
+                  <code>gosec</code> reported <code>undefined: Options</code> against{' '}
+                  <code>internal/scaffold</code>, a package <code>go build</code> and{' '}
+                  <code>go vet</code> both accept, in the same CI job where{' '}
+                  <code>go vet ./...</code> had just passed. It is not a compile error. gosec
+                  hands <code>go/packages</code> a package&apos;s files as a command line rather
+                  than as a pattern, and <code>go/packages</code> splits a command line longer
+                  than 16383 characters into chunks it then type-checks separately. That package
+                  is 392 files, about 26KB of absolute paths, so it was loaded in two halves:
+                  the half holding <code>scaffold.go</code> went one way and the half using{' '}
+                  <code>Options</code> went the other.
+                </p>
+                <p>
+                  The scan runs from inside each package directory now, where the same list is
+                  basenames and 8KB, and a test fails while there is still room if that stops
+                  being true, because the error it produces explains nothing about its cause.
+                  All 392 files scan clean, as they always did. Two other things came out of it:
+                  gosec is pinned rather than <code>@latest</code>, which is how v3.410.1 went
+                  red on a docs-only commit, and the scan walks every tracked module rather than
+                  the root one, so <code>demo/</code> and the three checked-in example
+                  applications stay covered.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.1 */}
             <div className="mb-12" id="v3.411.1">
               <div className="flex items-center gap-3 mb-4">

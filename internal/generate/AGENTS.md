@@ -40,6 +40,17 @@ the generators for jobs, mail, factories and column packs.
    the remover, so it passed throughout: a test of removal has to call the
    code `grit remove` calls.
 
+   Reading the generator against the remover file by file then found four more
+   (v3.411.2): the seeder, two `--tree` files and the tree test, and the
+   workflow service a status field writes. One of those gives the rule its
+   second half. **A path built from a name variant has to be removed using the
+   same variant.** `seeder.go` writes `<plural-kebab>_seeder.go` and `remove.go`
+   deleted `<plural_snake>_seeder.go`, which is the same string for a one-word
+   resource and a different one for every other, so `grit remove Widget` was
+   clean and `grit remove BlogPost` was not. Every fixture used a one-word name.
+   **A one-word fixture cannot tell two name variants apart**, so test a removal
+   with a two-word resource.
+
 2. **Build an emitted import block as a list, never with `strings.Replace` on an
    anchor line.** A `Replace` whose anchor has moved matches nothing, returns the
    input unchanged and reports success. See `go_import.go` for the shape to use.
