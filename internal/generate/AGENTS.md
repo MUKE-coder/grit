@@ -29,6 +29,17 @@ the generators for jobs, mail, factories and column packs.
    import or a sidebar link to a deleted page, and the project stops compiling
    on an operation that is supposed to clean up. Add both in the same change.
 
+   This rule was here, in these words, while policies broke it for months.
+   `generate` wrote `internal/policies/<snake>.go` **and** a `register<Name>s()`
+   call in `policies.go`; `remove` took back neither, so it printed
+   `Resource Widget removed successfully!` and left a tree that would not
+   build (fixed in v3.411.1). Two things to take from it. A feature that
+   injects in *two* places needs *two* removals, and taking back one of them
+   only swaps one compile error for another. And the round-trip test that
+   should have caught it reversed each injection by hand rather than calling
+   the remover, so it passed throughout: a test of removal has to call the
+   code `grit remove` calls.
+
 2. **Build an emitted import block as a list, never with `strings.Replace` on an
    anchor line.** A `Replace` whose anchor has moved matches nothing, returns the
    input unchanged and reports success. See `go_import.go` for the shape to use.
