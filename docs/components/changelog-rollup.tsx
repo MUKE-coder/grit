@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 19 to 25, 2026",
-    count: 18,
+    count: 19,
     entries: [
+      { version: "3.411.3", title: "A test that asks whether the resource is gone, instead of whether a file was deleted" },
       { version: "3.411.2", title: "Four more files grit remove left behind, and the fixture that hid one of them" },
       { version: "3.411.1", title: "grit remove left the project not compiling, and said it had succeeded" },
       { version: "3.411.0", title: "The API key seeder stops printing a live secret outside development" },

@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/MUKE-coder/grit/v3/internal/accessgen"
+	"github.com/MUKE-coder/grit/v3/internal/manifest"
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // RemoveResource removes a previously generated resource — deleting files and
@@ -82,6 +84,10 @@ func RemoveResource(name string) error {
 		filepath.Join(apiRoot, "internal", "services", names.Snake+"_tree_test.go"),
 		// --- the resource's workflow, from a status field ---
 		filepath.Join(apiRoot, "internal", "services", names.Snake+"_workflow.go"),
+		// The definition itself, which registers the state machine from its
+		// own init(). internal/workflow/workflow.go is the shared package and
+		// stays: other resources register into it.
+		filepath.Join(apiRoot, "internal", "workflow", names.Snake+".go"),
 		// The policy file names the model in its signature, so leaving it
 		// behind stops the project compiling the moment the model goes. Its
 		// register call is taken out of policies.go below; deleting one
@@ -311,6 +317,15 @@ func RemoveResource(name string) error {
 		if removed == nil {
 			fmt.Println("  ✗ Removed API routes")
 		}
+		// --tree injects five routes and a handler declaration of its own, and
+		// the sweep above cannot see them: it looks for `blogPostHandler.` and
+		// the tree writes `blogPostTreeHandler.`, which does not contain it. So
+		// the routes stayed, calling a handler whose file had just been
+		// deleted, and the project did not compile. The declaration goes with
+		// them, because a variable declared and not used is also a build error.
+		if removeLinesContaining(routesFile, names.Camel+"TreeHandler") == nil {
+			fmt.Println("  ✗ Removed the tree routes")
+		}
 	}
 
 	// 5b. Remove the WAF exclusion a richtext body earned. Unconditional: the
@@ -501,10 +516,45 @@ func RemoveResource(name string) error {
 		fmt.Printf("  ✓ %s now covers %d routes\n", res.Path, res.Routes)
 	}
 
+	// The manifest still claimed every file this resource owned. Those are
+	// all deleted now, so `grit doctor` read them as Missing and `grit
+	// upgrade` had entries it could neither repair nor explain. Forget exists
+	// for exactly this and nothing called it.
+	forgetResourceFiles(root, names)
+
 	fmt.Println()
 	fmt.Printf("  ✅ Resource %s removed successfully!\n\n", names.Pascal)
 
 	return nil
+}
+
+// forgetResourceFiles drops the resource's files from the manifest.
+//
+// Keyed on the generator string the generator recorded, "resource:<Name>",
+// rather than on the paths above: the two lists would have to be kept in step
+// with each other forever, and this way a file a future generator adds is
+// forgotten without anyone remembering to add it here too.
+func forgetResourceFiles(root string, names Names) {
+	m, err := manifest.Load(root)
+	if err != nil {
+		return // no manifest, or one we cannot read: nothing to correct
+	}
+	generator := "resource:" + names.Pascal
+	forgotten := 0
+	for _, rel := range m.Entries() {
+		if m.Files[manifest.Key(rel)].Generator == generator {
+			m.Forget(rel)
+			forgotten++
+		}
+	}
+	if forgotten == 0 {
+		return
+	}
+	if err := m.Save(root, scaffold.DefaultVersion); err != nil {
+		fmt.Printf("  ! the manifest still lists %s: %v\n", names.Pascal, err)
+		return
+	}
+	fmt.Printf("  ✗ Removed %d manifest entries\n", forgotten)
 }
 
 // removeStructBlock deletes a composite-literal element identified by a line it

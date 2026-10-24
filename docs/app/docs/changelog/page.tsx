@@ -66,6 +66,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.3 */}
+            <div className="mb-12" id="v3.411.3">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.3
+                </span>
+                <span className="text-sm text-muted-foreground">October 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A test that asks whether the resource is gone, instead of whether a file was deleted</h3>
+                <p>
+                  Three releases in a row have fixed <code>grit remove</code>: the policy file
+                  and its register call, then the seeder, the tree files and the workflow
+                  service. Each was found by someone running the command and reading the
+                  compiler output. The tests could not find them, because every one of them
+                  checked a removal somebody had already thought of, and the round trip
+                  reversed each injection by hand instead of calling the remover.
+                </p>
+                <p>
+                  There is now a test that asks the question the command claims to answer when
+                  it prints a tick. It generates a two-word resource with{' '}
+                  <code>--tree</code>, <code>--seed</code> and a workflow on its status field,
+                  removes it with the real remover, then reads the whole project back and fails
+                  on anything that still names the resource: a file, or a line. Not &quot;is
+                  this deleted&quot; but &quot;is it gone&quot;.
+                </p>
+                <p>It found three more things, all now fixed.</p>
+                <p>
+                  <strong>The tree routes stayed, calling a handler that had been deleted.</strong>{' '}
+                  Removal sweeps route lines containing{' '}
+                  <code>blogPostHandler.</code>, and <code>--tree</code> writes{' '}
+                  <code>blogPostTreeHandler.</code>, which does not contain it. Five routes and
+                  a handler declaration survived while the handler file went, so the project did
+                  not compile. The access table was wrong for the same reason: it is generated
+                  from the route files, and it was reporting the routes it found.
+                </p>
+                <p>
+                  <strong>
+                    <code>internal/workflow/&lt;resource&gt;.go</code> stayed, registering a
+                    state machine for a resource that no longer exists.
+                  </strong>{' '}
+                  The shared <code>internal/workflow/workflow.go</code> stays, correctly: other
+                  resources register into it.
+                </p>
+                <p>
+                  <strong>The manifest still claimed every file the resource owned.</strong> All
+                  of them had just been deleted, so <code>grit doctor</code> read them as
+                  missing and <code>grit upgrade</code> held entries it could neither repair nor
+                  explain. The entries are keyed off the generator that wrote them, so a file a
+                  future generator adds is forgotten without anyone having to remember a second
+                  list.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.2 */}
             <div className="mb-12" id="v3.411.2">
               <div className="flex items-center gap-3 mb-4">

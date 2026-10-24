@@ -51,6 +51,16 @@ the generators for jobs, mail, factories and column packs.
    **A one-word fixture cannot tell two name variants apart**, so test a removal
    with a two-word resource.
 
+   Three releases of finding these one at a time is enough, so there is now a
+   test that asks the question the command claims to answer:
+   `TestGenerateThenRemoveLeavesNothingBehind` generates a two-word resource
+   with `--tree`, `--seed` and a workflow, removes it with the real remover,
+   and fails on **anything left in the project that still names it**, file or
+   line. It found the tree routes (swept by `<camel>Handler.`, written as
+   `<camel>TreeHandler.`), `internal/workflow/<name>.go`, and the manifest
+   entries nothing had ever called `Forget` for. **Add your injection, then run
+   that test**: it is cheaper than the compiler output in somebody's project.
+
 2. **Build an emitted import block as a list, never with `strings.Replace` on an
    anchor line.** A `Replace` whose anchor has moved matches nothing, returns the
    input unchanged and reports success. See `go_import.go` for the shape to use.
