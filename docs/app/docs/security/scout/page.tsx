@@ -364,6 +364,90 @@ GET  /api/v1/admin/blogs    middleware: ["AuthRequired",
               to live with something and forgetting about it.
             </p>
 
+            <h2 className="text-2xl font-semibold mt-12 mb-4">What a clean project scores</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Worth knowing before your first scan, because a number with nothing to compare it
+              to tells you very little. A freshly generated monorepo, scanned with{' '}
+              <code>scout scan --repo . --mode safe</code> on Scout v0.4.9, reports 73 findings.
+              Not one of them is a way in. They break down like this.
+            </p>
+            <div className="overflow-x-auto mt-4">
+              <table className="w-full text-sm table-fixed">
+                <colgroup>
+                  <col className="w-[12%]" />
+                  <col className="w-[26%]" />
+                  <col className="w-[62%]" />
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-border text-left">
+                    <th className="py-2 pr-3 font-semibold">Count</th>
+                    <th className="py-2 pr-3 font-semibold">Check</th>
+                    <th className="py-2 font-semibold">What it is</th>
+                  </tr>
+                </thead>
+                <tbody className="text-muted-foreground">
+                  <tr className="border-b border-border/40">
+                    <td className="py-2 pr-3 align-top">62</td>
+                    <td className="py-2 pr-3 align-top"><code>code.unpinned-deps</code></td>
+                    <td className="py-2 align-top">
+                      A caret range in a <code>package.json</code>. A real decision rather than a
+                      bug: a range means a fresh install can pick up a version nobody tested.
+                    </td>
+                  </tr>
+                  <tr className="border-b border-border/40">
+                    <td className="py-2 pr-3 align-top">7</td>
+                    <td className="py-2 pr-3 align-top"><code>code.secrets</code></td>
+                    <td className="py-2 align-top">
+                      Signing keys in test files. A test that signs a token has to contain a key,
+                      so there is no version of those files without one. Filed upstream as
+                      scout#7.
+                    </td>
+                  </tr>
+                  <tr className="border-b border-border/40">
+                    <td className="py-2 pr-3 align-top">1</td>
+                    <td className="py-2 pr-3 align-top"><code>code.secrets</code></td>
+                    <td className="py-2 align-top">
+                      The demo users&apos; shared <code>admin123</code> in{' '}
+                      <code>users_seeder.go</code>. The literal is real and the seeder refuses to
+                      run outside <code>APP_ENV=development</code>, which a pattern match cannot
+                      see. Accept it.
+                    </td>
+                  </tr>
+                  <tr className="border-b border-border/40">
+                    <td className="py-2 pr-3 align-top">2</td>
+                    <td className="py-2 pr-3 align-top"><code>code.vulnerable-deps</code></td>
+                    <td className="py-2 align-top">
+                      <code>golang.org/x/crypto</code> (the advisory that{' '}
+                      <code>openpgp</code> is unmaintained, and nothing imports{' '}
+                      <code>openpgp</code>) and <code>disintegration/imaging</code> (its TIFF
+                      decoder, which is never registered). Both are in the module graph and
+                      neither is in the build. Neither has a fixed version to move to.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-3 align-top">1</td>
+                    <td className="py-2 pr-3 align-top"><code>code.secret-logging</code></td>
+                    <td className="py-2 align-top">
+                      The API key seeder printing the secret it just minted. That line is inside
+                      a development-only branch as of v3.411.0, and the check reads the call
+                      rather than the branch around it. Accept it.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              The useful reading of that table is the ratio. A scanner is worth running when a
+              new finding stands out, and it stops being worth running when there are so many
+              that nobody looks. If your own scan is much longer than this, the extra findings
+              are yours and worth reading one at a time.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              That is a repo scan. Point Scout at a running app with{' '}
+              <code>--target</code> and you also get the <code>grit_csrf</code> cookie finding
+              described above, which is the one deliberate exception in the cookie checks.
+            </p>
+
             <h2 className="text-2xl font-semibold mt-12 mb-4">What it is not</h2>
             <p className="text-muted-foreground leading-relaxed">
               Scout is not <Link href="/docs/batteries/security" className="text-primary hover:underline">Sentinel</Link>.

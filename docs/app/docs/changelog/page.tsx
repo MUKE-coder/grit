@@ -66,6 +66,55 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.4 */}
+            <div className="mb-12" id="v3.411.4">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.4
+                </span>
+                <span className="text-sm text-muted-foreground">October 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Scout v0.4.9, and 160 findings on a clean project become 73</h3>
+                <p>
+                  <code>grit add scout</code> installs v0.4.9, which closed the five false
+                  positives this integration was producing against a correctly configured Grit
+                  app: <code>&quot;/api&quot;</code> in the sensitive-word list made every
+                  namespaced route count as sensitive, so sign-in looked unprotected; the
+                  dashboard-exposure check reported Scout&apos;s own three dashboards on every
+                  safe-mode scan; and the code scanner matched the word
+                  &quot;secret&quot; rather than a secret-shaped value, which alone was 35
+                  findings. <code>Config</code>, <code>WithTarget</code> and{' '}
+                  <code>WithRoutes</code> are unchanged, checked against the module before the
+                  pin moved.
+                </p>
+                <p>
+                  A repo scan of a generated monorepo went from 160 findings to 73, and the
+                  Scout page now says what those 73 are, because a number with nothing to
+                  compare it to tells you very little. Sixty-two are caret ranges in a{' '}
+                  <code>package.json</code>, which is a decision rather than a bug. Seven are
+                  signing keys in test files, filed upstream: a test that signs a token has to
+                  contain a key. One is the demo users&apos; shared password in the seeder,
+                  which refuses to run outside <code>APP_ENV=development</code>, and one is the
+                  API key seeder printing the secret it just minted, which has been inside a
+                  development-only branch since v3.411.0. Both are things to accept rather than
+                  fix: the check reads the call, not the branch around it.
+                </p>
+                <p>
+                  The last two are <code>golang.org/x/crypto</code> and{' '}
+                  <code>disintegration/imaging</code>, and they are worth understanding rather
+                  than chasing. The first is the advisory that <code>openpgp</code> is
+                  unmaintained, and nothing in a generated project imports{' '}
+                  <code>openpgp</code>. The second is a TIFF decoder that is never registered.
+                  Both are in the module graph and neither is in the build, which is the
+                  difference between asking &quot;is this version present&quot; and asking
+                  &quot;is this code reached&quot;. <code>govulncheck</code> answers the second
+                  and is the one that gates CI. Neither advisory has a fixed version to move to.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.3 */}
             <div className="mb-12" id="v3.411.3">
               <div className="flex items-center gap-3 mb-4">
