@@ -102,6 +102,166 @@ SCOUT_DB=scout.db`}
               error in production. A project that has not added Scout reports nothing.
             </p>
 
+            <h2 className="text-2xl font-semibold mt-12 mb-4">Running a scan</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              There are two scans, they look at different things, and neither does the other
+              one&apos;s job. Knowing which one you are running is most of knowing how to read
+              the result.
+            </p>
+            <div className="overflow-x-auto mt-4">
+              <table className="w-full text-sm table-fixed">
+                <colgroup>
+                  <col className="w-[22%]" />
+                  <col className="w-[39%]" />
+                  <col className="w-[39%]" />
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-border text-left">
+                    <th className="py-2 pr-3 font-semibold"></th>
+                    <th className="py-2 pr-3 font-semibold">The mounted dashboard</th>
+                    <th className="py-2 font-semibold">The CLI, with <code>--repo</code></th>
+                  </tr>
+                </thead>
+                <tbody className="text-muted-foreground">
+                  <tr className="border-b border-border/40">
+                    <td className="py-2 pr-3 align-top font-medium">Looks at</td>
+                    <td className="py-2 pr-3 align-top">
+                      Your app as it is running, over HTTP, at <code>APP_URL</code>
+                    </td>
+                    <td className="py-2 align-top">Your source tree on disk</td>
+                  </tr>
+                  <tr className="border-b border-border/40">
+                    <td className="py-2 pr-3 align-top font-medium">Finds</td>
+                    <td className="py-2 pr-3 align-top">
+                      Headers, cookies, TLS, DNS, served files that should not be served, default
+                      credentials, and the route-table checks that use the access table
+                    </td>
+                    <td className="py-2 align-top">
+                      Hard-coded secrets, dangerous sinks, unpinned and vulnerable dependencies:
+                      the <code>code.*</code> checks
+                    </td>
+                  </tr>
+                  <tr className="border-b border-border/40">
+                    <td className="py-2 pr-3 align-top font-medium">Needs</td>
+                    <td className="py-2 pr-3 align-top">The app to be running</td>
+                    <td className="py-2 align-top">
+                      Nothing running, and the <code>scout</code> binary
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-3 align-top font-medium">Use it</td>
+                    <td className="py-2 pr-3 align-top">
+                      To see what the internet can see, and to keep a history you can diff
+                    </td>
+                    <td className="py-2 align-top">
+                      In CI, and before a release, where there is no deployment to point at yet
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              The dashboard does not run the <code>code.*</code> checks today. Scout can attach a
+              repository path to a target, but the option Grit mounts with takes a URL and
+              nothing else, so the code checks are CLI-only for now (scout#8). If a finding you
+              expected is missing, that is the likeliest reason.
+            </p>
+
+            <h3 className="text-xl font-semibold mt-8 mb-3">The dashboard</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              Start the API and open it. Sign in with the username and password you set above:
+              it is not your application&apos;s login, and the two have no accounts in common.
+            </p>
+            <CodeBlock
+              language="bash"
+              code={`grit start                       # or: cd apps/api && go run cmd/server/main.go
+
+# then open, and sign in with SCOUT_USERNAME / SCOUT_PASSWORD
+http://localhost:8080/scout/ui/`}
+            />
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              Press <strong>Scan</strong>. Nothing runs until you do: Grit mounts Scout with no
+              schedule, so it scans when asked and never on its own. The run streams as it goes,
+              and when it finishes you get the findings, the attack surface, a compliance view
+              and a diff against the previous scan of the same target. Every scan is kept in{' '}
+              <code>SCOUT_DB</code>, which is what makes the diff possible: history is the
+              feature, because the useful question is not &quot;what is wrong&quot; but
+              &quot;what is new since Friday&quot;.
+            </p>
+
+            <h3 className="text-xl font-semibold mt-8 mb-3">The CLI</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              Install it once. It is the same engine the dashboard runs, driven from a terminal.
+            </p>
+            <CodeBlock
+              language="bash"
+              code={`go install github.com/MUKE-coder/scout/cmd/scout@v0.4.9
+
+# the code checks, from the project root. No server needed
+scout scan --repo .
+
+# the live checks, against a running app
+scout scan --target http://localhost:8080
+
+# both at once, written out as files you can read later
+scout scan --repo . --target http://localhost:8080 --export md,html
+
+# what changed since the last scan of this target
+scout diff
+
+# fail a build. Exit 1 on a finding at or above the gate, 2 on an error
+scout ci --repo . --fail-on high
+
+# the same gate, counting only what is new since the last scan. This is the
+# one that works on a project that already has findings
+scout ci --repo . --fail-on high --new-only
+
+# the dashboard, without mounting anything in your app
+scout serve`}
+            />
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              <code>scout scan --json</code> prints the findings as JSON, which is the form to
+              reach for when something else has to read them.{' '}
+              <code>--sarif &lt;file&gt;</code> writes SARIF 2.1.0, which GitHub code scanning
+              accepts directly. <code>scout init</code> writes a <code>scout.yaml</code> holding
+              every default, for when flags stop being enough, and{' '}
+              <code>scout prune</code> drops scans past the retention period.
+            </p>
+
+            <h3 className="text-xl font-semibold mt-8 mb-3">Choosing a mode</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              <code>--mode</code> decides how hard Scout pushes, and the environment caps it, so
+              a mode you ask for is not always the mode you get. Safe is the default and the one
+              to leave alone unless you have a reason.
+            </p>
+            <CodeBlock
+              language="bash"
+              code={`scout scan --target https://staging.example.com --mode safe       # the default
+scout scan --target https://staging.example.com --mode active     # sends real payloads`}
+            />
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              Active against production and intrusive against staging both need two things: the
+              target marked <code>allow_active</code> in your <code>scout.yaml</code>, and proof
+              you own the host. Scout prints what to publish:
+            </p>
+            <CodeBlock
+              language="bash"
+              code={`scout ownership --target https://example.com`}
+            />
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              Publish the token it gives you as a DNS TXT record on{' '}
+              <code>_scout-verify.&lt;host&gt;</code> with the value{' '}
+              <code>scout-verify=&lt;token&gt;</code>, or serve it at{' '}
+              <code>/.well-known/scout-verify.txt</code>, and the scan will run. A local address
+              needs none of this, which is why development never asks. The point of the
+              ceremony is that an active scan sends real attack payloads, and the one thing a
+              scanner must never do is send those at somebody else&apos;s server.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              If you want to try the aggressive modes against something built to be attacked,{' '}
+              <code>scout lab</code> clones a deliberately vulnerable app and scans it.
+            </p>
+
             <h2 className="text-2xl font-semibold mt-12 mb-4">
               The part Grit can give it that a scanner usually cannot
             </h2>

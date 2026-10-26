@@ -66,6 +66,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.5 */}
+            <div className="mb-12" id="v3.411.5">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.5
+                </span>
+                <span className="text-sm text-muted-foreground">October 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The Scout page explained the checks and never said how to run one</h3>
+                <p>
+                  It covered <code>grit add scout</code>, the four settings, what each of the
+                  fifty-four checks looks for and how the access table makes the route checks
+                  possible. It did not say what to do next. There is now a{' '}
+                  <strong>Running a scan</strong> section, and it leads with the thing that was
+                  actually confusing: there are two scans, they look at different things, and
+                  neither does the other one&apos;s job.
+                </p>
+                <p>
+                  The mounted dashboard at <code>/scout/ui/</code> scans your app as it is
+                  running, over HTTP: headers, cookies, TLS, DNS, files that should not be
+                  served, default credentials, and the route-table checks. It scans when you
+                  press the button, because Grit mounts Scout with no schedule, and every run is
+                  kept so the next one can be diffed against it. The CLI with{' '}
+                  <code>--repo</code> scans your source tree instead, which is where the{' '}
+                  <code>code.*</code> checks live: hard-coded secrets, dangerous sinks, unpinned
+                  and vulnerable dependencies. That one needs nothing running, which is why it is
+                  the one for CI.
+                </p>
+                <p>
+                  The section gives the commands for both, for the CI gate (<code>--fail-on</code>{' '}
+                  with <code>--new-only</code>, which is the pair that works on a project that
+                  already has findings), for the diff, and for SARIF if GitHub code scanning is
+                  reading the output. It also explains what unlocks the aggressive modes, which
+                  was previously stated only as a rule: an active scan against a public host
+                  needs the target marked <code>allow_active</code> and proof you own it, via a{' '}
+                  <code>_scout-verify</code> DNS TXT record or a file at{' '}
+                  <code>/.well-known/scout-verify.txt</code>. A local address needs none of it.
+                </p>
+                <p>
+                  One honest limitation is now written down rather than left to be discovered:
+                  the dashboard cannot run the <code>code.*</code> checks. Scout&apos;s targets
+                  have a repo field and no option sets it, so the mount passes a URL and nothing
+                  else. Filed upstream as scout#8, with a suggestion that it honour a repo path
+                  only in development, since a finding quotes the source line it found.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.4 */}
             <div className="mb-12" id="v3.411.4">
               <div className="flex items-center gap-3 mb-4">
