@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 26 to November 1, 2026",
-    count: 12,
+    count: 13,
     entries: [
+      { version: "3.411.17", title: "A header the browser was never allowed to send, and a theme that stopped at the page" },
       { version: "3.411.16", title: "Web sign-in could not finish for a 2FA account, and social sign-in landed on a 404" },
       { version: "3.411.15", title: "The generator and grit sync wrote the same schema file two different ways" },
       { version: "3.411.14", title: "grit routes --write, for when the only thing that changed is a guard you wrote" },

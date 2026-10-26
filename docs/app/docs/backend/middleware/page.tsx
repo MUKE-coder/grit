@@ -315,7 +315,7 @@ editors.Use(middleware.RequireRole("ADMIN", "EDITOR"))
         c.Header("Access-Control-Allow-Methods",
             "GET, POST, PUT, PATCH, DELETE, OPTIONS")
         c.Header("Access-Control-Allow-Headers",
-            "Origin, Content-Type, Accept, Authorization")
+            allowedRequestHeadersValue)
         c.Header("Access-Control-Allow-Credentials", "true")
         c.Header("Access-Control-Max-Age", "86400")
 
@@ -331,6 +331,35 @@ editors.Use(middleware.RequireRole("ADMIN", "EDITOR"))
                 Configure allowed origins in your <code>.env</code> file:
               </p>
               <CodeBlock language="bash" filename=".env" code={`CORS_ORIGINS=http://localhost:3000,http://localhost:3001`} />
+
+              <h3 id="allowing-a-request-header">Allowing a request header</h3>
+              <p>
+                The headers the browser may send are a list in the same file, holding{' '}
+                <code>Origin</code>, <code>Content-Type</code>, <code>Accept</code>,{' '}
+                <code>Authorization</code>, <code>X-API-Key</code>, <code>X-CSRF-Token</code>,{' '}
+                <code>Idempotency-Key</code> and <code>X-Public-IP-Hint</code>. If your app
+                sends a header of its own, add it, or the browser will not send it at all.
+              </p>
+              <p>
+                This failure is worth knowing by sight. A header missing from the list is not
+                refused with an error: the preflight succeeds, the browser then declines to
+                send the real request, and nothing reaches your API. No status, no log line,
+                a fetch that rejects with nothing behind it, and the same call working
+                perfectly under curl.
+              </p>
+              <p>
+                Edit the list directly, or register the header from the file that reads it,
+                which is what the multitenant plugin does for{' '}
+                <code>X-Organization-ID</code>. Registering keeps the header and the feature
+                together, so deleting one removes the other:
+              </p>
+              <CodeBlock filename="apps/api/internal/middleware/tenant.go" code={`func init() { AllowRequestHeader("X-Organization-ID") }`} />
+              <p>
+                From an <code>init()</code> only. Package-level variables are initialised
+                before any <code>init()</code> runs and every <code>init()</code> finishes
+                before the server starts, so the list is final by the time a request can read
+                it and nothing synchronises it. Calling it from a handler is a data race.
+              </p>
 
               {/* ── Logger Middleware ─────────────────────────────── */}
               <h2 id="logger-middleware">Logger Middleware</h2>

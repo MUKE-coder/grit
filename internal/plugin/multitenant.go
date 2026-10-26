@@ -1,6 +1,11 @@
 package plugin
 
-import "strings"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+)
 
 func init() { Register(multitenantPlugin()) }
 
@@ -53,7 +58,36 @@ Requires the roles system (Grit v3.66.0+).`,
 
 		Files:      multitenantFiles,
 		Injections: multitenantInjections,
+		Preflight:  multitenantPreflight,
 	}
+}
+
+// multitenantPreflight checks that cors.go can be told about a header.
+//
+// This plugin's middleware reads X-Organization-ID, and registers it from an
+// init() so that removing the plugin removes the header too. That needs
+// middleware.AllowRequestHeader, which projects scaffolded before v3.411.17 do
+// not have: without it the install would write a tenant.go that does not
+// compile, which is a worse outcome than not installing.
+func multitenantPreflight(ctx Context) error {
+	api := ctx.APIRoot
+	if api == "" {
+		api = ctx.Root
+	}
+	path := filepath.Join(api, "internal", "middleware", "cors.go")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		// No cors.go at all is not this plugin's business to diagnose. The
+		// injections that follow will fail on their own targets with a clearer
+		// message than anything invented here.
+		return nil
+	}
+	if strings.Contains(string(data), "AllowRequestHeader") {
+		return nil
+	}
+	return fmt.Errorf("this project's internal/middleware/cors.go writes its CORS allow list as a string literal, " +
+		"and this plugin needs middleware.AllowRequestHeader to register X-Organization-ID.\n" +
+		"Run `grit upgrade` first: it reshapes that list, keeping every header already in it")
 }
 
 func multitenantFiles(ctx Context) map[string]string {

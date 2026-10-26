@@ -17,6 +17,17 @@ import (
 	"{{MODULE}}/internal/tenant"
 )
 
+// The browser is told it may send the header this middleware reads.
+//
+// Without it the preflight succeeds and the real request is never sent: no
+// status, no log line, an axios network error with nothing behind it. It only
+// shows up once a user has a second organization, because until then the API
+// picks the single one without being told (grit#107).
+//
+// Registered from here rather than edited into cors.go, so it arrives with this
+// file and goes away when grit plugin remove multitenant deletes it.
+func init() { AllowRequestHeader("X-Organization-ID") }
+
 // Tenant resolves the caller's active organization and puts it on the request
 // context, where the GORM scoping callbacks pick it up.
 //

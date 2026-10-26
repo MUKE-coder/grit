@@ -457,36 +457,8 @@ func webGlobalCSS() string {
 @import "tw-animate-css";
 
 /* The same token mapping the admin uses, so a single THEME=<name> still paints
- * both surfaces.
- *
- * Regular @theme, NOT @theme inline: the utilities compile to var(--color-*)
- * whose values are var(--bg-*) indirections that re-resolve per element, which
- * is what makes [data-theme] switching repaint at runtime. @theme inline would
- * bake the values at build time and the theme switcher would quietly stop
- * working. */
-@theme {
-  --color-background: var(--bg-primary);
-  --color-bg-secondary: var(--bg-secondary);
-  --color-bg-tertiary: var(--bg-tertiary);
-  --color-bg-elevated: var(--bg-elevated);
-  --color-bg-hover: var(--bg-hover);
-  --color-border: var(--border);
-  --color-foreground: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-muted: var(--text-muted);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
-  --color-accent-fg: var(--accent-fg);
-  --color-success: var(--success);
-  --color-danger: var(--danger);
-  --color-warning: var(--warning);
-  --color-info: var(--info);
-
-  --font-sans: var(--font-display), system-ui, sans-serif;
-  --font-mono: var(--font-mono), ui-monospace, monospace;
-  --font-serif: var(--font-serif), Georgia, serif;
-}
-
+ * both surfaces. */
+` + themeTokenMapCSS() + `
 /* v3 parity: v4 defaults the border color to currentColor, and the site relies
  * on the themed border. */
 @layer base {

@@ -270,3 +270,62 @@ func rgba(hex string, alpha float64) string {
 	return fmt.Sprintf("rgba(%d, %d, %d, %s)", n>>16&0xff, n>>8&0xff, n&0xff,
 		strconv.FormatFloat(alpha, 'g', -1, 64))
 }
+
+// themeTokenMapCSS maps the palette's tokens onto Tailwind's own token names,
+// for every surface that paints with Tailwind utilities.
+//
+// Regular @theme, NOT @theme inline, and that is the load-bearing detail. The
+// utilities compile to var(--color-*), whose values are var(--bg-*)
+// indirections, so overriding --bg-* under [data-theme="..."] repaints the
+// whole surface at runtime. @theme inline would substitute the values at build
+// time and theme switching would silently stop working.
+//
+// One writer rather than two identical blocks in the admin's stylesheet and
+// the web app's. They were already the same nineteen lines, and the scoped
+// block below is the second thing in a row that had to be written twice to be
+// right once.
+func themeTokenMapCSS() string {
+	return "@theme {\n" + themeTokenMap + `}
+
+/* The same mappings again, for a theme scoped to a surface instead of to
+ * <html>.
+ *
+ * Tailwind declares the @theme mappings above on :root, and a custom property
+ * that references another one is resolved where it is declared. So a section
+ * with its own data-theme redefines --bg-primary, but inherits a
+ * --color-background that was already resolved at the root: the tokens change
+ * and bg-background does not (grit#98). Re-declaring them here makes them
+ * resolve against that element's own tokens, and its children inherit the
+ * resolved value.
+ *
+ * Nested on purpose. A single [data-theme] is the page's own theme on <html>,
+ * where the block above already does this. */
+[data-theme] [data-theme],
+[data-theme] .dark,
+[data-theme] [data-theme-mode="dark"] {
+` + themeTokenMap + `}
+`
+}
+
+// themeTokenMap is the list, once, so the two blocks above cannot drift.
+const themeTokenMap = `  --color-background: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-hover: var(--bg-hover);
+  --color-border: var(--border);
+  --color-foreground: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+
+  --font-sans: var(--font-display), system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+  --font-serif: var(--font-serif), Georgia, serif;
+`

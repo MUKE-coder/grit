@@ -39,6 +39,14 @@ func Install(ctx Context, p Plugin) (*InstalledPlugin, error) {
 		}
 	}
 
+	// Before the first write, so a project missing something this plugin needs
+	// is told about it instead of ending up with files that do not compile.
+	if p.Preflight != nil {
+		if err := p.Preflight(ctx); err != nil {
+			return nil, err
+		}
+	}
+
 	record := InstalledPlugin{
 		Name:        p.Name,
 		Version:     p.Version,

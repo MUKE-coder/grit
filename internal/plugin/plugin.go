@@ -83,6 +83,15 @@ type Plugin struct {
 	// Requires names plugins that must be installed first.
 	Requires []string
 
+	// Preflight states a requirement the plugin cannot inject its way out of:
+	// something the project must already have for the generated code to
+	// compile. It runs before anything is written, so a project that is not
+	// ready is told what to do rather than left half-installed.
+	//
+	// For a requirement an older project can be brought up to, say so in the
+	// error: "run grit upgrade first" is a fix; "incompatible" is not.
+	Preflight func(ctx Context) error
+
 	// Files returns path (relative to project root) -> file content.
 	Files func(ctx Context) map[string]string
 

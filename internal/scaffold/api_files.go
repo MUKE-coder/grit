@@ -2475,6 +2475,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -2530,6 +2531,59 @@ func isWailsOrigin(origin string) bool {
 	return u.Hostname() == "wails.localhost"
 }
 
+// allowedRequestHeaders is what the browser is told the page may send.
+//
+// A header missing from this list is not refused with an error: it is stripped
+// during preflight, so the request never arrives, no handler runs, nothing is
+// logged, and the same call works perfectly under curl. That is the worst shape
+// a bug can have, and it is why this is a list anything can add to rather than
+// a string literal somebody has to remember to edit.
+//
+// X-CSRF-Token and Idempotency-Key are injected by the web and admin axios
+// clients on every unsafe method; without them a request either fails the
+// AutoCSRF check or replays with no idempotency guarantee. Authorization stays
+// for native bearer clients. X-API-Key is how a storefront calls the public
+// endpoints cross-origin.
+var allowedRequestHeaders = []string{
+	"Origin",
+	"Content-Type",
+	"Accept",
+	"Authorization",
+	"X-API-Key",
+	"X-CSRF-Token",
+	"Idempotency-Key",
+	"X-Public-IP-Hint",
+}
+
+// allowedRequestHeadersValue is the joined header value, built once.
+var allowedRequestHeadersValue = strings.Join(allowedRequestHeaders, ", ")
+
+// AllowRequestHeader adds a header to that list.
+//
+// Call it from an init() in the file that introduces the header, so the feature
+// and its CORS entry arrive and leave together instead of the second one being
+// a thing to remember. internal/middleware/tenant.go does exactly this for
+// X-Organization-ID, which is why removing the multitenant plugin also removes
+// the header without touching this file.
+//
+// init() only. Package-level variables are initialised before any init() runs,
+// and every init() finishes before main, so by the time a request can read
+// allowedRequestHeadersValue the list is final and nothing synchronises it.
+// Calling this from a handler would be a data race.
+func AllowRequestHeader(name string) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return
+	}
+	for _, existing := range allowedRequestHeaders {
+		if strings.EqualFold(existing, name) {
+			return
+		}
+	}
+	allowedRequestHeaders = append(allowedRequestHeaders, name)
+	allowedRequestHeadersValue = strings.Join(allowedRequestHeaders, ", ")
+}
+
 // CORS creates a CORS middleware with a fixed allowlist.
 //
 // Kept for callers that genuinely have a static list. Anything user-facing
@@ -2566,17 +2620,7 @@ func CORSDynamic(resolve func() []string) gin.HandlerFunc {
 		}
 
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		// X-CSRF-Token + Idempotency-Key are injected by the web and admin
-		// axios clients on every unsafe method. Without them in the allowed
-		// list, the browser's preflight strips the headers and the request
-		// either fails the AutoCSRF check or replays without an idempotency
-		// guarantee. Authorization stays for native bearer clients.
-		// X-API-Key is not optional here. A storefront calls the public
-		// endpoints with it, cross-origin, and a header missing from this list
-		// is stripped by the browser during preflight: the request fails in
-		// every browser and works perfectly under curl, which is the worst
-		// shape a bug can have.
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, X-API-Key, X-CSRF-Token, Idempotency-Key, X-Public-IP-Hint")
+		c.Header("Access-Control-Allow-Headers", allowedRequestHeadersValue)
 		c.Header("Access-Control-Allow-Credentials", "true")
 		c.Header("Access-Control-Max-Age", "86400")
 

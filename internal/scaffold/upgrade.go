@@ -747,6 +747,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairTrashRoutes(root, opts); err != nil {
 			fmt.Printf("  ⚠ wiring the trash routes: %v\n", err)
 		}
+		// The CORS allow list becomes a list with AllowRequestHeader, so the
+		// header a plugin introduces arrives with the file that reads it
+		// instead of being a line somebody has to remember to add.
+		if err := repairCORSHeaderList(root, opts); err != nil {
+			fmt.Printf("  ⚠ making the CORS allow list extensible: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {
@@ -789,6 +795,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		}
 		if err := repairFieldTypes(root, opts); err != nil {
 			fmt.Printf("  ⚠ adding the field type checks: %v\n", err)
+		}
+		if err := repairCORSHeaderList(root, opts); err != nil {
+			fmt.Printf("  ⚠ making the CORS allow list extensible: %v\n", err)
 		}
 	}
 

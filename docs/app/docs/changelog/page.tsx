@@ -66,6 +66,71 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.17 */}
+            <div className="mb-12" id="v3.411.17">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.17
+                </span>
+                <span className="text-sm text-muted-foreground">October 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A header the browser was never allowed to send, and a theme that stopped at the page</h3>
+                <p>
+                  Two bugs that look unrelated and share a shape: a value resolved once, at
+                  the top, for a thing that happens further down.
+                </p>
+                <h4>The CORS allow list is a list</h4>
+                <p>
+                  The multitenant plugin tells clients to send the active organization as{' '}
+                  <code>X-Organization-ID</code>, and did not add that header to the allow
+                  list in <code>internal/middleware/cors.go</code>. The preflight succeeded
+                  and the browser then declined to send the real request: no status, no log
+                  line, an axios network error with nothing behind it, and the same call
+                  working perfectly under curl. It waited for a second organization to appear,
+                  because until then the API picks the only one without being told.
+                </p>
+                <p>
+                  The allow list was a string literal written straight into the response,
+                  which made every new request header a thing somebody had to remember. It is
+                  a list now, with <code>middleware.AllowRequestHeader</code> to add to it
+                  from an <code>init()</code>. The plugin registers its header from{' '}
+                  <code>internal/middleware/tenant.go</code>, the file that reads it, so{' '}
+                  <code>grit plugin remove multitenant</code> takes the header out by deleting
+                  that file. Nothing has to find a line in cors.go again.
+                </p>
+                <p>
+                  <code>grit upgrade</code> reshapes an existing project&apos;s list and keeps
+                  every header already in it, including ones added by hand. Installing the
+                  plugin on a project that has not been upgraded stops before writing
+                  anything and says which command to run, rather than leaving behind a{' '}
+                  <code>tenant.go</code> that does not compile.
+                </p>
+                <h4>A theme scoped to a surface now repaints</h4>
+                <p>
+                  The <code>midnight</code> palette says you can opt a single surface into it
+                  by putting <code>data-theme</code> on that element. You could not. Tailwind
+                  declares the <code>@theme</code> mappings on <code>:root</code>, and a
+                  custom property that references another one is resolved where it is
+                  declared, so a section that redefined <code>--bg-primary</code> inherited a{' '}
+                  <code>--color-background</code> that had already been resolved at the root:
+                  the tokens changed and <code>bg-background</code> did not.
+                </p>
+                <p>
+                  The mappings are re-declared for a nested <code>data-theme</code>,{' '}
+                  <code>.dark</code> or <code>data-theme-mode=&quot;dark&quot;</code>, so they
+                  resolve against that element&apos;s own tokens and its children inherit the
+                  result. Both stylesheets, from one writer: they were already the same
+                  nineteen lines in the admin&apos;s sheet and the web app&apos;s, and this is
+                  the second thing in a row that had to be written twice to be right once.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Reported from a project built with Grit: grit#107 and grit#98.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.16 */}
             <div className="mb-12" id="v3.411.16">
               <div className="flex items-center gap-3 mb-4">

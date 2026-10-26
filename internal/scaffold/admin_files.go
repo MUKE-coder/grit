@@ -753,38 +753,9 @@ func adminGlobalCSS() string {
  * and zoom-in used by the dialog, sheet and dropdown components. */
 @import "tw-animate-css";
 
-/* Map the design-token CSS variables (defined per [data-theme] below) onto
- * Tailwind utility colors and fonts.
- *
- * Regular @theme, NOT @theme inline, and that is the load-bearing detail. The
- * utilities compile to var(--color-*), whose values are var(--bg-*)
- * indirections that re-resolve per element, so overriding --bg-* under
- * [data-theme="..."] repaints the whole UI at runtime. With @theme inline the
- * values are substituted at build time and theme switching silently stops
- * working. */
-@theme {
-  --color-background: var(--bg-primary);
-  --color-bg-secondary: var(--bg-secondary);
-  --color-bg-tertiary: var(--bg-tertiary);
-  --color-bg-elevated: var(--bg-elevated);
-  --color-bg-hover: var(--bg-hover);
-  --color-border: var(--border);
-  --color-foreground: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-muted: var(--text-muted);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
-  --color-accent-fg: var(--accent-fg);
-  --color-success: var(--success);
-  --color-danger: var(--danger);
-  --color-warning: var(--warning);
-  --color-info: var(--info);
-
-  --font-sans: var(--font-display), system-ui, sans-serif;
-  --font-mono: var(--font-mono), ui-monospace, monospace;
-  --font-serif: var(--font-serif), Georgia, serif;
-}
-
+/* The design tokens (declared per [data-theme] below) mapped onto Tailwind's
+ * utility colours and fonts. Shared with the web app. */
+` + themeTokenMapCSS() + `
 /* v3 parity: v4 defaults the border color to currentColor, but the admin
  * relies on the themed border everywhere. Point bare borders at --border. */
 @layer base {
