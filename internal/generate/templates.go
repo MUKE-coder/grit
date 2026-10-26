@@ -28,6 +28,14 @@ func (g *Generator) relOptional(f Field) bool {
 	if f.RelatedModelName() == toPascalCase(g.Definition.Name) {
 		return true
 	}
+	// The owner of an --owned-by resource is never absent. It is stamped from
+	// the signed-in caller rather than accepted from the body, every query is
+	// scoped by it, and the generated OwnerID() returns it as a string. A
+	// nullable owner is a row nobody can see and a model that does not
+	// compile, which is what CI caught the first time this change shipped.
+	if owner := g.Definition.OwnerField(); owner != nil && owner.Name == f.Name {
+		return false
+	}
 	return !f.Required
 }
 

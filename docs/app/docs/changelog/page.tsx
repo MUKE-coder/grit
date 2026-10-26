@@ -66,6 +66,43 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.12 */}
+            <div className="mb-12" id="v3.411.12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.12
+                </span>
+                <span className="text-sm text-muted-foreground">October 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The owner of an owned resource is never optional</h3>
+                <p>
+                  v3.411.11 made an unmarked <code>belongs_to</code> optional, which is right,
+                  and swept up the one relationship that must never be: the owner of an{' '}
+                  <code>--owned-by</code> resource. It is stamped from the signed-in caller
+                  rather than accepted from the body, every query is scoped by it, and the
+                  generated <code>GetOwnerID()</code> returns it as a string. Making it a{' '}
+                  <code>*string</code> produced a model that did not compile:
+                </p>
+                <CodeBlock
+                  language="text"
+                  code={`internal/models/note.go:49:9: cannot use m.UserID (variable of type *string) as string value in return statement`}
+                />
+                <p>
+                  A nullable owner would also be a row nobody can see, so refusing it is right
+                  on its own terms rather than only to keep the compiler quiet. Every other
+                  relationship on an owned resource is still optional.
+                </p>
+                <p>
+                  Worth saying where this was caught. The repository's own tests passed, because
+                  the thing that breaks is a generated project rather than the generator, and
+                  the suite that builds generated projects runs in CI. It is the gate that
+                  exists for exactly this, and it did its job within three minutes of the tag.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.11 */}
             <div className="mb-12" id="v3.411.11">
               <div className="flex items-center gap-3 mb-4">

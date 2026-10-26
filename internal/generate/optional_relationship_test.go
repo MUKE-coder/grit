@@ -124,3 +124,46 @@ func TestPointerColumnsBecomeNullableZod(t *testing.T) {
 		t.Errorf("a plain string should stay required, got %s", got)
 	}
 }
+
+// The owner of an --owned-by resource is never optional, however the field is
+// declared. It is stamped from the signed-in caller rather than accepted from
+// the body, every query is scoped by it, and the generated GetOwnerID()
+// returns it as a string.
+//
+// Making every unmarked belongs_to optional made the owner a *string, and the
+// generated model stopped compiling:
+//
+//	internal/models/note.go:49:9: cannot use m.UserID (variable of type
+//	*string) as string value in return statement
+//
+// Local tests passed and CI caught it, because the thing that breaks is a
+// generated project rather than the generator.
+func TestTheOwnerOfAnOwnedResourceIsNeverOptional(t *testing.T) {
+	def, err := ParseInlineFields("Note", "title:string")
+	if err != nil {
+		t.Fatal(err)
+	}
+	def.Fields = append(def.Fields,
+		Field{Name: "user", Type: "belongs_to", RelatedModel: "User"},
+		Field{Name: "contact", Type: "belongs_to", RelatedModel: "Contact"})
+	def.OwnedBy = "user"
+
+	g := &Generator{Definition: def}
+
+	owner := def.OwnerField()
+	if owner == nil {
+		t.Fatal("OwnerField did not find the owner, so this test proves nothing")
+	}
+	if g.relOptional(*owner) {
+		t.Error("the owner column must not be nullable: GetOwnerID returns a string " +
+			"and every query is scoped by it")
+	}
+
+	// And an ordinary relationship on the same resource is still optional, so
+	// the fix is about the owner and not about owned resources.
+	for _, f := range def.Fields {
+		if f.Name == "contact" && !g.relOptional(f) {
+			t.Error("a non-owner relationship on an owned resource should still be optional")
+		}
+	}
+}

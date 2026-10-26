@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 26 to November 1, 2026",
-    count: 7,
+    count: 8,
     entries: [
+      { version: "3.411.12", title: "The owner of an owned resource is never optional" },
       { version: "3.411.11", title: "A relationship can be optional, which it could not be before" },
       { version: "3.411.10", title: "The field-types reference had no field types in it" },
       { version: "3.411.9", title: "Removing the blog leaves a project that compiles and a test suite that does too" },
