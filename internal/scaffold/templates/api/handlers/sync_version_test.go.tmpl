@@ -24,27 +24,59 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 
-	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/sync"
 )
+
+// syncFixture is the model these tests push, and it is deliberately not one of
+// the application's own.
+//
+// They used models.Blog, because it was there and it had a Version field. That
+// made the sync engine's tests fail to compile the moment somebody removed the
+// blog resource from their project (grit#74): `go build ./...` still passed and
+// `go test ./internal/handlers/` did not, so the project looked healthy until
+// CI ran. Nothing here is about blogs. It is about whether a version advances.
+//
+// It carries the same shape the engine relies on: a string primary key, a
+// Version, the timestamps the cursor pages by, and soft delete for tombstones.
+// The BeforeUpdate hook is the thing under test rather than scenery, so it has
+// to be the real one: SetColumn with an expression, which is what a full-struct
+// Save silently overwrites.
+type syncFixture struct {
+	ID        string         `gorm:"primarykey;size:36" json:"id"`
+	Title     string         `gorm:"size:255;not null" json:"title"`
+	Slug      string         `gorm:"size:255;uniqueIndex" json:"slug"`
+	Content   string         `gorm:"type:text" json:"content"`
+	Version   int            `gorm:"not null;default:1" json:"version"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `gorm:"index" json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+func (syncFixture) TableName() string { return "sync_fixtures" }
+
+func (f *syncFixture) BeforeUpdate(tx *gorm.DB) error {
+	tx.Statement.SetColumn("version", gorm.Expr("version + 1"))
+	return nil
+}
 
 // syncVersionDB is a database with the one model these tests push.
 func syncVersionDB(tb testing.TB) *gorm.DB {
 	tb.Helper()
 	db := newTestDB(tb)
-	require.NoError(tb, db.AutoMigrate(&models.Blog{}))
+	require.NoError(tb, db.AutoMigrate(&syncFixture{}))
 	require.NoError(tb, sync.Install(db))
 	return db
 }
 
 func syncVersionHandler(db *gorm.DB) *SyncHandler {
 	reg := sync.NewRegistry()
-	reg.Register("blogs", &models.Blog{})
+	reg.Register("sync_fixtures", &syncFixture{})
 	return NewSyncHandler(db, reg)
 }
 
@@ -75,9 +107,9 @@ func pushOne(tb testing.TB, h *SyncHandler, ch PushChange) PushResult {
 	return out.Results[0]
 }
 
-func blogVersion(tb testing.TB, db *gorm.DB, id string) int {
+func fixtureVersion(tb testing.TB, db *gorm.DB, id string) int {
 	tb.Helper()
-	var row models.Blog
+	var row syncFixture
 	require.NoError(tb, db.First(&row, "id = ?", id).Error)
 	return row.Version
 }
@@ -90,19 +122,19 @@ func TestSyncUpdateIncrementsTheStoredVersion(t *testing.T) {
 
 	const id = "01a14381-0000-7000-8000-000000000001"
 	created := pushOne(t, h, PushChange{
-		Op: "create", Model: "blogs", ID: id, Version: 0,
+		Op: "create", Model: "sync_fixtures", ID: id, Version: 0,
 		Data: map[string]interface{}{"title": "First", "slug": "first-" + id, "content": "x"},
 	})
 	require.True(t, created.OK, "create should apply: %+v", created)
-	require.Equal(t, 1, blogVersion(t, db, id), "a new row starts at version 1")
+	require.Equal(t, 1, fixtureVersion(t, db, id), "a new row starts at version 1")
 
 	updated := pushOne(t, h, PushChange{
-		Op: "update", Model: "blogs", ID: id, Version: 1,
+		Op: "update", Model: "sync_fixtures", ID: id, Version: 1,
 		Data: map[string]interface{}{"title": "Second"},
 	})
 	require.True(t, updated.OK, "an update at the current version should apply: %+v", updated)
 
-	require.Equal(t, 2, blogVersion(t, db, id),
+	require.Equal(t, 2, fixtureVersion(t, db, id),
 		"the stored version must advance, or the next push at v1 is accepted as current and conflict detection never fires")
 	require.Equal(t, 2, updated.NewVersion,
 		"new_version must be what was stored; reporting the old one hides the bug because the two agree")
@@ -116,20 +148,20 @@ func TestSyncRefusesASecondPushAtTheSameVersion(t *testing.T) {
 
 	const id = "01a14381-0000-7000-8000-000000000002"
 	pushOne(t, h, PushChange{
-		Op: "create", Model: "blogs", ID: id, Version: 0,
+		Op: "create", Model: "sync_fixtures", ID: id, Version: 0,
 		Data: map[string]interface{}{"title": "First", "slug": "second-" + id, "content": "x"},
 	})
 
 	// Device A syncs.
 	first := pushOne(t, h, PushChange{
-		Op: "update", Model: "blogs", ID: id, Version: 1,
+		Op: "update", Model: "sync_fixtures", ID: id, Version: 1,
 		Data: map[string]interface{}{"title": "Device A"},
 	})
 	require.True(t, first.OK)
 
 	// Device B was offline and still believes the row is at version 1.
 	second := pushOne(t, h, PushChange{
-		Op: "update", Model: "blogs", ID: id, Version: 1,
+		Op: "update", Model: "sync_fixtures", ID: id, Version: 1,
 		Data: map[string]interface{}{"title": "Device B"},
 	})
 	require.False(t, second.OK, "a push at a stale version must not be applied")
@@ -137,7 +169,7 @@ func TestSyncRefusesASecondPushAtTheSameVersion(t *testing.T) {
 	require.Equal(t, 2, second.ServerVersion, "the client needs the current version to rebase onto")
 	require.NotNil(t, second.ServerData, "the client cannot build a merge dialog without the server's row")
 
-	var row models.Blog
+	var row syncFixture
 	require.NoError(t, db.First(&row, "id = ?", id).Error)
 	require.Equal(t, "Device A", row.Title, "device B must not have overwritten device A")
 }
@@ -151,17 +183,17 @@ func TestSyncVersionAdvancesOnEveryUpdate(t *testing.T) {
 
 	const id = "01a14381-0000-7000-8000-000000000003"
 	pushOne(t, h, PushChange{
-		Op: "create", Model: "blogs", ID: id, Version: 0,
+		Op: "create", Model: "sync_fixtures", ID: id, Version: 0,
 		Data: map[string]interface{}{"title": "v1", "slug": "third-" + id, "content": "x"},
 	})
 
 	for want := 2; want <= 5; want++ {
 		res := pushOne(t, h, PushChange{
-			Op: "update", Model: "blogs", ID: id, Version: want - 1,
+			Op: "update", Model: "sync_fixtures", ID: id, Version: want - 1,
 			Data: map[string]interface{}{"title": "update"},
 		})
 		require.True(t, res.OK, "update to v%d should apply: %+v", want, res)
-		require.Equal(t, want, blogVersion(t, db, id))
+		require.Equal(t, want, fixtureVersion(t, db, id))
 		require.Equal(t, want, res.NewVersion)
 	}
 }
@@ -174,16 +206,16 @@ func TestSyncIgnoresAClientSuppliedVersionInThePayload(t *testing.T) {
 
 	const id = "01a14381-0000-7000-8000-000000000004"
 	pushOne(t, h, PushChange{
-		Op: "create", Model: "blogs", ID: id, Version: 0,
+		Op: "create", Model: "sync_fixtures", ID: id, Version: 0,
 		Data: map[string]interface{}{"title": "v1", "slug": "fourth-" + id, "content": "x", "version": 99},
 	})
-	require.Equal(t, 1, blogVersion(t, db, id), "a forged version in the create payload is stripped")
+	require.Equal(t, 1, fixtureVersion(t, db, id), "a forged version in the create payload is stripped")
 
 	res := pushOne(t, h, PushChange{
-		Op: "update", Model: "blogs", ID: id, Version: 1,
+		Op: "update", Model: "sync_fixtures", ID: id, Version: 1,
 		Data: map[string]interface{}{"title": "v2", "version": 99},
 	})
 	require.True(t, res.OK)
-	require.Equal(t, 2, blogVersion(t, db, id),
+	require.Equal(t, 2, fixtureVersion(t, db, id),
 		"the version is the server's to set, whatever the payload says")
 }

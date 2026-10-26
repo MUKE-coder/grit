@@ -18,7 +18,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 
-	"{{MODULE}}/internal/models"
 )
 
 // pullPage asks for one page and returns the rows and the next cursor.
@@ -70,13 +69,13 @@ func TestPullCarriesTombstones(t *testing.T) {
 
 	const id = "01a14381-0000-7000-8000-00000000010a"
 	pushOne(t, h, PushChange{
-		Op: "create", Model: "blogs", ID: id, Version: 0,
+		Op: "create", Model: "sync_fixtures", ID: id, Version: 0,
 		Data: map[string]interface{}{"title": "Doomed", "slug": "doomed-" + id, "content": "x"},
 	})
-	res := pushOne(t, h, PushChange{Op: "delete", Model: "blogs", ID: id, Version: 1})
+	res := pushOne(t, h, PushChange{Op: "delete", Model: "sync_fixtures", ID: id, Version: 1})
 	require.True(t, res.OK, "delete should apply: %+v", res)
 
-	rows, _ := pullPage(t, h, "blogs", "", 100)
+	rows, _ := pullPage(t, h, "sync_fixtures", "", 100)
 	var tomb map[string]interface{}
 	for _, r := range rows {
 		if r["id"] == id {
@@ -96,11 +95,11 @@ func TestPullDoesNotFlagLiveRows(t *testing.T) {
 
 	const id = "01a14381-0000-7000-8000-00000000010b"
 	pushOne(t, h, PushChange{
-		Op: "create", Model: "blogs", ID: id, Version: 0,
+		Op: "create", Model: "sync_fixtures", ID: id, Version: 0,
 		Data: map[string]interface{}{"title": "Alive", "slug": "alive-" + id, "content": "x"},
 	})
 
-	rows, _ := pullPage(t, h, "blogs", "", 100)
+	rows, _ := pullPage(t, h, "sync_fixtures", "", 100)
 	require.Len(t, rows, 1)
 	require.Equal(t, false, rows[0]["_deleted"])
 }
@@ -120,7 +119,7 @@ func TestPullDoesNotDropRowsSharingATimestamp(t *testing.T) {
 	const n = 6
 	shared := time.Now().UTC().Truncate(time.Second)
 	for i := 0; i < n; i++ {
-		row := models.Blog{
+		row := syncFixture{
 			ID:      "01a14381-0000-7000-8000-00000000020" + string(rune('a'+i)),
 			Title:   "Tied",
 			Slug:    "tied-" + string(rune('a'+i)),
@@ -128,7 +127,7 @@ func TestPullDoesNotDropRowsSharingATimestamp(t *testing.T) {
 			Version: 1,
 		}
 		require.NoError(t, db.Create(&row).Error)
-		require.NoError(t, db.Model(&models.Blog{}).Where("id = ?", row.ID).
+		require.NoError(t, db.Model(&syncFixture{}).Where("id = ?", row.ID).
 			UpdateColumns(map[string]interface{}{"created_at": shared, "updated_at": shared}).Error)
 	}
 
@@ -136,7 +135,7 @@ func TestPullDoesNotDropRowsSharingATimestamp(t *testing.T) {
 	seen := map[string]int{}
 	cursor := ""
 	for page := 0; page < 10; page++ {
-		rows, next := pullPage(t, h, "blogs", cursor, 2)
+		rows, next := pullPage(t, h, "sync_fixtures", cursor, 2)
 		if len(rows) == 0 {
 			break
 		}
@@ -162,20 +161,20 @@ func TestPullFromTheLatestCursorReturnsOnlyWhatIsNew(t *testing.T) {
 	h := syncVersionHandler(db)
 
 	pushOne(t, h, PushChange{
-		Op: "create", Model: "blogs", ID: "01a14381-0000-7000-8000-00000000030a", Version: 0,
+		Op: "create", Model: "sync_fixtures", ID: "01a14381-0000-7000-8000-00000000030a", Version: 0,
 		Data: map[string]interface{}{"title": "First", "slug": "c-first", "content": "x"},
 	})
-	_, cursor := pullPage(t, h, "blogs", "", 100)
+	_, cursor := pullPage(t, h, "sync_fixtures", "", 100)
 	require.NotEmpty(t, cursor)
 
-	rows, _ := pullPage(t, h, "blogs", cursor, 100)
+	rows, _ := pullPage(t, h, "sync_fixtures", cursor, 100)
 	require.Empty(t, rows, "nothing has changed since that cursor")
 
 	pushOne(t, h, PushChange{
-		Op: "create", Model: "blogs", ID: "01a14381-0000-7000-8000-00000000030b", Version: 0,
+		Op: "create", Model: "sync_fixtures", ID: "01a14381-0000-7000-8000-00000000030b", Version: 0,
 		Data: map[string]interface{}{"title": "Second", "slug": "c-second", "content": "x"},
 	})
-	rows, _ = pullPage(t, h, "blogs", cursor, 100)
+	rows, _ = pullPage(t, h, "sync_fixtures", cursor, 100)
 	require.Len(t, rows, 1, "only the change made after the cursor")
 	require.Equal(t, "01a14381-0000-7000-8000-00000000030b", rows[0]["id"])
 }
@@ -199,7 +198,7 @@ func TestPushRefusesAnOversizedBatch(t *testing.T) {
 
 	changes := make([]PushChange, MaxPushChanges+1)
 	for i := range changes {
-		changes[i] = PushChange{Op: "create", Model: "blogs", ID: "x", Version: 0}
+		changes[i] = PushChange{Op: "create", Model: "sync_fixtures", ID: "x", Version: 0}
 	}
 	body, err := json.Marshal(SyncPushRequest{Changes: changes})
 	require.NoError(t, err)

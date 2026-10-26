@@ -66,6 +66,68 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.9 */}
+            <div className="mb-12" id="v3.411.9">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.9
+                </span>
+                <span className="text-sm text-muted-foreground">October 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Removing the blog leaves a project that compiles and a test suite that does too</h3>
+                <p>
+                  <code>grit remove resource Blog --force</code> already deleted fourteen files
+                  and reversed fourteen injections, and the project built afterwards. Four
+                  things were left behind, and the first one is the sort of failure worth
+                  describing carefully.
+                </p>
+                <h4>The sync engine's tests used the blog model as their fixture</h4>
+                <p>
+                  <code>sync_version_test.go</code> and <code>sync_pull_test.go</code> reached
+                  for <code>models.Blog</code> because it was there and it had a{' '}
+                  <code>Version</code> field. Nothing in them is about blogs: they exist to
+                  prove that a sync update advances a row&apos;s version, which is the whole of
+                  conflict detection. But it meant deleting the blog resource broke the test
+                  package, and it broke it in the worst available way:{' '}
+                  <code>go build ./...</code> still passed and{' '}
+                  <code>go test ./internal/handlers/</code> did not, so a project looked healthy
+                  right up until CI ran.
+                </p>
+                <p>
+                  Those tests own their fixture now, a <code>syncFixture</code> local to the
+                  handlers package. It carries the real <code>BeforeUpdate</code> hook rather
+                  than a simplified one, because that hook is the thing under test: a
+                  full-struct <code>Save</code> silently overwrites what{' '}
+                  <code>SetColumn</code> put in the statement, which is the bug those tests were
+                  written to catch, and a fixture without it would have passed while proving
+                  nothing.
+                </p>
+                <h4>And three smaller leftovers</h4>
+                <p>
+                  A stale <code>blogs</code> entry in the authz catalog, so the role editor
+                  offered permissions for a resource that was gone, and then the empty{' '}
+                  <code>Publishing</code> group it left behind. The first pass at that missed
+                  the group, because the scaffold explains its built-in features with a comment
+                  above them and the comment outlives the feature: a group holding only comments
+                  is still empty. An orphaned <code>// Blog management.</code> comment above the
+                  stats routes. And the WAF body-inspection exclusion still naming{' '}
+                  <code>/blogs</code>, which stays harmless and reads as evidence the resource
+                  exists. The <code>/posts</code> and <code>/articles</code> entries beside it
+                  stay, since they are the scaffold&apos;s allowance for resources somebody may
+                  still add.
+                </p>
+                <p>
+                  Verified the way it was reported: scaffold a triple project, remove the blog,
+                  then build, vet and run the handler tests. All three pass, and the only
+                  remaining match for &quot;blog&quot; in a generated API is a sample URL path
+                  in the field-type examples, which has nothing to do with the resource. Filed
+                  as #74.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.8 */}
             <div className="mb-12" id="v3.411.8">
               <div className="flex items-center gap-3 mb-4">

@@ -465,8 +465,34 @@ func RemoveResource(name string) error {
 	// that made removal leave broken code in the first place.
 	permsFile := filepath.Join(apiRoot, "internal", "authz", "permissions.go")
 	if fileExists(permsFile) {
-		if removeStructBlock(permsFile, fmt.Sprintf("Key:  %q,", names.Plural)) {
+		removed := removeStructBlock(permsFile, fmt.Sprintf("Key:  %q,", names.Plural))
+		// A resource the scaffold ships is a Feature inside one of the
+		// scaffold's own groups rather than a Module of its own, so the block
+		// above does not match it and never did. Blog is the one that matters:
+		// after removing it the roles screen still offered blogs.view and
+		// blogs.edit for a resource that was no longer there (grit#74).
+		if removeLinesContaining(permsFile, fmt.Sprintf("{Key: %q,", names.Plural)) == nil {
+			removed = true
+		}
+		// And then the group it was the only member of, because an empty
+		// "Publishing" heading in the role editor is the same leftover one
+		// level up.
+		if pruneEmptyPermissionGroups(permsFile) {
+			removed = true
+		}
+		if removed {
 			fmt.Println("  ✗ Removed permissions from the authz catalog")
+		}
+	}
+
+	// 15c. The comment that introduced the routes, once the routes are gone.
+	//
+	// Cosmetic, and it is the kind of thing somebody later reads as evidence
+	// that a resource still exists.
+	if fileExists(routesFile) {
+		if removeLinesContaining(routesFile,
+			fmt.Sprintf("// %s management.", names.Pascal)) == nil {
+			fmt.Printf("  ✗ Removed the %s routes comment\n", names.Lower)
 		}
 	}
 
@@ -478,6 +504,22 @@ func RemoveResource(name string) error {
 	// cut it out; without this the home page keeps importing the deleted
 	// use-blogs hook and the web app fails to build.
 	if strings.EqualFold(names.Pascal, "Blog") {
+		// The scaffold's WAF body-inspection exclusion names /blogs by hand,
+		// alongside /posts and /articles, because a richtext body trips the
+		// injection heuristics. removeWAFRichtext only takes back what a
+		// generated resource added, so these survived and left the exclusion
+		// list describing routes that no longer exist (grit#74). The /posts
+		// and /articles entries stay: they are the scaffold's allowance for
+		// resources somebody may still add.
+		if fileExists(routesFile) {
+			dropped := removeLinesContaining(routesFile, `"/blogs", "/blogs/*",`) == nil
+			if removeLinesContaining(routesFile, `"/admin/blogs", "/admin/blogs/*",`) == nil {
+				dropped = true
+			}
+			if dropped {
+				fmt.Println("  ✗ Removed the blog WAF exclusion")
+			}
+		}
 		// The home page moved into the (marketing) route group; a project from
 		// before that has it at the app root.
 		homePage := filepath.Join(webRoot, "app", "(marketing)", "page.tsx")
@@ -568,6 +610,85 @@ func forgetResourceFiles(root string, names Names) {
 //
 // Braces inside string literals would confuse the counter, but catalog entries
 // hold identifiers and display names, so this stays honest for its one caller.
+// pruneEmptyPermissionGroups deletes any permission Group left with no
+// features, and reports whether it deleted one.
+//
+// Removing a resource that was the only feature of a group leaves
+//
+//	{
+//		Key:  "publishing",
+//		Name: "Publishing",
+//		Features: []Feature{
+//		},
+//	},
+//
+// which compiles and shows an empty heading in the role editor. Found when
+// the blog resource was removed from a real project (grit#74).
+//
+// Line-based and deliberately narrow: it only ever removes a group whose
+// Features literal opens and closes with nothing in between, so it cannot
+// eat a group that still has members.
+func pruneEmptyPermissionGroups(filePath string) bool {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return false
+	}
+	lines := strings.Split(string(data), "\n")
+
+	changed := false
+	for i := 0; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) != "Features: []Feature{" {
+			continue
+		}
+		// Find the literal's closing line, skipping blanks and comments. The
+		// scaffold explains its built-in features with a comment above them,
+		// and that comment outlives the feature: without this the group is
+		// "empty" in every sense except the one this check tested for, and
+		// the roles screen keeps an empty Publishing heading.
+		close := -1
+		for j := i + 1; j < len(lines); j++ {
+			t := strings.TrimSpace(lines[j])
+			if t == "" || strings.HasPrefix(t, "//") {
+				continue
+			}
+			if t == "}," {
+				close = j
+			}
+			break
+		}
+		if close < 0 {
+			continue // the group still has features
+		}
+		// Walk back to the "{" that opened this group.
+		start := -1
+		for j := i - 1; j >= 0 && j > i-6; j-- {
+			if strings.TrimSpace(lines[j]) == "{" {
+				start = j
+				break
+			}
+		}
+		if start < 0 {
+			continue
+		}
+		// And forward to the line closing the group, which is the one after
+		// the empty Features literal's own closing line.
+		end := close + 1
+		if end >= len(lines) || strings.TrimSpace(lines[end]) != "}," {
+			continue
+		}
+		lines = append(lines[:start], lines[end+1:]...)
+		changed = true
+		i = start - 1
+	}
+	if !changed {
+		return false
+	}
+	if err := os.WriteFile(filePath, []byte(strings.Join(lines, "\n")), 0o644); err != nil {
+		return false
+	}
+	return true
+}
+
 func removeStructBlock(filePath, anchor string) bool {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
