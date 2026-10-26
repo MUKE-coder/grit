@@ -66,6 +66,65 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.15 */}
+            <div className="mb-12" id="v3.411.15">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.15
+                </span>
+                <span className="text-sm text-muted-foreground">October 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The generator and grit sync wrote the same schema file two different ways</h3>
+                <p>
+                  <code>packages/shared/schemas/&lt;resource&gt;.ts</code> has two writers.{' '}
+                  <code>grit generate</code> keyed it by the JSON tag; <code>grit sync</code>{' '}
+                  rewrote the same file in camelCase. Whichever ran last decided whether the app
+                  worked, because the API decodes with <code>ShouldBindJSON</code> against{' '}
+                  <code>json:&quot;contact_id&quot;</code> and simply ignores a payload keyed{' '}
+                  <code>contactId</code>: the field arrives empty and the error names something
+                  the form did fill in.
+                </p>
+                <p>
+                  In the project that reported it, six schemas were camelCase and one was
+                  snake_case, and the only difference was which command had touched it last.
+                </p>
+                <p>
+                  Sync keys by the JSON tag now, in the entity schema as well as the create and
+                  update pair. That was the one doing the most damage, because it is the schema
+                  you validate a response against, so it rejected responses the API had just
+                  produced. It also skips association structs, which it was emitting as{' '}
+                  <code>contact: z.unknown()</code> beside <code>contact_id</code>, and knows
+                  the API&apos;s own date wrappers rather than falling through to{' '}
+                  <code>z.unknown()</code> for every date column. The same gap was in the
+                  generated TypeScript types, so that is fixed too.
+                </p>
+                <h4>Two gaps in the generated schema, from the same report</h4>
+                <p>
+                  An optional relationship was still a required uuid. After the v3.411.11 fix
+                  the Go model and the admin form both knew it was optional and the schema did
+                  not, so a form built from it refused to save a deal with no contact.
+                </p>
+                <p>
+                  And a conditionally required field was required unconditionally.{' '}
+                  <code>required: true</code> with <code>show_when</code> produced{' '}
+                  <code>requiredif</code> on the model and <code>requiredWhen</code> in the
+                  admin form, both correct, and a plain required string in Zod, which rejected
+                  every row the condition did not hold for. &quot;Required while it is
+                  shown&quot; is a predicate, not a flag, so it is optional in the object now
+                  with a <code>superRefine</code> enforcing the condition, which is the same
+                  rule the other two already expressed.
+                </p>
+                <p>
+                  Verified by generating a resource with both shapes, running{' '}
+                  <code>grit sync</code> over it, and type-checking the shared package, the
+                  admin and the web app, all clean. One existing test had to change: it asserted
+                  the camelCase keys, so it had been holding the bug in place.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.14 */}
             <div className="mb-12" id="v3.411.14">
               <div className="flex items-center gap-3 mb-4">

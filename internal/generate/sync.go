@@ -281,17 +281,35 @@ func buildZodSchema(s GoStruct) string {
 		if isAutoField(f.JSONName) {
 			continue
 		}
+		// An association is not a field. Including it put `contact:
+		// z.unknown()` beside `contact_id` in the schema, which validates
+		// nothing and invites a form to send the whole related record back.
+		if isAssociation(f, s.Fields) {
+			continue
+		}
 
 		zodType := fieldZod(f)
-		camelName := toCamelCase(f.JSONName)
 
-		createFields.WriteString(fmt.Sprintf("  %s: %s,\n", camelName, zodType))
+		// The JSON tag's own name, not camelCase.
+		//
+		// The API decodes with ShouldBindJSON against `json:"contact_id"`, so
+		// a payload keyed contactId is a payload the API ignores: the field
+		// arrives empty and the error names a field the form did fill in.
+		// The generator always wrote snake_case here and sync rewrote the
+		// same file in camelCase, so whichever ran last decided whether the
+		// app worked (grit#102).
+		key := f.JSONName
+		if key == "" {
+			key = toSnakeCase(f.Name)
+		}
+
+		createFields.WriteString(fmt.Sprintf("  %s: %s,\n", key, zodType))
 
 		updateZod := zodType
 		if !strings.Contains(updateZod, ".optional()") && !strings.Contains(updateZod, ".nullable()") {
 			updateZod += ".optional()"
 		}
-		updateFields.WriteString(fmt.Sprintf("  %s: %s,\n", camelName, updateZod))
+		updateFields.WriteString(fmt.Sprintf("  %s: %s,\n", key, updateZod))
 	}
 
 	// The entity schema is emitted alongside the create and update pair.
@@ -309,8 +327,23 @@ func buildZodSchema(s GoStruct) string {
 	// what you validate an API response against.
 	var entityFields strings.Builder
 	for _, f := range s.Fields {
+		// Keyed by the JSON tag, like the create and update pair above and
+		// like everything the API actually sends. This one was camelCase too,
+		// and it is the schema you validate a response against, so it
+		// rejected every response the API had just produced.
+		key := f.JSONName
+		if key == "" {
+			key = toSnakeCase(f.Name)
+		}
+		// An association appears in a response, so unlike create and update
+		// it belongs here. It is another resource's shape, though, and this
+		// builder has no way to reach for it, so it stays permissive rather
+		// than pretending to validate.
 		zodType := fieldZod(f)
-		entityFields.WriteString(fmt.Sprintf("  %s: %s,\n", toCamelCase(f.JSONName), zodType))
+		if isAssociation(f, s.Fields) {
+			zodType = "z.unknown().optional()"
+		}
+		entityFields.WriteString(fmt.Sprintf("  %s: %s,\n", key, zodType))
 	}
 
 	return fmt.Sprintf(`import { z } from "zod";
@@ -346,6 +379,13 @@ func goTypeToTS(goType string) string {
 	case "time.Time":
 		return "string"
 	case "gorm.DeletedAt":
+		return "string | null"
+	// The API's date wrappers marshal to a string. Without these they fell
+	// through to unknown, so every date column in a generated type was
+	// something the frontend had to cast before it could be read.
+	case "jsontime.DateTime", "jsontime.Date":
+		return "string"
+	case "*jsontime.DateTime", "*jsontime.Date":
 		return "string | null"
 	default:
 		if strings.Contains(goType, "JSONSlice[string]") {
@@ -416,6 +456,15 @@ func goTypeToZod(goType, gormTag string) string {
 		return "z.string().nullable()"
 	case "time.Time":
 		return "z.string()"
+	case "datatypes.Date", "*datatypes.Date":
+		return "z.string()"
+	// The API's own date and datetime wrappers. They marshal to a string, and
+	// falling through to z.unknown() meant the schema validated nothing for
+	// every date column a resource had.
+	case "jsontime.DateTime", "jsontime.Date":
+		return "z.string()"
+	case "*jsontime.DateTime", "*jsontime.Date":
+		return "z.string().nullable()"
 	default:
 		if strings.Contains(goType, "JSONSlice[string]") {
 			return "z.array(z.string()).optional()"

@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 26 to November 1, 2026",
-    count: 10,
+    count: 11,
     entries: [
+      { version: "3.411.15", title: "The generator and grit sync wrote the same schema file two different ways" },
       { version: "3.411.14", title: "grit routes --write, for when the only thing that changed is a guard you wrote" },
       { version: "3.411.13", title: "A kept tenant.Unscoped handle leaked conditions and errors into the next statement" },
       { version: "3.411.12", title: "The owner of an owned resource is never optional" },

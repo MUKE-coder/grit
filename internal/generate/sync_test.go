@@ -180,15 +180,23 @@ func TestBuildZodSchema(t *testing.T) {
 	if !found {
 		t.Fatalf("buildZodSchema missing CreateProductSchema:%s", got)
 	}
-	if !strings.Contains(entity, "id:") || !strings.Contains(entity, "createdAt:") {
-		t.Errorf("the entity schema should carry id and createdAt:%s", entity)
+	// Keyed by the JSON tag, because that is what the API sends and what the
+	// generated TypeScript types and every hook in the scaffold already use.
+	// This said createdAt, which is what sync wrote and what made the schema
+	// disagree with the generator's own output for the same resource
+	// (grit#102).
+	if !strings.Contains(entity, "id:") || !strings.Contains(entity, "created_at:") {
+		t.Errorf("the entity schema should carry id and created_at:%s", entity)
+	}
+	if strings.Contains(entity, "createdAt:") {
+		t.Errorf("the entity schema is still camelCase, which the API ignores:%s", entity)
 	}
 
 	// Create and update take input, so the auto fields stay out of those.
 	if strings.Contains(rest, "id:") {
 		t.Errorf("create/update should not include auto field id:%s", rest)
 	}
-	if strings.Contains(rest, "createdAt:") {
+	if strings.Contains(rest, "created_at:") {
 		t.Errorf("create/update should not include auto field created_at:%s", rest)
 	}
 

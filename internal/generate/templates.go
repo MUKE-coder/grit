@@ -687,6 +687,7 @@ func (g *Generator) buildHandlerSearchCols() string {
 func (g *Generator) writeZodSchema(names Names) error {
 	createFields := ""
 	updateFields := ""
+	var refinements []conditionalRequired
 	owner := g.Definition.OwnerField()
 
 	for _, f := range g.Definition.Fields {
@@ -717,8 +718,15 @@ func (g *Generator) writeZodSchema(names Names) error {
 			if f.RelatedModelName() == toPascalCase(g.Definition.Name) {
 				zod += `.or(z.literal(""))`
 			}
+			// An optional relationship is optional here too. The Go side and
+			// the admin form both knew; the schema still demanded a uuid, so
+			// a form built from it refused to save a deal with no contact
+			// (grit#102).
+			if g.relOptional(f) && !strings.Contains(zod, ".optional()") {
+				zod += ".nullable().optional()"
+			}
 			createFields += fmt.Sprintf("  %s: %s,\n", fkName, zod)
-			updateFields += fmt.Sprintf("  %s: %s,\n", fkName, zod+".optional()")
+			updateFields += fmt.Sprintf("  %s: %s,\n", fkName, strings.TrimSuffix(zod, ".optional()")+".optional()")
 			continue
 		}
 
@@ -732,6 +740,22 @@ func (g *Generator) writeZodSchema(names Names) error {
 
 		snakeName := toSnakeCase(f.Name)
 		zodType := f.ZodType()
+		// "Required while it is shown" is a predicate, not a flag. Marking it
+		// required in the object rejects every row the condition does not
+		// hold for: a lost_reason required when status is lost made every
+		// open deal invalid (grit#102). Optional here, enforced by the
+		// refinement below, which is the same rule the model's requiredif tag
+		// and the admin's requiredWhen already express.
+		if f.ShowWhen != nil && f.Required {
+			refinements = append(refinements, conditionalRequired{
+				Field: snakeName,
+				On:    toSnakeCase(f.ShowWhen.Field),
+				Value: f.ShowWhen.Value,
+			})
+			if !strings.Contains(zodType, ".optional()") {
+				zodType += ".optional()"
+			}
+		}
 		createFields += fmt.Sprintf("  %s: %s,\n", snakeName, zodType)
 
 		// Update schema: make all fields optional
@@ -794,18 +818,51 @@ func (g *Generator) writeZodSchema(names Names) error {
 	content := fmt.Sprintf(`%s
 
 export const Create%sSchema = z.object({
-%s});
+%s})%s;
 
 export const Update%sSchema = z.object({
 %s});
 
 export type Create%sInput = z.infer<typeof Create%sSchema>;
 export type Update%sInput = z.infer<typeof Update%sSchema>;
-`, importLines, names.Pascal, createFields, names.Pascal, updateFields,
+`, importLines, names.Pascal, createFields, zodRefinements(refinements),
+		names.Pascal, updateFields,
 		names.Pascal, names.Pascal, names.Pascal, names.Pascal)
 
 	path := filepath.Join(g.SharedRoot(), "schemas", names.Kebab+".ts")
 	return writeFileWithDirs(path, content)
+}
+
+// conditionalRequired is a field that is required only while its condition
+// holds, which Zod expresses as a refinement rather than as a type.
+type conditionalRequired struct {
+	Field string // the field this applies to, in snake_case
+	On    string // the sibling it depends on
+	Value string // the stored value, not the label
+}
+
+// zodRefinements renders the superRefine that enforces them, or "" when there
+// are none.
+//
+// One refine for all of them rather than one each: a chain of superRefine
+// calls reads worse and reports the same thing.
+func zodRefinements(rules []conditionalRequired) string {
+	if len(rules) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString(".superRefine((v, ctx) => {\n")
+	for _, r := range rules {
+		fmt.Fprintf(&b, "  if (v.%s === %q && !v.%s) {\n", r.On, r.Value, r.Field)
+		b.WriteString("    ctx.addIssue({\n")
+		b.WriteString("      code: z.ZodIssueCode.custom,\n")
+		fmt.Fprintf(&b, "      path: [%q],\n", r.Field)
+		b.WriteString("      message: \"Required\",\n")
+		b.WriteString("    });\n")
+		b.WriteString("  }\n")
+	}
+	b.WriteString("})")
+	return b.String()
 }
 
 // writeTSTypes creates the TypeScript type file for the resource.
