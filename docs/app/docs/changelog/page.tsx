@@ -66,6 +66,51 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.7 */}
+            <div className="mb-12" id="v3.411.7">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.7
+                </span>
+                <span className="text-sm text-muted-foreground">October 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit skills install, because an agent cannot type a slash command</h3>
+                <p>
+                  There is a set of Claude skills that build with Grit: a router that reads your
+                  project and assigns the work, one expert per architecture, and specialists for
+                  resources, the admin panel, design, data, security, performance, deployment and
+                  review. They read the docs out of your installed binary rather than from
+                  memory, which is the point of them.
+                </p>
+                <p>
+                  Installing them was the problem. They ship as a Claude Code plugin, and{' '}
+                  <code>/plugin</code> is a slash command a person types: it is not reachable
+                  from a tool call, and in the VS Code extension it does not exist at all, where
+                  it answers <code>/plugin isn&apos;t available in this environment</code>. So an
+                  assistant told to install them had to stop and ask, every time, in the one
+                  environment a lot of people work in.
+                </p>
+                <p>
+                  An ordinary command is reachable. <code>grit skills install</code> puts them in
+                  at user level so every project sees them, and{' '}
+                  <code>grit skills install --all</code> adds the five skills from other projects
+                  that the experts use for design research and browser testing and work around
+                  when they are missing. <code>grit skills status</code> says what is there.
+                </p>
+                <p>
+                  It checks afterwards rather than trusting the exit code. The installer writes
+                  to every agent it can find and will report a failure for one of them while
+                  succeeding overall, so a green tick based on the exit status would have been a
+                  lie roughly as often as it was true. It counts what actually landed, says so
+                  when only some arrived, and refuses to claim success when nothing did. It also
+                  says up front that a red mark naming an agent you do not use is not your
+                  problem, because the output is alarming the first time.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.6 */}
             <div className="mb-12" id="v3.411.6">
               <div className="flex items-center gap-3 mb-4">

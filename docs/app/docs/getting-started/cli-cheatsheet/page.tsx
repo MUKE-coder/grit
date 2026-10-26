@@ -111,6 +111,11 @@ export default function CLICheatsheetPage() {
                         desc: "Write CLAUDE.md / AGENTS.md convention docs",
                       },
                       {
+                        cmd: "grit skills install",
+                        alias: "",
+                        desc: "Install the expert skills an AI assistant builds with",
+                      },
+                      {
                         cmd: "grit new",
                         alias: "",
                         desc: "Scaffold a new project",
