@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // AddWebAuth runs the web-auth scaffold against an existing Grit
@@ -58,6 +59,25 @@ func AddWebAuth(root string, force bool) error {
 	// Without it the written file keeps the {{ADMIN_HREF}} placeholder, which is a
 	// link to a page called literally that.
 	opts := Options{ProjectName: filepath.Base(root), Architecture: detectArchitecture(root)}
+
+	// The callback that served the wrong URL.
+	//
+	// It used to be written to app/(auth)/callback/, and "(auth)" is a route
+	// group so that serves /callback, while the API redirects to
+	// /auth/callback (grit#106). A project that ran this command before would
+	// otherwise keep both: a dead page at the old path, holding the token
+	// handling that was removed from the new one for being a leak.
+	//
+	// Only when it is byte-for-byte a file this command wrote. Somebody who
+	// built their own page there keeps it.
+	stale := filepath.Join(webRoot, "app", "(auth)", "callback", "page.tsx")
+	if existing, err := os.ReadFile(stale); err == nil && isGritWebCallback(string(existing)) {
+		if err := os.Remove(stale); err == nil {
+			rel, _ := filepath.Rel(root, stale)
+			fmt.Printf("  ✗ removed %s (it served /callback; the API redirects to /auth/callback)\n", rel)
+			_ = os.Remove(filepath.Dir(stale)) // only succeeds when empty
+		}
+	}
 
 	for _, f := range webAuthFiles(webRoot, opts) {
 		rel, _ := filepath.Rel(root, f.path)
@@ -109,6 +129,19 @@ type webAuthFile struct {
 	content string
 }
 
+// isGritWebCallback reports whether a file is one this command wrote, in
+// either of the two shapes it has had.
+//
+// Matched on content rather than on a hash, because the file changed between
+// versions and both are ours to remove: the one that read tokens from the
+// query string, and the one that does not.
+func isGritWebCallback(src string) bool {
+	if !strings.Contains(src, "AuthCallbackPage") || !strings.Contains(src, "CallbackSpinner") {
+		return false
+	}
+	return strings.Contains(src, "Signing you in...")
+}
+
 func webAuthFiles(webRoot string, opts Options) []webAuthFile {
 	files := []webAuthFile{
 		// Hooks + lib
@@ -127,7 +160,13 @@ func webAuthFiles(webRoot string, opts Options) []webAuthFile {
 		{filepath.Join(webRoot, "app", "(auth)", "register", "page.tsx"), webThemedRegisterPage()},
 		{filepath.Join(webRoot, "app", "(auth)", "forgot-password", "page.tsx"), webThemedForgotPasswordPage()},
 		{filepath.Join(webRoot, "app", "(auth)", "reset-password", "page.tsx"), webThemedResetPasswordPage()},
-		{filepath.Join(webRoot, "app", "(auth)", "callback", "page.tsx"), webAuthCallback()},
+		// /auth/callback, which is where the API redirects after a social
+		// sign-in. "(auth)" is a route group, so it is not in the URL: this
+		// file used to sit one level up and served /callback, and every web
+		// OAuth sign-in landed on a 404 (grit#106). OAUTH_FRONTEND_URL
+		// decides which app a social sign-in returns to, and it defaults to
+		// the admin, so a web OAuth flow needs it pointed here.
+		{filepath.Join(webRoot, "app", "(auth)", "auth", "callback", "page.tsx"), webAuthCallback()},
 
 		// Theme-aware shells (copied from admin so the web bundle is
 		// self-contained -- no cross-package import).

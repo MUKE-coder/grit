@@ -66,6 +66,71 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.16 */}
+            <div className="mb-12" id="v3.411.16">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.16
+                </span>
+                <span className="text-sm text-muted-foreground">October 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Web sign-in could not finish for a 2FA account, and social sign-in landed on a 404</h3>
+                <p>
+                  For an account with two-factor authentication on, the API answers a correct
+                  password with a pending token and no user. The web login page did not look,
+                  so it set the cached user to <code>undefined</code>, stamped the
+                  session marker and sent the person to the home page. The password was
+                  accepted, nothing was signed in, and nothing said so.
+                </p>
+                <p>
+                  The admin had handled this for a while, with a comment on the guard saying
+                  the unguarded read &quot;is what used to break&quot;. The fix never reached
+                  the web template, which is the recurring shape of these: one of the two apps
+                  learns something and the other does not.
+                </p>
+                <p>
+                  The web login page now has the code step, for an authenticator code or a
+                  backup code, with the trust-this-device option, and the session marker is
+                  stamped in one place, once there really is a session.{' '}
+                  <code>useLogin</code> guards the challenge and there is a{' '}
+                  <code>useVerifyTOTP</code> beside it.
+                </p>
+                <h4>And the OAuth callback disagreed with the API in three ways</h4>
+                <p>
+                  It lived at <code>app/(auth)/callback/</code>, and <code>(auth)</code> is a
+                  route group, so it served <code>/callback</code> while the API redirects to{' '}
+                  <code>/auth/callback</code>. Every web social sign-in landed on a 404.
+                </p>
+                <p>
+                  It also read <code>access_token</code> and <code>refresh_token</code> from
+                  the query string. The API stopped sending those and sets the HttpOnly cookies
+                  itself, so a successful sign-in fell through to the failure branch and
+                  reported &quot;Authentication failed&quot;. The branch that would have
+                  handled them stored them with <code>Cookies.set</code>, in the URL and
+                  readable by JavaScript, which is the opposite of the policy the rest of the
+                  app follows. It was unreachable, and it is deleted rather than left
+                  unreachable: dead code that leaks is a leak waiting for somebody to make it
+                  reachable again. And it never stamped the session marker, so even a working
+                  redirect was bounced by the middleware on the next page.
+                </p>
+                <p>
+                  A project that ran <code>grit add web-auth</code> before has the old page at
+                  the old path. The command removes it, but only when it is byte-for-byte one
+                  it wrote, so a hand-built page there is left alone.
+                </p>
+                <p>
+                  Also from the same report: <code>grit add web-auth --help</code> described
+                  two files and writes about thirty. It now lists what it writes and says that
+                  running it on a project with its own navbar or account pages is a bigger
+                  decision than adding two helpers. It also names{' '}
+                  <code>OAUTH_FRONTEND_URL</code>, which decides whether a social sign-in
+                  returns to the web app or the admin, and defaults to the admin.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.15 */}
             <div className="mb-12" id="v3.411.15">
               <div className="flex items-center gap-3 mb-4">

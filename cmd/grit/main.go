@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.411.15"
+var version = "3.411.16"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -725,12 +725,26 @@ func addWebAuthCmd() *cobra.Command {
 	var force bool
 	cmd := &cobra.Command{
 		Use:   "web-auth",
-		Short: "Add page protection helpers to apps/web/",
-		Long: "Scaffolds apps/web/middleware.ts (SSR cookie redirect) and\n" +
-			"apps/web/components/ProtectedWebRoute.tsx (client guard).\n" +
-			"Existing files are left alone unless --force is passed.\n\n" +
+		Short: "Add the customer-facing auth surface to apps/web/",
+		Long: "Writes the whole signed-in customer surface, which is a good deal\n" +
+			"more than the two helpers this used to describe:\n\n" +
+			"  the pages        login (with the 2FA code step), register,\n" +
+			"                   forgot and reset password, the OAuth callback\n" +
+			"  the (app) group  its layout, the account overview and profile\n" +
+			"  the chrome       the auth shells, social buttons, UserMenu, and\n" +
+			"                   a navbar that replaces the plain one\n" +
+			"  the guards       middleware.ts (SSR cookie redirect) and\n" +
+			"                   ProtectedWebRoute.tsx (client guard)\n" +
+			"  the helpers      auth hooks, password rules, strength meter\n\n" +
+			"About thirty files. Running it on a project that already has its\n" +
+			"own navbar or account pages is a bigger decision than adding two\n" +
+			"helpers, which is why this now says so.\n\n" +
+			"Existing files are left alone unless --force is passed, except one\n" +
+			"that is byte-for-byte a file this command wrote.\n\n" +
 			"After running, declare which paths are protected in middleware.ts\n" +
-			"by editing the matcher, or wrap a page with <ProtectedWebRoute>.",
+			"by editing the matcher, or wrap a page with <ProtectedWebRoute>.\n" +
+			"For social sign-in, point OAUTH_FRONTEND_URL at the web app: it\n" +
+			"defaults to the admin, so a web OAuth flow lands there instead.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
 

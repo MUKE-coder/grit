@@ -28,6 +28,25 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // A login can end in two places: signed in, or holding a short-lived
+  // pending token because the account has 2FA on and this device is not
+  // trusted. Without this the password was accepted, nothing was signed in,
+  // and the person was sent to the home page as a guest (grit#105).
+  const [pendingToken, setPendingToken] = useState("");
+  const [factorMethod, setFactorMethod] = useState("app");
+  const [code, setCode] = useState("");
+  const [useBackup, setUseBackup] = useState(false);
+  const [trustDevice, setTrustDevice] = useState(false);
+
+  const goHome = () => {
+    // The web-origin marker, stamped only once there is really a session.
+    // Stamping it beside a pending token told the middleware somebody was
+    // signed in when they were not.
+    setWebSessionMarker();
+    const next = searchParams?.get("next");
+    router.push(next && next.startsWith("/") ? next : "/");
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -36,23 +55,119 @@ function LoginForm() {
       // API sets HttpOnly grit_access + grit_refresh via Set-Cookie.
       // withCredentials on the axios client carries them on subsequent
       // requests automatically.
-      await api.post("/api/auth/login", { email, password });
+      const res = await api.post("/api/auth/login", { email, password });
+      // 2FA accounts stop here: the API answers with a pending token and no
+      // user, and the next step is the code, not the home page.
+      const d = res?.data?.data as
+        | { totp_required?: boolean; pending_token?: string; method?: string }
+        | undefined;
+      if (d?.totp_required && d.pending_token) {
+        setPendingToken(d.pending_token);
+        // Which factor the account uses. Empty means an authenticator, which
+        // is what every account meant before codes by email existed.
+        setFactorMethod(d.method ?? "app");
+        return;
+      }
       // v3.31.42: stamp the web-origin marker so the middleware
       // recognises this session as a web-app session and lets
       // protected pages render. The API cookie alone isn't enough
       // because it's scoped to the API origin -- the web middleware
-      // can't see it.
-      setWebSessionMarker();
-      // Honour ?next= so a bounce off a protected page returns the
-      // user to where they were headed.
-      const next = searchParams?.get("next");
-      router.push(next && next.startsWith("/") ? next : "/");
+      // can't see it. Honours ?next= so a bounce off a protected page
+      // returns the user to where they were headed.
+      goHome();
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, "Invalid email or password"));
     } finally {
       setLoading(false);
     }
   };
+
+  const onVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingToken) return;
+    setError("");
+    setLoading(true);
+    try {
+      await api.post(
+        useBackup ? "/api/auth/totp/backup-codes/verify" : "/api/auth/totp/verify",
+        { pending_token: pendingToken, code: code.trim(), trust_device: trustDevice },
+      );
+      goHome();
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, "That code was not accepted"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step two, rendered instead of the credentials form rather than beneath
+  // it, so there is one obvious thing to do.
+  if (pendingToken) {
+    return (
+      <AuthShell
+        mode="login"
+        title="Two-factor authentication"
+        subtitle={
+          useBackup
+            ? "Enter one of your backup codes"
+            : factorMethod === "email"
+              ? "We emailed you a 6-digit code. It expires in a few minutes."
+              : "Enter the 6-digit code from your authenticator app"
+        }
+        errorMessage={error}
+      >
+        <form onSubmit={onVerify} className="space-y-5">
+          <div className="space-y-2">
+            <label htmlFor="totp-code" className="block text-sm font-medium" style={{ color: "var(--auth-muted)" }}>
+              {useBackup ? "Backup code" : "Authentication code"}
+            </label>
+            <input
+              id="totp-code"
+              name="code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className={inputOk}
+              placeholder={useBackup ? "xxxx-xxxx" : "123456"}
+              inputMode={useBackup ? "text" : "numeric"}
+              autoComplete="one-time-code"
+              autoFocus
+              required
+            />
+          </div>
+
+          <label className="flex items-center gap-2 text-sm" style={{ color: "var(--auth-muted)" }}>
+            <input
+              type="checkbox"
+              checked={trustDevice}
+              onChange={(e) => setTrustDevice(e.target.checked)}
+            />
+            Trust this device for 30 days
+          </label>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-[var(--auth-radius)] bg-[var(--auth-primary)] px-4 py-3 font-medium text-[var(--auth-primary-fg)] transition-opacity disabled:opacity-60"
+          >
+            {loading ? "Verifying..." : "Verify"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setUseBackup(!useBackup);
+              setCode("");
+              setError("");
+            }}
+            className="w-full text-sm underline"
+            style={{ color: "var(--auth-muted)" }}
+          >
+            {useBackup ? "Use your authenticator instead" : "Use a backup code"}
+          </button>
+        </form>
+      </AuthShell>
+    );
+  }
 
   return (
     <AuthShell

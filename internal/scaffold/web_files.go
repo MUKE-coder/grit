@@ -2096,8 +2096,7 @@ func webAuthCallback() string {
 
 import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Cookies from "js-cookie";
-import { api } from "@/lib/api";
+import { setWebSessionMarker } from "@/lib/web-session";
 
 // useSearchParams forces a client bailout during prerender unless it's
 // wrapped in a Suspense boundary. The inner component does the work;
@@ -2119,32 +2118,28 @@ function CallbackInner() {
     if (processed.current) return;
     processed.current = true;
 
-    const accessToken = searchParams.get("access_token");
-    const refreshToken = searchParams.get("refresh_token");
+    // No tokens in the URL, by design. The API's OAuth callback sets the
+    // HttpOnly cookies itself and redirects here with no query parameters,
+    // so the only thing this page can learn from the URL is a failure.
+    //
+    // It used to read access_token and refresh_token from the query string,
+    // which meant a successful sign-in fell through to the failure branch
+    // and reported "Authentication failed" (grit#106). The branch that
+    // handled those tokens stored them with Cookies.set, in the URL and
+    // readable by JavaScript, which is the opposite of the policy the rest
+    // of this app follows. Removed rather than left unreachable: dead code
+    // that leaks is a leak waiting for somebody to make it reachable again.
     const error = searchParams.get("error");
-
     if (error) {
       router.push("/login?error=" + encodeURIComponent(error));
       return;
     }
 
-    if (accessToken && refreshToken) {
-      Cookies.set("access_token", accessToken, { expires: 1 });
-      Cookies.set("refresh_token", refreshToken, { expires: 7 });
-
-      api
-        .get("/api/auth/me", {
-          headers: { Authorization: "Bearer " + accessToken },
-        })
-        .then(() => {
-          router.push("/");
-        })
-        .catch(() => {
-          router.push("/");
-        });
-    } else {
-      router.push("/login?error=Authentication+failed");
-    }
+    // The cookies are already set. All that is left is the web-origin
+    // marker, without which middleware.ts bounces the next protected page
+    // straight back to /login.
+    setWebSessionMarker();
+    router.push("/");
   }, [searchParams, router]);
 
   return <CallbackSpinner />;
@@ -2219,6 +2214,21 @@ export function useAuth() {
   };
 }
 
+// A login can end in two places: signed in, or holding a short-lived pending
+// token because the account has 2FA on and this device is not trusted. The
+// admin has handled this for some time; the web template did not, so a 2FA
+// account had ["me"] set to undefined, the session marker stamped, and was
+// sent to the home page without being signed in (grit#105).
+export interface TOTPChallenge {
+  totp_required: true;
+  pending_token: string;
+  method?: string;
+}
+
+function isChallenge(d: AuthResponse | TOTPChallenge): d is TOTPChallenge {
+  return (d as TOTPChallenge).totp_required === true;
+}
+
 export function useLogin() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -2228,17 +2238,53 @@ export function useLogin() {
       // POST is enough — the API sets HttpOnly cookies on the response.
       // The 'tokens' field is still in the JSON body so native bearer
       // clients work too, but the browser ignores it.
-      const { data } = await api.post<ApiResponse<AuthResponse>>(
+      const { data } = await api.post<ApiResponse<AuthResponse | TOTPChallenge>>(
         "/api/auth/login",
         credentials
       );
       return data;
     },
     onSuccess: (data) => {
+      // Reading data.data.user without this guard is the bug: on a 2FA
+      // account it is undefined, and stamping the marker beside a pending
+      // token tells the middleware somebody is signed in when they are not.
+      if (isChallenge(data.data)) return;
       queryClient.setQueryData(["me"], data.data.user);
       // v3.31.42: stamp the web-origin marker so the middleware
       // doesn't bounce signed-in web users to /login on the next
       // navigation. See lib/web-session.ts for the rationale.
+      setWebSessionMarker();
+      router.push("/");
+    },
+  });
+}
+
+// Completes a login that stopped at the 2FA prompt. Same shape for an
+// authenticator code and a backup code, only the endpoint differs, so a form
+// can offer both without branching.
+export function useVerifyTOTP() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      pending_token: string;
+      code: string;
+      trust_device?: boolean;
+      backup?: boolean;
+    }) => {
+      const path = payload.backup
+        ? "/api/auth/totp/backup-codes/verify"
+        : "/api/auth/totp/verify";
+      const { data } = await api.post<ApiResponse<AuthResponse>>(path, {
+        pending_token: payload.pending_token,
+        code: payload.code.trim(),
+        trust_device: payload.trust_device ?? false,
+      });
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["me"], data.data.user);
       setWebSessionMarker();
       router.push("/");
     },
