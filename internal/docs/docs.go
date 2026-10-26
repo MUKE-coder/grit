@@ -156,6 +156,12 @@ func Read(url string) (*Page, error) {
 			return &idx.Pages[i], nil
 		}
 	}
+	// A shell may have rewritten the argument into an absolute OS path, and
+	// such a path still ends with the page's own URL.
+	if page := bySuffix(&idx.Pages, want); page != nil {
+		return page, nil
+	}
+
 	// Suggest, rather than just refusing. A near miss on a URL is the common
 	// case and the alternative is an agent concluding the page does not exist.
 	near := make([]string, 0, 4)
@@ -189,7 +195,39 @@ func URLs() []string {
 }
 
 func normaliseURL(u string) string {
-	return strings.ToLower(strings.Trim(u, "/"))
+	// Backslashes too, because a rewritten path arrives with them on Windows
+	// and a page URL never contains one.
+	return strings.ToLower(strings.Trim(strings.ReplaceAll(u, "\\", "/"), "/"))
+}
+
+// bySuffix finds the one page whose URL is the tail of want, on a segment
+// boundary.
+//
+// This exists for one specific failure. MSYS rewrites an argument that looks
+// like an absolute POSIX path into a Windows one before the process sees it,
+// so `grit docs show /docs/concepts/field-types`, which is the example this
+// command's own help prints, arrives as
+// "C:/Program Files/Git/docs/concepts/field-types". Git Bash is the shell
+// most Windows Go developers work in and the one Claude Code uses there, so
+// refusing that argument is refusing the documented usage, and the error
+// ("no page at ...") reads as a missing page rather than a mangled path.
+//
+// Matched on a segment boundary, and only when exactly one page matches: a
+// genuinely ambiguous argument still gets the suggestion list rather than a
+// confident guess. Not anchored on "docs", because twenty indexed pages are
+// under /blog.
+func bySuffix(pages *[]Page, want string) *Page {
+	var found *Page
+	for i := range *pages {
+		url := normaliseURL((*pages)[i].URL)
+		if want == url || strings.HasSuffix(want, "/"+url) {
+			if found != nil {
+				return nil // ambiguous, so say nothing and let the caller suggest
+			}
+			found = &(*pages)[i]
+		}
+	}
+	return found
 }
 
 // terms splits a query into lowercase words, dropping the ones that match

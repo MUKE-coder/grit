@@ -143,7 +143,10 @@ SCOUT_DB=scout.db`}
                   </tr>
                   <tr className="border-b border-border/40">
                     <td className="py-2 pr-3 align-top font-medium">Needs</td>
-                    <td className="py-2 pr-3 align-top">The app to be running</td>
+                    <td className="py-2 pr-3 align-top">
+                      The app to be running. In development it also reads the source, so it
+                      covers both columns
+                    </td>
                     <td className="py-2 align-top">
                       Nothing running, and the <code>scout</code> binary
                     </td>
@@ -161,10 +164,14 @@ SCOUT_DB=scout.db`}
               </table>
             </div>
             <p className="text-muted-foreground leading-relaxed mt-4">
-              The dashboard does not run the <code>code.*</code> checks today. Scout can attach a
-              repository path to a target, but the option Grit mounts with takes a URL and
-              nothing else, so the code checks are CLI-only for now (scout#8). If a finding you
-              expected is missing, that is the likeliest reason.
+              Since v3.411.6 the dashboard runs the <code>code.*</code> checks too, in
+              development. <code>grit add scout</code> hands Scout the project root, so the
+              source findings and the live findings land in one scan series you can diff, rather
+              than in two. Scout honours that path <strong>only</strong> when the environment is
+              dev and logs a line otherwise, because a finding quotes the source line it found
+              and a dashboard reachable in staging or production has no business reading the
+              tree. So the CLI stays the way to get code findings anywhere but your own machine,
+              and it is still the one for CI.
             </p>
 
             <h3 className="text-xl font-semibold mt-8 mb-3">The dashboard</h3>
@@ -528,8 +535,8 @@ GET  /api/v1/admin/blogs    middleware: ["AuthRequired",
             <p className="text-muted-foreground leading-relaxed">
               Worth knowing before your first scan, because a number with nothing to compare it
               to tells you very little. A freshly generated monorepo, scanned with{' '}
-              <code>scout scan --repo . --mode safe</code> on Scout v0.4.9, reports 73 findings.
-              Not one of them is a way in. They break down like this.
+              <code>scout scan --repo . --mode safe</code> on Scout v0.4.10, reports 66
+              findings. Not one of them is a way in. They break down like this.
             </p>
             <div className="overflow-x-auto mt-4">
               <table className="w-full text-sm table-fixed">
@@ -552,15 +559,6 @@ GET  /api/v1/admin/blogs    middleware: ["AuthRequired",
                     <td className="py-2 align-top">
                       A caret range in a <code>package.json</code>. A real decision rather than a
                       bug: a range means a fresh install can pick up a version nobody tested.
-                    </td>
-                  </tr>
-                  <tr className="border-b border-border/40">
-                    <td className="py-2 pr-3 align-top">7</td>
-                    <td className="py-2 pr-3 align-top"><code>code.secrets</code></td>
-                    <td className="py-2 align-top">
-                      Signing keys in test files. A test that signs a token has to contain a key,
-                      so there is no version of those files without one. Filed upstream as
-                      scout#7.
                     </td>
                   </tr>
                   <tr className="border-b border-border/40">
@@ -601,6 +599,12 @@ GET  /api/v1/admin/blogs    middleware: ["AuthRequired",
               new finding stands out, and it stops being worth running when there are so many
               that nobody looks. If your own scan is much longer than this, the extra findings
               are yours and worth reading one at a time.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              It was 73 on v0.4.9. Seven of those were signing keys in test files, which is not
+              a finding anyone can act on: a test that signs a token has to contain a key, so
+              there is no version of that file without one. Scout skips test fixtures as of
+              v0.4.10.
             </p>
             <p className="text-muted-foreground leading-relaxed mt-4">
               That is a repo scan. Point Scout at a running app with{' '}

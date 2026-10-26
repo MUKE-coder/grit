@@ -21,17 +21,22 @@ import (
 // whole integration rests on, landed after v0.3.0 was cut, so no tag could
 // compile the file this command writes. v0.4.6 contains it.
 //
-// v0.4.9 is the release that closed Scout issues #2 to #6, all of them
-// false positives this integration was producing on a correctly configured
-// Grit app: "/api" in the sensitive-word list made every namespaced route
-// sensitive, the dashboard-exposure check reported Scout's own three
-// dashboards, and the code scanner matched the word "secret" rather than a
-// secret-shaped value. A scan of a generated project went from 160 findings
-// to 73, and 62 of what is left is the caret-range check on package.json.
+// v0.4.9 closed Scout issues #2 to #6, all of them false positives this
+// integration was producing on a correctly configured Grit app: "/api" in the
+// sensitive-word list made every namespaced route sensitive, the
+// dashboard-exposure check reported Scout's own three dashboards, and the code
+// scanner matched the word "secret" rather than a secret-shaped value. A scan
+// of a generated project went from 160 findings to 73.
+//
+// v0.4.10 closed #7 and #8. Secrets in test fixtures are skipped, which takes
+// a generated project from 73 findings to 66, and scout.WithRepo exists, which
+// is why the template now hands Scout the project root: before it, the
+// dashboard could never run the code checks because WithTarget set a URL and
+// nothing else.
 //
 // Config, WithTarget and WithRoutes are unchanged across the bump: checked
 // against the module before raising it, because Scout moves fast.
-const scoutVersion = "v0.4.9"
+const scoutVersion = "v0.4.10"
 
 // Scout needs these, and a project generated before now is below them. Go
 // would raise them silently on the first build; doing it here means the

@@ -66,6 +66,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.6 */}
+            <div className="mb-12" id="v3.411.6">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.6
+                </span>
+                <span className="text-sm text-muted-foreground">October 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit docs show works in the shell its own help was written for</h3>
+                <p>
+                  <code>grit docs show /docs/concepts/field-types</code> is the example the
+                  command prints in its help, and in Git Bash on Windows it failed. MSYS
+                  rewrites any argument that looks like an absolute POSIX path before the
+                  process sees it, so the CLI received{' '}
+                  <code>C:/Program Files/Git/docs/concepts/field-types</code> and answered{' '}
+                  <code>no page at ...</code>, which reads as a missing page rather than a
+                  mangled argument.
+                </p>
+                <p>
+                  That matters more than a path bug usually would. Git Bash is the shell most
+                  Windows Go developers work in and the one Claude Code uses there, so the one
+                  command that exists to stop an agent guessing a field type was the command
+                  that did not work. A rewritten path still ends with the page&apos;s own URL,
+                  so the resolver now recovers it by matching the tail on a segment boundary,
+                  and only when exactly one page matches: an ambiguous argument still gets the
+                  suggestion list rather than a confident guess. Not anchored on a{' '}
+                  <code>docs</code> segment, because twenty indexed pages are under{' '}
+                  <code>/blog</code>.
+                </p>
+                <h4>The Scout dashboard runs the code checks now, in development</h4>
+                <p>
+                  Scout v0.4.10 added <code>WithRepo</code>, so <code>grit add scout</code>
+                  hands it the project root and the source findings land in the same scan series
+                  as the live ones instead of being reachable only from the CLI. The root is
+                  found by walking up for <code>grit.json</code> rather than configured, because
+                  the answer differs by architecture and by where the binary was started: in
+                  production it finds nothing, which is the right outcome.
+                </p>
+                <p>
+                  Scout honours the path only when the environment is dev and logs a line
+                  otherwise. That gate was the condition of asking for the feature: a finding
+                  quotes the source line it found, so a dashboard reachable in staging or
+                  production has no business reading the tree.
+                </p>
+                <p>
+                  The same release skips secrets in test fixtures, which takes a generated
+                  project from 73 findings to 66. The seven that went were signing keys in test
+                  files, which is not a finding anyone can act on: a test that signs a token has
+                  to contain a key, so there is no version of that file without one. The Scout
+                  page&apos;s breakdown has been re-measured rather than adjusted by arithmetic.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.5 */}
             <div className="mb-12" id="v3.411.5">
               <div className="flex items-center gap-3 mb-4">

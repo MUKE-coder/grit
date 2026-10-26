@@ -17,6 +17,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/MUKE-coder/scout"
 	// Every check registers itself from here. Importing a single collector
@@ -61,9 +63,43 @@ func mountScout(r *gin.Engine, cfg *config.Config) {
 	},
 		scout.WithTarget(cfg.AppURL),
 		scout.WithRoutes(scoutRoutes()...),
+		// The source tree, so the dashboard runs the code checks (secrets,
+		// dangerous sinks, unpinned and vulnerable dependencies) against the
+		// same target as the live checks, in one scan series you can diff.
+		//
+		// Scout honours this only when the environment is dev and logs a line
+		// otherwise, because a finding quotes the source line it found and a
+		// dashboard reachable in staging or production must not read the tree.
+		// Empty when the root cannot be found, which Scout treats as absent.
+		scout.WithRepo(scoutProjectRoot()),
 	)
 
 	log.Printf("Scout mounted at /scout (%d routes, safe mode)", access.Count())
+}
+
+// scoutProjectRoot is the directory holding grit.json, or "" when there is
+// none above us.
+//
+// Found by walking up rather than configured, because the answer differs by
+// architecture and by how the binary was started: the API runs from apps/api
+// in development and from wherever it was deployed in production, where this
+// returns "" and Scout ignores it, which is the correct outcome.
+func scoutProjectRoot() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	for i := 0; i < 6; i++ {
+		if _, err := os.Stat(filepath.Join(dir, "grit.json")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	return ""
 }
 
 // scoutDashboardKey signs Scout's dashboard sessions.
