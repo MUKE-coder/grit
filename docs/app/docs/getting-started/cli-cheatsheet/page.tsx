@@ -111,6 +111,11 @@ export default function CLICheatsheetPage() {
                         desc: "Write CLAUDE.md / AGENTS.md convention docs",
                       },
                       {
+                        cmd: "grit routes --write",
+                        alias: "",
+                        desc: "Rewrite internal/access/registry.go from the route files",
+                      },
+                      {
                         cmd: "grit skills install",
                         alias: "",
                         desc: "Install the expert skills an AI assistant builds with",

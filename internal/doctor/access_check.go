@@ -6,6 +6,10 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/accessgen"
 )
 
+// accessTableStaleFix is the one command that refreshes the table and does
+// nothing else. Named rather than inline so a test can hold it to that.
+const accessTableStaleFix = "grit routes --write   # rewrites the table from the route files"
+
 // checkAccessTableStale reports an access table that no longer matches the
 // route files it was built from.
 //
@@ -44,6 +48,11 @@ func checkAccessTableStale(p *project) []Finding {
 		Resource: "internal/access/registry.go",
 		Message: "the access table no longer matches the route files, so the routes screen " +
 			"and the MCP route tool may report the wrong permission for a route whose guard changed",
-		Fix: "grit upgrade   # regenerates it, or `grit generate resource` for a new one",
+		// The narrow one first. Suggesting grit upgrade for a stale table
+		// asked somebody who hand-edited one guard to move their whole
+		// project onto the CLI's templates, and the alternative offered,
+		// grit generate resource, rewrites the route file and drops the
+		// guard that made the table stale in the first place (grit#104).
+		Fix: accessTableStaleFix,
 	}}
 }

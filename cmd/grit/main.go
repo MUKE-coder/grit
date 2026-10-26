@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.411.13"
+var version = "3.411.14"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -2532,10 +2532,26 @@ func printDesktopSuccess(name string) {
 // ── grit routes ──────────────────────────────────────────────────────────────
 
 func routesCmd() *cobra.Command {
-	return &cobra.Command{
+	var write bool
+	cmd := &cobra.Command{
 		Use:   "routes",
 		Short: "List all registered API routes",
-		Long:  "Parse the routes.go file and display a table of all registered HTTP routes with their methods, paths, handlers, and middleware groups.",
+		Long: `Parse the route files and display every registered HTTP route with its
+method, path, handler and middleware group.
+
+With --write, rewrite internal/access/registry.go from the same parse. That
+table is what the admin's routes screen and the MCP route tool read to say
+which permission guards a route, and it is generated rather than discovered
+because gin exposes a route's last handler and nothing in front of it.
+
+Use --write after editing a guard by hand:
+
+    m.Protected.POST("/pipelines", middleware.RequireRole("ADMIN", "perm:pipelines.create"), h.Create)
+    grit routes --write
+
+grit generate and grit remove already refresh it, and grit upgrade refreshes
+it along with everything else. This is the narrow one, for when the only thing
+that changed is a guard you wrote yourself.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
 
@@ -2556,9 +2572,33 @@ func routesCmd() *cobra.Command {
 			cHeading.Printf("\n  API Routes (%s)\n\n", routesFile)
 
 			fmt.Println(routeparser.FormatTable(routes))
+
+			if !write {
+				return nil
+			}
+
+			root, err := findProjectRoot()
+			if err != nil {
+				return err
+			}
+			res, err := accessgen.Generate(root)
+			if err != nil {
+				return fmt.Errorf("writing the access table: %w", err)
+			}
+			switch {
+			case res.Path == "":
+				cMuted.Println("  This project has no internal/access table to write.")
+			case res.Changed:
+				cOK.Printf("  ✓ %s now covers %d routes\n\n", res.Path, res.Routes)
+			default:
+				cMuted.Printf("  %s was already current (%d routes).\n\n", res.Path, res.Routes)
+			}
 			return nil
 		},
 	}
+	cmd.Flags().BoolVar(&write, "write", false,
+		"rewrite internal/access/registry.go from the route files")
+	return cmd
 }
 
 // ── grit down / grit up ─────────────────────────────────────────────────────

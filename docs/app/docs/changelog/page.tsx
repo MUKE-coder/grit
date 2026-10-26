@@ -66,6 +66,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.14 */}
+            <div className="mb-12" id="v3.411.14">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.14
+                </span>
+                <span className="text-sm text-muted-foreground">October 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit routes --write, for when the only thing that changed is a guard you wrote</h3>
+                <p>
+                  Gating a single action is a hand edit, because <code>--roles</code> is per
+                  resource rather than per action:
+                </p>
+                <CodeBlock
+                  language="go"
+                  code={`m.Staff.GET("/pipelines/export", middleware.RequireRole("ADMIN", "perm:pipelines.export"), h.Export)`}
+                />
+                <p>
+                  That makes <code>internal/access/registry.go</code> stale, which{' '}
+                  <code>grit doctor</code> correctly reported. What it then suggested did not
+                  fit. <code>grit upgrade</code> moves the whole project onto the CLI&apos;s
+                  templates, which is a much larger decision than refreshing one table. The
+                  alternative it offered, <code>grit generate resource</code>, rewrites the
+                  route file and drops the guard that made the table stale in the first place,
+                  so following the advice loses the work that prompted it.
+                </p>
+                <p>
+                  <code>grit routes</code> already parsed the route files correctly and showed
+                  the right permission. It just never wrote the table. It can now:
+                </p>
+                <CodeBlock language="bash" code={`grit routes --write`} />
+                <p>
+                  It prints the table as before, then rewrites{' '}
+                  <code>internal/access/registry.go</code> from the same parse, and says whether
+                  anything changed rather than claiming work it did not do.{' '}
+                  <code>grit generate</code> and <code>grit remove</code> already refresh the
+                  table, and <code>grit upgrade</code> still refreshes it along with everything
+                  else. This is the narrow one. The doctor hint names it.
+                </p>
+                <p>
+                  Verified end to end on a generated project: edit a guard by hand, run{' '}
+                  <code>grit doctor</code>, run exactly what it suggests, and confirm the
+                  hand-written permission reaches the table, the edit survives, and the warning
+                  clears.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.13 */}
             <div className="mb-12" id="v3.411.13">
               <div className="flex items-center gap-3 mb-4">
