@@ -121,6 +121,91 @@ def prose(source):
     return parts
 
 
+# A page's tables, when the rows are data rather than markup.
+#
+# The reference pages render their tables from a const array at the top of the
+# file and a .map() in the body, so every <td> holds {row.type} and the text
+# that matters is in the array. prose() reads <p>, <li> and <blockquote> and
+# clean() strips expressions, so those tables came out of the index as nothing
+# at all: the field-types page called itself the single source of truth for
+# field mapping and contained no field types (grit#99). An assistant told to
+# look a type up in the binary could not, and had to go and read
+# internal/generate/field.go instead, which is the exact failure the embedded
+# docs exist to prevent.
+#
+# Parsed rather than evaluated, and lossily: the string values of each object
+# literal, in declaration order, joined as a row. That is enough to answer
+# "what does money become" and cheap enough to be safe.
+DATA_ARRAY = re.compile(r"^const\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?::[^=\n]+)?=\s*\[", re.M)
+ROW_VALUE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\s*:\s*(?:'((?:[^'\\]|\\.)*)'|\"((?:[^\"\\]|\\.)*)\"|`((?:[^`\\]|\\.)*)`)", re.S)
+
+
+def data_tables(source):
+    """Rows from the const arrays this page renders with .map()."""
+    out = []
+    for match in DATA_ARRAY.finditer(source):
+        name = match.group(1)
+        # Only arrays the page actually renders. A const that is never mapped
+        # is configuration, not content, and indexing it adds noise.
+        if name + ".map(" not in source:
+            continue
+
+        # Walk to the array's closing bracket, so a nested [] cannot end it
+        # early.
+        depth, i, end = 0, match.end() - 1, -1
+        while i < len(source):
+            if source[i] == "[":
+                depth += 1
+            elif source[i] == "]":
+                depth -= 1
+                if depth == 0:
+                    end = i
+                    break
+            i += 1
+        if end < 0:
+            continue
+
+        rows = []
+        for obj in objects_in(source[match.end():end]):
+            values = [unescape_js(a or b or c) for a, b, c in ROW_VALUE.findall(obj)]
+            values = [v for v in values if v]
+            if values:
+                rows.append(" | ".join(values))
+        if rows:
+            out.append(humanise(name) + ": " + " // ".join(rows))
+    return out
+
+
+def objects_in(body):
+    """Each top-level { ... } in an array body."""
+    objs, depth, start = [], 0, -1
+    for i, ch in enumerate(body):
+        if ch == "{":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0 and start >= 0:
+                objs.append(body[start + 1:i])
+                start = -1
+    return objs
+
+
+def unescape_js(raw):
+    text = raw.replace("\\'", "'").replace('\\"', '"').replace("\\`", "`")
+    text = text.replace("\\n", " ").replace("\\\\", "\\")
+    return clean(text)
+
+
+def humanise(const_name):
+    """COLUMNS -> Columns, MODIFIER_TAGS -> Modifier tags."""
+    words = const_name.replace("_", " ").strip()
+    if words.isupper():
+        words = words.capitalize()
+    return words
+
+
 def clean(fragment):
     text = EXPR.sub(" ", fragment)
     text = TAG.sub(" ", text)
@@ -166,7 +251,12 @@ def doc_pages(meta):
             "title": title,
             "description": description,
             "headings": headings(source),
-            "text": " ".join(prose(source))[:6000],
+            # Budgeted separately, because on a reference page the tables are
+            # the content and the prose is the commentary. Sharing one cap let
+            # the prose push the flags table off the end, which is the same
+            # bug as not indexing it at all for anybody looking for a flag.
+            "text": (" ".join(prose(source))[:6000] + " "
+                     + " ".join(data_tables(source))[:8000]).strip(),
             "kind": "docs",
         })
     return pages

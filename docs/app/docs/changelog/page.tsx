@@ -66,6 +66,55 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.10 */}
+            <div className="mb-12" id="v3.411.10">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.10
+                </span>
+                <span className="text-sm text-muted-foreground">October 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>The field-types reference had no field types in it</h3>
+                <p>
+                  <code>grit docs show docs/concepts/field-types</code> printed the page&apos;s
+                  prose and its section headings and none of its tables. The page calls itself
+                  the single source of truth for field mapping, and the four sections that hold
+                  that mapping came out empty. <code>--json</code> had the same hole.
+                </p>
+                <p>
+                  Which made the one instruction every agent is given before generating a
+                  resource, look the type up in the binary rather than recalling it, impossible
+                  to follow. The person who reported it had to go and read{' '}
+                  <code>internal/generate/field.go</code> at the matching tag instead, which is
+                  exactly the failure the embedded docs exist to prevent.
+                </p>
+                <p>
+                  The cause is worth knowing, because it will happen again. The reference pages
+                  render their tables from a <code>const</code> array at the top of the file and
+                  a <code>.map()</code> in the body, so every <code>&lt;td&gt;</code> holds{' '}
+                  <code>{'{row.type}'}</code> and the content lives in the array. The indexer
+                  read <code>&lt;p&gt;</code>, <code>&lt;li&gt;</code> and{' '}
+                  <code>&lt;blockquote&gt;</code>, and stripped expressions. Nothing failed:
+                  the page indexed, it just indexed the commentary and not the content.
+                </p>
+                <p>
+                  The indexer now reads the const arrays a page actually renders and emits each
+                  object as a row. Prose and tables get separate budgets, because on a reference
+                  page the tables are the content and the prose is the commentary, and sharing
+                  one cap let the prose push the flags table off the end, which is the same
+                  failure for anybody looking up a flag. The field-types page went from no rows
+                  to all six of its tables.
+                </p>
+                <p>
+                  Guarded by a test that asserts the content rather than the mechanism: the page
+                  has to carry <code>money | price:money</code>, <code>--owned-by</code> and the
+                  rest, however the index comes to be built. Filed as #99.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.9 */}
             <div className="mb-12" id="v3.411.9">
               <div className="flex items-center gap-3 mb-4">
