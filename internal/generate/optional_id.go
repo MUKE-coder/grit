@@ -1,7 +1,8 @@
 package generate
 
 // OPTIONAL_ID_HELPER_SRC is emitted into a handler that has a nullable foreign
-// key, which today means a resource with a self-reference (a tree).
+// key: a self-reference, which always is one, or any other belongs_to that is
+// not required.
 //
 // It exists because of one mismatch between HTTP and SQL. An HTML select with
 // nothing chosen posts an empty string; a JSON client that means "no parent"

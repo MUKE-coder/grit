@@ -100,10 +100,14 @@ func (g *Generator) crud(names Names) crudParts {
 			fkJson := toSnakeCase(baseName) + "_id"
 			preloads = append(preloads, toPascalCase(baseName))
 			relations = append(relations, scaffold.ServiceRelation{
-				Field:    toPascalCase(baseName),
-				Model:    f.RelatedModelName(),
-				FK:       fkGoName,
-				Nullable: f.RelatedModelName() == toPascalCase(g.Definition.Name),
+				Field: toPascalCase(baseName),
+				Model: f.RelatedModelName(),
+				FK:    fkGoName,
+				// Matches the column: an optional relationship is a *string, and
+				// the relations helper has to dereference it rather than compare
+				// a pointer to "". It said self-reference only, so making any
+				// belongs_to optional produced a service that did not compile.
+				Nullable: g.relOptional(f),
 			})
 
 			// The owner is stamped from the signed-in caller, in the service.
@@ -113,8 +117,10 @@ func (g *Generator) crud(names Names) crudParts {
 				continue
 			}
 
-			// A self-reference is optional: the root of a tree has no parent.
-			selfRef := f.RelatedModelName() == toPascalCase(g.Definition.Name)
+			// Optional when the relationship is. optional<X>ID turns the
+			// empty string the form sends for "none" into a NULL, which is
+			// what the column holds and what the foreign key accepts.
+			selfRef := g.relOptional(f)
 			if selfRef {
 				p.createFields += fmt.Sprintf("\t\t%s string `json:\"%s\"`\n", fkGoName, fkJson)
 				p.createAssign += fmt.Sprintf("\t\t%s: optional%sID(req.%s),\n", fkGoName, names.Pascal, fkGoName)
@@ -544,10 +550,13 @@ type %sLinks struct {
 			strings.TrimSuffix(headers, ", "), strings.TrimSuffix(aligns, ", "))
 	}
 
-	// optionalID only for a resource with a self-reference: the only nullable
-	// foreign key the generator writes, and an unused function does not compile.
+	// optionalID for any nullable foreign key, which a self-reference always
+	// is and any other belongs_to is when it is not required. It used to be
+	// written only for a self-reference, so the first optional relationship
+	// produced a handler calling a function that was never emitted
+	// (grit#100). Still conditional: an unused function does not compile.
 	for _, f := range g.Definition.Fields {
-		if f.IsBelongsTo() && f.RelatedModelName() == toPascalCase(g.Definition.Name) {
+		if f.IsBelongsTo() && g.relOptional(f) {
 			p.optionalID = strings.ReplaceAll(OPTIONAL_ID_HELPER_SRC, "{{Pascal}}", names.Pascal)
 			break
 		}

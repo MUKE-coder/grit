@@ -66,6 +66,65 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.11 */}
+            <div className="mb-12" id="v3.411.11">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.11
+                </span>
+                <span className="text-sm text-muted-foreground">October 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A relationship can be optional, which it could not be before</h3>
+                <p>
+                  A <code>belongs_to</code> ignored its own <code>required</code> flag. Every
+                  foreign key came out <code>binding:&quot;required&quot;</code>, so a deal with
+                  no contact yet could not be saved, and the obvious workaround is worse than
+                  the bug: storing <code>&quot;&quot;</code> in a key column is refused by
+                  Postgres with SQLSTATE 23503 the moment the constraint exists.
+                </p>
+                <p>
+                  Optional relationships are ordinary. A task not tied to a deal, a contact with
+                  no company, a deal nobody has assigned yet. Each one had to be hand-written:
+                  change the model to a <code>*string</code>, add the empty-string-to-NULL
+                  conversion in the handler, edit the Zod schema and the admin form to drop{' '}
+                  <code>required</code>.
+                </p>
+                <p>
+                  A non-required <code>belongs_to</code> now generates a <code>*string</code>
+                  with <code>default:null</code> and no binding tag, the{' '}
+                  <code>optional&lt;X&gt;ID</code> helper in the handler,{' '}
+                  <code>string | null</code> in the TypeScript type,{' '}
+                  <code>.nullable().optional()</code> in Zod, no <code>required</code> in the
+                  admin form, and a pointer assignment in the CSV importer. A relationship
+                  marked <code>required: true</code> is unchanged.
+                </p>
+                <p>
+                  Six surfaces decide this and they each used to decide it separately, which is
+                  how it stayed broken: the model said required, the tree code said nullable,
+                  and nothing compared them. They now read one predicate. Two of those six were
+                  only found by compiling a generated project rather than reading the diff: the
+                  service layer compared a pointer to <code>&quot;&quot;</code>, and the
+                  importer assigned a string to it. Neither is visible in the generator.
+                </p>
+                <h4>And sync stopped adding a text box for every relationship</h4>
+                <p>
+                  <code>grit sync</code> read GORM association structs as missing fields. A
+                  resource with five <code>belongs_to</code> got five duplicate free-text inputs
+                  beside the relationship-selects the generator had already written correctly,
+                  five duplicate columns, and an editable &quot;Archived at&quot; date. The
+                  generated form was wrong the moment it was generated, because generate and
+                  sync disagreed about what a field is. Sync now skips anything carrying a{' '}
+                  <code>foreignKey</code> or <code>many2many</code> tag, anything that is a
+                  slice of a model, and any struct standing beside its own key column, which is
+                  how GORM infers an association in a model somebody wrote by hand.{' '}
+                  <code>archived_at</code> joins the bookkeeping columns it already skipped.
+                </p>
+                <p>Filed as #100 and #101.</p>
+              </div>
+            </div>
+
             {/* v3.411.10 */}
             <div className="mb-12" id="v3.411.10">
               <div className="flex items-center gap-3 mb-4">

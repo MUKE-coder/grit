@@ -95,7 +95,7 @@ func SyncAdminResource(root string, s GoStruct) (added int, warnings []string, e
 		if fieldKey == "" {
 			fieldKey = toSnakeCase(f.Name)
 		}
-		if isAutoField(fieldKey) || f.Name == "Version" {
+		if isAutoField(fieldKey) || f.Name == "Version" || isAssociation(f, s.Fields) {
 			continue
 		}
 
@@ -121,6 +121,42 @@ func SyncAdminResource(root string, s GoStruct) (added int, warnings []string, e
 		}
 	}
 	return added, warnings, nil
+}
+
+// isAssociation reports whether a parsed field is a GORM association rather
+// than a column of its own.
+//
+// Sync read them as missing fields and appended a free-text input for each: a
+// resource with five belongs_to got five duplicate text boxes beside the
+// relationship-selects the generator had already written correctly, and a
+// duplicate column beside the one that renders the related record's label
+// (grit#101). The generated form was wrong the moment it was generated,
+// because generate and sync disagreed about what a field is.
+func isAssociation(f GoField, all []GoField) bool {
+	// What the generator writes, and what a hand-written association usually
+	// carries: the tag naming the key.
+	if strings.Contains(f.GORMTag, "foreignKey:") || strings.Contains(f.GORMTag, "many2many:") {
+		return true
+	}
+	// GORM also infers by convention, so a model edited by hand may carry no
+	// tag at all. A bare capitalised type with no package qualifier is a model
+	// in this package; time.Time, gorm.DeletedAt and datatypes.JSON are not,
+	// and neither is any builtin.
+	base := strings.TrimPrefix(strings.TrimPrefix(f.GoType, "[]"), "*")
+	if base == "" || strings.Contains(base, ".") || base[0] < 'A' || base[0] > 'Z' {
+		return false
+	}
+	// A slice of models is a has-many, which has no foreign key on this side.
+	if strings.HasPrefix(f.GoType, "[]") {
+		return true
+	}
+	// And a belongs_to is the struct standing beside its own key column.
+	for _, other := range all {
+		if other.Name == f.Name+"ID" {
+			return true
+		}
+	}
+	return false
 }
 
 // ensureCustomOverlayImport adds the overlay import and threads it into the

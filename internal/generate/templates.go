@@ -11,6 +11,26 @@ import (
 )
 
 // writeGoModel creates the GORM model file for the resource.
+// relOptional reports whether a relationship may be empty.
+//
+// A self-reference always may: the root of a tree has no parent. Every other
+// belongs_to follows its own required flag, exactly like every other field
+// type does, which it did not until grit#100. The flag was ignored and every
+// foreign key came out `binding:"required"`, so a deal with no contact yet
+// could not be saved at all, and the workaround (store "") hits
+// SQLSTATE 23503 the moment the foreign key constraint exists.
+//
+// One predicate rather than four copies of the condition, because the model,
+// the handler, the TypeScript type and the admin form each decided this
+// separately before, and three of them said required while the fourth said
+// nullable.
+func (g *Generator) relOptional(f Field) bool {
+	if f.RelatedModelName() == toPascalCase(g.Definition.Name) {
+		return true
+	}
+	return !f.Required
+}
+
 func (g *Generator) writeGoModel(names Names) error {
 	fields := g.Definition.Fields
 
@@ -234,7 +254,6 @@ func (g *Generator) writeGoModel(names Names) error {
 			//
 			// The generated tests now switch foreign keys on so SQLite cannot
 			// hide this again.
-			selfRef := relModel == toPascalCase(g.Definition.Name)
 
 			// FK column.
 			//
@@ -245,8 +264,11 @@ func (g *Generator) writeGoModel(names Names) error {
 			if f.IsOneToOne() {
 				fkIndex = "uniqueIndex"
 			}
-			if selfRef {
-				structFields += fmt.Sprintf("\t%s *string `gorm:\"size:36;%s\" json:\"%s\"`\n", fkGoName, fkIndex, fkJson)
+			// A pointer with default:null, not an empty string. Postgres
+			// enforces the foreign key, and "" is not a key: it answers
+			// SQLSTATE 23503 rather than storing "no relation".
+			if g.relOptional(f) {
+				structFields += fmt.Sprintf("\t%s *string `gorm:\"size:36;%s;default:null\" json:\"%s\"`\n", fkGoName, fkIndex, fkJson)
 			} else {
 				structFields += fmt.Sprintf("\t%s string `gorm:\"size:36;%s\" json:\"%s\" binding:\"required\"`\n", fkGoName, fkIndex, fkJson)
 			}
@@ -808,7 +830,7 @@ func (g *Generator) writeTSTypes(names Names) error {
 			// FK matches the referenced model's UUID string PK, and a
 			// self-referential one is nullable: a tree root has no parent, and
 			// the column holds NULL rather than an empty string.
-			if selfRef {
+			if g.relOptional(f) {
 				fields += fmt.Sprintf("  %s: string | null;\n", fkSnake)
 			} else {
 				fields += fmt.Sprintf("  %s: string;\n", fkSnake)
@@ -1148,11 +1170,12 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 			fieldLabel := strings.Join(splitPascal(toPascalCase(baseName)), " ")
 			relSnake := toSnakeCase(f.RelatedModelName())
 			relPlural := Pluralize(relSnake)
-			// A self-reference is optional in the form, because the top of a
-			// tree has no parent and a required select gives the person no way
-			// to say so.
+			// Optional in the form when the relationship is optional. A
+			// required select gives the person no way to say "none", which is
+			// wrong for the top of a tree and wrong for a deal with no contact
+			// yet.
 			required := "required: true, "
-			if f.RelatedModelName() == toPascalCase(g.Definition.Name) {
+			if g.relOptional(f) {
 				required = ""
 			}
 			formFields += fmt.Sprintf("\n    { key: \"%s\", label: \"%s\", type: \"relationship-select\", %srelatedEndpoint: \"/api/%s\", displayField: \"%s\" },",

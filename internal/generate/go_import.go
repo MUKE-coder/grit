@@ -118,10 +118,13 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 			fkGo := toPascalCase(base) + "ID"
 			lookup := g.resolveBelongsToLookup(relModel)
 
-			// A self-reference is a nullable column, so the importer assigns a
-			// pointer to it. Every other foreign key is a plain string.
+			// An optional relationship is a nullable column, so the importer
+			// assigns a pointer to it. This said self-reference only, so the
+			// moment any belongs_to could be optional the generated importer
+			// stopped compiling: cannot use id (variable of type string) as
+			// *string value in assignment (grit#100).
 			assignExpr := "rel.ID"
-			if relModel == toPascalCase(g.Definition.Name) {
+			if g.relOptional(f) {
 				assignExpr = "&rel.ID"
 			}
 
@@ -142,7 +145,7 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 							"\t\t// ignored, or a CSV could file records under somebody else's name.\n"+
 							"\t\titem.%s = ownerID\n", f.Name, col, fkGo))
 				}
-				assign.WriteString(importUserLookup(col, where, fkGo, cond))
+				assign.WriteString(importUserLookup(col, where, fkGo, cond, g.relOptional(f)))
 				continue
 			}
 
@@ -167,7 +170,7 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 					"\t\t\terr := db.Where(\"id = ?\", v).First(&rel).Error\n"+
 					"\t\t\tswitch {\n"+
 					"\t\t\tcase err == nil:\n"+
-					"\t\t\t\titem.%s = rel.ID\n"+
+					"\t\t\t\titem.%s = "+assignExpr+"\n"+
 					"\t\t\tcase !errors.Is(err, gorm.ErrRecordNotFound):\n"+
 					"\t\t\t\tfailed++\n"+
 					"\t\t\t\tif len(rowErrors) < 50 {\n"+
@@ -585,7 +588,13 @@ func (s *{{Pascal}}Service) ImportCSV(ctx context.Context, jobID, path string) {
 // when there is none. It never creates one: a users row is an account, and an
 // importer that made one per unrecognised email let any signed-in caller mint
 // accounts around registration, with no password and nothing verified.
-func importUserLookup(col, where, fkGo, cond string) string {
+func importUserLookup(col, where, fkGo, cond string, ptr bool) string {
+	// An optional relationship is a nullable column, so the importer has
+	// to assign a pointer to it.
+	assign := "rel.ID"
+	if ptr {
+		assign = "&rel.ID"
+	}
 	return fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok && v != \"\"%s {\n"+
 		"\t\t\tvar rel models.User\n"+
 		"\t\t\tif err := db.Where(%q, v).First(&rel).Error; err != nil {\n"+
@@ -599,6 +608,6 @@ func importUserLookup(col, where, fkGo, cond string) string {
 		"\t\t\t\t}\n"+
 		"\t\t\t\tcontinue\n"+
 		"\t\t\t}\n"+
-		"\t\t\titem.%s = rel.ID\n"+
+		"\t\t\titem.%s = "+assign+"\n"+
 		"\t\t}\n", col, cond, where+" = ?", where, fkGo)
 }

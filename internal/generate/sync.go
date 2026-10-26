@@ -420,6 +420,18 @@ func goTypeToZod(goType, gormTag string) string {
 		if strings.Contains(goType, "JSONSlice[string]") {
 			return "z.array(z.string()).optional()"
 		}
+		// A pointer is the column saying it may be NULL, which is how an
+		// optional foreign key is written. Without this an optional
+		// belongs_to came out as z.unknown(): the schema validated nothing,
+		// so the one surface that should have caught a bad relationship id
+		// accepted anything at all (grit#100).
+		if strings.HasPrefix(goType, "*") {
+			inner := goTypeToZod(strings.TrimPrefix(goType, "*"), gormTag)
+			if inner == "z.unknown()" {
+				return inner
+			}
+			return inner + ".nullable().optional()"
+		}
 		return "z.unknown()"
 	}
 }
@@ -430,6 +442,9 @@ func isAutoField(jsonName string) bool {
 		"created_at": true,
 		"updated_at": true,
 		"deleted_at": true,
+		// The framework's own archive bookkeeping, which sync was offering as
+		// an editable date on every form (grit#101).
+		"archived_at": true,
 	}
 	return auto[jsonName]
 }
