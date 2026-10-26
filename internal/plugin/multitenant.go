@@ -305,13 +305,27 @@ const skipKey = "tenant:skip"
 
 // Unscoped returns a session that bypasses organization scoping.
 //
-// For genuinely cross-tenant work — platform admin screens, background jobs
+// For genuinely cross-tenant work: platform admin screens, background jobs
 // that sweep every organization, migrations. Every call is a deliberate,
 // greppable decision:
 //
 //	tenant.Unscoped(db).Find(&all)
+//
+// The Session call is what makes the returned handle safe to keep in a
+// variable, and it is not optional. Set returns GORM's chainable instance,
+// which shares one Statement across every call made on it, so a kept handle
+// carries the previous call's WHERE clause and its error into the next one:
+//
+//	tx = tenant.Unscoped(tx)
+//	tx.Where("slug = ?", slug).Take(&existing)  // ErrRecordNotFound
+//	return tx.Create(&org).Error                // also "record not found"
+//
+// The Create inherits both. Two reads through one handle combine their
+// conditions and match nothing. Nothing about the failure points at scoping,
+// which is why this is worth a line of explanation rather than a line of
+// code.
 func Unscoped(db *gorm.DB) *gorm.DB {
-	return db.Set(skipKey, true)
+	return db.Set(skipKey, true).Session(&gorm.Session{})
 }
 
 // RegisterScoping installs the callbacks. Call once at startup, after opening

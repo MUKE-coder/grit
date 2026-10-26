@@ -367,6 +367,7 @@ func mtTenantTests(ctx Context) string {
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/glebarez/sqlite"
@@ -494,6 +495,53 @@ func TestUnscoped_SeesEverything(t *testing.T) {
 	}
 	if len(all) != 2 {
 		t.Errorf("Unscoped saw %d widgets, want 2", len(all))
+	}
+}
+
+// A handle kept in a variable has to behave like a fresh one every time.
+//
+// Unscoped used to return GORM's chainable instance, which shares one
+// Statement across every call made on it, so a kept handle carried the
+// previous call's WHERE clause and its error into the next (grit#103):
+//
+//	tx = tenant.Unscoped(tx)
+//	tx.Where("slug = ?", slug).Take(&existing)  // ErrRecordNotFound
+//	return tx.Create(&org).Error                // also "record not found"
+//
+// The one-shot form in the doc comment was always fine, and keeping the
+// handle is the natural next step, so the failure found people who had done
+// nothing wrong and pointed nowhere near scoping.
+func TestUnscoped_HandleDoesNotLeakBetweenStatements(t *testing.T) {
+	db := newDB(t)
+
+	un := tenant.Unscoped(db)
+
+	// A miss, which is expected here and must not be contagious.
+	var found Widget
+	err := un.Where("name = ?", "nothing-by-this-name").Take(&found).Error
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		t.Fatalf("expected the lookup to miss, got %v", err)
+	}
+
+	if err := un.Create(&Widget{ID: "w1", Name: "after a miss"}).Error; err != nil {
+		t.Fatalf("the create inherited the previous call's error: %v", err)
+	}
+	if err := un.Create(&Widget{ID: "w2", Name: "second"}).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	// And two reads must not combine their conditions into one that matches
+	// nothing.
+	var first, second []Widget
+	if err := un.Where("name = ?", "after a miss").Find(&first).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := un.Where("name = ?", "second").Find(&second).Error; err != nil {
+		t.Fatal(err)
+	}
+	if len(first) != 1 || len(second) != 1 {
+		t.Errorf("two reads through one handle combined their conditions: got %d and %d, want 1 and 1",
+			len(first), len(second))
 	}
 }
 

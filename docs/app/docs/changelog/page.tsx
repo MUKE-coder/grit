@@ -66,6 +66,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.13 */}
+            <div className="mb-12" id="v3.411.13">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.13
+                </span>
+                <span className="text-sm text-muted-foreground">October 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A kept tenant.Unscoped handle leaked conditions and errors into the next statement</h3>
+                <p>
+                  <code>tenant.Unscoped</code> in the multitenant plugin returned{' '}
+                  <code>db.Set(skipKey, true)</code>, and <code>Set</code> hands back GORM&apos;s
+                  chainable instance rather than a new session. One instance means one{' '}
+                  <code>Statement</code> shared across every call made on it, so a handle kept
+                  in a variable carried the previous call&apos;s WHERE clause and its error into
+                  the next one.
+                </p>
+                <CodeBlock
+                  language="go"
+                  code={`tx = tenant.Unscoped(tx)
+
+var existing models.Organization
+tx.Where("slug = ?", slug).Take(&existing)   // ErrRecordNotFound, as expected
+
+return tx.Create(&org).Error                  // also returns "record not found"`}
+                />
+                <p>
+                  The <code>Create</code> inherits both. Two reads through one handle combine
+                  their conditions and match nothing. The one-shot form the doc comment shows,{' '}
+                  <code>tenant.Unscoped(db).Find(&amp;all)</code>, was always fine, and keeping
+                  the handle is the natural next step, so this found people who had done nothing
+                  wrong and the failure pointed nowhere near scoping. The doc comment also said
+                  it returned a session, which it did not.
+                </p>
+                <p>
+                  It returns a real one now, <code>.Session(&amp;gorm.Session{'{}'})</code>, which
+                  is safe to keep and to reuse and leaves the one-shot form unchanged.
+                </p>
+                <p>
+                  Every project with the plugin now ships the reproduction as a test, and that
+                  test was written before the fix and watched to fail with the reported symptom,{' '}
+                  <em>the create inherited the previous call&apos;s error: record not found</em>,
+                  then watched to pass. A second guard in the framework&apos;s own tests checks
+                  the line is still there, because the failure mode here is somebody tidying
+                  away a <code>Session</code> call that looks redundant.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.12 */}
             <div className="mb-12" id="v3.411.12">
               <div className="flex items-center gap-3 mb-4">
