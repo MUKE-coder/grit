@@ -10,8 +10,9 @@ export type RollupWeek = { label: string; count: number; entries: RollupEntry[] 
 export const changelogRollup: RollupWeek[] = [
   {
     label: "October 26 to November 1, 2026",
-    count: 3,
+    count: 4,
     entries: [
+      { version: "3.411.8", title: "Development used local disk while MinIO was running, and said MinIO was down" },
       { version: "3.411.7", title: "grit skills install, because an agent cannot type a slash command" },
       { version: "3.411.6", title: "grit docs show works in the shell its own help was written for" },
       { version: "3.411.5", title: "The Scout page explained the checks and never said how to run one" },

@@ -195,8 +195,8 @@ func skillsStatusCmd() *cobra.Command {
 var expertSkillNames = []string{
 	"grit-build", "grit-core", "grit-resource", "grit-data",
 	"grit-triple", "grit-double", "grit-single", "grit-desktop", "grit-mobile",
-	"grit-admin", "grit-ui-ux", "grit-security", "grit-perf", "grit-deploy",
-	"grit-reviewer", "grit-feedback", "grit-setup", "grit-report",
+	"grit-offline", "grit-admin", "grit-ui-ux", "grit-security", "grit-perf",
+	"grit-deploy", "grit-reviewer", "grit-feedback", "grit-setup", "grit-report",
 	"grit-references",
 }
 

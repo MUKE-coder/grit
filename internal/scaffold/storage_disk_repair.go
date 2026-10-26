@@ -64,7 +64,11 @@ const (
 		"		log.Println(\"MinIO has no credentials (MINIO_ACCESS_KEY), so files are kept on the local disk. Set STORAGE_DRIVER=local to make that the choice, or set the MinIO credentials to use MinIO\")\n" +
 		"		return \"local\"\n" +
 		"	}\n" +
-		"	endpoint := getEnv(\"MINIO_ENDPOINT\", \"http://localhost:9000\")\n" +
+		"	// resolveMinioEndpoint, not a literal: MINIO_PORT moves per project so\n" +
+		"	// that several can run at once, and probing 9000 reported MinIO as\n" +
+		"	// down while it was answering on 9002. Every new project then stored\n" +
+		"	// uploads on local disk in development without anyone choosing that.\n" +
+		"	endpoint := resolveMinioEndpoint()\n" +
 		"	if minioAnswers(endpoint) {\n" +
 		"		return driver\n" +
 		"	}\n" +
@@ -327,6 +331,10 @@ const (
 	// The local root is not source.
 	apiGitignoreLocalStorage = "\n# Files kept by STORAGE_DRIVER=local (STORAGE_LOCAL_ROOT)\n/storage/\n"
 
+	// The storage probe, before and after it followed MINIO_PORT.
+	storageDriverOldProbe = "endpoint := getEnv(\"MINIO_ENDPOINT\", \"http://localhost:9000\")"
+	storageDriverNewProbe = "endpoint := resolveMinioEndpoint()"
+
 	// The admin and web apps load local files from the API origin.
 	cspImgSrcOld = "\"img-src 'self' data: blob: https: \" + STORAGE_ORIGIN,"
 	cspImgSrcNew = "\"img-src 'self' data: blob: https: \" + API_ORIGIN + \" \" + STORAGE_ORIGIN,"
@@ -341,6 +349,18 @@ const (
 // needs this most is an existing one, so it cannot be a new-projects-only fix.
 func repairStorageFallbackSource(src string) (string, []string, []string) {
 	if strings.Contains(src, "func minioAnswers(") {
+		// It has the fallback, and it may still probe the wrong port. The
+		// literal ignores MINIO_PORT, which every project sets to something
+		// other than 9000 so that several can run at once, so MinIO was
+		// reported as down while it was answering and uploads quietly went to
+		// local disk (grit#97). resolveMinioEndpoint is already in this file
+		// and already follows MINIO_PORT.
+		if strings.Contains(src, storageDriverOldProbe) {
+			return strings.Replace(src, storageDriverOldProbe, storageDriverNewProbe, 1),
+				[]string{"the storage probe follows MINIO_PORT instead of assuming 9000, " +
+					"so development uses MinIO when MinIO is running"},
+				nil
+		}
 		return src, nil, nil
 	}
 	start := strings.Index(src, storageDriverFuncHead)

@@ -66,6 +66,48 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.8 */}
+            <div className="mb-12" id="v3.411.8">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.8
+                </span>
+                <span className="text-sm text-muted-foreground">October 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Development used local disk while MinIO was running, and said MinIO was down</h3>
+                <p>
+                  The storage probe asked MinIO on <code>localhost:9000</code>. Every project
+                  publishes it on <code>MINIO_PORT</code>, which defaults to 9002 so that
+                  several projects can run at once, so the probe asked a port nothing was
+                  listening on, concluded MinIO was down, and fell back to the local disk. The
+                  log line even said so: <em>MinIO at http://localhost:9000 is not answering, so
+                  files are being kept on the local disk</em>. Uploads worked, which is why
+                  nobody chased it, and every new project quietly stored files somewhere nobody
+                  had chosen.
+                </p>
+                <p>
+                  <code>resolveMinioEndpoint()</code> was already in the same file, already
+                  doing the right thing: <code>MINIO_ENDPOINT</code> wins, otherwise the port
+                  follows <code>MINIO_PORT</code>. The probe simply did not call it. It does
+                  now.
+                </p>
+                <p>
+                  The repair matters as much as the template here, because the project that has
+                  this is an existing one. <code>grit upgrade</code> was returning early on any
+                  project that already had the disk fallback, which is exactly the set of
+                  projects carrying the wrong port, so the fix would never have reached them. It
+                  now rewrites the probe in place and stays silent on a project that already has
+                  the right one.
+                </p>
+                <p>
+                  Reported from a real project with a reproduction and the one-line fix, which
+                  is the whole of the diagnosis above. Filed as #97.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.7 */}
             <div className="mb-12" id="v3.411.7">
               <div className="flex items-center gap-3 mb-4">
