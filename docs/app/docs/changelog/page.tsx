@@ -66,6 +66,32 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.22 */}
+            <div className="mb-12" id="v3.411.22">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.22
+                </span>
+                <span className="text-sm text-muted-foreground">October 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit-critic</h3>
+                <p>
+                  A twenty-second expert skill, and the only one that reviews work it did
+                  not write. It takes a feature somebody has marked done, uses it with
+                  real-shaped data, reads the backend for the bottleneck, checks that the
+                  tests would fail if the code were wrong, looks at the screens at phone
+                  width, and reports findings ordered by what each one will cost. It does
+                  not tick the box; the person who owns the phase does.
+                </p>
+                <p>
+                  <code>grit skills</code> knows about it, which is the part of this
+                  release that is code.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.21 */}
             <div className="mb-12" id="v3.411.21">
               <div className="flex items-center gap-3 mb-4">

@@ -198,7 +198,7 @@ var expertSkillNames = []string{
 	"grit-triple", "grit-double", "grit-single", "grit-desktop", "grit-mobile",
 	"grit-offline", "grit-admin", "grit-ui-ux", "grit-security", "grit-perf",
 	"grit-deploy", "grit-reviewer", "grit-feedback", "grit-setup", "grit-report",
-	"grit-tokens", "grit-advocate",
+	"grit-tokens", "grit-advocate", "grit-critic",
 	"grit-references",
 }
 
