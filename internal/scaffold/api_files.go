@@ -694,6 +694,9 @@ func main() {
 			Mailer:  mailer,
 			Storage: storageService,
 			Cache:   cacheService,
+			// Nil when Sentinel is off, and the sweep says so rather than
+			// failing: a project with no firewall did not ask for a ban sweep.
+			AutoBan: services.NewSecurityAutoBan(secObsBridge, cfg),
 		})
 		if err != nil {
 			log.Printf("Warning: Background worker failed to start: %v", err)
@@ -706,7 +709,7 @@ func main() {
 	// Start cron scheduler, for the same reason and on the same condition.
 	var cronScheduler *cron.Scheduler
 	if cfg.RedisURL != "" && redisReachable {
-		cs, err := cron.New(cfg.RedisURL)
+		cs, err := cron.New(cfg.RedisURL, cfg.SecurityAutoBanEvery)
 		if err != nil {
 			log.Printf("Warning: Cron scheduler failed to start: %v", err)
 		} else {
@@ -1033,6 +1036,16 @@ type Config struct {
 	// answer the same question and a project that answered it once should
 	// not have to answer it twice.
 	SentinelAutoBlockExemptIPs []string
+	// The scheduled sweep. Sentinel's own AutoBlock catches a burst, ten
+	// high-severity threats inside ten minutes; this catches the scanner
+	// patient enough to stay under that and still send thousands of probes a
+	// week. An address over SecurityAutoBanMinThreats high-severity threats
+	// inside SecurityAutoBanWindow is banned, every SecurityAutoBanEvery.
+	SecurityAutoBanEnabled    bool
+	SecurityAutoBanMinThreats int
+	SecurityAutoBanWindow     time.Duration
+	SecurityAutoBanEvery      time.Duration
+	SecurityAutoBanPermanent  bool
 	SentinelTurnstileSecret string
 	SentinelHCaptchaSecret  string
 	SentinelRecaptchaSecret string
@@ -1154,6 +1167,11 @@ func Load() (*Config, error) {
 		SentinelRecaptchaSecret: getEnv("SENTINEL_RECAPTCHA_SECRET", ""),
 		SentinelLockoutExemptIPs: splitCSV(getEnv("SENTINEL_LOCKOUT_EXEMPT_IPS", "")),
 		SentinelAutoBlockExemptIPs: splitCSV(getEnv("SENTINEL_AUTOBLOCK_EXEMPT_IPS", "")),
+		SecurityAutoBanEnabled:    getEnv("SECURITY_AUTO_BAN", "true") == "true",
+		SecurityAutoBanMinThreats: getEnvInt("SECURITY_AUTO_BAN_MIN_THREATS", 3),
+		SecurityAutoBanWindow:     getEnvDuration("SECURITY_AUTO_BAN_WINDOW_HOURS", 24, time.Hour),
+		SecurityAutoBanEvery:      getEnvDuration("AUTO_BAN_INTERVAL_HOURS", 6, time.Hour),
+		SecurityAutoBanPermanent:  getEnv("SECURITY_AUTO_BAN_PERMANENT", "true") == "true",
 		` + configSentinelProxiesNew + `
 
 		PulseEnabled:    getEnv("PULSE_ENABLED", "true") == "true",
@@ -7996,7 +8014,13 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// In-app Security + Observability dashboards — read from Sentinel/Pulse APIs
 	// over loopback. notificationHandler powers the admin bell.
 	notificationHandler := &handlers.NotificationHandler{DB: db}
-	securityHandler := &handlers.SecurityHandler{Bridge: svc.SecObs}
+	// The dashboard's button and the scheduled job share one sweep, so the
+	// policy shown on the page is the policy that runs at 3am.
+	securityHandler := &handlers.SecurityHandler{
+		Bridge:       svc.SecObs,
+		AutoBan:      services.NewSecurityAutoBan(svc.SecObs, cfg),
+		AutoBanEvery: cfg.SecurityAutoBanEvery,
+	}
 	observabilityHandler := &handlers.ObservabilityHandler{Bridge: svc.SecObs}
 
 	// v3.30 — semantic activity log + ticket system. Mailer is optional;
@@ -8359,6 +8383,15 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		staff.POST("/admin/jobs/:id/retry", middleware.RequireRole("ADMIN", "perm:jobs.edit"), jobsHandler.Retry)
 		staff.DELETE("/admin/jobs/queue/:queue", middleware.RequireRole("ADMIN", "perm:jobs.edit"), jobsHandler.ClearQueue)
 ` + sagaRoutesBlock + `` + routeExplorerRoutesBlock + `` + routesMailPreviewAnchor + routesMailPreview + `		staff.GET("/admin/security/summary", middleware.RequireRole("ADMIN", "perm:system.view"), securityHandler.Summary)
+		staff.GET("/admin/security/trends", middleware.RequireRole("ADMIN", "perm:system.view"), securityHandler.Trends)
+		staff.GET("/admin/security/top", middleware.RequireRole("ADMIN", "perm:system.view"), securityHandler.Top)
+		staff.GET("/admin/security/threats", middleware.RequireRole("ADMIN", "perm:system.view"), securityHandler.Threats)
+		// Banning is a write, and one that can take the site off the internet
+		// if it is pointed at the wrong address, so it is ADMIN and nothing
+		// weaker. perm:system.view reads; it does not ban.
+		staff.POST("/admin/security/ban", middleware.RequireRole("ADMIN"), securityHandler.Ban)
+		staff.DELETE("/admin/security/ban/:ip", middleware.RequireRole("ADMIN"), securityHandler.Unban)
+		staff.POST("/admin/security/ban-offenders", middleware.RequireRole("ADMIN"), securityHandler.BanOffenders)
 		staff.GET("/admin/observability/summary", middleware.RequireRole("ADMIN", "perm:system.view"), observabilityHandler.Summary)
 
 		// The bin. Reading it is a system view; restoring somebody else's

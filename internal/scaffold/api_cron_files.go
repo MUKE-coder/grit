@@ -54,7 +54,11 @@ type Scheduler struct {
 }
 
 // New creates a new cron Scheduler connected to Redis.
-func New(redisURL string) (*Scheduler, error) {
+//
+// autoBanEvery is how often the security sweep runs. It is a parameter rather
+// than a constant because it is the one schedule here an operator reasonably
+// changes: a site under a scan wants it hourly, a quiet one daily.
+func New(redisURL string, autoBanEvery time.Duration) (*Scheduler, error) {
 	redisOpt, err := asynq.ParseRedisURI(redisURL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing redis URL for cron: %w", err)
@@ -146,9 +150,55 @@ func New(redisURL string) (*Scheduler, error) {
 		Type:     "backup:scheduled",
 	})
 
+	// The security sweep: bans the addresses that keep attacking.
+	//
+	// Sentinel's own AutoBlock answers a burst, ten high-severity threats from
+	// one address inside ten minutes. This answers patience: four an hour for a
+	// week never trips that rule, and it is most of what real scanning looks
+	// like. Which addresses, and how many threats it takes, is the sweep's own
+	// configuration; this only decides how often it looks.
+	//
+	// Unique bounds it to one enqueue per window, so replicas cannot double-run
+	// a job whose whole purpose is to make bans.
+	autoBanSpec, autoBanEvery := everyHours(autoBanEvery)
+	_, err = scheduler.Register(
+		autoBanSpec,
+		asynq.NewTask("security:auto_ban", nil),
+		asynq.Unique(autoBanEvery-time.Minute),
+		asynq.Timeout(15*time.Minute),
+		asynq.MaxRetry(2),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("registering the security auto-ban sweep: %w", err)
+	}
+	RegisteredTasks = append(RegisteredTasks, Task{
+		Name:     "Ban repeat attackers",
+		Schedule: autoBanSpec,
+		Type:     "security:auto_ban",
+	})
+
 	// grit:cron-tasks
 
 	return &Scheduler{scheduler: scheduler, redisURL: redisURL}, nil
+}
+
+// everyHours turns a duration into an hourly cron spec, and returns the
+// duration actually used.
+//
+// Cron has no "every 90 minutes": the spec is a set of hours, so anything that
+// is not a whole number of hours has to become one. Rounding down rather than
+// up, because a sweep asked to run more often should not run less often than
+// asked. Anything over a day runs daily, since "0 */30 * * *" is not a
+// schedule, it is a field that never matches.
+func everyHours(d time.Duration) (string, time.Duration) {
+	hours := int(d / time.Hour)
+	if hours < 1 {
+		hours = 1
+	}
+	if hours >= 24 {
+		return "0 0 * * *", 24 * time.Hour
+	}
+	return fmt.Sprintf("0 */%d * * *", hours), time.Duration(hours) * time.Hour
 }
 
 // Start runs the scheduler on whichever replica holds the cron lock; see
@@ -192,7 +242,7 @@ func Start(cfg *config.Config, _ *cache.Cache) (*Scheduler, error) {
 		return nil, nil
 	}
 
-	s, err := New(cfg.RedisURL)
+	s, err := New(cfg.RedisURL, cfg.SecurityAutoBanEvery)
 	if err != nil {
 		return nil, err
 	}

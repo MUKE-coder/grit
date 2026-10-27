@@ -44,13 +44,34 @@ func refreshSupportAndDashboards(root string, opts Options) error {
 
 	module := opts.Module()
 
+	// The security handler's own dependencies, which were not on this list and
+	// had to be: the handler gained calls to SentinelPost, SentinelDelete,
+	// IsAutoBan, CanonicalSeverity and the auto-ban sweep, and an upgrade that
+	// delivered the handler without them left the project not compiling. A
+	// file written here and a file written only for a new project are two
+	// delivery lists, and this is what the second one being short looks like.
+	//
+	// Only where the dashboards are already present, on the same reasoning as
+	// add() above: a project without them does not acquire one.
+	services := filepath.Join(apiRoot, "internal", "services")
+	if bridge := filepath.Join(services, "secobs_bridge.go"); fileExists(bridge) {
+		for _, f := range []struct{ path, content string }{
+			{bridge, secobsBridgeGo()},
+			// New in v3.413.0, so it is written rather than refreshed.
+			{filepath.Join(services, "security_autoban.go"), securityAutoBanGo()},
+		} {
+			if err := writeFile(f.path, strings.ReplaceAll(f.content, "{{MODULE}}", module)); err != nil {
+				return fmt.Errorf("writing %s: %w", f.path, err)
+			}
+		}
+	}
+
 	// The ticket handler calls services.TicketService (M29), which calls
 	// QueueTicketCreatedEmail in ticket_mail.go (M30). All three go together,
 	// mail and service first: a new handler over an old service does not
 	// compile. When ticket_mail.go is somebody's own and keeps its old shape,
 	// the handler is left as it is and the reason is printed.
 	if handler := filepath.Join(handlers, "ticket.go"); fileExists(handler) {
-		services := filepath.Join(apiRoot, "internal", "services")
 		mailFile := filepath.Join(services, "ticket_mail.go")
 		if err := writeFile(mailFile, strings.ReplaceAll(ticketMailGo(), "{{MODULE}}", module)); err != nil {
 			return fmt.Errorf("writing %s: %w", mailFile, err)

@@ -453,6 +453,12 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairWAFRichtext(root, opts); err != nil {
 			fmt.Printf("  ⚠ excluding the richtext routes from WAF body inspection: %v\n", err)
 		}
+		// The scheduled ban sweep and the security dashboard it feeds: the
+		// config it reads, the routes the page calls, the cron entry and the
+		// two call sites of cron.New, which gained a parameter.
+		if err := repairSecurityAutoBan(root, opts); err != nil {
+			fmt.Printf("  ⚠ wiring the scheduled ban sweep: %v\n", err)
+		}
 		// Sentinel v2.8.0 arrives through the dependency floors above, and two
 		// things in routes.go have to move with it: the local storage route is
 		// stepped aside before a stored config.env is read as an env-file probe

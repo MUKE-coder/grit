@@ -322,6 +322,8 @@ export {
   ArrowLeft,
   Shield,
   ShieldCheck,
+  Bug,
+  Target,
   Webhook,
   Cpu,
   Zap,

@@ -48,6 +48,7 @@ const (
 	TypeTokensCleanup         = "tokens:cleanup"
 	TypeUploadsOrphanCleanup  = "uploads:cleanup_orphans" // v3.31.33
 	TypeTrashPurgeExpired     = "trash:purge_expired"
+	TypeSecurityAutoBan       = "security:auto_ban"
 	TypeBackupWeekly          = "backup:weekly"           // v3.31.77 (legacy)
 	TypeBackupScheduled       = "backup:scheduled"        // settings-driven auto backup
 	TypeAuditPrune            = "audit:prune"             // activity-log retention
@@ -304,6 +305,10 @@ type WorkerDeps struct {
 	Mailer  *mail.Mailer
 	Storage *storage.Storage
 	Cache   *cache.Cache
+	// AutoBan is the scheduled security sweep. Nil when Sentinel is off, and
+	// the job says so rather than failing: a project that turned the firewall
+	// off did not ask for a ban sweep either.
+	AutoBan *services.SecurityAutoBan
 }
 
 // ExponentialBackoff returns the delay before retry attempt n. The
@@ -356,6 +361,7 @@ func StartWorker(redisURL string, deps WorkerDeps) (func(), error) {
 	mux.HandleFunc(TypeAuditPrune, handleAuditPrune(deps))
 	mux.HandleFunc(TypeUploadsOrphanCleanup, handleUploadsOrphanCleanup(deps))
 	mux.HandleFunc(TypeTrashPurgeExpired, handleTrashPurgeExpired(deps))
+	mux.HandleFunc(TypeSecurityAutoBan, handleSecurityAutoBan(deps))
 	mux.HandleFunc(TypeBackupWeekly, handleBackupWeekly(deps))
 	mux.HandleFunc(TypeBackupScheduled, handleBackupScheduled(deps))
 	// grit:jobs
@@ -522,6 +528,36 @@ func handleTrashPurgeExpired(deps WorkerDeps) func(ctx context.Context, task *as
 		for table, n := range removed {
 			log.Printf("Trash sweep: removed %d %s row(s) for good", n, table)
 		}
+		return nil
+	}
+}
+
+// handleSecurityAutoBan bans the addresses that keep attacking.
+//
+// Sentinel's own AutoBlock answers a burst within seconds: ten high-severity
+// threats from one address inside ten minutes. It cannot answer the scanner
+// that sends four an hour, every hour, for a week, and that is the shape most
+// env-file and admin-path scanning actually takes. This counts the window
+// instead of the burst, so patience stops being a way through.
+//
+// High severity only. An actor's total threat count includes every
+// low-severity heuristic it ever tripped, and banning on that number is how a
+// dashboard starts refusing real users.
+func handleSecurityAutoBan(deps WorkerDeps) func(ctx context.Context, task *asynq.Task) error {
+	return func(ctx context.Context, task *asynq.Task) error {
+		if deps.AutoBan == nil {
+			log.Println("Auto-ban sweep: Sentinel is not configured, nothing to sweep")
+			return nil
+		}
+		if !deps.AutoBan.Config.Enabled {
+			log.Println("Auto-ban sweep: turned off by SECURITY_AUTO_BAN")
+			return nil
+		}
+		result, err := deps.AutoBan.Run(ctx, false)
+		if err != nil {
+			return fmt.Errorf("auto-ban sweep: %w", err)
+		}
+		result.LogResult(deps.AutoBan.Config)
 		return nil
 	}
 }

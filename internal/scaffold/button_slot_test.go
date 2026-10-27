@@ -225,6 +225,12 @@ func inlineTags(src, element string) []string {
 		depth := 0
 		var quote byte
 		j := start + len(open)
+		// An apostrophe inside the tag, which a // comment between attributes
+		// can carry ("the project's button"), opens a quote that never closes.
+		// j then reaches len(src), i becomes len(src)+1, and the next src[i:]
+		// panics with a slice bound rather than failing with a count. A test
+		// that panics takes the whole package down and says nothing about what
+		// it was measuring.
 		for ; j < len(src); j++ {
 			ch := src[j]
 			switch {
@@ -244,6 +250,11 @@ func inlineTags(src, element string) []string {
 			if ch == '>' && depth == 0 && quote == 0 {
 				break
 			}
+		}
+		if j >= len(src) {
+			// Ran off the end without closing this tag: there is nothing
+			// further to find, and advancing past the end is the panic.
+			return tags
 		}
 		i = j + 1
 	}

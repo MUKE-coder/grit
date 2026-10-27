@@ -327,6 +327,24 @@ SENTINEL_LOCKOUT_EXEMPT_IPS=
 # answer the same question. Auto-block is on outside development.
 SENTINEL_AUTOBLOCK_EXEMPT_IPS=
 
+# The scheduled ban sweep. Sentinel'''s own auto-block catches a burst, ten
+# high-severity threats from one address inside ten minutes. This catches the
+# scanner patient enough to stay under that: every AUTO_BAN_INTERVAL_HOURS it
+# counts each address''' high-severity threats over the window and bans the ones
+# over the line. On outside development.
+#
+# MIN_THREATS is a threshold to exceed, not to meet: at 3, an address is banned
+# on its fourth high-severity threat. Loopback and private addresses are never
+# banned, whatever they do, because behind a proxy you have not told Sentinel to
+# trust they are where all your users appear to come from.
+SECURITY_AUTO_BAN=true
+SECURITY_AUTO_BAN_MIN_THREATS=3
+SECURITY_AUTO_BAN_WINDOW_HOURS=24
+AUTO_BAN_INTERVAL_HOURS=6
+# A ban with no end, until somebody lifts it from the Security page. Set false
+# and a ban lasts a week instead.
+SECURITY_AUTO_BAN_PERMANENT=true
+
 # Require a confirmed email address before a password sign-in is accepted.
 # Leave false on an existing project: every current user has a NULL
 # email_verified_at and would be locked out the moment you switch it on.

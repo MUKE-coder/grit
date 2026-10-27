@@ -1,0 +1,670 @@
+"use client";
+
+/**
+ * The security dashboard: what has been tried against this app, and what was
+ * done about it.
+ *
+ * It reads Sentinel through the API rather than iframing Sentinel's own
+ * console, because the two answer different questions. The console is for
+ * investigating one address. This is for the question an operator actually
+ * arrives with, which is "is anything happening, and do I need to do
+ * something", and the answer to that is a number, a trend and a button.
+ *
+ * Every panel here is sourced. Nothing on this page is a placeholder: if a
+ * call fails its panel says so rather than showing a zero, because a zero on a
+ * security dashboard reads as "you are safe" and that is the one wrong answer
+ * it must never give.
+ */
+
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from "recharts";
+import { PageHeader } from "@/components/chrome/PageHeader";
+import { SkeletonCards } from "@/components/ui/Skeleton";
+import { buttonClasses } from "@/components/ui/button";
+import { inputClasses } from "@/components/ui/input";
+import { apiClient } from "@/lib/api-client";
+import {
+  Shield, AlertTriangle, AlertCircle, ExternalLink, Activity as ActivityIcon,
+  Bug, Globe, Lock, Search, ShieldCheck, Target,
+} from "@/lib/icons";
+import { API_URL } from "@/lib/api-core";
+
+type Severity = "all" | "critical" | "high" | "medium" | "low";
+
+interface Summary {
+  score: number;
+  grade: string;
+  score_trend?: string;
+  threats_24h: number;
+  unique_ips_24h: number;
+  critical_24h: number;
+  high_24h: number;
+  blocked_24h: number;
+  banned_ips_now: number;
+  banned_automatic: number;
+  banned_manual: number;
+  active_bans?: Array<{
+    ip: string; reason: string; blocked_at: string;
+    expires_at: string; permanent: boolean; automatic: boolean;
+  }>;
+  auto_ban?: {
+    enabled: boolean; min_threats?: number;
+    window?: string; every?: string; permanent?: boolean;
+  };
+  degraded?: string[];
+}
+
+interface TopLists {
+  attack_types: Array<{ type: string; count: number }>;
+  routes: Array<{ route: string; method: string; count: number }>;
+  ips: Array<{ ip: string; count: number; risk: number; country: string; last_seen: string }>;
+  degraded?: string[];
+}
+
+interface ThreatRow {
+  id: string; ip: string; method: string; path: string;
+  type: string; severity: string; blocked: boolean;
+  outcome: string; timestamp: string;
+}
+
+// The grades, and what each one is for. Sentinel grades posture rather than
+// compromise, which is the distinction people get wrong when they first see a
+// C on an app that has never been breached, so the page says it outright.
+const GRADES = [
+  { band: "A · 90-100", label: "Excellent", tone: "success" },
+  { band: "B · 80-89", label: "Good", tone: "success" },
+  { band: "C · 70-79", label: "Fair", tone: "warning" },
+  { band: "D · 60-69", label: "Weak", tone: "warning" },
+  { band: "F · 0-59", label: "Failing, act on the recommendations", tone: "danger" },
+] as const;
+
+const SEVERITIES: Severity[] = ["all", "critical", "high", "medium", "low"];
+
+export default function SecurityPage() {
+  const queryClient = useQueryClient();
+  const [severity, setSeverity] = useState<Severity>("all");
+  const [search, setSearch] = useState("");
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+
+  const summary = useQuery<Summary>({
+    queryKey: ["security", "summary"],
+    queryFn: async () => (await apiClient.get<Summary>("/api/admin/security/summary")).data,
+    refetchInterval: 60_000,
+  });
+
+  const trends = useQuery<{ data: Array<{ period: string; total: number; by_type: Record<string, number> }> }>({
+    queryKey: ["security", "trends"],
+    queryFn: async () => (await apiClient.get("/api/admin/security/trends?window=24h")).data,
+    refetchInterval: 60_000,
+  });
+
+  const top = useQuery<TopLists>({
+    queryKey: ["security", "top"],
+    queryFn: async () => (await apiClient.get<TopLists>("/api/admin/security/top?window=168h")).data,
+    refetchInterval: 120_000,
+  });
+
+  const threats = useQuery<{ data: ThreatRow[]; meta: { total: number; page: number; pages: number } }>({
+    queryKey: ["security", "threats", severity, query, page],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: String(page), page_size: "20" });
+      if (severity !== "all") params.set("severity", severity);
+      if (query) params.set("search", query);
+      return (await apiClient.get("/api/admin/security/threats?" + params.toString())).data;
+    },
+    placeholderData: (previous) => previous,
+  });
+
+  const refreshAll = () => {
+    queryClient.invalidateQueries({ queryKey: ["security"] });
+  };
+
+  const banOffenders = useMutation({
+    mutationFn: async (dryRun: boolean) =>
+      (await apiClient.post("/api/admin/security/ban-offenders", { dry_run: dryRun })).data,
+    onSuccess: refreshAll,
+  });
+
+  const unban = useMutation({
+    mutationFn: async (ip: string) => apiClient.delete("/api/admin/security/ban/" + encodeURIComponent(ip)),
+    onSuccess: refreshAll,
+  });
+
+  const banOne = useMutation({
+    mutationFn: async (ip: string) => apiClient.post("/api/admin/security/ban", { ip, permanent: true }),
+    onSuccess: refreshAll,
+  });
+
+  const data = summary.data;
+  const policy = data?.auto_ban;
+
+  return (
+    <div>
+      <PageHeader
+        title="Security"
+        subtitle="Live threat activity from the Sentinel firewall: WAF detections, rate limiting and IP bans."
+        actions={
+          <a
+            href={`${API_URL}/sentinel/ui`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm font-medium text-foreground hover:bg-bg-hover"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Full Sentinel console
+          </a>
+        }
+      />
+
+      <DegradedBanner degraded={data?.degraded} />
+
+      {summary.isLoading ? (
+        <SkeletonCards count={5} />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <Stat
+            label="Security score"
+            value={`${data?.score ?? 0} · ${data?.grade ?? "?"}`}
+            hint="Posture, not compromise"
+            icon={<ShieldCheck className="h-4 w-4" />}
+            tone={scoreTone(data?.score ?? 0)}
+          />
+          <Stat
+            label="Threats (24h)"
+            value={data?.threats_24h ?? 0}
+            hint={`${data?.unique_ips_24h ?? 0} unique IP${(data?.unique_ips_24h ?? 0) === 1 ? "" : "s"}`}
+            icon={<ActivityIcon className="h-4 w-4" />}
+            tone={(data?.threats_24h ?? 0) > 0 ? "warning" : "default"}
+          />
+          <Stat
+            label="Critical (24h)"
+            value={data?.critical_24h ?? 0}
+            hint={`${data?.high_24h ?? 0} high severity`}
+            icon={<AlertCircle className="h-4 w-4" />}
+            tone={(data?.critical_24h ?? 0) > 0 ? "danger" : "default"}
+          />
+          <Stat
+            label="Blocked (24h)"
+            value={data?.blocked_24h ?? 0}
+            hint="Requests stopped by the WAF"
+            icon={<Shield className="h-4 w-4" />}
+            tone={(data?.blocked_24h ?? 0) > 0 ? "success" : "default"}
+          />
+          <Stat
+            label="Banned IPs"
+            value={data?.banned_ips_now ?? 0}
+            hint={`${data?.banned_automatic ?? 0} automatic · ${data?.banned_manual ?? 0} manual`}
+            icon={<Lock className="h-4 w-4" />}
+            tone={(data?.banned_ips_now ?? 0) > 0 ? "warning" : "default"}
+          />
+        </div>
+      )}
+
+      {/* What the score means. Without this a C reads as a breach, and the
+          first thing anybody does with a score they do not understand is
+          ignore it. */}
+      <section className="mt-6 rounded-xl border border-border bg-bg-elevated p-5">
+        <p className="text-sm font-semibold text-foreground">What the score means</p>
+        <p className="mt-1 text-sm text-text-secondary">
+          Sentinel grades this API&apos;s security posture from 0 to 100 on five weighted
+          factors: recent threat activity, sign-in security, how the app answers an attack
+          (blocking, or only writing it down), security-header compliance, and rate-limit
+          coverage. Heavy scanning while the WAF is in log-only mode pulls the score down
+          even when nothing has been breached. It measures posture, not compromise.
+        </p>
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          {GRADES.map((g) => (
+            <div
+              key={g.band}
+              className={"rounded-lg border px-3 py-2 text-center " + bandClass(g.tone)}
+            >
+              <p className="text-sm font-bold">{g.band}</p>
+              <p className="mt-0.5 text-xs opacity-80">{g.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Threat activity, one series.
+          A second line for "blocked per hour" would be the better chart, and
+          it is not drawn because Sentinel's trend buckets carry a total and a
+          by_type breakdown and no blocked count. Drawing it from what is here
+          would mean a flat line at zero next to real bars, which says the WAF
+          stopped nothing. The blocked total for the window is in the caption
+          instead, from the summary, where it is a real number. */}
+      <Panel title="Threat activity (last 24 hours)" icon={<ActivityIcon className="h-4 w-4" />}>
+        <div className="px-5 pb-5 pt-2">
+          <p className="mb-3 text-xs text-text-muted">
+            Detections per hour.{" "}
+            {summary.data
+              ? `${summary.data.threats_24h} in the last 24 hours, ${summary.data.blocked_24h} of them blocked.`
+              : null}
+          </p>
+          {(trends.data?.data?.length ?? 0) === 0 ? (
+            <p className="py-10 text-center text-sm text-text-muted">
+              No threats in the last 24 hours.
+            </p>
+          ) : (
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={(trends.data?.data ?? []).map((p) => ({
+                  hour: formatHour(p.period),
+                  threats: p.total,
+                }))}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="hour" tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} axisLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "var(--text-muted)" }} tickLine={false} axisLine={false} width={28} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--bg-elevated)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                  />
+                  <Bar dataKey="threats" name="Threats" fill="var(--accent)" radius={[3, 3, 0, 0]} maxBarSize={28} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      </Panel>
+
+      {/* What is being tried, where, and by whom. */}
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <RankedList
+          title="Top attack types (7d)"
+          icon={<Bug className="h-4 w-4" />}
+          rows={(top.data?.attack_types ?? []).map((t) => ({ key: t.type, label: t.type, count: t.count }))}
+          empty="Nothing has been tried yet."
+        />
+        <RankedList
+          title="Most targeted routes (7d)"
+          icon={<Target className="h-4 w-4" />}
+          rows={(top.data?.routes ?? []).map((r) => ({ key: r.method + r.route, label: r.route, count: r.count }))}
+          empty="No route has been probed."
+          mono
+        />
+        <Panel
+          title="Most active IPs (7d)"
+          icon={<Globe className="h-4 w-4" />}
+          action={
+            <button
+              type="button"
+              onClick={() => banOffenders.mutate(false)}
+              disabled={banOffenders.isPending}
+              className={buttonClasses({ variant: "danger", size: "sm" })}
+            >
+              {banOffenders.isPending ? "Banning..." : "Ban high-threat IPs"}
+            </button>
+          }
+        >
+          {(top.data?.ips?.length ?? 0) === 0 ? (
+            <p className="px-5 py-8 text-center text-sm text-text-muted">Nobody has tripped the firewall.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {top.data!.ips.map((a) => (
+                <li key={a.ip} className="flex items-center justify-between gap-3 px-5 py-2.5">
+                  <span className="truncate font-mono text-sm text-foreground">{a.ip}</span>
+                  <span className="shrink-0 text-sm font-semibold text-text-secondary">{a.count}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {banOffenders.data ? (
+            <p className="border-t border-border px-5 py-2 text-xs font-semibold text-danger">
+              {banOffenders.data.message}
+            </p>
+          ) : null}
+          {policy?.enabled ? (
+            <p className="border-t border-border px-5 py-2 text-xs text-text-muted">
+              A scheduled sweep also bans any address with more than {policy.min_threats} high-severity
+              threats in {humanise(policy.window)}, every {humanise(policy.every)}{" "}
+              (AUTO_BAN_INTERVAL_HOURS).
+            </p>
+          ) : (
+            <p className="border-t border-border px-5 py-2 text-xs text-text-muted">
+              The scheduled sweep is off. Set SECURITY_AUTO_BAN=true to ban repeat attackers
+              without pressing this button.
+            </p>
+          )}
+        </Panel>
+      </div>
+
+      {/* The log itself. */}
+      <Panel
+        title="Threat log"
+        icon={<AlertTriangle className="h-4 w-4" />}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex rounded-lg border border-border bg-bg-secondary p-0.5">
+              {SEVERITIES.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => { setSeverity(s); setPage(1); }}
+                  aria-pressed={severity === s}
+                  // A segmented control: the filled one is a selected state,
+                  // not a primary action, so this is deliberately not
+                  // buttonClasses. Swapping the button style of a project
+                  // should not restyle a set of filter tabs.
+                  className={
+                    "rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors " +
+                    (severity === s ? "bg-accent text-accent-fg" : "text-text-secondary hover:text-foreground")
+                  }
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            <form
+              onSubmit={(event) => { event.preventDefault(); setQuery(search.trim()); setPage(1); }}
+              className="relative"
+            >
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" aria-hidden="true" />
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search IP or path"
+                aria-label="Search the threat log by IP or path"
+                className={inputClasses({ inputSize: "sm", fullWidth: false, className: "pl-8" })}
+              />
+            </form>
+          </div>
+        }
+      >
+        {(threats.data?.data?.length ?? 0) === 0 ? (
+          <p className="px-5 py-10 text-center text-sm text-text-muted">
+            {query || severity !== "all" ? "Nothing matches that filter." : "No threats have been recorded."}
+          </p>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs font-semibold uppercase tracking-wide text-text-muted">
+                    <th scope="col" className="px-5 py-2.5">Time</th>
+                    <th scope="col" className="px-5 py-2.5">IP</th>
+                    <th scope="col" className="px-5 py-2.5">Request</th>
+                    <th scope="col" className="px-5 py-2.5">Threat</th>
+                    <th scope="col" className="px-5 py-2.5">Severity</th>
+                    <th scope="col" className="px-5 py-2.5">Outcome</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {threats.data!.data.map((t) => (
+                    <tr key={t.id} className="hover:bg-bg-hover">
+                      <td className="whitespace-nowrap px-5 py-2.5 text-xs text-text-secondary">
+                        {new Date(t.timestamp).toLocaleString()}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-2.5 font-mono text-xs text-foreground">{t.ip}</td>
+                      <td className="max-w-xs truncate px-5 py-2.5 text-xs">
+                        <span className="font-semibold text-foreground">{t.method}</span>{" "}
+                        <span className="font-mono text-text-secondary">{t.path}</span>
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-2.5 text-xs text-text-secondary">{t.type}</td>
+                      <td className="whitespace-nowrap px-5 py-2.5">
+                        <span className={"rounded px-1.5 py-0.5 text-[11px] font-semibold " + severityClass(t.severity)}>
+                          {t.severity}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-2.5 text-xs">
+                        <span className={t.blocked ? "font-semibold text-success" : "text-text-muted"}>
+                          {t.outcome}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-3 text-xs text-text-muted">
+              <span>
+                Page {threats.data!.meta.page} of {threats.data!.meta.pages} ·{" "}
+                {threats.data!.meta.total.toLocaleString()} threat
+                {threats.data!.meta.total === 1 ? "" : "s"}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className={buttonClasses({ variant: "outline", size: "sm" })}
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={page >= (threats.data!.meta.pages || 1)}
+                  className={buttonClasses({ variant: "outline", size: "sm" })}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </Panel>
+
+      {/* Who is banned, and the way back out. An unban button matters more
+          than a ban one: the ban is usually right and the mistake is the one
+          you have to be able to undo in a hurry. */}
+      <Panel
+        title="Banned IPs"
+        icon={<Lock className="h-4 w-4" />}
+        action={<BanForm onBan={(ip) => banOne.mutate(ip)} pending={banOne.isPending} />}
+      >
+        <p className="border-b border-border px-5 py-2 text-xs text-text-muted">
+          A ban takes effect within about 30 seconds.
+        </p>
+        {(data?.active_bans?.length ?? 0) === 0 ? (
+          <p className="px-5 py-8 text-center text-sm text-text-muted">No IP is banned.</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {data!.active_bans!.map((b) => (
+              <li key={b.ip} className="flex items-center justify-between gap-3 px-5 py-3">
+                <div className="min-w-0">
+                  <p className="font-mono text-sm text-foreground">
+                    {b.ip}
+                    <span className={"ml-2 rounded px-1.5 py-0.5 text-[11px] font-semibold " +
+                      (b.automatic ? "bg-accent/10 text-accent" : "bg-bg-hover text-text-secondary")}>
+                      {b.automatic ? "automatic" : "manual"}
+                    </span>
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-text-muted">
+                    {b.reason}
+                    {b.blocked_at ? " · since " + new Date(b.blocked_at).toLocaleString() : ""}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className="text-xs text-text-muted">
+                    {b.permanent ? "Permanent" : "until " + new Date(b.expires_at).toLocaleString()}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => unban.mutate(b.ip)}
+                    disabled={unban.isPending}
+                    className={buttonClasses({ variant: "outline", size: "sm" })}
+                  >
+                    Unban
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+    </div>
+  );
+}
+
+// BanForm adds one address by hand. The server refuses a private or loopback
+// address and says why, so this does not duplicate that rule badly.
+function BanForm({ onBan, pending }: { onBan: (ip: string) => void; pending: boolean }) {
+  const [ip, setIp] = useState("");
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const value = ip.trim();
+        if (!value) return;
+        onBan(value);
+        setIp("");
+      }}
+      className="flex items-center gap-2"
+    >
+      <input
+        value={ip}
+        onChange={(event) => setIp(event.target.value)}
+        placeholder="198.51.100.4"
+        aria-label="IP address to ban"
+        className={inputClasses({ inputSize: "sm", fullWidth: false })}
+      />
+      <button
+        type="submit"
+        disabled={pending || !ip.trim()}
+        className={buttonClasses({ size: "sm" })}
+      >
+        Ban an IP
+      </button>
+    </form>
+  );
+}
+
+// DegradedBanner says which panels have no data behind them.
+//
+// The dashboard used to answer a dead upstream with a page of zeros and a 200,
+// which reads as good news. The API now names the calls that failed, and this
+// puts that on the screen above the numbers it applies to.
+function DegradedBanner({ degraded }: { degraded?: string[] }) {
+  if (!degraded || degraded.length === 0) return null;
+  return (
+    <div className="mt-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+      <span>
+        Sentinel did not answer for {degraded.join(", ")}. Those panels are empty rather than zero.
+      </span>
+    </div>
+  );
+}
+
+function Stat({ label, value, hint, icon, tone }: {
+  label: string; value: React.ReactNode; hint: string;
+  icon: React.ReactNode; tone: "default" | "success" | "warning" | "danger";
+}) {
+  const toneClass = {
+    default: "border-border bg-bg-elevated",
+    success: "border-success/30 bg-success/5",
+    warning: "border-warning/30 bg-warning/5",
+    danger: "border-danger/30 bg-danger/5",
+  }[tone];
+  const iconClass = {
+    default: "text-text-secondary", success: "text-success",
+    warning: "text-warning", danger: "text-danger",
+  }[tone];
+  return (
+    <div className={"rounded-xl border p-4 " + toneClass}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">{label}</p>
+        <span className={iconClass}>{icon}</span>
+      </div>
+      <p className="mt-2 text-2xl font-bold text-foreground">{value}</p>
+      <p className="mt-0.5 text-xs text-text-muted">{hint}</p>
+    </div>
+  );
+}
+
+function Panel({ title, icon, action, children }: {
+  title: string; icon: React.ReactNode;
+  action?: React.ReactNode; children: React.ReactNode;
+}) {
+  return (
+    <section className="mt-6 overflow-hidden rounded-xl border border-border bg-bg-elevated">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
+        <div className="flex items-center gap-2">
+          <span className="text-text-secondary">{icon}</span>
+          <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">{title}</p>
+        </div>
+        {action}
+      </header>
+      {children}
+    </section>
+  );
+}
+
+function RankedList({ title, icon, rows, empty, mono }: {
+  title: string; icon: React.ReactNode;
+  rows: Array<{ key: string; label: string; count: number }>;
+  empty: string; mono?: boolean;
+}) {
+  return (
+    <section className="overflow-hidden rounded-xl border border-border bg-bg-elevated">
+      <header className="flex items-center gap-2 border-b border-border px-5 py-3">
+        <span className="text-text-secondary">{icon}</span>
+        <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">{title}</p>
+      </header>
+      {rows.length === 0 ? (
+        <p className="px-5 py-8 text-center text-sm text-text-muted">{empty}</p>
+      ) : (
+        <ul className="divide-y divide-border">
+          {rows.map((r) => (
+            <li key={r.key} className="flex items-center justify-between gap-3 px-5 py-2.5">
+              <span className={"truncate text-sm text-foreground " + (mono ? "font-mono text-xs" : "")}>
+                {r.label}
+              </span>
+              <span className="shrink-0 text-sm font-semibold text-text-secondary">{r.count}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function scoreTone(score: number): "default" | "success" | "warning" | "danger" {
+  if (score >= 80) return "success";
+  if (score >= 60) return "warning";
+  return "danger";
+}
+
+function bandClass(tone: "success" | "warning" | "danger") {
+  return {
+    success: "border-success/30 bg-success/5 text-success",
+    warning: "border-warning/30 bg-warning/5 text-warning",
+    danger: "border-danger/30 bg-danger/5 text-danger",
+  }[tone];
+}
+
+function severityClass(severity: string) {
+  switch (severity.toLowerCase()) {
+    case "critical": return "bg-danger/15 text-danger";
+    case "high": return "bg-warning/15 text-warning";
+    case "medium": return "bg-accent/10 text-accent";
+    default: return "bg-bg-hover text-text-secondary";
+  }
+}
+
+// formatHour turns Sentinel's "2026-10-27T13:00" bucket into something an axis
+// can hold. It is not an RFC 3339 timestamp, so Date cannot parse it on every
+// engine: the hour is read off the string instead.
+function formatHour(period: string): string {
+  const match = /T(\d{2})/.exec(period);
+  return match ? match[1] + ":00" : period;
+}
+
+// humanise turns a Go duration ("24h0m0s") into something a sentence can use.
+function humanise(duration?: string): string {
+  if (!duration) return "";
+  const hours = /^(\d+)h/.exec(duration);
+  if (!hours) return duration;
+  const n = Number(hours[1]);
+  if (n === 24) return "24 hours";
+  if (n % 24 === 0) return n / 24 + " days";
+  return n + (n === 1 ? " hour" : " hours");
+}

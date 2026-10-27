@@ -249,6 +249,76 @@ export default function SecurityPage() {
                   count and a window and supports a dry run that blocks nobody.
                 </p>
 
+                <h3 id="auto-ban-sweep" className="text-xl font-semibold tracking-tight mb-3">
+                  The scheduled ban sweep
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Auto-block answers a burst. It cannot answer patience: four
+                  high-severity threats an hour, every hour, for a week never trips ten in ten
+                  minutes, and that is what most real scanning looks like. One deployment&apos;s
+                  threat log held 18,405 rows, nearly all of them env-file probes from a handful
+                  of addresses, every one detected and recorded, and not one of them stopped.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  So there is a second rule that reads the window instead of the burst. Every six
+                  hours it counts each address&apos;s high-severity threats over the last day and
+                  bans the ones over the line. The two are complements: one answers in seconds,
+                  the other catches everything slow enough to avoid it.
+                </p>
+                <CodeBlock language="bash" filename=".env" code={`# More than three high-severity threats in 24 hours, swept every 6 hours.
+# MIN_THREATS is exceeded, not met: at 3, an address is banned on its fourth.
+SECURITY_AUTO_BAN=true
+SECURITY_AUTO_BAN_MIN_THREATS=3
+SECURITY_AUTO_BAN_WINDOW_HOURS=24
+AUTO_BAN_INTERVAL_HOURS=6
+SECURITY_AUTO_BAN_PERMANENT=true`} />
+                <p className="text-muted-foreground leading-relaxed mb-4 mt-4">
+                  <strong>High severity only</strong>, which is the part worth understanding. An
+                  actor&apos;s total threat count includes every low-severity heuristic it ever
+                  tripped, so a client that trips one forty times would be banned by a number
+                  that says nothing about intent. High is what the scanner patterns score: path
+                  traversal, SQL injection, env-file probes.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Loopback and the private ranges are never banned, for the same reason auto-block
+                  exempts them: behind a proxy Sentinel has not been told to trust, every request
+                  carries the proxy&apos;s address. Addresses already banned are skipped, one
+                  sweep is capped, and each ban is written with a reason that says what it
+                  counted, which is also how the dashboard tells an automatic ban from a manual
+                  one.
+                </p>
+
+                <h3 id="security-dashboard" className="text-xl font-semibold tracking-tight mb-3">
+                  The Security page
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The admin panel reads all of this through the API rather than embedding
+                  Sentinel&apos;s own console, because the two answer different questions. The
+                  console is for investigating one address. The Security page is for the question
+                  an operator actually arrives with, which is whether anything is happening and
+                  whether they need to do something.
+                </p>
+                <ul className="list-disc pl-6 space-y-2 text-muted-foreground mb-4">
+                  <li>The graded score, with what the grades mean. It measures posture, not
+                      compromise: heavy scanning against a WAF in log-only mode pulls it down
+                      without anything having been breached.</li>
+                  <li>Threats, unique addresses, critical count and blocked count over 24 hours,
+                      and the hourly shape of them.</li>
+                  <li>What is being tried, which routes, and by whom, over seven days.</li>
+                  <li>The threat log itself: filtered by severity, searched by address or path,
+                      and paged. A log of 18,000 rows cannot be acted on ten at a time.</li>
+                  <li>Who is banned, whether automatically or by hand, and the way back out.
+                      The unban button matters more than the ban one.</li>
+                  <li><strong>Ban high-threat IPs</strong>, which runs the sweep now on the same
+                      policy the schedule uses. The schedule only sees what arrives after it is
+                      turned on, and the log it is turned on in front of is usually already full.</li>
+                </ul>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Every panel is sourced. When a call to Sentinel fails, the page says which one
+                  rather than rendering a zero, because a zero on a security dashboard reads as
+                  &quot;you are safe&quot;, and that is the one wrong answer it must never give.
+                </p>
+
                 <h3 id="security-headers" className="text-xl font-semibold tracking-tight mb-3">
                   Security Headers
                 </h3>

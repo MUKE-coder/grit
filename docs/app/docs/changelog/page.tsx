@@ -66,6 +66,94 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.413.0 */}
+            <div className="mb-12" id="v3.413.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.413.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A security dashboard you can act from, and a sweep that bans the addresses that keep attacking</h3>
+                <p>
+                  The Security page used to show three numbers, an explainer for an escalation
+                  policy, and the ten most recent threats. Two of its panels could not show
+                  anything at all: <code>rate_limited_last_hour</code> was hard-coded to zero and{' '}
+                  <code>rate_limit_hits_5min</code> to an empty array, so the page always said
+                  there had been no rate limiting, whatever had happened. The threat log was
+                  unfiltered, unsearchable and ten rows long, which on a real deployment is a log
+                  of 18,000 rows read ten at a time.
+                </p>
+                <p>
+                  It reads the whole of Sentinel now, through six new endpoints: the graded score
+                  with what the grades mean, threats and unique addresses and critical and blocked
+                  counts over 24 hours, the hourly shape of them, what is being tried and against
+                  which routes and by whom over seven days, the threat log filtered by severity
+                  and searched by address or path and paged, and who is banned with the way back
+                  out. The fake panels are gone rather than renamed.
+                </p>
+                <p>
+                  <strong>The sweep.</strong> Sentinel&apos;s own auto-block answers a burst: ten
+                  high-severity threats from one address inside ten minutes. It cannot answer
+                  patience, and patience is what most scanning actually is. Four an hour for a
+                  week never trips that rule. So every six hours a scheduled job counts each
+                  address&apos;s high-severity threats over the last day and bans the ones over
+                  the line, which is more than three by default. Both numbers are settings
+                  (<code>SECURITY_AUTO_BAN_MIN_THREATS</code>,{' '}
+                  <code>AUTO_BAN_INTERVAL_HOURS</code>), and the same sweep is behind the
+                  dashboard&apos;s <strong>Ban high-threat IPs</strong> button, because a schedule
+                  only sees what arrives after it is switched on and the log it is switched on in
+                  front of is usually already full.
+                </p>
+                <p>
+                  <strong>High severity only</strong>, deliberately. An actor&apos;s total threat
+                  count includes every low-severity heuristic it ever tripped, so banning on that
+                  number is how a dashboard starts refusing real users. Loopback and the private
+                  ranges are never banned, for the same reason auto-block exempts them: behind a
+                  proxy Sentinel has not been told to trust, every request carries the
+                  proxy&apos;s address.
+                </p>
+                <p>
+                  <strong>Two faults in Sentinel were found building this</strong> and are filed
+                  rather than worked around quietly (
+                  <a href="https://github.com/MUKE-coder/sentinel/issues/44">sentinel#44</a>).{' '}
+                  <code>top_attack_types</code> is populated by the in-memory store and by none of
+                  the persistent ones, so on SQLite, Postgres or MySQL it is always empty; the
+                  attack-type panel sums the trend buckets instead. And <code>ListActors</code>{' '}
+                  ignores <code>sort_by</code> in every store, so asking for the busiest addresses
+                  returned the most recent ones; the ranking is done here. Both workarounds say
+                  which issue they are waiting on.
+                </p>
+                <p>
+                  A third fault was ours and nearly shipped. Sentinel stores severities
+                  capitalised, and the first version of the sweep asked for{' '}
+                  <code>severity=high</code>. It matched nothing, scanned zero threats against a
+                  log holding eleven, and logged that no address was over the threshold, which is
+                  indistinguishable from a quiet week. A test now reads the severity words out of
+                  Sentinel&apos;s own source and fails if they stop agreeing.
+                </p>
+                <p>
+                  <code>grit upgrade</code> carries all of it to an existing project: the
+                  configuration, the routes, the cron entry, the task type, the worker and both
+                  call sites of <code>cron.New</code>, which gained a parameter. The anchors match
+                  a gofmt-formatted file rather than the template, because gofmt aligns struct
+                  fields into columns and an anchor copied from the template matches the template
+                  and not one real project.
+                </p>
+                <p>
+                  Two smaller things found on the way. A wrong name passed to the template loader
+                  panics half way through <code>grit new</code>, and nothing checked the call
+                  sites against the files, only the files against themselves; a test now checks
+                  all 96 of them, with a &quot;did you mean&quot; for the missing extension that
+                  causes it. And the inline-control budget test could panic instead of failing,
+                  on an apostrophe inside a JSX tag, which took the package down without saying
+                  what it had been measuring.
+                </p>
+              </div>
+            </div>
+
             {/* v3.412.1 */}
             <div className="mb-12" id="v3.412.1">
               <div className="flex items-center gap-3 mb-4">
