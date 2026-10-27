@@ -66,6 +66,77 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.19 */}
+            <div className="mb-12" id="v3.411.19">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.19
+                </span>
+                <span className="text-sm text-muted-foreground">October 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A rebuild could leave the old server answering, and say so in one line</h3>
+                <p>
+                  On Windows, a hot reload sometimes left the previous server running
+                  and still serving. The new one printed{' '}
+                  <code>bind: Only one usage of each socket address</code>, exited, and
+                  the old code kept answering every request as though nothing had
+                  happened. The edit was simply not live, and the only symptom was that
+                  it did not work. One developer lost an afternoon to a route that
+                  resolved to an older one.
+                </p>
+                <h4>Why air cannot fix this</h4>
+                <p>
+                  air starts the binary through PowerShell, so the process it tracks is
+                  PowerShell rather than the server, and it stops the old one with{' '}
+                  <code>TASKKILL /F /T</code> on that pid. When PowerShell has already
+                  gone, the server underneath it is an orphan with no parent to be found
+                  through, and the kill misses it. air then rebuilds happily, because
+                  Windows lets the linker replace the image of a running process, and the
+                  new server binds a port the orphan still holds.
+                </p>
+                <p>
+                  The obvious settings do not help. <code>kill_delay</code> is read only
+                  in air&apos;s Unix kill path and only when <code>send_interrupt</code>{' '}
+                  is on, and on Windows air logs that send_interrupt is unsupported and
+                  runs TASKKILL. That code is identical in the pinned version and the
+                  latest, so upgrading air changes nothing either. The fix had to be in
+                  the server.
+                </p>
+                <h4>Two changes</h4>
+                <p>
+                  The port is bound before the database connects and before a single
+                  route is registered, so a port already in use is the first thing
+                  printed rather than the last. The message says what is actually
+                  happening, that your API is still answering with the code from before
+                  your edit, and gives the two commands to find and stop whatever holds
+                  the port.
+                </p>
+                <p>
+                  And in development the new build asks whoever holds the port to step
+                  aside, over HTTP, on <code>POST /api/dev/step-aside</code>. A Grit
+                  server recognises the request and shuts down gracefully, draining its
+                  workers on the way out; anything else answers 404 and is left alone.
+                  Nothing is killed and no process id is guessed, which is the point:
+                  working out which pid owns a port and killing it means being wrong
+                  occasionally, and being wrong means killing something somebody else was
+                  using. The endpoint is mounted only when <code>APP_ENV</code> is a
+                  development value, and answers only on loopback.
+                </p>
+                <p>
+                  <code>grit upgrade</code> applies both to an existing project, and
+                  updates <code>.air.toml</code> to interrupt rather than kill the old
+                  server, which is worth having on macOS and Linux where air does honour
+                  it. A main.go that has been edited away from what Grit wrote is left
+                  alone and says why.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Reported from a project built with Grit: grit#110.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.18 */}
             <div className="mb-12" id="v3.411.18">
               <div className="flex items-center gap-3 mb-4">

@@ -60,6 +60,11 @@ func writeFrameworkOwnedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "form_share.go"):    formShareHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "form_share.go"):    apiFormShareServiceGo(),
 
+		// Starting up: binding the port before anything else runs, and taking
+		// it back in development from a previous build that should have exited
+		// and did not. On Windows that is not air's to fix (grit#110).
+		filepath.Join(apiRoot, "internal", "devserver", "devserver.go"): apiDevServerGo(),
+
 		// The audit tables' read side: the request log, the semantic feed and the
 		// OCSF export a collector polls, which had a query each in three handlers.
 		// Writing to them stays with the LogX functions.

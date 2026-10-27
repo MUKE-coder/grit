@@ -434,8 +434,19 @@ tmp_dir = "tmp"
   exclude_dir = ["tmp", "vendor", "node_modules"]
   exclude_regex = ["_test.go"]
   include_ext = ["go", "toml", "yaml"]
-  kill_delay = "0s"
-  send_interrupt = false
+  # Stop the old server before starting the new one, and let it shut down
+  # rather than being shot.
+  #
+  # These two are a Unix-only pair, which is worth knowing before reaching for
+  # them: air reads kill_delay in its Unix kill path, and only when
+  # send_interrupt is on. On Windows it logs "send_interrupt is not supported"
+  # and runs TASKKILL /F /T, and kill_delay is not consulted at all. So this
+  # buys a graceful shutdown on macOS and Linux, where the old server now gets
+  # a SIGINT, drains, and closes its listener properly, and buys nothing on
+  # Windows. The Windows half of this problem is handled in the server itself:
+  # see internal/devserver (grit#110).
+  kill_delay = "1s"
+  send_interrupt = true
   stop_on_error = true
 
 [log]
@@ -482,6 +493,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/routes"
 	"` + "{{MODULE}}" + `/internal/services"
+	"` + "{{MODULE}}" + `/internal/devserver"
 	"` + "{{MODULE}}" + `/internal/storage"
 	"` + "{{MODULE}}" + `/internal/tracing"
 )
@@ -491,6 +503,24 @@ func main() {
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	// The port, before anything else.
+	//
+	// Bound here rather than at ListenAndServe so that a port already in use
+	// is the FIRST thing printed. It used to be the last: the database
+	// connected, two hundred routes registered and printed themselves, the
+	// dashboards announced their URLs, and then one line said the server had
+	// not started. On a hot reload that line scrolls past and the previous
+	// build keeps answering every request with the code from before the edit,
+	// so the only symptom is that your change does nothing (grit#110).
+	//
+	// In development this also takes the port back from a previous build of
+	// this same server that should have exited and did not, by asking it over
+	// HTTP. See internal/devserver.
+	listener, err := devserver.Listen(cfg.Port, cfg.AppEnv)
+	if err != nil {
+		log.Fatal(devserver.ExplainBindFailure(cfg.Port, cfg.AppEnv, err))
 	}
 
 	// OpenTelemetry, when OTEL_EXPORTER_OTLP_ENDPOINT points somewhere.
@@ -711,6 +741,17 @@ func main() {
 		}
 	}()
 
+	// Shutdown signalling, set up before the server so the development
+	// step-aside endpoint can use the same path Ctrl+C does.
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	// Development only: let the next build of this server ask this one to go,
+	// so a rebuild does not end with two servers and the older one winning.
+	devserver.MountStepAside(router, cfg.AppEnv, func() {
+		quit <- syscall.SIGTERM
+	})
+
 	// Create server
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", cfg.Port),
@@ -727,14 +768,14 @@ func main() {
 		if cfg.SentinelEnabled {
 			log.Printf("Sentinel dashboard at http://localhost:%s/sentinel/ui", cfg.Port)
 		}
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		// Serve, not ListenAndServe: the listener was bound at the top of
+		// main, before any of this was set up.
+		if err := srv.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Server failed: %v", err)
 		}
 	}()
 
 	// Graceful shutdown
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
 	log.Println("Shutting down server...")

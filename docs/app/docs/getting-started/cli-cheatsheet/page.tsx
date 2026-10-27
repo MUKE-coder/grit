@@ -1104,6 +1104,40 @@ export default function CLICheatsheetPage() {
                     desc="Start a single app: web, admin, expo, or desktop"
                   />
                 </div>
+
+                <h3 id="port-already-in-use" className="mt-8">
+                  When the port is already in use
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The API binds its port before it connects to the database or
+                  registers a single route, so a port that is taken is the first
+                  thing you read rather than one line after the route dump. That
+                  line mattered: on a hot reload it scrolls past, and the previous
+                  build keeps answering every request with the code from before
+                  your edit. The only symptom is that your change does nothing.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  In development the new build asks whoever holds the port to step
+                  aside, over HTTP, on{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    POST /api/dev/step-aside
+                  </code>
+                  . A Grit server recognises the request and shuts down
+                  gracefully; anything else answers 404 and is left running, and
+                  you get a message naming the port with the two commands to find
+                  and stop it. Nothing is killed and no process id is guessed, so
+                  this cannot take down something that merely happened to be
+                  there.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The endpoint is mounted only when{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    APP_ENV
+                  </code>{" "}
+                  is development, dev or local, and it answers only on loopback.
+                  An unset <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">APP_ENV</code>{" "}
+                  is production, so it does not exist in a deployment.
+                </p>
               </div>
 
               {/* -------------------------------------------------------- */}

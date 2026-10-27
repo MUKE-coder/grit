@@ -753,6 +753,16 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairCORSHeaderList(root, opts); err != nil {
 			fmt.Printf("  ⚠ making the CORS allow list extensible: %v\n", err)
 		}
+		// The port is bound before the database and the routes, so a port
+		// already in use is the first thing printed rather than one line after
+		// the route dump, and in development a previous build that should have
+		// exited is asked for the port back.
+		if err := repairDevServerListen(root, opts); err != nil {
+			fmt.Printf("  ⚠ binding the port before startup: %v\n", err)
+		}
+		if err := repairAirKillSettings(root, opts); err != nil {
+			fmt.Printf("  ⚠ updating the reload settings: %v\n", err)
+		}
 		// The libraries every API mounts. A project below the floor misses
 		// security fixes; one above it is left alone.
 		if raised, err := raiseFrameworkDeps(opts.APIRoot(root)); err != nil {
@@ -798,6 +808,16 @@ func Upgrade(uOpts UpgradeOptions) error {
 		}
 		if err := repairCORSHeaderList(root, opts); err != nil {
 			fmt.Printf("  ⚠ making the CORS allow list extensible: %v\n", err)
+		}
+		// The port is bound before the database and the routes, so a port
+		// already in use is the first thing printed rather than one line after
+		// the route dump, and in development a previous build that should have
+		// exited is asked for the port back.
+		if err := repairDevServerListen(root, opts); err != nil {
+			fmt.Printf("  ⚠ binding the port before startup: %v\n", err)
+		}
+		if err := repairAirKillSettings(root, opts); err != nil {
+			fmt.Printf("  ⚠ updating the reload settings: %v\n", err)
 		}
 	}
 

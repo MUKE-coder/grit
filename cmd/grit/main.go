@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.411.18"
+var version = "3.411.19"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
