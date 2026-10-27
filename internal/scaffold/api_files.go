@@ -3271,6 +3271,32 @@ func isSafeDateColumn(col string, cfg Config) bool {
 //   - sort_by must be in cfg.Sortable, else cfg.DefaultSort (or DefaultSortColumn)
 //   - sort_order must be "asc" or "desc", else cfg.DefaultOrder (or DefaultSortOrder)
 //   - search is applied case-insensitively across cfg.Searchable columns (nothing if empty)
+// orderStably sorts by the requested column and then by id.
+//
+// The second column is not decoration. Without it, rows that share a value in
+// the sort column have no defined order at all, and the database is entitled
+// to return them differently for every query. Postgres does exactly that as
+// soon as the table is big enough to plan a parallel external sort: the order
+// of tied rows then depends on which worker finished first.
+//
+// What that looks like from outside is a list that quietly repeats a row on
+// one page and never shows another, with no error anywhere. Measured on
+// 500,000 contacts with repeating names (grit#112).
+//
+// id breaks every tie because it is unique, so the full ordering is total and
+// the same for every query. Skipped when the sort is already id, which would
+// otherwise emit "ORDER BY id asc, id asc".
+//
+// One function for both the page-numbered and the cursor path, because the
+// cursor path had this and the page path did not, and nothing compared them.
+func orderStably(query *gorm.DB, sortBy, sortOrder string) *gorm.DB {
+	query = query.Order(sortBy + " " + sortOrder)
+	if sortBy != "id" {
+		query = query.Order("id " + sortOrder)
+	}
+	return query
+}
+
 func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 	// Normalize sort_by against the whitelist.
 	sortBy := p.SortBy
@@ -3427,8 +3453,7 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 
 	// Then fetch the page.
 	offset := (p.Page - 1) * p.PageSize
-	if err := query.
-		Order(sortBy + " " + sortOrder).
+	if err := orderStably(query, sortBy, sortOrder).
 		Offset(offset).
 		Limit(p.PageSize).
 		Find(&result.Data).Error; err != nil {
@@ -3562,9 +3587,7 @@ func listCursor[T any](query *gorm.DB, p Params, cfg Config, sortBy, sortOrder s
 	}
 
 	limit := p.PageSize + 1
-	if err := query.
-		Order(sortBy + " " + sortOrder).
-		Order("id " + sortOrder).
+	if err := orderStably(query, sortBy, sortOrder).
 		Limit(limit).
 		Find(&result.Data).Error; err != nil {
 		return result, err

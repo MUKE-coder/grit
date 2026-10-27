@@ -66,6 +66,81 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.21 */}
+            <div className="mb-12" id="v3.411.21">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.21
+                </span>
+                <span className="text-sm text-muted-foreground">October 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A paged list could repeat a row and skip another, and two more experts</h3>
+                <p>
+                  A page-numbered list sorted by the requested column and stopped there.
+                  Rows that share a value in that column then have no defined order at
+                  all, and the database is entitled to return them differently for every
+                  query. Postgres does exactly that as soon as the table is big enough to
+                  plan a parallel external sort: the order of tied rows depends on which
+                  worker finished first.
+                </p>
+                <p>
+                  What that looks like from outside is not an error. It is the same row
+                  appearing on page 2 and page 3 while another one is never shown.
+                  Measured on 500,000 contacts with repeating names, reported with the
+                  query plan attached.
+                </p>
+                <p>
+                  Both list paths now sort by the column and then by id, which is unique,
+                  so the ordering is total and identical for every query. The cursor path
+                  already did this; the page path did not, and nothing compared them, so
+                  they share one function now. <code>grit upgrade</code> carries it to an
+                  existing project.
+                </p>
+                <p>
+                  The regression test asserts the SQL rather than the rows, which is the
+                  interesting part: SQLite returns ties in insertion order, so a test that
+                  walks the pages passes whether or not the tiebreaker is there and would
+                  have gone on passing through the whole of this bug.
+                </p>
+
+                <h3>Two more experts, and the CLI knows about them</h3>
+                <p>
+                  <code>grit skills</code> carries its own list of the pack, so that{' '}
+                  <code>status</code> works with no network. The list had not moved since
+                  the pack was nineteen skills, so two of them were installed and then
+                  reported as missing, and the summary line counted wrong.
+                </p>
+                <p>
+                  <strong>grit-tokens</strong> reads Claude Code&apos;s own transcripts
+                  and says what a project has spent: billable tokens against cache reads,
+                  cost at rates you can edit, and a per-tool table separating what a tool
+                  put back into the context from what the model wrote to call it. It reads
+                  the subagents&apos; transcripts too, which were a quarter of the
+                  billable total on the project it was written against. It writes a
+                  self-contained HTML page, and can report on a threshold and on every
+                  increment.
+                </p>
+                <p>
+                  <strong>grit-advocate</strong> watches a build and files what is worth
+                  telling people about as an issue, with the evidence, the channel it
+                  suits and a draft. It has a bar that most of a build does not clear, and
+                  two rules that keep it honest: every number traces to the run log, the
+                  git history or the token report, and no client name or customer data
+                  ever reaches a draft.
+                </p>
+                <p>
+                  A new project also ignores <code>.grit/token-usage.json</code>, the
+                  cache the first of those writes. It holds one machine&apos;s usage
+                  history and does not belong in a repository.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The pagination bug was reported from a project built with Grit: grit#112.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.20 */}
             <div className="mb-12" id="v3.411.20">
               <div className="flex items-center gap-3 mb-4">

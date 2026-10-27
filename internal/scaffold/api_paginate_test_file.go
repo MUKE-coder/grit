@@ -11,6 +11,7 @@ func apiPaginateTestGo() string {
 	return `package paginate
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -45,6 +46,77 @@ func newDB(t *testing.T) *gorm.DB {
 		t.Fatalf("migrate: %v", err)
 	}
 	return db
+}
+
+// A page-numbered list repeated rows and skipped others once the table was
+// big enough.
+//
+// The page query sorted by the requested column and stopped there, so rows
+// sharing a value had no defined order and the database was free to return
+// them differently for each query. Postgres does exactly that as soon as it
+// plans a parallel external sort: the order of tied rows depends on which
+// worker finished first. Measured on 500,000 rows with repeating names, the
+// same row came back on two pages while another never appeared, with no error
+// anywhere (grit#112).
+//
+// Asserted on the SQL rather than on the rows, deliberately. SQLite returns
+// ties in insertion order, so a test that walks the pages passes whether or
+// not the tiebreaker is there, and would have gone on passing through the
+// whole of this bug.
+func TestPagesBreakTiesOnID(t *testing.T) {
+	db := newDB(t)
+	seed(t, db, 3)
+
+	var orders []string
+	if err := db.Callback().Query().After("gorm:query").Register("test:order", func(tx *gorm.DB) {
+		sql := tx.Statement.SQL.String()
+		if strings.Contains(sql, "LIMIT") && strings.Contains(sql, "ORDER BY") {
+			orders = append(orders, sql[strings.Index(sql, "ORDER BY"):])
+		}
+	}); err != nil {
+		t.Fatalf("register callback: %v", err)
+	}
+
+	cfg := Config{Sortable: map[string]bool{"rank": true}}
+	if _, err := List[widget](db.Model(&widget{}), Params{
+		Page: 2, PageSize: 1, SortBy: "rank", SortOrder: "asc",
+	}, cfg); err != nil {
+		t.Fatalf("list: %v", err)
+	}
+
+	if len(orders) != 1 {
+		t.Fatalf("expected one page query, saw %d: %q", len(orders), orders)
+	}
+	if !strings.HasPrefix(orders[0], "ORDER BY rank asc,id asc") {
+		t.Errorf("page query ordered %q, want rank then id: without the second\n"+
+			"column, tied rows have no defined order and pages repeat and skip", orders[0])
+	}
+}
+
+// And sorting by id does not ask for it twice.
+func TestSortingByIDDoesNotRepeatTheTiebreaker(t *testing.T) {
+	db := newDB(t)
+	seed(t, db, 3)
+
+	var orders []string
+	if err := db.Callback().Query().After("gorm:query").Register("test:order:id", func(tx *gorm.DB) {
+		sql := tx.Statement.SQL.String()
+		if strings.Contains(sql, "LIMIT") && strings.Contains(sql, "ORDER BY") {
+			orders = append(orders, sql[strings.Index(sql, "ORDER BY"):])
+		}
+	}); err != nil {
+		t.Fatalf("register callback: %v", err)
+	}
+
+	cfg := Config{Sortable: map[string]bool{"id": true}}
+	if _, err := List[widget](db.Model(&widget{}), Params{
+		Page: 1, PageSize: 1, SortBy: "id", SortOrder: "asc",
+	}, cfg); err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if len(orders) == 1 && strings.Contains(orders[0], "id asc,id asc") {
+		t.Errorf("ordered %q: id is already unique", orders[0])
+	}
 }
 
 // seed inserts n rows with distinct, increasing created_at values.

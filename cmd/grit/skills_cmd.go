@@ -48,7 +48,8 @@ func skillsCmd() *cobra.Command {
 		Short: "Install the Grit expert skills an AI assistant builds with",
 		Long: `The Grit expert skills: a router that reads your project and assigns the work,
 one expert per architecture, and specialists for resources, the admin panel,
-design, data, security, performance, deployment and review.
+design, data, security, performance, deployment and review, plus one that reads
+what the work cost in tokens and one that writes up what was worth sharing.
 
 They read the docs out of this binary rather than from memory, interview you
 once and remember the answers, and file what Grit got wrong as an issue while
@@ -197,6 +198,7 @@ var expertSkillNames = []string{
 	"grit-triple", "grit-double", "grit-single", "grit-desktop", "grit-mobile",
 	"grit-offline", "grit-admin", "grit-ui-ux", "grit-security", "grit-perf",
 	"grit-deploy", "grit-reviewer", "grit-feedback", "grit-setup", "grit-report",
+	"grit-tokens", "grit-advocate",
 	"grit-references",
 }
 
