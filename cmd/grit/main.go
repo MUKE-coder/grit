@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.411.22"
+var version = "3.411.23"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -96,6 +96,7 @@ func rootCommand() *cobra.Command {
 	rootCmd.AddCommand(downCmd())
 	rootCmd.AddCommand(upCmd())
 	rootCmd.AddCommand(deployCmd())
+	rootCmd.AddCommand(portCmd())
 
 	return rootCmd
 }

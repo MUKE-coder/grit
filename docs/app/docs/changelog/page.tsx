@@ -66,6 +66,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.23 */}
+            <div className="mb-12" id="v3.411.23">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.23
+                </span>
+                <span className="text-sm text-muted-foreground">October 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit port: the admin&apos;s components, in any app</h3>
+                <p>
+                  The admin is where the interface work has gone: a table with sorting,
+                  filters, bulk actions, export and import, a form builder, the dashboard
+                  widgets. A customer portal usually wants some of that, and there was no
+                  way to have it. <code>grit expose table</code> writes a page with its
+                  own eighty line table rather than the admin&apos;s, so anybody who
+                  wanted the real one built it again, and the project ended up with two
+                  tables that behave differently.
+                </p>
+                <p>
+                  <code>grit port table --to apps/web</code> copies the real one, and
+                  everything it imports, into any app in the project. On a generated
+                  triple that is thirteen files: the table, its column header, the cell
+                  renderers, the empty and loading states, and the five lib files they
+                  reach. The web app type-checks with no edits.
+                </p>
+                <p>
+                  Copied rather than shared, deliberately. A package would mean decoupling
+                  every component from next/link, the icon map and the translation hook,
+                  adding transpilePackages, and rewriting the imports of every project
+                  that already exists. The components are also edited per project, which
+                  is the premise of the admin being yours rather than a dependency. What
+                  makes the copy cheap is that every Grit frontend uses the same{' '}
+                  <code>@/*</code> alias and the same design tokens, so a file at the same
+                  path compiles and is painted correctly with nothing rewritten.
+                </p>
+                <p>
+                  It will not write to your package.json. A package the copied files
+                  import that the target does not declare is listed with the command to
+                  add it, because a workspace hoists those: the app type-checks today and
+                  fails when it is built on its own. A file already in the target is kept
+                  rather than replaced, since by then somebody has edited it.
+                </p>
+                <p>
+                  <code>grit port list</code> shows the bundles: table, table-full, form,
+                  widgets, ui. A path inside the admin works too.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.22 */}
             <div className="mb-12" id="v3.411.22">
               <div className="flex items-center gap-3 mb-4">
