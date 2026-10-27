@@ -320,6 +320,13 @@ SENTINEL_RECAPTCHA_SECRET=
 # Comma separated, for example: 203.0.113.0/24,198.51.100.7
 SENTINEL_LOCKOUT_EXEMPT_IPS=
 
+# Addresses or CIDRs auto-block never bars. Ten high-severity threats from one
+# address inside ten minutes bars it for a day, which is a scanner and not a
+# customer, but put your own monitoring and any partner that probes you here.
+# Left empty this follows SENTINEL_LOCKOUT_EXEMPT_IPS above, because both
+# answer the same question. Auto-block is on outside development.
+SENTINEL_AUTOBLOCK_EXEMPT_IPS=
+
 # Require a confirmed email address before a password sign-in is accepted.
 # Leave false on an existing project: every current user has a NULL
 # email_verified_at and would be locked out the moment you switch it on.

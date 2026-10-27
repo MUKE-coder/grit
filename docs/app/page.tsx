@@ -1214,7 +1214,7 @@ export default function HomePage() {
               { name: 'Golang Battles', desc: 'Competitive Go coding platform with real-time WebSocket battles, ELO ranking, and sandbox execution.', url: '#', tag: 'Platform' },
               { name: 'GORM Studio', desc: 'Visual database browser for GORM. View tables, run queries, export data. Embedded in every Grit project.', url: 'https://github.com/MUKE-coder/gorm-studio', tag: 'Tool' },
               { name: 'Pulse', desc: 'Self-hosted observability SDK. Request tracing, DB monitoring, runtime metrics, Prometheus export.', url: 'https://github.com/MUKE-coder/pulse', tag: 'Library' },
-              { name: 'Sentinel', desc: 'WAF + rate limiting + brute-force protection with real-time threat dashboard.', url: 'https://github.com/MUKE-coder/sentinel', tag: 'Security' },
+              { name: 'Sentinel', desc: 'WAF, rate limiting and brute-force protection, with an address that keeps attacking blocked automatically.', url: 'https://github.com/MUKE-coder/sentinel', tag: 'Security' },
               { name: 'Scout', desc: 'Security scanner you mount in your own API. Headers, TLS, DNS, exposed files, secrets, reachable CVEs, and your real route table. `grit add scout`.', url: 'https://github.com/MUKE-coder/scout', tag: 'Security' },
               { name: 'gin-docs', desc: 'Zero-annotation API documentation generator for Gin. Auto-generates OpenAPI spec with Scalar UI.', url: 'https://github.com/MUKE-coder/gin-docs', tag: 'Library' },
             ].map((project) => (

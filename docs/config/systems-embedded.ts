@@ -935,7 +935,7 @@ export const SENTINEL: SystemDesign = {
   tagline:
     'A web application firewall, threat intelligence and audit layer that mounts in one call, and the accuracy numbers to say how often it is wrong.',
   group: 'Embedded',
-  packages: ['github.com/MUKE-coder/sentinel/v2', 'v2.7.0'],
+  packages: ['github.com/MUKE-coder/sentinel/v2', 'v2.8.0'],
 
   interview: {
     intro:

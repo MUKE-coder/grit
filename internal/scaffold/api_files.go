@@ -343,7 +343,11 @@ require (
 	// v2.2.2 is a security release (client-IP spoofing behind a proxy, a
 	// sort_by SQL injection, SSRF bypasses), and v2.5.0 keeps rate limits and
 	// lockouts in Redis, so every replica counts against the same numbers.
-	github.com/MUKE-coder/sentinel/v2 v2.7.0
+	// v2.8.0 detects the env-file probes a scanner actually sends
+	// (/sendgrid.env, not just /.env) and adds AutoBlock, which bars an
+	// address on what it has done here rather than on a third party's opinion
+	// of it.
+	github.com/MUKE-coder/sentinel/v2 v2.8.0
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
@@ -1023,6 +1027,12 @@ type Config struct {
 	// thousands of people. They are still counted and still subject to the
 	// (address, account) lockout.
 	SentinelLockoutExemptIPs []string
+	// Addresses or CIDRs that auto-block never bars, whatever they do: your
+	// own monitoring, a partner's integration, an office range. Empty, the
+	// sign-in lockout's exempt list above is used instead, because both
+	// answer the same question and a project that answered it once should
+	// not have to answer it twice.
+	SentinelAutoBlockExemptIPs []string
 	SentinelTurnstileSecret string
 	SentinelHCaptchaSecret  string
 	SentinelRecaptchaSecret string
@@ -1143,6 +1153,7 @@ func Load() (*Config, error) {
 		SentinelHCaptchaSecret:  getEnv("SENTINEL_HCAPTCHA_SECRET", ""),
 		SentinelRecaptchaSecret: getEnv("SENTINEL_RECAPTCHA_SECRET", ""),
 		SentinelLockoutExemptIPs: splitCSV(getEnv("SENTINEL_LOCKOUT_EXEMPT_IPS", "")),
+		SentinelAutoBlockExemptIPs: splitCSV(getEnv("SENTINEL_AUTOBLOCK_EXEMPT_IPS", "")),
 		` + configSentinelProxiesNew + `
 
 		PulseEnabled:    getEnv("PULSE_ENABLED", "true") == "true",
@@ -7416,12 +7427,11 @@ func wafExcludedRoutes() []string {
 		"/public/forms/*",
 ` + wafRichtextMarkerBlock + `
 	}
-	out := make([]string, 0, len(paths))
+	out := make([]string, 0, len(paths)+2)
 	for _, p := range paths {
 		out = append(out, prefix+p)
 	}
-	return out
-}
+` + wafFilesNewReturn + `
 
 // Services holds all Phase 4 services for dependency injection.
 type Services struct {
@@ -7521,6 +7531,46 @@ func sentinelMySQLDSN(dsn string) string {
 		my += sep + "parseTime=true&loc=UTC"
 	}
 	return my
+}
+
+// autoBlockNeverBlocked are the addresses auto-block is never allowed to bar,
+// whatever they do.
+//
+// Auto-block bars an address, and an address is only the attacker's when
+// Sentinel is reading the real client. Behind a reverse proxy it has not been
+// told to trust, every request carries the proxy's own address instead, and
+// TrustedProxies is empty by default because trusting a forwarded header you
+// have not configured is worse. So on a deployment where Caddy, Traefik,
+// nginx or an ingress terminates TLS and SENTINEL_TRUSTED_PROXIES was never
+// set, ten probes through that proxy would bar the proxy: every user, for a
+// day, from one scanner.
+//
+// Loopback and the private ranges are where such a proxy appears, so they are
+// exempt. Nothing is given up by it that you would want: a client genuinely on
+// one of these ranges is on your own network, and barring one address there is
+// not the control you want anyway.
+//
+// Set SENTINEL_TRUSTED_PROXIES and the real client address is read, after
+// which this list stops applying to anybody who matters.
+var autoBlockNeverBlocked = []string{
+	"127.0.0.0/8", "::1/128",
+	"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16",
+	"100.64.0.0/10", // carrier NAT, and what some ingress controllers use
+	"fc00::/7",      // IPv6 unique local
+}
+
+// autoBlockExempt is that list plus whatever this project named.
+func autoBlockExempt(cfg *config.Config) []string {
+	named := cfg.SentinelAutoBlockExemptIPs
+	if len(named) == 0 {
+		// Whose egress address is thousands of people is one question, and a
+		// project that answered it for the sign-in lockout has answered it for
+		// auto-block too. SENTINEL_AUTOBLOCK_EXEMPT_IPS parts them.
+		named = cfg.SentinelLockoutExemptIPs
+	}
+	out := make([]string, 0, len(autoBlockNeverBlocked)+len(named))
+	out = append(out, autoBlockNeverBlocked...)
+	return append(out, named...)
 }
 
 // mountSentinel mounts the security suite: WAF, rate limiting, auth shield and
@@ -7667,6 +7717,22 @@ func mountSentinel(r *gin.Engine, db *gorm.DB, cfg *config.Config, svc *Services
 				TurnstileSecret: cfg.SentinelTurnstileSecret,
 				HCaptchaSecret:  cfg.SentinelHCaptchaSecret,
 				RecaptchaSecret: cfg.SentinelRecaptchaSecret,
+			},
+			// An address that keeps attacking is blocked, on what it has
+			// done to this application rather than on a third party's
+			// reputation feed, which is the only thing that stops a scanner
+			// nobody has reported yet. Sentinel's defaults: ten
+			// high-severity threats inside ten minutes bars the address for
+			// a day. A high severity is what the scanner patterns score (LFI,
+			// SQLi, path traversal), so ordinary odd traffic does not
+			// accumulate towards a block.
+			//
+			// Off in development, where the thing it would block is you.
+			// Counted through Counters above, so threats spread over replicas
+			// add up to one total and a block made anywhere holds everywhere.
+			AutoBlock: sentinel.AutoBlockConfig{
+				Enabled:   !isDev,
+				ExemptIPs: autoBlockExempt(cfg),
 			},
 			Anomaly: sentinel.AnomalyConfig{Enabled: !isDev},
 			Geo:     sentinel.GeoConfig{Enabled: !isDev},

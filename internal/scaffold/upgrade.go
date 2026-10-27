@@ -453,6 +453,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairWAFRichtext(root, opts); err != nil {
 			fmt.Printf("  ⚠ excluding the richtext routes from WAF body inspection: %v\n", err)
 		}
+		// Sentinel v2.8.0 arrives through the dependency floors above, and two
+		// things in routes.go have to move with it: the local storage route is
+		// stepped aside before a stored config.env is read as an env-file probe
+		// and refused 403, and auto-block is turned on outside development.
+		if err := repairSentinelV280(root, opts); err != nil {
+			fmt.Printf("  ⚠ bringing the Sentinel config up to v2.8.0: %v\n", err)
+		}
 		// Sync pull pages on (updated_at, id) and a soft delete moves updated_at:
 		// the soft-delete hook, its wiring and the updated_at indexes.
 		if err := repairSyncPull(root, opts); err != nil {

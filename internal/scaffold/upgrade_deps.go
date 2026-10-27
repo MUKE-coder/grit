@@ -28,8 +28,8 @@ type FrameworkDep struct {
 func FrameworkDepFloors() []FrameworkDep { return frameworkDeps }
 
 var frameworkDeps = []FrameworkDep{
-	{"github.com/MUKE-coder/sentinel/v2", "v2.7.0",
-		"a sign-in lockout bars the (address, account) pair rather than the address, so one person's mistakes behind an office or carrier NAT no longer lock out everybody sharing that egress; the CAPTCHA tier is no longer configured when no provider exists; MySQL is a real storage driver rather than a silent fall-through"},
+	{"github.com/MUKE-coder/sentinel/v2", "v2.8.0",
+		"the env-file probes a scanner actually sends are detected again (/sendgrid.env and /laravel.env stopped matching in v2.4.0, and prefixed names are most of what a scanner asks for), and AutoBlock bars an address on what it has done to this application rather than on a reputation feed, which is what stops a scanner nobody has reported yet. Earlier, in v2.7.0: a sign-in lockout bars the (address, account) pair rather than the address, so one person's mistakes behind an office or carrier NAT no longer lock out everybody sharing that egress; the CAPTCHA tier is no longer configured when no provider exists; MySQL is a real storage driver rather than a silent fall-through"},
 	{"github.com/MUKE-coder/gorm-studio", "v1.1.1",
 		"a table in TablePolicy.Hidden is refused by the raw SQL editor too, and a crafted XLSX import returns an error instead of panicking the request"},
 	{"github.com/MUKE-coder/pulse", "v1.5.1",

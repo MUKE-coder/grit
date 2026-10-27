@@ -198,6 +198,57 @@ export default function SecurityPage() {
                   exists and can never fire.
                 </p>
 
+                <h3 id="auto-block" className="text-xl font-semibold tracking-tight mb-3">
+                  Auto-block
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Everything above detects and records. Auto-block is what stops the address
+                  doing it again: ten threats of <strong>High</strong> severity or worse from one
+                  address inside ten minutes bars that address for a day. On outside development,
+                  off in development, where the thing it would block is you.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  It acts on behaviour rather than reputation. <code>IPReputation</code> asks a
+                  third party what is already known about an address; this asks what the address
+                  has just done to your application, which is the only thing that catches a
+                  scanner nobody has reported yet. Counting runs through the same Redis counters
+                  as the rate limits, so threats spread over replicas add up to one total and a
+                  block made anywhere is enforced everywhere.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The severity floor is what keeps it from turning on your users. High is what the
+                  scanner patterns score (path traversal, SQL injection, env-file probes), so a
+                  lone medium-severity oddity does not accumulate towards a block, and each threat
+                  counts once by its own id. Every automatic block is audited like a manual one,
+                  and liftable from the dashboard.
+                </p>
+                <div className="rounded-lg border border-warning/30 bg-warning/5 p-4 mb-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    <strong className="text-foreground">Loopback and the private ranges are
+                    never blocked</strong>, and the reason is worth knowing because it decides
+                    whether this feature is safe on your deployment. Auto-block bars an address,
+                    and the address is only the attacker&apos;s when Sentinel is reading the real
+                    client. Behind a reverse proxy it has not been told to trust, every request
+                    carries the proxy&apos;s address instead, so ten probes through that proxy
+                    would bar the proxy: every user, for a day, from one scanner. Set{' '}
+                    <code>SENTINEL_TRUSTED_PROXIES</code> to the proxy&apos;s address and the real
+                    client is read, after which the exemption stops applying to anybody who
+                    matters.
+                  </p>
+                </div>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  <code>SENTINEL_AUTOBLOCK_EXEMPT_IPS</code> adds to that list: your own
+                  monitoring, a partner&apos;s integration, an office range. Left unset it follows{' '}
+                  <code>SENTINEL_LOCKOUT_EXEMPT_IPS</code>, because both answer the same question
+                  and a project that answered it once should not have to answer it twice.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Auto-block only sees threats from the moment it is on. For the addresses already
+                  in your threat log, the dashboard&apos;s IP Management page has a{' '}
+                  <strong>Block repeat offenders</strong> panel, which takes a minimum threat
+                  count and a window and supports a dry run that blocks nobody.
+                </p>
+
                 <h3 id="security-headers" className="text-xl font-semibold tracking-tight mb-3">
                   Security Headers
                 </h3>
@@ -455,6 +506,16 @@ if cfg.SentinelEnabled {
         AuthShield: sentinel.AuthShieldConfig{
             Enabled:    true,
             LoginRoute: "/api/auth/login",
+        },
+        AutoBlock: sentinel.AutoBlockConfig{
+            Enabled: true,
+            // Sentinel's defaults: 10 threats of High or worse in 10 minutes
+            // bars the address for 24 hours.
+            //
+            // Loopback and the private ranges, because behind a proxy that
+            // Sentinel has not been told to trust, every request carries the
+            // proxy's address and blocking it blocks everybody.
+            ExemptIPs: autoBlockExempt(cfg),
         },
         Anomaly: sentinel.AnomalyConfig{
             Enabled: true,

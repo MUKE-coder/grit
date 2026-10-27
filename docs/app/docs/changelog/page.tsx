@@ -66,6 +66,85 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.412.0 */}
+            <div className="mb-12" id="v3.412.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.412.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An address that keeps attacking is blocked, and a stored file is not mistaken for one</h3>
+                <p>
+                  Sentinel v2.8.0, adopted. Two things in it, and a third that had to be fixed
+                  before either could ship safely.
+                </p>
+                <p>
+                  <strong>Every env-file probe is detected again.</strong> Sentinel matched{' '}
+                  <code>/.env</code> but had stopped matching <code>/sendgrid.env</code> and{' '}
+                  <code>/laravel.env</code> in v2.4.0, and prefixed names are most of what a
+                  scanner actually asks for.
+                </p>
+                <p>
+                  <strong>Auto-block is on outside development.</strong> Ten threats of High
+                  severity or worse from one address inside ten minutes bars that address for a
+                  day. It acts on what the address has done to your application rather than on a
+                  third party&apos;s opinion of it, which is the only thing that catches a scanner
+                  nobody has reported yet, and it counts through the same Redis counters as the
+                  rate limits, so threats spread over replicas add up to one total and a block made
+                  anywhere holds everywhere. The severity floor matters: High is what the scanner
+                  patterns score, so ordinary odd traffic does not accumulate towards a block.
+                </p>
+                <p>
+                  <strong>Loopback and the private ranges are never auto-blocked</strong>, and this
+                  is the part that is Grit&apos;s rather than Sentinel&apos;s. Auto-block bars an
+                  address, and an address is only the attacker&apos;s when Sentinel is reading the
+                  real client. Behind a reverse proxy it has not been told to trust, every request
+                  carries the proxy&apos;s address instead, and{' '}
+                  <code>SENTINEL_TRUSTED_PROXIES</code> is empty by default because trusting a
+                  forwarded header you have not configured is worse. On a deployment where Caddy,
+                  Traefik, nginx or an ingress terminates TLS and that variable was never set, ten
+                  probes through the proxy would have barred the proxy: every user, for a day, from
+                  one scanner. Turning auto-block on without this would have been a worse bug than
+                  the one it fixes. Set <code>SENTINEL_TRUSTED_PROXIES</code> and the real client
+                  address is read, after which the exemption stops applying to anybody who matters;{' '}
+                  <code>SENTINEL_AUTOBLOCK_EXEMPT_IPS</code> adds your own monitoring and any
+                  partner that probes you, and follows the sign-in lockout&apos;s exempt list when
+                  it is not set, because both answer the same question.
+                </p>
+                <p>
+                  <strong>The local storage route is stepped aside.</strong> Detecting env probes
+                  anywhere in a path is correct for a scanner and wrong for a file somebody stored:
+                  the local driver serves an object under the key it was uploaded with, and a field
+                  that accepts anything keeps the original extension, so a stored{' '}
+                  <code>config.env</code> is a real path the app has to answer. In production the
+                  WAF blocks, so that object would have started answering 403 on an upgrade that
+                  changed nothing anyone could see. The route is excluded from WAF inspection and
+                  nothing is given up by it: the storage layer refuses a key with a{' '}
+                  <code>.</code> or <code>..</code> segment, a backslash, a Windows drive letter or
+                  any key resolving outside the disk&apos;s root, whether or not the WAF is
+                  looking.
+                </p>
+                <p>
+                  The exclusion is listed separately from the API-prefixed paths, because the file
+                  route is mounted on the engine rather than under{' '}
+                  <code>/api/&lt;version&gt;</code>. The first attempt put it in the prefixed
+                  literal, where it became <code>/api/v1/files</code> and matched nothing: dead
+                  config, silently, which this file had already produced twice before. A test now
+                  reads the route constant out of the storage template and the exclusion out of the
+                  routes template and fails if they disagree.
+                </p>
+                <p>
+                  <code>grit upgrade</code> carries all of it: the exclusion, the auto-block
+                  config, the exempt ranges and the new variable, with the upgraded{' '}
+                  <code>wafExcludedRoutes</code> byte-identical to a freshly generated one. A
+                  project whose Sentinel config was hand-edited is left alone and told what to add.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.27 */}
             <div className="mb-12" id="v3.411.27">
               <div className="flex items-center gap-3 mb-4">
