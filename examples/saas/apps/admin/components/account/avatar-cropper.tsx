@@ -33,6 +33,48 @@ interface AvatarCropperProps {
   saving?: boolean;
 }
 
+/**
+ * One of the three crop controls: a native range input with a visible label.
+ *
+ * Native rather than a styled div, because a range input is the one element
+ * that already announces its name, its value and its bounds, moves by `step`
+ * on an arrow key, and is understood by every assistive technology without
+ * being told what it is.
+ */
+function Nudge({
+  label,
+  min,
+  max,
+  value,
+  onNudge,
+}: {
+  label: string;
+  min: number;
+  max: number;
+  value: number;
+  onNudge: (next: number) => void;
+}) {
+  return (
+    <label className="flex flex-col gap-2 text-xs font-medium text-text-muted">
+      {label}
+      <input
+        type="range"
+        min={Math.round(min)}
+        max={Math.round(max)}
+        step={NUDGE}
+        value={Math.round(value)}
+        onChange={(event) => onNudge(Number(event.target.value))}
+        // Left as the browser's own slider, tinted. Restyling the track of a
+        // range input means appearance-none and then rebuilding the thumb per
+        // engine, and a half-restyled one draws a coloured box behind the
+        // native widget. accent-color is the one property that recolours it
+        // without taking over drawing it.
+        className="w-full cursor-pointer accent-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary"
+      />
+    </label>
+  );
+}
+
 /** The picture is fitted inside this, in CSS pixels. */
 const STAGE_W = 520;
 const STAGE_H = 300;
@@ -163,32 +205,6 @@ export function AvatarCropper({ file, onCancel, onCropped, size = 512, saving = 
     }
   }
 
-  // The same moves without a pointer. A cropper that only works by dragging is
-  // one a keyboard user cannot use at all, and the alternative is no picture.
-  function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    const moves: Record<string, { x: number; y: number }> = {
-      ArrowLeft: { x: -NUDGE, y: 0 },
-      ArrowRight: { x: NUDGE, y: 0 },
-      ArrowUp: { x: 0, y: -NUDGE },
-      ArrowDown: { x: 0, y: NUDGE },
-    };
-    const move = moves[event.key];
-    if (move) {
-      event.preventDefault();
-      setSel((current) => clamp({ ...current, x: current.x + move.x, y: current.y + move.y }));
-      return;
-    }
-    if (event.key === "+" || event.key === "=") {
-      event.preventDefault();
-      // Grown from the middle, so the part somebody framed stays framed.
-      setSel((current) => clamp({ x: current.x - NUDGE / 2, y: current.y - NUDGE / 2, size: current.size + NUDGE }));
-    }
-    if (event.key === "-" || event.key === "_") {
-      event.preventDefault();
-      setSel((current) => clamp({ x: current.x + NUDGE / 2, y: current.y + NUDGE / 2, size: current.size - NUDGE }));
-    }
-  }
-
   // Esc cancels, which is what every other dialog in here does.
   useEffect(() => {
     if (!file) return;
@@ -260,7 +276,7 @@ export function AvatarCropper({ file, onCancel, onCropped, size = 512, saving = 
               Crop your new profile picture
             </h2>
             <p className="mt-0.5 text-xs text-text-muted">
-              Drag the circle to choose the part you want, and drag a corner to resize it.
+              Drag the circle to choose the part you want, or use the sliders below.
             </p>
           </div>
           <button
@@ -286,15 +302,13 @@ export function AvatarCropper({ file, onCancel, onCropped, size = 512, saving = 
                   cropped. */}
               <div
                 ref={stage}
-                tabIndex={0}
                 role="group"
-                aria-label="Crop area. Drag the circle, or use the arrow keys to move it and plus and minus to resize it."
-                onKeyDown={onKeyDown}
+                aria-label="Crop area"
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerEnd}
                 onPointerCancel={onPointerEnd}
                 style={{ width: shown.w || STAGE_W, height: shown.h || STAGE_H }}
-                className="relative touch-none select-none overflow-hidden rounded-lg bg-bg-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary"
+                className="relative touch-none select-none overflow-hidden rounded-lg bg-bg-tertiary"
               >
                 {url && (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -329,7 +343,16 @@ export function AvatarCropper({ file, onCancel, onCropped, size = 512, saving = 
                       <button
                         key={handle.corner}
                         type="button"
-                        aria-label={`Resize from the ${handle.label}`}
+                        // A pointer affordance, and only that. These carried an
+                        // aria-label and a tab stop while having no keyboard
+                        // handler at all, so the keyboard path through this
+                        // dialog was four buttons that announced themselves as
+                        // "Resize from the top left" and then did nothing. The
+                        // sliders below are the keyboard path; a control that
+                        // can be focused and cannot be used is worse than one
+                        // that is skipped.
+                        tabIndex={-1}
+                        aria-hidden="true"
                         onPointerDown={(event) => onResizeStart(event, handle.corner)}
                         style={{ cursor: handle.cursor }}
                         className={`absolute h-3 w-3 rounded-sm border border-black/20 bg-white shadow ${handle.className}`}
@@ -338,6 +361,53 @@ export function AvatarCropper({ file, onCancel, onCropped, size = 512, saving = 
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* The keyboard path, and the only one that reports where the
+              selection is.
+
+              It was an arrow-key handler on the stage, which is a div: a
+              screen reader announced "group" and then nothing, so nudging it
+              gave no feedback about where the crop had got to. Biome refused
+              the tab stop on it as well, and correctly, since the role said
+              the element was not interactive (grit#116). Native range inputs
+              are interactive by definition, announce their name and value as
+              they move, and cost no ARIA. Arrow keys still move by NUDGE,
+              because that is the step. */}
+          {image && !error && (
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              <Nudge
+                label="Size"
+                min={MIN_SELECTION}
+                max={Math.max(MIN_SELECTION, Math.min(shown.w, shown.h))}
+                value={sel.size}
+                onNudge={(next) =>
+                  // Grown from the middle, so the part somebody framed stays
+                  // framed, which is what the plus and minus keys used to do.
+                  setSel((current) =>
+                    clamp({
+                      size: next,
+                      x: current.x - (next - current.size) / 2,
+                      y: current.y - (next - current.size) / 2,
+                    }),
+                  )
+                }
+              />
+              <Nudge
+                label="Horizontal"
+                min={0}
+                max={Math.max(0, shown.w - sel.size)}
+                value={sel.x}
+                onNudge={(next) => setSel((current) => clamp({ ...current, x: next }))}
+              />
+              <Nudge
+                label="Vertical"
+                min={0}
+                max={Math.max(0, shown.h - sel.size)}
+                value={sel.y}
+                onNudge={(next) => setSel((current) => clamp({ ...current, y: next }))}
+              />
             </div>
           )}
         </div>

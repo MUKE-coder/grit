@@ -66,6 +66,60 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.412.1 */}
+            <div className="mb-12" id="v3.412.1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.412.1
+                </span>
+                <span className="text-sm text-muted-foreground">October 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A new project passes its own lint, and the avatar cropper can be used without a mouse</h3>
+                <p>
+                  A fresh <code>--triple</code> scaffold failed <code>pnpm lint</code> on an admin
+                  component nobody had touched, so the first push of a new project failed the CI
+                  that <code>grit new</code> had just written for it. Reported as{' '}
+                  <a href="https://github.com/MUKE-coder/grit/issues/116">#116</a>.
+                </p>
+                <p>
+                  The crop area was a <code>div</code> carrying <code>tabIndex=&#123;0&#125;</code>{' '}
+                  and <code>role=&quot;group&quot;</code>, which says the element is not
+                  interactive, so Biome refused the tab stop. Its offered fix was to delete the tab
+                  stop, which would have left the cropper unusable without a pointer. The
+                  reporter said so, and was right.
+                </p>
+                <p>
+                  The honest fix was to stop pretending a <code>div</code> is a control.{' '}
+                  <strong>The keyboard path is three native range inputs</strong>, Size, Horizontal
+                  and Vertical, below the picture. A range input announces its name, its value and
+                  its bounds without being told to, moves by its step on an arrow key, and is
+                  understood by every assistive technology. The old arrow-key handler moved the
+                  crop and said nothing about where it had got to; these report it. Dragging the
+                  circle is unchanged, and the Size control still grows from the middle, so the
+                  part you framed stays framed.
+                </p>
+                <p>
+                  The same component had a second fault the report did not mention. Its four
+                  corner handles were real <code>&lt;button&gt;</code> elements with labels like
+                  &quot;Resize from the top left&quot; and <strong>no keyboard handler at all</strong>,
+                  so the keyboard tour of the dialog was four buttons that announced a job they
+                  could not do. They are pointer affordances now, out of the tab order, and the
+                  sliders are the way through.
+                </p>
+                <p>
+                  <strong>The reason this shipped is the part worth fixing.</strong> Grit&apos;s CI
+                  scaffolds projects and builds every frontend, and a build says nothing about
+                  Biome&apos;s accessibility rules: Next compiles the broken markup happily. The
+                  nightly canary now runs each generated app&apos;s own <code>lint</code> script,
+                  the one a user runs, across the scaffold matrix. A unit test asserts the same
+                  property where it is cheap, so a regression fails <code>go test</code> rather
+                  than waiting for the night.
+                </p>
+              </div>
+            </div>
+
             {/* v3.412.0 */}
             <div className="mb-12" id="v3.412.0">
               <div className="flex items-center gap-3 mb-4">

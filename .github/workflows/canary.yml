@@ -121,6 +121,40 @@ jobs:
             exit 1
           fi
 
+      # A scaffolded project has to pass its own lint, and nothing checked that
+      # until a project did: a fresh --triple scaffold failed `pnpm lint` on an
+      # admin component nobody had touched, so the first push of a new project
+      # failed its own CI (grit#116). Building a frontend does not catch it,
+      # because Biome's accessibility rules are not type errors and Next builds
+      # happily around them.
+      #
+      # This runs the generated project's own lint script, not one chosen here,
+      # so the thing being checked is what a user actually runs.
+      - name: Every frontend passes its own lint
+        run: |
+          cd /tmp/canary/app
+          failed=""
+          for app in web admin docs; do
+            [ -d "apps/$app" ] || continue
+            grep -q '"lint"' "apps/$app/package.json" || continue
+            echo "::group::lint apps/$app"
+            if ! (cd "apps/$app" && pnpm lint 2>&1 | tee "/tmp/lint-$app.log"); then
+              failed="$failed $app"
+            fi
+            echo "::endgroup::"
+          done
+          if [ -d frontend ] && grep -q '"lint"' frontend/package.json; then
+            echo "::group::lint frontend"
+            if ! (cd frontend && pnpm lint 2>&1 | tee /tmp/lint-frontend.log); then
+              failed="$failed frontend"
+            fi
+            echo "::endgroup::"
+          fi
+          if [ -n "$failed" ]; then
+            echo "LINT FAILED:$failed"
+            exit 1
+          fi
+
       # Advisory-only: the npm graph of a scaffolded app is large and mostly
       # build-time tooling, so a high-severity transitive advisory should be
       # visible in the log without failing the drift signal this job exists for.
