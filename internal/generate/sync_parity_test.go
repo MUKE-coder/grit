@@ -75,6 +75,12 @@ func TestSyncAndGenerateAgreeOnEveryFieldType(t *testing.T) {
 		}
 	}
 
+	// A server-set column is in neither schema, which a key-by-key comparison
+	// of the two writers cannot tell from both of them being wrong.
+	if _, present := got["closed_at"]; present {
+		t.Error("closed_at is server-set and should not be asked of a caller")
+	}
+
 	// The conditional field's rule is a refinement, not a type, so a field-by
 	// -field comparison cannot see it.
 	if strings.Contains(string(generated), "superRefine") && !strings.Contains(synced, "superRefine") {
@@ -179,6 +185,13 @@ func everyFieldTypeDefinition() *ResourceDefinition {
 			{Name: "cover", Type: "file"},
 			{Name: "gallery", Type: "files"},
 			{Name: "stage", Type: "select", Required: true, Options: opt("a", "b")},
+			// A default makes a required field optional in create, because the
+			// server fills it in. The two writers disagreed about this and the
+			// fixture had no defaulted field to notice with (grit#114).
+			{Name: "mode", Type: "select", Required: true, Default: "draft",
+				Options: opt("draft", "live")},
+			// And a column the server fills belongs in neither schema.
+			{Name: "closed_at", Type: "datetime", ServerSet: true},
 			{Name: "pick", Type: "radio", Options: opt("x")},
 			{Name: "perms", Type: "check", Options: opt("read", "write")},
 			{Name: "email_addr", Type: "email", Required: true},

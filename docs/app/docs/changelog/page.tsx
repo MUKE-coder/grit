@@ -66,6 +66,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.26 */}
+            <div className="mb-12" id="v3.411.26">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.26
+                </span>
+                <span className="text-sm text-muted-foreground">October 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A partial update had to send every optional date</h3>
+                <p>
+                  <code>UpdateDealSchema.parse(&#123; title: &quot;New title&quot; &#125;)</code>{' '}
+                  failed, asking for <code>expected_close</code> and{' '}
+                  <code>closed_at</code>. The update schema exists so a PATCH can send
+                  only what changed, and it was demanding every optional date on the
+                  model.
+                </p>
+                <p>
+                  The rule said to add <code>.optional()</code> to every field unless it
+                  already had <code>.optional()</code> or <code>.nullable()</code>, and
+                  the documentation stated it that way too. The rule was the bug.{' '}
+                  <code>.nullable()</code> allows the value null, not an absent key, so
+                  skipping those fields defeated the partial update the same sentence
+                  promised. The docs now say what is true.
+                </p>
+                <p>
+                  The same mistake made an optional date a required key on create: a form
+                  that left &quot;expected close&quot; empty had to send{' '}
+                  <code>expected_close: null</code> explicitly or fail. Dates, datetimes,
+                  files and rich text were all excluded from the optional suffix on the
+                  same reasoning, and all four are fixed.
+                </p>
+                <h4>A default now means optional</h4>
+                <p>
+                  A field with <code>default: open</code> was mandatory on create,
+                  although the point of a default is that the server fills it in when the
+                  client says nothing. The generator read the default and sync did not, so
+                  the two also disagreed, which the parity test did not catch because its
+                  fixture had no defaulted field. It has one now.
+                </p>
+                <h4>server_set, for the columns a client never sends</h4>
+                <p>
+                  A <code>closed_at</code> derived by a hook, a{' '}
+                  <code>last_activity_at</code> a service maintains: these were offered as
+                  input, so a form asked somebody to type a value the next write would
+                  overwrite. Mark the field <code>server_set: true</code> and it comes out
+                  of create, update and the admin form, the way id and the timestamps
+                  already do, while staying in the response and the entity schema.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Reported from a project built with Grit: grit#114.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.25 */}
             <div className="mb-12" id="v3.411.25">
               <div className="flex items-center gap-3 mb-4">

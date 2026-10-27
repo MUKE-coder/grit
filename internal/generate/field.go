@@ -169,6 +169,20 @@ type Field struct {
 	SlugSource   string `yaml:"slug_source"`
 	RelatedModel string `yaml:"related_model"`
 
+	// ServerSet marks a column the server fills and a client never sends: a
+	// closed_at derived from a status by a hook, a last_activity_at a service
+	// maintains, a computed total.
+	//
+	// It comes out of the create and update schemas, out of the admin form and
+	// out of the writable column list, the same way id, created_at and version
+	// already do. Without it those columns were offered as input, so a form
+	// asked somebody to type a value the next write would overwrite
+	// (grit#114).
+	//
+	// The column still exists, is still returned, and is still in the entity
+	// schema. This says who writes it, not whether it is there.
+	ServerSet bool `yaml:"server_set,omitempty"`
+
 	// Encrypted stores the column as crypto.EncryptedString: AES-256-GCM at
 	// rest, plaintext in code and over the wire. Set by the :encrypted
 	// modifier, on string, text and richtext fields only.
@@ -728,8 +742,27 @@ func (f Field) ZodType() string {
 		base = "z.string()"
 	}
 
-	if !f.Required && FieldType(f.Type) != FieldDatetime && FieldType(f.Type) != FieldDate && FieldType(f.Type) != FieldSlug && FieldType(f.Type) != FieldRichtext && FieldType(f.Type) != FieldBelongsTo && FieldType(f.Type) != FieldManyToMany && FieldType(f.Type) != FieldStringArray && FieldType(f.Type) != FieldCheck && FieldType(f.Type) != FieldFile && FieldType(f.Type) != FieldFiles {
-		base += ".optional()"
+	// A key that may be left out of the payload.
+	//
+	// Two reasons it may: the field is not required, or it is required and has
+	// a default, which the server fills in when the client says nothing.
+	//
+	// This used to exclude dates, datetimes, files and rich text as well, on
+	// the reasoning that .nullable() already said "this may be empty". It does
+	// not: .nullable() lets the key be null, not absent, so an optional date
+	// was a key every create form had to send explicitly as null (grit#114).
+	// The three exclusions left are real. A slug never reaches the schema at
+	// all, a belongs_to has its optionality decided by the caller, which knows
+	// whether the relationship is required, and a files field already carries
+	// .default([]), which makes it optional in Zod.
+	if !f.Required || f.Default != "" {
+		switch FieldType(f.Type) {
+		case FieldSlug, FieldBelongsTo, FieldFiles:
+		default:
+			if !strings.Contains(base, ".optional()") {
+				base += ".optional()"
+			}
+		}
 	}
 
 	return base

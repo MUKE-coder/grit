@@ -384,6 +384,12 @@ func (g *Generator) writeGoModel(names Names) error {
 		// builds the create schema from this file, and without the tag it
 		// demanded a slug the hook was about to overwrite (grit#108). The
 		// value is the column it comes from, which is worth saying anyway.
+		// Filled by the server, so nothing should ask a caller for it. Named
+		// in the model because `grit sync` builds the schemas from this file
+		// and cannot tell a computed column from an ordinary one.
+		if f.ServerSet {
+			tags += ` server:"true"`
+		}
 		if f.IsSlug() {
 			source := toSnakeCase(f.SlugSource)
 			if source == "" {
@@ -738,6 +744,10 @@ func (g *Generator) writeZodSchema(names Names) error {
 		if owner != nil && f.Name == owner.Name {
 			continue
 		}
+		// And a column the server fills, for the same reason.
+		if f.ServerSet {
+			continue
+		}
 
 		// belongs_to: use FK column name (e.g., category_id)
 		if f.IsBelongsTo() {
@@ -794,10 +804,7 @@ func (g *Generator) writeZodSchema(names Names) error {
 		createFields += fmt.Sprintf("  %s: %s,\n", snakeName, zodType)
 
 		// Update schema: make all fields optional
-		updateZod := f.ZodType()
-		if !strings.Contains(updateZod, ".optional()") && !strings.Contains(updateZod, ".nullable()") {
-			updateZod += ".optional()"
-		}
+		updateZod := OptionalForUpdate(f.ZodType())
 		updateFields += fmt.Sprintf("  %s: %s,\n", snakeName, updateZod)
 	}
 

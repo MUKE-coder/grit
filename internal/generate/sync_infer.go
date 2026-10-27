@@ -45,6 +45,17 @@ func inferField(f GoField, all []GoField) (Field, bool) {
 	// binding:"required" for one of these, because that would refuse every row
 	// the condition does not hold for, so the requiredif tag is the only thing
 	// that says the rule exists.
+	// A column with a default may be left out of a create: the database fills
+	// it in. The generator knew this from the definition and sync did not, so
+	// the two disagreed on every defaulted field (grit#114).
+	//
+	// "null" is not a default in this sense. It is how an optional foreign key
+	// is written, and that case is decided by the relationship rather than by
+	// the column.
+	if d := gormOption(f.GORMTag, "default"); d != "" && !strings.EqualFold(d, "null") {
+		out.Default = d
+	}
+
 	if on, value, found := strings.Cut(f.RequiredIf, "="); found {
 		out.Required = true
 		out.ShowWhen = &FieldCondition{Field: on, Value: value}

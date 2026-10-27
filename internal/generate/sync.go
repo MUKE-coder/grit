@@ -165,6 +165,7 @@ type GoField struct {
 	Sanitize   string
 	Slug       string
 	Owner      bool
+	ServerSet  bool
 }
 
 // parseGoStructs parses all struct declarations from a Go file.
@@ -227,6 +228,7 @@ func parseGoStructs(filePath string) ([]GoStruct, error) {
 					goField.Sanitize = extractTag(tag, "sanitize")
 					goField.Slug = extractTag(tag, "slug")
 					goField.Owner = extractTag(tag, "owner") == "true"
+					goField.ServerSet = extractTag(tag, "server") == "true"
 				}
 
 				// Skip fields with json:"-"
@@ -323,7 +325,7 @@ func buildZodSchema(s GoStruct) string {
 		// whatever the body said. Asking a create form for either is asking
 		// for a value that will be discarded, and the form cannot be
 		// submitted without inventing one.
-		if f.Slug != "" || f.Owner {
+		if f.Slug != "" || f.Owner || f.ServerSet {
 			continue
 		}
 
@@ -361,10 +363,7 @@ func buildZodSchema(s GoStruct) string {
 
 		createFields.WriteString(fmt.Sprintf("  %s: %s,\n", key, zodType))
 
-		updateZod := zodType
-		if !strings.Contains(updateZod, ".optional()") && !strings.Contains(updateZod, ".nullable()") {
-			updateZod += ".optional()"
-		}
+		updateZod := OptionalForUpdate(zodType)
 		updateFields.WriteString(fmt.Sprintf("  %s: %s,\n", key, updateZod))
 	}
 
@@ -447,6 +446,24 @@ export type Update%sInput = z.infer<typeof Update%sSchema>;
 //
 // ok is false when the Go type says nothing a resource field can be inferred
 // from, and the caller keeps the plain type mapping.
+// OptionalForUpdate makes a validator accept an absent key.
+//
+// The update schema exists so a PATCH can send only what changed, which means
+// every key in it is optional. This used to skip anything already carrying
+// .nullable(), which reads as "that one can be empty already" and is wrong:
+// .nullable() allows null, not absent. An optional date was therefore a key
+// every partial update had to send, which is the opposite of what the schema
+// is for (grit#114).
+//
+// One function because the rule was written out at three call sites, and three
+// copies of a rule is three chances for it to stop being the same rule.
+func OptionalForUpdate(zod string) string {
+	if strings.Contains(zod, ".optional()") {
+		return zod
+	}
+	return zod + ".optional()"
+}
+
 func syncZod(f GoField, s GoStruct) (Field, string, bool) {
 	field, ok := inferField(f, s.Fields)
 	if !ok {

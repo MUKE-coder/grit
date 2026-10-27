@@ -290,9 +290,7 @@ func (g *Generator) injectZodField(names Names, f Field) error {
 		return err
 	}
 	updateZod := f.ZodType()
-	if !strings.Contains(updateZod, ".optional()") && !strings.Contains(updateZod, ".nullable()") {
-		updateZod += ".optional()"
-	}
+	updateZod = OptionalForUpdate(updateZod)
 	return injectAfterAnyAnchor(path,
 		[]string{fmt.Sprintf("export const Update%sSchema = z.object({", names.Pascal)},
 		fmt.Sprintf("  %s: %s,", snake, updateZod))

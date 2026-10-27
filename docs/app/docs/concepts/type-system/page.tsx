@@ -462,13 +462,29 @@ import { API_ROUTES, ROLES } from "@shared/constants";`} />
                   <div className="p-4 rounded-lg border border-border/30 bg-card/30">
                     <h3 className="text-sm font-semibold mb-1.5">UpdateSchema</h3>
                     <p className="text-xs text-muted-foreground/70 leading-relaxed">
-                      Same fields as CreateSchema, but every field gets <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.optional()</code> appended
-                      (unless it already has <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.optional()</code> or
-                      <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.nullable()</code>).
-                      This allows partial updates where the frontend only sends the changed fields.
+                      Same fields as CreateSchema, with <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.optional()</code> on
+                      every one of them, so a PATCH can send only what changed. Nullable fields
+                      included: <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.nullable()</code> allows
+                      the value null, not an absent key, so skipping them made every optional
+                      date a key a partial update had to send.
                     </p>
                   </div>
                 </div>
+                <p className="text-sm text-muted-foreground leading-relaxed mt-4">
+                  Neither schema asks for a column the server fills. The id, the
+                  timestamps and the version are left out on sight. For your own
+                  computed columns, a hook-derived <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">closed_at</code> or
+                  a service-maintained <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">last_activity_at</code>,
+                  mark the field <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">server_set: true</code> in
+                  the definition. It stays in the response and in the entity schema, and
+                  comes out of create, update and the admin form, so nobody is asked to
+                  type a value the next write overwrites.
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed mt-3">
+                  A field with a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">default</code> is
+                  optional on create even when it is required, because the server supplies
+                  it when the client says nothing.
+                </p>
               </div>
 
               {/* Field Name Conversion in Zod */}
