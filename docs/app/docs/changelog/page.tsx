@@ -66,6 +66,74 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.18 */}
+            <div className="mb-12" id="v3.411.18">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.18
+                </span>
+                <span className="text-sm text-muted-foreground">October 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit sync wrote a weaker schema over the one the generator wrote</h3>
+                <p>
+                  Two writers produced the Zod schema for a resource and nothing
+                  compared them. <code>grit generate resource</code> wrote it from the
+                  definition, which knows every rule. <code>grit sync</code> then rewrote
+                  the same file from the Go model, and sync is the documented step after
+                  generating, so sync&apos;s file is the one projects kept.
+                </p>
+                <p>
+                  It was the weaker of the two in nine ways at once. Money became{' '}
+                  <code>z.unknown()</code>. A select became <code>z.string()</code> with
+                  its values gone. A foreign key lost <code>.uuid()</code>, a required
+                  string lost <code>.min(1)</code>, and the formatted types lost the
+                  shared schemas that trim, lowercase and bound them. A field required
+                  only while another field holds a value became required always. The slug
+                  and the owner column, both filled by the server, were asked for. And{' '}
+                  <code>version</code> was required on create although it travels as an
+                  ETag and the service drops it from the body. A create form validated
+                  with that schema could not be submitted at all.
+                </p>
+                <h4>Sync no longer decides</h4>
+                <p>
+                  The fix is not a second set of rules in sync. The Go model already
+                  carries what it needs, so sync now reconstructs the field each column
+                  was generated from and hands it to <code>Field.ZodType()</code>, the
+                  emitter the generator uses. The create and update schemas it writes are
+                  byte-for-byte the ones the generator wrote.
+                </p>
+                <p>
+                  Two columns the model could not describe now describe themselves. A
+                  slug carries <code>slug:&quot;title&quot;</code>, naming the column it
+                  is derived from, and the owner of an <code>--owned-by</code> resource
+                  carries <code>owner:&quot;true&quot;</code>. A third was missing
+                  entirely: a required number or money column carries{' '}
+                  <code>required:&quot;true&quot;</code>, because gin&apos;s{' '}
+                  <code>binding:&quot;required&quot;</code> rejects 0 and false and has
+                  never been safe to put on one.
+                </p>
+                <p>
+                  There is a test that generates a resource with all thirty field types
+                  and fails on any field where the two writers disagree. The nine bugs
+                  are not the point; the tenth not being addable to one writer alone is.
+                </p>
+                <h4>Found while fixing it</h4>
+                <p>
+                  The public form-share reader had the same fault from the same cause. It
+                  skipped a slug column only when it was literally called{' '}
+                  <code>slug</code>, read required from <code>binding</code> alone so
+                  every required number said optional, and offered{' '}
+                  <code>archived_at</code> to the person filling in the form, which is
+                  the fault grit#101 fixed in the admin and nobody looked for here.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Reported from a project built with Grit: grit#108.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.17 */}
             <div className="mb-12" id="v3.411.17">
               <div className="flex items-center gap-3 mb-4">

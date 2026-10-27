@@ -245,6 +245,15 @@ func (g *Generator) injectModelField(names Names, f Field) error {
 		}
 	} else if f.Required && f.GoType() == "string" {
 		tags += ` binding:"required"`
+	} else if f.Required && !f.IsSlug() {
+		// Required, and not a string, so gin cannot carry the rule:
+		// binding:"required" rejects 0 and false, which are values these
+		// columns legitimately hold, so the generator has always left it off.
+		// That left the model saying nothing at all about a required int or a
+		// required money column, and `grit sync` read the silence as optional
+		// (grit#108). Declared here instead: a statement for whoever reads the
+		// model, with none of binding's runtime behaviour.
+		tags += ` required:"true"`
 	}
 	if FieldType(f.Type) == FieldRichtext && !f.Encrypted {
 		tags += ` sanitize:"html"`

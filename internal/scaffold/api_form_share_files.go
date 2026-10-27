@@ -259,6 +259,11 @@ func reflectPublicFields(model interface{}) []PublicFieldInfo {
 		"deleted_at": true,
 		"version":    true,
 		"slug":       true,
+		// The archive bookkeeping. Offered on a public form it asks a
+		// stranger to pick the date their submission was put away, which is
+		// the same fault grit#101 fixed in the admin's forms and nobody
+		// looked for here.
+		"archived_at": true,
 	}
 
 	var out []PublicFieldInfo
@@ -275,7 +280,19 @@ func reflectPublicFields(model interface{}) []PublicFieldInfo {
 			continue
 		}
 
-		required := false
+		// A slug is derived from another column by the model's hook, under
+		// whatever name it was given. The skip list above only knows a column
+		// literally called "slug", so one called "handle" was offered on the
+		// public form as a question nobody can answer.
+		if f.Tag.Get("slug") != "" {
+			continue
+		}
+
+		// Required comes from two tags, because gin's cannot be used on every
+		// type: binding:"required" rejects 0 and false, so a required number
+		// or money column carries required:"true" instead. Reading only the
+		// first marked every one of them optional.
+		required := f.Tag.Get("required") == "true"
 		for _, part := range strings.Split(f.Tag.Get("binding"), ",") {
 			if strings.TrimSpace(part) == "required" {
 				required = true

@@ -1122,6 +1122,51 @@ export default function CLICheatsheetPage() {
                   . Run this whenever you manually edit a Go model to keep
                   frontend types in sync.
                 </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  It writes the same schema{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    grit generate resource
+                  </code>{" "}
+                  does, because it reconstructs each field from the model and
+                  hands it to the same emitter. Running sync after generating
+                  does not weaken what the generator wrote.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  That means the tags on a hand-written model decide what the
+                  schema validates:{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    binding:&quot;required&quot;
+                  </code>{" "}
+                  on a string and{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    required:&quot;true&quot;
+                  </code>{" "}
+                  on anything else (gin&apos;s required rejects 0 and false, so
+                  it is not usable on a number),{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    enum:&quot;a|b|c&quot;
+                  </code>{" "}
+                  for a closed set,{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    requiredif:&quot;status=lost&quot;
+                  </code>{" "}
+                  for a rule that only applies sometimes,{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    format:&quot;email&quot;
+                  </code>{" "}
+                  for a formatted column, and{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    slug:&quot;title&quot;
+                  </code>{" "}
+                  or{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    owner:&quot;true&quot;
+                  </code>{" "}
+                  for a column the server fills, which no create form should
+                  ask for. The id, the timestamps and the version are left out
+                  of create and update on sight: the version travels as an
+                  ETag, never in the body.
+                </p>
                 <div className="space-y-3">
                   <TerminalCard
                     cmd="grit sync"

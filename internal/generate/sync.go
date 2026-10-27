@@ -148,6 +148,23 @@ type GoField struct {
 	// Enum is the pipe-separated values a choice column may hold, read from
 	// its enum tag. Empty for every other column.
 	Enum string
+
+	// The rest of what the model already says about the column, which sync
+	// used to ignore and then write a schema that contradicted (grit#108).
+	//
+	// Binding is the gin binding tag: "required" is the only part that
+	// matters here. RequiredIf is the condition under which the column is
+	// required, as "status=lost". Sanitize tells rich text from plain text,
+	// which are the same Go type. Slug names the column a slug is derived
+	// from, and Owner marks the owner column of an --owned-by resource:
+	// both are filled by the server, and neither is otherwise distinguishable
+	// from an ordinary string.
+	Binding    string
+	Required   bool
+	RequiredIf string
+	Sanitize   string
+	Slug       string
+	Owner      bool
 }
 
 // parseGoStructs parses all struct declarations from a Go file.
@@ -204,6 +221,12 @@ func parseGoStructs(filePath string) ([]GoStruct, error) {
 					goField.GORMTag = extractTag(tag, "gorm")
 					goField.Format = extractTag(tag, "format")
 					goField.Enum = extractTag(tag, "enum")
+					goField.Binding = extractTag(tag, "binding")
+					goField.Required = extractTag(tag, "required") == "true"
+					goField.RequiredIf = extractTag(tag, "requiredif")
+					goField.Sanitize = extractTag(tag, "sanitize")
+					goField.Slug = extractTag(tag, "slug")
+					goField.Owner = extractTag(tag, "owner") == "true"
 				}
 
 				// Skip fields with json:"-"
@@ -272,9 +295,17 @@ func buildTSType(s GoStruct) string {
 	return fmt.Sprintf("export interface %s {\n%s}\n", s.Name, fields.String())
 }
 
+// buildZodSchema writes a model's create, update and entity schemas.
+//
+// It decides nothing about a field. inferField reconstructs the resource field
+// the column was generated from and Field.ZodType() renders it, which is the
+// same call the generator makes, so the file sync writes says what the file the
+// generator wrote said. See sync_infer.go for why that matters.
 func buildZodSchema(s GoStruct) string {
 	var createFields strings.Builder
 	var updateFields strings.Builder
+	var refinements []conditionalRequired
+	var shaped []Field
 
 	for _, f := range s.Fields {
 		// Skip auto-generated fields
@@ -287,8 +318,33 @@ func buildZodSchema(s GoStruct) string {
 		if isAssociation(f, s.Fields) {
 			continue
 		}
+		// Filled by the server. A slug is derived from another column by a
+		// hook, and the owner of an --owned-by row is the signed-in user,
+		// whatever the body said. Asking a create form for either is asking
+		// for a value that will be discarded, and the form cannot be
+		// submitted without inventing one.
+		if f.Slug != "" || f.Owner {
+			continue
+		}
 
-		zodType := fieldZod(f)
+		field, zodType, ok := syncZod(f, s)
+		if ok {
+			shaped = append(shaped, field)
+
+			// "Required while it is shown" is a predicate, not a flag.
+			// Marking it required in the object rejects every row the
+			// condition does not hold for.
+			if field.ShowWhen != nil && field.Required {
+				refinements = append(refinements, conditionalRequired{
+					Field: f.JSONName,
+					On:    toSnakeCase(field.ShowWhen.Field),
+					Value: field.ShowWhen.Value,
+				})
+				if !strings.Contains(zodType, ".optional()") {
+					zodType += ".optional()"
+				}
+			}
+		}
 
 		// The JSON tag's own name, not camelCase.
 		//
@@ -324,7 +380,9 @@ func buildZodSchema(s GoStruct) string {
 	//
 	// It is also the useful one. Create and update describe what goes in;
 	// this describes what comes back, id and timestamps included, which is
-	// what you validate an API response against.
+	// what you validate an API response against. A slug and an owner column
+	// belong here for the same reason: the server fills them, and then sends
+	// them.
 	var entityFields strings.Builder
 	for _, f := range s.Fields {
 		// Keyed by the JSON tag, like the create and update pair above and
@@ -340,19 +398,31 @@ func buildZodSchema(s GoStruct) string {
 		// builder has no way to reach for it, so it stays permissive rather
 		// than pretending to validate.
 		zodType := fieldZod(f)
-		if isAssociation(f, s.Fields) {
+		switch {
+		case isAssociation(f, s.Fields):
 			zodType = "z.unknown().optional()"
+		case isAutoField(f.JSONName):
+			// id, the timestamps and the version, from their Go types alone.
+			// These are the framework's columns and the API always sends
+			// them: inferring a resource field from one would make id
+			// optional and created_at nullable, which is a response this API
+			// does not produce.
+		default:
+			if field, zod, ok := syncZod(f, s); ok {
+				shaped = append(shaped, field)
+				zodType = zod
+			}
 		}
 		entityFields.WriteString(fmt.Sprintf("  %s: %s,\n", key, zodType))
 	}
 
-	return fmt.Sprintf(`import { z } from "zod";
+	return fmt.Sprintf(`%s
 
 export const %sSchema = z.object({
 %s});
 
 export const Create%sSchema = z.object({
-%s});
+%s})%s;
 
 export const Update%sSchema = z.object({
 %s});
@@ -360,8 +430,38 @@ export const Update%sSchema = z.object({
 export type %s = z.infer<typeof %sSchema>;
 export type Create%sInput = z.infer<typeof Create%sSchema>;
 export type Update%sInput = z.infer<typeof Update%sSchema>;
-`, s.Name, entityFields.String(), s.Name, createFields.String(), s.Name, updateFields.String(),
+`, zodSchemaImports(shaped),
+		s.Name, entityFields.String(),
+		s.Name, createFields.String(), zodRefinements(refinements),
+		s.Name, updateFields.String(),
 		s.Name, s.Name, s.Name, s.Name, s.Name, s.Name)
+}
+
+// syncZod renders one column, by reconstructing the resource field it was
+// generated from and asking the generator's own emitter.
+//
+// Two rules live here rather than in Field.ZodType, because the generator
+// applies them at its call site too: a self-reference has to accept the empty
+// string, since that is how "this is a root" is spelled, and a belongs_to never
+// takes .optional() from ZodType, so an optional relationship says so itself.
+//
+// ok is false when the Go type says nothing a resource field can be inferred
+// from, and the caller keeps the plain type mapping.
+func syncZod(f GoField, s GoStruct) (Field, string, bool) {
+	field, ok := inferField(f, s.Fields)
+	if !ok {
+		return field, fieldZod(f), false
+	}
+	zod := field.ZodType()
+	if FieldType(field.Type) == FieldBelongsTo {
+		if selfReferencing(f, s) {
+			zod += `.or(z.literal(""))`
+		}
+		if !field.Required {
+			zod += ".nullable().optional()"
+		}
+	}
+	return field, zod, true
 }
 
 func goTypeToTS(goType string) string {
@@ -494,6 +594,12 @@ func isAutoField(jsonName string) bool {
 		// The framework's own archive bookkeeping, which sync was offering as
 		// an editable date on every form (grit#101).
 		"archived_at": true,
+		// Optimistic locking. The row's version travels as an ETag and comes
+		// back as If-Match, never in the body: the service drops it from
+		// every write. Required on create, as sync had it, it asked a form
+		// for a number nobody has and refused to submit without one
+		// (grit#108).
+		"version": true,
 	}
 	return auto[jsonName]
 }

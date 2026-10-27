@@ -41,6 +41,7 @@ func (g *Generator) relOptional(f Field) bool {
 
 func (g *Generator) writeGoModel(names Names) error {
 	fields := g.Definition.Fields
+	owner := g.Definition.OwnerField()
 
 	// Detect slug field and resolve source
 	var slugField *Field
@@ -275,10 +276,19 @@ func (g *Generator) writeGoModel(names Names) error {
 			// A pointer with default:null, not an empty string. Postgres
 			// enforces the foreign key, and "" is not a key: it answers
 			// SQLSTATE 23503 rather than storing "no relation".
+			// The owner of an --owned-by row is the signed-in user: the
+			// service stamps it and ignores whatever the body said. Marked
+			// here so a reader of the model knows not to ask for it, which
+			// is how `grit sync` came to write a create schema demanding an
+			// owner id no form has (grit#108).
+			ownerTag := ""
+			if owner != nil && f.Name == owner.Name {
+				ownerTag = ` owner:"true"`
+			}
 			if g.relOptional(f) {
-				structFields += fmt.Sprintf("\t%s *string `gorm:\"size:36;%s;default:null\" json:\"%s\"`\n", fkGoName, fkIndex, fkJson)
+				structFields += fmt.Sprintf("\t%s *string `gorm:\"size:36;%s;default:null\" json:\"%s\"%s`\n", fkGoName, fkIndex, fkJson, ownerTag)
 			} else {
-				structFields += fmt.Sprintf("\t%s string `gorm:\"size:36;%s\" json:\"%s\" binding:\"required\"`\n", fkGoName, fkIndex, fkJson)
+				structFields += fmt.Sprintf("\t%s string `gorm:\"size:36;%s\" json:\"%s\" binding:\"required\"%s`\n", fkGoName, fkIndex, fkJson, ownerTag)
 			}
 			// Association struct.
 			//
@@ -334,6 +344,15 @@ func (g *Generator) writeGoModel(names Names) error {
 			}
 		} else if f.Required && (f.GoType() == "string") && !f.IsSlug() {
 			tags += ` binding:"required"`
+		} else if f.Required && !f.IsSlug() {
+			// Required, and not a string, so gin cannot carry the rule:
+			// binding:"required" rejects 0 and false, which are values these
+			// columns legitimately hold, so the generator has always left it off.
+			// That left the model saying nothing at all about a required int or a
+			// required money column, and `grit sync` read the silence as optional
+			// (grit#108). Declared here instead: a statement for whoever reads the
+			// model, with none of binding's runtime behaviour.
+			tags += ` required:"true"`
 		}
 		if FieldType(f.Type) == FieldRichtext && !f.Encrypted {
 			// Rendered as HTML wherever it is shown, so internal/sanitize cleans
@@ -358,6 +377,22 @@ func (g *Generator) writeGoModel(names Names) error {
 			// The same columns List searches. grit migrate gives them a trigram
 			// index on Postgres, which LIKE '%term%' can use.
 			tags += ` search:"trigram"`
+		}
+		// A slug is derived from another column by the BeforeCreate hook
+		// below, so nothing should ask a caller for one. Named here because
+		// the column is otherwise an ordinary unique string: `grit sync`
+		// builds the create schema from this file, and without the tag it
+		// demanded a slug the hook was about to overwrite (grit#108). The
+		// value is the column it comes from, which is worth saying anyway.
+		if f.IsSlug() {
+			source := toSnakeCase(f.SlugSource)
+			if source == "" {
+				source = toSnakeCase(slugSourceGo)
+			}
+			if source == "" {
+				source = "auto"
+			}
+			tags += fmt.Sprintf(` slug:"%s"`, source)
 		}
 
 		structFields += fmt.Sprintf("\t%s %s `%s`\n", goName, goType, tags)
@@ -766,14 +801,40 @@ func (g *Generator) writeZodSchema(names Names) error {
 		updateFields += fmt.Sprintf("  %s: %s,\n", snakeName, updateZod)
 	}
 
-	// Shared schemas the generated one references directly rather than
-	// inlining, so each shape has one definition.
-	//
-	// Built as a list. Appending to a slice stays correct the day a third
-	// shared schema appears; rewriting an anchor line fails silently the
-	// day the anchor moves.
+	importLines := zodSchemaImports(g.Definition.Fields)
+
+	content := fmt.Sprintf(`%s
+
+export const Create%sSchema = z.object({
+%s})%s;
+
+export const Update%sSchema = z.object({
+%s});
+
+export type Create%sInput = z.infer<typeof Create%sSchema>;
+export type Update%sInput = z.infer<typeof Update%sSchema>;
+`, importLines, names.Pascal, createFields, zodRefinements(refinements),
+		names.Pascal, updateFields,
+		names.Pascal, names.Pascal, names.Pascal, names.Pascal)
+
+	path := filepath.Join(g.SharedRoot(), "schemas", names.Kebab+".ts")
+	return writeFileWithDirs(path, content)
+}
+
+// zodSchemaImports is the import block a schema file needs for the shared
+// schemas its fields reference.
+//
+// Shared with sync, which emits the same file from the Go model: a field that
+// renders as MoneySchema has to import MoneySchema whichever writer rendered
+// it, and sync used to avoid the question by emitting z.unknown() instead
+// (grit#108).
+//
+// Built as a list. Appending to a slice stays correct the day a third shared
+// schema appears; rewriting an anchor line fails silently the day the anchor
+// moves.
+func zodSchemaImports(fields []Field) string {
 	needsFileRef, needsMoney := false, false
-	for _, f := range g.Definition.Fields {
+	for _, f := range fields {
 		if f.IsFileField() {
 			needsFileRef = true
 		}
@@ -792,7 +853,7 @@ func (g *Generator) writeZodSchema(names Names) error {
 	// The formatted types, one import line per module, names sorted so a
 	// regenerate does not reorder them.
 	formatNames := map[string]map[string]bool{}
-	for _, f := range g.Definition.Fields {
+	for _, f := range fields {
 		module, name := f.SharedSchema()
 		if module == "" {
 			continue
@@ -813,24 +874,7 @@ func (g *Generator) writeZodSchema(names Names) error {
 		sort.Strings(list)
 		imports = append(imports, fmt.Sprintf(`import { %s } from "%s";`, strings.Join(list, ", "), module))
 	}
-	importLines := strings.Join(imports, "\n")
-
-	content := fmt.Sprintf(`%s
-
-export const Create%sSchema = z.object({
-%s})%s;
-
-export const Update%sSchema = z.object({
-%s});
-
-export type Create%sInput = z.infer<typeof Create%sSchema>;
-export type Update%sInput = z.infer<typeof Update%sSchema>;
-`, importLines, names.Pascal, createFields, zodRefinements(refinements),
-		names.Pascal, updateFields,
-		names.Pascal, names.Pascal, names.Pascal, names.Pascal)
-
-	path := filepath.Join(g.SharedRoot(), "schemas", names.Kebab+".ts")
-	return writeFileWithDirs(path, content)
+	return strings.Join(imports, "\n")
 }
 
 // conditionalRequired is a field that is required only while its condition
