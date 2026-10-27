@@ -83,7 +83,7 @@ func writeSingleFrontendFiles(root string, opts Options) error {
 		files[path] = content
 	}
 
-	for path, content := range files {
+	for path, content := range withoutRemoved(files, root, opts) {
 		if err := writeFile(path, content); err != nil {
 			return fmt.Errorf("writing %s: %w", path, err)
 		}
@@ -197,7 +197,7 @@ func writeSingleRootFiles(root string, opts Options) error {
 		filepath.Join(root, ".gitignore"): singleGitignore(),
 	}
 
-	for path, content := range files {
+	for path, content := range withoutRemoved(files, root, opts) {
 		if err := writeFile(path, content); err != nil {
 			return fmt.Errorf("writing %s: %w", path, err)
 		}

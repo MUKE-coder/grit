@@ -9,7 +9,7 @@ import (
 )
 
 func writeWebFiles(root string, opts Options) error {
-	for path, content := range webFileMap(root, opts) {
+	for path, content := range withoutRemoved(webFileMap(root, opts), root, opts) {
 		if deletedRouteFile(path) {
 			continue
 		}

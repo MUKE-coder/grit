@@ -40,7 +40,7 @@ func writeWebTanStackFiles(root string, opts Options) error {
 		filepath.Join(webRoot, "public", ".gitkeep"):                          "",
 	}
 
-	for path, content := range files {
+	for path, content := range withoutRemoved(files, root, opts) {
 		// adminHref fills in where the panel lives, as writeWebFiles does for the
 		// Next.js app. Without it the navbar of every --vite web app carried the
 		// literal {{ADMIN_HREF}}: a link to a page called that.

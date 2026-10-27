@@ -66,6 +66,60 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.20 */}
+            <div className="mb-12" id="v3.411.20">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.20
+                </span>
+                <span className="text-sm text-muted-foreground">October 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>An upgrade put back a resource you had removed, and on a single project removal barely happened</h3>
+                <p>
+                  On a project whose blog had been taken out with{' '}
+                  <code>grit remove resource Blog</code>, <code>grit upgrade</code> wrote
+                  three of its files back: the seeder, the web hook and the blog API
+                  helper. The seeder refers to <code>models.Blog</code>, which was gone,
+                  so a project that built before the upgrade did not build after it. The
+                  files had never been touched by the developer and had been deliberately
+                  deleted, and without git nothing said which command had done it.
+                </p>
+                <p>
+                  Those three are written from the scaffold&apos;s own file maps rather
+                  than by the generator, so removal knew about them and the upgrade did
+                  not. The upgrade now drops the blog example&apos;s files when the
+                  project has no <code>blog.go</code>, decided in one place and applied by
+                  every writer that can emit one, in each architecture. Keyed on the model
+                  rather than on a record of the removal, because a model deleted by hand
+                  leaves exactly the same hole.
+                </p>
+                <h4>And the other side of it</h4>
+                <p>
+                  Checking that fix turned up the same fault facing the other way.{' '}
+                  <code>grit remove resource</code> spelled two of its roots as{' '}
+                  <code>apps/api</code> and <code>apps/web</code>. A single keeps its Go
+                  code in <code>api/</code> and is itself the frontend, so on one of those
+                  the command deleted two files out of ten, left the model, the handler,
+                  the service, the seeder and the hook where they were, and printed
+                  &ldquo;removed successfully&rdquo;. It reads the architecture from{' '}
+                  <code>grit.json</code> now, like everything else does.
+                </p>
+                <h4>--plan is not a dry run</h4>
+                <p>
+                  Its help read like one, and somebody ran it on a project with no git
+                  expecting to be shown what would happen. It has always upgraded as well
+                  as writing the runbook. The help says so now, and the command prints a
+                  line before it writes anything pointing at <code>--diff</code>, which is
+                  the flag that looks without touching.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Reported from a project built with Grit: grit#111.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.19 */}
             <div className="mb-12" id="v3.411.19">
               <div className="flex items-center gap-3 mb-4">

@@ -40,6 +40,18 @@ func (g *Generator) SharedRoot() string {
 
 // sharedRootFrom answers the same question for the commands that have a root and
 // no Generator.
+// removeWebRoot is the customer-facing frontend's directory.
+//
+// A triple keeps it at apps/web. A double has one frontend, also at apps/web,
+// with the admin as a route group inside it. A single IS the frontend: its
+// pages are at the project root, under src/.
+func removeWebRoot(root, arch string) string {
+	if arch == "single" {
+		return root
+	}
+	return filepath.Join(root, "apps", "web")
+}
+
 func sharedRootFrom(root string) string {
 	// Every place a Grit project keeps its shared types.
 	//

@@ -21,13 +21,25 @@ func RemoveResource(name string) error {
 	}
 
 	def := &ResourceDefinition{Name: name}
-	gen := &Generator{Root: root, Definition: def}
+	// The architecture, read from grit.json like everything else reads it.
+	//
+	// Without it the generator answers every path question as though this were
+	// a monorepo, and the two roots below were spelled out as apps/api and
+	// apps/web besides. On a single, whose Go code is in api/ and whose
+	// frontend is at the project root, that meant removal deleted the two
+	// files whose roots happened to be resolved properly, left the model, the
+	// handler, the service, the seeder and the hook where they were, and
+	// printed "removed successfully". Found while fixing grit#111, which is
+	// the same fault seen from the other side: there an upgrade put back what
+	// removal had taken out, here removal never took it out at all.
+	arch, frontend := readGritJSON(root)
+	gen := &Generator{Root: root, Architecture: arch, Frontend: frontend, Definition: def}
 	names := gen.Names()
 
-	apiRoot := filepath.Join(root, "apps", "api")
+	apiRoot := gen.APIRoot()
 	sharedRoot := sharedRootFrom(root)
 	adminRoot := adminRootFrom(root)
-	webRoot := filepath.Join(root, "apps", "web")
+	webRoot := removeWebRoot(root, arch)
 
 	fmt.Printf("\n  Removing resource: %s\n\n", names.Pascal)
 

@@ -39,7 +39,7 @@ func writeMigrateSeedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "database", "migrate.go"):         apiMigrateGo(),
 	}
 
-	for path, content := range files {
+	for path, content := range withoutRemoved(files, root, opts) {
 		content = strings.ReplaceAll(content, "{{MODULE}}", module)
 		if err := writeFile(path, content); err != nil {
 			return fmt.Errorf("writing %s: %w", path, err)

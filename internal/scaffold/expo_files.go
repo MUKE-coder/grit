@@ -63,7 +63,7 @@ func writeExpoFiles(root string, opts Options) error {
 		filepath.Join(expoRoot, "lib", "brand.ts"):                                expoBrand(),
 	}
 
-	for path, content := range files {
+	for path, content := range withoutRemoved(files, root, opts) {
 		if err := writeFile(path, content); err != nil {
 			return fmt.Errorf("writing %s: %w", path, err)
 		}

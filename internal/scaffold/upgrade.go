@@ -59,6 +59,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 
 	opts := Options{
 		ProjectName: projectName,
+		// An upgrade, so the writers can tell a resource this project has
+		// removed from one it has not been given yet (grit#111).
+		Upgrading: true,
 		Style:       readProjectStyle(root),
 		// The theme the project was scaffolded with. Upgrade wrote files that
 		// bake colour values in -- the mobile app's Tailwind config is one --

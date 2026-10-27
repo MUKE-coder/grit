@@ -36,7 +36,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/ui"
 )
 
-var version = "3.411.19"
+var version = "3.411.20"
 
 func main() {
 	if err := rootCommand().Execute(); err != nil {
@@ -1540,6 +1540,15 @@ func upgradeCmd() *cobra.Command {
 			printLogo()
 			cHeading.Printf("\n  Upgrading project to Grit v%s\n\n", version)
 
+			// Said before anything is written, not after. A person who
+			// reached for --plan expecting a dry run has one line in which to
+			// press Ctrl+C, and it is worth more than a note in the summary.
+			if writePlan {
+				cMuted.Println("  --plan upgrades the project as well as writing UPGRADE-PLAN.md.")
+				cMuted.Println("  To see what would change without changing anything, use --diff.")
+				fmt.Println()
+			}
+
 			if err := scaffold.Upgrade(scaffold.UpgradeOptions{
 				Force:    force,
 				ShowDiff: showDiff,
@@ -1578,7 +1587,13 @@ func upgradeCmd() *cobra.Command {
 
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite every file, including ones you have edited")
 	cmd.Flags().BoolVar(&showDiff, "diff", false, "Show what the upgrade would change in the files it leaves alone")
-	cmd.Flags().BoolVar(&writePlan, "plan", false, "Write UPGRADE-PLAN.md: a runbook for the files the upgrade leaves alone")
+	// Says "and upgrades" out loud. Every other tool with a --plan means a dry
+	// run, so this one reads as one, and somebody ran it on a project with no
+	// git expecting to be shown what would happen (grit#111). The flag still
+	// does what it has always done; the help no longer implies otherwise, and
+	// it names the flag that does look without touching anything.
+	cmd.Flags().BoolVar(&writePlan, "plan", false,
+		"Upgrade, and also write UPGRADE-PLAN.md: a runbook for the files the upgrade leaves alone. Not a dry run: use --diff for that")
 
 	return cmd
 }

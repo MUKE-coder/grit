@@ -67,13 +67,20 @@ type Options struct {
 	APIOnly     bool
 	IncludeExpo bool
 	MobileOnly  bool
+
+	// Upgrading is set by Upgrade and by nothing else. It is the difference
+	// between "this project has no blog" and "this project does not have a
+	// blog yet": on a new project the models are written after the seeders,
+	// so a file that asks whether a model exists gets "no" for every project
+	// Grit creates. See removed_resources.go.
+	Upgrading bool
 	Full        bool
 }
 
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.411.19"
+const DefaultVersion = "3.411.20"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
