@@ -729,6 +729,7 @@ func (g *Generator) writeZodSchema(names Names) error {
 	createFields := ""
 	updateFields := ""
 	var refinements []conditionalRequired
+	createKeys := map[string]bool{}
 	owner := g.Definition.OwnerField()
 
 	for _, f := range g.Definition.Fields {
@@ -770,6 +771,7 @@ func (g *Generator) writeZodSchema(names Names) error {
 			if g.relOptional(f) && !strings.Contains(zod, ".optional()") {
 				zod += ".nullable().optional()"
 			}
+			createKeys[fkName] = true
 			createFields += fmt.Sprintf("  %s: %s,\n", fkName, zod)
 			updateFields += fmt.Sprintf("  %s: %s,\n", fkName, strings.TrimSuffix(zod, ".optional()")+".optional()")
 			continue
@@ -778,6 +780,7 @@ func (g *Generator) writeZodSchema(names Names) error {
 		// many_to_many: use <name>_ids (e.g., tag_ids)
 		if f.IsManyToMany() {
 			idsName := strings.TrimSuffix(toSnakeCase(f.Name), "s") + "_ids"
+			createKeys[idsName] = true
 			createFields += fmt.Sprintf("  %s: %s,\n", idsName, f.ZodType())
 			updateFields += fmt.Sprintf("  %s: %s,\n", idsName, f.ZodType())
 			continue
@@ -801,12 +804,18 @@ func (g *Generator) writeZodSchema(names Names) error {
 				zodType += ".optional()"
 			}
 		}
+		createKeys[snakeName] = true
 		createFields += fmt.Sprintf("  %s: %s,\n", snakeName, zodType)
 
 		// Update schema: make all fields optional
 		updateZod := OptionalForUpdate(f.ZodType())
 		updateFields += fmt.Sprintf("  %s: %s,\n", snakeName, updateZod)
 	}
+
+	// A refinement is the one validator that reads a sibling, so it can only
+	// be emitted for a field this schema has. See refinementsFor.
+	kept, dropped := refinementsFor(refinements, createKeys)
+	warnDroppedRefinements(names.Pascal, dropped)
 
 	importLines := zodSchemaImports(g.Definition.Fields)
 
@@ -820,7 +829,7 @@ export const Update%sSchema = z.object({
 
 export type Create%sInput = z.infer<typeof Create%sSchema>;
 export type Update%sInput = z.infer<typeof Update%sSchema>;
-`, importLines, names.Pascal, createFields, zodRefinements(refinements),
+`, importLines, names.Pascal, createFields, zodRefinements(kept),
 		names.Pascal, updateFields,
 		names.Pascal, names.Pascal, names.Pascal, names.Pascal)
 
@@ -890,6 +899,43 @@ type conditionalRequired struct {
 	Field string // the field this applies to, in snake_case
 	On    string // the sibling it depends on
 	Value string // the stored value, not the label
+}
+
+// refinementsFor drops the rules whose condition reads a field this schema
+// does not have, and names what it dropped.
+//
+// A refinement is the one thing in the schema that reads a sibling. Every
+// other validator only sees its own value, so excluding a field is harmless to
+// them and fatal to this: the generated superRefine said `v.status === "lost"`
+// for a status that `server_set` had just taken out, which is a TypeScript
+// error, which stops the shared package compiling, which fails the build of
+// every app that imports it (grit#115).
+//
+// Dropped rather than kept, because a client that is not sent the field cannot
+// evaluate the condition anyway. The rule is not lost: it is on the model as a
+// requiredif tag, and internal/fieldtypes enforces it on every write that has
+// a model, which is the API, a PATCH, a CSV import and a job. What is lost is
+// the inline message on the form, which is worth saying out loud rather than
+// dropping in silence.
+func refinementsFor(rules []conditionalRequired, keys map[string]bool) (kept, dropped []conditionalRequired) {
+	for _, r := range rules {
+		if keys[r.On] {
+			kept = append(kept, r)
+			continue
+		}
+		dropped = append(dropped, r)
+	}
+	return kept, dropped
+}
+
+// warnDroppedRefinements says which ones went and why.
+func warnDroppedRefinements(resource string, dropped []conditionalRequired) {
+	for _, r := range dropped {
+		fmt.Printf("  \u26a0 %s: %s is required when %s is %q, but %s is not in the "+
+			"create schema, so the browser cannot check it. The server still does, "+
+			"from the model's requiredif tag.\n",
+			resource, r.Field, r.On, r.Value, r.On)
+	}
 }
 
 // zodRefinements renders the superRefine that enforces them, or "" when there

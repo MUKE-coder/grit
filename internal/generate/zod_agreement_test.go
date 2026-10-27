@@ -90,12 +90,22 @@ func TestConditionalRequiredBecomesARefinement(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	def.Fields = append(def.Fields, Field{
-		Name:     "lost_reason",
-		Type:     "string",
-		Required: true,
-		ShowWhen: &FieldCondition{Field: "status", Value: "lost"},
-	})
+	// The field the condition reads has to be in the definition. It was not,
+	// and this test asserted a refinement reading a key the schema does not
+	// have, which is a TypeScript error: the output it demanded never
+	// compiled. That is the bug grit#115 turned out to be, in miniature.
+	def.Fields = append(def.Fields,
+		Field{
+			Name:    "status",
+			Type:    "select",
+			Options: []FieldOption{{Value: "open", Label: "Open"}, {Value: "lost", Label: "Lost"}},
+		},
+		Field{
+			Name:     "lost_reason",
+			Type:     "string",
+			Required: true,
+			ShowWhen: &FieldCondition{Field: "status", Value: "lost"},
+		})
 
 	g := newTestGenerator(root, module, def)
 	if err := g.writeZodSchema(g.Names()); err != nil {

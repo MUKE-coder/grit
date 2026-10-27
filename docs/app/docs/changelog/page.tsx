@@ -66,6 +66,52 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.27 */}
+            <div className="mb-12" id="v3.411.27">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.27
+                </span>
+                <span className="text-sm text-muted-foreground">October 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>A conditional rule could point at a field that was no longer there</h3>
+                <p>
+                  <code>server_set</code>, added one release earlier, takes a column out of
+                  the create schema. When another field&apos;s condition read that column,
+                  the refinement generated for it went on saying{' '}
+                  <code>v.status === &quot;lost&quot;</code> for a status that was no
+                  longer in the object. That is a TypeScript error, so{' '}
+                  <code>@repo/shared</code> stopped compiling and the build of every app
+                  importing it failed.
+                </p>
+                <p>
+                  A refinement is the one validator in a schema that reads a sibling.
+                  Every other one sees only its own value, which is why removing a field
+                  is harmless to them and fatal to this. Both writers now emit a
+                  refinement only for a field the schema actually has.
+                </p>
+                <p>
+                  Dropped rather than kept, because a client that is never sent the field
+                  cannot evaluate the condition anyway. The rule itself is not lost: it is
+                  on the model as a <code>requiredif</code> tag, and{' '}
+                  <code>internal/fieldtypes</code> enforces it on every write that has a
+                  model, which is the API, a PATCH, a CSV import and a job. What goes is
+                  the inline message on the form, so the generator says so rather than
+                  dropping it in silence.
+                </p>
+                <p>
+                  An existing test had been asserting exactly this output, for a condition
+                  on a field its own definition did not contain. It was demanding a file
+                  that never compiled, so it is fixed too.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Reported from a project built with Grit: grit#115.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.26 */}
             <div className="mb-12" id="v3.411.26">
               <div className="flex items-center gap-3 mb-4">

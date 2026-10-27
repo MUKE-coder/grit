@@ -308,6 +308,7 @@ func buildZodSchema(s GoStruct) string {
 	var updateFields strings.Builder
 	var refinements []conditionalRequired
 	var shaped []Field
+	createKeys := map[string]bool{}
 
 	for _, f := range s.Fields {
 		// Skip auto-generated fields
@@ -361,11 +362,17 @@ func buildZodSchema(s GoStruct) string {
 			key = toSnakeCase(f.Name)
 		}
 
+		createKeys[key] = true
 		createFields.WriteString(fmt.Sprintf("  %s: %s,\n", key, zodType))
 
 		updateZod := OptionalForUpdate(zodType)
 		updateFields.WriteString(fmt.Sprintf("  %s: %s,\n", key, updateZod))
 	}
+
+	// A refinement reads a sibling, so it can only be emitted for a field the
+	// schema has. See refinementsFor.
+	kept, dropped := refinementsFor(refinements, createKeys)
+	warnDroppedRefinements(s.Name, dropped)
 
 	// The entity schema is emitted alongside the create and update pair.
 	//
@@ -431,7 +438,7 @@ export type Create%sInput = z.infer<typeof Create%sSchema>;
 export type Update%sInput = z.infer<typeof Update%sSchema>;
 `, zodSchemaImports(shaped),
 		s.Name, entityFields.String(),
-		s.Name, createFields.String(), zodRefinements(refinements),
+		s.Name, createFields.String(), zodRefinements(kept),
 		s.Name, updateFields.String(),
 		s.Name, s.Name, s.Name, s.Name, s.Name, s.Name)
 }
