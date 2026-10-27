@@ -66,6 +66,52 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.24 */}
+            <div className="mb-12" id="v3.411.24">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.24
+                </span>
+                <span className="text-sm text-muted-foreground">October 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>grit index: the indexes the lists actually need</h3>
+                <p>
+                  The second half of grit#112. Every generated list is{' '}
+                  <code>WHERE &lt;scope&gt; ORDER BY &lt;column&gt;, id</code>, and
+                  nothing created an index in that shape, so the database sorted the whole
+                  table on disk for every page. Invisible on a seeded table, and the
+                  slowest thing in the product on a real one: 2.3 seconds for one page of
+                  500,000 rows, 16.6 seconds at page 20,000.
+                </p>
+                <p>
+                  <code>grit index</code> works out what each list needs and writes the
+                  SQL. The three parts are already in the project. The scope first,
+                  because it is an equality the planner can seek to: <code>org_id</code>{' '}
+                  for a tenant-owned model, the owner column for an{' '}
+                  <code>--owned-by</code> one, nothing otherwise. Then the sort column.
+                  Then <code>id</code>, because the tiebreaker shipped in v3.411.21 means
+                  an index without that trailing column cannot serve the whole ORDER BY.
+                </p>
+                <p>
+                  Only the default sort by default, which is the one every list request
+                  uses when nobody has clicked a column. An index per sortable column is
+                  write amplification on tables that are mostly written, and nothing at
+                  generation time knows which columns people really sort by, so{' '}
+                  <code>--all-sortable</code> and <code>--only deal=title,status</code>{' '}
+                  are there for when you have a measurement.
+                </p>
+                <p>
+                  It writes SQL and creates nothing. The statements are CONCURRENTLY,
+                  which does not lock the table and therefore cannot run inside a
+                  transaction, so the file says to apply it with psql rather than through
+                  a runner that wraps everything in BEGIN. That is the reason this is not
+                  something AutoMigrate does while somebody is using the product.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.23 */}
             <div className="mb-12" id="v3.411.23">
               <div className="flex items-center gap-3 mb-4">
