@@ -707,6 +707,172 @@ export const CLI_COMMANDS: CliCommand[] = [
     keywords: ['offline', 'sync', 'outbox', 'conflict', 'local first', 'indexeddb'],
   },
   {
+    id: 'index',
+    name: 'grit index',
+    category: 'Data',
+    summary: 'The indexes your list queries need, as SQL you apply.',
+    example: 'grit index --write db/indexes.sql',
+    output: [
+      '  \u2713 db/indexes.sql',
+      '  11 indexes across 11 resources.',
+      '',
+      '  Apply it:',
+      '    psql "$DATABASE_URL" -f db/indexes.sql',
+    ],
+    purpose:
+      'Every generated list is WHERE <scope> ORDER BY <column>, id, and nothing was creating an index in that shape. The database then sorts the whole table on disk for every page, which is invisible on a seeded table and the slowest thing in the product on a real one: 2.3 seconds for one page of 500,000 rows, 16.6 seconds at page 20,000.',
+    useCases: [
+      'Before a table gets large, which is the only cheap time to do it.',
+      'When a list page is slow and EXPLAIN shows a sequential scan and a sort.',
+      'After adding a resource that will hold a lot of rows.',
+    ],
+    notes: [
+      'The index has three parts and the project already says what they are. The scope first, because it is an equality the planner can seek to: org_id for a tenant-owned model, the owner column for an --owned-by one, nothing otherwise. Then the sort column. Then id, because every list orders by the column and then by id to break ties, and an index without that trailing column cannot serve the whole ORDER BY.',
+      'Only the default sort gets an index by default. That is the one every list request uses when nobody has clicked a column, so it pays for itself on every page load. The rest cost write throughput on tables that are mostly written, so --all-sortable and --only deal=title,status are there for when you have a measurement.',
+      'It writes SQL and creates nothing. The statements are CREATE INDEX CONCURRENTLY, which does not lock the table and therefore cannot run inside a transaction: apply the file with psql rather than through a runner that wraps everything in BEGIN.',
+      'Postgres syntax. On MySQL drop CONCURRENTLY; on SQLite drop it and expect the table to be locked while each one builds.',
+    ],
+    files: [
+      { path: 'db/indexes.sql', status: 'created', note: 'with --write; otherwise it prints' },
+    ],
+    docs: [{ label: 'Scaling', href: '/docs/scaling' }],
+    keywords: ['index', 'slow', 'sort', 'order by', 'performance', 'postgres', 'explain', 'pagination'],
+  },
+  {
+    id: 'skills',
+    name: 'grit skills',
+    category: 'Meta',
+    summary: 'Install the expert skills that build with Grit, and see what is installed.',
+    example: 'grit skills install --all',
+    output: [
+      '  \u2713 22 experts and their references',
+      '',
+      '  Start a new session, then:',
+      '      /grit-setup      check what the experts depend on',
+      '      /grit-build      read the project and assign the work',
+    ],
+    purpose:
+      'A pack of Claude skills that build on Grit: a router that reads your project and assigns the work, one expert per architecture, specialists for resources, the admin panel, design, data, security, performance, deployment and review, an independent critic for anything marked done, one that reads what the work cost in tokens, and one that writes up what was worth telling people about.',
+    useCases: [
+      'Setting up a machine to build with Grit and an AI assistant.',
+      'Checking which experts are installed after changing machines.',
+      'Adding the external skills the experts use for design research and browser testing, with --all.',
+    ],
+    notes: [
+      'Installed at user level by default, so every project on the machine gets them. --project installs into this project only.',
+      'They read the docs out of your installed binary rather than from memory, so the answers match the version you are on.',
+      'grit skills status shows what is present without touching the network.',
+      'The pack is MUKE-coder/grit-expert-skills, and the experts file what Grit got wrong as issues while they work.',
+    ],
+    files: [
+      { path: '~/.claude/skills/grit-*', status: 'created', note: 'one directory per expert' },
+    ],
+    keywords: ['skills', 'claude', 'ai', 'experts', 'agent', 'install'],
+  },
+  {
+    id: 'doctor',
+    name: 'grit doctor',
+    category: 'Meta',
+    summary: 'Finds the mistakes that do not announce themselves. Exits non-zero, so CI can run it.',
+    example: 'grit doctor',
+    output: [
+      '  \u2717 Blog is not scoped to an owner: every signed-in user can edit every row',
+      '  \u26a0 GORM Studio is mounted with no login',
+      '  \u2713 18 other checks passed',
+    ],
+    purpose:
+      'Some mistakes compile, pass their tests and ship: an encrypted field with no key, a resource nothing scopes to its owner, a table shared across organizations, a database browser with no login, dashboard credentials still at their defaults. None of them produce an error until somebody else finds them.',
+    useCases: [
+      'In CI, where its exit code fails the build.',
+      'Before a first deployment.',
+      'After installing a plugin that changes how rows are scoped.',
+    ],
+    notes: [
+      'Exits non-zero when anything is an error, so it works as a CI step with no wrapper.',
+      'Warnings do not fail it. The distinction is whether the finding is wrong or only risky.',
+    ],
+    files: [],
+    keywords: ['doctor', 'check', 'lint', 'ci', 'security', 'audit', 'scoping'],
+  },
+  {
+    id: 'scale',
+    name: 'grit scale',
+    category: 'Meta',
+    summary: 'Asks a running API for its percentiles and names the next scaling step.',
+    example: 'grit scale --url https://api.example.com',
+    output: [
+      '  p50 24ms   p95 180ms   p99 1.2s',
+      '  Connections 8/25   Cache hits 71%',
+      '',
+      '  Stage 2. The next step is an index on orders (org_id, created_at, id).',
+    ],
+    purpose:
+      'Reads request percentiles, connection use, the slowest queries and the cache hit rate from a running API, works out which scaling stage it is at, and names the single next thing to do rather than a list of everything that could be improved.',
+    useCases: [
+      'Pointed at production, when something feels slow.',
+      'Before adding capacity, to find out whether capacity is the problem.',
+    ],
+    notes: [
+      'Point it at production. These numbers describe wherever they are measured, and a laptop under no load is always healthy.',
+      'It names one next step on purpose. A list of twelve improvements is a list nobody acts on.',
+    ],
+    files: [],
+    docs: [{ label: 'Scaling', href: '/docs/scaling' }],
+    keywords: ['scale', 'performance', 'percentile', 'p95', 'slow', 'production', 'capacity'],
+  },
+  {
+    id: 'logs',
+    name: 'grit logs',
+    category: 'Run',
+    summary: 'The dev log from grit start, with the errors pulled out.',
+    example: 'grit logs --errors',
+    output: [
+      '  14:02:11 [api] panic: runtime error: invalid memory address',
+      '    internal/handlers/deal.go:118',
+      '',
+      '  3 failures in this run.',
+    ],
+    purpose:
+      'grit start records everything the API and the frontends print into .grit/logs/dev.log and keeps the previous run beside it, so a failure that scrolled past, or one from the run before, is still there.',
+    useCases: [
+      'A stack trace that scrolled off the terminal.',
+      'Finding what happened in the previous run after a restart.',
+      'Grepping for a status code or a request id.',
+    ],
+    notes: [
+      'grit logs is the tail of this run, --errors is only the failures with their traces, and --grep takes a pattern.',
+      'The previous run is kept beside the current one, so restarting does not lose it.',
+    ],
+    files: [
+      { path: '.grit/logs/dev.log', status: 'created', note: 'written by grit start' },
+    ],
+    keywords: ['logs', 'errors', 'stack trace', 'debug', 'dev log'],
+  },
+  {
+    id: 'docs-cmd',
+    name: 'grit docs',
+    category: 'Meta',
+    summary: 'The documentation, embedded in the binary and pinned to its version.',
+    example: 'grit docs search pagination',
+    output: [
+      '  /docs/backend/pagination      Page numbers, cursors, and the tiebreaker',
+      '  /docs/scaling                 What to do when a list gets slow',
+    ],
+    purpose:
+      'Grit ships several releases a week, so the docs site is usually ahead of the version a project is pinned to. This answers from an index built with your binary, and says so when the project was scaffolded with a different one.',
+    useCases: [
+      'Checking what a flag does without leaving the terminal.',
+      'Reading the docs for the version you are actually on, not the newest.',
+      'Working offline.',
+    ],
+    notes: [
+      'The index travels inside the binary, so it needs no network.',
+      'It says when the project was scaffolded with a different version from the CLI reading it.',
+    ],
+    files: [],
+    keywords: ['docs', 'documentation', 'search', 'offline', 'reference'],
+  },
+  {
     id: 'port',
     name: 'grit port',
     category: 'Add',

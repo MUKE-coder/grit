@@ -66,6 +66,49 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.411.25 */}
+            <div className="mb-12" id="v3.411.25">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.411.25
+                </span>
+                <span className="text-sm text-muted-foreground">October 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Six commands the reference did not have</h3>
+                <p>
+                  The command explorer presents itself as the complete reference and was
+                  missing six: <code>grit index</code>, <code>grit skills</code>,{' '}
+                  <code>grit doctor</code>, <code>grit scale</code>,{' '}
+                  <code>grit logs</code> and <code>grit docs</code>. An incomplete
+                  reference is a quiet lie, because the reader concludes the command does
+                  not exist rather than that it is undocumented.
+                </p>
+                <p>
+                  All six are in now, read from what each one actually does rather than
+                  written from memory, and <code>grit port</code>, <code>grit index</code>{' '}
+                  and <code>grit skills</code> have sections in the cheatsheet with the
+                  reasoning, not just the flags.
+                </p>
+                <h4>And a warning that had stopped being true</h4>
+                <p>
+                  The expert skills said <code>apps/web</code> and <code>apps/admin</code>{' '}
+                  have different palettes, and that copying a component between them
+                  produces an element that renders nothing. That stopped being true in
+                  v3.411.21, when both stylesheets came to be written from one function:
+                  the vocabularies are now identical, sixteen token names in each, the
+                  same sixteen, checked on a generated project.
+                </p>
+                <p>
+                  Left alone it would have discouraged <code>grit port</code>, which is
+                  the move it now describes. The old failure is kept as the first thing to
+                  check when a ported component does come out invisible, since an older
+                  project can still be in that state.
+                </p>
+              </div>
+            </div>
+
             {/* v3.411.24 */}
             <div className="mb-12" id="v3.411.24">
               <div className="flex items-center gap-3 mb-4">

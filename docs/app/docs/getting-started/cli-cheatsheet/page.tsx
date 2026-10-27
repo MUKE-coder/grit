@@ -176,6 +176,21 @@ export default function CLICheatsheetPage() {
                         desc: "Sync Go types → TypeScript",
                       },
                       {
+                        cmd: "grit port",
+                        alias: "",
+                        desc: "Copy an admin component into another app",
+                      },
+                      {
+                        cmd: "grit index",
+                        alias: "",
+                        desc: "The indexes your list queries need, as SQL",
+                      },
+                      {
+                        cmd: "grit skills",
+                        alias: "",
+                        desc: "Install the expert skills",
+                      },
+                      {
                         cmd: "grit env",
                         alias: "",
                         desc: "Create .env with fresh secrets after git clone",
@@ -1207,6 +1222,155 @@ export default function CLICheatsheetPage() {
                     desc="Sync Go types → TypeScript types and Zod schemas"
                   />
                 </div>
+              </div>
+
+              {/* -------------------------------------------------------- */}
+              {/*  grit port                                               */}
+              {/* -------------------------------------------------------- */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-2">
+                  grit port
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Copies an admin component, and everything it imports, into another
+                  app. The admin holds the interface work: a table with sorting, filters,
+                  bulk actions, export and import, a form builder, the dashboard widgets.
+                  A customer portal usually wants some of that, and rebuilding it by hand
+                  is how a project ends up with two tables that behave differently.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The files are copied, not shared. They land at the same path in the
+                  target app, which is why they compile unchanged: every Grit frontend
+                  uses the same{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    @/*
+                  </code>{" "}
+                  alias and the same design tokens. From then on they belong to that app.
+                </p>
+                <div className="space-y-3">
+                  <TerminalCard
+                    cmd="grit port list"
+                    desc="The bundles you can ask for: table, table-full, form, widgets, ui"
+                  />
+                  <TerminalCard
+                    cmd="grit port table --to apps/web"
+                    desc="The data table and the files it imports, into the web app"
+                  />
+                  <TerminalCard
+                    cmd="grit port form --to apps/web --dry-run"
+                    desc="List what would be copied, write nothing"
+                  />
+                  <TerminalCard
+                    cmd="grit port components/tables/table-filters.tsx --to apps/web"
+                    desc="One file by path, rather than a bundle"
+                  />
+                </div>
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  It never writes to your package.json. A package the copied files import
+                  that the target does not declare is listed with the command to add it,
+                  because a workspace hoists those: the app type-checks today and fails
+                  when it is built on its own. A file already in the target is kept rather
+                  than replaced, since by then somebody has edited it.
+                </p>
+              </div>
+
+              {/* -------------------------------------------------------- */}
+              {/*  grit index                                              */}
+              {/* -------------------------------------------------------- */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-2">
+                  grit index
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Works out which indexes your lists need and writes the SQL. Every
+                  generated list is{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    WHERE &lt;scope&gt; ORDER BY &lt;column&gt;, id
+                  </code>
+                  , and without an index in that shape the database sorts the whole table
+                  on disk for every page. It is invisible on a seeded table and the
+                  slowest thing in the product on a real one: 2.3 seconds for one page of
+                  500,000 rows, and 16.6 seconds at page 20,000.
+                </p>
+                <div className="space-y-3">
+                  <TerminalCard
+                    cmd="grit index"
+                    desc="Print the statements for the default sort of every list"
+                  />
+                  <TerminalCard
+                    cmd="grit index --write db/indexes.sql"
+                    desc="Write them to a file to apply with psql"
+                  />
+                  <TerminalCard
+                    cmd="grit index --all-sortable"
+                    desc="An index for every sortable column, not just the default sort"
+                  />
+                  <TerminalCard
+                    cmd="grit index --only deal=title,status"
+                    desc="Pick the columns for one resource"
+                  />
+                </div>
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  The scope comes first, because it is an equality the planner can seek
+                  to: org_id for a tenant-owned model, the owner column for an{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    --owned-by
+                  </code>{" "}
+                  one, nothing otherwise. Then the sort column. Then id, because every
+                  list orders by the column and then by id to break ties, and an index
+                  without that trailing column cannot serve the whole ORDER BY.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  Only the default sort gets one by default. That is the sort every list
+                  request uses when nobody has clicked a column, so it pays for itself on
+                  every page load. The rest cost write throughput on tables that are
+                  mostly written, so pick them when you have a measurement.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  It writes SQL and creates nothing. The statements are{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    CREATE INDEX CONCURRENTLY
+                  </code>
+                  , which does not lock the table and therefore cannot run inside a
+                  transaction: apply the file with psql rather than through a runner that
+                  wraps everything in BEGIN.
+                </p>
+              </div>
+
+              {/* -------------------------------------------------------- */}
+              {/*  grit skills                                             */}
+              {/* -------------------------------------------------------- */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-2">
+                  grit skills
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Installs the expert skills: a router that reads your project and assigns
+                  the work, one expert per architecture, specialists for resources, the
+                  admin panel, design, data, security, performance, deployment and review,
+                  an independent critic for anything marked done, one that reads what the
+                  work cost in tokens, and one that writes up what was worth telling
+                  people about.
+                </p>
+                <div className="space-y-3">
+                  <TerminalCard
+                    cmd="grit skills install"
+                    desc="The pack, at user level, so every project on the machine has it"
+                  />
+                  <TerminalCard
+                    cmd="grit skills install --all"
+                    desc="The pack plus the external skills the experts use"
+                  />
+                  <TerminalCard
+                    cmd="grit skills status"
+                    desc="What is installed, without touching the network"
+                  />
+                </div>
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  They read the docs out of your installed binary rather than from memory,
+                  so the answers match the version you are on, and they file what Grit got
+                  wrong as an issue while they work.
+                </p>
               </div>
 
               {/* -------------------------------------------------------- */}
