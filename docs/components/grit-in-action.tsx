@@ -4,6 +4,7 @@ import * as React from 'react'
 import Image from 'next/image'
 import { Pause, Play, Terminal } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { WindowDots } from '@/components/window-dots'
 
 /**
  * Grit in action: the commands on the left, what they produced on the right.
@@ -203,11 +204,9 @@ export function GritInAction() {
           onBlurCapture={() => setPaused(false)}
         >
           {/* ── Left: the terminal ─────────────────────────────── */}
-          <div className="overflow-hidden rounded-xl border border-border bg-[#0b0b12] shadow-2xl">
+          <div className="overflow-hidden rounded-xl border border-border bg-[#0d1117] shadow-2xl">
             <div className="flex items-center gap-2 border-b border-white/5 px-4 py-3">
-              <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-              <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
-              <span className="h-3 w-3 rounded-full bg-[#28c840]" />
+              <WindowDots size="md" />
               <span className="ml-2 inline-flex items-center gap-1.5 font-mono text-xs text-white/40">
                 <Terminal className="h-3.5 w-3.5" aria-hidden="true" />
                 myapp
@@ -231,7 +230,7 @@ export function GritInAction() {
 
             <div className="min-h-[300px] p-5 font-mono text-[13px] leading-relaxed sm:min-h-[340px]">
               <div className="flex gap-2">
-                <span className="shrink-0 text-[#6c5ce7]">$</span>
+                <span className="shrink-0 text-primary">$</span>
                 <span className="break-all text-white/90">
                   {typed}
                   {!reduced && typed.length < current.command.length && (

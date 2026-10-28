@@ -6,6 +6,7 @@ import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { WindowDots } from '@/components/window-dots'
 
 export const metadata = getDocMetadata('/docs/admin/relationships')
 
@@ -82,11 +83,7 @@ export default function RelationshipsPage() {
             <div className="mt-4 mb-8">
               <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
                 <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
+                  <WindowDots />
                   <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                 </div>
                 <div className="p-5 font-mono text-sm">
@@ -217,11 +214,7 @@ db.Preload("Category").First(&product, product.ID)`} />
             <div className="mt-4 mb-8">
               <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
                 <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
+                  <WindowDots />
                   <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                 </div>
                 <div className="p-5 font-mono text-sm">
@@ -707,11 +700,7 @@ GET /api/v1/public/products?category_id=<electronics>,<cameras>,<laptops>
             <div className="mt-4 mb-8">
               <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
                 <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
+                  <WindowDots />
                   <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                 </div>
                 <div className="p-5 font-mono text-sm">

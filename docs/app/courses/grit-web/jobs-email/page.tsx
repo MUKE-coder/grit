@@ -452,7 +452,7 @@ client.Enqueue(task,
             The <Code>*</Code> means {'"'}every{'"'}. Here are common patterns:
           </p>
 
-          <div className="bg-[#0d1526] border border-border/40 rounded-lg overflow-hidden mb-6">
+          <div className="bg-[#0d1117] border border-border/40 rounded-lg overflow-hidden mb-6">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/40">
@@ -580,7 +580,7 @@ scheduler.Register("0 * * * *", asynq.NewTask(TypeSessionCleanup, nil))`}
             Here{"'"}s how they differ:
           </p>
 
-          <div className="bg-[#0d1526] border border-border/40 rounded-lg overflow-hidden mb-6">
+          <div className="bg-[#0d1117] border border-border/40 rounded-lg overflow-hidden mb-6">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/40">

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type React from 'react'
 import { LogIn, MonitorSmartphone, ShieldCheck, KeySquare, Building2, Check } from 'lucide-react'
 import { CodeBlock } from '@/components/code-block'
+import { WindowDots } from '@/components/window-dots'
 
 /**
  * Authentication, as shipped.
@@ -217,11 +218,7 @@ export function AuthShowcase() {
 
               <div className="rounded-xl overflow-hidden border border-border bg-card/40 shadow-[0_24px_64px_-16px_rgba(2,6,23,0.5)]">
                 <div className="flex items-center gap-2 px-3.5 py-2.5 bg-card/70 border-b border-border/60">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
+                  <WindowDots />
                   <span className="mx-auto text-[11px] font-mono text-muted-foreground">
                     {current.chrome}
                   </span>
@@ -239,11 +236,7 @@ export function AuthShowcase() {
           ) : feature.image ? (
             <div className="rounded-xl overflow-hidden border border-border bg-card/40 shadow-[0_24px_64px_-16px_rgba(2,6,23,0.5)]">
               <div className="flex items-center gap-2 px-3.5 py-2.5 bg-card/70 border-b border-border/60">
-                <div className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                </div>
+                <WindowDots />
                 <span className="mx-auto text-[11px] font-mono text-muted-foreground">
                   {feature.imageLabel}
                 </span>

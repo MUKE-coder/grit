@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { WindowDots } from '@/components/window-dots'
 
 interface TerminalLine {
   type: 'command' | 'output' | 'success' | 'step'
@@ -125,11 +126,7 @@ export function AnimatedTerminal() {
     <div className="rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm overflow-hidden glow-purple">
       {/* Terminal header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 bg-accent/30">
-        <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-        </div>
+        <WindowDots />
         <span className="ml-2 text-[11px] font-mono text-muted-foreground/50">terminal</span>
       </div>
       {/* Terminal body */}

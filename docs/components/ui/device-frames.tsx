@@ -9,6 +9,7 @@
 
 import React from 'react'
 import { cn } from '@/lib/utils'
+import { WindowDots } from '@/components/window-dots'
 
 // ─── BrowserFrame ────────────────────────────────────────────────────────
 // Web target. Mac-style window controls + spoofed URL bar with Grit URL.
@@ -34,11 +35,7 @@ export function BrowserFrame({
     >
       {/* Chrome */}
       <div className="flex items-center gap-2 px-3 py-2 bg-card border-b border-border/60">
-        <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-        </div>
+        <WindowDots />
         <div className="flex-1 flex justify-center">
           <div className="inline-flex items-center gap-1.5 rounded-md bg-background border border-border/60 px-2.5 py-1 max-w-[260px] truncate">
             <svg
@@ -90,11 +87,7 @@ export function DesktopFrame({
     >
       {/* Title bar */}
       <div className="flex items-center gap-2 px-3 py-2 bg-card border-b border-border/60">
-        <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-        </div>
+        <WindowDots />
         <div className="flex-1 text-center">
           <span className="text-[11px] font-medium text-muted-foreground">{title}</span>
         </div>

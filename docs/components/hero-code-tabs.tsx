@@ -134,7 +134,7 @@ export function HeroCodeTabs() {
       <div
         role="tablist"
         aria-label="What you get out of the box"
-        className="flex items-center gap-0 overflow-x-auto bg-[#f6f8fa] dark:bg-[#161b22] border-b border-[#d0d7de] dark:border-white/[0.08] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex items-center gap-0 overflow-x-auto bg-muted dark:bg-[#0d1117] border-b border-border dark:border-white/[0.08] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {TABS.map((t) => {
           const selected = t.key === active
@@ -147,8 +147,8 @@ export function HeroCodeTabs() {
               onClick={() => setActive(t.key)}
               className={`inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3.5 py-2.5 text-[12px] font-medium whitespace-nowrap transition-colors ${
                 selected
-                  ? 'border-primary bg-white text-[#24292f] dark:bg-[#0d1117] dark:text-slate-100'
-                  : 'border-transparent text-[#57606a] hover:text-[#24292f] dark:text-slate-500 dark:hover:text-slate-300'
+                  ? 'border-primary bg-white text-foreground dark:bg-[#0d1117] dark:text-slate-100'
+                  : 'border-transparent text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-slate-300'
               }`}
             >
               <t.icon className="h-3.5 w-3.5" />
@@ -158,8 +158,8 @@ export function HeroCodeTabs() {
         })}
       </div>
 
-      <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#0d1117] border-b border-[#d0d7de]/60 dark:border-white/[0.06]">
-        <span className="text-[11px] font-mono text-[#57606a] dark:text-slate-500">{tab.file}</span>
+      <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#0d1117] border-b border-border/60 dark:border-white/[0.06]">
+        <span className="text-[11px] font-mono text-muted-foreground dark:text-muted-foreground">{tab.file}</span>
       </div>
 
       {/* Fixed height so switching tabs does not resize the hero and shove the
@@ -173,9 +173,9 @@ export function HeroCodeTabs() {
         />
       </div>
 
-      <div className="flex items-center gap-2 px-4 py-2.5 bg-[#f6f8fa] dark:bg-[#161b22] border-t border-[#d0d7de] dark:border-white/[0.08]">
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-muted dark:bg-[#0d1117] border-t border-border dark:border-white/[0.08]">
         <ShieldCheck className="h-3 w-3 shrink-0 text-emerald-500" />
-        <span className="text-[11px] font-mono text-[#57606a] dark:text-slate-400 truncate">
+        <span className="text-[11px] font-mono text-muted-foreground dark:text-slate-400 truncate">
           {tab.caption}
         </span>
       </div>

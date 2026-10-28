@@ -75,6 +75,7 @@ const config: Config = {
       // the budget unbreakable through a utility: there is no class that can
       // produce an off-scale corner.
       borderRadius: {
+        DEFAULT: 'calc(var(--radius) - 4px)', // 6, so bare `rounded` is on scale too
         sm: 'calc(var(--radius) - 4px)', // 6
         md: 'var(--radius)', // 10
         lg: 'var(--radius)', // 10

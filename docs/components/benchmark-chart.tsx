@@ -78,7 +78,7 @@ function Bar({
       {/* Top-lit rather than bottom-lit: fading toward the base keeps the pale
           brand colours (Bun's and Encore's creams) from reading as grey. */}
       <div
-        className="w-full rounded-t-[5px] transition-all duration-500"
+        className="w-full rounded-t-sm transition-all duration-500"
         style={{
           height: `${pct}%`,
           background: `linear-gradient(to bottom, ${color}, ${color}bb)`,
@@ -98,7 +98,7 @@ export function BenchmarkChart({ scenarios }: { scenarios: BenchScenario[] }) {
   if (!scenario) return null
 
   return (
-    <div className="rounded-2xl border border-border/40 bg-[#0d0d12] p-5 sm:p-8">
+    <div className="rounded-2xl border border-border/40 bg-[#0d1117] p-5 sm:p-8">
       <div
         role="tablist"
         aria-label="Benchmark scenario"
@@ -136,7 +136,7 @@ export function BenchmarkChart({ scenarios }: { scenarios: BenchScenario[] }) {
             alt=""
             width={16}
             height={16}
-            className="rounded-[4px]"
+            className="rounded-sm"
           />
           <span className="font-medium text-foreground">Grit</span>
         </span>

@@ -77,7 +77,7 @@ export function CapabilityMatrix() {
   const [openRow, setOpenRow] = useState<string | null>(null)
 
   return (
-    <div className="rounded-2xl border border-border/40 bg-[#0d0d12] p-5 sm:p-8">
+    <div className="rounded-2xl border border-border/40 bg-[#0d1117] p-5 sm:p-8">
       {/* ── Legend ─────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mb-8 text-xs">
         {ORDER.map((s) => (

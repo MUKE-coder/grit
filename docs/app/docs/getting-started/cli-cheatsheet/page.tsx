@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from "@/components/code-block";
 import { getDocMetadata } from "@/config/docs-metadata";
+import { WindowDots } from '@/components/window-dots'
 
 export const metadata = getDocMetadata("/docs/getting-started/cli-cheatsheet");
 
@@ -21,11 +22,7 @@ function TerminalCard({
   return (
     <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-        <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-        </div>
+        <WindowDots />
         <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
           terminal
         </span>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { WindowDots } from '@/components/window-dots'
 
 const lines = [
   { text: '$ grit new my-saas --triple --vite', delay: 0, type: 'command' as const },
@@ -39,11 +40,7 @@ export function HeroTerminal() {
     <div className="rounded-xl border border-slate-200 dark:border-border/40 bg-slate-900 overflow-hidden shadow-2xl shadow-black/20">
       {/* Window chrome */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-700/50">
-        <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-          <div className="h-3 w-3 rounded-full bg-[#febc2e]" />
-          <div className="h-3 w-3 rounded-full bg-[#28c840]" />
-        </div>
+        <WindowDots size="md" />
         <span className="text-xs font-mono text-slate-500 ml-2">Terminal</span>
       </div>
 

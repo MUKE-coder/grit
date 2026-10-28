@@ -35,6 +35,7 @@ import { DocsSidebar } from '@/components/docs-sidebar'
 import { CopyPromptButton } from '@/components/copy-prompt-button'
 import { PageHelp } from '@/components/page-help'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { WindowDots } from '@/components/window-dots'
 
 export const metadata = getDocMetadata('/docs/tutorials')
 
@@ -125,9 +126,7 @@ function MockupThumb({ tag, cmd }: { tag: string; cmd: string }) {
   return (
     <div className="relative border-b border-border/40 bg-[#0d1117] px-4 py-3 overflow-hidden">
       <div className="flex items-center gap-1.5 mb-2">
-        <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-        <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-        <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+        <WindowDots />
         <span className="ml-2 text-[10px] font-mono uppercase tracking-wider text-primary/50">{tag}</span>
       </div>
       <pre className="text-[11px] leading-5 font-mono text-slate-300/80 whitespace-pre-wrap">{cmd}</pre>

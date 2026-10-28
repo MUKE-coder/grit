@@ -9,6 +9,7 @@ import { CodeBlock } from '@/components/code-block'
 import { PageHelp } from '@/components/page-help'
 import { getDocMetadata } from '@/config/docs-metadata'
 import { BookDownload } from '@/components/book-download'
+import { WindowDots } from '@/components/window-dots'
 
 export const metadata = getDocMetadata('/docs')
 
@@ -242,11 +243,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
             {/* YouTube intro video */}
             <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-10 shadow-lg">
               <div className="px-4 py-2.5 border-b border-border/30 bg-accent/20 flex items-center gap-2">
-                <div className="flex items-center gap-1.5">
-                  <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                  <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                  <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                </div>
+                <WindowDots />
                 <span className="ml-2 text-[11px] font-mono text-muted-foreground/50">What is Grit?</span>
               </div>
               <div className="aspect-video">
@@ -662,11 +659,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
               {/* Terminal block: scaffold */}
               <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
                 <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
+                  <WindowDots />
                   <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                 </div>
                 <div className="p-5 font-mono text-sm space-y-2">

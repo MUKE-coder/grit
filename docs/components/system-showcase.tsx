@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type React from 'react'
 import { KeyRound, ShieldAlert, Gauge, ScrollText, DatabaseBackup, FolderOpen, Layers3, CalendarClock } from 'lucide-react'
+import { WindowDots } from '@/components/window-dots'
 
 /**
  * The System Hub, shown page by page.
@@ -165,11 +166,7 @@ export function SystemShowcase() {
       <div className="grid lg:grid-cols-[1fr_19rem] gap-8 lg:gap-10 items-start">
         <div className="rounded-xl overflow-hidden border border-border bg-card/40 shadow-[0_24px_64px_-16px_rgba(2,6,23,0.5)]">
           <div className="flex items-center gap-2 px-3.5 py-2.5 bg-card/70 border-b border-border/60">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-            </div>
+            <WindowDots />
             <span className="mx-auto text-[11px] font-mono text-muted-foreground">
               localhost:3001{page.route}
             </span>

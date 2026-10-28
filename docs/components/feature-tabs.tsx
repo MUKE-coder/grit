@@ -420,17 +420,17 @@ export function FeatureTabs() {
       {/* Code editor — GitHub-themed shell that mirrors CodeBlock chrome */}
       <div className="rounded-xl overflow-hidden border-2 border-slate-200/80 bg-white shadow-[0_1px_0_rgba(27,31,35,0.04),0_24px_64px_-16px_rgba(15,23,42,0.18)] dark:border-white/10 dark:bg-[#0d1117] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_64px_-16px_rgba(0,0,0,0.6)]">
         {/* File tabs */}
-        <div className="flex items-center gap-0 bg-[#f6f8fa] dark:bg-[#161b22] border-b border-[#d0d7de] dark:border-white/[0.08] overflow-x-auto">
+        <div className="flex items-center gap-0 bg-muted dark:bg-[#0d1117] border-b border-border dark:border-white/[0.08] overflow-x-auto">
           {active.files.map((file, i) => (
             <button
               key={file.name}
               type="button"
               onClick={() => setActiveFileIdx(i)}
               className={cn(
-                'flex items-center gap-2 px-4 py-2.5 text-xs font-mono whitespace-nowrap transition-colors border-r border-[#d0d7de]/60 dark:border-white/[0.06]',
+                'flex items-center gap-2 px-4 py-2.5 text-xs font-mono whitespace-nowrap transition-colors border-r border-border/60 dark:border-white/[0.06]',
                 i === activeFileIdx
-                  ? 'text-[#24292f] dark:text-white bg-white dark:bg-[#0d1117] -mb-px'
-                  : 'text-[#57606a] dark:text-white/50 hover:text-[#24292f] dark:hover:text-white/80'
+                  ? 'text-foreground dark:text-white bg-white dark:bg-[#0d1117] -mb-px'
+                  : 'text-muted-foreground dark:text-white/50 hover:text-foreground dark:hover:text-white/80'
               )}
             >
               <FileIcon kind={file.icon} />

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type React from 'react'
 import { Globe, Monitor, Smartphone, Server } from 'lucide-react'
+import { WindowDots } from '@/components/window-dots'
 
 /**
  * One framework, every platform — shown with screenshots, not drawings.
@@ -121,7 +122,7 @@ function Chrome({ shell, label, children }: { shell: Shell; label: string; child
     // phone, not so much that it competes with the screenshot.
     return (
       <div className="flex justify-center">
-        <div className="relative rounded-[2.25rem] border-[10px] border-[#1c1c22] bg-[#1c1c22] shadow-[0_28px_70px_-20px_rgba(2,6,23,0.75)] max-w-[17rem]">
+        <div className="relative rounded-[2.25rem] border-[10px] border-[#0d1117] bg-[#0d1117] shadow-[0_28px_70px_-20px_rgba(2,6,23,0.75)] max-w-[17rem]">
           <div className="absolute left-1/2 top-2 h-1 w-16 -translate-x-1/2 rounded-full bg-white/20" />
           <div className="overflow-hidden rounded-[1.6rem]">{children}</div>
         </div>
@@ -132,11 +133,7 @@ function Chrome({ shell, label, children }: { shell: Shell; label: string; child
   return (
     <div className="rounded-xl overflow-hidden border border-border bg-card/40 shadow-[0_24px_64px_-16px_rgba(2,6,23,0.5)]">
       <div className="flex items-center gap-2 px-3.5 py-2.5 bg-card/70 border-b border-border/60">
-        <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-        </div>
+        <WindowDots />
         <span className="mx-auto text-[11px] font-mono text-muted-foreground truncate max-w-[60%]">
           {label}
         </span>

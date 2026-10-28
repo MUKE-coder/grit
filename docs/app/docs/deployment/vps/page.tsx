@@ -6,6 +6,7 @@ import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { WindowDots } from '@/components/window-dots'
 
 export const metadata = getDocMetadata('/docs/deployment/vps')
 
@@ -172,11 +173,7 @@ export default function DeploymentPage() {
                 </h3>
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
+                    <WindowDots />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">local machine</span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
@@ -195,11 +192,7 @@ export default function DeploymentPage() {
                 </p>
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
+                    <WindowDots />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">server (as root)</span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
@@ -227,11 +220,7 @@ export default function DeploymentPage() {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
+                    <WindowDots />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">local machine</span>
                   </div>
                   <div className="p-5 font-mono text-sm">
@@ -245,11 +234,7 @@ export default function DeploymentPage() {
                 </h3>
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
+                    <WindowDots />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">server (as deploy)</span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
@@ -281,11 +266,7 @@ export default function DeploymentPage() {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
+                    <WindowDots />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">server</span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
@@ -334,11 +315,7 @@ export default function DeploymentPage() {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
+                    <WindowDots />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">server</span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
@@ -474,11 +451,7 @@ GORM_STUDIO_ENABLED=false`} />
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
+                    <WindowDots />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">server — /opt/myapp</span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
@@ -542,11 +515,7 @@ GORM_STUDIO_ENABLED=false`} />
                 </h3>
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
+                    <WindowDots />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">server</span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
@@ -584,11 +553,7 @@ GORM_STUDIO_ENABLED=false`} />
                 </h3>
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
+                    <WindowDots />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">server</span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
@@ -638,11 +603,7 @@ admin.yourdomain.com {
                 </h3>
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
+                    <WindowDots />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">server</span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
@@ -718,11 +679,7 @@ admin.yourdomain.com {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
+                    <WindowDots />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">server</span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
@@ -850,11 +807,7 @@ jobs:
                 </h3>
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
+                    <WindowDots />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">server</span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
@@ -879,11 +832,7 @@ jobs:
                 </p>
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
+                    <WindowDots />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">server</span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
@@ -960,11 +909,7 @@ jobs:
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
+                    <WindowDots />
                     <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">server — /opt/myapp</span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">

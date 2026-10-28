@@ -10,6 +10,8 @@
  * scrolling up for context.
  */
 
+import { WindowDots } from '@/components/window-dots'
+
 interface DocsShotProps {
   src: string
   alt: string
@@ -26,11 +28,7 @@ export function DocsShot({ src, alt, label, caption, narrow = false }: DocsShotP
     <figure className={`my-8 ${narrow ? 'max-w-xs mx-auto' : ''}`}>
       <div className="rounded-xl overflow-hidden border border-border bg-card/40 shadow-[0_18px_48px_-16px_rgba(2,6,23,0.4)]">
         <div className="flex items-center gap-2 px-3.5 py-2.5 bg-card/70 border-b border-border/60">
-          <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-          </div>
+          <WindowDots />
           <span className="mx-auto text-[11px] font-mono text-muted-foreground truncate max-w-[70%]">
             {label}
           </span>

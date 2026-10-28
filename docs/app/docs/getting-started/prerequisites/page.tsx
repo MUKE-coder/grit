@@ -5,6 +5,7 @@ import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { PageHelp } from '@/components/page-help'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { WindowDots } from '@/components/window-dots'
 
 export const metadata = getDocMetadata('/docs/getting-started/prerequisites')
 
@@ -69,9 +70,7 @@ export default function PrerequisitesPage() {
                   {/* Mockup art */}
                   <div className="relative border-b border-border/40 bg-[#0d1117] px-4 py-3.5 overflow-hidden">
                     <div className="flex items-center gap-1.5 mb-2">
-                      <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                      <WindowDots />
                       <span className="ml-2 text-[10px] font-mono uppercase tracking-wider text-primary/50">{t.tag}</span>
                     </div>
                     <pre className="text-[11px] leading-5 font-mono text-slate-300/80 whitespace-pre-wrap">{t.art}</pre>

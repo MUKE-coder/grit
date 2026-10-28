@@ -15,6 +15,7 @@ import {
   ChevronRight,
   X,
 } from 'lucide-react'
+import { WindowDots } from '@/components/window-dots'
 import {
   CLI_COMMANDS,
   CLI_CATEGORIES,
@@ -475,14 +476,10 @@ function CommandTerminal({ cmd }: { cmd: CliCommand }) {
   const running = phase === 'typing' || phase === 'running'
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/60 bg-[#0b0b12]">
+    <div className="overflow-hidden rounded-xl border border-border/60 bg-[#0d1117]">
       {/* Chrome */}
       <div className="flex items-center gap-2 border-b border-white/[0.06] bg-white/[0.02] px-4 py-2.5">
-        <span className="flex gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-        </span>
+        <WindowDots />
         <span className="ml-1 flex items-center gap-1.5 font-mono text-[11px] text-white/40">
           <Terminal className="h-3 w-3" />
           myapp

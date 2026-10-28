@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { WindowDots } from '@/components/window-dots'
 import {
   ArrowRight,
   KeyRound,
@@ -237,9 +238,7 @@ export default function BatteriesPage() {
                     {/* Code mockup */}
                     <div className="relative border-b border-border/40 bg-[#0d1117] px-4 py-3.5 overflow-hidden">
                       <div className="flex items-center gap-1.5 mb-2">
-                        <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                        <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                        <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                        <WindowDots />
                         <span className="ml-2 text-[10px] font-mono tracking-wider text-primary/50">
                           {b.file}
                         </span>

@@ -139,7 +139,7 @@ export function HeroStepsTabs() {
       <div
         role="tablist"
         aria-label="What you are building"
-        className="flex items-center gap-0 overflow-x-auto bg-[#f6f8fa] dark:bg-[#161b22] border-b border-[#d0d7de] dark:border-white/[0.08] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex items-center gap-0 overflow-x-auto bg-muted dark:bg-[#0d1117] border-b border-border dark:border-white/[0.08] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {VARIANTS.map((v) => {
           const selected = v.key === active
@@ -152,8 +152,8 @@ export function HeroStepsTabs() {
               onClick={() => setActive(v.key)}
               className={`inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3.5 py-2.5 text-[12px] font-medium whitespace-nowrap transition-colors ${
                 selected
-                  ? 'border-primary bg-white text-[#24292f] dark:bg-[#0d1117] dark:text-slate-100'
-                  : 'border-transparent text-[#57606a] hover:text-[#24292f] dark:text-slate-500 dark:hover:text-slate-300'
+                  ? 'border-primary bg-white text-foreground dark:bg-[#0d1117] dark:text-slate-100'
+                  : 'border-transparent text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-slate-300'
               }`}
             >
               <v.icon className="h-3.5 w-3.5" />
@@ -163,9 +163,9 @@ export function HeroStepsTabs() {
         })}
       </div>
 
-      <div className="flex items-baseline justify-between gap-3 px-4 py-2 bg-white dark:bg-[#0d1117] border-b border-[#d0d7de]/60 dark:border-white/[0.06]">
-        <span className="text-[11px] text-[#57606a] dark:text-slate-500">{variant.blurb}</span>
-        <span className="text-[11px] font-mono text-[#57606a] dark:text-slate-500">contacts</span>
+      <div className="flex items-baseline justify-between gap-3 px-4 py-2 bg-white dark:bg-[#0d1117] border-b border-border/60 dark:border-white/[0.06]">
+        <span className="text-[11px] text-muted-foreground dark:text-muted-foreground">{variant.blurb}</span>
+        <span className="text-[11px] font-mono text-muted-foreground dark:text-muted-foreground">contacts</span>
       </div>
 
       {/* A fixed height, so switching tabs does not resize the hero and shove
@@ -178,21 +178,21 @@ export function HeroStepsTabs() {
                 {i + 1}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="group relative rounded-lg border border-[#d0d7de] dark:border-white/[0.08] bg-[#f6f8fa] dark:bg-[#161b22] px-3 py-2">
-                  <pre className="overflow-x-auto text-[12px] leading-relaxed font-mono text-[#24292f] dark:text-slate-200">
+                <div className="group relative rounded-lg border border-border dark:border-white/[0.08] bg-muted dark:bg-[#0d1117] px-3 py-2">
+                  <pre className="overflow-x-auto text-[12px] leading-relaxed font-mono text-foreground dark:text-slate-200">
                     <code>{step.command}</code>
                   </pre>
                   <button
                     type="button"
                     onClick={() => void copy(step.command, i)}
                     aria-label={`Copy: ${step.command.split('\n')[0]}`}
-                    className="absolute right-1.5 top-1.5 rounded-md p-1 text-[#57606a] opacity-0 transition-opacity hover:bg-black/5 focus-visible:opacity-100 group-hover:opacity-100 dark:text-slate-500 dark:hover:bg-white/10"
+                    className="absolute right-1.5 top-1.5 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-black/5 focus-visible:opacity-100 group-hover:opacity-100 dark:text-muted-foreground dark:hover:bg-white/10"
                   >
                     {copied === i ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
                   </button>
                 </div>
                 {step.result && (
-                  <p className="mt-1 flex items-start gap-1.5 text-[11.5px] leading-snug text-[#57606a] dark:text-slate-500">
+                  <p className="mt-1 flex items-start gap-1.5 text-[11.5px] leading-snug text-muted-foreground dark:text-muted-foreground">
                     <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-500" aria-hidden="true" />
                     {step.result}
                   </p>
@@ -203,9 +203,9 @@ export function HeroStepsTabs() {
         </ol>
       </div>
 
-      <div className="flex items-center gap-2 border-t border-[#d0d7de] dark:border-white/[0.08] bg-[#f6f8fa] dark:bg-[#161b22] px-4 py-2.5">
+      <div className="flex items-center gap-2 border-t border-border dark:border-white/[0.08] bg-muted dark:bg-[#0d1117] px-4 py-2.5">
         <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden="true" />
-        <span className="text-[11.5px] text-[#57606a] dark:text-slate-400">Opens {variant.opens}</span>
+        <span className="text-[11.5px] text-muted-foreground dark:text-slate-400">Opens {variant.opens}</span>
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import { Highlight, type PrismTheme } from 'prism-react-renderer'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { CopyButton } from './copy-button'
+import { WindowDots } from '@/components/window-dots'
 
 // GitHub Dark — tuned for our dark theme (matches gh.com syntax pal).
 const githubDark: PrismTheme = {
@@ -93,11 +94,7 @@ export function CodeBlock({
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-white/[0.06] bg-slate-50/70 dark:bg-white/[0.02]">
           <div className="flex items-center gap-2.5">
             {terminal && (
-              <div className="flex items-center gap-1.5 mr-1">
-                <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-              </div>
+              <WindowDots className="mr-1" />
             )}
             <span className="text-[12px] font-mono text-slate-600 dark:text-slate-400">
               {filename || 'Terminal'}
@@ -126,7 +123,7 @@ export function CodeBlock({
                     {!isComment && (
                       <span className="text-sky-600/70 dark:text-sky-400/60 select-none mr-2 shrink-0">$</span>
                     )}
-                    <span className={isComment ? 'text-slate-500 dark:text-slate-500 text-xs' : ''}>
+                    <span className={isComment ? 'text-slate-500 dark:text-muted-foreground text-xs' : ''}>
                       {line.map((token, key) => (
                         <span key={key} {...getTokenProps({ token })} />
                       ))}

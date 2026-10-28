@@ -90,7 +90,7 @@ export default function BenchmarksPage() {
                           alt=""
                           width={22}
                           height={22}
-                          className="rounded-[5px]"
+                          className="rounded-sm"
                         />
                         Grit vs
                         <FrameworkLogo
