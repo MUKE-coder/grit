@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Check, Copy, Globe, Layers, Monitor, Smartphone, Server } from 'lucide-react'
+import { Tabs } from '@/components/grit/tabs'
 
 /*
  * The hero: how a full-stack app gets built, in the commands that build it.
@@ -47,7 +48,7 @@ const VARIANTS: Variant[] = [
     key: 'web',
     label: 'Web app',
     icon: Globe,
-    blurb: 'Next.js front end, admin panel and Go API.',
+    blurb: 'Next.js + admin + Go API',
     steps: [
       { command: 'grit new contacts --triple --next', result: 'API, web app and admin panel, with auth already working' },
       { command: 'cd contacts', result: '' },
@@ -60,9 +61,9 @@ const VARIANTS: Variant[] = [
   },
   {
     key: 'desktop',
-    label: 'Desktop app',
+    label: 'Desktop',
     icon: Monitor,
-    blurb: 'The same API, in a Wails window, offline-capable.',
+    blurb: 'Wails window, offline-capable',
     steps: [
       { command: 'grit new contacts --triple --desktop', result: 'Adds a Wails app that shares the monorepo API' },
       { command: 'cd contacts', result: '' },
@@ -75,9 +76,9 @@ const VARIANTS: Variant[] = [
   },
   {
     key: 'mobile',
-    label: 'Mobile app',
+    label: 'Mobile',
     icon: Smartphone,
-    blurb: 'Expo and React Native, against the same API.',
+    blurb: 'Expo and React Native',
     steps: [
       { command: 'grit new contacts --triple --expo', result: 'Adds apps/expo, sharing the Zod schemas and types' },
       { command: 'cd contacts', result: '' },
@@ -92,7 +93,7 @@ const VARIANTS: Variant[] = [
     key: 'api',
     label: 'API only',
     icon: Server,
-    blurb: 'Go, Gin and GORM. No front end at all.',
+    blurb: 'Go, Gin and GORM. No front end',
     steps: [
       { command: 'grit new contacts --api', result: 'The Go API alone, with auth, docs and migrations' },
       { command: 'cd contacts', result: '' },
@@ -106,7 +107,7 @@ const VARIANTS: Variant[] = [
     key: 'full',
     label: 'Everything',
     icon: Layers,
-    blurb: 'API, web, admin, desktop, mobile and a docs site, in one repo.',
+    blurb: 'Every app, one repo',
     steps: [
       { command: 'grit new contacts --full', result: 'Every app Grit can scaffold, sharing one API and one set of types' },
       { command: 'cd contacts', result: '' },
@@ -118,6 +119,19 @@ const VARIANTS: Variant[] = [
     opens: 'all of them at once, against the same database',
   },
 ]
+
+/** The binary at the head of a command, coloured apart from its arguments. */
+function Command({ text }: { text: string }) {
+  const space = text.indexOf(' ')
+  const bin = space === -1 ? text : text.slice(0, space)
+  const rest = space === -1 ? '' : text.slice(space)
+  return (
+    <code className="block whitespace-pre-wrap break-words font-mono text-[13px] leading-[22px] text-code-fg">
+      <span className="text-code-fn">{bin}</span>
+      {rest}
+    </code>
+  )
+}
 
 export function HeroStepsTabs() {
   const [active, setActive] = useState(VARIANTS[0].key)
@@ -135,78 +149,88 @@ export function HeroStepsTabs() {
   }
 
   return (
-    <div className="relative rounded-2xl overflow-hidden bg-white dark:bg-[#0d1117] border border-border shadow-[0_24px_64px_-16px_rgba(2,6,23,0.5)]">
-      <div
-        role="tablist"
-        aria-label="What you are building"
-        className="flex items-center gap-0 overflow-x-auto bg-muted dark:bg-[#0d1117] border-b border-border dark:border-white/[0.08] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {VARIANTS.map((v) => {
-          const selected = v.key === active
-          return (
-            <button
-              key={v.key}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              onClick={() => setActive(v.key)}
-              className={`inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3.5 py-2.5 text-[12px] font-medium whitespace-nowrap transition-colors ${
-                selected
-                  ? 'border-accent bg-white text-foreground dark:bg-[#0d1117] dark:text-slate-100'
-                  : 'border-transparent text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-slate-300'
-              }`}
-            >
-              <v.icon className="h-3.5 w-3.5" />
+    <div className="min-w-0">
+      <Tabs
+        label="What are you building?"
+        value={active}
+        onChange={setActive}
+        className="max-w-full overflow-x-auto"
+        items={VARIANTS.map((v) => ({
+          id: v.key,
+          label: (
+            <>
+              <v.icon className="h-3.5 w-3.5" aria-hidden="true" />
               {v.label}
-            </button>
-          )
-        })}
-      </div>
+            </>
+          ),
+        }))}
+      />
 
-      <div className="flex items-baseline justify-between gap-3 px-4 py-2 bg-white dark:bg-[#0d1117] border-b border-border/60 dark:border-white/[0.06]">
-        <span className="text-[11px] text-muted-foreground dark:text-muted-foreground">{variant.blurb}</span>
-        <span className="text-[11px] font-mono text-muted-foreground dark:text-muted-foreground">contacts</span>
-      </div>
+      <figure
+        className="mt-3 overflow-hidden rounded-[18px] border border-border bg-surface-1"
+        style={{
+          boxShadow:
+            '0 40px 100px -40px rgba(169,155,255,0.18), 0 30px 60px -30px rgba(0,0,0,0.8)',
+        }}
+      >
+        <div className="flex h-11 items-center gap-3 border-b border-surface-3 px-4">
+          <span aria-hidden="true" className="g-terminal__dots">
+            <i />
+            <i />
+            <i />
+          </span>
+          <span className="truncate font-mono text-[12px] font-medium text-fg-subtle">
+            ~/contacts · {variant.blurb}
+          </span>
+        </div>
 
-      {/* A fixed height, so switching tabs does not resize the hero and shove
-          the page under the reader's cursor. */}
-      <div className="h-[430px] overflow-y-auto px-4 py-3.5">
-        <ol className="space-y-2.5">
+        {/* A fixed height, so switching tabs does not resize the hero and shove
+            the page under the reader's cursor. */}
+        <ol className="h-[430px] overflow-y-auto px-2.5 pb-1.5 pt-3.5">
           {variant.steps.map((step, i) => (
-            <li key={step.command} className="flex gap-3">
-              <span className="mt-1.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-semibold text-accent">
+            <li
+              key={step.command}
+              className="group grid grid-cols-[26px_minmax(0,1fr)_32px] gap-2 rounded-[10px] px-1.5 py-[7px] transition-colors hover:bg-bg/60"
+            >
+              <span className="text-right font-mono text-[11px] leading-[22px] text-fg-subtle">
                 {i + 1}
               </span>
-              <div className="min-w-0 flex-1">
-                <div className="group relative rounded-lg border border-border dark:border-white/[0.08] bg-muted dark:bg-[#0d1117] px-3 py-2">
-                  <pre className="overflow-x-auto text-[12px] leading-relaxed font-mono text-foreground dark:text-slate-200">
-                    <code>{step.command}</code>
-                  </pre>
-                  <button
-                    type="button"
-                    onClick={() => void copy(step.command, i)}
-                    aria-label={`Copy: ${step.command.split('\n')[0]}`}
-                    className="absolute right-1.5 top-1.5 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-black/5 focus-visible:opacity-100 group-hover:opacity-100 dark:text-muted-foreground dark:hover:bg-white/10"
-                  >
-                    {copied === i ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-                  </button>
-                </div>
+              <span className="min-w-0">
+                <Command text={step.command} />
                 {step.result && (
-                  <p className="mt-1 flex items-start gap-1.5 text-[11.5px] leading-snug text-muted-foreground dark:text-muted-foreground">
-                    <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-500" aria-hidden="true" />
+                  <span className="mt-0.5 block text-[12.5px] leading-[18px] text-fg-subtle">
+                    <span className="text-success" aria-hidden="true">
+                      ✓{' '}
+                    </span>
                     {step.result}
-                  </p>
+                  </span>
                 )}
-              </div>
+              </span>
+              <button
+                type="button"
+                onClick={() => void copy(step.command, i)}
+                aria-label={`Copy: ${step.command.split('\n')[0]}`}
+                className="g-copy h-[30px] w-[30px] opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+              >
+                {copied === i ? (
+                  <Check className="h-3.5 w-3.5 text-success" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+              </button>
             </li>
           ))}
         </ol>
-      </div>
 
-      <div className="flex items-center gap-2 border-t border-border dark:border-white/[0.08] bg-muted dark:bg-[#0d1117] px-4 py-2.5">
-        <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden="true" />
-        <span className="text-[11.5px] text-muted-foreground dark:text-slate-400">Opens {variant.opens}</span>
-      </div>
+        <div className="flex items-center gap-2.5 border-t border-surface-3 px-[22px] pb-4 pt-3 font-mono text-[12.5px] text-fg-muted">
+          <span
+            aria-hidden="true"
+            className="g-ping h-[7px] w-[7px] flex-none rounded-full bg-success"
+          />
+          Opens {variant.opens}
+          <span className="g-caret" aria-hidden="true" />
+        </div>
+      </figure>
     </div>
   )
 }

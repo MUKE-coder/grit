@@ -188,7 +188,7 @@ export function PlatformShowcase() {
               loading="lazy"
             />
           </Chrome>
-          <p className="text-xs text-muted-foreground/70 mt-4">
+          <p className="text-xs text-fg-subtle mt-4 max-w-[72ch]">
             A screenshot of a generated project, not a mockup.
           </p>
         </div>

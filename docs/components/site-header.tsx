@@ -3,18 +3,13 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Youtube, Heart, Sun, Moon } from 'lucide-react'
+import { Sun, Moon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { SearchDialog } from '@/components/search-dialog'
 import { MobileNav } from '@/components/docs-sidebar'
 import { GitHubStars } from '@/components/github-stars'
-import {
-  DiscordIcon,
-  DISCORD_INVITE_URL,
-  WhatsAppIcon,
-  WHATSAPP_COMMUNITY_URL,
-} from '@/components/community-cta'
+import { DiscordIcon, DISCORD_INVITE_URL } from '@/components/community-cta'
 import { cn } from '@/lib/utils'
 import { GRIT_VERSION, RELEASE_CHANNEL_LABEL, releaseChannel } from '@/config/site'
 
@@ -31,7 +26,7 @@ export function SiteHeader() {
   useEffect(() => setMounted(true), [])
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-foreground/15 bg-background/60 backdrop-blur-md">
+    <header className="sticky top-0 z-50 h-16 w-full border-b border-[#1a1d22] bg-bg/80 backdrop-blur-[14px]">
       <div className="container flex h-16 max-w-screen-2xl items-center px-4 sm:px-8">
         {/* Mobile menu */}
         <MobileNav />
@@ -70,22 +65,21 @@ export function SiteHeader() {
 
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-1">
-          {/* The nav was overflowing into the search box at 9 items, so it's
-              trimmed to top-level destinations. Tech Kits + Changelog live under
-              /docs and are already reachable from the docs sidebar; Pitch is a
-              niche marketing page and is still linked from the footer. AI
-              Integration stays despite being a docs page — it's deliberately
-              highlighted. Courses moved to the footer and the docs sidebar to
-              make room for Grit UI, which is a separate product on its own
-              domain and had no entry point from here at all. */}
+          {/* Five destinations.
+              It was nine, then seven, and it still read as a toolbar rather
+              than a navigation bar: by the time a reader has scanned seven
+              labels and six coloured icons they have stopped looking for the
+              one they wanted. Sponsors, Courses, YouTube and WhatsApp are all
+              in the footer and in the docs sidebar, which is where somebody
+              goes looking for them. Discord stays as a single icon because it
+              is the one place to ask a question, and Build with AI folds into
+              Docs, where the page itself lives. */}
           {[
             { label: 'Docs', href: '/docs' },
             { label: 'Builder', href: '/builder' },
-            { label: 'Build with AI', href: '/docs/ai-integration', highlight: true },
             { label: 'Grit UI', href: 'https://ui.gritframework.dev', external: true },
-            { label: 'Blog', href: '/blog' },
             { label: 'Showcase', href: '/showcase' },
-            { label: 'Sponsors', href: '/sponsors' },
+            { label: 'Blog', href: '/blog' },
           ].map((item) => {
             // An off-domain entry can never be the active route, and running it
             // through isActive() would prefix-match "https://…" against the
@@ -97,17 +91,13 @@ export function SiteHeader() {
                 href={item.href}
                 {...(item.external ? { target: '_blank', rel: 'noreferrer' } : {})}
                 className={cn(
-                  'relative px-3 py-1.5 text-[13px] transition-colors',
-                  active
-                    ? 'font-semibold text-accent'
-                    : item.highlight
-                      ? 'font-medium text-accent hover:text-accent/80'
-                      : 'text-muted-foreground hover:text-foreground',
+                  'relative px-3 py-1.5 text-[14px] transition-colors',
+                  active ? 'text-fg' : 'text-fg-muted hover:text-fg',
                 )}
               >
                 {item.label}
                 {active && (
-                  <span className="absolute left-3 right-3 -bottom-0.5 h-[2px] rounded-full bg-primary" />
+                  <span className="absolute left-3 right-3 -bottom-0.5 h-[2px] rounded-full bg-accent" />
                 )}
               </Link>
             )
@@ -122,7 +112,7 @@ export function SiteHeader() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              className="h-8 w-8 text-fg-muted hover:text-fg hover:bg-surface-2"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             >
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -132,39 +122,27 @@ export function SiteHeader() {
 
           <GitHubStars className="mr-0.5" />
 
-          <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50" asChild>
-            <Link href="https://www.youtube.com/@GritFramework" target="_blank" rel="noreferrer">
-              <Youtube className="h-4 w-4" />
-              <span className="sr-only">YouTube</span>
-            </Link>
-          </Button>
-
-          <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-8 w-8 text-accent/70 hover:text-accent hover:bg-accent/10" asChild>
+          {/* The one community link that stays in the bar. The rest (YouTube,
+              WhatsApp, Sponsors) are in the footer, where a reader looks for
+              them, rather than competing with the search box. */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden sm:inline-flex h-8 w-8 text-fg-muted hover:text-fg hover:bg-surface-2"
+            asChild
+          >
             <Link href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer">
               <DiscordIcon className="h-4 w-4" />
               <span className="sr-only">Join the Discord server</span>
             </Link>
           </Button>
 
-          <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-8 w-8 text-emerald-500/70 hover:text-emerald-500 hover:bg-emerald-500/10" asChild>
-            <Link href={WHATSAPP_COMMUNITY_URL} target="_blank" rel="noreferrer">
-              <WhatsAppIcon className="h-4 w-4" />
-              <span className="sr-only">Join the WhatsApp community</span>
-            </Link>
-          </Button>
-
-          <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-8 w-8 text-pink-500/70 hover:text-pink-500 hover:bg-pink-500/10" asChild>
-            <Link href="/sponsor">
-              <Heart className="h-4 w-4" />
-              <span className="sr-only">Sponsor</span>
-            </Link>
-          </Button>
-
-          <Button size="sm" className="hidden md:inline-flex h-8 px-4 text-xs font-medium bg-primary hover:bg-accent/80 text-primary-foreground border-0 rounded-full" asChild>
-            <Link href="/docs/getting-started/quick-start">
-              Get Started
-            </Link>
-          </Button>
+          <Link
+            href="/docs/getting-started/quick-start"
+            className="g-btn g-btn--primary g-btn--sm ml-1 hidden md:inline-flex"
+          >
+            Get started
+          </Link>
         </div>
       </div>
     </header>

@@ -329,6 +329,9 @@ a.g-card:hover .g-card__more {
 .g-tabs {
   position: relative;
   display: inline-flex;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
   gap: 2px;
   padding: 3px;
   border-radius: 10px;
@@ -351,6 +354,11 @@ a.g-card:hover .g-card__more {
 .g-tab {
   position: relative;
   z-index: 1;
+  flex: none;
+  /* A tab label that wraps makes the group two rows tall and leaves the
+     sliding indicator measuring a box that is no longer where it looks.
+     The group scrolls instead. */
+  white-space: nowrap;
   height: 32px;
   padding: 0 12px;
   border: 0;
@@ -373,6 +381,10 @@ a.g-card:hover .g-card__more {
 .g-tab:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
+}
+
+.g-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 /* Underline tabs: code-block language switches and docs */

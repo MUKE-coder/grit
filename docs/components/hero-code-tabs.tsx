@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Boxes, Lock, ShieldCheck, UploadCloud, Zap } from 'lucide-react'
+import { Boxes, Check, Copy, Lock, ShieldCheck, UploadCloud, Zap } from 'lucide-react'
 import { CodeBlock } from '@/components/code-block'
 import { CopyPromptButton } from '@/components/copy-prompt-button'
+import { Tabs } from '@/components/grit/tabs'
 
 /**
  * The hero's right-hand panel: four tabs, each a real thing you get for free.
@@ -192,20 +193,21 @@ export function HeroCodeTabs() {
    it was worse — it made everyone read an instruction meant for someone else.
    ───────────────────────────────────────────────────────────────────────── */
 
+
 const INSTALLS = [
-  {
-    key: 'windows',
-    label: 'Windows',
-    code: 'iwr -useb https://gritframework.dev/install.ps1 | iex',
-  },
   {
     key: 'unix',
     label: 'macOS / Linux',
     code: 'curl -fsSL https://gritframework.dev/install.sh | sh',
   },
   {
+    key: 'windows',
+    label: 'Windows',
+    code: 'iwr -useb https://gritframework.dev/install.ps1 | iex',
+  },
+  {
     key: 'go',
-    label: 'Go',
+    label: 'Go install',
     code: 'go install github.com/MUKE-coder/grit/v3/cmd/grit@latest',
   },
   // A fourth way to start, and increasingly the common one: hand the whole
@@ -220,43 +222,58 @@ const INSTALLS = [
 
 export function InstallTabs() {
   const [active, setActive] = useState(INSTALLS[0].key)
+  const [copied, setCopied] = useState(false)
   const install = INSTALLS.find((i) => i.key === active) ?? INSTALLS[0]
 
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(install.code)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1600)
+    } catch {
+      // A browser that refuses the clipboard still shows the command to read.
+    }
+  }
+
   return (
-    <div className="max-w-lg">
-      <div className="flex items-center gap-1 mb-2">
-        {INSTALLS.map((i) => (
-          <button
-            key={i.key}
-            type="button"
-            onClick={() => setActive(i.key)}
-            aria-pressed={i.key === active}
-            className={`rounded-lg px-2.5 py-1 text-[12px] font-medium transition-colors ${
-              i.key === active
-                ? 'bg-accent/15 text-accent'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {i.label}
-          </button>
-        ))}
-      </div>
+    <div className="w-full max-w-[540px]">
+      <Tabs
+        label="Install method"
+        variant="line"
+        value={active}
+        onChange={setActive}
+        items={INSTALLS.map((i) => ({ id: i.key, label: i.label }))}
+      />
+
       {install.key === 'ai' ? (
-        <div className="rounded-xl border border-border bg-card/40 p-4 backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.25)]">
-          <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
+        <div className="mt-3 rounded-xl border border-border bg-surface-1/90 p-4">
+          <p className="mb-3 text-[13px] leading-relaxed text-fg-muted">
             Copy one prompt into Claude Code, Cursor, Codex or any chat. It installs the
             Grit skill, teaches the agent the framework and links every concept it needs.
           </p>
           <CopyPromptButton />
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card/40 backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.25)]">
-          <CodeBlock
-            key={install.key}
-            terminal
-            code={install.code}
-            className="!border-0 !rounded-xl !bg-transparent dark:!bg-transparent !m-0"
-          />
+        <div className="mt-3 flex h-[52px] items-center gap-3 rounded-xl border border-border bg-surface-1/90 pl-4 pr-2">
+          <span aria-hidden="true" className="font-mono text-[14px] text-fg-subtle">
+            $
+          </span>
+          <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-[13.5px] text-code-fg">
+            {install.code}
+          </code>
+          <button
+            type="button"
+            onClick={() => void copy()}
+            className="g-copy h-9 w-9 flex-none"
+            data-copied={copied}
+            aria-label={copied ? 'Copied' : `Copy: ${install.code}`}
+          >
+            {copied ? (
+              <Check strokeWidth={2} aria-hidden="true" />
+            ) : (
+              <Copy strokeWidth={1.75} aria-hidden="true" />
+            )}
+          </button>
         </div>
       )}
     </div>

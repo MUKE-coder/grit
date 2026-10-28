@@ -52,18 +52,33 @@ export type BenchScenario = {
   rows: BenchRow[]
 }
 
-const GRIT_COLOR = '#3BB4F5'
+/*
+ * Two colours, not seven.
+ *
+ * Each bar used to carry its framework's own brand colour, which turned a
+ * throughput chart into a traffic light: Express green, Laravel red, Bun and
+ * Encore cream. None of those hues mean anything about the measurement, and
+ * two of them mean something quite specific to anyone who has read a chart
+ * before. The logo and the name under each pair already say which framework
+ * it is, so colour is free to carry the only distinction that matters here.
+ */
+const GRIT_COLOR = 'var(--chart-grit)'
+const RIVAL_COLOR = 'var(--chart-rival)'
 
 function Bar({
   value,
   pct,
   color,
+  labelColor,
   label,
   faded,
 }: {
   value: number
   pct: number
   color: string
+  /* The fill and the number need different colours: the rival fill is a dark
+     neutral by design, and a number printed in it would be unreadable. */
+  labelColor: string
   label: string
   faded?: boolean
 }) {
@@ -71,7 +86,7 @@ function Bar({
     <div className="flex h-full flex-1 flex-col justify-end items-center min-w-0">
       <span
         className="mb-1.5 text-[11px] sm:text-xs font-bold tabular-nums whitespace-nowrap"
-        style={{ color }}
+        style={{ color: labelColor }}
       >
         {value.toLocaleString()}
       </span>
@@ -81,7 +96,7 @@ function Bar({
         className="w-full rounded-t-sm transition-all duration-500"
         style={{
           height: `${pct}%`,
-          background: `linear-gradient(to bottom, ${color}, ${color}bb)`,
+          background: `linear-gradient(to bottom, ${color}, color-mix(in srgb, ${color} 73%, transparent))`,
           opacity: faded ? 0.95 : 1,
         }}
       />
@@ -179,12 +194,14 @@ export function BenchmarkChart({ scenarios }: { scenarios: BenchScenario[] }) {
                     value={row.gritRps}
                     pct={(row.gritRps / peak) * 100}
                     color={GRIT_COLOR}
+                    labelColor="var(--accent)"
                     label="Grit"
                   />
                   <Bar
                     value={row.rps}
                     pct={Math.max(1.5, (row.rps / peak) * 100)}
-                    color={row.color}
+                    color={RIVAL_COLOR}
+                    labelColor="var(--fg-muted)"
                     label={row.framework}
                     faded
                   />

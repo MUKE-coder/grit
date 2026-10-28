@@ -196,7 +196,7 @@ export function ComplianceShowcase() {
         </div>
       </div>
 
-      <p className="text-[11.5px] text-muted-foreground/70 mt-8 pt-5 border-t border-border/40 leading-relaxed max-w-3xl">
+      <p className="text-[11.5px] text-fg-subtle mt-8 pt-5 border-t border-border/40 leading-relaxed max-w-[72ch]">
         What Grit does not ship: a cookie-consent banner, a signed SBOM, or data-residency
         controls. Field-level encryption, a go-live checklist and dependency scanning in CI are
         included, but the paperwork side of a certification is still yours.

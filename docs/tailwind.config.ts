@@ -47,7 +47,18 @@ const config: Config = {
         success: 'rgb(from var(--success) r g b / <alpha-value>)',
         warning: 'rgb(from var(--warning) r g b / <alpha-value>)',
         danger: 'rgb(from var(--danger) r g b / <alpha-value>)',
-        code: 'rgb(from var(--code-bg) r g b / <alpha-value>)',
+        // The code palette. `bg-code` stays the panel background it has
+        // always been; the rest are the syntax roles, so a hand-written
+        // snippet can be coloured from tokens rather than from hex.
+        code: {
+          DEFAULT: 'rgb(from var(--code-bg) r g b / <alpha-value>)',
+          fg: 'rgb(from var(--code-fg) r g b / <alpha-value>)',
+          comment: 'rgb(from var(--code-comment) r g b / <alpha-value>)',
+          keyword: 'rgb(from var(--code-keyword) r g b / <alpha-value>)',
+          string: 'rgb(from var(--code-string) r g b / <alpha-value>)',
+          fn: 'rgb(from var(--code-fn) r g b / <alpha-value>)',
+          number: 'rgb(from var(--code-number) r g b / <alpha-value>)',
+        },
         chart: {
           // Grit carries colour; every rival is one neutral grey, so a chart
           // never reads as a traffic light.
@@ -85,7 +96,12 @@ const config: Config = {
           DEFAULT: 'rgb(from var(--destructive) r g b / <alpha-value>)',
           foreground: 'rgb(from var(--destructive-foreground) r g b / <alpha-value>)',
         },
-        border: 'rgb(from var(--border) r g b / <alpha-value>)',
+        // `border-border` is the hairline, `border-border-strong` the one a
+        // control draws so it reads as interactive rather than as a panel.
+        border: {
+          DEFAULT: 'rgb(from var(--border) r g b / <alpha-value>)',
+          strong: 'rgb(from var(--border-strong) r g b / <alpha-value>)',
+        },
         input: 'rgb(from var(--input) r g b / <alpha-value>)',
         ring: 'rgb(from var(--ring) r g b / <alpha-value>)',
         sidebar: {

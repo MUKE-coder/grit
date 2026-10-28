@@ -68,8 +68,36 @@ export function SoftwareApplicationSchema() {
   )
 }
 
-// FAQPage schema — used on home and docs pages for AEO
-export function FAQPageSchema() {
+/*
+ * FAQPage schema.
+ *
+ * Google's own requirement is that FAQ structured data correspond to FAQ
+ * content visible on the page. The list below predates the home page's own
+ * FAQ and does not match it, so a caller that renders a visible FAQ passes
+ * it in and the markup describes what the reader can actually see. The
+ * built-in list stays as the fallback for pages with no visible FAQ.
+ */
+export function FAQPageSchema({
+  faqs,
+}: {
+  faqs?: { question: string; answer: string }[]
+}) {
+  if (faqs?.length) {
+    return (
+      <StructuredData
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: faqs.map((faq) => ({
+            '@type': 'Question',
+            name: faq.question,
+            acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+          })),
+        }}
+      />
+    )
+  }
+
   return (
     <StructuredData
       data={{

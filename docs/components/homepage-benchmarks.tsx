@@ -11,7 +11,12 @@ import { FRAMEWORKS, UNMEASURED, SCENARIOS, ranked, ratio, isAppBound } from '@/
  * behind it — there is one set of numbers on this site, not two.
  */
 
-export function HomepageBenchmarks() {
+/**
+ * @param bare omits the block's own heading and chrome, for a caller that
+ *   already supplies both. The landing page does: a section with two headings
+ *   and the same eyebrow twice reads as two sections that failed to merge.
+ */
+export function HomepageBenchmarks({ bare = false }: { bare?: boolean } = {}) {
   if (FRAMEWORKS.length === 0) return null
 
   const scenarios: BenchScenario[] = SCENARIOS.map((s) => ({
@@ -37,22 +42,26 @@ export function HomepageBenchmarks() {
     }),
   }))
 
+  const Outer = bare ? 'div' : 'section'
+
   return (
-    <section className="py-16 md:py-20 px-6 border-b border-border/40">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-8">
-          <span className="tag-mono text-accent/80 mb-3 block">Benchmarks</span>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-3">
-            The same CRUD API, built in every framework
-          </h2>
-          <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            One Postgres, identical container limits, the same 10,000 rows, the same k6 script,
-            every framework in production shape and on its own ORM. Each has a page showing
-            exactly how to reproduce it, including the two rows against Bun that repeated
-            measurement could not separate, and the three bugs this benchmark found in Grit
-            itself.
-          </p>
-        </div>
+    <Outer className={bare ? '' : 'py-16 md:py-20 px-6 border-b border-border/40'}>
+      <div className={bare ? '' : 'max-w-5xl mx-auto'}>
+        {!bare && (
+          <div className="text-center mb-8">
+            <span className="tag-mono text-accent/80 mb-3 block">Benchmarks</span>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-3">
+              The same CRUD API, built in every framework
+            </h2>
+            <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              One Postgres, identical container limits, the same 10,000 rows, the same k6
+              script, every framework in production shape and on its own ORM. Each has a page
+              showing exactly how to reproduce it, including the two rows against Bun that
+              repeated measurement could not separate, and the three bugs this benchmark found
+              in Grit itself.
+            </p>
+          </div>
+        )}
 
         <BenchmarkChart scenarios={scenarios} />
 
@@ -101,6 +110,6 @@ export function HomepageBenchmarks() {
           ))}
         </div>
       </div>
-    </section>
+    </Outer>
   )
 }

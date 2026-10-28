@@ -135,7 +135,12 @@ const TYPING_MS = 26
 const OUTPUT_MS = 260
 const HOLD_MS = 2200
 
-export function GritInAction() {
+/**
+ * @param bare omits the block's own heading and chrome, for a caller that
+ *   already supplies both. The landing page does, and a section carrying the
+ *   same heading twice reads as a render bug.
+ */
+export function GritInAction({ bare = false }: { bare?: boolean } = {}) {
   const [step, setStep] = React.useState(0)
   const [typed, setTyped] = React.useState('')
   const [shownOutput, setShownOutput] = React.useState(0)
@@ -181,20 +186,24 @@ export function GritInAction() {
     setShownOutput(0)
   }
 
+  const Outer = bare ? 'div' : 'section'
+
   return (
-    <section className="border-t border-border/40 py-20 sm:py-28">
-      <div className="container max-w-screen-xl px-6">
-        <div className="mx-auto mb-12 max-w-2xl text-center">
-          <span className="tag-mono mb-3 block text-accent/80">Grit in action</span>
-          <h2 className="mb-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-            Seven commands.
-            <br className="hidden sm:block" /> A working application.
-          </h2>
-          <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Left: the commands, in the order you actually run them. Right: what each one
-            produced. These are screenshots of real generated projects.
-          </p>
-        </div>
+    <Outer className={bare ? '' : 'border-t border-border/40 py-20 sm:py-28'}>
+      <div className={bare ? '' : 'container max-w-screen-xl px-6'}>
+        {!bare && (
+          <div className="mx-auto mb-12 max-w-2xl text-center">
+            <span className="tag-mono mb-3 block text-accent/80">Grit in action</span>
+            <h2 className="mb-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+              Seven commands.
+              <br className="hidden sm:block" /> A working application.
+            </h2>
+            <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
+              Left: the commands, in the order you actually run them. Right: what each one
+              produced. These are screenshots of real generated projects.
+            </p>
+          </div>
+        )}
 
         <div
           className="grid items-start gap-6 lg:grid-cols-2 lg:gap-8"
@@ -304,6 +313,6 @@ export function GritInAction() {
           </div>
         </div>
       </div>
-    </section>
+    </Outer>
   )
 }

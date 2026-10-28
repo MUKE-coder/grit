@@ -6,6 +6,8 @@ import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 import { FrameworkLogo } from '@/components/framework-logo'
+import { CapabilityMatrix } from '@/components/capability-matrix'
+import { TOTAL_ROWS } from '@/config/capabilities'
 import { getDocMetadata } from '@/config/docs-metadata'
 import {
   FRAMEWORKS,
@@ -211,6 +213,28 @@ export default function BenchmarksPage() {
                   </ul>
                 </div>
               )}
+            </section>
+
+            {/* The 33 capabilities */}
+            {/*
+              The home page shows the count and the ranking; the evidence for
+              both is this table, and it belongs where somebody who doubts the
+              number comes looking. It used to sit on the home page, where it
+              was 2,800 pixels tall and pushed everything after it out of
+              reach. Same component, same data, one click away.
+            */}
+            <section id="capabilities" className="mb-12 scroll-mt-24">
+              <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                The other half: {TOTAL_ROWS} capabilities
+              </h2>
+              <p className="text-muted-foreground leading-relaxed mb-6">
+                A benchmark measures a request. This measures a Monday: how many of the{' '}
+                {TOTAL_ROWS} things a real product needs are already running the first time
+                you open the app. Every cell records <em>how</em> the capability arrives,
+                not whether it exists, because a tick-or-cross matrix would be dishonest
+                about frameworks whose answer here is genuinely good.
+              </p>
+              <CapabilityMatrix />
             </section>
 
             {/* ── Where Grit loses ────────────────────────────────── */}

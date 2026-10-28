@@ -6,7 +6,7 @@ import { Check, Copy, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BUILD_WITH_AI_PROMPT } from '@/config/build-prompt'
 
-type Variant = 'hero' | 'inline' | 'panel'
+type Variant = 'hero' | 'inline' | 'ghost' | 'panel'
 
 interface CopyPromptButtonProps {
   variant?: Variant
@@ -53,20 +53,20 @@ export function CopyPromptButton({ variant = 'inline', className, label }: CopyP
     return (
       <div
         className={cn(
-          'rounded-xl border border-violet-500/20 bg-violet-500/[0.04] p-5 sm:p-6',
+          'rounded-2xl border border-accent-line bg-accent-soft p-5 sm:p-6',
           className,
         )}
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="mb-1.5 inline-flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-violet-500" />
-              <span className="tag-mono text-violet-500/90">Build with AI</span>
+              <Sparkles className="h-4 w-4 text-accent" aria-hidden="true" />
+              <span className="g-eyebrow">Build with AI</span>
             </div>
-            <h3 className="text-lg font-semibold tracking-tight">
+            <h3 className="text-[20px] font-semibold tracking-[-0.02em] text-fg">
               Let your AI build it
             </h3>
-            <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-2 max-w-xl text-[14px] leading-[1.65] text-fg-muted">
               One prompt that installs the Grit skill, teaches your agent the framework,
               and links every concept it needs. Works in Claude Code, Cursor, Codex,
               Windsurf, Copilot or any chat.
@@ -93,30 +93,28 @@ export function CopyPromptButton({ variant = 'inline', className, label }: CopyP
   )
 }
 
-// Violet, not the site's blue.
-//
-// This sits beside "Get started", which is the primary action and owns the
-// blue. Two solid blue buttons side by side make neither one the obvious
-// thing to press, and this is a different kind of action anyway: it hands the
-// job to an agent rather than starting the tutorial.
+/*
+ * Never the primary.
+ *
+ * This sits beside "Get started", which is the one primary action on the
+ * page and owns the inverted fill. Two filled buttons side by side make
+ * neither one the obvious thing to press, and this is a different kind of
+ * action anyway: it hands the job to an agent rather than starting the
+ * tutorial. So it is a secondary or a ghost, from the design system's own
+ * button, rather than a fourth button drawn by hand.
+ */
 function buttonClass(variant: Variant): string {
-  const base =
-    'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background'
-  if (variant === 'hero') {
-    return cn(base, 'h-12 px-6 text-[15px] border border-border bg-card text-foreground hover:border-accent/50')
-  }
-  return cn(
-    base,
-    'h-10 px-4 text-sm border border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 dark:text-violet-300 [html:not(.dark)_&]:text-violet-700',
-  )
+  if (variant === 'hero') return 'g-btn g-btn--secondary g-btn--lg'
+  if (variant === 'ghost') return 'g-btn g-btn--ghost g-btn--lg'
+  return 'g-btn g-btn--secondary'
 }
 
 function Failed({ show }: { show: boolean }) {
   if (!show) return null
   return (
-    <p role="status" className="text-xs text-muted-foreground">
+    <p role="status" className="text-[12px] text-fg-muted">
       Your browser blocked the clipboard.{' '}
-      <Link href="/prompt" className="text-accent underline" target="_blank" rel="noopener noreferrer">
+      <Link href="/prompt" className="g-link" target="_blank" rel="noopener noreferrer">
         Open the prompt
       </Link>{' '}
       and copy it by hand.
