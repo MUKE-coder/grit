@@ -11,7 +11,7 @@
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 199 89% 40%;        /* sky-600 — darker sky for light mode contrast */
+    --primary: 247 63% 57%;        /* #5b4bd6 — the product's accent, 6.07:1 with white */
     --primary-foreground: 0 0% 100%;
     --secondary: 210 20% 95%;
     --secondary-foreground: 222 47% 11%;
@@ -23,8 +23,8 @@
     --destructive-foreground: 0 0% 98%;
     --border: 214 20% 88%;         /* visible but subtle borders */
     --input: 214 20% 88%;
-    --ring: 199 89% 40%;
-    --chart-1: 199 89% 40%;
+    --ring: 247 63% 57%;
+    --chart-1: 247 63% 57%;
     --chart-2: 160 52% 36%;
     --chart-3: 36 100% 50%;
     --chart-4: 340 75% 55%;
@@ -32,12 +32,12 @@
     --radius: 0.625rem;
     --sidebar-background: 222 30% 96%;  /* cooler gray — visual split from bg */
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 199 89% 40%;
+    --sidebar-primary: 247 63% 57%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 20% 92%;
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 214 20% 88%;
-    --sidebar-ring: 199 89% 40%;
+    --sidebar-ring: 247 63% 57%;
   }
 
   .dark {
@@ -48,32 +48,34 @@
     --card-foreground: 213 31% 91%;
     --popover: 222 47% 9%;
     --popover-foreground: 213 31% 91%;
-    --primary: 199 89% 48%;        /* sky-500 */
-    --primary-foreground: 0 0% 100%;
+    /* #a78bfa. 6.89:1 as text on the page, and 7.05:1 under the near-black
+     * label below. One hue, both jobs. See DESIGN.md section 1. */
+    --primary: 255 92% 76%;
+    --primary-foreground: 240 20% 5%;
     --secondary: 217 33% 12%;
     --secondary-foreground: 213 31% 91%;
     --muted: 217 33% 12%;
-    --muted-foreground: 215 20% 55%;  /* slate-400ish */
+    --muted-foreground: 215 18% 62%;  /* 4.5:1 on a raised surface, not just on the page */
     --accent: 217 33% 14%;
     --accent-foreground: 213 31% 91%;
     --destructive: 0 63% 50%;
     --destructive-foreground: 0 0% 98%;
     --border: 217 33% 14%;         /* subtle white/[0.06] feel */
     --input: 217 33% 14%;
-    --ring: 199 89% 48%;           /* sky-500 */
-    --chart-1: 199 89% 48%;
+    --ring: 255 92% 76%;
+    --chart-1: 255 92% 76%;
     --chart-2: 160 52% 36%;
     --chart-3: 36 100% 50%;
     --chart-4: 340 75% 55%;
     --chart-5: 217 91% 60%;
     --sidebar-background: 222 47% 3.5%;  /* noticeably darker than bg */
     --sidebar-foreground: 213 31% 91%;
-    --sidebar-primary: 199 89% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-primary: 255 92% 76%;
+    --sidebar-primary-foreground: 240 20% 5%;
     --sidebar-accent: 217 33% 10%;
     --sidebar-accent-foreground: 213 31% 91%;
     --sidebar-border: 217 33% 12%;
-    --sidebar-ring: 199 89% 48%;
+    --sidebar-ring: 255 92% 76%;
   }
 }
 
@@ -140,12 +142,18 @@ article {
 }
 
 /* Glow effects */
+/* The glow follows the accent token rather than naming a colour.
+ *
+ * These were hard-coded rgba(108, 92, 231) while --primary was sky blue, so
+ * 39 pages glowed purple around a blue button. The name is kept because those
+ * 39 files use it; what changed is that it can no longer disagree with the
+ * accent it is glowing around. */
 .glow-purple {
-  box-shadow: 0 0 60px -12px rgba(108, 92, 231, 0.3);
+  box-shadow: 0 0 60px -12px hsl(var(--primary) / 0.3);
 }
 
 .glow-purple-sm {
-  box-shadow: 0 0 30px -8px rgba(108, 92, 231, 0.25);
+  box-shadow: 0 0 30px -8px hsl(var(--primary) / 0.25);
 }
 
 /* Monospace style tags */

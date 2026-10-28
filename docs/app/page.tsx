@@ -118,7 +118,7 @@ export default function HomePage() {
         <span className="crosshair absolute bottom-24 right-[22%] text-foreground/30 hidden lg:block" style={{ width: 14, height: 14 }} />
 
         {/* Floating glow orbs */}
-        <GlowOrb className="-top-32 left-1/4 h-[400px] w-[400px] bg-sky-400/30" duration={18} />
+        <GlowOrb className="-top-32 left-1/4 h-[400px] w-[400px] bg-primary/25" duration={18} />
         <GlowOrb className="top-40 right-1/4 h-[300px] w-[300px] bg-cyan-300/20" delay={2} duration={16} />
 
         <div className="relative max-w-7xl mx-auto pt-14 pb-16 md:pt-20 md:pb-24 px-6">
@@ -156,7 +156,7 @@ export default function HomePage() {
                   <br />
                   <span className="lg:whitespace-nowrap">Full-Stack Framework</span>
                   <br />
-                  <span className="bg-gradient-to-r from-primary via-sky-500 to-primary bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-primary via-primary/70 to-primary bg-clip-text text-transparent">
                     for Go &amp; React
                   </span>
                 </h1>

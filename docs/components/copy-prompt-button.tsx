@@ -103,7 +103,7 @@ function buttonClass(variant: Variant): string {
   const base =
     'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background'
   if (variant === 'hero') {
-    return cn(base, 'h-12 px-6 text-[15px] bg-violet-600 text-white hover:bg-violet-500')
+    return cn(base, 'h-12 px-6 text-[15px] border border-border bg-card text-foreground hover:border-primary/50')
   }
   return cn(
     base,
