@@ -1524,7 +1524,7 @@ export const CLI_COMMANDS: CliCommand[] = [
       { flag: 'list', desc: 'What is available and what is installed' },
       { flag: 'remove <name>', desc: 'Uninstall, unpicking its injections' },
     ],
-    docs: [{ label: 'Plugins', href: '/docs/plugins' }],
+    docs: [{ label: 'Plugins', href: '/docs/plugins/marketplace' }],
     keywords: ['webhooks', 'multitenancy', 'extensions', 'modules'],
   },
   {

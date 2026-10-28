@@ -62,6 +62,17 @@ const nextConfig = {
         destination: '/docs/deployment/dokploy',
         permanent: true,
       },
+      // /docs/plugins used to be "Optional Go Modules": Go packages you
+      // install with `go get`, which the page itself says is a different
+      // thing from `grit plugin add`. So three pages competed for the word
+      // "plugins" and the bare URL belonged to the least likely one. The Go
+      // modules page moved to an address that names it; the bare URL now
+      // goes where somebody typing it expects.
+      {
+        source: '/docs/plugins',
+        destination: '/docs/plugins/marketplace',
+        permanent: false,
+      },
     ]
   },
 }

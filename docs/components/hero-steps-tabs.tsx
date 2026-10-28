@@ -167,19 +167,19 @@ export function HeroStepsTabs() {
       />
 
       <figure
-        className="mt-3 overflow-hidden rounded-2xl border border-border bg-surface-1"
+        className="mt-3 overflow-hidden rounded-2xl border border-[#23272d] bg-code-bg"
         style={{
           boxShadow:
             '0 40px 100px -40px rgba(169,155,255,0.18), 0 30px 60px -30px rgba(0,0,0,0.8)',
         }}
       >
-        <div className="flex h-11 items-center gap-3 border-b border-surface-3 px-4">
+        <div className="flex h-11 items-center gap-3 border-b border-[#1c2025] px-4">
           <span aria-hidden="true" className="g-terminal__dots">
             <i />
             <i />
             <i />
           </span>
-          <span className="truncate font-mono text-[12px] font-medium text-fg-subtle">
+          <span className="truncate font-mono text-[12px] font-medium text-[#7d848e]">
             ~/contacts · {variant.blurb}
           </span>
         </div>
@@ -190,7 +190,7 @@ export function HeroStepsTabs() {
           {variant.steps.map((step, i) => (
             <li
               key={step.command}
-              className="group grid grid-cols-[26px_minmax(0,1fr)_32px] gap-2 rounded-md px-1.5 py-[7px] transition-colors hover:bg-bg/60"
+              className="group grid grid-cols-[26px_minmax(0,1fr)_32px] gap-2 rounded-md px-1.5 py-[7px] transition-colors hover:bg-white/[0.03]"
             >
               <span className="text-right font-mono text-[11px] leading-[22px] text-fg-subtle">
                 {i + 1}
@@ -222,7 +222,7 @@ export function HeroStepsTabs() {
           ))}
         </ol>
 
-        <div className="flex items-center gap-2.5 border-t border-surface-3 px-[22px] pb-4 pt-3 font-mono text-[12.5px] text-fg-muted">
+        <div className="flex items-center gap-2.5 border-t border-[#1c2025] px-[22px] pb-4 pt-3 font-mono text-[12.5px] text-[#a1a7b0]">
           <span
             aria-hidden="true"
             className="g-ping h-[7px] w-[7px] flex-none rounded-full bg-success"

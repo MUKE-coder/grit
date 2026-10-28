@@ -40,10 +40,23 @@ func pair(light, dark, ansiLight, ansiDark string) lipgloss.CompleteAdaptiveColo
 // faint is deliberately below that, which is why it is only ever a rule, a
 // pending dot or a progress track, and never a word.
 var (
-	// Cobalt. The brand is the one role a project might reasonably want to
-	// change; nothing else here depends on which hue it is.
-	cBrand   = pair("#0B57C9", "#6AA7FF", "4", "12")
-	cMuted   = pair("#586170", "#939CAE", "8", "8")
+	// The brand violet, the same pair the website uses: --accent is #5B47E0
+	// on a light background and #A99BFF on a dark one.
+	//
+	// It was cobalt, which meant somebody ran `grit new`, watched a blue CLI
+	// scaffold their project, then opened a violet website about it. Two
+	// identities with nothing comparing them is the exact failure DESIGN.md
+	// exists to stop, and the CLI was the half nobody had looked at.
+	//
+	// TestBrandIsReadableOnEveryTerminalBackground keeps the hue honest: the
+	// nine backgrounds below are the claim this file has always made in a
+	// comment, and now makes in a test.
+	cBrand   = pair("#5B47E0", "#A99BFF", "5", "13")
+	// #939CAE measured 5.07:1 on One Dark, just under the floor this file
+	// has always claimed. One step lighter clears it at 5.13:1. Found by
+	// TestEveryTextRoleIsReadableOnEveryTerminalBackground the first time it
+	// ran, which is the argument for the test.
+	cMuted   = pair("#586170", "#949DAF", "8", "8")
 	cFaint   = pair("#C4C9D2", "#4A5160", "7", "8")
 	cSuccess = pair("#0A7343", "#3DD68C", "2", "10")
 	cWarning = pair("#855300", "#F0B847", "3", "11")

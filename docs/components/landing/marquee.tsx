@@ -52,7 +52,7 @@ function Row({ hidden = false }: { hidden?: boolean }) {
 
 export function ToolMarquee() {
   return (
-    <div className="relative border-t border-[#1a1d22]">
+    <div className="relative border-t border-border">
       <div className="g-frame py-7">
         <span aria-hidden="true" className="g-cnr g-cnr--tl" />
         <span aria-hidden="true" className="g-cnr g-cnr--tr" />

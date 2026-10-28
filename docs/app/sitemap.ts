@@ -153,7 +153,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/docs/changelog', priority: 0.6, changeFrequency: 'weekly' as const },
 
     // Plugins
-    { path: '/docs/plugins', priority: 0.7, changeFrequency: 'monthly' as const },
+    { path: '/docs/plugins/go-modules', priority: 0.7, changeFrequency: 'monthly' as const },
 
     // Courses
     { path: '/courses', priority: 0.9, changeFrequency: 'monthly' as const },

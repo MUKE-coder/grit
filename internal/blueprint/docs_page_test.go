@@ -7,12 +7,15 @@ import (
 	"testing"
 )
 
-const blueprintsPage = "docs/app/docs/blueprints/page.tsx"
+// The website's copy of the list. Two pages read it (/blueprints, the
+// gallery, and /docs/blueprints, the explanation), so comparing this one
+// file with the registry covers both.
+const blueprintsPage = "docs/config/blueprints.ts"
 
 // TestBlueprintsPageListsEveryBlueprint compares the registry with the docs
 // page.
 //
-// The page cannot import this package, so it holds its own copy of the list.
+// The website cannot import this package, so it holds its own copy of the list.
 // Two lists with nothing comparing them drift, and this one drifts quietly: a
 // blueprint ships, `grit blueprint list` shows it, the docs page does not, and
 // the page still looks complete.

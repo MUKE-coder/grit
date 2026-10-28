@@ -363,7 +363,7 @@ const navItems: NavItem[] = [
     title: 'Go Packages',
     icon: <Layers className="h-3.5 w-3.5" />,
     items: [
-      { title: 'Optional Go modules', href: '/docs/plugins' },
+      { title: 'Optional Go modules', href: '/docs/plugins/go-modules' },
     ],
   },
   {

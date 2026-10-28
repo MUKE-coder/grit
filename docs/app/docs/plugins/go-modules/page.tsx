@@ -7,7 +7,7 @@ import { LaneFlow } from '@/components/lane-flow'
 import { Callout } from '@/components/callout'
 import { getDocMetadata } from '@/config/docs-metadata'
 
-export const metadata = getDocMetadata('/docs/plugins')
+export const metadata = getDocMetadata('/docs/plugins/go-modules')
 
 const plugins = [
   {

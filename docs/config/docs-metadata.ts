@@ -630,7 +630,7 @@ export const docsMetadata: Record<string, DocPage> = {
   },
 
   // Plugins
-  '/docs/plugins': {
+  '/docs/plugins/go-modules': {
     title: 'Plugins',
     description:
       'Grit plugins: drop-in Go packages for WebSockets, Stripe payments, OAuth, notifications, search, video processing, conferencing, webhooks, i18n, and data export.',

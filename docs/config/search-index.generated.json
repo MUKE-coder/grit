@@ -810,12 +810,6 @@
     "keywords": "deep dive six expo files grit generate resource emits typed react query hook list detail create edit screens shared form belongs renders picker file fields native uploads docs mobile generation"
   },
   {
-    "title": "Plugins",
-    "href": "/docs/plugins",
-    "section": "Plugins",
-    "keywords": "plugins extensions websockets stripe oauth grit-websockets grit-stripe grit-oauth packages grit drop go payments notifications search video processing conferencing webhooks i18n data export docs"
-  },
-  {
     "title": "Writing a plugin",
     "href": "/docs/plugins/authoring",
     "section": "Plugins",
@@ -832,6 +826,12 @@
     "href": "/docs/plugins/device-pairing",
     "section": "Plugins",
     "keywords": "docs plugins device pairing"
+  },
+  {
+    "title": "Plugins",
+    "href": "/docs/plugins/go-modules",
+    "section": "Plugins",
+    "keywords": "grit plugins drop go packages websockets stripe payments oauth notifications search video processing conferencing webhooks i18n data export docs modules"
   },
   {
     "title": "Impersonate plugin",
@@ -1396,5 +1396,11 @@
     "href": "/docs/admin/datatable#stats-and-insights",
     "section": "Admin Panel",
     "keywords": "stat cards charts insights breakdown series count by status active graph collapsed panel analytics"
+  },
+  {
+    "title": "Plugins Overview",
+    "href": "/docs/plugins",
+    "section": "Plugins",
+    "keywords": "plugins extensions websockets stripe oauth grit-websockets grit-stripe grit-oauth packages"
   }
 ]

@@ -378,6 +378,58 @@ article {
   animation: count-up 0.8s ease-out forwards;
 }
 
+/* ── Light mode for the design system's atmosphere ────────────────────────
+ *
+ * app/grit.css is the designer's bundle, taken byte for byte so it can be
+ * replaced wholesale on an update. It hard-codes thirteen dark colours, and
+ * most of them are correct: a terminal stays dark in both themes on purpose,
+ * so a screenshot of one is stable.
+ *
+ * Four are not. The rails, the grid, the dot field and the highlight
+ * gradient are atmosphere, and atmosphere drawn in near-black reads as a
+ * cage on a white page. The highlight is the worst of them: it starts at
+ * #E9E5FF, which on white makes the first half of the emphasised phrase
+ * invisible.
+ *
+ * Overridden here rather than in grit.css, because editing that file means
+ * the next update from the designer silently reverts the fix. globals.css
+ * imports it first, so these win at equal specificity.
+ * ──────────────────────────────────────────────────────────────────────── */
+.light .g-frame,
+[data-theme='light'] .g-frame {
+  border-left-color: var(--border);
+  border-right-color: var(--border);
+}
+
+.light .g-gridbg,
+[data-theme='light'] .g-gridbg {
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+}
+
+.light .g-dots,
+[data-theme='light'] .g-dots {
+  background-image: radial-gradient(var(--border-strong) 1px, transparent 1px);
+}
+
+/* The dark gradient runs pale -> accent -> deep. On white it has to run the
+   other way, or the phrase starts invisible and arrives. */
+.light .g-hl,
+[data-theme='light'] .g-hl {
+  background: linear-gradient(95deg, #4a37c9 0%, var(--accent) 55%, #7a63f0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* A wash is a hint of the brand behind a section. At the dark theme's 14%
+   it is a lilac slab on white. */
+.light .g-wash,
+[data-theme='light'] .g-wash {
+  background: radial-gradient(closest-side, rgba(91, 71, 224, 0.07), transparent);
+}
+
 /* Prose styling for docs content.
  *
  * Sizes, weights and rhythm from the design system: h2 is --text-h2

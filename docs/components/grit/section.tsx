@@ -31,7 +31,7 @@ export function Section({
   return (
     <section
       id={id}
-      className={`relative ${first ? '' : 'border-t border-[#1a1d22]'} ${className}`.trim()}
+      className={`relative ${first ? '' : 'border-t border-border'} ${className}`.trim()}
     >
       {grid && (
         <div aria-hidden="true" className="g-gridbg pointer-events-none absolute inset-0" />
