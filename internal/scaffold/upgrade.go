@@ -613,6 +613,9 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairOAuthHook(root); err != nil {
 			fmt.Printf("  ⚠ running the social-login hooks: %v\n", err)
 		}
+		if err := repairGoogleScope(root); err != nil {
+			fmt.Printf("  ⚠ asking Google for the name and photo on a social login: %v\n", err)
+		}
 		if err := repairEmailTwoFactorRoutes(root); err != nil {
 			fmt.Printf("  ⚠ adding the routes for a second factor by email: %v\n", err)
 		}

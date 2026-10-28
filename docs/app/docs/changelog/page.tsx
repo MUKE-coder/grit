@@ -59,6 +59,67 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.416.0 */}
+            <div className="mb-12" id="v3.416.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-accent">
+                  v3.416.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Two reported bugs, light mode, and the CLI finally looks like the website</h3>
+                <p>
+                  <strong>Every Google sign-in created a user called &ldquo;User&rdquo;.</strong>{' '}
+                  The scaffold called goth&apos;s <code>google.New</code> with no scopes, and goth
+                  falls back to <code>[&quot;email&quot;]</code> when none are given. With only
+                  that, Google returns no name and no picture, so the callback &mdash; which was
+                  always written to copy them &mdash; had nothing to copy and fell through to its
+                  placeholder. Anything listing people showed a column of &ldquo;User&rdquo;. New
+                  projects ask for <code>profile</code> as well, and{' '}
+                  <code>grit upgrade</code> adds it to an existing one
+                  (<a href="https://github.com/MUKE-coder/grit/issues/120">grit#120</a>).
+                </p>
+                <p>
+                  <strong><code>docker compose up</code> could not pull MinIO.</strong> MinIO took
+                  their image off Docker Hub, so Grit moved to{' '}
+                  <code>quay.io/minio/minio</code>; Quay now answers 401 for it even with an
+                  anonymous pull token. A fresh machine got a registry error that says nothing
+                  about which part of the project is wrong. Compose now uses a pinned image that
+                  still pulls without a login, and a test resolves it against the registry on
+                  every run, because this has broken twice and both times only a user found out
+                  (<a href="https://github.com/MUKE-coder/grit/issues/109">grit#109</a>).
+                  Local development needs none of it: <code>STORAGE_DRIVER=local</code> writes to
+                  disk and starts no container.
+                </p>
+                <p>
+                  <strong>Light mode.</strong> The design system&apos;s component CSS hard-codes
+                  thirteen dark colours. Nine are deliberate, because a terminal stays dark in
+                  both themes so a screenshot of one is stable. Four were not: the rails, the
+                  grid, the dot field and the highlight gradient are atmosphere, and atmosphere
+                  in near-black reads as a cage on a white page. The gradient was the worst,
+                  starting at a near-white that made the first half of every emphasised phrase
+                  invisible.
+                </p>
+                <p>
+                  <strong>The CLI was still cobalt.</strong> You ran <code>grit new</code>,
+                  watched a blue CLI scaffold your project, then opened a violet website about
+                  it. <code>internal/ui</code> carries the website&apos;s accent now, and the
+                  contrast claim it has always made in a comment is a test: every text role
+                  against the nine terminal backgrounds it names. It found a violation on its
+                  first run, in a colour nobody had touched.
+                </p>
+                <p>
+                  <strong>Blueprints have a page.</strong> The registry has pointed at{' '}
+                  <code>gritframework.dev/blueprints</code> since it shipped, and that URL was a
+                  404. Plugins and Blueprints are both in the nav now, and{' '}
+                  <code>/docs/plugins</code> &mdash; which was a page about optional Go modules,
+                  a different thing from the plugin system &mdash; redirects to the marketplace.
+                </p>
+              </div>
+            </div>
+
             {/* v3.415.0 */}
             <div className="mb-12" id="v3.415.0">
               <div className="flex items-center gap-3 mb-4">

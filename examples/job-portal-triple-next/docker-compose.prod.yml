@@ -63,7 +63,7 @@ services:
 
   # ── MinIO (S3-compatible storage) ─────────
   minio:
-    image: minio/minio:latest
+    image: alpine/minio:RELEASE.2025-10-15T17-29-55Z
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:

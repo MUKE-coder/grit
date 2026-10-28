@@ -56,7 +56,7 @@ func TestProductionComposeHardening(t *testing.T) {
 	old = strings.Replace(old, composeRedisURLNew, composeRedisURLOld, 1)
 	old = strings.Replace(old, composeRedisAuth, "", 1)
 	old = strings.ReplaceAll(old, pgbouncerImageNew, pgbouncerImageOld)
-	old = strings.ReplaceAll(old, minioImageNew, minioImageOld)
+	old = strings.ReplaceAll(old, minioImageNew, minioImageOldHub)
 	out, changes, warnings := repairComposeHardeningSource(old)
 	if len(warnings) != 0 || out != fresh {
 		t.Errorf("repairing the previous compose file did not give the fresh one (changes %v, warnings %v)", changes, warnings)

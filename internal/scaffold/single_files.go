@@ -339,6 +339,11 @@ func main() {
 		oauthProviders = append(oauthProviders, google.New(
 			cfg.GoogleClientID, cfg.GoogleClientSecret,
 			cfg.AppURL+"/api/auth/oauth/google/callback",
+			// goth defaults to ["email"] when no scope is given, and with only
+			// that Google returns no name and no picture: every account signed
+			// up through Google was created as "User" with a blank avatar.
+			// "profile" is what asks for them.
+			"email", "profile",
 		))
 	}
 	if cfg.GithubClientID != "" {

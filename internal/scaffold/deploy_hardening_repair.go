@@ -69,9 +69,28 @@ coverage.out
 const (
 	pgbouncerImageOld = "image: edoburu/pgbouncer:latest"
 	pgbouncerImageNew = "image: edoburu/pgbouncer:v1.25.2-p0"
-	minioImageOld     = "image: minio/minio\n"
-	// Docker Hub no longer serves minio/minio; MinIO publishes to quay.io.
-	minioImageNew = "image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z\n"
+	// Both previous homes, because a project can be sitting on either.
+	//
+	// minio/minio on Docker Hub returns 404: MinIO took it down. The obvious
+	// move was quay.io/minio/minio, and that is what Grit shipped until
+	// v3.416.0, but Quay now answers 401 for that repository even with an
+	// anonymous pull token, so `docker compose up` failed on a fresh machine
+	// with no way to tell that the image, not the project, was the problem.
+	// Reported as grit#109.
+	//
+	// alpine/minio is community-maintained rather than MinIO's own, which is
+	// a real downgrade and the reason this comment is long. It is the only
+	// anonymously pullable image that still tracks upstream releases: it
+	// mirrors the RELEASE.* tag scheme, so the version stays legible.
+	// chainguard/minio also pulls, but its free tier keeps only `latest`,
+	// and an unpinned moving target in a compose file people run for months
+	// is worse than a community mirror at a pinned version.
+	//
+	// None of this is needed for local development: STORAGE_DRIVER=local
+	// writes to disk and starts no container at all.
+	minioImageOldHub  = "image: minio/minio\n"
+	minioImageOldQuay = "image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z\n"
+	minioImageNew     = "image: alpine/minio:RELEASE.2025-10-15T17-29-55Z\n"
 
 	composeDBProviderAnchor = "      APP_ENV: production\n"
 	composeDBProvider       = "      APP_ENV: production\n" +
@@ -259,7 +278,8 @@ var (
 
 func repairComposeHardeningSource(src string) (string, []string, []string) {
 	out := strings.ReplaceAll(src, pgbouncerImageOld, pgbouncerImageNew)
-	out = strings.ReplaceAll(out, minioImageOld, minioImageNew)
+	out = strings.ReplaceAll(out, minioImageOldHub, minioImageNew)
+	out = strings.ReplaceAll(out, minioImageOldQuay, minioImageNew)
 	var changes, warnings []string
 
 	// Only when the file still declares one of its own: a project that has
@@ -276,7 +296,7 @@ func repairComposeHardeningSource(src string) (string, []string, []string) {
 		changes = append(changes, "container names are Compose's to choose, so a second copy of the stack can run beside the first")
 	}
 	if out != src {
-		changes = append(changes, "pgbouncer and MinIO run pinned image versions, and MinIO comes from quay.io")
+		changes = append(changes, "pgbouncer and MinIO run pinned image versions, and MinIO comes from an image that still pulls without a login")
 	}
 	if start, end, ok := serviceBlock(out, "api"); ok && strings.Contains(out[start:end], composeRedisURLOld) {
 		block := out[start:end]
