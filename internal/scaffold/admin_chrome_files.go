@@ -691,7 +691,7 @@ export type NavEntry = {
 // inside this array literal, or "grit plugin add" can't wire its nav link.
 export const SYSTEM_NAV: readonly NavEntry[] = [
   // grit:nav:system
-] as const;
+] as const;` + contentNavDeclaration + `
 
 // The system pages that earn a place in the rail.
 //
@@ -811,7 +811,7 @@ export function CollapsibleSidebar({
     const key = r.group || "_root";
     if (!groups[key]) groups[key] = [];
     groups[key].push(r);
-  }
+  }` + contentNavFilter + `
 
   return (
     <>
@@ -866,8 +866,10 @@ export function CollapsibleSidebar({
           {/* The resources, under a heading of their own so the system group
               below reads as a different kind of thing rather than more of the
               same list. Suppressed when there are none, because a heading over
-              nothing is worse than no heading. */}
-          {!collapsed && groups._root.length > 0 && (
+              nothing is worse than no heading. A plugin-injected working
+              surface counts toward "none": the heading has to appear for a
+              project whose only Content entry came from a plugin. */}
+          {!collapsed && (groups._root.length > 0 || visibleContentNav.length > 0) && (
             <p className="-mx-2 mt-3 border-t border-border px-4 pb-0.5 pt-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
               {t("nav.content", "Content")}
             </p>
@@ -887,7 +889,7 @@ export function CollapsibleSidebar({
               />
             );
           })}
-
+` + contentNavRender + `
           {Object.entries(groups)
             .filter(([k]) => k !== "_root")
             .map(([groupName, items]) => (

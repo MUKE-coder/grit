@@ -517,6 +517,13 @@ func Upgrade(uOpts UpgradeOptions) error {
 		if err := repairAccountSecurity(root, opts); err != nil {
 			fmt.Printf("  ⚠ hardening account security: %v\n", err)
 		}
+		// A plugin can put a working surface in the rail's Content group.
+		// Before this the only anchor was SYSTEM_NAV, which renders in the
+		// System Hub's Extensions tab, so a board or a calendar was filed
+		// under System, where nobody looks for one.
+		if err := repairContentNav(root, opts); err != nil {
+			fmt.Printf("  ⚠ adding the Content nav anchor for plugins: %v\n", err)
+		}
 		// Build contexts, the production stack, SQLite in production and the admin
 		// panel's sign-in gate.
 		if err := repairDeployHardening(root, opts); err != nil {

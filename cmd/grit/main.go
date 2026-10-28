@@ -64,6 +64,7 @@ func rootCommand() *cobra.Command {
 
 	rootCmd.AddCommand(newCmd())
 	rootCmd.AddCommand(pluginCmd())
+	rootCmd.AddCommand(blueprintCmd())
 	rootCmd.AddCommand(skillsCmd())
 	rootCmd.AddCommand(newDesktopCmd())
 	rootCmd.AddCommand(initCmd())
