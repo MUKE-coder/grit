@@ -348,6 +348,12 @@
     "keywords": "reproducible k6 benchmarks grit against laravel 13 django next js 15 express bun encore ts same public crud resource postgres identical container limits 10 000 rows restored before every run three repetitions medians reported framework own orm includes full harness cpu evidence results bound database scenario loses bugs benchmark found itself docs vs"
   },
   {
+    "title": "Blueprints",
+    "href": "/docs/blueprints",
+    "section": "Documentation",
+    "keywords": "docs blueprints"
+  },
+  {
     "title": "Changelog",
     "href": "/docs/changelog",
     "section": "Changelog",
@@ -612,6 +618,12 @@
     "keywords": "desktop generate resource wails crud model service tanstack injection full stack resources apps models services router route files 10 automatic code injections docs generation"
   },
   {
+    "title": "Extending",
+    "href": "/docs/extending",
+    "section": "Documentation",
+    "keywords": "docs extending"
+  },
+  {
     "title": "React Hooks",
     "href": "/docs/frontend/hooks",
     "section": "Frontend (Next.js)",
@@ -820,6 +832,18 @@
     "href": "/docs/plugins/impersonate",
     "section": "Plugins",
     "keywords": "plugin impersonate impersonation admin login as user sign in support debug audit trail return to yourself session swap docs plugins"
+  },
+  {
+    "title": "Kanban",
+    "href": "/docs/plugins/kanban",
+    "section": "Plugins",
+    "keywords": "docs plugins kanban"
+  },
+  {
+    "title": "Marketplace",
+    "href": "/docs/plugins/marketplace",
+    "section": "Plugins",
+    "keywords": "docs plugins marketplace"
   },
   {
     "title": "Multi-tenancy plugin",

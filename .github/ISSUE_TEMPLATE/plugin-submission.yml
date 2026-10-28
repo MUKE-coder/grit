@@ -1,0 +1,107 @@
+name: Plugin Submission
+description: List a plugin you wrote in the community index
+title: "[Plugin] "
+labels: ["plugin-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for writing a Grit plugin.
+
+        Listing is not endorsement, and the review is deliberately shallow: that the
+        repository exists, that it installs and removes cleanly on a fresh project,
+        and that it is not obviously hostile. Nobody audits the code for you, and the
+        people who install it should read what it writes, the same as any dependency.
+
+        Accepted submissions are added to `internal/plugin/community.json`, which is
+        what `grit plugin list` and the
+        [marketplace page](https://gritframework.dev/docs/plugins/marketplace) both read.
+
+  - type: input
+    id: name
+    attributes:
+      label: Plugin name
+      description: >-
+        What `grit plugin list` will show. Lowercase, hyphens, no spaces. It must not
+        clash with a built-in plugin, or `grit plugin add <name>` would install the
+        built-in and yours would be unreachable.
+      placeholder: calendar
+    validations:
+      required: true
+
+  - type: input
+    id: repo
+    attributes:
+      label: Repository
+      description: >-
+        Public, and holding a `plugin.json` at the root or in `plugin/`. This is what
+        people will pass to `grit plugin add`.
+      placeholder: github.com/you/grit-calendar
+    validations:
+      required: true
+
+  - type: input
+    id: summary
+    attributes:
+      label: One line
+      description: >-
+        What it does, in a sentence that reads under a name in a list. Not what it is
+        built with.
+      placeholder: A month and week calendar for any resource with a date field
+    validations:
+      required: true
+
+  - type: dropdown
+    id: architectures
+    attributes:
+      label: Architectures it works on
+      multiple: true
+      options:
+        - single
+        - double
+        - triple
+        - api
+        - mobile
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: On a freshly scaffolded project
+      description: >-
+        Run these before submitting. The third is the one people skip, and it is the
+        one that matters: removal replays the lockfile backwards, so it only works if
+        every injection the plugin makes is one the lockfile recorded.
+      options:
+        - label: "`grit plugin add <repo>` installs without errors"
+          required: true
+        - label: "`go build ./...` compiles afterwards"
+          required: true
+        - label: "`grit plugin remove <name>` leaves the project compiling again"
+          required: true
+        - label: It declares its dependencies rather than assuming the project has them
+          required: true
+        - label: Every file it writes is one it created, so removal deletes nothing it did not add
+          required: true
+
+  - type: textarea
+    id: what-it-writes
+    attributes:
+      label: What it writes
+      description: >-
+        The files it creates and the markers it injects at. Paste the output of
+        `grit plugin add` on a fresh project if that is easiest.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: Anything a reviewer should know
+      description: >-
+        External services it needs, a licence that is not permissive, a known
+        limitation. Say it here rather than leave it to be found.
+    validations:
+      required: false

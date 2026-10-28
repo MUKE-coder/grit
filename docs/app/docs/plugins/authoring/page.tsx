@@ -1,18 +1,48 @@
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight, Boxes, AlertTriangle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { AlertTriangle, ArrowRight, Boxes } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 
 export const metadata = {
-  title: 'Plugins — Grit',
+  title: 'Writing a plugin — Grit',
   description:
-    'How Grit plugins work: installing, removing, and writing your own. Plugins generate code into your project rather than hiding behind a runtime dependency.',
+    'The anatomy of a Grit plugin, walked through the kanban plugin: files, injections, dependencies, preflight, and the lockfile that makes removal exact. The rules that matter and the failures each one prevents.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/authoring' },
 }
 
-export default function PluginsPage() {
+const RULES = [
+  {
+    rule: 'Never write a file you did not create',
+    why: 'Removal deletes every file the lockfile records. If a plugin overwrites a file the project already had, removal deletes the user’s file. The installer refuses to overwrite for exactly this reason: change an existing file with an injection instead.',
+  },
+  {
+    rule: 'Every injection needs a marker that will still be there',
+    why: 'An injection anchors on a comment like // grit:models. If a plugin anchors on ordinary code, a reformat or a rename silently breaks the install. Anchor on markers, and if the marker you need does not exist, add it to the scaffold rather than anchoring on something else.',
+  },
+  {
+    rule: 'Declare dependencies, do not assume them',
+    why: 'GoDeps and NodeDeps are fetched before any file is written, so a network failure aborts before the project changes. A plugin that imports a package it did not declare installs cleanly and then fails to compile.',
+  },
+  {
+    rule: 'Refuse early rather than install half',
+    why: 'Preflight runs before the first write. A plugin whose UI needs an admin app should say so on a project that has none, not write the Go half and report success while the feature is invisible.',
+  },
+  {
+    rule: 'Adapt to the architecture',
+    why: 'A --single project has no apps/api, and a TanStack admin keeps its code under src/ with a different router. Path helpers exist for both. Plugins that wrote the Next shape unconditionally landed their files where the alias does not point, which is not a build error: the plugin reports success and the feature is simply not there.',
+  },
+  {
+    rule: 'Pin a column name GORM would not guess',
+    why: 'GORM derives column names by looking for known initialisms anywhere in a field name. WIPLimit contains IP, so the column is w_ip_limit. Reading the struct works, AutoMigrate is happy, and only a write by column name fails, in a handler, in production.',
+  },
+  {
+    rule: 'Test that it removes, not just that it installs',
+    why: 'Installing is the easy half, and the half everybody tests. Removal replays the lockfile backwards, so it only works if every change the plugin made is one the lockfile recorded. A plugin that edits a file outside the injection mechanism installs fine and leaves wreckage behind.',
+  },
+]
+
+export default function PluginAuthoringPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -23,249 +53,355 @@ export default function PluginsPage() {
           <div className="mb-3 flex items-center gap-2">
             <Boxes className="h-5 w-5 text-primary" />
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
-              Extending Grit
+              Plugins
             </span>
           </div>
 
-          <h1 className="mb-4 font-display text-4xl font-bold tracking-tight">Plugins</h1>
-          <p className="mb-10 text-lg text-muted-foreground">
-            A Grit plugin <strong>generates code into your project</strong>. It isn&apos;t a
-            runtime dependency you import &mdash; it writes models, routes and pages into
-            your repo, which you then own and can edit like anything else.
+          <h1 className="mb-4 font-display text-4xl font-bold tracking-tight">Writing a plugin</h1>
+          <p className="mb-10 text-lg leading-relaxed text-muted-foreground">
+            This guide is written around the{' '}
+            <Link href="/docs/plugins/kanban" className="text-primary hover:underline">
+              kanban plugin
+            </Link>
+            , because a board is the smallest feature that needs every part of the system at once:
+            models and migrations, a service with real logic, routes, React Query hooks, two admin
+            pages, a nav entry, an npm dependency, and injections into six existing files.
           </p>
 
-          <div className="prose-grit">
-            <h2>Using plugins</h2>
-            <CodeBlock language="bash" code={`grit plugin list                       # what's available
-grit plugin info multitenant           # what it does
-grit plugin add multitenant            # install a built-in
-grit plugin add ./plugins/my-plugin    # install one of your own
-grit plugin remove multitenant`} />
+          <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">
+            What a plugin actually is
+          </h2>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            A Grit plugin is not loaded at runtime. It is a code generator with a receipt. Install
+            writes files, patches existing files at named markers, and records every one of those
+            actions in <code>.grit/plugins.lock.json</code>. Removal reads that record and replays
+            it backwards.
+          </p>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            That one design decision shapes everything else here. Grit previously had a feature
+            that generated code one way and removed it via a separately maintained list. The two
+            drifted, and removal left behind handlers and switch arms that no longer compiled. A
+            plugin system multiplies that risk by every plugin anyone writes, so removal is derived
+            from what install did, never from a second list an author has to remember to update.
+          </p>
 
-            <h2>Why generated code, not a library</h2>
-            <p>
-              Grit is a code generator. <code>grit new</code> emits a Go + React app that has
-              no dependency on Grit afterwards &mdash; there is no runtime framework object
-              for a plugin to hook into. So plugins write code instead.
-            </p>
-            <p>That trade is deliberate, and it cuts both ways:</p>
-            <ul>
-              <li>
-                <strong>You own the code.</strong> Read it, edit it, delete it. No digging
-                through a vendor directory to work out what a plugin does.
-              </li>
-              <li>
-                <strong>No automatic upgrades.</strong> A plugin that ships a fix
-                won&apos;t update code already in your repo. Remove and re-add to take a new
-                version, and review the diff.
-              </li>
-            </ul>
+          <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">The anatomy</h2>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            A plugin is one value. Here is kanban&apos;s, trimmed:
+          </p>
+          <CodeBlock
+            language="go"
+            code={`func kanbanPlugin() Plugin {
+	return Plugin{
+		Name:    "kanban",
+		Version: "1.0.0",
+		Summary: "Boards, columns and cards with drag-and-drop ordering",
 
-            <h2>Removal is exact</h2>
-            <p>
-              Installation records every file written and every snippet injected in{' '}
-              <code>.grit/plugins.lock.json</code>. Removal replays that record backwards.
-              Commit the lockfile &mdash; it&apos;s how your teammates know what&apos;s
-              installed.
-            </p>
-            <p>
-              This is the part worth understanding if you write a plugin: there is{' '}
-              <strong>no uninstall code to write</strong>. You describe what to install;
-              removal is derived. A separate hand-maintained removal list is exactly how
-              this kind of tooling drifts and starts leaving projects that don&apos;t
-              compile.
-            </p>
+		// Refuses before the first write if the project cannot host it.
+		Preflight: kanbanPreflight,
 
-            <div className="my-8 rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
-              <div className="mb-2 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                <strong className="text-foreground">Edited code is never overwritten</strong>
-              </div>
-              <p className="mb-0 text-sm text-muted-foreground">
-                If you change an injected block, removal reports it and leaves it alone
-                rather than guessing. You&apos;ll be told which file to tidy by hand.
-              </p>
-            </div>
+		// Fetched before any file is written, so a network failure aborts
+		// while the project is still untouched.
+		NodeDeps: []Dependency{
+			{Name: "@dnd-kit/core", Version: "6.3.1", Workspace: "apps/admin"},
+			{Name: "@dnd-kit/sortable", Version: "10.0.0", Workspace: "apps/admin"},
+		},
 
-            <h2>Writing a plugin</h2>
-            <p>A plugin is a value describing files, injections and dependencies:</p>
-            <CodeBlock language="go" code={`plugin.Plugin{
-    Name:    "audit-trail",
-    Version: "1.0.0",
-    Summary: "Records who changed what",
+		// Functions, not data: a triple project needs admin pages an --api
+		// project does not.
+		Files:      kanbanFiles,
+		Injections: kanbanInjections,
 
-    // Requires other plugins be installed first.
-    Requires: []string{},
+		NextSteps: []string{
+			"Install the new admin dependency:  pnpm install",
+			"Run migrations:                    cd apps/api && go run cmd/migrate/main.go",
+		},
+	}
+}`}
+          />
 
-    Files: func(ctx plugin.Context) map[string]string {
-        return map[string]string{
-            "apps/api/internal/audit/audit.go": auditSource(ctx),
-        }
-    },
+          <h3 className="mb-3 mt-8 text-xl font-semibold tracking-tight">Files</h3>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            <code>Files</code> returns a map of project-relative path to content. It is a function
+            because the right paths depend on the project: <code>apiPath</code> resolves{' '}
+            <code>apps/api</code> or the root, <code>adminFile</code> resolves the Next admin or the
+            TanStack one, and <code>adminSource</code> converts a component written in the Next
+            dialect for whichever admin the project has.
+          </p>
+          <CodeBlock
+            language="go"
+            code={`func kanbanFiles(ctx Context) map[string]string {
+	files := map[string]string{
+		apiPath(ctx, "internal/kanban/rank.go"):         kanbanRankSource,
+		apiPath(ctx, "internal/models/board.go"):        kanbanModelsGo(ctx),
+		apiPath(ctx, "internal/services/board.go"):      kanbanServiceGo(ctx),
+		apiPath(ctx, "internal/handlers/board.go"):      kanbanHandlerGo(ctx),
+		apiPath(ctx, "internal/handlers/board_test.go"): kanbanHandlerTestGo(ctx),
+	}
 
-    Injections: func(ctx plugin.Context) []plugin.Injection {
-        return []plugin.Injection{{
-            File:   "apps/api/internal/routes/routes.go",
-            Marker: "// grit:routes:protected",
-            Code:   "\\t\\tprotected.GET(\\"/audit\\", auditHandler.List)",
-        }}
-    },
+	if !hasAdmin(ctx) {
+		return files
+	}
 
-    NextSteps: []string{"Run migrations: go run cmd/migrate/main.go"},
-}`} />
+	files[adminFile(ctx, "hooks/use-boards.ts")] = adminSource(ctx, kanbanHook())
+	files[adminFile(ctx, "components/kanban/board-view.tsx")] = adminSource(ctx, kanbanBoardView())
 
-            <p>
-              <code>Files</code> and <code>Injections</code> are functions, not data, so a
-              plugin can adapt to the project. <code>ctx</code> carries the module path,
-              architecture and frontend &mdash; a <code>--triple</code> app needs admin
-              pages an <code>--api</code> project does not.
-            </p>
+	// A Next page is its own route; TanStack needs a separate shim.
+	list, listRoute := adminPageFile(ctx, "boards", "boards")
+	files[list] = adminSource(ctx, kanbanBoardsPage())
+	if listRoute != "" {
+		files[listRoute] = tanStackRouteShim("boards", "@/pages/boards")
+	}
 
-            <h3>Injections</h3>
-            <p>
-              Code is inserted on the line <em>before</em> a marker comment. The markers a
-              scaffolded project provides:
-            </p>
-            <CodeBlock language="text" code={`// grit:models                AutoMigrate registry
-// grit:handlers              handler construction
-// grit:imports               imports in routes.go
-// grit:middleware:protected  request middleware, after auth
-// grit:routes:public         API-key routes
-// grit:routes:protected      authenticated routes
-// grit:routes:admin          admin-only routes
-// grit:routes:custom         unauthenticated routes
-// grit:seeders               seed registration
-// grit:cron-tasks            scheduled tasks
-// grit:nav:system            a System entry in the admin sidebar
-// grit:icons:import          an icon import in the admin
-// grit:icons:map             that icon in the admin's iconMap`} />
+	return files
+}`}
+          />
 
-              <p className="mt-4 leading-relaxed text-muted-foreground">
-                An icon needs both of its markers. <code>getIcon</code> falls back to
-                a document icon for a key it does not know rather than failing, so a
-                sidebar entry with only the import renders the wrong icon and nothing
-                reports it.
-              </p>
-
-            <p>
-              Mark an injection <code>Optional</code> when the target legitimately may not
-              exist &mdash; a frontend file in an <code>--api</code> project. A missing
-              marker is then a warning instead of a failed install.
-            </p>
-
-            <h3>Rules the installer enforces</h3>
-            <ul>
-              <li>
-                <strong>Never overwrites an existing file.</strong> Removal would otherwise
-                delete something your plugin didn&apos;t create.
-              </li>
-              <li>
-                <strong>A missing marker fails the install</strong> unless the injection is
-                optional. A silent partial install is worse than a clear error.
-              </li>
-              <li>
-                <strong>Installing twice is refused</strong> &mdash; remove first.
-              </li>
-              <li>
-                <strong>Requirements are enforced both ways.</strong> You can&apos;t install
-                without dependencies, or remove something still depended on.
-              </li>
-            </ul>
-
-            <h2>Writing one you can install</h2>
+          <div className="my-6 rounded-xl border border-primary/30 bg-primary/5 p-5">
+            <p className="mb-2 font-medium">Embed code you want tested</p>
             <p className="leading-relaxed text-muted-foreground">
-              The value above is how the built-in plugins are written, and they are
-              compiled into the CLI. Yours does not have to be: the same shape,
-              described in JSON, installs from a directory.
-            </p>
-
-            <CodeBlock language="text" code={`my-plugin/
-  plugin.json          the manifest
-  files/               the file bodies it installs`} />
-
-            <CodeBlock language="json" code={`{
-  "name": "product-reviews",
-  "version": "1.0.0",
-  "summary": "Customer reviews with a moderation queue",
-  "files": [
-    { "from": "files/review_model.go", "to": "{{API_ROOT}}/internal/models/review.go" }
-  ],
-  "injections": [
-    {
-      "file": "{{API_ROOT}}/internal/models/user.go",
-      "marker": "// grit:models",
-      "code": "\t\t&Review{},"
-    },
-    {
-      "file": "{{API_ROOT}}/internal/routes/routes.go",
-      "marker": "// grit:routes:public",
-      "code": "\t\tpublicAPI.GET(\"/products/:key/reviews\", reviewHandler.ForProduct)",
-      "when": { "architecture": ["triple", "double", "full"] }
-    }
-  ],
-  "nextSteps": ["Run the migration:  grit migrate"]
-}`} />
-
-              <p className="leading-relaxed text-muted-foreground">
-                <code>from</code> is relative to the plugin directory,{' '}
-                <code>to</code> to the project root. File bodies and paths get{' '}
-                <code>{'{{MODULE}}'}</code>, <code>{'{{PROJECT}}'}</code> and{' '}
-                <code>{'{{API_ROOT}}'}</code> substituted, so a plugin does not need to
-                know the module path of the project installing it, or whether that
-                project keeps its Go code in <code>apps/api</code> or at the root.
-              </p>
-              <p className="leading-relaxed text-muted-foreground">
-                <code>when</code> limits a file or injection to certain projects, by{' '}
-                <code>architecture</code> and <code>frontend</code>. It is data rather
-                than an expression language on purpose: a plugin that needs real logic
-                is better written in Go and contributed upstream, and a
-                half-implemented expression parser is a support burden nobody asked
-                for.
-              </p>
-
-              <div className="not-prose my-5 rounded-xl border border-border p-4 text-sm leading-relaxed">
-                <p className="text-foreground"><strong>Nothing else changes.</strong></p>
-                <p className="mt-2 text-muted-foreground">
-                  A directory plugin is recorded in{' '}
-                  <code>.grit/plugins.lock.json</code> exactly like a built-in, and{' '}
-                  <code>grit plugin remove</code> replays that record backwards the same
-                  way. The installer refuses the same things: an existing file, a
-                  missing marker that is not optional, a second install, a dirty git
-                  tree. Paths that climb out of the project are refused at load time,
-                  because a plugin is somebody else&apos;s code and{' '}
-                  <code>&quot;to&quot;: &quot;../../.ssh/authorized_keys&quot;</code>{' '}
-                  is a file write rather than an install.
-                </p>
-              </div>
-
-              <p className="leading-relaxed text-muted-foreground">
-                Only an explicit path is read as a directory:{' '}
-                <code>./plugins/x</code>, <code>../x</code> or an absolute path. A bare
-                name is always a built-in, so a folder cannot shadow one by sharing its
-                name.
-              </p>
-
-            <h2>A worked example</h2>
-            <p>
-              The <code>multitenant</code> plugin is the reference implementation: models, a
-              GORM callback, middleware, an API, and tests &mdash; five files and three
-              injections. Read it in <code>internal/plugin/multitenant.go</code>.
+              <code>kanbanRankSource</code> is not a Go string. It is{' '}
+              <code>//go:embed kanban/rank.go</code>, so the ordering algorithm the project receives
+              is byte for byte the code Grit&apos;s own test suite runs on every CI run. A plugin
+              that keeps its algorithm in a string literal has no tests for what it ships: the
+              string compiles nowhere until somebody installs it.
             </p>
           </div>
 
-          <div className="mt-12 flex items-center justify-between border-t border-border/40 pt-6">
-            <Button asChild variant="ghost">
-              <Link href="/docs">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Docs
-              </Link>
-            </Button>
-            <Button asChild variant="ghost">
-              <Link href="/docs/plugins/multitenant">
-                Multi-tenancy
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+          <h3 className="mb-3 mt-8 text-xl font-semibold tracking-tight">Injections</h3>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            An injection inserts a snippet on the line before a marker comment. The exact text is
+            recorded in the lockfile, so removal takes out precisely what was put in.
+          </p>
+          <CodeBlock
+            language="go"
+            code={`{
+	File:   apiPath(ctx, "internal/models/user.go"),
+	Marker: "// grit:models",
+	Code:   "\\t\\t&Board{},\\n\\t\\t&BoardColumn{},\\n\\t\\t&BoardCard{},",
+},
+{
+	File:   apiPath(ctx, "internal/routes/routes.go"),
+	Marker: "// grit:handlers",
+	Code:   "\\tboardHandler := handlers.NewBoardHandler(db)",
+},`}
+          />
+          <p className="mb-4 mt-4 leading-relaxed text-muted-foreground">
+            The markers available in a scaffolded project:
+          </p>
+          <div className="mb-6 overflow-hidden rounded-xl border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-card/60">
+                <tr className="border-b border-border text-left">
+                  <th className="px-4 py-3 font-medium">Marker</th>
+                  <th className="px-4 py-3 font-medium">In</th>
+                  <th className="px-4 py-3 font-medium">For</th>
+                </tr>
+              </thead>
+              <tbody className="align-top">
+                <tr className="border-b border-border/60">
+                  <td className="px-4 py-3 font-mono text-xs">// grit:models</td>
+                  <td className="px-4 py-3 text-muted-foreground">models/user.go</td>
+                  <td className="px-4 py-3 text-muted-foreground">Register a model for AutoMigrate</td>
+                </tr>
+                <tr className="border-b border-border/60">
+                  <td className="px-4 py-3 font-mono text-xs">// grit:handlers</td>
+                  <td className="px-4 py-3 text-muted-foreground">routes/routes.go</td>
+                  <td className="px-4 py-3 text-muted-foreground">Construct a handler</td>
+                </tr>
+                <tr className="border-b border-border/60">
+                  <td className="px-4 py-3 font-mono text-xs">// grit:routes:protected</td>
+                  <td className="px-4 py-3 text-muted-foreground">routes/routes.go</td>
+                  <td className="px-4 py-3 text-muted-foreground">Routes behind auth</td>
+                </tr>
+                <tr className="border-b border-border/60">
+                  <td className="px-4 py-3 font-mono text-xs">// grit:routes:custom</td>
+                  <td className="px-4 py-3 text-muted-foreground">routes/routes.go</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    Routes with no auth middleware, for genuinely anonymous endpoints
+                  </td>
+                </tr>
+                <tr className="border-b border-border/60">
+                  <td className="px-4 py-3 font-mono text-xs">// grit:icons:import</td>
+                  <td className="px-4 py-3 text-muted-foreground">admin lib/icons.ts</td>
+                  <td className="px-4 py-3 text-muted-foreground">Import a lucide icon</td>
+                </tr>
+                <tr className="border-b border-border/60">
+                  <td className="px-4 py-3 font-mono text-xs">// grit:icons:map</td>
+                  <td className="px-4 py-3 text-muted-foreground">admin lib/icons.ts</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    Make it reachable by name. Both are needed: getIcon falls back to a document
+                    icon and nothing reports the miss
+                  </td>
+                </tr>
+                <tr className="border-b border-border/60">
+                  <td className="px-4 py-3 font-mono text-xs">// grit:nav:content</td>
+                  <td className="px-4 py-3 text-muted-foreground">admin CollapsibleSidebar.tsx</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    A working surface, in the rail beside the resources
+                  </td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 font-mono text-xs">// grit:nav:system</td>
+                  <td className="px-4 py-3 text-muted-foreground">admin CollapsibleSidebar.tsx</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    An operational surface, in the System Hub&apos;s Extensions tab
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            Those last two are worth getting right, and kanban got it wrong first. A board filed
+            under System, Extensions is three clicks from the dashboard and nobody looks for their
+            board there. <code>grit:nav:content</code> exists because building this plugin found
+            that there was no anchor for a surface people open while working rather than while
+            configuring.
+          </p>
+
+          <h3 className="mb-3 mt-8 text-xl font-semibold tracking-tight">Preflight</h3>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            Preflight states a requirement the plugin cannot inject its way out of. It runs before
+            anything is written, so a project that is not ready is told what to do rather than left
+            half-installed.
+          </p>
+          <CodeBlock
+            language="go"
+            code={`func kanbanPreflight(ctx Context) error {
+	if !hasAdmin(ctx) {
+		return fmt.Errorf("kanban needs an admin app, and this project is --%s\\n\\n"+
+			"The board UI lives in the admin. Scaffold with --triple, or install the\\n"+
+			"API half by hand from the files this plugin would have written.", ctx.Architecture)
+	}
+	return nil
+}`}
+          />
+          <p className="mb-4 mt-4 leading-relaxed text-muted-foreground">
+            Say what to do instead. &quot;Incompatible&quot; is not a fix; &quot;run grit upgrade
+            first&quot; is.
+          </p>
+
+          <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">The rules</h2>
+          <p className="mb-6 leading-relaxed text-muted-foreground">
+            Each of these exists because something went wrong without it.
+          </p>
+          <ol className="mb-8 space-y-5">
+            {RULES.map((r, i) => (
+              <li key={r.rule} className="rounded-xl border border-border bg-card/40 p-5">
+                <p className="mb-2 font-medium">
+                  <span className="mr-2 font-mono text-sm text-primary">{i + 1}</span>
+                  {r.rule}
+                </p>
+                <p className="leading-relaxed text-muted-foreground">{r.why}</p>
+              </li>
+            ))}
+          </ol>
+
+          <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">
+            Writing one outside the Grit repo
+          </h2>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            The plugins above are Go values compiled into the CLI. You do not need to fork Grit to
+            write one: the same shape is expressible as a directory with a JSON manifest, and
+            install and removal behave identically.
+          </p>
+          <CodeBlock
+            language="text"
+            code={`my-plugin/
+  plugin.json          the manifest
+  files/               file bodies, referenced by "from"`}
+          />
+          <CodeBlock
+            language="json"
+            code={`{
+  "name": "calendar",
+  "version": "1.0.0",
+  "summary": "A month view for any resource with a date field",
+  "nodeDeps": [
+    { "name": "date-fns", "version": "4.1.0", "workspace": "apps/admin" }
+  ],
+  "files": [
+    { "from": "files/calendar.tsx", "to": "apps/admin/components/calendar.tsx" }
+  ],
+  "injections": [
+    {
+      "file": "apps/admin/components/chrome/CollapsibleSidebar.tsx",
+      "marker": "// grit:nav:content",
+      "code": "  { href: \\"/calendar\\", label: \\"Calendar\\", iconKey: \\"Calendar\\", adminOnly: false },"
+    }
+  ],
+  "nextSteps": ["pnpm install"]
+}`}
+          />
+          <p className="mb-4 mt-4 leading-relaxed text-muted-foreground">
+            File bodies get <code>{'{{MODULE}}'}</code> and <code>{'{{PROJECT}}'}</code> substituted,
+            so a plugin does not need to know the module path of the project installing it. Install
+            it from a path or straight from a repository:
+          </p>
+          <CodeBlock
+            language="bash"
+            code={`grit plugin add ./my-plugin
+grit plugin add github.com/you/grit-calendar`}
+          />
+
+          <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">Testing it</h2>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            On a freshly scaffolded project, in this order:
+          </p>
+          <CodeBlock
+            language="bash"
+            code={`grit new testbed --triple --next
+cd testbed
+
+grit plugin add ./my-plugin       # installs without errors
+cd apps/api && go build ./...     # still compiles
+go test ./internal/...            # the tests it shipped pass
+cd ../.. && pnpm install && cd apps/admin && npx tsc --noEmit
+
+cd ../.. && grit plugin remove calendar --force
+cd apps/api && go build ./...     # STILL compiles`}
+          />
+          <div className="my-6 flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500" />
+            <p className="leading-relaxed text-muted-foreground">
+              That last build is the one people skip, and it is the one that matters. Installing is
+              the easy half. If removal leaves a project that does not compile, the plugin changed
+              something the lockfile did not record.
+            </p>
+          </div>
+
+          <h2 className="mb-4 mt-12 text-2xl font-semibold tracking-tight">Publishing it</h2>
+          <p className="mb-4 leading-relaxed text-muted-foreground">
+            Put it in a public repository with the manifest at the root or in <code>plugin/</code>,
+            then run <code>grit plugin submit</code> for the checklist and the submission link.
+            Accepted plugins appear in <code>grit plugin list</code> and on the{' '}
+            <Link href="/docs/plugins/marketplace" className="text-primary hover:underline">
+              marketplace
+            </Link>
+            .
+          </p>
+
+          <div className="mt-12 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/docs/plugins/marketplace"
+              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-primary"
+            >
+              <span className="flex-1">
+                <span className="block font-medium">Marketplace</span>
+                <span className="text-sm text-muted-foreground">Official and community plugins</span>
+              </span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <Link
+              href="/docs/plugins/kanban"
+              className="group flex flex-1 items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-primary"
+            >
+              <span className="flex-1">
+                <span className="block font-medium">The kanban plugin</span>
+                <span className="text-sm text-muted-foreground">The example in full</span>
+              </span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+            </Link>
           </div>
         </div>
       </main>

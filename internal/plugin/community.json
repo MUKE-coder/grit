@@ -1,0 +1,20 @@
+{
+  "$comment": [
+    "The community plugin index. One entry per plugin that somebody outside the",
+    "Grit team wrote and wants listed.",
+    "",
+    "This file is the single source of truth: the CLI embeds it for",
+    "`grit plugin list`, and docs/scripts/sync-community-plugins.py copies it",
+    "into the docs site for the marketplace page. Edit it here and nowhere else.",
+    "",
+    "To add yours, see `grit plugin submit` or",
+    "https://gritframework.dev/docs/plugins/marketplace.",
+    "",
+    "Listing is not endorsement, and the review is deliberately shallow: that",
+    "the repository exists, that it holds a plugin.json, that the plugin",
+    "installs and removes cleanly on a fresh project, and that it is not",
+    "obviously hostile. Nobody audits the code for you. It writes files into",
+    "your project and you should read them, the same as any dependency."
+  ],
+  "plugins": []
+}

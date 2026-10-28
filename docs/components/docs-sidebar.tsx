@@ -236,7 +236,11 @@ const navItems: NavItem[] = [
     title: 'Plugins',
     icon: <Package className="h-3.5 w-3.5" />,
     items: [
+      { title: 'Four ways to extend', href: '/docs/extending' },
+      { title: 'Blueprints', href: '/docs/blueprints' },
       { title: 'What are plugins', href: '/docs/plugins/overview' },
+      { title: 'Marketplace', href: '/docs/plugins/marketplace' },
+      { title: 'Kanban boards', href: '/docs/plugins/kanban' },
       { title: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
       { title: 'Impersonate', href: '/docs/plugins/impersonate' },
       { title: 'Command palette', href: '/docs/plugins/command-palette' },

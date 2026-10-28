@@ -26,6 +26,7 @@ func pluginCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(pluginListCmd())
+	cmd.AddCommand(pluginSubmitCmd())
 	cmd.AddCommand(pluginInfoCmd())
 	cmd.AddCommand(pluginAddCmd())
 	cmd.AddCommand(pluginUpdateCmd())
@@ -157,8 +158,115 @@ func pluginListCmd() *cobra.Command {
 			}
 			printModulePlugins()
 
+			printCommunityPlugins()
+
 			fmt.Println("  grit plugin info <name>   details")
 			fmt.Println("  grit plugin add <name>    install")
+			fmt.Println("  grit plugin submit        list one of your own")
+			fmt.Println()
+			return nil
+		},
+	}
+}
+
+// printCommunityPlugins lists what other people have written.
+//
+// Printed even when empty. A section that disappears when there is nothing in
+// it reads as "there is no such thing as a community plugin", which is the
+// opposite of what an empty index means.
+func printCommunityPlugins() {
+	faint := color.New(color.Faint)
+
+	fmt.Println("  Community plugins:")
+	fmt.Println("  " + faint.Sprint("written by other people, listed but not audited") + "\n")
+
+	entries := plugin.Community()
+	if len(entries) == 0 {
+		fmt.Println("  " + faint.Sprint("None listed yet. Yours could be the first: grit plugin submit"))
+		fmt.Println()
+		return
+	}
+
+	for _, p := range entries {
+		fmt.Printf("  %-16s %s\n", color.CyanString(p.Name), faint.Sprintf("by %s", p.Author))
+		fmt.Printf("  %-16s %s\n", "", faint.Sprint(p.Summary))
+		fmt.Printf("  %-16s %s\n", "", faint.Sprintf("grit plugin add %s", p.Repo))
+	}
+	fmt.Println()
+}
+
+// addFromRepo clones a plugin repository and reads its manifest.
+//
+// The confirmation is not a formality. A built-in plugin is code the Grit
+// team wrote and tests; a repository is code somebody else wrote, and the
+// index it may have come from is a list, not an audit. Saying the source out
+// loud and waiting is the difference between a decision and an accident.
+//
+// The clone is left on disk when the install fails, and the path is printed,
+// because the usual reason an install fails is that the manifest needs
+// reading.
+func addFromRepo(cmd *cobra.Command, arg string, force bool) (plugin.Plugin, error) {
+	url := plugin.RepoURL(arg)
+
+	if !force {
+		fmt.Println(color.YellowString("  ⚠ This installs code from a repository Grit does not control."))
+		fmt.Printf("    Source: %s\n", url)
+		fmt.Println("    It will write files into your project and patch existing ones.")
+		fmt.Println("    Read them afterwards with `git diff`, as you would any dependency.")
+		fmt.Println()
+		if !confirm() {
+			return plugin.Plugin{}, fmt.Errorf("cancelled")
+		}
+		fmt.Println()
+	}
+
+	dir, err := plugin.TempCloneDir(url)
+	if err != nil {
+		return plugin.Plugin{}, err
+	}
+
+	fmt.Printf("  Cloning %s\n", color.New(color.Faint).Sprint(url))
+	p, err := plugin.CloneAndLoad(url, dir)
+	if err != nil {
+		fmt.Printf("  %s\n", color.New(color.Faint).Sprintf("the clone is at %s", dir))
+		return plugin.Plugin{}, err
+	}
+	// Removing it on success keeps a plugin's own repository from being
+	// mistaken for the installed copy: what is installed is in your project.
+	cmd.PostRun = func(*cobra.Command, []string) { _ = os.RemoveAll(dir) }
+	return p, nil
+}
+
+func pluginSubmitCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "submit",
+		Short: "List a plugin you wrote in the community index",
+		Long: "Prints what to send and where to send it.\n\n" +
+			"Submission is a GitHub issue, reviewed by hand. The review is shallow on\n" +
+			"purpose: that the repository exists, that it installs and removes cleanly\n" +
+			"on a fresh project, and that it is not obviously hostile. Nobody audits\n" +
+			"the code for you, and listing is not endorsement.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+			faint := color.New(color.Faint)
+
+			fmt.Println("  Listing a plugin you wrote")
+			fmt.Println()
+			fmt.Println("  Before you submit, check that on a freshly scaffolded project:")
+			fmt.Println()
+			fmt.Println("    " + color.CyanString("grit plugin add <your repo>") + faint.Sprint("   installs without errors"))
+			fmt.Println("    " + color.CyanString("go build ./...") + faint.Sprint("                compiles afterwards"))
+			fmt.Println("    " + color.CyanString("grit plugin remove <name>") + faint.Sprint("     leaves it compiling again"))
+			fmt.Println()
+			fmt.Println("  That last one is the one people skip. Removal replays the lockfile")
+			fmt.Println("  backwards, so it only works if every injection the plugin makes is")
+			fmt.Println("  one the lockfile recorded.")
+			fmt.Println()
+			fmt.Println("  Then open:")
+			fmt.Println("    " + plugin.SubmitURL)
+			fmt.Println()
+			fmt.Println("  Writing one first:")
+			fmt.Println("    " + faint.Sprint("https://gritframework.dev/docs/plugins/authoring"))
 			fmt.Println()
 			return nil
 		},
@@ -237,16 +345,22 @@ func pluginAddCmd() *cobra.Command {
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add <name|./path>",
+		Use:   "add <name|./path|repo-url>",
 		Short: "Install a plugin into this project",
-		Long: `Install a built-in plugin by name, or one of your own from a directory:
+		Long: `Install a built-in plugin by name, one of your own from a directory, or
+somebody else's from a git repository:
 
-  grit plugin add impersonate
+  grit plugin add kanban
   grit plugin add ./plugins/product-reviews
+  grit plugin add github.com/someone/grit-calendar
 
 A plugin directory holds a plugin.json manifest and the files it installs.
 Everything else is identical: the same lockfile records what was written, and
-` + "`" + `grit plugin remove` + "`" + ` replays it backwards either way.`,
+` + "`" + `grit plugin remove` + "`" + ` replays it backwards whichever way it arrived.
+
+A repository is somebody else's code landing in your project, so it is
+confirmed before anything is cloned. Nothing from the repository is executed:
+Grit reads its plugin.json and writes the files it names.`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
@@ -256,9 +370,12 @@ Everything else is identical: the same lockfile records what was written, and
 			// folder from ever shadowing a built-in that shares its name.
 			var p plugin.Plugin
 			var err error
-			if plugin.IsDirRef(args[0]) {
+			switch {
+			case plugin.IsRepoRef(args[0]):
+				p, err = addFromRepo(cmd, args[0], force)
+			case plugin.IsDirRef(args[0]):
 				p, err = plugin.LoadDir(args[0])
-			} else {
+			default:
 				p, err = plugin.Get(args[0])
 			}
 			if err != nil {
