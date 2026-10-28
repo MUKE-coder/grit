@@ -770,6 +770,36 @@ export const CLI_COMMANDS: CliCommand[] = [
     keywords: ['skills', 'claude', 'ai', 'experts', 'agent', 'install'],
   },
   {
+    id: 'versions',
+    name: 'grit versions',
+    category: 'Meta',
+    summary: 'What this project runs, against what this CLI ships. Changes nothing.',
+    example: 'grit versions',
+    output: [
+      '  this project               3.102.0',
+      '  this CLI                   3.414.0',
+      '  sentinel                   behind    v2.5.0 -> v2.8.0',
+      '  pulse                      current   v1.5.1',
+      '  kanban                     current   1.0.0',
+      '  3 things are behind. grit upgrade',
+    ],
+    purpose:
+      'grit doctor warns when something is wrong, which means it is silent about everything that is merely old. Somebody deciding whether to bring an existing project up to a newer Grit needs the opposite: the whole picture, including the parts that are fine, because what they are weighing is the size of the move rather than any one fault. This prints the project’s Grit version, every library the generated API mounts, and every installed plugin, each against the version this CLI expects.',
+    useCases: [
+      'Before planning an upgrade, to size it.',
+      'Answering “are our Sentinel, Pulse and GORM Studio versions in step”.',
+      'In a report, with --json.',
+    ],
+    notes: [
+      'A floor is not a pin: a project ahead of the version this CLI expects reports “ahead” and is left alone. Grit never downgrades.',
+      'A library the project never mounted reports “absent”, which is a choice rather than a gap.',
+      'A plugin installed from a directory or a repository reports “unknown”, because this CLI has no version of it to compare against.',
+      'Reports only. grit upgrade is what raises anything.',
+    ],
+    files: [],
+    keywords: ['versions', 'version', 'upgrade', 'outdated', 'behind', 'sentinel', 'pulse', 'gorm-studio', 'batteries', 'sync', 'audit'],
+  },
+  {
     id: 'doctor',
     name: 'grit doctor',
     category: 'Meta',

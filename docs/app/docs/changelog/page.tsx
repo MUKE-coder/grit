@@ -66,6 +66,80 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.415.0 */}
+            <div className="mb-12" id="v3.415.0">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.415.0
+                </span>
+                <span className="text-sm text-muted-foreground">October 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Three reported bugs, a worked example on every plugin page, and a way to see how far behind a project is</h3>
+                <p>
+                  <strong>A batch insert panicked.</strong> The multitenant plugin&apos;s stamp
+                  callback reached straight for GORM&apos;s <code>Statement.ReflectValue</code>,
+                  which is a struct for <code>Create(&amp;row)</code> and a slice for{' '}
+                  <code>Create(&amp;rows)</code>. Passing a slice to <code>field.Set</code> panics
+                  inside reflect rather than returning an error, so a batch insert of any
+                  tenant-owned model took the process down: an import, a join table, any
+                  hand-written code doing the ordinary thing. It handles both now, and
+                  dereferences pointer elements so a slice of pointers works too
+                  (<a href="https://github.com/MUKE-coder/grit/issues/117">grit#117</a>).
+                </p>
+                <p>
+                  <strong>A record page showed a dash where a name should be.</strong> A
+                  belongs_to column is generated with a dotted key, <code>board.name</code>,
+                  because the API returns the related object rather than a flattened field. The
+                  list table resolved it and the record page did not, so on a CRM a deal&apos;s
+                  page showed a dash for Pipeline, Stage, Contact, Company and Owner while the
+                  list beside it showed all five. Nothing failed: a missing nested property is
+                  undefined, and undefined renders as a dash. The resolver now lives in one place
+                  that both surfaces import
+                  (<a href="https://github.com/MUKE-coder/grit/issues/118">grit#118</a>).
+                </p>
+                <p>
+                  <strong>A date read &quot;just now&quot;.</strong> Both <code>date</code> and{' '}
+                  <code>datetime</code> columns were formatted relative to the current moment, so
+                  a calendar date with no time showed &quot;just now&quot; today and &quot;18h
+                  ago&quot; yesterday, on a column whose own form field said <code>date</code>.
+                  The deeper problem was two choosers disagreeing: the one <code>grit sync</code>{' '}
+                  uses for hand-written models had always told dates from timestamps. They share
+                  one rule now, and a test asserts they agree
+                  (<a href="https://github.com/MUKE-coder/grit/issues/119">grit#119</a>).
+                </p>
+                <p>
+                  <strong>Every plugin page now carries a worked example.</strong> The
+                  marketplace sends people to a plugin&apos;s page to find out how to use it, and
+                  those pages only said what each plugin was. All nine have a step-by-step run
+                  through on a real project, each step with the command and what it actually
+                  does, and a Related plugins block where every entry says why it is related
+                  rather than just naming it.
+                </p>
+                <p>
+                  Writing them found a hole in the CLI&apos;s own documentation indexer. It only
+                  extracted arrays a page rendered with <code>.map(</code>, so a page rendering
+                  its data through a shared component was invisible to{' '}
+                  <code>grit docs search</code> while looking perfectly fine in a browser. It
+                  recognises the prop form too now.
+                </p>
+                <p>
+                  <strong>grit versions</strong> is new. <code>grit doctor</code> warns when
+                  something is wrong, which means it is silent about everything that is merely
+                  old. Somebody deciding whether to bring an existing project up to a newer Grit
+                  needs the opposite: the whole picture, including the parts that are fine,
+                  because what they are weighing is the size of the move rather than any one
+                  fault. It prints the project&apos;s Grit version against this CLI&apos;s, every
+                  library the generated API mounts (Sentinel, Pulse, GORM Studio and the rest)
+                  against the version this CLI expects, and every installed plugin. Each line
+                  reads current, behind, ahead or absent, and a behind line says why the newer
+                  version matters. It changes nothing; <code>grit upgrade</code> is what raises
+                  them.
+                </p>
+              </div>
+            </div>
+
             {/* v3.414.0 */}
             <div className="mb-12" id="v3.414.0">
               <div className="flex items-center gap-3 mb-4">
