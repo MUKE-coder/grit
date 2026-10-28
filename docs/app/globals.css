@@ -117,7 +117,27 @@
     --destructive-foreground: #ffffff;
     --input: var(--border-strong);
     --ring: var(--accent);
-    --radius: 10px;
+    /* ── The radius scale ───────────────────────────────────────────────
+       Declared here and nowhere else. These are the values the design
+       system's own component CSS (app/grit.css, published as bundle.css)
+       actually draws with, which is what makes the scale checkable: an
+       audit can say "every corner on this page is one of these" rather
+       than counting distinct values and hoping.
+
+       7px looks like an eighth value and is not one: .g-tab sits inside
+       .g-tabs (10px) with a 3px inset, and 10 - 3 is the radius that keeps
+       the two curves concentric. A nested radius is derived, never chosen.
+
+       --radius stays as the shadcn alias every components/ui/ file reads. */
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-btn-sm: 8px;
+    --radius-md: 10px;
+    --radius-btn-lg: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-full: 9999px;
+    --radius: var(--radius-md);
 
     --sidebar-background: var(--surface-1);
     --sidebar-foreground: var(--fg-muted);

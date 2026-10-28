@@ -122,14 +122,28 @@ const config: Config = {
       // scale. Collapsing all five names onto the three allowed values makes
       // the budget unbreakable through a utility: there is no class that can
       // produce an off-scale corner.
+      // Every name reads a token from globals.css, so there is no arithmetic
+      // here that can invent a value. The old mapping derived 6, 8 and 10
+      // from one --radius, and the 8px it produced was on no scale and on
+      // every button.
+      //
+      // Names outnumber values on purpose. `lg` stays at 10 and bare
+      // `rounded` stays at 6 because between them they are 2,600 corners on
+      // this site, and moving a radius 2px in 2,600 places is a large diff
+      // that nobody asked for and nobody can see. The two button radii have
+      // names of their own rather than a Tailwind size, because they belong
+      // to a control rather than to a step on the scale.
       borderRadius: {
-        DEFAULT: 'calc(var(--radius) - 4px)', // 6, so bare `rounded` is on scale too
-        sm: 'calc(var(--radius) - 4px)', // 6
-        md: 'var(--radius)', // 10
-        lg: 'var(--radius)', // 10
-        xl: '1rem', // 16
-        '2xl': '1rem', // 16
-        '3xl': '1rem', // 16
+        DEFAULT: 'var(--radius-sm)', // 6
+        xs: 'var(--radius-xs)', // 4
+        sm: 'var(--radius-sm)', // 6
+        'btn-sm': 'var(--radius-btn-sm)', // 8
+        md: 'var(--radius-md)', // 10
+        lg: 'var(--radius-md)', // 10
+        btn: 'var(--radius-btn-lg)', // 12
+        xl: 'var(--radius-lg)', // 16
+        '2xl': 'var(--radius-xl)', // 20
+        '3xl': 'var(--radius-xl)', // 20
       },
       keyframes: {
         'accordion-down': {

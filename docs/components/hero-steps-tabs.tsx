@@ -167,7 +167,7 @@ export function HeroStepsTabs() {
       />
 
       <figure
-        className="mt-3 overflow-hidden rounded-[18px] border border-border bg-surface-1"
+        className="mt-3 overflow-hidden rounded-2xl border border-border bg-surface-1"
         style={{
           boxShadow:
             '0 40px 100px -40px rgba(169,155,255,0.18), 0 30px 60px -30px rgba(0,0,0,0.8)',
@@ -190,7 +190,7 @@ export function HeroStepsTabs() {
           {variant.steps.map((step, i) => (
             <li
               key={step.command}
-              className="group grid grid-cols-[26px_minmax(0,1fr)_32px] gap-2 rounded-[10px] px-1.5 py-[7px] transition-colors hover:bg-bg/60"
+              className="group grid grid-cols-[26px_minmax(0,1fr)_32px] gap-2 rounded-md px-1.5 py-[7px] transition-colors hover:bg-bg/60"
             >
               <span className="text-right font-mono text-[11px] leading-[22px] text-fg-subtle">
                 {i + 1}

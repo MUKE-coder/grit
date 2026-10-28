@@ -15,7 +15,6 @@
   // --- DESIGN.md §9 -------------------------------------------------------
   const BUDGETS = {
     typeStyles: 12,
-    radii: 4,
     sectionPaddings: 3,
     shadows: 2,
     sections: 12,
@@ -25,8 +24,22 @@
     contrastFailures: 0,
   };
 
-  // The four radii DESIGN.md §4 allows, in px. 0 is always fine.
-  const ALLOWED_RADII = [0, 6, 10, 16, 9999];
+  /*
+   * The radius scale, in px, as --radius-* declares it in globals.css and as
+   * the design system's component CSS draws it. 0 is always fine.
+   *
+   * This used to be a count ("no more than four distinct radii"), which was
+   * the right check while there was no published scale: counting distinct
+   * values was a proxy for having one. There is a scale now, so the question
+   * is no longer how many corners a page has but whether any of them is a
+   * value nobody chose. A page may legitimately use every step.
+   *
+   * 7 is here because .g-tab sits inside .g-tabs (10) with a 3px inset, and
+   * 10 - 3 is what keeps the two curves concentric. 2 is the line-tab
+   * indicator, a 2px bar rounded to its own height. Both are derived from a
+   * scale value rather than chosen beside it.
+   */
+  const ALLOWED_RADII = [0, 2, 4, 6, 7, 8, 10, 12, 16, 20, 9999];
 
   // The three section paddings DESIGN.md §3 allows, in px.
   const ALLOWED_SECTION_PADDING = [0, 64, 96, 128];
@@ -148,14 +161,18 @@
       return r && r !== '0px' ? normaliseRadius(r) : null;
     })
   );
-  const offScale = radiusValues.filter(([v]) => {
-    const n = Math.round(parseFloat(v));
-    return !v.includes(' ') && !ALLOWED_RADII.includes(n === 0 ? 0 : n > 500 ? 9999 : n);
-  });
-  if (radiusValues.length > BUDGETS.radii) {
-    fail('border radii', radiusValues.length, BUDGETS.radii,
-      'allowed: 6, 10, 16, full. Off-scale here: ' +
-      (offScale.length ? offScale.map(([v, n]) => `${v} (x${n})`).join(', ') : 'none, just too many'));
+  // A compound value is several corners of one radius, so each component is
+  // checked on its own rather than the whole string being waved through.
+  const onScale = (part) => {
+    const n = Math.round(parseFloat(part));
+    if (Number.isNaN(n)) return true; // a percentage or a keyword, not a px value
+    return ALLOWED_RADII.includes(n === 0 ? 0 : n > 500 ? 9999 : n);
+  };
+  const offScale = radiusValues.filter(([v]) => !v.split(' ').every(onScale));
+  if (offScale.length) {
+    fail('off-scale border radii', offScale.length, 0,
+      'the scale is 4 / 6 / 8 / 10 / 12 / 16 / 20 / full. Off it here: ' +
+      offScale.map(([v, n]) => `${v} (x${n})`).join(', '));
   }
 
   // --- 3. section rhythm --------------------------------------------------
@@ -315,7 +332,7 @@
     viewport: `${window.innerWidth}x${window.innerHeight}`,
     budgets: {
       typeStyles: { found: typeStyles.length, limit: BUDGETS.typeStyles },
-      radii: { found: radiusValues.length, limit: BUDGETS.radii },
+      offScaleRadii: { found: offScale.length, limit: 0, distinctInUse: radiusValues.length },
       sectionPaddings: { found: paddings.length, limit: BUDGETS.sectionPaddings },
       shadows: { found: shadows.length, limit: BUDGETS.shadows },
       sections: { found: sections.length, limit: BUDGETS.sections },

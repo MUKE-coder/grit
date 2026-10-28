@@ -5,7 +5,6 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { ThemeProvider } from "@/components/theme-provider";
 import { OrganizationSchema } from "@/components/structured-data";
-import { NexoraChat } from "@/components/nexora-chat";
 import { Analytics } from "zenith-analytics/next";
 import { siteConfig } from "@/config/site";
 import { ZENITH_PUBLIC } from "@/config/zenith";
@@ -83,7 +82,6 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <OrganizationSchema />
           {children}
-          <NexoraChat />
         </ThemeProvider>
         {/* Zenith analytics — server-rendered so the ~1KB snippet is inlined
             into the HTML. Cookieless, so there is nothing to consent to. */}

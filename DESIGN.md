@@ -16,15 +16,16 @@ The marketing site was audited on 2026-10-28. One page, the landing page:
 | What | Found | Should be |
 |---|---|---|
 | Distinct type styles (size + weight) | **40** | ≤ 12 |
-| Distinct border radii | **8** | 4 |
+| Distinct border radii, against no declared scale | **8** | on-scale only |
 | Distinct section paddings | **6** | 3 |
 | `<section>` elements | **36** | ≤ 12 |
 | Top-level headings (h1 + h2) | **30** | ≤ 12 |
 
 Nothing on that page is ugly. It is *unresolved*: forty type styles means
-there is no scale, eight radii means there is no radius token, and thirty
-headings competing for attention means none of them wins. That is what "we
-have not found our sweet spot" feels like from the inside, and it is fixable
+there is no scale, eight radii with no `--radius-*` token behind them means
+every corner was picked by hand, and thirty headings competing for attention
+means none of them wins. That is what "we have not found our sweet spot"
+feels like from the inside, and it is fixable
 by subtraction rather than by more design.
 
 The same audit found `.glow-purple` still in the stylesheet while the theme's
@@ -151,18 +152,33 @@ things that genuinely float: a dropdown, a dialog, a drag preview.
 
 - **Border**: `1px solid var(--line)`. Always 1px. Never 2px for emphasis;
   use `--line-strong` instead.
-- **Radius**: three values plus full, and no others.
-  | Value | Tailwind class | For |
-  |---|---|---|
-  | 6px | `rounded-sm` | Badges, inputs, small controls |
-  | 10px | `rounded-md`, `rounded-lg` | Cards, panels, code blocks |
-  | 16px | `rounded-xl`, `rounded-2xl`, `rounded-3xl` | Hero panels, feature slabs |
-  | full | `rounded-full` | Pills, avatars, icon buttons |
+- **Radius**: the eight values below, and no others.
+  | Value | Token | Tailwind class | For |
+  |---|---|---|---|
+  | 4px | `--radius-xs` | `rounded-xs` | Inline code, ticks, the smallest chips |
+  | 6px | `--radius-sm` | `rounded`, `rounded-sm` | Badges, inputs, small controls |
+  | 8px | `--radius-btn-sm` | `rounded-btn-sm` | A 32px button, an icon button |
+  | 10px | `--radius-md` | `rounded-md`, `rounded-lg` | Cards, panels, code blocks |
+  | 12px | `--radius-btn-lg` | `rounded-btn` | A 48px button, a command row |
+  | 16px | `--radius-lg` | `rounded-xl` | Hero panels, feature slabs |
+  | 20px | `--radius-xl` | `rounded-2xl`, `rounded-3xl` | Bento cards, showcase panels |
+  | full | `--radius-full` | `rounded-full` | Pills, avatars, icon buttons |
 
-  All five Tailwind names are mapped onto those three values in
-  `tailwind.config.ts`, so there is no utility that can produce an off-scale
-  corner. The old mapping generated 6, 8 and 10 from one `--radius`, and the
-  8px it produced was on no scale and on every button.
+  The scale is declared once, as `--radius-*` in `globals.css`, and
+  `tailwind.config.ts` reads those tokens rather than doing arithmetic on
+  one of them. The old mapping generated 6, 8 and 10 from a single
+  `--radius`, and the 8px it produced was on no scale and on every button.
+
+  This is eight values where it used to be four, because the design system's
+  published component CSS draws with eight. The budget that mattered was
+  never the count: it was whether a corner is a value somebody chose. So
+  the check is now "every radius is on the scale" rather than "no more than
+  four radii", and a page may legitimately use every step.
+
+  **A nested radius is derived, never chosen.** A child inside a padded
+  parent takes the parent's radius minus the inset, so the two curves stay
+  concentric: `.g-tab` is 7px because it sits in a 10px `.g-tabs` with a 3px
+  pad. 7 is not a ninth value on the scale and nothing else may use it.
 - **Shadow**: exactly two, and only on floating things.
   - `shadow-pop`: `0 8px 24px -8px rgb(0 0 0 / 0.4)`
   - `shadow-lift`: `0 2px 8px -2px rgb(0 0 0 / 0.25)` for a dragged item.
@@ -306,7 +322,7 @@ What `/grit-design-review` counts. A page over budget is not shipped.
 | Budget | Limit |
 |---|---|
 | Distinct type styles (size + weight) | 12 |
-| Distinct border radii | 4 |
+| Border radii off the scale | 0 |
 | Distinct section paddings | 3 |
 | Distinct shadows | 2 |
 | Sections per marketing page | 12 |
@@ -322,7 +338,7 @@ What `/grit-design-review` counts. A page over budget is not shipped.
 
 - A second accent colour to make something stand out. Use size or space.
 - A shadow to separate two things that are next to each other. Use a line.
-- A radius that is not one of the four.
+- A radius that is not on the scale, or a nested radius that is not the parent's minus the inset.
 - Centre-aligned body text. Headings may centre; paragraphs do not.
 - An animation that repeats on every scroll into view.
 - Text over an image without a scrim that keeps it at 4.5:1.

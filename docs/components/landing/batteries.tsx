@@ -55,7 +55,7 @@ function Tick({ on }: { on: boolean }) {
   return (
     <span
       aria-hidden="true"
-      className={`inline-grid h-[18px] w-[18px] place-items-center rounded-[5px] border ${
+      className={`inline-grid h-[18px] w-[18px] place-items-center rounded-xs border ${
         on ? 'border-accent bg-accent text-accent-fg' : 'border-border-strong'
       }`}
     >
