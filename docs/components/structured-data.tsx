@@ -1,3 +1,5 @@
+import { siteConfig } from '@/config/site'
+
 interface StructuredDataProps {
   data: Record<string, unknown>
 }
@@ -27,6 +29,7 @@ export function OrganizationSchema() {
           'https://github.com/MUKE-coder/grit',
           'https://www.youtube.com/@GritFramework',
           'https://www.linkedin.com/company/grit-framework',
+          siteConfig.discord,
           'https://jb.desishub.com',
         ],
       }}

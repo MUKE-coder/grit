@@ -4,7 +4,12 @@ import React, { useRef, useEffect } from "react"
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { WhatsAppIcon, WHATSAPP_COMMUNITY_URL } from '@/components/community-cta'
+import {
+  DiscordIcon,
+  DISCORD_INVITE_URL,
+  WhatsAppIcon,
+  WHATSAPP_COMMUNITY_URL,
+} from '@/components/community-cta'
 import {
   ChevronRight,
   Home,
@@ -491,24 +496,36 @@ function CommunityNudge() {
     <div className="mt-6 px-4">
       <div className="border-t border-border/50 pt-5">
         <Link
-          href={WHATSAPP_COMMUNITY_URL}
+          href={DISCORD_INVITE_URL}
           target="_blank"
           rel="noreferrer"
-          className="group block rounded-xl border border-emerald-500/25 bg-emerald-500/[0.05] p-3.5 transition-colors hover:border-emerald-500/45 hover:bg-emerald-500/[0.10]"
+          className="group block rounded-xl border border-primary/25 bg-primary/[0.05] p-3.5 transition-colors hover:border-primary/45 hover:bg-primary/[0.10]"
         >
           <div className="flex items-center gap-2">
-            <WhatsAppIcon className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+            <DiscordIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
             <span className="text-[13px] font-semibold text-foreground">
               Ask the community
             </span>
           </div>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-            Stuck on something? Get help on WhatsApp from other Grit developers.
+            Stuck on something? Get help on Discord from other Grit developers.
           </p>
-          <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-emerald-500">
-            Join the group
+          <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
+            Join the server
             <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
           </span>
+        </Link>
+
+        {/* The WhatsApp group predates the Discord and people are already in
+            it, so it stays, one line below rather than as a second card. */}
+        <Link
+          href={WHATSAPP_COMMUNITY_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="group mt-2 flex items-center gap-2 px-1 text-xs text-emerald-700 transition-colors hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+        >
+          <WhatsAppIcon className="h-3 w-3 shrink-0" />
+          Or the WhatsApp group
         </Link>
       </div>
     </div>

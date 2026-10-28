@@ -26,7 +26,13 @@ import { FeatureTabs } from '@/components/feature-tabs'
 import { CpuArchitecture } from '@/components/ui/cpu-architecture'
 import { MagneticButton, GSAPSection, FadeIn, GlowOrb } from '@/components/motion-primitives'
 import { ReactLogo, TanStackLogo } from '@/components/framework-logos'
-import { CommunityCTA, WhatsAppIcon, WHATSAPP_COMMUNITY_URL } from '@/components/community-cta'
+import {
+  CommunityCTA,
+  DiscordIcon,
+  DISCORD_INVITE_URL,
+  WhatsAppIcon,
+  WHATSAPP_COMMUNITY_URL,
+} from '@/components/community-cta'
 import { HubAndSpoke } from '@/components/hub-and-spoke'
 import { WhatIsGrit } from '@/components/what-is-grit'
 import { GRIT_VERSION } from '@/config/site'
@@ -1364,14 +1370,17 @@ grit new my-app`} />
                 The fastest way to build, deploy, and operate full-stack apps in Go.
               </p>
               <div className="flex items-center gap-3">
-                <Link href="https://github.com/MUKE-coder/grit" target="_blank" className="h-8 w-8 rounded-md border border-border/40 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border/60 transition-colors">
+                <Link href="https://github.com/MUKE-coder/grit" target="_blank" aria-label="Grit on GitHub" className="h-8 w-8 rounded-md border border-border/40 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border/60 transition-colors">
                   <Github className="h-3.5 w-3.5" />
                 </Link>
-                <Link href="https://www.youtube.com/@GritFramework" target="_blank" className="h-8 w-8 rounded-md border border-border/40 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border/60 transition-colors">
+                <Link href="https://www.youtube.com/@GritFramework" target="_blank" aria-label="Grit on YouTube" className="h-8 w-8 rounded-md border border-border/40 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border/60 transition-colors">
                   <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.582 7.146a2.78 2.78 0 0 0-1.957-1.967C17.882 4.7 12 4.7 12 4.7s-5.882 0-7.625.479A2.78 2.78 0 0 0 2.418 7.146C1.94 8.892 1.94 12 1.94 12s0 3.108.478 4.854a2.78 2.78 0 0 0 1.957 1.967C6.118 19.3 12 19.3 12 19.3s5.882 0 7.625-.479a2.78 2.78 0 0 0 1.957-1.967C22.06 15.108 22.06 12 22.06 12s0-3.108-.478-4.854zM9.94 15.3V8.7l5.715 3.3-5.715 3.3z" /></svg>
                 </Link>
-                <Link href="https://www.linkedin.com/company/grit-framework" target="_blank" className="h-8 w-8 rounded-md border border-border/40 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border/60 transition-colors">
+                <Link href="https://www.linkedin.com/company/grit-framework" target="_blank" aria-label="Grit on LinkedIn" className="h-8 w-8 rounded-md border border-border/40 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border/60 transition-colors">
                   <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14zM8.339 18.337v-8.59H5.667v8.59h2.672zM7.003 8.574a1.548 1.548 0 1 0 0-3.096 1.548 1.548 0 0 0 0 3.096zm11.335 9.763V13.64c0-2.465-1.338-3.612-3.123-3.612-1.44 0-2.087.791-2.448 1.348v-1.157h-2.671c.034.751 0 8.59 0 8.59h2.671v-4.79c0-.243.018-.487.09-.66.196-.485.642-.989 1.39-.989.982 0 1.376.752 1.376 1.852v4.587h2.715z" /></svg>
+                </Link>
+                <Link href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer" aria-label="Join the Grit Discord server" className="h-8 w-8 rounded-md border border-border/40 flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors">
+                  <DiscordIcon className="h-3.5 w-3.5" />
                 </Link>
               </div>
             </div>
@@ -1413,6 +1422,12 @@ grit new my-app`} />
                 <li><Link href="/sponsors" className="text-muted-foreground hover:text-foreground transition-colors">Sponsors</Link></li>
                 <li><Link href="/pitch" className="text-muted-foreground hover:text-foreground transition-colors">Pitch</Link></li>
                 <li><Link href="/talk" className="text-muted-foreground hover:text-foreground transition-colors">The Talk</Link></li>
+                <li>
+                  <Link href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-primary/90 hover:text-primary transition-colors">
+                    <DiscordIcon className="h-3 w-3" />
+                    Discord Server
+                  </Link>
+                </li>
                 <li>
                   <Link href={WHATSAPP_COMMUNITY_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-emerald-500/90 hover:text-emerald-500 transition-colors">
                     <WhatsAppIcon className="h-3 w-3" />

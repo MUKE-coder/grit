@@ -1,8 +1,31 @@
 import Link from 'next/link'
 import { ArrowRight, MessagesSquare } from 'lucide-react'
+import { siteConfig } from '@/config/site'
+
+/**
+ * The Grit Discord — the main place to get help. Channels for installing,
+ * questions and bugs, so an answer stays findable instead of scrolling away.
+ *
+ * Re-exported from siteConfig rather than written twice: the invite also goes
+ * into the page metadata and the structured data, and two copies of a URL that
+ * must agree is how a dead invite link survives a rotation.
+ */
+export const DISCORD_INVITE_URL = siteConfig.discord
 
 /** The Grit WhatsApp community — questions, tutorials, and help from other builders. */
 export const WHATSAPP_COMMUNITY_URL = 'https://chat.whatsapp.com/HXsOWlp5W6o9lV4YhsY376'
+
+/**
+ * DiscordIcon — lucide ships no Discord glyph, so the official mark is
+ * inlined. currentColor keeps it themeable alongside the other header icons.
+ */
+export function DiscordIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
+      <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
+    </svg>
+  )
+}
 
 /**
  * WhatsAppIcon — lucide ships no WhatsApp glyph, so the official mark is
@@ -17,7 +40,13 @@ export function WhatsAppIcon({ className = 'h-4 w-4' }: { className?: string }) 
 }
 
 /**
- * CommunityCTA — invitation to the WhatsApp community.
+ * CommunityCTA — invitation to the community.
+ *
+ * Discord leads and WhatsApp follows, because the two rooms are not equivalent
+ * for the thing being asked: a Discord answer lands in a named channel and
+ * stays searchable, where the same answer in a WhatsApp group scrolls away
+ * within a day and gets asked again next week. WhatsApp stays because people
+ * are already in it.
  *
  * Two variants because the same ask reads differently depending on where the
  * reader is. "card" is a standalone block for the end of a page, where someone
@@ -35,55 +64,68 @@ export function CommunityCTA({
   if (variant === 'inline') {
     return (
       <Link
-        href={WHATSAPP_COMMUNITY_URL}
+        href={DISCORD_INVITE_URL}
         target="_blank"
         rel="noreferrer"
-        className={`group flex items-center gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] px-4 py-3 no-underline transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/[0.10] ${className}`}
+        className={`group flex items-center gap-3 rounded-xl border border-primary/25 bg-primary/[0.06] px-4 py-3 no-underline transition-colors hover:border-primary/40 hover:bg-primary/[0.10] ${className}`}
       >
-        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-500">
-          <WhatsAppIcon className="h-4 w-4" />
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+          <DiscordIcon className="h-4 w-4" />
         </span>
         <span className="flex-1 text-sm leading-snug text-muted-foreground">
           <span className="font-medium text-foreground">Stuck, or want a second opinion?</span>{' '}
-          Ask in the Grit WhatsApp community.
+          Ask in the Grit Discord.
         </span>
-        <ArrowRight className="h-4 w-4 shrink-0 text-emerald-500 transition-transform group-hover:translate-x-0.5" />
+        <ArrowRight className="h-4 w-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
       </Link>
     )
   }
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/[0.10] via-card/40 to-card/40 p-7 md:p-8 ${className}`}
+      className={`relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/[0.10] via-card/40 to-card/40 p-7 md:p-8 ${className}`}
     >
       <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
         <div className="max-w-xl">
           <div className="mb-3 flex items-center gap-2.5">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-500">
-              <WhatsAppIcon className="h-[18px] w-[18px]" />
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+              <DiscordIcon className="h-[18px] w-[18px]" />
             </span>
-            <span className="tag-mono text-emerald-500">Community</span>
+            <span className="tag-mono text-primary">Community</span>
           </div>
           <h3 className="mb-2 text-xl font-semibold tracking-tight text-foreground md:text-2xl">
             Build alongside other Grit developers
           </h3>
           <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
-            Join the WhatsApp community for questions, tutorials, and guidance from
-            people shipping Grit apps, and from the person who builds it. No question
-            is too small.
+            Join the Discord for questions, tutorials, and guidance from people
+            shipping Grit apps, and from the person who builds it. There are
+            channels for installing, for questions and for bugs, so you can ask in
+            the right place and read what has already been answered. No question is
+            too small.
           </p>
         </div>
 
-        <Link
-          href={WHATSAPP_COMMUNITY_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="group inline-flex h-11 shrink-0 items-center gap-2 self-start rounded-full bg-emerald-500 px-6 text-sm font-semibold text-white no-underline transition-colors hover:bg-emerald-600 md:self-auto"
-        >
-          <WhatsAppIcon className="h-4 w-4" />
-          Join the community
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-        </Link>
+        <div className="flex shrink-0 flex-col gap-2.5 self-start md:self-auto">
+          <Link
+            href={DISCORD_INVITE_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="group inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground no-underline transition-colors hover:bg-primary/85"
+          >
+            <DiscordIcon className="h-4 w-4" />
+            Join the Discord
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+          <Link
+            href={WHATSAPP_COMMUNITY_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-emerald-600/30 px-5 text-xs font-medium text-emerald-700 no-underline transition-colors hover:border-emerald-600/50 hover:bg-emerald-600/10 dark:border-emerald-500/30 dark:text-emerald-400 dark:hover:border-emerald-500/50 dark:hover:bg-emerald-500/10"
+          >
+            <WhatsAppIcon className="h-3.5 w-3.5" />
+            Or the WhatsApp group
+          </Link>
+        </div>
       </div>
     </div>
   )
@@ -93,14 +135,14 @@ export function CommunityCTA({
 export function CommunitySidebarLink({ className = '' }: { className?: string }) {
   return (
     <Link
-      href={WHATSAPP_COMMUNITY_URL}
+      href={DISCORD_INVITE_URL}
       target="_blank"
       rel="noreferrer"
-      className={`group flex items-center gap-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2.5 text-xs transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/[0.10] ${className}`}
+      className={`group flex items-center gap-2.5 rounded-lg border border-primary/20 bg-primary/[0.06] px-3 py-2.5 text-xs transition-colors hover:border-primary/40 hover:bg-primary/[0.10] ${className}`}
     >
-      <MessagesSquare className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+      <MessagesSquare className="h-3.5 w-3.5 shrink-0 text-primary" />
       <span className="flex-1 font-medium text-foreground/90">Ask the community</span>
-      <ArrowRight className="h-3 w-3 shrink-0 text-emerald-500/70 transition-transform group-hover:translate-x-0.5" />
+      <ArrowRight className="h-3 w-3 shrink-0 text-primary/70 transition-transform group-hover:translate-x-0.5" />
     </Link>
   )
 }

@@ -9,7 +9,12 @@ import { Button } from '@/components/ui/button'
 import { SearchDialog } from '@/components/search-dialog'
 import { MobileNav } from '@/components/docs-sidebar'
 import { GitHubStars } from '@/components/github-stars'
-import { WhatsAppIcon, WHATSAPP_COMMUNITY_URL } from '@/components/community-cta'
+import {
+  DiscordIcon,
+  DISCORD_INVITE_URL,
+  WhatsAppIcon,
+  WHATSAPP_COMMUNITY_URL,
+} from '@/components/community-cta'
 import { cn } from '@/lib/utils'
 import { GRIT_VERSION, RELEASE_CHANNEL_LABEL, releaseChannel } from '@/config/site'
 
@@ -131,6 +136,13 @@ export function SiteHeader() {
             <Link href="https://www.youtube.com/@GritFramework" target="_blank" rel="noreferrer">
               <Youtube className="h-4 w-4" />
               <span className="sr-only">YouTube</span>
+            </Link>
+          </Button>
+
+          <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-8 w-8 text-primary/70 hover:text-primary hover:bg-primary/10" asChild>
+            <Link href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer">
+              <DiscordIcon className="h-4 w-4" />
+              <span className="sr-only">Join the Discord server</span>
             </Link>
           </Button>
 

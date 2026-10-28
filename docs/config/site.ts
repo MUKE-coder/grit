@@ -53,6 +53,10 @@ export const siteConfig = {
   github: 'https://github.com/MUKE-coder/grit',
   youtube: 'https://www.youtube.com/@GritFramework',
   linkedin: 'https://www.linkedin.com/company/grit-framework',
+  // The one place the invite is written. community-cta re-exports it as
+  // DISCORD_INVITE_URL for the components, so a new invite is a one-line
+  // change here rather than a search for the old code.
+  discord: 'https://discord.gg/6nJpTgN7U',
   website: 'https://jb.desishub.com',
   keywords: [
     'Go framework',
