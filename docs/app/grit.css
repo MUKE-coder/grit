@@ -1,0 +1,769 @@
+/* ==========================================================================
+   grit.css — the design system's component layer, as published.
+
+   From the Grit Design System artifact, project/components/bundle.css. It is
+   used as given rather than re-expressed in Tailwind utilities: the system
+   owns these values, and a second spelling of them is a second place for
+   them to drift.
+
+   Depends on the token variables in globals.css.
+   ========================================================================== */
+
+/* No @layer wrapper: an @import must precede every other rule, which puts
+   this file before `@tailwind components` and leaves @layer nothing to
+   attach to. It is not needed here. Every rule below is a class selector, so
+   it already outranks Tailwind's preflight, and Tailwind's utilities come
+   later in the cascade and still win over a component class, which is the
+   ordering @layer existed to buy. */
+/* ---------- Buttons ---------- */
+.g-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font: 500 14px/1 var(--font-sans);
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+.g-btn:active {
+  transform: translateY(1px);
+}
+.g-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+.g-btn svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.g-btn--lg {
+  height: 48px;
+  padding: 0 20px;
+  font-size: 15px;
+  border-radius: 12px;
+}
+.g-btn--sm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+/* Primary: inverted. The strongest action on any screen. One per view. */
+.g-btn--primary {
+  background: var(--fg);
+  color: var(--bg);
+}
+.g-btn--primary:hover {
+  background: color-mix(in oklab, var(--fg) 86%, var(--bg));
+}
+/* Secondary: outline */
+.g-btn--secondary {
+  background: transparent;
+  color: var(--fg);
+  border-color: var(--border-strong);
+}
+.g-btn--secondary:hover {
+  background: var(--surface-2);
+  border-color: color-mix(in oklab, var(--border-strong) 60%, var(--fg));
+}
+/* Ghost: text-level */
+.g-btn--ghost {
+  background: transparent;
+  color: var(--fg-muted);
+}
+.g-btn--ghost:hover {
+  color: var(--fg);
+  background: var(--surface-2);
+}
+/* Accent: rare; a single highlighted action inside a dark panel. */
+.g-btn--accent {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+.g-btn--accent:hover {
+  background: color-mix(in oklab, var(--accent) 88%, var(--fg));
+}
+.g-btn .g-btn__arrow {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+.g-btn:hover .g-btn__arrow {
+  transform: translateX(2px);
+}
+
+/* ---------- Small text elements ---------- */
+.g-eyebrow {
+  font: 500 12px/16px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+.g-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--fg-muted);
+  font: 500 12px/1 var(--font-mono);
+}
+.g-badge--accent {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+.g-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+}
+.g-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  background: var(--surface-2);
+  color: var(--fg-muted);
+  font: 500 11px/1 var(--font-mono);
+}
+.g-code-inline {
+  font: 450 0.875em/1 var(--font-mono);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--fg);
+}
+.g-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-line);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  transition: text-decoration-color var(--duration-fast);
+}
+.g-link:hover {
+  text-decoration-color: var(--accent);
+}
+
+/* ---------- Card ---------- */
+.g-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  border-radius: 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+a.g-card:hover,
+.g-card--interactive:hover {
+  border-color: var(--border-strong);
+  background: color-mix(in oklab, var(--surface-1) 70%, var(--surface-2));
+}
+.g-card__icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--fg);
+}
+.g-card__icon svg {
+  width: 18px;
+  height: 18px;
+}
+.g-card__title {
+  font: 600 16px/24px var(--font-sans);
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  margin: 0;
+}
+.g-card__body {
+  font: 400 14px/22px var(--font-sans);
+  color: var(--fg-muted);
+  margin: 0;
+}
+.g-card__more {
+  margin-top: auto;
+  font: 500 13px/20px var(--font-sans);
+  color: var(--fg-subtle);
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  transition: color var(--duration-fast);
+}
+a.g-card:hover .g-card__more {
+  color: var(--accent);
+}
+
+/* ---------- Terminal / code block ---------- */
+.g-terminal {
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  overflow: hidden;
+  color: var(--code-fg);
+  font: 400 13.5px/24px var(--font-mono);
+}
+.g-terminal__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 8px 0 16px;
+  border-bottom: 1px solid #23272d;
+}
+.g-terminal__dots {
+  display: flex;
+  gap: 6px;
+}
+.g-terminal__dots i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2a2f36;
+}
+.g-terminal__title {
+  flex: 1;
+  font: 500 12px/1 var(--font-mono);
+  color: #7d848e;
+}
+.g-terminal__body {
+  padding: 16px 20px 20px;
+  overflow-x: auto;
+}
+.g-terminal__line {
+  white-space: pre;
+}
+.g-terminal__prompt {
+  color: var(--code-comment);
+  user-select: none;
+  margin-right: 12px;
+}
+.g-terminal__out {
+  color: #a1a7b0;
+  white-space: pre;
+}
+.g-terminal__ok {
+  color: #3dd68c;
+}
+.tok-k {
+  color: var(--code-keyword);
+}
+.tok-s {
+  color: var(--code-string);
+}
+.tok-f {
+  color: var(--code-fn);
+}
+.tok-n {
+  color: var(--code-number);
+}
+.tok-c {
+  color: var(--code-comment);
+}
+
+.g-copy {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #7d848e;
+  cursor: pointer;
+  transition:
+    color var(--duration-fast),
+    background-color var(--duration-fast),
+    border-color var(--duration-fast);
+}
+.g-copy:hover {
+  color: #edeef0;
+  background: #15181c;
+  border-color: #23272d;
+}
+.g-copy:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+.g-copy[data-copied='true'] {
+  color: #3dd68c;
+}
+.g-copy svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ---------- Tabs (segmented, sliding indicator) ---------- */
+.g-tabs {
+  position: relative;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+}
+.g-tabs__indicator {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  width: 0;
+  border-radius: 7px;
+  background: var(--surface-3);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+  transition:
+    transform var(--duration-base) var(--ease-in-out),
+    width var(--duration-base) var(--ease-in-out);
+}
+.g-tab {
+  position: relative;
+  z-index: 1;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  font: 500 13px/1 var(--font-sans);
+  color: var(--fg-subtle);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color var(--duration-fast);
+}
+.g-tab:hover {
+  color: var(--fg-muted);
+}
+.g-tab[aria-selected='true'] {
+  color: var(--fg);
+}
+.g-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* Underline tabs: code-block language switches and docs */
+.g-tabs--line {
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0;
+  gap: 20px;
+}
+.g-tabs--line .g-tab {
+  height: 40px;
+  padding: 0;
+  border-radius: 0;
+}
+.g-tabs--line .g-tabs__indicator {
+  top: auto;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: none;
+}
+
+/* ---------- Callout ---------- */
+.g-callout {
+  display: flex;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  font: 400 14px/22px var(--font-sans);
+  color: var(--fg-muted);
+}
+.g-callout svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 2px;
+  color: var(--fg-subtle);
+}
+.g-callout strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+.g-callout--tip svg {
+  color: var(--accent);
+}
+.g-callout--tip {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+.g-callout--warn svg {
+  color: var(--warning);
+}
+.g-callout--danger svg {
+  color: var(--danger);
+}
+
+/* ---------- Docs prose ---------- */
+.g-prose {
+  color: var(--fg-muted);
+  font: 400 16px/28px var(--font-sans);
+  max-width: 72ch;
+}
+.g-prose > * + * {
+  margin-top: 16px;
+}
+.g-prose h2 {
+  color: var(--fg);
+  font: 600 28px/36px var(--font-sans);
+  letter-spacing: -0.025em;
+  margin-top: 64px;
+  scroll-margin-top: 88px;
+}
+.g-prose h3 {
+  color: var(--fg);
+  font: 600 20px/28px var(--font-sans);
+  letter-spacing: -0.015em;
+  margin-top: 40px;
+  scroll-margin-top: 88px;
+}
+.g-prose strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+.g-prose a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-line);
+  text-underline-offset: 3px;
+}
+.g-prose code:not(pre code) {
+  font: 450 0.875em/1 var(--font-mono);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--fg);
+}
+.g-prose ul {
+  padding-left: 20px;
+}
+.g-prose li + li {
+  margin-top: 6px;
+}
+.g-prose li::marker {
+  color: var(--fg-subtle);
+}
+.g-prose .g-terminal {
+  margin-block: 24px;
+}
+
+/* ---------- Sidebar ---------- */
+.g-side__group {
+  font: 500 11px/16px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+  padding: 0 10px;
+  margin: 24px 0 6px;
+}
+.g-side__item {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 6px;
+  color: var(--fg-muted);
+  font: 400 14px/1 var(--font-sans);
+  text-decoration: none;
+  transition:
+    color var(--duration-fast),
+    background-color var(--duration-fast);
+}
+.g-side__item:hover {
+  color: var(--fg);
+  background: var(--surface-2);
+}
+.g-side__item[aria-current='page'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 500;
+}
+
+/* ---------- Atmosphere ---------- */
+/* The crispness comes from structure that is drawn, not implied. */
+.g-frame {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  border-left: 1px solid #1a1d22;
+  border-right: 1px solid #1a1d22;
+  box-sizing: border-box;
+}
+/* Corner marks: a 7x7 accent square where a rail meets a section rule.
+   Every section gets them; they are the brand's signature detail. */
+.g-cnr {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
+  z-index: 3;
+}
+.g-cnr--tl {
+  top: -4px;
+  left: -4px;
+}
+.g-cnr--tr {
+  top: -4px;
+  right: -4px;
+}
+/* One phrase per heading, never a whole heading, never body copy. */
+.g-hl {
+  background: linear-gradient(95deg, #e9e5ff 0%, var(--accent) 55%, #8b7cf6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.g-gridbg {
+  background-image:
+    linear-gradient(#15181c 1px, transparent 1px),
+    linear-gradient(90deg, #15181c 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 75% 70% at 70% 10%, #000 20%, transparent 72%);
+  mask-image: radial-gradient(ellipse 75% 70% at 70% 10%, #000 20%, transparent 72%);
+}
+.g-wash {
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(169, 155, 255, 0.14), transparent);
+}
+.g-dots {
+  background-image: radial-gradient(#23272d 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* ---------- Bento ---------- */
+.g-bento {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.2s;
+}
+.g-bento:hover {
+  border-color: var(--border-strong);
+}
+.g-bento img {
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.g-bento:hover img {
+  transform: translateY(-6px) rotate(-3deg) scale(1.03);
+}
+
+
+/* ==========================================================================
+   Motion. Outside @layer components so the reduced-motion override wins
+   against utilities as well as components.
+   ========================================================================== */
+
+.g-reveal {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out);
+}
+.g-reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+@keyframes g-caret {
+  50% {
+    opacity: 0;
+  }
+}
+.g-caret {
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  vertical-align: -3px;
+  background: var(--accent);
+  animation: g-caret 1s steps(1) infinite;
+}
+
+.g-float {
+  animation: g-float 7s ease-in-out infinite;
+}
+@keyframes g-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(-12px) rotate(-2deg);
+  }
+}
+
+.g-marquee-wrap {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.g-marquee {
+  display: flex;
+  width: max-content;
+  animation: g-marquee 45s linear infinite;
+}
+.g-marquee-wrap:hover .g-marquee {
+  animation-play-state: paused;
+}
+@keyframes g-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.g-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 28px;
+  filter: grayscale(1) brightness(1.6);
+  opacity: 0.55;
+  transition:
+    opacity 0.2s,
+    filter 0.2s;
+}
+.g-logo:hover {
+  filter: none;
+  opacity: 1;
+}
+
+.g-flow {
+  stroke-dasharray: 6 6;
+  animation: g-dash 1.1s linear infinite;
+}
+@keyframes g-dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+.g-march {
+  background: repeating-linear-gradient(90deg, var(--accent) 0 6px, transparent 6px 12px);
+  background-size: 24px 2px;
+  animation: g-march 0.9s linear infinite;
+}
+@keyframes g-march {
+  to {
+    background-position: 24px 0;
+  }
+}
+.g-packet {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 4px var(--accent-soft),
+    0 0 18px var(--accent);
+  animation: g-travel 6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+@keyframes g-travel {
+  0% {
+    left: 1%;
+    opacity: 0;
+  }
+  5%,
+  95% {
+    opacity: 1;
+  }
+  100% {
+    left: 99%;
+    opacity: 0;
+  }
+}
+.g-ping {
+  position: relative;
+}
+.g-ping::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: inherit;
+  animation: g-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes g-ping {
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.g-draw {
+  stroke-dasharray: 900;
+  stroke-dashoffset: 900;
+  animation: g-draw 3.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.4s forwards;
+}
+@keyframes g-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .g-float,
+  .g-marquee,
+  .g-flow,
+  .g-march,
+  .g-packet,
+  .g-caret,
+  .g-ping::after {
+    animation: none !important;
+  }
+  .g-draw {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+}

@@ -546,6 +546,12 @@
     "keywords": "vps server ubuntu linux nginx caddy systemd tls certbot ssh manual self host droplet hetzner digitalocean walkthrough deploy grit projects docker production builds environment configuration database setup hosting options docs deployment"
   },
   {
+    "title": "Design",
+    "href": "/docs/design",
+    "section": "Design System",
+    "keywords": "docs design"
+  },
+  {
     "title": "Styles and themes",
     "href": "/docs/design/styles-and-themes",
     "section": "Design System",

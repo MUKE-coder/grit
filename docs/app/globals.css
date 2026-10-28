@@ -1,3 +1,5 @@
+@import './grit.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -16,6 +18,17 @@
   :root,
   .dark,
   [data-theme="dark"] {
+    /* Named as the design system names them, so grit.css can be taken from
+       the artifact verbatim on every update rather than hand-translated. */
+    --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --duration-fast: 150ms;
+    --duration-base: 240ms;
+    --duration-slow: 480ms;
+    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
     --bg: #08090b;
     --surface-1: #0f1114;
     --surface-2: #15181c;
