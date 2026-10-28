@@ -78,7 +78,22 @@ jobs:
           test ! -s /tmp/unformatted
           go build ./...
           go vet ./...
-          go test ./... 2>&1 | tail -40
+          # The whole log is kept. `| tail -N` over sixty packages shows N
+          # "ok" lines and the word FAIL, which is what it did the one time
+          # it mattered: the failing test was never printed at all, and the
+          # canary that caught a dependency drift could not say what broke
+          # (grit#94).
+          if go test ./... >/tmp/gotest-unit.log 2>&1; then
+            tail -30 /tmp/gotest-unit.log
+          else
+            echo "::group::failing tests"
+            grep -nE "FAIL|_test[.]go:[0-9]+" /tmp/gotest-unit.log | head -80
+            echo "::endgroup::"
+            echo "::group::context around each failure"
+            grep -nE -B 4 -A 25 "^--- FAIL" /tmp/gotest-unit.log | head -200
+            echo "::endgroup::"
+            exit 1
+          fi
 
       # The one hand-written file in the example is a policy rule, and the
       # claim it makes is that a returned loan cannot be edited. Run on its own
@@ -102,7 +117,22 @@ jobs:
           test ! -s /tmp/unformatted-shop
           go build ./...
           go vet ./...
-          go test ./... 2>&1 | tail -40
+          # The whole log is kept. `| tail -N` over sixty packages shows N
+          # "ok" lines and the word FAIL, which is what it did the one time
+          # it mattered: the failing test was never printed at all, and the
+          # canary that caught a dependency drift could not say what broke
+          # (grit#94).
+          if go test ./... >/tmp/gotest-race.log 2>&1; then
+            tail -30 /tmp/gotest-race.log
+          else
+            echo "::group::failing tests"
+            grep -nE "FAIL|_test[.]go:[0-9]+" /tmp/gotest-race.log | head -80
+            echo "::endgroup::"
+            echo "::group::context around each failure"
+            grep -nE -B 4 -A 25 "^--- FAIL" /tmp/gotest-race.log | head -200
+            echo "::endgroup::"
+            exit 1
+          fi
 
       # The storefront type-checks against the Go side's published shapes. A
       # price typed as a string, or a field dropped from the public allowlist,
@@ -143,7 +173,22 @@ jobs:
           test ! -s /tmp/unformatted-saas
           go build ./...
           go vet ./...
-          go test ./... 2>&1 | tail -40
+          # The whole log is kept. `| tail -N` over sixty packages shows N
+          # "ok" lines and the word FAIL, which is what it did the one time
+          # it mattered: the failing test was never printed at all, and the
+          # canary that caught a dependency drift could not say what broke
+          # (grit#94).
+          if go test ./... >/tmp/gotest-cover.log 2>&1; then
+            tail -30 /tmp/gotest-cover.log
+          else
+            echo "::group::failing tests"
+            grep -nE "FAIL|_test[.]go:[0-9]+" /tmp/gotest-cover.log | head -80
+            echo "::endgroup::"
+            echo "::group::context around each failure"
+            grep -nE -B 4 -A 25 "^--- FAIL" /tmp/gotest-cover.log | head -200
+            echo "::endgroup::"
+            exit 1
+          fi
 
       # On its own, so a failure names the thing that broke rather than being
       # one line in a wall of output. These are the requests that turn "your
