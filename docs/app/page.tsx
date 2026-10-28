@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import type { Metadata } from 'next'
-import { Activity, ArrowRight, Bot, Building2, Check, ChevronDown, Database, Eye, FileCheck, Flag, Github, HardDrive, Heart, Layers, LayoutDashboard, Lock, Mail, Monitor, Radio, Rocket, Server, Shield, Smartphone, Terminal, TestTube2, TrendingUp, UploadCloud, UserCheck, Webhook, Zap } from 'lucide-react'
+import { Metadata } from 'next'
+import { ArrowRight, Check, ChevronDown, Github, Heart, Server, Smartphone, Terminal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { CodeBlock } from '@/components/code-block'
@@ -8,33 +8,20 @@ import { InstallTabs } from '@/components/hero-code-tabs'
 import { HeroStepsTabs } from '@/components/hero-steps-tabs'
 import { GritInAction } from '@/components/grit-in-action'
 import { CopyPromptButton } from '@/components/copy-prompt-button'
-import { HomepageBenchmarks } from '@/components/homepage-benchmarks'
 import { HomepageCapabilities } from '@/components/homepage-capabilities'
-import { Testimonials } from '@/components/testimonials'
-import { OneApiClients } from '@/components/one-api-clients'
-import { ThemeShowcase } from '@/components/theme-showcase'
 import { PlatformShowcase } from '@/components/platform-showcase'
-import { SystemShowcase } from '@/components/system-showcase'
-import { FormShowcase } from '@/components/form-showcase'
 import { AuthShowcase } from '@/components/auth-showcase'
 import { ResourceDefinitionShowcase } from '@/components/resource-definition-showcase'
-import { InfraShowcase } from '@/components/infra-showcase'
-import { ComplianceShowcase } from '@/components/compliance-showcase'
-import { DeployShowcase } from '@/components/deploy-showcase'
 import { SoftwareApplicationSchema, FAQPageSchema } from '@/components/structured-data'
 import { FeatureTabs } from '@/components/feature-tabs'
-import { CpuArchitecture } from '@/components/ui/cpu-architecture'
-import { MagneticButton, GSAPSection, FadeIn, GlowOrb } from '@/components/motion-primitives'
+import { MagneticButton, FadeIn, GlowOrb } from '@/components/motion-primitives'
 import { ReactLogo, TanStackLogo } from '@/components/framework-logos'
 import {
-  CommunityCTA,
   DiscordIcon,
   DISCORD_INVITE_URL,
   WhatsAppIcon,
   WHATSAPP_COMMUNITY_URL,
 } from '@/components/community-cta'
-import { HubAndSpoke } from '@/components/hub-and-spoke'
-import { WhatIsGrit } from '@/components/what-is-grit'
 import { GRIT_VERSION } from '@/config/site'
 import { GridFrame } from '@/components/grid-frame'
 import { HomeSponsors } from '@/components/sponsors'
@@ -267,133 +254,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ GRIT IN ACTION ═══
-
-          Directly under the hero, before a single number or claim. Everything
-          below this argues; this demonstrates. Somebody who arrived knowing
-          nothing should be able to watch it once and understand what the tool
-          does, which no amount of prose above the fold has ever achieved. */}
+      {/* ═══ GRIT IN ACTION ═══ */}
       <GritInAction />
 
-      {/* ═══ BENCHMARKS ═══
-
-          Directly under the hero because it is the first question anyone asks
-          about a Go framework, and because the answer is the strongest single
-          argument this project has. Numbers live in config/benchmarks.ts so the
-          chart cannot drift from the methodology pages behind it. */}
-      <HomepageBenchmarks />
-
-      {/* The benchmark answers how fast. This answers how much you assemble. */}
+      {/* ═══ WHAT IS ALREADY IN THE BOX ═══ */}
       <HomepageCapabilities />
 
-      {/* ═══ WHAT IS ALREADY IN THE BOX ═══
-
-          Added after four independent reviews of this site each recommended
-          building things that shipped months ago — an MCP server, generated
-          tests, an audit log, webhooks, multi-tenancy, backups. All documented,
-          all a thousand lines further down this page, all invisible to someone
-          deciding in ninety seconds whether to keep reading.
-
-          This is not new content. It is the same capabilities, scannable, near
-          the top, each one linking to where it is explained properly. */}
-      <section className="py-16 px-6 border-b border-border/40">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-3">
-              You are not going to build these again
-            </h2>
-            <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Every one of these ships in a generated project. Switch on what you need,
-              leave the rest off.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-            {[
-              { icon: Lock, label: 'Auth, OAuth & 2FA', href: '/docs/backend/authentication' },
-              { icon: UserCheck, label: 'Roles & permissions', href: '/docs/backend/rbac' },
-              { icon: LayoutDashboard, label: 'Admin panel', href: '/docs/admin/overview' },
-              { icon: Zap, label: 'Background jobs', href: '/docs/batteries' },
-              { icon: UploadCloud, label: 'File storage & uploads', href: '/docs/batteries' },
-              { icon: Radio, label: 'Realtime WebSockets', href: '/docs/backend/realtime' },
-              { icon: Mail, label: 'Email & notifications', href: '/docs/batteries' },
-              { icon: Bot, label: 'AI gateway', href: '/docs/ai-integration' },
-              { icon: Activity, label: 'Observability (Pulse)', href: '/docs/backend/pulse' },
-              { icon: Shield, label: 'WAF & rate limiting', href: '/docs/security' },
-              { icon: FileCheck, label: 'Tamper-evident audit log', href: '/docs/security' },
-              { icon: Eye, label: 'Read-access audit', href: '/docs/security/compliance#read-access' },
-              { icon: Database, label: 'Append-only records', href: '/docs/backend/append-only' },
-              { icon: Lock, label: 'Optimistic locking (If-Match)', href: '/docs/deployment/multiple-instances#concurrent-writes' },
-              { icon: Layers, label: 'Runs as many replicas', href: '/docs/deployment/multiple-instances' },
-              { icon: Layers, label: 'Transactional workflow hooks', href: '/docs/backend/workflows#hooks' },
-              { icon: Database, label: 'Durable events (outbox)', href: '/docs/backend/workflows#durable' },
-              { icon: Layers, label: 'Translated admin panel', href: '/docs/frontend/i18n#admin' },
-              { icon: LayoutDashboard, label: 'Enter many rows in a grid', href: '/docs/admin/datatable#grid-data-entry' },
-              { icon: TrendingUp, label: 'Stats and charts on every list', href: '/docs/admin/datatable#stats-and-insights' },
-              { icon: Layers, label: 'Flags by business unit', href: '/docs/backend/feature-flags#attributes' },
-              { icon: Database, label: 'Services own every query', href: '/docs/backend/services' },
-              { icon: FileCheck, label: 'grit doctor project audit', href: '/docs/security/doctor' },
-              { icon: Lock, label: 'Clone and run: grit env writes the secrets', href: '/docs/cli' },
-              { icon: Radio, label: 'Push notifications to the Expo app', href: '/docs/plugins/push' },
-              { icon: Monitor, label: 'Video uploads, converted for every client', href: '/docs/plugins/video' },
-              { icon: Lock, label: 'Stripe checkout and subscriptions', href: '/docs/plugins/stripe' },
-              { icon: TestTube2, label: 'Live checks on 3 Postgres versions', href: '/docs/testing#live-checks' },
-              { icon: Shield, label: 'Stability matrix, per subsystem', href: '/docs/stability' },
-              { icon: Database, label: 'Roll back a migration', href: '/docs/backend/migrations#rolling-back' },
-              { icon: FileCheck, label: 'Docs checked against the CLI', href: '/docs/testing#docs-checks' },
-              { icon: Shield, label: 'Typed error codes, end to end', href: '/docs/backend/errors' },
-              { icon: Database, label: 'Postgres, MySQL or SQLite', href: '/docs/infrastructure/database' },
-              { icon: LayoutDashboard, label: 'Admin panel in one app, two or three', href: '/docs/concepts/architecture-modes' },
-              { icon: UserCheck, label: 'A customer account area, built in', href: '/docs/concepts/architecture-modes/double' },
-              { icon: TrendingUp, label: 'Exact multi-currency money', href: '/docs/concepts/money' },
-              { icon: Building2, label: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
-              { icon: Webhook, label: 'Webhooks', href: '/docs/backend/webhooks' },
-              { icon: Eye, label: 'Undelete a record from the bin', href: '/docs/admin/trash' },
-              { icon: Flag, label: 'Feature flags', href: '/docs/backend/feature-flags' },
-              { icon: TestTube2, label: 'Generated tests', href: '/docs/testing' },
-              { icon: HardDrive, label: 'Backups & restore', href: '/docs/deployment/checklist' },
-              { icon: Monitor, label: 'Offline-first desktop', href: '/docs/desktop' },
-              { icon: Smartphone, label: 'Mobile (Expo)', href: '/docs/mobile/getting-started' },
-              { icon: Bot, label: 'MCP server for AI agents', href: '/docs/ai-integration' },
-              { icon: Rocket, label: 'One-command deploy', href: '/docs/deployment' },
-            ].map((cap) => (
-              <Link
-                key={cap.label}
-                href={cap.href}
-                className="group flex items-center gap-2.5 rounded-lg border border-border/50 bg-card/40 px-3 py-2.5 text-[13px] transition-colors hover:border-border hover:bg-card/70"
-              >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
-                  <cap.icon className="h-3.5 w-3.5" />
-                </span>
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors leading-snug">
-                  {cap.label}
-                </span>
-              </Link>
-            ))}
-          </div>
-
-          <div className="mt-8 text-center">
-            <Link
-              href="/docs/start"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
-            >
-              Start here: nothing to deployed in seven steps
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ NEW: WHAT IS GRIT (60-second tour) ═══ */}
-      <WhatIsGrit />
-
-      {/* ═══ ONE FRAMEWORK, EVERY PLATFORM ═══
-
-          Screenshots of real generated projects — the admin, the Wails window,
-          the Expo app on an emulator, and the Scalar reference the API serves.
-          Each tab pairs the shot with the exact commands that produce it, so
-          the claim and the proof sit in the same frame. */}
-      <section className="py-20 md:py-24 px-6 border-b border-border/40">
+      {/* ═══ ONE FRAMEWORK, EVERY PLATFORM ═══ */}
+      <section className="py-24 px-6 border-b border-border/40">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-10">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
@@ -413,92 +281,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ WHAT ONE COMMAND GENERATES ═══
-
-          Screenshots of the forms Grit produced from the field definitions
-          shown beside them. "It generates a form for you" is a cheap claim;
-          the uploads, the searchable FK with inline-create, the line-items
-          table with live totals and the wizard are not. */}
-      <section className="py-20 md:py-24 px-6 border-b border-border/40">
-        <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl mb-10">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Code generation
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
-              One command.<br />The whole form.
-            </h2>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-              Not a scaffold you finish by hand. Uploads that know what they accept, foreign
-              keys you can fill without leaving the page, line-item tables that total
-              themselves, wizards that save a step at a time, and a desktop app that
-              keeps taking input with the network off.
-            </p>
-          </div>
-
-          <FormShowcase />
-        </div>
-      </section>
-
-      {/* ═══ THEMES ═══
-
-          Real screenshots of a generated admin, not mockups. A mockup proves a
-          designer can draw; a screenshot proves the framework produces it. This
-          is also the one thing on the page no competitor can copy without
-          building the admin first. */}
-      <section className="py-20 md:py-24 px-6 border-b border-border/40">
-        <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl mb-10">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Themes
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
-              Nine themes.<br />None of them look generated.
-            </h2>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-              Every scaffolded admin ships with four complete themes: not palettes, but
-              coordinated typography, auth pages, dashboard and brand colour. Pick one at{' '}
-              <code className="text-foreground/80 text-sm">grit new</code>, or change your mind
-              later with one line in <code className="text-foreground/80 text-sm">.env</code>.
-            </p>
-          </div>
-
-          <ThemeShowcase />
-        </div>
-      </section>
-
-      {/* ═══ THE SYSTEM HUB ═══
-
-          The batteries, one screenshot at a time. Several of these needed real
-          infrastructure to capture — the jobs page shows work that five actual
-          uploads enqueued through Redis. */}
-      <section className="py-20 md:py-24 px-6 border-b border-border/40">
-        <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl mb-10">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Batteries included
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
-              The parts you always end up<br />building anyway.
-            </h2>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-              Permissions, brute-force protection, golden-signal metrics, an audit timeline,
-              scheduled backups, S3 uploads, a job queue and a cron scheduler: each with
-              a real screen, not a config file and a README. This is what{' '}
-              <code className="text-foreground/80 text-sm">grit new</code> gives you on day one.
-            </p>
-          </div>
-
-          <SystemShowcase />
-        </div>
-      </section>
-
-      {/* ═══ AUTHENTICATION ═══
-
-          Screenshots plus the env/route detail, because "auth included" means
-          nothing until you can see which parts. The closing paragraph names
-          what is absent on purpose. */}
-      <section className="py-20 md:py-24 px-6 border-b border-border/40">
+      {/* ═══ AUTHENTICATION ═══ */}
+      <section className="py-24 px-6 border-b border-border/40">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-10">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
@@ -519,34 +303,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ COMPLIANCE & ENTERPRISE ═══
-
-          The section a buyer's security reviewer reads. Every claim is one the
-          code backs — "tamper-evident" is a real hash chain with a verify
-          endpoint, not a turn of phrase. */}
-      <section className="py-20 md:py-24 px-6 border-b border-border/40">
-        <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl mb-10">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Compliance
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
-              The questions enterprise<br />buyers ask first.
-            </h2>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-              GDPR export and erasure with a tamper-evident journal, SSO per customer over OIDC
-              or SAML, access-review campaigns for SOC 2, and a hash-chained audit trail of every
-              write, and of every read where access itself has to be accounted for, that exports
-              to your SIEM. Built in, not bought later.
-            </p>
-          </div>
-
-          <ComplianceShowcase />
-        </div>
-      </section>
-
       {/* ═══ RESOURCE DEFINITION ═══ */}
-      <section className="py-20 md:py-24 px-6 border-b border-border/40">
+      <section className="py-24 px-6 border-b border-border/40">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-10">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
@@ -567,171 +325,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ INFRASTRUCTURE ═══ */}
-      <section className="py-20 md:py-24 px-6 border-b border-border/40">
-        <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl mb-10">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Infrastructure
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
-              Your database.<br />Your bucket. Your Redis.
-            </h2>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-              Grit is opinionated about structure, not about who you rent from. Each of these
-              is one environment variable, with a local default that works before you have any
-              cloud account at all.
-            </p>
-          </div>
-
-          <InfraShowcase />
-        </div>
-      </section>
-
-      {/* ═══ DEPLOYMENT ═══
-
-          Reads DEPLOYMENT_PROVIDERS, the same config the docs pages use, so
-          the two cannot drift. */}
-      <section className="py-20 md:py-24 px-6 border-b border-border/40">
-        <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl mb-10">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Deployment
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
-              It is a Go binary<br />and some containers.
-            </h2>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-              Which means it runs anywhere: a $5 VPS, a managed platform, or your own
-              Docker host. Pick a target for the actual steps, what it costs, and the thing that
-              catches people out.
-            </p>
-          </div>
-
-          <DeployShowcase />
-        </div>
-      </section>
-
-      {/* ═══ ONE API, EVERY CLIENT ═══
-
-          The argument nothing else in this space can make, and it is invisible
-          unless the four are side by side and clickable. A framework that
-          scaffolds a backend is common; one where the same generated types and
-          hooks drive Next.js, TanStack, Expo and an offline desktop binary is
-          not. The left pane deliberately never changes. */}
-      <section className="py-20 md:py-24 px-6 border-b border-border/40">
-        <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl mb-12">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> One backend
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
-              Write the API once.<br />Ship it to every client.
-            </h2>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-              The generator emits the Go handler <em>and</em> the typed client: schemas,
-              TypeScript types and React Query hooks. The same hook then works in a Next.js
-              app, a TanStack SPA, an Expo phone app and an offline-capable desktop binary.
-              Rename a field in the Go struct and every one of them stops compiling until
-              you fix it.
-            </p>
-          </div>
-
-          <OneApiClients />
-        </div>
-      </section>
-
-      {/* ═══ CPU ARCHITECTURE — Grit as the central chip ═══ */}
-      <section className="relative py-24 px-6 overflow-hidden border-t border-border/40">
-        {/* Layered backdrop — subtle radial + dotted grid */}
-        <div className="absolute inset-0 -z-30 bg-gradient-to-b from-background via-card/20 to-background" />
-        <div
-          className="absolute inset-0 -z-20 opacity-[0.4]"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.08) 1px, transparent 0)',
-            backgroundSize: '24px 24px',
-          }}
-        />
-        <GlowOrb className="-top-40 left-1/2 -translate-x-1/2 h-[700px] w-[700px] bg-primary/[0.06]" duration={20} />
-
-        <div className="max-w-6xl mx-auto">
-
-          <GSAPSection>
-            <div className="text-center mb-14" data-gsap-reveal>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-5">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" /> The Grit Core
-              </span>
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground mb-5 leading-[1.1]">
-                One CLI: eight production<br />primitives wired together
-              </h2>
-              <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                Grit is the chip on the board. Auth, jobs, storage, AI, observability,
-                webhooks, realtime, and cache all light up the moment you scaffold,
-                so you spend your time on product not plumbing.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-
-              {/* CPU canvas — center 6 cols on desktop, full width below */}
-              <div className="lg:col-span-7 order-2 lg:order-1" data-gsap-reveal>
-                <div className="relative rounded-2xl border-2 border-border/60 bg-card/60 backdrop-blur p-8 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.04),0_0_0_4px_hsl(var(--primary)/0.04)]">
-                  {/* Corner bracket decorations */}
-                  <div className="absolute top-3 left-3 h-4 w-4 border-t-2 border-l-2 border-primary/40" />
-                  <div className="absolute top-3 right-3 h-4 w-4 border-t-2 border-r-2 border-primary/40" />
-                  <div className="absolute bottom-3 left-3 h-4 w-4 border-b-2 border-l-2 border-primary/40" />
-                  <div className="absolute bottom-3 right-3 h-4 w-4 border-b-2 border-r-2 border-primary/40" />
-                  <CpuArchitecture
-                    className="text-foreground/30 dark:text-foreground/25"
-                    text="GRIT"
-                  />
-                  {/* Stamp footer */}
-                  <div className="mt-4 flex items-center justify-between px-2">
-                    <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                      <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">{`v${GRIT_VERSION} · production-ready`}</span>
-                    </div>
-                    <span className="text-[10px] font-mono text-muted-foreground/50">GRIT-FW-A1</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Feature spokes — 2-col on desktop, full grid on mobile */}
-              <div className="lg:col-span-5 order-1 lg:order-2 grid grid-cols-2 gap-3" data-gsap-reveal>
-                {[
-                  { label: 'Auth',          sub: 'JWT · OAuth · 2FA',     dot: 'bg-sky-400' },
-                  { label: 'AI Gateway',    sub: '100+ models · stream',  dot: 'bg-violet-400' },
-                  { label: 'File Storage',  sub: 'S3 · R2 · MinIO',       dot: 'bg-amber-400' },
-                  { label: 'Background Jobs', sub: 'asynq · retries',     dot: 'bg-orange-400' },
-                  { label: 'Webhooks',      sub: 'Stripe · HMAC · replay', dot: 'bg-emerald-400' },
-                  { label: 'Realtime Hub',  sub: 'WebSockets · channels', dot: 'bg-rose-400' },
-                  { label: 'Redis Cache',   sub: 'middleware · TTL',      dot: 'bg-red-400' },
-                  { label: 'Transactional Mail', sub: 'Resend · templates', dot: 'bg-cyan-400' },
-                ].map((f) => (
-                  <div
-                    key={f.label}
-                    className="group relative rounded-xl border border-border/50 bg-card/50 p-4 hover:border-primary/40 hover:bg-card/80 transition-all shadow-sm hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3)]"
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`h-1.5 w-1.5 rounded-full ${f.dot} shadow-[0_0_8px_currentColor]`} />
-                      <span className="font-semibold text-foreground text-sm">{f.label}</span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground font-mono">{f.sub}</p>
-                  </div>
-                ))}
-              </div>
-
-            </div>
-          </GSAPSection>
-
-        </div>
-      </section>
-
-      {/* ═══ HUB & SPOKE — Hubfly-style with animated flow lines ═══ */}
-      <HubAndSpoke />
-
-      {/* ═══ FRAMEWORK FOR DEVELOPERS & AGENTS — tabbed code section ═══ */}
+      {/* ═══ A FRAMEWORK FOR DEVELOPERS AND AGENTS ═══ */}
       <section className="relative py-24 px-6 overflow-hidden">
         {/* Soft warm gradient backdrop */}
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-card/30 via-background to-background" />
@@ -779,307 +373,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ PULSE DASHBOARD + FRONTEND-AGNOSTIC CARDS ═══ */}
-      <section className="py-20 px-6 border-t border-border/40">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-
-            {/* LEFT: Monitor with Pulse */}
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-3">
-                Monitor and fix issues with Pulse
-              </h2>
-              <p className="text-base text-muted-foreground leading-relaxed mb-5">
-                Pulse gives full observability: find errors and performance issues
-                before your team does. Mounted at <code className="text-primary text-sm bg-primary/5 px-1.5 py-0.5 rounded">/pulse/ui</code> on every Grit project.
-              </p>
-              <ul className="space-y-2.5 mb-6">
-                {[
-                  'Fix errors and performance with recommended solutions',
-                  'Trace requests, jobs, DB queries, cache hits, errors',
-                  'Read a route against its own baseline, so you see what got slower',
-                  'Pull a heap or CPU profile from a running process with go tool pprof',
-                  'Run k6 and get a CPU profile of exactly that load window',
-                ].map((line) => (
-                  <li key={line} className="flex items-start gap-2.5 text-sm text-foreground/80">
-                    <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" strokeWidth={2.5} />
-                    {line}
-                  </li>
-                ))}
-              </ul>
-              <Button variant="outline" className="border-border/60 text-foreground hover:bg-accent/30 rounded-full mb-8" asChild>
-                <Link href="/docs/backend/pulse">
-                  Explore Pulse <ArrowRight className="ml-2 h-3.5 w-3.5" />
-                </Link>
-              </Button>
-
-              {/* Pulse dashboard mockup */}
-              <div className="relative rounded-xl border-2 border-border/60 bg-card/80 overflow-hidden shadow-[0_24px_48px_-16px_rgba(0,0,0,0.35),0_2px_8px_-2px_rgba(0,0,0,0.15),0_0_0_4px_hsl(var(--primary)/0.04)]">
-                <div className="flex">
-                  {/* Sidebar */}
-                  <div className="hidden sm:block w-32 border-r border-border/40 bg-background/60 px-3 py-3">
-                    <div className="flex items-center gap-1.5 mb-3">
-                      <div className="h-5 w-5 rounded-md bg-sky-500/15 flex items-center justify-center">
-                        <span className="text-sky-400 font-mono font-bold text-[9px]">P</span>
-                      </div>
-                      <div className="text-[10px] font-semibold text-foreground/80">Pulse</div>
-                    </div>
-                    <div className="text-[8px] text-muted-foreground/60 font-mono uppercase tracking-wider mb-1.5">Production</div>
-                    {[
-                      { l: 'Dashboard', sel: false },
-                      { l: 'Requests', sel: true },
-                      { l: 'Jobs', sel: false },
-                      { l: 'DB Queries', sel: false },
-                      { l: 'Errors', sel: false, badge: '12' },
-                      { l: 'Slow Queries', sel: false },
-                    ].map((row) => (
-                      <div key={row.l} className={`flex items-center justify-between rounded-md px-1.5 py-1 mb-0.5 text-[10px] ${row.sel ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}>
-                        <span>{row.l}</span>
-                        {row.badge && <span className="text-[8px] font-mono bg-rose-500/15 text-rose-400 px-1 rounded">{row.badge}</span>}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Body */}
-                  <div className="flex-1 p-4 min-w-0">
-                    <div className="flex items-baseline justify-between mb-1">
-                      <div className="text-sm font-semibold text-foreground">Requests</div>
-                      <div className="flex items-center gap-1 text-[10px] text-emerald-400">
-                        <TrendingUp className="h-2.5 w-2.5" />
-                        +14% vs yesterday
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 text-[10px] text-muted-foreground/70 mb-3 font-mono">
-                      <div><span className="text-foreground/80 font-semibold text-base mr-1">124.2K</span>requests</div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />2xx 122.5K
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />4xx 1,151
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-rose-400" />5xx 324
-                      </div>
-                    </div>
-
-                    {/* Bar chart */}
-                    <div className="flex items-end gap-[3px] h-28 mb-2">
-                      {[35, 48, 42, 58, 52, 65, 38, 72, 55, 48, 62, 90, 68, 55, 78, 65, 82, 70, 58, 45, 52, 62, 75, 88, 70, 65].map((h, i) => {
-                        const isAlert = i === 11 || i === 17 || i === 23
-                        const tone = isAlert
-                          ? 'from-rose-400 to-amber-400'
-                          : i % 5 === 0
-                            ? 'from-amber-400 to-amber-400/60'
-                            : 'from-emerald-400/80 to-emerald-400/30'
-                        return (
-                          <div
-                            key={i}
-                            className={`flex-1 rounded-sm bg-gradient-to-t ${tone}`}
-                            style={{ height: `${h}%` }}
-                          />
-                        )
-                      })}
-                    </div>
-                    <div className="flex justify-between text-[8px] font-mono text-muted-foreground/50">
-                      <span>02 Nov 18:00 UTC</span>
-                      <span>03 Nov 18:00 UTC</span>
-                    </div>
-
-                    {/* Duration mini-strip */}
-                    <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between">
-                      <div>
-                        <div className="text-[10px] text-muted-foreground/70 font-mono uppercase tracking-wider">Duration</div>
-                        <div className="text-sm font-semibold text-foreground">125ms &ndash; 2.2s</div>
-                      </div>
-                      <svg className="h-8 w-32" viewBox="0 0 120 30">
-                        <polyline
-                          fill="none"
-                          strokeWidth="1.5"
-                          stroke="hsl(var(--primary))"
-                          points="0,18 10,15 20,20 30,12 40,16 50,10 60,14 70,8 80,12 90,6 100,10 110,5 120,8"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT: Frontend-agnostic cascading file cards */}
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-3">
-                The best partner to any front-end
-              </h2>
-              <p className="text-base text-muted-foreground leading-relaxed mb-5">
-                Grit scaffolds Next.js and TanStack Router front-ends, and generates the
-                typed client for both. The API itself is plain REST with an OpenAPI
-                document, so anything that speaks HTTP can call it, but these are the
-                ones we generate and test.
-              </p>
-              <Button variant="outline" className="border-border/60 text-foreground hover:bg-accent/30 rounded-full mb-12" asChild>
-                <Link href="/docs/frontend">
-                  Explore front-ends <ArrowRight className="ml-2 h-3.5 w-3.5" />
-                </Link>
-              </Button>
-
-              {/* Cascading frontend cards */}
-              <div className="relative h-[280px]">
-                {[
-                  {
-                    name: 'users.expo.tsx',
-                    color: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
-                    icon: <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="7" y="2" width="10" height="20" rx="2.5" /><path d="M11 18.5h2" /></svg>,
-                    style: { top: '0%', right: '0%', width: '78%' },
-                  },
-                  {
-                    name: 'users.tsx',
-                    color: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
-                    icon: <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><circle cx="12" cy="12" r="2.1" /><g fill="none" stroke="currentColor" strokeWidth="1"><ellipse cx="12" cy="12" rx="10" ry="4.5" /><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(60 12 12)" /><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(-60 12 12)" /></g></svg>,
-                    style: { top: '24%', right: '4%', width: '74%' },
-                  },
-                  {
-                    name: 'users.desktop.tsx',
-                    color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-                    icon: <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="2.5" y="4" width="19" height="13" rx="2" /><path d="M9 20h6" /></svg>,
-                    style: { top: '48%', right: '8%', width: '70%' },
-                  },
-                  {
-                    name: 'users.next.tsx',
-                    color: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
-                    icon: <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><circle cx="12" cy="12" r="10" /><path d="M9 7v10M15 7l-6 10" stroke="white" strokeWidth="1.2" fill="none" /></svg>,
-                    style: { top: '72%', right: '12%', width: '66%' },
-                  },
-                ].map((card) => (
-                  <div
-                    key={card.name}
-                    className={`absolute flex items-center gap-2.5 rounded-xl border ${card.color} bg-card/95 backdrop-blur shadow-lg px-4 py-3`}
-                    style={card.style}
-                  >
-                    {card.icon}
-                    <span className="font-mono text-sm font-medium text-foreground/90">{card.name}</span>
-                    <div className="flex items-center gap-1 ml-auto">
-                      <span className="inline-block h-1 w-8 rounded-full bg-border/60" />
-                      <span className="inline-block h-1 w-5 rounded-full bg-border/40" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ ARCHITECTURE ═══ */}
-      {/* ═══ UPGRADES ═══
-
-          The thing nothing else in this category does, and until now the only
-          place it appeared was a changelog entry. A scaffolder hands you code
-          once; this one keeps fixing the project it generated. */}
-      <section className="py-24 px-6 border-t border-border/40">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">Upgrades</p>
-              <h2 className="text-3xl font-bold text-foreground mb-4">
-                The framework keeps<br />fixing your project
-              </h2>
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-                A scaffolder gives you code once and then watches it rot. Every fix on the
-                changelog reaches projects that already exist: <code className="font-mono text-sm text-foreground">grit upgrade</code>{' '}
-                brings an app up to the current templates, and it knows which files you have
-                edited, so it never overwrites your work to do it.
-              </p>
-              <ul className="space-y-3 mb-8">
-                {[
-                  ['A hash per generated file', 'Pristine files are replaced. Files you edited are reported as a conflict and left exactly as they are.'],
-                  ['53 repairs for the files you share', 'routes.go and main.go carry your code and Grit’s. A repair rewrites the exact text Grit wrote, and when it finds something else it says so and changes nothing.'],
-                  ['Upgraded equals fresh', 'Each repair is tested against the file the previous release actually wrote, asserting the result is byte-for-byte what a new project gets today.'],
-                ].map(([title, body]) => (
-                  <li key={title} className="flex gap-3">
-                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span className="text-sm text-muted-foreground leading-relaxed">
-                      <span className="text-foreground font-medium">{title}.</span> {body}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <Button variant="outline" className="border-border/60 text-foreground hover:bg-accent/30 rounded-full" asChild>
-                <Link href="/docs/upgrades">
-                  How upgrades work <ArrowRight className="ml-2 h-3.5 w-3.5" />
-                </Link>
-              </Button>
-            </div>
-
-            <div className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
-              <div className="flex items-center gap-2 border-b border-border/40 px-4 py-2.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-red-400/60" />
-                <span className="h-2.5 w-2.5 rounded-full bg-yellow-400/60" />
-                <span className="h-2.5 w-2.5 rounded-full bg-green-400/60" />
-                <span className="ml-2 text-xs font-mono text-muted-foreground">grit upgrade</span>
-              </div>
-              <pre className="p-4 text-[11px] md:text-xs font-mono leading-relaxed overflow-x-auto">
-<span className="text-muted-foreground">  → Updating the media pipeline...</span>{'\n'}
-<span className="text-emerald-400">  ✓ apps/api/internal/routes/routes.go</span>{'\n'}
-<span className="text-muted-foreground">    /api/health answers ok, degraded, off or unknown per</span>{'\n'}
-<span className="text-muted-foreground">    component, reports storage, and merges anything</span>{'\n'}
-<span className="text-muted-foreground">    health.Register was given</span>{'\n'}
-<span className="text-amber-400">  ⚠ the verification email is not sent the way Grit wrote it</span>{'\n'}
-<span className="text-muted-foreground">    send it with dispatchMail rather than from a `go`</span>{'\n'}
-<span className="text-muted-foreground">    statement, so it is queued, retried and survives a restart</span>{'\n'}
-<span className="text-emerald-400">  ✓ Admin panel updated (177 files)</span>{'\n'}
-{'\n'}
-<span className="text-emerald-400">  ✓ Upgrade complete. Updated 485 files.</span>{'\n'}
-              </pre>
-              <p className="border-t border-border/40 px-4 py-3 text-xs text-muted-foreground">
-                The warning is the interesting half: Grit found code it did not write, so it
-                did not touch it, and told you what the fix would have been.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-24 px-6 border-t border-border/40 bg-card/30">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">Flexible Architecture</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Choose how you build</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Coming from Laravel? Choose Single. MERN stack? Choose Double. Building a SaaS? Choose Triple.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 stagger-children">
-            {[
-              { name: 'Single', icon: <Zap className="h-5 w-5" />, desc: 'Go + embedded SPA', flag: '--single', color: 'text-sky-400 bg-sky-400/10' },
-              { name: 'Double', icon: <Layers className="h-5 w-5" />, desc: 'Web + API monorepo', flag: '--double', color: 'text-violet-400 bg-violet-400/10' },
-              { name: 'Triple', icon: <Server className="h-5 w-5" />, desc: 'Web + Admin + API', flag: '--triple', color: 'text-emerald-400 bg-emerald-400/10' },
-              { name: 'API Only', icon: <Database className="h-5 w-5" />, desc: 'Go backend only', flag: '--api', color: 'text-amber-400 bg-amber-400/10' },
-              { name: 'Mobile', icon: <Smartphone className="h-5 w-5" />, desc: 'API + Expo', flag: '--mobile', color: 'text-rose-400 bg-rose-400/10' },
-            ].map((arch) => (
-              <div key={arch.name} className="rounded-xl border border-border/40 bg-card/50 card-gradient p-5 text-center card-grit hover:border-primary/40">
-                <div className={`h-12 w-12 rounded-xl ${arch.color} flex items-center justify-center mx-auto mb-3 icon-animated`}>
-                  {arch.icon}
-                </div>
-                <h3 className="font-semibold text-foreground mb-1">{arch.name}</h3>
-                <p className="text-xs text-muted-foreground mb-2">{arch.desc}</p>
-                <code className="text-[10px] font-mono text-muted-foreground/60">{arch.flag}</code>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center mt-8">
-            <Button variant="outline" className="border-border/60 text-foreground hover:bg-accent/30 rounded-full" asChild>
-              <Link href="/docs/concepts/architecture-modes">
-                Compare architectures <ArrowRight className="ml-2 h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ DEPLOY DEEP-DIVE ═══ */}
+      {/* ═══ DEPLOY ═══ */}
       <section className="py-24 px-6 border-t border-border/40">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -1128,7 +422,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ COMPARISON TABLE ═══ */}
+      {/* ═══ HOW GRIT COMPARES ═══ */}
       <section className="py-24 px-6 border-t border-border/40">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
@@ -1193,19 +487,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ TESTIMONIALS ═══
-
-          Two states, and the empty one is deliberate. This section once
-          carried quotes attributed to real people and institutions who never
-          gave them, placeholder copy from a design mock that shipped by
-          accident. Saying plainly that there is nothing here yet is a
-          stronger claim to a sceptical reader than inventing three.
-
-          Approved entries live in data/testimonials.json; see
-          config/testimonials.ts for how one gets there. */}
-      <Testimonials />
-
-      {/* ═══ SHOWCASE ═══ */}
+      {/* ═══ SHOWCASE & SPONSORS ═══ */}
       <section className="py-24 px-6 border-t border-border/40">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
@@ -1234,47 +516,22 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
 
-      {/* ═══ CREATOR QUOTE ═══ */}
-      <section className="py-24 px-6 border-t border-border/40 bg-card/30">
-        <div className="max-w-3xl mx-auto text-center">
-          <img
-            src="https://avatars.githubusercontent.com/u/64189841?v=4"
-            alt="Muke JohnBaptist"
-            className="h-16 w-16 rounded-full mx-auto mb-6 ring-2 ring-primary/20"
-          />
-          <blockquote className="text-xl md:text-2xl font-medium text-foreground leading-relaxed mb-6">
-            &ldquo;I built Grit because I was tired of spending weeks setting up the same boilerplate for every project.
-            Auth, admin panels, file uploads, background jobs. They should just work. Now they do.
-            One command, and you have a production-ready app. That{"'"}s the framework I wanted to use.&rdquo;
-          </blockquote>
-          <div>
-            <div className="font-semibold text-foreground">Muke JohnBaptist</div>
-            <div className="text-sm text-muted-foreground">Creator of Grit Framework</div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ SPONSORS ═══ */}
-      <section className="relative py-24 px-6 border-t border-border/40 overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute left-1/2 top-1/2 h-[320px] w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/[0.05] blur-[120px]" />
-        </div>
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">Sponsors</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Backed by developers like you</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Grit is free and MIT licensed. Sponsors fund the features, docs and
-              releases, and get their name in front of everyone who builds with it.
-            </p>
-          </div>
+        {/* Sponsors, folded in: who backs it and who uses it are the same
+            question, and they were two sections asking it twice. */}
+        <div className="mt-16 border-t border-border/40 pt-12 text-center">
+          <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+            Sponsors
+          </p>
+          <p className="mx-auto mb-8 max-w-xl text-sm leading-relaxed text-muted-foreground">
+            Grit is free and MIT licensed. Sponsors fund the features, docs and
+            releases.
+          </p>
 
           <HomeSponsors />
 
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button asChild size="lg" className="rounded-full">
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Button asChild variant="outline" size="lg" className="rounded-full">
               <Link href="/sponsor">
                 <Heart className="mr-2 h-4 w-4" />
                 Become a sponsor
@@ -1290,7 +547,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ FAQ ═══ */}
+      {/* ═══ FREQUENTLY ASKED QUESTIONS ═══ */}
       <section className="py-24 px-6 border-t border-border/40">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-16">
@@ -1322,14 +579,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ COMMUNITY ═══ */}
-      <section className="relative py-20 px-6 border-t border-border/40">
-        <div className="max-w-5xl mx-auto">
-          <CommunityCTA />
-        </div>
-      </section>
-
-      {/* ═══ CTA — "Start using Grit today" ═══ */}
+      {/* ═══ START USING GRIT TODAY ═══ */}
       <section className="relative py-32 px-6 border-t border-border/40 overflow-hidden">
         {/* faint decorative grid */}
         <div className="absolute inset-0 -z-10 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(to right, hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--foreground)) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
@@ -1338,13 +588,17 @@ export default function HomePage() {
             Start using Grit today
           </h2>
           <p className="text-muted-foreground mb-8 text-lg">
-            Install the CLI and scaffold your first project. Or dive into the docs
-            to plan your architecture first.
+            Install the CLI and scaffold your first project. No Go toolchain needed.
           </p>
-          <CodeBlock language="bash" className="mb-8 text-left" code={`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest
-grit new my-app`} />
+          {/* The same command the hero shows. It used to say `go install`,
+              which contradicted both the hero and the README: the whole point
+              of the installer is that you do not need Go to start. */}
+          <CodeBlock language="bash" className="mb-8 text-left" code={`curl -fsSL https://gritframework.dev/install.sh | sh
+grit new my-app --triple`} />
+
+          {/* One primary. There were three buttons here, all filled, so the
+              eye had nowhere to land. DESIGN.md section 6. */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <CopyPromptButton variant="hero" className="[&>button]:rounded-full [&>button]:h-11 [&>button]:px-7 [&>button]:text-sm" />
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-7 h-11 text-sm rounded-full" asChild>
               <Link href="/docs/getting-started/quick-start">Read the docs <ArrowRight className="ml-2 h-3.5 w-3.5" /></Link>
             </Button>
@@ -1352,6 +606,22 @@ grit new my-app`} />
               <Link href="/docs/stack-selector">Explore architectures</Link>
             </Button>
           </div>
+
+          {/* The two points worth keeping from the sections above that were
+              cut: that a project does not rot, and that there is somewhere to
+              ask. Both belong where somebody is deciding, not three screens
+              earlier as sections of their own. */}
+          <p className="mt-10 text-sm text-muted-foreground">
+            <Link href="/docs/upgrades" className="text-primary hover:underline">
+              grit upgrade
+            </Link>{' '}
+            keeps a project on the current framework without touching the code you
+            wrote, and{' '}
+            <Link href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+              the Discord
+            </Link>{' '}
+            is where the questions get answered.
+          </p>
         </div>
       </section>
 
