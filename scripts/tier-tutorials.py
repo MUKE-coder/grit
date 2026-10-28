@@ -420,7 +420,7 @@ THEME_TEMPLATE = """              <h3>Pick a theme</h3>
 
 THEME_ROW = (
     '                  <tr className="border-b border-border/30">\n'
-    '                    <td className="px-4 py-2.5 font-mono text-xs text-primary">{name}</td>\n'
+    '                    <td className="px-4 py-2.5 font-mono text-xs text-accent">{name}</td>\n'
     '                    <td className="px-4 py-2.5 text-muted-foreground">{note}</td>\n'
     '                  </tr>'
 )
@@ -465,7 +465,7 @@ def render(tier):
 
     structure = '\n'.join(
         '                  <tr className="border-b border-border/30">\n'
-        '                    <td className="px-4 py-2.5 font-mono text-xs text-primary">%s</td>\n'
+        '                    <td className="px-4 py-2.5 font-mono text-xs text-accent">%s</td>\n'
         '                    <td className="px-4 py-2.5 text-muted-foreground">%s</td>\n'
         '                  </tr>' % (path, note)
         for path, note in tier.structure
@@ -473,7 +473,7 @@ def render(tier):
 
     ports = '\n'.join(
         '                  <tr className="border-b border-border/30">\n'
-        '                    <td className="px-4 py-2.5 font-mono text-xs text-primary">%s</td>\n'
+        '                    <td className="px-4 py-2.5 font-mono text-xs text-accent">%s</td>\n'
         '                    <td className="px-4 py-2.5 text-muted-foreground">%s</td>\n'
         '                  </tr>' % (where, what)
         for where, what in tier.ports
@@ -515,8 +515,7 @@ def render(tier):
     return '''import Link from 'next/link'
 import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import { DocsShell } from '@/components/docs/shell'
 import { CodeBlock } from '@/components/code-block'
 import { getDocMetadata } from '@/config/docs-metadata'
 
@@ -526,15 +525,9 @@ export const metadata = getDocMetadata('/docs/tutorials/contacts/%(key)s')
 
 export default function %(component)s() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-3xl">
+    <DocsShell>
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Tutorial</span>
+              <span className="tag-mono text-accent/80 mb-3 block">Tutorial</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">%(title)s</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">%(lead)s</p>
             </div>
@@ -646,10 +639,7 @@ export default function %(component)s() {
 %(nav_prev)s
 %(nav_next)s
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   )
 }
 ''' % {
