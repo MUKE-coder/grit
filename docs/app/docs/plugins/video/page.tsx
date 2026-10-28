@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { PluginSteps, RelatedPlugins } from '@/components/plugin-detail'
+import type { PluginStep, RelatedPlugin } from '@/components/plugin-detail'
 
 export const metadata = {
   title: 'Video plugin | Grit',
@@ -11,6 +13,38 @@ export const metadata = {
     'Video uploads converted by ffmpeg to an MP4 every browser and phone plays, with a poster frame, in a background queue that needs no Redis. Players for the web app and the Expo app.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/video' },
 }
+
+const STEPS: PluginStep[] = [
+  {
+    title: 'Check ffmpeg is on the machine',
+    run: 'ffmpeg -version',
+    then: 'The conversion runs in your own worker, not a hosted service. Without ffmpeg the plugin installs and the conversion fails at runtime, which is a worse place to find out.',
+  },
+  {
+    title: 'Install it',
+    run: 'grit plugin add video',
+    then: 'Writes the video model, the conversion job, and the endpoints to start one and read its status.',
+  },
+  {
+    title: 'Run the migration',
+    run: 'cd apps/api && go run cmd/migrate/main.go',
+    then: 'A conversion is a row, so its progress survives a restart and a failed one can be retried rather than lost.',
+  },
+  {
+    title: 'Upload, then convert',
+    run: 'curl -X POST localhost:8080/api/v1/videos -d \'{"key": "uploads/clip.mov"}\'',
+    then: 'The upload goes through the storage you already have. The key must name an upload you own, so one account cannot queue work against another\'s file.',
+  },
+  {
+    title: 'Play it',
+    then: 'The conversion produces an MP4 and a poster image. Poll the video\'s status, or subscribe to the event, and render the MP4 once it is ready rather than the original.',
+  },
+]
+
+const RELATED: RelatedPlugin[] = [
+  { name: 'Push notifications', href: '/docs/plugins/push', why: 'The obvious thing to do when a conversion finishes is tell the person who uploaded it.' },
+  { name: 'Kanban boards', href: '/docs/plugins/kanban', why: 'If clips are work items rather than content, a board is often the better surface for them.' },
+]
 
 export default function VideoPluginPage() {
   return (
@@ -132,6 +166,10 @@ const video = await createVideo(ref.key);
             HTTP came back as a 720p H.264 MP4 with a poster within a second, served from storage, and another
             user sending the same key was told it does not exist.
           </p>
+
+          <PluginSteps steps={STEPS} intro={'Accepting a clip from a phone or a browser and turning it into something every client can play.'} />
+
+          <RelatedPlugins items={RELATED} />
 
           <div className="mt-16 flex items-center justify-between border-t border-border/50 pt-8">
             <Link href="/docs/plugins/push">

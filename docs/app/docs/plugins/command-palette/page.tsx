@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { PluginSteps, RelatedPlugins } from '@/components/plugin-detail'
+import type { PluginStep, RelatedPlugin } from '@/components/plugin-detail'
 
 export const metadata = {
   title: 'Command palette plugin — Grit',
@@ -11,6 +13,37 @@ export const metadata = {
     'A keyboard-first ⌘K command palette for the admin, built from the resource registry — pure client code, no Go.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/command-palette' },
 }
+
+const STEPS: PluginStep[] = [
+  {
+    title: 'Install it',
+    run: 'grit plugin add command-palette',
+    then: 'Writes the palette component and mounts it in the admin shell. Nothing is added to the API.',
+  },
+  {
+    title: 'Start the admin',
+    run: 'pnpm --filter admin dev',
+    then: 'No migration step, because the plugin stores nothing.',
+  },
+  {
+    title: 'Open it',
+    then: 'Ctrl+K, or Cmd+K on a Mac, from anywhere in the admin. Type part of a resource or page name, then Enter.',
+  },
+  {
+    title: 'Create from it',
+    then: 'Each registered resource also gets a New <Resource> action, so adding a record is two keystrokes and a form rather than a navigation.',
+  },
+  {
+    title: 'Add a resource and look again',
+    run: 'grit generate resource Invoice --fields "number:string,total:money"',
+    then: 'Invoices and New Invoice are in the palette on the next reload. It is built from the resource registry, so there is no second list to keep in step.',
+  },
+]
+
+const RELATED: RelatedPlugin[] = [
+  { name: 'Saved views', href: '/docs/plugins/saved-views', why: 'The palette gets you to a table fast; saved views get you to the right rows in it.' },
+  { name: 'Kanban boards', href: '/docs/plugins/kanban', why: 'The other keyboard-first surface: a board can be rearranged entirely without a mouse.' },
+]
 
 export default function CommandPalettePage() {
   return (
@@ -156,6 +189,10 @@ Enter         open the highlighted command`} />
               </p>
             </div>
           </div>
+
+          <PluginSteps steps={STEPS} intro={'Adding keyboard navigation to an admin that already has a dozen resources. This one is frontend only: no Go, no migration, no server change.'} />
+
+          <RelatedPlugins items={RELATED} />
 
           <div className="mt-12 flex items-center justify-between border-t border-border/40 pt-6">
             <Button asChild variant="ghost">

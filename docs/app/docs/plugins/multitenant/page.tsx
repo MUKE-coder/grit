@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { PluginSteps, RelatedPlugins } from '@/components/plugin-detail'
+import type { PluginStep, RelatedPlugin } from '@/components/plugin-detail'
 
 export const metadata = {
   title: 'Multi-tenancy plugin — Grit',
@@ -11,6 +13,47 @@ export const metadata = {
     'Organizations, per-organization roles, and automatic query scoping that fails closed.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/multitenant' },
 }
+
+const STEPS: PluginStep[] = [
+  {
+    title: 'Install it',
+    run: 'grit plugin add multitenant',
+    then: 'Writes the Organization and OrganizationMember models, the tenant package holding the GORM callbacks, the organisation screens in the admin, and the switcher in the navbar.',
+  },
+  {
+    title: 'Run the migration',
+    run: 'cd apps/api && go run cmd/migrate/main.go',
+    then: 'Creates the two tables. Nothing else in the project has changed shape yet.',
+  },
+  {
+    title: 'Make a model tenant-owned',
+    run: 'type Deal struct {\n	ID    string `gorm:"primarykey;size:36" json:"id"`\n	Title string `json:"title"`\n\n	tenant.Owned   // <- this line is the whole opt-in\n}',
+    language: 'go',
+    then: 'Embedding tenant.Owned adds OrgID and brings the model under scoping. Until a model has it, it stays shared across organisations, which is the right default for a currency table and the wrong one for a deal.',
+  },
+  {
+    title: 'Migrate again, and backfill',
+    run: 'cd apps/api && go run cmd/migrate/main.go',
+    then: 'The new org_id column starts empty on existing rows, and an empty org_id matches no organisation. Rows that predate this are invisible to every scoped query until you give them one, so backfill before anybody looks.',
+  },
+  {
+    title: 'Tell the API which organisation is active',
+    run: 'curl -H "X-Organization-ID: org_123" localhost:8080/api/v1/deals',
+    then: 'The admin and web clients send this header automatically once an organisation is selected. Without it a scoped query fails closed with NO_ORGANIZATION rather than returning everything.',
+  },
+  {
+    title: 'Opt one query out, visibly',
+    run: '// A platform-wide report, deliberately across organisations.\nvar total int64\ntenant.Unscoped(db).Model(&models.Deal{}).Count(&total)',
+    language: 'go',
+    then: 'Scoping is automatic so that forgetting is impossible; the escape hatch is explicit so that crossing tenants shows up in review. Read internal/tenant/tenant.go before using it.',
+  },
+]
+
+const RELATED: RelatedPlugin[] = [
+  { name: 'Impersonate', href: '/docs/plugins/impersonate', why: 'Once data is per-organisation, the fastest way to answer "what does this member actually see" is to be them for a minute.' },
+  { name: 'Kanban boards', href: '/docs/plugins/kanban', why: 'Boards become per-organisation the moment Board, BoardColumn and BoardCard embed tenant.Owned. Nothing else changes.' },
+  { name: 'Saved views', href: '/docs/plugins/saved-views', why: 'Views are already per-user; with organisations in play they are the natural way to keep one team\'s filters apart from another\'s.' },
+]
 
 export default function MultitenantPage() {
   return (
@@ -204,6 +247,10 @@ DELETE /api/organizations/:id/members/:userId`} />
               </p>
             </div>
           </div>
+
+          <PluginSteps steps={STEPS} intro={'Taking a single-tenant project to one where a user belongs to several organisations and holds a different role in each. Nothing is scoped until you say which models are owned, which is step 3.'} />
+
+          <RelatedPlugins items={RELATED} />
 
           <div className="mt-12 flex items-center justify-between border-t border-border/40 pt-6">
             <Button asChild variant="ghost">

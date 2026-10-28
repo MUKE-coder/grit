@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { PluginSteps, RelatedPlugins } from '@/components/plugin-detail'
+import type { PluginStep, RelatedPlugin } from '@/components/plugin-detail'
 
 export const metadata = {
   title: 'Saved views plugin — Grit',
@@ -11,6 +13,36 @@ export const metadata = {
     'Let each user capture a resource table’s filters, sort, and search as a named view they can return to in one click.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/saved-views' },
 }
+
+const STEPS: PluginStep[] = [
+  {
+    title: 'Install it',
+    run: 'grit plugin add saved-views',
+    then: 'Writes the SavedView model and handlers, the hook, and the chips that appear above every resource table.',
+  },
+  {
+    title: 'Run the migration',
+    run: 'cd apps/api && go run cmd/migrate/main.go',
+    then: 'One table, scoped to a user and a resource.',
+  },
+  {
+    title: 'Filter a table the way you want it',
+    then: 'Set the filters, the sort, the search and the date range on any resource. The table already keeps all of that in the URL.',
+  },
+  {
+    title: 'Save it',
+    then: 'Click Save view and name it. What is stored is the query string, which is why the tables themselves needed no changes: applying a view is a navigation.',
+  },
+  {
+    title: 'Switch between them',
+    then: 'The views appear as chips above the table. They are per user and per resource, so one person\'s Overdue, mine is not everyone\'s.',
+  },
+]
+
+const RELATED: RelatedPlugin[] = [
+  { name: 'Command palette', href: '/docs/plugins/command-palette', why: 'Reach the table in two keystrokes, then a saved view to reach the rows.' },
+  { name: 'Multi-tenancy', href: '/docs/plugins/multitenant', why: 'If views need to differ per organisation as well as per user, that is the plugin that adds the dimension.' },
+]
 
 export default function SavedViewsPage() {
   return (
@@ -161,6 +193,10 @@ cd apps/api && go run cmd/migrate/main.go`} />
               ideal for quickly toggling between different slices of the same table.
             </p>
           </div>
+
+          <PluginSteps steps={STEPS} intro={'Giving a team a way to keep the filters they use every morning, without building anything into the tables.'} />
+
+          <RelatedPlugins items={RELATED} />
 
           <div className="mt-12 flex items-center justify-between border-t border-border/40 pt-6">
             <Button asChild variant="ghost">

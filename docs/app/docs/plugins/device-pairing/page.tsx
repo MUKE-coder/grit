@@ -5,6 +5,8 @@ import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
+import { PluginSteps, RelatedPlugins } from '@/components/plugin-detail'
+import type { PluginStep, RelatedPlugin } from '@/components/plugin-detail'
 
 export const metadata = {
   title: 'Device pairing plugin — Grit',
@@ -12,6 +14,36 @@ export const metadata = {
     'Sign a browser in by showing a QR code that an already-signed-in device scans and approves. The WhatsApp Web flow.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/device-pairing' },
 }
+
+const STEPS: PluginStep[] = [
+  {
+    title: 'Install it',
+    run: 'grit plugin add device-pairing',
+    then: 'Writes the pairing handlers, a /link page on the web app, and a Link a device screen in the admin for approving from a desktop.',
+  },
+  {
+    title: 'Run the migration',
+    run: 'cd apps/api && go run cmd/migrate/main.go',
+    then: 'Pairing requests are rows with an expiry, because a code that lives only in memory cannot be revoked and does not survive a restart.',
+  },
+  {
+    title: 'Open the page on the device being signed in',
+    then: 'Visit /link on the web app. It calls POST /pair/start, which returns a single-use code and a QR PNG, then polls for approval. The endpoint is anonymous by necessity and rate limited per IP for the same reason.',
+  },
+  {
+    title: 'Approve from a device that is already signed in',
+    then: 'Scan the code, or type it into the admin\'s Link a device screen. Before approving you are shown the user agent and the IP you are about to trust, and can deny in one tap. That screen is the security control.',
+  },
+  {
+    title: 'Check it in Active Sessions',
+    then: 'A paired browser becomes an ordinary session: it appears in the account\'s Active Sessions and is revoked from there like any other. Codes are 32 bytes of crypto/rand, single use, and expire after two minutes.',
+  },
+]
+
+const RELATED: RelatedPlugin[] = [
+  { name: 'Push notifications', href: '/docs/plugins/push', why: 'The other plugin built around a user\'s devices, and the one that can tell a phone a pairing is waiting.' },
+  { name: 'Impersonate', href: '/docs/plugins/impersonate', why: 'The other way a session starts without the account holder typing a password, with its own audit trail.' },
+]
 
 export default function DevicePairingPage() {
   return (
@@ -218,6 +250,10 @@ apps/admin/app/(dashboard)/system/link-device/   the approval screen`}
           </div>
 
           {/* Nav */}
+          <PluginSteps steps={STEPS} intro={'Adding the WhatsApp Web flow: a browser shows a code, a phone that is already signed in approves it, and the browser is signed in without a password being typed on it.'} />
+
+          <RelatedPlugins items={RELATED} />
+
           <div className="mt-16 flex items-center justify-between border-t border-border pt-8">
             <Button variant="ghost" asChild>
               <Link href="/docs/plugins/saved-views">

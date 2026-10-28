@@ -3,6 +3,8 @@ import { ArrowRight, SquareKanban } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { PluginSteps, RelatedPlugins } from '@/components/plugin-detail'
+import type { PluginStep, RelatedPlugin } from '@/components/plugin-detail'
 
 export const metadata = {
   title: 'Kanban boards — Grit',
@@ -10,6 +12,44 @@ export const metadata = {
     'grit plugin add kanban: boards, columns and cards with drag-and-drop by pointer, touch or keyboard. Reordering writes one row, using fractional indexing rather than a position column.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/kanban' },
 }
+
+const STEPS: PluginStep[] = [
+  {
+    title: 'Install it',
+    run: 'grit plugin add kanban',
+    then: 'Writes the three models, the service holding the ordering, the routes, the hooks and two admin pages, and adds Boards to the sidebar under Content.',
+  },
+  {
+    title: 'Install the admin dependency and migrate',
+    run: 'pnpm install\ncd apps/api && go run cmd/migrate/main.go',
+    then: 'The dependency is @dnd-kit, which is what makes dragging work with a finger and a keyboard as well as a mouse. The migration creates boards, board_columns and board_cards.',
+  },
+  {
+    title: 'Create a board',
+    then: 'Open Boards in the admin and name one. It starts with To do, In progress and Done, because landing on an empty screen with a single button is a worse first thirty seconds than landing on a board.',
+  },
+  {
+    title: 'Add some cards and drag one',
+    then: 'Add a card from the foot of a column. Drag it with the pointer, or Tab to its handle, press Space, use the arrows and press Space again. The column name is announced as you cross it.',
+  },
+  {
+    title: 'Set a work-in-progress limit',
+    run: 'curl -X PATCH localhost:8080/api/v1/board-columns/<id> -d \'{"wip_limit": 3}\'',
+    then: 'A move that would push the column past its limit is refused with 409 and the card returns where it came from. Rearranging inside a full column is still allowed: a limit is about how much work is in progress, not whether it can be ordered.',
+  },
+  {
+    title: 'React to a move from your own code',
+    run: 'events.On("boards.card_moved", func(ctx context.Context, e events.Event) error {\n	// notify, re-score, sync to another system\n	return nil\n})',
+    language: 'go',
+    then: 'The handler emits on the domain bus, so webhooks, the audit log and realtime subscribers all hear about it without the move endpoint knowing they exist.',
+  },
+]
+
+const RELATED: RelatedPlugin[] = [
+  { name: 'Multi-tenancy', href: '/docs/plugins/multitenant', why: 'Boards become per-organisation as soon as the three models embed tenant.Owned, with no change to the board code.' },
+  { name: 'Command palette', href: '/docs/plugins/command-palette', why: 'The other keyboard-first surface in the admin, and the fastest way to reach a board.' },
+  { name: 'Saved views', href: '/docs/plugins/saved-views', why: 'If the work is better as a filtered table than as a board, this is the plugin that makes the table worth returning to.' },
+]
 
 export default function KanbanPluginPage() {
   return (
@@ -189,6 +229,10 @@ WHERE column_id = ? AND position >= ?`}
             the lines it injected are taken back out, and the project compiles again. Your board
             data stays in the database until you drop the tables.
           </p>
+
+          <PluginSteps steps={STEPS} intro={'Putting a board on an existing project, from installing to dragging a card with the keyboard.'} />
+
+          <RelatedPlugins items={RELATED} />
 
           <div className="mt-12 flex flex-col gap-3 sm:flex-row">
             <Link

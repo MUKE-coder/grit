@@ -805,13 +805,54 @@ func (f Field) NeedsJSONTimeImport() bool {
 	return FieldType(f.Type) == FieldDatetime || FieldType(f.Type) == FieldDate
 }
 
+// isTimestampName reports whether a field name reads as a record of when
+// something happened, rather than a moment somebody picked.
+//
+// The same test guessFormat applies, kept here so the generator and `grit
+// sync` cannot answer differently for one column.
+func isTimestampName(name string) bool {
+	lower := strings.ToLower(name)
+	// Stripping underscores first and testing for "at" would also match
+	// format, seat and chat.
+	if strings.HasSuffix(lower, "_at") {
+		return true
+	}
+	if len(name) > 2 && strings.HasSuffix(name, "At") {
+		return true // CreatedAt, PublishedAt
+	}
+	switch lower {
+	case "createdat", "updatedat", "deletedat":
+		return true
+	}
+	return false
+}
+
 // ColumnFormat returns the DataTable column format for this field type.
+//
+// Dates and timestamps are not the same thing and did not used to be told
+// apart. A `date` is a calendar day with no time, so rendering it relative to
+// the current moment reads wrong for every value: a deal closing today showed
+// "just now", yesterday's showed "18h ago", and the form for the same column
+// said `date`, so the table and the form disagreed about what the value was.
+//
+// The rule matches guessFormat in sync_resource_admin.go, which `grit sync`
+// has always used for hand-written models. The two choosers disagreeing meant
+// a generated resource and a synced one formatted the same column differently.
 func (f Field) ColumnFormat() string {
 	switch FieldType(f.Type) {
 	case FieldBool:
 		return "boolean"
-	case FieldDatetime, FieldDate:
-		return "relative"
+	case FieldDate:
+		// A calendar date has no time of day to be relative to.
+		return "date"
+	case FieldDatetime:
+		// "Relative" earns its place on a timestamp of something that already
+		// happened, which is what an _at name means. Anything else is a
+		// moment somebody chose, and a date reads better than "in 3 days".
+		if isTimestampName(f.Name) {
+			return "relative"
+		}
+		return "date"
 	case FieldRichtext:
 		return "richtext"
 	case FieldMoney:

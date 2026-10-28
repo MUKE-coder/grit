@@ -169,7 +169,7 @@ import { useRouter } from "next/navigation";
 import type { ResourceDefinition, ColumnDefinition, FieldDefinition } from "@/lib/resource";
 import { useResource } from "@/hooks/use-resource";
 import { useResourceDetailController } from "@/hooks/use-resource-detail-controller";
-import { renderCell } from "@/components/tables/cell-renderers";
+import { renderCell, getNestedValue } from "@/components/tables/cell-renderers";
 import { DataTable } from "@/components/tables/data-table";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { ArrowLeft, Pencil, Trash2, Loader2, Printer, Plus, FileText } from "@/lib/icons";
@@ -322,7 +322,7 @@ function ResourceDetailView({ resource, id }: ResourceDetailPageProps) {
             <div key={col.key} className="min-w-0">
               <dt className="text-xs font-medium uppercase tracking-wide text-text-muted">{col.label}</dt>
               <dd className="mt-1 break-words text-sm text-foreground">
-                {renderCell(col, record[col.key], record)}
+                {renderCell(col, getNestedValue(record, col.key), record)}
               </dd>
             </div>
           ))}

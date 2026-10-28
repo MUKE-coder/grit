@@ -420,6 +420,71 @@ func seed(t *testing.T, db *gorm.DB, org, id, name string) {
 	}
 }
 
+// A batch insert is the ordinary GORM way to add several rows, and it reaches
+// the stamp callback with a slice rather than a struct. Before the callback
+// handled both, this panicked inside reflect and took the process down.
+func TestStamp_BatchCreate(t *testing.T) {
+	db := newDB(t)
+	ctx := tenant.WithOrg(context.Background(), "org-a")
+
+	rows := []Widget{{ID: "w1", Name: "one"}, {ID: "w2", Name: "two"}}
+	if err := db.WithContext(ctx).Create(&rows).Error; err != nil {
+		t.Fatalf("batch create: %v", err)
+	}
+	for _, r := range rows {
+		if r.OrgID != "org-a" {
+			t.Errorf("row %s has org %q, want org-a", r.ID, r.OrgID)
+		}
+	}
+
+	// And the rows that landed are scoped, not just the structs in memory.
+	var found []Widget
+	if err := db.WithContext(ctx).Find(&found).Error; err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 2 {
+		t.Fatalf("read back %d rows, want 2", len(found))
+	}
+}
+
+// Slices of pointers are just as common, and a pointer has no fields to set
+// either: the element has to be dereferenced first.
+func TestStamp_BatchCreatePointers(t *testing.T) {
+	db := newDB(t)
+	ctx := tenant.WithOrg(context.Background(), "org-b")
+
+	rows := []*Widget{{ID: "p1", Name: "one"}, {ID: "p2", Name: "two"}}
+	if err := db.WithContext(ctx).Create(&rows).Error; err != nil {
+		t.Fatalf("batch create: %v", err)
+	}
+	for _, r := range rows {
+		if r.OrgID != "org-b" {
+			t.Errorf("row %s has org %q, want org-b", r.ID, r.OrgID)
+		}
+	}
+}
+
+// An explicit organization still wins over the one on the context, the same
+// as it does for a single row.
+func TestStamp_BatchCreateKeepsAnExplicitOrg(t *testing.T) {
+	db := newDB(t)
+	ctx := tenant.WithOrg(context.Background(), "org-a")
+
+	rows := []Widget{
+		{ID: "m1", Name: "default"},
+		{ID: "m2", Name: "explicit", Owned: tenant.Owned{OrgID: "org-z"}},
+	}
+	if err := db.WithContext(ctx).Create(&rows).Error; err != nil {
+		t.Fatalf("batch create: %v", err)
+	}
+	if rows[0].OrgID != "org-a" {
+		t.Errorf("m1 has org %q, want org-a", rows[0].OrgID)
+	}
+	if rows[1].OrgID != "org-z" {
+		t.Errorf("m2 has org %q; an explicit value must not be overwritten", rows[1].OrgID)
+	}
+}
+
 // The core guarantee: one organization cannot read another's rows.
 func TestScoping_IsolatesOrganizations(t *testing.T) {
 	db := newDB(t)

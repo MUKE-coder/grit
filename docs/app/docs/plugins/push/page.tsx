@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { PluginSteps, RelatedPlugins } from '@/components/plugin-detail'
+import type { PluginStep, RelatedPlugin } from '@/components/plugin-detail'
 
 export const metadata = {
   title: 'Push notifications plugin | Grit',
@@ -11,6 +13,41 @@ export const metadata = {
     'Push notifications to the Expo app on iOS and Android, through Expo’s push service: device tokens, sending, and cleaning up tokens for deleted apps.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/push' },
 }
+
+const STEPS: PluginStep[] = [
+  {
+    title: 'Install it',
+    run: 'grit plugin add push',
+    then: 'Writes the token model and handlers, the services.Push sender, and apps/expo/lib/push.ts. It needs an Expo app in the project.',
+  },
+  {
+    title: 'Run the migration',
+    run: 'cd apps/api && go run cmd/migrate/main.go',
+    then: 'Device tokens are rows against a user, so a phone that signs in as somebody else stops receiving the last user\'s notifications.',
+  },
+  {
+    title: 'Register the device',
+    run: 'import { registerForPush } from "@/lib/push";\n\nawait registerForPush();   // asks permission, then POSTs the token',
+    language: 'ts',
+    then: 'Call it after sign-in. The matching unregister call belongs in your sign-out path, or the handset keeps receiving notifications meant for the previous account.',
+  },
+  {
+    title: 'Send yourself a test',
+    run: 'curl -X POST localhost:8080/api/v1/push/test -b cookies.txt',
+    then: 'Goes to every device registered to the signed-in user. If nothing arrives, the response says which token Expo rejected.',
+  },
+  {
+    title: 'Send from your own code',
+    run: 'services.Push.Go(ctx, []string{deal.OwnerID},\n	"Deal won", deal.Title, map[string]string{"deal_id": deal.ID})',
+    language: 'go',
+    then: 'Sends in the background, 100 devices per request. Tokens Expo reports as no longer registered are deleted automatically, so the table does not fill with dead handsets.',
+  },
+]
+
+const RELATED: RelatedPlugin[] = [
+  { name: 'Device pairing', href: '/docs/plugins/device-pairing', why: 'The other half of treating devices as first-class: pairing starts a session, push reaches it.' },
+  { name: 'Video', href: '/docs/plugins/video', why: 'The other plugin that assumes an Expo app, for the clips a notification might point at.' },
+]
 
 export default function PushPluginPage() {
   return (
@@ -131,6 +168,10 @@ await unregisterPush();`} />
             a registered token went out through Expo, and a token no device owned came back as not registered and
             was removed.
           </p>
+
+          <PluginSteps steps={STEPS} intro={'Sending a notification to a phone running the project\'s Expo app. Expo relays to APNs and FCM, so no certificates or Firebase keys go into the API.'} />
+
+          <RelatedPlugins items={RELATED} />
 
           <div className="mt-16 flex items-center justify-between border-t border-border/50 pt-8">
             <Link href="/docs/plugins/device-pairing">

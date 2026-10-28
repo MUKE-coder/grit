@@ -279,8 +279,11 @@ package tenant
 
 import (
 	"context"
+	"reflect"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm/schema"
 
 	"` + ctx.Module + `/internal/respond"
 )
@@ -415,6 +418,13 @@ func scope(db *gorm.DB) {
 }
 
 // stamp sets OrgID on insert.
+//
+// ReflectValue is a struct for db.Create(&row) and a SLICE for
+// db.Create(&rows), which is the ordinary GORM way to insert several rows at
+// once. Passing a slice to field.Set panics inside reflect rather than
+// returning an error, so before this handled both kinds, a batch insert of
+// any tenant-owned model took the process down: an import, a join table, any
+// hand-written code doing the normal thing.
 func stamp(db *gorm.DB) {
 	if db.Error != nil || skipped(db) || !hasOrgColumn(db) {
 		return
@@ -425,12 +435,32 @@ func stamp(db *gorm.DB) {
 		return
 	}
 	field := db.Statement.Schema.LookUpField("OrgID")
-	if field == nil || db.Statement.ReflectValue.Kind() == 0 {
+	if field == nil {
+		return
+	}
+
+	switch db.Statement.ReflectValue.Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < db.Statement.ReflectValue.Len(); i++ {
+			stampOne(db, field, db.Statement.ReflectValue.Index(i), orgID)
+		}
+	case reflect.Struct:
+		stampOne(db, field, db.Statement.ReflectValue, orgID)
+	}
+}
+
+// stampOne fills OrgID on a single row.
+//
+// reflect.Indirect because a []*Widget yields pointer elements, and a pointer
+// has no fields to set either.
+func stampOne(db *gorm.DB, field *schema.Field, row reflect.Value, orgID string) {
+	row = reflect.Indirect(row)
+	if row.Kind() != reflect.Struct {
 		return
 	}
 	// Only fill an empty value, so an explicit assignment still wins.
-	if v, zero := field.ValueOf(db.Statement.Context, db.Statement.ReflectValue); zero || v == "" {
-		_ = field.Set(db.Statement.Context, db.Statement.ReflectValue, orgID)
+	if v, zero := field.ValueOf(db.Statement.Context, row); zero || v == "" {
+		_ = field.Set(db.Statement.Context, row, orgID)
 	}
 }
 

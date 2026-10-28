@@ -145,9 +145,16 @@ def data_tables(source):
     out = []
     for match in DATA_ARRAY.finditer(source):
         name = match.group(1)
-        # Only arrays the page actually renders. A const that is never mapped
-        # is configuration, not content, and indexing it adds noise.
-        if name + ".map(" not in source:
+        # Only arrays the page actually renders. A const that is neither
+        # mapped nor handed to a component is configuration, not content, and
+        # indexing it adds noise.
+        #
+        # The prop form matters: a page that renders its data through a shared
+        # component writes steps={STEPS} rather than STEPS.map(. Checking only
+        # for .map( meant every plugin page's worked example was absent from
+        # `grit docs search` while looking perfectly fine in a browser, which
+        # is the worst way for documentation to be missing.
+        if name + ".map(" not in source and "{" + name + "}" not in source:
             continue
 
         # Walk to the array's closing bracket, so a nested [] cannot end it

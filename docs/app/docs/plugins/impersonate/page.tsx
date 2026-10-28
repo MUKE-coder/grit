@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { PluginSteps, RelatedPlugins } from '@/components/plugin-detail'
+import type { PluginStep, RelatedPlugin } from '@/components/plugin-detail'
 
 export const metadata = {
   title: 'Impersonate plugin — Grit',
@@ -11,6 +13,36 @@ export const metadata = {
     'Sign in as another user to reproduce a bug or verify their permissions, then return to your own account in one click.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/impersonate' },
 }
+
+const STEPS: PluginStep[] = [
+  {
+    title: 'Install it',
+    run: 'grit plugin add impersonate',
+    then: 'Writes the session-swap handlers, the banner component, and an Impersonate screen under System gated on users.edit.',
+  },
+  {
+    title: 'Run the migration',
+    run: 'cd apps/api && go run cmd/migrate/main.go',
+    then: 'Impersonation sessions are rows, so they can be listed, audited and ended from the server.',
+  },
+  {
+    title: 'Start a session',
+    then: 'Open System, Impersonate, and pick the user. The swap happens server side through HttpOnly cookies: the admin never handles a raw token for the other account, and the original session is kept so it can be restored.',
+  },
+  {
+    title: 'Work as them',
+    then: 'A banner stays on screen for the whole session saying who you are and offering Return to your account. It is deliberately hard to forget you are impersonating, because the failure mode is an admin changing real data believing it is their own.',
+  },
+  {
+    title: 'Stop, and check the trail',
+    then: 'One click returns you. Both the start and the stop are written to the activity log with who did it and to whom, so the question "who was in this account on Tuesday" has an answer.',
+  },
+]
+
+const RELATED: RelatedPlugin[] = [
+  { name: 'Multi-tenancy', href: '/docs/plugins/multitenant', why: 'Impersonation and organisation scoping answer the same support question from two directions: who can see what.' },
+  { name: 'Device pairing', href: '/docs/plugins/device-pairing', why: 'The other way a session can start on a device that did not type the password, and it ends up in the same Active Sessions list.' },
+]
 
 export default function ImpersonatePage() {
   return (
@@ -171,6 +203,10 @@ POST /api/auth/impersonate/stop          protected; return to your own account`}
               </li>
             </ul>
           </div>
+
+          <PluginSteps steps={STEPS} intro={'Reproducing a bug a specific user is hitting, without asking them for their password.'} />
+
+          <RelatedPlugins items={RELATED} />
 
           <div className="mt-12 flex items-center justify-between border-t border-border/40 pt-6">
             <Button asChild variant="ghost">

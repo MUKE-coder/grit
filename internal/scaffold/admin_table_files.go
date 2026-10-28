@@ -9,18 +9,10 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type MouseEven
 import Link from "next/link";
 import type { ColumnDefinition, RowActionDefinition } from "@/lib/resource";
 import { ColumnHeader } from "./column-header";
-import { renderCell } from "./cell-renderers";
+import { renderCell, getNestedValue } from "./cell-renderers";
 import { TableSkeleton } from "./table-skeleton";
 import { TableEmptyState } from "./table-empty-state";
 import { Eye, ArrowUpRight, Copy, Check } from "@/lib/icons";
-
-function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
-  if (!path.includes(".")) return obj[path];
-  return path.split(".").reduce<unknown>(
-    (acc, key) => acc && typeof acc === "object" ? (acc as Record<string, unknown>)[key] : undefined,
-    obj
-  );
-}
 
 // ClickableCell wraps a rendered cell when the column defines onClick. The two
 // built-ins ("link" → open the row, "copy" → copy the value) get an affordance
@@ -1486,7 +1478,24 @@ export function formatCurrency(value: number, prefix = "$"): string {
 
 // fieldTypeCells are the table cells of the formatted field types, spliced into
 // cell-renderers.tsx.
-const fieldTypeCells = `function DomainCell({ value }: { value: string }) {
+const fieldTypeCells = `/**
+ * Reads a column key that may name a nested property: "board.name".
+ *
+ * A belongs_to column is generated with a dotted key, because the API returns
+ * the related object rather than a flattened field. Every surface that renders
+ * a column has to resolve it the same way; the list table did and the record
+ * page did not, so a detail page showed a dash for every relation while the
+ * list beside it showed the name.
+ */
+export function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  if (!path.includes(".")) return obj[path];
+  return path.split(".").reduce<unknown>(
+    (acc, key) => acc && typeof acc === "object" ? (acc as Record<string, unknown>)[key] : undefined,
+    obj
+  );
+}
+
+function DomainCell({ value }: { value: string }) {
   // Stored bare (example.co.ug), so the scheme is the cell's to add.
   return (
     <a

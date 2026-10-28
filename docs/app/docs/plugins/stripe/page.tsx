@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { PluginSteps, RelatedPlugins } from '@/components/plugin-detail'
+import type { PluginStep, RelatedPlugin } from '@/components/plugin-detail'
 
 export const metadata = {
   title: 'Stripe plugin | Grit',
@@ -11,6 +13,39 @@ export const metadata = {
     'Take payments and subscriptions through Stripe: the price decided on the server, the order settled by a verified webhook exactly once, refunds from the admin, a payment form for the web app, and hosted billing for recurring plans.',
   alternates: { canonical: 'https://gritframework.dev/docs/plugins/stripe' },
 }
+
+const STEPS: PluginStep[] = [
+  {
+    title: 'Install it',
+    run: 'grit plugin add stripe',
+    then: 'Writes the checkout handlers, the webhook endpoint and the models behind them.',
+  },
+  {
+    title: 'Put the keys in the environment',
+    run: 'STRIPE_SECRET_KEY=sk_test_...\nSTRIPE_WEBHOOK_SECRET=whsec_...',
+    then: 'Test keys to begin with. The webhook secret is not optional: without it the endpoint cannot tell a real Stripe event from anybody who found the URL.',
+  },
+  {
+    title: 'Run the migration',
+    run: 'cd apps/api && go run cmd/migrate/main.go',
+    then: 'Payments and processed event ids are rows. The second table is what makes a redelivered webhook harmless.',
+  },
+  {
+    title: 'Forward webhooks to your machine',
+    run: 'stripe listen --forward-to localhost:8080/api/v1/stripe/webhook',
+    then: 'Stripe cannot reach localhost on its own. Most of the time a checkout "works but nothing happens" in development, this is why.',
+  },
+  {
+    title: 'Take a payment and then replay it',
+    run: 'stripe trigger payment_intent.succeeded',
+    then: 'Run it twice. The second delivery must change nothing: Stripe redelivers on its own schedule, and a handler that is not idempotent double-charges or double-ships the first time that happens in production.',
+  },
+]
+
+const RELATED: RelatedPlugin[] = [
+  { name: 'Multi-tenancy', href: '/docs/plugins/multitenant', why: 'If each organisation is billed separately, add it before the billing model hardens around one customer per app.' },
+  { name: 'Webhooks', href: '/docs/backend/webhooks', why: 'Outbound webhooks, to the Standard Webhooks spec, for telling other systems what you just charged for.' },
+]
 
 export default function StripePluginPage() {
   return (
@@ -261,6 +296,10 @@ const { data } = useSubscription();   // { subscription, entitled }
             Testing webhooks locally: <code>stripe listen --forward-to localhost:8080/webhooks/stripe</code> prints
             the signing secret to use. Or skip it: the return page&apos;s refresh settles card payments on its own.
           </p>
+
+          <PluginSteps steps={STEPS} intro={'Taking a payment, and surviving the parts of Stripe that are not the happy path: retries and redelivered webhooks.'} />
+
+          <RelatedPlugins items={RELATED} />
 
           <div className="mt-16 flex items-center justify-between border-t border-border/50 pt-8">
             <Link href="/docs/plugins/video">

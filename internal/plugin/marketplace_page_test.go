@@ -3,6 +3,7 @@ package plugin
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -120,4 +121,62 @@ func readRepoFile(t *testing.T, rel string) (string, bool) {
 		dir = parent
 	}
 	return "", false
+}
+
+// TestEveryPluginPageHasAWorkedExample.
+//
+// The marketplace sends people to a plugin's page to find out how to use it.
+// A page that only says what the plugin is leaves them to work the rest out
+// from the CLI, which is the thing the page existed to save them.
+func TestEveryPluginPageHasAWorkedExample(t *testing.T) {
+	for _, p := range All() {
+		page, ok := readRepoFile(t, "docs/app/docs/plugins/"+p.Name+"/page.tsx")
+		if !ok {
+			// webhooks documents itself under /docs/backend; the marketplace
+			// test above is what checks every plugin is reachable.
+			continue
+		}
+		if !strings.Contains(page, "const STEPS: PluginStep[]") {
+			t.Errorf("the %s page has no STEPS array, so it has no worked example", p.Name)
+		}
+		if !strings.Contains(page, "<PluginSteps steps={STEPS}") {
+			t.Errorf("the %s page declares STEPS but never renders them", p.Name)
+		}
+		if !strings.Contains(page, "const RELATED: RelatedPlugin[]") {
+			t.Errorf("the %s page has no RELATED array", p.Name)
+		}
+		if !strings.Contains(page, "<RelatedPlugins items={RELATED}") {
+			t.Errorf("the %s page declares RELATED but never renders it", p.Name)
+		}
+	}
+}
+
+// TestRelatedPluginLinksResolve: a "see also" list quietly rots into dead
+// links, and a 404 from a page recommending somewhere to go next is worse
+// than not recommending anything.
+func TestRelatedPluginLinksResolve(t *testing.T) {
+	hrefRe := regexp.MustCompile(`href: '(/docs/[^']+)'`)
+
+	for _, p := range All() {
+		rel := "docs/app/docs/plugins/" + p.Name + "/page.tsx"
+		page, ok := readRepoFile(t, rel)
+		if !ok {
+			continue
+		}
+		block, found := sliceBetween(page, "const RELATED: RelatedPlugin[] = [", "\n]")
+		if !found {
+			continue
+		}
+		for _, m := range hrefRe.FindAllStringSubmatch(block, -1) {
+			href := m[1]
+			target := "docs/app" + href + "/page.tsx"
+			if _, exists := readRepoFile(t, target); !exists {
+				t.Errorf("the %s page links to %s under Related plugins, "+
+					"but %s does not exist", p.Name, href, target)
+			}
+			if href == "/docs/plugins/"+p.Name {
+				t.Errorf("the %s page lists itself as a related plugin", p.Name)
+			}
+		}
+	}
 }

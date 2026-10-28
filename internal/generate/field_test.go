@@ -227,8 +227,11 @@ func TestField_UIHelpers(t *testing.T) {
 		{"richtext", "richtext", "richtext", false, true},
 		{"int", "text", "number", true, false},
 		{"bool", "boolean", "toggle", false, false},
-		{"datetime", "relative", "datetime", true, false},
-		{"date", "relative", "date", true, false},
+		// A bare "datetime" with no name is not an _at timestamp, so it
+		// formats as a date. The named cases are covered by
+		// TestColumnFormatTellsDatesFromTimestamps.
+		{"datetime", "date", "datetime", true, false},
+		{"date", "date", "date", true, false},
 		{"slug", "text", "", true, true},
 		{"belongs_to", "text", "relationship-select", false, false},
 		{"many_to_many", "text", "multi-relationship-select", false, false},
@@ -248,6 +251,60 @@ func TestField_UIHelpers(t *testing.T) {
 		}
 		if got := f.IsSearchable(); got != tt.isSearchable {
 			t.Errorf("Field{%q}.IsSearchable() = %v, want %v", tt.fieldType, got, tt.isSearchable)
+		}
+	}
+}
+
+// TestColumnFormatTellsDatesFromTimestamps is grit#119.
+//
+// A calendar date rendered relative to the current moment reads wrong for
+// every value: today's date showed "just now" and yesterday's "18h ago", on a
+// column whose own form field said "date".
+func TestColumnFormatTellsDatesFromTimestamps(t *testing.T) {
+	cases := []struct {
+		fieldType string
+		name      string
+		want      string
+		why       string
+	}{
+		{"date", "due", "date", "a calendar date has no time of day to be relative to"},
+		{"date", "closed_at", "date", "still a calendar date, whatever it is called"},
+		{"datetime", "created_at", "relative", "a record of when something happened"},
+		{"datetime", "CreatedAt", "relative", "the camelCase spelling of the same thing"},
+		{"datetime", "published_at", "relative", ""},
+		{"datetime", "starts", "date", "a moment somebody picked, not a timestamp"},
+		{"datetime", "format", "date", "ends in 'at' only if you delete the underscore"},
+		{"datetime", "seat", "date", ""},
+	}
+
+	for _, tc := range cases {
+		f := Field{Type: tc.fieldType, Name: tc.name}
+		if got := f.ColumnFormat(); got != tc.want {
+			t.Errorf("Field{Type:%q, Name:%q}.ColumnFormat() = %q, want %q%s",
+				tc.fieldType, tc.name, got, tc.want,
+				map[bool]string{true: " (" + tc.why + ")", false: ""}[tc.why != ""])
+		}
+	}
+}
+
+// TestColumnFormatAgreesWithGuessFormat: the generator and `grit sync` pick
+// the format for the same column by two different code paths, and they used
+// to disagree, so a generated resource and a synced one formatted the same
+// field differently.
+func TestColumnFormatAgreesWithGuessFormat(t *testing.T) {
+	cases := []struct{ name, goType, fieldType string }{
+		{"created_at", "time.Time", "datetime"},
+		{"updated_at", "time.Time", "datetime"},
+		{"due", "time.Time", "date"},
+		{"starts", "time.Time", "datetime"},
+	}
+
+	for _, tc := range cases {
+		generated := Field{Type: tc.fieldType, Name: tc.name}.ColumnFormat()
+		synced := guessFormat(GoField{Name: tc.name, GoType: tc.goType})
+		if generated != synced {
+			t.Errorf("%s: generate says %q, sync says %q; they must agree",
+				tc.name, generated, synced)
 		}
 	}
 }
