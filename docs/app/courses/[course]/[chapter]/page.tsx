@@ -207,7 +207,7 @@ export default async function ChapterLandingPage({ params }: PageProps) {
       {firstLesson && (
         <div className="rounded-2xl border border-accent/20 bg-accent/[0.05] p-5 mb-10 text-center">
           <p className="text-sm text-muted-foreground mb-4">Lesson 1 takes ~{firstLesson.minutes} min.</p>
-          <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground">
+          <Button asChild className="rounded-full bg-primary hover:bg-fg/85 text-primary-foreground">
             <Link href={`/courses/${course.slug}/${chapter.slug}/${firstLesson.slug}`}>
               Start chapter
               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
@@ -240,7 +240,7 @@ export default async function ChapterLandingPage({ params }: PageProps) {
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground hover:bg-accent/90 text-xs font-medium px-4 py-2 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground hover:bg-fg/85 text-xs font-medium px-4 py-2 transition-colors"
             >
               <Github className="h-3.5 w-3.5" />
               Suggest an improvement on GitHub

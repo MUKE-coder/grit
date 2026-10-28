@@ -110,7 +110,7 @@ export default async function BlogPostPage({
           </p>
           <Link
             href="/docs/getting-started/quick-start"
-            className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-accent/90 transition-colors glow-primary-sm"
+            className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-fg/85 transition-colors glow-primary-sm"
           >
             Get started
           </Link>

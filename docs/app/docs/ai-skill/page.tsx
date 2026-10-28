@@ -34,7 +34,7 @@ export default function AISkillPage() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Button size="sm" variant="outline" className="gap-1.5 border-accent/20 text-accent/80 hover:bg-accent/10 hover:text-accent">
+                <Button size="sm" variant="outline" className="gap-1.5 border-accent/20 text-accent/80 hover:bg-surface-2 hover:text-accent">
                   <Download className="h-3.5 w-3.5" />
                   Download Grit Handbook PDF
                 </Button>

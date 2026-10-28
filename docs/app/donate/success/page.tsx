@@ -43,7 +43,7 @@ export default function DonateSuccessPage() {
               <Button
                 variant="outline"
                 size="lg"
-                className="border-border/60 bg-transparent hover:bg-accent/50"
+                className="border-border/60 bg-transparent hover:bg-surface-2"
                 asChild
               >
                 <Link href="/donate">

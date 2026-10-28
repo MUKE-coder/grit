@@ -91,7 +91,7 @@ export function Testimonials() {
               href={TESTIMONIAL_ISSUE_URL}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-border/60 px-6 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50"
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-border/60 px-6 text-sm font-semibold text-foreground transition-colors hover:bg-surface-2"
             >
               <Github className="h-4 w-4" aria-hidden="true" />
               Add yours
@@ -116,14 +116,14 @@ export function Testimonials() {
               href={TESTIMONIAL_ISSUE_URL}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent/90"
+              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-fg/85"
             >
               <Github className="h-4 w-4" aria-hidden="true" />
               Share your experience
             </Link>
             <Link
               href="/showcase"
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-border/60 px-6 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50"
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-border/60 px-6 text-sm font-semibold text-foreground transition-colors hover:bg-surface-2"
             >
               See what people are building
               <ArrowRight className="h-4 w-4" aria-hidden="true" />

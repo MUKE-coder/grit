@@ -60,7 +60,7 @@ export default function HirePage() {
                   Get in Touch
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" className="border-border/60 bg-transparent hover:bg-accent/50" asChild>
+              <Button variant="outline" size="lg" className="border-border/60 bg-transparent hover:bg-surface-2" asChild>
                 <Link href="https://gritcms.com" target="_blank" rel="noreferrer">
                   See GritCMS
                   <ExternalLink className="ml-2 h-4 w-4" />

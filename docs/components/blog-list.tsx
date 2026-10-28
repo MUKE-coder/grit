@@ -39,7 +39,7 @@ export function BlogList({ posts }: { posts: BlogCard[] }) {
               className={`text-left rounded-md px-2.5 py-1.5 text-sm transition-colors ${
                 c === active
                   ? 'text-accent font-medium bg-accent/10'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/30'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-surface-2'
               }`}
             >
               {c}

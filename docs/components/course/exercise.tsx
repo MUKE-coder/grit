@@ -57,7 +57,7 @@ export function Exercise({ prompt, hint, solution }: Props) {
             'inline-flex items-center gap-1.5 text-sm font-medium rounded-md px-3 py-1.5 transition-colors',
             revealed
               ? 'text-muted-foreground hover:text-foreground'
-              : 'bg-primary text-primary-foreground hover:bg-accent/90',
+              : 'bg-primary text-primary-foreground hover:bg-fg/85',
           )}
         >
           {revealed ? (

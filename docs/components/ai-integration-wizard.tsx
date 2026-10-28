@@ -356,7 +356,7 @@ export function AIIntegrationWizard() {
                 <CopyButton
                   text={prompt}
                   variant="default"
-                  className="bg-primary text-primary-foreground hover:bg-accent/90"
+                  className="bg-primary text-primary-foreground hover:bg-fg/85"
                 >
                   Copy prompt
                 </CopyButton>
@@ -407,7 +407,7 @@ export function AIIntegrationWizard() {
               setStep(next)
             }}
             disabled={!canNext}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-accent/90 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-fg/85 disabled:opacity-40"
           >
             Next
             <ArrowRight className="h-4 w-4" />

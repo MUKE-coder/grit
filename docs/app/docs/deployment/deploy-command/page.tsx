@@ -140,7 +140,7 @@ WantedBy=multi-user.target`}
                     { flag: '--domain', env: 'DEPLOY_DOMAIN', desc: 'Domain for Caddy reverse proxy' },
                     { flag: '--app-port', env: '-', desc: 'Port the app runs on (default: 8080)' },
                   ].map((row) => (
-                    <tr key={row.flag} className="hover:bg-accent/20 transition-colors">
+                    <tr key={row.flag} className="hover:bg-surface-2 transition-colors">
                       <td className="px-4 py-3 font-mono text-sm text-accent">{row.flag}</td>
                       <td className="px-4 py-3 font-mono text-xs text-muted-foreground/70">{row.env}</td>
                       <td className="px-4 py-3 text-muted-foreground">{row.desc}</td>

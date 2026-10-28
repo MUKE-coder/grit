@@ -71,7 +71,7 @@ export default function InstallationPage() {
                     { tool: 'pnpm', version: '8+', for: 'Package management', check: 'pnpm --version' },
                     { tool: 'Docker', version: 'Latest', for: 'Infrastructure', check: 'docker --version' },
                   ].map((row) => (
-                    <tr key={row.tool} className="hover:bg-accent/20 transition-colors">
+                    <tr key={row.tool} className="hover:bg-surface-2 transition-colors">
                       <td className="px-4 py-3 font-medium text-foreground">{row.tool}</td>
                       <td className="px-4 py-3 font-mono text-sm text-accent">{row.version}</td>
                       <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{row.for}</td>
@@ -211,7 +211,7 @@ grit new-desktop my-app`} />
                 { name: 'GORM Studio', url: 'http://localhost:8080/studio', desc: 'Database browser' },
                 { name: 'Mailhog', url: 'http://localhost:8025', desc: 'Email testing' },
               ].map((svc) => (
-                <div key={svc.name} className="rounded-lg border border-border/40 bg-accent/20 p-4 hover:bg-accent/30 transition-colors">
+                <div key={svc.name} className="rounded-lg border border-border/40 bg-accent/20 p-4 hover:bg-surface-2 transition-colors">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-medium text-foreground">{svc.name}</span>
                     <code className="text-[11px] font-mono text-accent/70">{svc.url.replace('http://', '')}</code>
@@ -272,7 +272,7 @@ grit start client`} />
                     { svc: 'File storage', provider: 'Cloudflare R2 / Backblaze B2', env: 'STORAGE_DRIVER=r2 (+ R2_* keys)' },
                     { svc: 'Email', provider: 'Resend', env: 'RESEND_API_KEY / MAIL_FROM' },
                   ].map((row) => (
-                    <tr key={row.svc} className="hover:bg-accent/20 transition-colors">
+                    <tr key={row.svc} className="hover:bg-surface-2 transition-colors">
                       <td className="px-4 py-2.5 font-medium text-foreground">{row.svc}</td>
                       <td className="px-4 py-2.5 text-muted-foreground">{row.provider}</td>
                       <td className="px-4 py-2.5 font-mono text-[12px] text-accent/80">{row.env}</td>

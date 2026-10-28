@@ -321,7 +321,7 @@ export function SearchDialog() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-md border border-border/50 bg-accent/30 px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-2 rounded-md border border-border/50 bg-accent/30 px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground transition-colors"
       >
         <FileText className="h-3.5 w-3.5" />
         <span className="hidden sm:inline">Search docs...</span>

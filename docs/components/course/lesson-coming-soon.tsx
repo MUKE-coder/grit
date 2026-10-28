@@ -40,7 +40,7 @@ export function LessonComingSoon({ courseSlug, courseName, lessonTitle }: Props)
         builds on.
       </p>
       <div className="flex items-center justify-center gap-3 flex-wrap">
-        <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground">
+        <Button asChild className="rounded-full bg-primary hover:bg-fg/85 text-primary-foreground">
           <Link href="/courses/concepts">
             Start with Grit Concepts
             <ArrowRight className="ml-1.5 h-3.5 w-3.5" />

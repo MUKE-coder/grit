@@ -313,7 +313,7 @@ export default function CoursesPage() {
                     href={course.href}
                     className="group flex items-start gap-3 p-5 border-b-[3px] border-r-[3px] border-double border-foreground/20 bg-card/20 hover:bg-card/50 transition-colors"
                   >
-                    <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-accent/10 text-accent shrink-0 group-hover:bg-accent/20 transition-colors">
+                    <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-accent/10 text-accent shrink-0 group-hover:bg-surface-2 transition-colors">
                       <course.icon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">

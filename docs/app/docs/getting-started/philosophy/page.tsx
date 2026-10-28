@@ -371,7 +371,7 @@ export default function PhilosophyPage() {
 
             {/* Next/Prev navigation */}
             <div className="flex flex-wrap gap-3 mt-12 pt-6 border-t border-border/30">
-              <Button variant="outline" asChild className="border-border/60 bg-transparent hover:bg-accent/50">
+              <Button variant="outline" asChild className="border-border/60 bg-transparent hover:bg-surface-2">
                 <Link href="/docs">Introduction</Link>
               </Button>
               <Button asChild className="glow-purple-sm ml-auto">

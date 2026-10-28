@@ -91,8 +91,9 @@ export function SectionHeader({
       </h2>
       {lead && (
         <p
-          className={`mt-5 text-lead text-fg-muted ${centred ? 'mx-auto' : ''}`}
-          style={{ maxWidth: '60ch' }}
+          className={`mt-5 max-w-[var(--measure)] text-lead text-fg-muted ${
+            centred ? 'mx-auto' : ''
+          }`}
         >
           {lead}
         </p>

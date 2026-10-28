@@ -280,7 +280,7 @@ export function AuthShowcase() {
       </div>
 
       {/* Stating the gaps costs one line and buys the rest of the page. */}
-      <p className="text-[11.5px] text-fg-subtle mt-8 pt-5 border-t border-border/40 leading-relaxed max-w-[72ch]">
+      <p className="text-[11.5px] text-fg-subtle mt-8 pt-5 border-t border-border/40 leading-relaxed max-w-[var(--measure)]">
         Not included, so you are not surprised later: there is no email-verification flow (the
         field exists and social sign-in sets it, but nothing sends a verification mail), and no
         API-key authentication; machine callers use the same JWT flow.

@@ -129,6 +129,21 @@
        the two curves concentric. A nested radius is derived, never chosen.
 
        --radius stays as the shadcn alias every components/ui/ file reads. */
+    /* ── The measure ───────────────────────────────────────────────────
+       The comfortable line length, as a max-width.
+
+       NOT 72ch. The `ch` unit is the advance of the digit "0", and Geist's
+       digits are tabular and wide: measured in the browser at 14, 15, 16 and
+       19px, `ch` is 0.663em while a real prose character averages 0.461em.
+       So `ch` overstates a character by 44%, and `max-width: 72ch` holds
+       **104 characters** in this typeface, which is well past the point the
+       rule exists to stop. The design system's own token says 72ch and has
+       the same problem.
+
+       72 characters x 0.461em is 33em, and em tracks the font size, so one
+       token holds the measure at every size the docs use. */
+    --measure: 33em;
+
     --radius-xs: 4px;
     --radius-sm: 6px;
     --radius-btn-sm: 8px;
@@ -363,17 +378,30 @@ article {
   animation: count-up 0.8s ease-out forwards;
 }
 
-/* Prose styling for docs content */
+/* Prose styling for docs content.
+ *
+ * Sizes, weights and rhythm from the design system: h2 is --text-h2
+ * (600 28px/36px), h3 is --text-h3 (600 20px/28px), body is --text-body
+ * (400 16px/28px). Headings were 700 here, which is a weight the system
+ * does not have, and the only place on the site that used it.
+ *
+ * The measure is --measure rather than whatever the container happens to
+ * be. Sixteen paragraphs on this site were over it, some at 134 characters,
+ * which is past the point where the eye loses the start of the next line. */
+.prose-grit {
+  max-width: var(--measure);
+}
+
 .prose-grit h2 {
-  @apply font-display text-[1.7rem] font-bold tracking-tight mb-5 mt-14 text-foreground scroll-mt-24;
+  @apply text-[28px] font-semibold leading-9 tracking-[-0.025em] mb-4 mt-16 text-foreground scroll-mt-24;
 }
 
 .prose-grit h3 {
-  @apply font-display text-xl font-semibold tracking-tight mb-3 mt-9 text-foreground scroll-mt-24;
+  @apply text-[20px] font-semibold leading-7 tracking-[-0.02em] mb-3 mt-10 text-foreground scroll-mt-24;
 }
 
 .prose-grit p {
-  @apply text-base leading-relaxed text-muted-foreground mb-4;
+  @apply text-base leading-7 text-muted-foreground mb-4;
 }
 
 .prose-grit ul {

@@ -74,7 +74,7 @@ export function Folder({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-1.5 rounded-md py-1 pl-1 pr-2 text-left hover:bg-accent/20"
+        className="flex w-full items-center gap-1.5 rounded-md py-1 pl-1 pr-2 text-left hover:bg-surface-2"
       >
         <ChevronRight
           className={`h-3 w-3 shrink-0 text-muted-foreground/50 transition-transform ${open ? 'rotate-90' : ''}`}

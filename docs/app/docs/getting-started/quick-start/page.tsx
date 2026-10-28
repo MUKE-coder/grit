@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SiteHeader } from "@/components/site-header";
-import { DocsSidebar } from "@/components/docs-sidebar";
+import { DocsShell } from "@/components/docs/shell";
+import { DocsPageHeader } from "@/components/docs/page-header";
 import { CodeBlock } from "@/components/code-block";
 import { Steps, Step } from "@/components/steps";
 import { CommunityCTA } from "@/components/community-cta";
@@ -13,36 +13,35 @@ export const metadata = getDocMetadata('/docs/getting-started/quick-start')
 
 export default function QuickStartPage() {
   return (
-    <div className="min-h-screen bg-background isolate">
-      <SiteHeader />
-      <DocsSidebar />
-
-      <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-3xl">
-            {/* Header */}
-            <div className="mb-10">
-              <span className="tag-mono text-accent/80 mb-3 block">
-                Getting Started
-              </span>
-              <h1 className="text-4xl font-bold tracking-tight mb-4">
-                Quick Start
-              </h1>
-              <p className="text-xl text-muted-foreground leading-relaxed">
-                Get a full-stack Grit project running in 5 minutes. This guide
-                assumes you have Go, Node.js, pnpm, and Docker already
-                installed. If not, see the{" "}
-                <Link
-                  href="/docs/getting-started/installation"
-                  className="text-accent hover:underline"
-                >
-                  Installation guide
-                </Link>{" "}
-                first.
-              </p>
-            </div>
-
-            <BookDownload className="mb-8" />
+    <DocsShell
+      header={
+        <DocsPageHeader
+          crumbs={[
+            { label: 'Docs', href: '/docs' },
+            { label: 'Getting started', href: '/docs' },
+            { label: 'Quick Start' },
+          ]}
+          title="Quick Start"
+          readingTime={5}
+          sourcePath="app/docs/getting-started/quick-start/page.tsx"
+          lead={
+            <>
+              Get a full-stack Grit project running in five minutes. This guide
+              assumes Go, Node.js, pnpm and Docker are installed. If not, start
+              with{' '}
+              <Link
+                href="/docs/getting-started/installation"
+                className="g-link"
+              >
+                Installation
+              </Link>
+              .
+            </>
+          }
+        />
+      }
+    >
+      <BookDownload className="mb-8" />
 
             {/* Prerequisites */}
             <div className="prose-grit mb-10">
@@ -119,7 +118,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                 </p>
                 <CodeBlock terminal code="grit update" className="mb-0" />
                 <p className="text-[15px] text-muted-foreground">
-                  Run <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">grit version</code> afterwards
+                  Run <code className="text-[15px] font-mono bg-surface-2 px-1.5 py-0.5 rounded-xs text-accent">grit version</code> afterwards
                   to confirm you&apos;re on the latest release.
                 </p>
               </div>
@@ -160,14 +159,14 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                 </p>
                 <CodeBlock terminal code="grit new myapp --triple --vite" className="mb-0" />
                 <p className="text-[15px] text-muted-foreground mt-3">
-                  Available flags: <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--single</code>,{' '}
-                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--double</code>,{' '}
-                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--triple</code>,{' '}
-                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--api</code>,{' '}
-                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--mobile</code> for architecture,{' '}
-                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--vite</code>,{' '}
-                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--next</code> for frontend,
-                  and <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--desktop</code> to add a
+                  Available flags: <code className="text-[15px] font-mono bg-surface-2 px-1.5 py-0.5 rounded-xs text-accent">--single</code>,{' '}
+                  <code className="text-[15px] font-mono bg-surface-2 px-1.5 py-0.5 rounded-xs text-accent">--double</code>,{' '}
+                  <code className="text-[15px] font-mono bg-surface-2 px-1.5 py-0.5 rounded-xs text-accent">--triple</code>,{' '}
+                  <code className="text-[15px] font-mono bg-surface-2 px-1.5 py-0.5 rounded-xs text-accent">--api</code>,{' '}
+                  <code className="text-[15px] font-mono bg-surface-2 px-1.5 py-0.5 rounded-xs text-accent">--mobile</code> for architecture,{' '}
+                  <code className="text-[15px] font-mono bg-surface-2 px-1.5 py-0.5 rounded-xs text-accent">--vite</code>,{' '}
+                  <code className="text-[15px] font-mono bg-surface-2 px-1.5 py-0.5 rounded-xs text-accent">--next</code> for frontend,
+                  and <code className="text-[15px] font-mono bg-surface-2 px-1.5 py-0.5 rounded-xs text-accent">--desktop</code> to add a
                   Wails desktop client (<a href="/docs/concepts/architecture-modes/multi-client" className="text-accent hover:underline">multi-client pattern</a>).
                 </p>
               </div>
@@ -181,7 +180,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                 </p>
                 <CodeBlock terminal code="grit new . --triple --vite" className="mb-0" />
                 <p className="text-sm text-muted-foreground/60 mt-2">
-                  Use <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">--force</code> to
+                  Use <code className="text-[15px] font-mono bg-surface-2 px-1.5 py-0.5 rounded-xs text-accent">--force</code> to
                   scaffold into a non-empty directory.
                 </p>
               </div>
@@ -500,7 +499,7 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
               <Button
                 variant="outline"
                 asChild
-                className="border-border/60 bg-transparent hover:bg-accent/50"
+                className="border-border/60 bg-transparent hover:bg-surface-2"
               >
                 <Link href="/docs/getting-started/philosophy">Philosophy</Link>
               </Button>
@@ -511,9 +510,6 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
                 </Link>
               </Button>
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    </DocsShell>
   );
 }

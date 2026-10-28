@@ -64,9 +64,15 @@ export function BookDownload({
           <BookOpen className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="mb-1 text-base font-semibold text-foreground">
+          {/* A <p>, not an <h3>.
+              This card sits above the page's first real section, so a level-3
+              heading here made every page carrying it skip h1 -> h3, which is
+              what a screen reader user navigating by heading level hears as a
+              missing section. It is a promotional card, not a section of the
+              document. */}
+          <p className="mb-1 text-base font-semibold text-foreground">
             Free book: {BOOK_TITLE}
-          </h3>
+          </p>
           <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
             A textbook that teaches Go from scratch to someone who already ships React and
             Next.js, then builds real applications with Grit. Every concept starts from the
@@ -89,7 +95,7 @@ export function BookDownload({
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href={BOOK_HREF}
-              className="group inline-flex h-9 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent/90"
+              className="group inline-flex h-9 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-fg/85"
             >
               <Download className="h-3.5 w-3.5" />
               Download the PDF

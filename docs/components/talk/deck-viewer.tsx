@@ -228,7 +228,7 @@ export function DeckViewer({ deck }: { deck: TalkDeck }) {
             onClick={() => go(current - 1)}
             disabled={current === 0}
             aria-label="Previous slide"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -237,7 +237,7 @@ export function DeckViewer({ deck }: { deck: TalkDeck }) {
             onClick={() => go(current + 1)}
             disabled={current === slides.length - 1}
             aria-label="Next slide"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -261,7 +261,7 @@ export function DeckViewer({ deck }: { deck: TalkDeck }) {
             <button
               type="button"
               onClick={() => setOverviewOpen(true)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
             >
               <Grid2x2 className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">All slides</span>
@@ -271,7 +271,7 @@ export function DeckViewer({ deck }: { deck: TalkDeck }) {
               onClick={() => setNotesOpen((v) => !v)}
               aria-pressed={notesOpen}
               className={cn(
-                'inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs transition-colors hover:bg-accent/50',
+                'inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs transition-colors hover:bg-surface-2',
                 notesOpen ? 'text-accent' : 'text-muted-foreground hover:text-foreground',
               )}
             >
@@ -282,7 +282,7 @@ export function DeckViewer({ deck }: { deck: TalkDeck }) {
               type="button"
               onClick={toggleFullscreen}
               aria-label={isFullscreen ? 'Leave fullscreen' : 'Present fullscreen'}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
             >
               {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
             </button>
@@ -313,7 +313,7 @@ export function DeckViewer({ deck }: { deck: TalkDeck }) {
               type="button"
               onClick={() => setOverviewOpen(false)}
               aria-label="Close"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </button>

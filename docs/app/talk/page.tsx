@@ -88,14 +88,14 @@ export default function TalkPage() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
               href="/docs/getting-started/quick-start"
-              className="group inline-flex h-11 items-center gap-2 rounded-full bg-primary px-7 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent/90"
+              className="group inline-flex h-11 items-center gap-2 rounded-full bg-primary px-7 text-sm font-semibold text-primary-foreground transition-colors hover:bg-fg/85"
             >
               Build one yourself
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link
               href="/blog"
-              className="inline-flex h-11 items-center rounded-full border border-border/60 px-7 text-sm font-medium text-foreground transition-colors hover:bg-accent/30"
+              className="inline-flex h-11 items-center rounded-full border border-border/60 px-7 text-sm font-medium text-foreground transition-colors hover:bg-surface-2"
             >
               Read the write-ups
             </Link>

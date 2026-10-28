@@ -93,7 +93,7 @@ export function LessonShell({ course, chapter, lesson, prev, next, children }: P
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground hover:bg-accent/90 text-xs font-medium px-4 py-2 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground hover:bg-fg/85 text-xs font-medium px-4 py-2 transition-colors"
             >
               <Github className="h-3.5 w-3.5" />
               Suggest an improvement on GitHub
@@ -123,7 +123,7 @@ export function LessonShell({ course, chapter, lesson, prev, next, children }: P
             </Link>
           </Button>
         ) : (
-          <Button variant="ghost" size="sm" asChild className="text-accent hover:bg-accent/10">
+          <Button variant="ghost" size="sm" asChild className="text-accent hover:bg-surface-2">
             <Link href={`/courses/${course.slug}`} className="gap-1.5">
               Finish course
               <ArrowRight className="h-3.5 w-3.5" />

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useEffect } from "react"
+import React, { useRef, useEffect, useState } from "react"
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -36,8 +36,8 @@ import {
   Network,
   Heart,
   ArrowRight,
+  Search,
 } from 'lucide-react'
-import { useState } from 'react'
 // Banners removed for cleaner Tailwind-style sidebar
 import {
   Sheet,
@@ -407,7 +407,7 @@ function NavSection({ item }: { item: NavItem }) {
           'flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-md transition-colors',
           pathname === item.href
             ? 'text-accent bg-accent/[0.07]'
-            : 'text-foreground/80 hover:text-foreground hover:bg-accent/25'
+            : 'text-foreground/80 hover:text-foreground hover:bg-surface-2'
         )}
       >
         <span className="text-muted-foreground/70">{item.icon}</span>
@@ -431,7 +431,7 @@ function NavSection({ item }: { item: NavItem }) {
               'block px-3 py-1.5 text-sm transition-colors border-l-2',
               pathname === subItem.href
                 ? 'text-accent font-medium border-accent bg-accent/[0.06] rounded-r-md'
-                : 'text-muted-foreground hover:text-foreground border-transparent hover:border-muted-foreground/30 hover:bg-accent/20 rounded-r-md'
+                : 'text-muted-foreground hover:text-foreground border-transparent hover:border-muted-foreground/30 hover:bg-surface-2 rounded-r-md'
             )}
           >
             {subItem.title}
@@ -442,9 +442,21 @@ function NavSection({ item }: { item: NavItem }) {
   )
 }
 
-export function DocsSidebar() {
+/**
+ * @param variant `fixed` pins the column to the left of the viewport, which
+ *   is what the 232 pages that render their own layout expect. `inline`
+ *   makes it the first column of DocsShell, so the whole three-column row
+ *   centres inside 1440px instead of the navigation sitting a metre from
+ *   the text it belongs to on a wide screen.
+ */
+export function DocsSidebar({
+  variant = 'fixed',
+}: {
+  variant?: 'fixed' | 'inline'
+} = {}) {
   const sidebarRef = useRef<HTMLElement>(null)
   const pathname = usePathname()
+  const [filter, setFilter] = useState('')
 
   useEffect(() => {
     const el = sidebarRef.current?.querySelector('[data-active="true"]')
@@ -452,6 +464,26 @@ export function DocsSidebar() {
       el.scrollIntoView({ block: 'nearest', behavior: 'instant' })
     }
   }, [pathname])
+
+  // Filtering is flat on purpose: a query matches a page title or its group
+  // title, and a group whose own name matches keeps all of its pages. That
+  // is the behaviour somebody typing "auth" expects, rather than a tree that
+  // hides the heading they were navigating by.
+  const query = filter.trim().toLowerCase()
+  const visible = query
+    ? navItems
+        .map((item) => {
+          if (item.title.toLowerCase().includes(query)) return item
+          const items = item.items?.filter((sub) =>
+            sub.title.toLowerCase().includes(query),
+          )
+          if (items?.length) return { ...item, items }
+          return null
+        })
+        .filter((item): item is NavItem => item !== null)
+    : navItems
+
+  const inline = variant === 'inline'
 
   return (
     <>
@@ -465,13 +497,43 @@ export function DocsSidebar() {
       />
       {/* Structural column rails (lg+): sidebar │ main, and main │ TOC when the
           right rail is shown. Drawn in foreground so they're visible on the dark base. */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 hidden lg:block">
-        <div className="absolute inset-y-0 left-64 w-px bg-foreground/14" />
-        <div className="absolute inset-y-0 right-[15.5rem] w-px bg-foreground/10 hidden min-[1340px]:block" />
-      </div>
-      <aside ref={sidebarRef} className="fixed top-16 z-30 hidden h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-border/40 bg-sidebar-background py-8 lg:block">
-        <nav className="px-2 space-y-0.5">
-          {navItems.map((item, i) => (
+      {/* The rails are drawn at viewport coordinates, so they only line up
+          with a column that is itself pinned to the viewport. The inline
+          layout draws its own borders on the columns instead. */}
+      {!inline && (
+        <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 hidden lg:block">
+          <div className="absolute inset-y-0 left-64 w-px bg-foreground/14" />
+          <div className="absolute inset-y-0 right-[15.5rem] w-px bg-foreground/10 hidden min-[1340px]:block" />
+        </div>
+      )}
+      <aside
+        ref={sidebarRef}
+        aria-label="Docs navigation"
+        className={cn(
+          'hidden shrink-0 overflow-y-auto border-r border-border lg:block',
+          inline
+            ? 'sticky top-16 max-h-[calc(100vh-4rem)] w-[264px] self-stretch px-4 pb-12 pt-6'
+            : 'fixed top-16 z-30 h-[calc(100vh-4rem)] w-64 bg-sidebar-background py-8',
+        )}
+      >
+        {inline && (
+          <div className="relative mb-2">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-2.5 top-[11px] h-3.5 w-3.5 text-fg-subtle"
+            />
+            <input
+              type="search"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="Filter pages"
+              aria-label="Filter pages"
+              className="h-9 w-full rounded-btn-sm border border-border bg-surface-1 pl-8 pr-2.5 text-[13px] text-fg placeholder:text-fg-subtle focus-visible:border-border-strong focus-visible:outline-none"
+            />
+          </div>
+        )}
+        <nav className={cn('space-y-0.5', inline ? 'px-0' : 'px-2')}>
+          {visible.map((item, i) => (
             <div key={item.title}>
               {/* Horizontal divider before each grouped section (not the
                   top-level entry links, not the very first item). */}
@@ -488,8 +550,18 @@ export function DocsSidebar() {
             component on every /docs page, so these blocks reach all of them.
             Community comes first: someone reading docs is more likely to be
             stuck than to be reaching for their wallet. */}
-        <CommunityNudge />
-        <SponsorNudge />
+        {query && visible.length === 0 && (
+          <p className="mt-5 px-2 text-[13px] text-fg-subtle">
+            No pages match &ldquo;{filter}&rdquo;.
+          </p>
+        )}
+
+        {!query && (
+          <>
+            <CommunityNudge />
+            <SponsorNudge />
+          </>
+        )}
       </aside>
     </>
   )
@@ -578,7 +650,7 @@ function MobileNavSection({ item, onNavigate }: { item: NavItem; onNavigate: () 
           'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-all',
           pathname === item.href
             ? 'bg-accent/10 text-accent font-medium'
-            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+            : 'text-muted-foreground hover:bg-surface-2 hover:text-foreground'
         )}
       >
         {item.icon}
@@ -591,7 +663,7 @@ function MobileNavSection({ item, onNavigate }: { item: NavItem; onNavigate: () 
     <div className="mb-1">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-[13px] font-medium text-foreground/80 hover:bg-accent/30 transition-colors"
+        className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-[13px] font-medium text-foreground/80 hover:bg-surface-2 transition-colors"
       >
         <div className="flex items-center gap-2.5">
           <span className="text-muted-foreground/60">{item.icon}</span>
@@ -615,7 +687,7 @@ function MobileNavSection({ item, onNavigate }: { item: NavItem; onNavigate: () 
                 'block rounded-md px-2.5 py-1.5 text-[13px] transition-all',
                 pathname === subItem.href
                   ? 'text-accent font-medium bg-accent/5'
-                  : 'text-muted-foreground/70 hover:text-foreground hover:bg-accent/30'
+                  : 'text-muted-foreground/70 hover:text-foreground hover:bg-surface-2'
               )}
             >
               {subItem.title}
@@ -666,7 +738,7 @@ export function MobileNav() {
                 key={item.label}
                 href={item.href}
                 onClick={() => setOpen(false)}
-                className="block rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+                className="block rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-colors"
               >
                 {item.label}
               </Link>
@@ -686,7 +758,7 @@ export function MobileNav() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <div className="flex items-center gap-2 rounded-lg border border-accent/25 bg-accent/8 px-3 py-2.5 text-xs font-medium text-accent/80 hover:bg-accent/15 hover:text-accent transition-colors cursor-pointer">
+              <div className="flex items-center gap-2 rounded-lg border border-accent/25 bg-accent/8 px-3 py-2.5 text-xs font-medium text-accent/80 hover:bg-surface-2 hover:text-accent transition-colors cursor-pointer">
                 <Download className="h-3.5 w-3.5 shrink-0" />
                 <span>Download Handbook PDF</span>
               </div>

@@ -113,7 +113,7 @@ export default async function AssignmentPage({ params }: PageProps) {
           Push your code to GitHub, paste the link in your notes.md, and move on.
         </p>
         {nextChapter && (
-          <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground">
+          <Button asChild className="rounded-full bg-primary hover:bg-fg/85 text-primary-foreground">
             <Link href={`/courses/${course.slug}/${nextChapter.slug}`}>
               Continue to ch.{nextChapter.number}: {nextChapter.title}
               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
@@ -121,7 +121,7 @@ export default async function AssignmentPage({ params }: PageProps) {
           </Button>
         )}
         {!nextChapter && (
-          <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground">
+          <Button asChild className="rounded-full bg-primary hover:bg-fg/85 text-primary-foreground">
             <Link href={`/courses/${course.slug}`}>
               Finish course
               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />

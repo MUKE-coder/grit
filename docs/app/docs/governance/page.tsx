@@ -199,7 +199,7 @@ go build -o grit ./cmd/grit   # your build of the CLI`}
               href="https://github.com/MUKE-coder/grit"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-border/60 px-5 text-sm font-semibold transition-colors hover:bg-accent/50"
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-border/60 px-5 text-sm font-semibold transition-colors hover:bg-surface-2"
             >
               <Github className="h-4 w-4" />
               github.com/MUKE-coder/grit

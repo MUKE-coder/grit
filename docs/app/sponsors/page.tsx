@@ -77,7 +77,7 @@ export default function SponsorsPage() {
               </span>
               <Link
                 href="/sponsor"
-                className="inline-flex items-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent transition-colors hover:bg-accent/20"
+                className="inline-flex items-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent transition-colors hover:bg-surface-2"
               >
                 <Heart className="h-4 w-4" />
                 Become a sponsor

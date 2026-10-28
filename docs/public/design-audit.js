@@ -239,7 +239,17 @@
   }
   let accentInView = 0;
   if (accentRGB) {
-    const near = (c) => c && Math.abs(c.r - accentRGB.r) < 24 &&
+    /*
+     * A fill, not a wash.
+     *
+     * `bg-accent/10` computes to rgba(169, 155, 255, 0.1): the same three
+     * channels as the fill, at a tenth of the strength. Comparing r, g and
+     * b alone counted every soft accent panel on the page as a call to
+     * action, which on a docs page is five of them and on no page is true.
+     * A 10% wash is a surface; an opaque fill is a button.
+     */
+    const near = (c) => c && c.a >= 0.85 &&
+      Math.abs(c.r - accentRGB.r) < 24 &&
       Math.abs(c.g - accentRGB.g) < 24 && Math.abs(c.b - accentRGB.b) < 24;
     for (const e of els) {
       const r = e.getBoundingClientRect();
@@ -256,19 +266,54 @@
     }
   }
 
-  // --- 7. line length -----------------------------------------------------
+  /* --- 7. line length ----------------------------------------------------
+   *
+   * Measured, not assumed, and definitely not in `ch`.
+   *
+   * The `ch` unit is the advance of the digit "0". Geist's digits are
+   * tabular and wide: `ch` is 0.663em where a real prose character averages
+   * 0.461em, so `max-width: 72ch` holds 104 characters in this typeface.
+   * Anything reported in ch here would be 44% optimistic, and a page could
+   * pass while running a third longer than the rule allows.
+   *
+   * So each paragraph's own font renders a sentence off-screen, and the
+   * width of that divided by its length is what one character costs. It
+   * costs one layout per distinct font, cached by the font shorthand. */
+  const charWidthCache = new Map();
+  const SAMPLE =
+    'The quick brown fox jumps over the lazy dog, and then it does so again, ' +
+    'because typography is measured in characters and not in zeroes.';
+  const charWidth = (cs) => {
+    const key = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    if (charWidthCache.has(key)) return charWidthCache.get(key);
+    const span = document.createElement('span');
+    span.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;top:-9999px';
+    span.style.fontFamily = cs.fontFamily;
+    span.style.fontSize = cs.fontSize;
+    span.style.fontWeight = cs.fontWeight;
+    span.style.letterSpacing = cs.letterSpacing;
+    span.textContent = SAMPLE;
+    document.body.appendChild(span);
+    const w = span.getBoundingClientRect().width / SAMPLE.length;
+    span.remove();
+    charWidthCache.set(key, w);
+    return w;
+  };
+
   const longLines = [];
   for (const p of [...document.querySelectorAll('p')].filter(visible)) {
-    const s = getComputedStyle(p);
-    const ch = parseFloat(s.fontSize) * 0.5; // approx advance of one character
-    const chars = p.getBoundingClientRect().width / ch;
+    const cs = getComputedStyle(p);
+    const w = charWidth(cs);
+    if (!w) continue;
+    const chars = p.getBoundingClientRect().width / w;
     if (chars > BUDGETS.lineLength && p.textContent.trim().length > 120) {
       longLines.push(Math.round(chars));
     }
   }
   if (longLines.length) {
-    fail('paragraphs wider than 72ch', longLines.length, 0,
-      `widest ~${Math.max(...longLines)}ch. Put prose in max-w-3xl`);
+    fail('paragraphs over the measure', longLines.length, 0,
+      `widest ~${Math.max(...longLines)} characters, against ${BUDGETS.lineLength}. ` +
+      'Set max-width to var(--measure), never to a ch value.');
   }
 
   // --- 8. contrast --------------------------------------------------------
@@ -318,8 +363,29 @@
     .filter(visible)
     .filter((e) => {
       const r = e.getBoundingClientRect();
-      // Inline links inside a paragraph are exempt, as WCAG 2.5.8 allows.
-      if (e.tagName === 'A' && e.closest('p')) return false;
+      /*
+       * WCAG 2.5.8 exempts a target "in a sentence or block of text", and
+       * what that means in practice is a text link whose height is its line
+       * box. A breadcrumb, a meta row and a list of text actions are all
+       * made of those, and flagging them taught people to ignore the check.
+       *
+       * So the exemption is: visible text, no padding, no background and no
+       * border. An icon button has no text and fails it; a 20px-tall link
+       * with a background is a control and fails it too.
+       */
+      const s = getComputedStyle(e);
+      // "A text link" means its height is its line box: no vertical padding,
+      // no fill, no border. Horizontal padding is allowed, because a link in
+      // a row of links often carries some and it does not make the target
+      // any shorter.
+      const lineHeight = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.2;
+      const bare =
+        (e.innerText || '').trim().length > 0 &&
+        s.paddingTop === '0px' && s.paddingBottom === '0px' &&
+        s.borderTopWidth === '0px' && s.borderBottomWidth === '0px' &&
+        (rgb(s.backgroundColor)?.a ?? 0) < 0.05 &&
+        r.height <= lineHeight + 4;
+      if (bare) return false;
       return r.width < 24 || r.height < 24;
     });
   if (small.length) {

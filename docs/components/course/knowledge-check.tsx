@@ -63,7 +63,7 @@ export function KnowledgeCheck({ question, choices }: Props) {
                 {showState && c.correct && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
                 {showState && !c.correct && <X className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
                 {!showState && (
-                  <span className="h-2.5 w-2.5 rounded-full bg-transparent group-hover:bg-accent/30 transition-colors" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-transparent group-hover:bg-surface-2 transition-colors" />
                 )}
               </span>
               <span className="flex-1 text-foreground/95 leading-relaxed">{c.label}</span>

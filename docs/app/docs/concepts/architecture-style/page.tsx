@@ -729,7 +729,7 @@ export default function ArchitectureStylePage() {
               <Button
                 variant="outline"
                 asChild
-                className="border-border/60 bg-transparent hover:bg-accent/50"
+                className="border-border/60 bg-transparent hover:bg-surface-2"
               >
                 <Link href="/docs/concepts/architecture">Architecture Overview</Link>
               </Button>

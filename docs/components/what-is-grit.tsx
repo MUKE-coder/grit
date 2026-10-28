@@ -135,7 +135,7 @@ export function WhatIsGrit() {
                 ))}
               </ul>
             </div>
-            <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground self-start md:self-center px-7 h-11">
+            <Button asChild className="rounded-full bg-primary hover:bg-fg/85 text-primary-foreground self-start md:self-center px-7 h-11">
               <Link href="/docs/getting-started/quick-start">
                 Read quick start <ArrowRight className="ml-2 h-3.5 w-3.5" />
               </Link>

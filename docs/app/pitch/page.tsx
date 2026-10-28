@@ -237,14 +237,14 @@ export default function PitchPage() {
             <div className="mt-9 flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <Link
                 href="/docs/getting-started/quick-start"
-                className="group inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-accent/90 transition-colors glow-primary-sm"
+                className="group inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-fg/85 transition-colors glow-primary-sm"
               >
                 Start building
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
                 href="#why"
-                className="inline-flex items-center h-11 px-6 rounded-full border border-border/60 text-foreground font-medium text-sm hover:bg-accent/30 transition-colors"
+                className="inline-flex items-center h-11 px-6 rounded-full border border-border/60 text-foreground font-medium text-sm hover:bg-surface-2 transition-colors"
               >
                 Why Grit exists
               </Link>
@@ -755,20 +755,20 @@ grit generate resource Product \\
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 href="/docs/getting-started/quick-start"
-                className="group inline-flex items-center gap-2 h-11 px-7 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-accent/90 transition-colors"
+                className="group inline-flex items-center gap-2 h-11 px-7 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-fg/85 transition-colors"
               >
                 Get started
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
                 href="/talk"
-                className="inline-flex items-center h-11 px-7 rounded-full border border-border/60 text-foreground font-medium text-sm hover:bg-accent/30 transition-colors"
+                className="inline-flex items-center h-11 px-7 rounded-full border border-border/60 text-foreground font-medium text-sm hover:bg-surface-2 transition-colors"
               >
                 Watch the talk
               </Link>
               <Link
                 href="/courses"
-                className="inline-flex items-center h-11 px-7 rounded-full border border-border/60 text-foreground font-medium text-sm hover:bg-accent/30 transition-colors"
+                className="inline-flex items-center h-11 px-7 rounded-full border border-border/60 text-foreground font-medium text-sm hover:bg-surface-2 transition-colors"
               >
                 Follow a course
               </Link>

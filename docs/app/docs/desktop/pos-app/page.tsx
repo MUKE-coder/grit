@@ -1475,7 +1475,7 @@ wails build -platform linux/amd64`}
                 href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfpiJDPD3QgNG9hYzVFo5iLR0yrDPTJedWnBH7"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border border-accent/25 bg-accent/5 px-5 py-4 hover:bg-accent/10 transition-colors group"
+                className="flex items-center gap-3 rounded-lg border border-accent/25 bg-accent/5 px-5 py-4 hover:bg-surface-2 transition-colors group"
               >
                 <Download className="h-5 w-5 text-accent/70 group-hover:text-accent shrink-0" />
                 <div>

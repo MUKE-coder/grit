@@ -594,7 +594,7 @@ function CapRow({
   cells: (boolean | string)[]
 }) {
   return (
-    <tr className="hover:bg-accent/20 transition-colors">
+    <tr className="hover:bg-surface-2 transition-colors">
       <td className="px-4 py-2.5 font-medium text-foreground/90 text-[13px] sticky left-0 bg-background z-10">
         {label}
       </td>
@@ -621,7 +621,7 @@ function CapRow({
 
 function Recommend({ says, run }: { says: string; run: string }) {
   return (
-    <tr className="hover:bg-accent/20 transition-colors">
+    <tr className="hover:bg-surface-2 transition-colors">
       <td className="text-muted-foreground">{says}</td>
       <td>
         <code className="text-xs text-accent/80 font-mono bg-accent/5 px-2 py-1 rounded">

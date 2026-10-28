@@ -219,7 +219,7 @@ export default function TutorialsPage() {
                     <MockupThumb tag={t.duration} cmd={t.cmd} />
                     <div className="p-5 flex flex-col flex-1">
                       <div className="flex items-center gap-2.5 mb-1.5">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent group-hover:bg-accent/20 transition-colors">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent group-hover:bg-surface-2 transition-colors">
                           <t.icon className="h-4 w-4" />
                         </div>
                         <h3 className="text-sm font-semibold flex items-center gap-1.5 group-hover:text-accent transition-colors">

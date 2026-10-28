@@ -499,7 +499,7 @@ OAUTH_FRONTEND_URL=http://localhost:3001`} />
 
             {/* Bottom Navigation */}
             <div className="flex flex-wrap gap-3 mt-12 pt-6 border-t border-border/30">
-              <Button variant="outline" asChild className="border-border/60 bg-transparent hover:bg-accent/50">
+              <Button variant="outline" asChild className="border-border/60 bg-transparent hover:bg-surface-2">
                 <Link href="/docs/backend/authentication">
                   <ArrowLeft className="mr-1.5 h-4 w-4" />
                   Authentication

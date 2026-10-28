@@ -147,7 +147,7 @@ function CourseTreeInner({
               type="button"
               onClick={() => toggle(ch.slug)}
               className={cn(
-                'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[13px] font-medium hover:bg-accent/30',
+                'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[13px] font-medium hover:bg-surface-2',
                 pathname === chapterBase && 'bg-accent/10 text-accent',
               )}
             >
@@ -168,7 +168,7 @@ function CourseTreeInner({
                   href={chapterBase}
                   onClick={onLessonClick}
                   className={cn(
-                    'block px-2 py-1 rounded text-[12px] hover:bg-accent/30',
+                    'block px-2 py-1 rounded text-[12px] hover:bg-surface-2',
                     pathname === chapterBase
                       ? 'text-accent font-medium'
                       : 'text-muted-foreground/80',
@@ -191,7 +191,7 @@ function CourseTreeInner({
                           href={href}
                           onClick={onLessonClick}
                           className={cn(
-                            'flex items-start gap-2 px-2 py-1 rounded text-[12.5px] leading-snug hover:bg-accent/30 transition-colors',
+                            'flex items-start gap-2 px-2 py-1 rounded text-[12.5px] leading-snug hover:bg-surface-2 transition-colors',
                             active ? 'bg-accent/10 text-accent font-medium' : 'text-foreground/85',
                             l.status === 'coming-soon' && 'opacity-60',
                           )}
@@ -216,7 +216,7 @@ function CourseTreeInner({
                     href={`${chapterBase}/assignment`}
                     onClick={onLessonClick}
                     className={cn(
-                      'mt-2 flex items-start gap-2 px-2 py-1.5 rounded text-[12.5px] hover:bg-accent/30 border border-dashed border-amber-500/20',
+                      'mt-2 flex items-start gap-2 px-2 py-1.5 rounded text-[12.5px] hover:bg-surface-2 border border-dashed border-amber-500/20',
                       pathname === `${chapterBase}/assignment`
                         ? 'bg-amber-500/10 text-amber-500'
                         : 'text-amber-500/80',

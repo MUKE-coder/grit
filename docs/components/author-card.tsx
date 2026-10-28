@@ -49,7 +49,7 @@ export function AuthorCard() {
         href={LINKEDIN}
         target="_blank"
         rel="noreferrer"
-        className="shrink-0 inline-flex items-center justify-center h-10 px-5 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-accent/90 transition-colors"
+        className="shrink-0 inline-flex items-center justify-center h-10 px-5 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-fg/85 transition-colors"
       >
         Subscribe
       </a>

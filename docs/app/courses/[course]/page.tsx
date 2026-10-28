@@ -109,7 +109,7 @@ export default async function CourseLandingPage({ params }: PageProps) {
 
           {/* CTA */}
           <div className="flex flex-wrap gap-2.5">
-            <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground" disabled={course.status === 'coming-soon'}>
+            <Button asChild className="rounded-full bg-primary hover:bg-fg/85 text-primary-foreground" disabled={course.status === 'coming-soon'}>
               <Link href={startHref}>
                 {course.status === 'coming-soon' ? 'Preview the outline' : 'Start course'}
                 <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
@@ -241,7 +241,7 @@ export default async function CourseLandingPage({ params }: PageProps) {
             : "Lesson 1 takes ~6 minutes. By the end of this hour you'll be writing real code."}
         </p>
         <div className="flex flex-wrap justify-center gap-2.5">
-          <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground">
+          <Button asChild className="rounded-full bg-primary hover:bg-fg/85 text-primary-foreground">
             <Link href={startHref}>
               {course.status === 'coming-soon' ? 'Preview outline' : 'Start course'}
               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />

@@ -381,7 +381,7 @@ export default function PerformanceBenchmarksPage() {
                     </thead>
                     <tbody className="divide-y divide-border/30">
                       {MATRIX.map((row) => (
-                        <tr key={row.capability} className="hover:bg-accent/20 transition-colors">
+                        <tr key={row.capability} className="hover:bg-surface-2 transition-colors">
                           <td className="px-4 py-2.5 font-medium text-foreground/90 text-[13px] sticky left-0 bg-background z-10">
                             {row.capability}
                           </td>

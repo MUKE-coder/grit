@@ -227,7 +227,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                         { cmd: 'grit studio', desc: 'Open GORM Studio, the visual database browser' },
                         { cmd: 'grit deploy', desc: 'Deploy your app to a VPS' },
                       ].map((row) => (
-                        <tr key={row.cmd} className="hover:bg-accent/10 transition-colors">
+                        <tr key={row.cmd} className="hover:bg-surface-2 transition-colors">
                           <td className="px-4 py-2.5 align-top">
                             <code className="text-xs font-mono text-accent/80">{row.cmd}</code>
                           </td>
@@ -514,7 +514,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                           refine: false,
                         },
                       ].map((row) => (
-                        <tr key={row.feature} className="hover:bg-accent/10 transition-colors">
+                        <tr key={row.feature} className="hover:bg-surface-2 transition-colors">
                           <td className="px-4 py-2.5 text-xs text-foreground/80 font-medium">
                             {row.feature}
                           </td>
@@ -698,7 +698,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                 What Gets Generated
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                When you run <code className="text-sm font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">grit generate resource Post</code>, the CLI creates:
+                When you run <code className="text-sm font-mono bg-surface-2 px-1.5 py-0.5 rounded-xs text-accent">grit generate resource Post</code>, the CLI creates:
               </p>
               <div className="space-y-3">
                 {[
@@ -765,12 +765,12 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                   <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Link>
               </Button>
-              <Button variant="outline" asChild className="border-border/60 bg-transparent hover:bg-accent/50">
+              <Button variant="outline" asChild className="border-border/60 bg-transparent hover:bg-surface-2">
                 <Link href="/docs/getting-started/philosophy">
                   Read the Philosophy
                 </Link>
               </Button>
-              <Button variant="outline" asChild className="border-border/60 bg-transparent hover:bg-accent/50">
+              <Button variant="outline" asChild className="border-border/60 bg-transparent hover:bg-surface-2">
                 <a href="https://github.com/MUKE-coder/grit/tree/main/examples" target="_blank" rel="noreferrer">
                   Browse Examples
                 </a>

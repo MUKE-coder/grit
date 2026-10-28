@@ -157,7 +157,7 @@ export function CliExplorer() {
               type="button"
               onClick={() => setQuery('')}
               aria-label="Clear search"
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground/60 hover:bg-accent/30 hover:text-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground/60 hover:bg-surface-2 hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </button>
@@ -207,7 +207,7 @@ export function CliExplorer() {
                       className={`group w-full rounded-lg border px-3 py-2.5 text-left transition-colors ${
                         active
                           ? 'border-accent/40 bg-accent/[0.07]'
-                          : 'border-transparent hover:border-border/60 hover:bg-accent/20'
+                          : 'border-transparent hover:border-border/60 hover:bg-surface-2'
                       }`}
                     >
                       <div className="flex items-center gap-2">

@@ -45,14 +45,14 @@ export default function NotFound() {
           <div className="mt-8 flex items-center justify-center gap-3">
             <Link
               href="/"
-              className="group inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-accent/90 transition-colors glow-primary-sm"
+              className="group inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:bg-fg/85 transition-colors glow-primary-sm"
             >
               Back home
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link
               href="/docs"
-              className="inline-flex items-center h-11 px-6 rounded-full border border-border bg-card/60 text-foreground font-medium text-sm hover:bg-accent/40 transition-colors"
+              className="inline-flex items-center h-11 px-6 rounded-full border border-border bg-card/60 text-foreground font-medium text-sm hover:bg-surface-2 transition-colors"
             >
               Read the docs
             </Link>

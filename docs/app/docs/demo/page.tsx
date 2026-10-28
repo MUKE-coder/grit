@@ -75,7 +75,7 @@ export default function DemoPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10">
               <Button
                 size="lg"
-                className="bg-primary hover:bg-accent/90 text-primary-foreground h-12 text-base rounded-xl"
+                className="bg-primary hover:bg-fg/85 text-primary-foreground h-12 text-base rounded-xl"
                 asChild
               >
                 <Link href="https://demo.gritframework.dev" target="_blank" rel="noopener noreferrer">

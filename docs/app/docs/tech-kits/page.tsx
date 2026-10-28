@@ -168,7 +168,7 @@ export default function TechKitsIndexPage() {
                 Create the incredible, with Grit.
               </p>
               <div className="flex flex-wrap justify-center gap-2.5">
-                <Button asChild className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground">
+                <Button asChild className="rounded-full bg-primary hover:bg-fg/85 text-primary-foreground">
                   <Link href="/docs/getting-started/quick-start">
                     Quick start <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                   </Link>

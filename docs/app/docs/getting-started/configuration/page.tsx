@@ -26,7 +26,7 @@ export default function ConfigurationPage() {
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 A complete reference for every environment variable in your Grit project. All
-                configuration is done through the <code className="text-sm font-mono bg-accent/80 px-1.5 py-0.5 rounded text-accent">.env</code> file
+                configuration is done through the <code className="text-sm font-mono bg-surface-2 px-1.5 py-0.5 rounded-xs text-accent">.env</code> file
                 at the project root.
               </p>
               <LaneFlow
@@ -785,7 +785,7 @@ THEME=atlas`} />
 
             {/* Nav */}
             <div className="flex flex-wrap gap-3 mt-12 pt-6 border-t border-border/30">
-              <Button variant="outline" asChild className="border-border/60 bg-transparent hover:bg-accent/50">
+              <Button variant="outline" asChild className="border-border/60 bg-transparent hover:bg-surface-2">
                 <Link href="/docs/getting-started/project-structure">
                   Project Structure
                 </Link>

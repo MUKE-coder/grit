@@ -126,7 +126,7 @@ export default function TanStackRouterPage() {
                     ['Params', 'useParams() from next/navigation', 'Route.useParams()'],
                     ['Navigation', '<Link> from next/link', '<Link> from @tanstack/react-router'],
                   ].map(([aspect, next, tanstack]) => (
-                    <tr key={aspect} className="hover:bg-accent/20 transition-colors">
+                    <tr key={aspect} className="hover:bg-surface-2 transition-colors">
                       <td className="px-4 py-3 font-medium text-foreground">{aspect}</td>
                       <td className="px-4 py-3 text-muted-foreground">{next}</td>
                       <td className="px-4 py-3 text-accent/80">{tanstack}</td>

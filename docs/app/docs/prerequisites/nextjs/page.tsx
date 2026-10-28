@@ -195,7 +195,7 @@ const tailwindCode = `// Tailwind uses utility classes directly in JSX
 function ProductCard({ product }: { product: Product }) {
   return (
     <div className="rounded-xl border border-border bg-card p-6
-                    hover:bg-accent/10 transition-colors
+                    hover:bg-surface-2 transition-colors
                     sm:p-4 md:p-6 lg:p-8">
       {/* Responsive: sm/md/lg prefixes */}
       <h3 className="text-lg font-semibold text-foreground

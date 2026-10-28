@@ -621,7 +621,7 @@ export default function BlogPage() {
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
             className="px-3 py-1.5 text-sm rounded-md border border-border/40
-                       hover:bg-accent/50 disabled:opacity-40 disabled:cursor-not-allowed"
+                       hover:bg-surface-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Previous
           </button>
@@ -632,7 +632,7 @@ export default function BlogPage() {
             onClick={() => setPage((p) => Math.min(data.meta.pages, p + 1))}
             disabled={page === data.meta.pages}
             className="px-3 py-1.5 text-sm rounded-md border border-border/40
-                       hover:bg-accent/50 disabled:opacity-40 disabled:cursor-not-allowed"
+                       hover:bg-surface-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Next
           </button>

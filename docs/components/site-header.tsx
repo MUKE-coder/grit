@@ -13,6 +13,10 @@ import { DiscordIcon, DISCORD_INVITE_URL } from '@/components/community-cta'
 import { cn } from '@/lib/utils'
 import { GRIT_VERSION, RELEASE_CHANNEL_LABEL, releaseChannel } from '@/config/site'
 
+/* The docs sections that have a nav entry of their own, so "Guides" knows
+   which /docs pages are not its own. */
+const DOCS_SECTIONS = ['/docs/cli', '/docs/systems', '/docs/plugins', '/docs/changelog']
+
 export function SiteHeader() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -22,6 +26,8 @@ export function SiteHeader() {
   // route under it (e.g., /courses, /courses/concepts/welcome/what-is-grit
   // both highlight "Courses").
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+
+  const inDocs = pathname === '/docs' || pathname.startsWith('/docs/')
 
   useEffect(() => setMounted(true), [])
 
@@ -43,6 +49,9 @@ export function SiteHeader() {
             <span className="font-semibold text-[15px] tracking-tight text-foreground">
               Grit
             </span>
+            {inDocs && (
+              <span className="font-mono text-[12px] font-medium text-fg-subtle">/ docs</span>
+            )}
             {/* The channel is shown only when it is not stable, because a
                 badge saying "stable" on every page is noise, and its absence
                 has to mean stable for that to work. */}
@@ -73,18 +82,38 @@ export function SiteHeader() {
               in the footer and in the docs sidebar, which is where somebody
               goes looking for them. Discord stays as a single icon because it
               is the one place to ask a question, and Build with AI folds into
-              Docs, where the page itself lives. */}
-          {[
-            { label: 'Docs', href: '/docs' },
-            { label: 'Builder', href: '/builder' },
-            { label: 'Grit UI', href: 'https://ui.gritframework.dev', external: true },
-            { label: 'Showcase', href: '/showcase' },
-            { label: 'Blog', href: '/blog' },
-          ].map((item) => {
+              Docs, where the page itself lives.
+
+              Inside /docs the five become the docs' own sections, because a
+              reader who is already in the documentation is navigating within
+              it, not back out to the marketing pages. */}
+          {(inDocs
+            ? [
+                { label: 'Guides', href: '/docs' },
+                { label: 'CLI', href: '/docs/cli' },
+                { label: 'Systems', href: '/docs/systems' },
+                { label: 'Plugins', href: '/docs/plugins' },
+                { label: 'Changelog', href: '/docs/changelog' },
+              ]
+            : [
+                { label: 'Docs', href: '/docs' },
+                { label: 'Builder', href: '/builder' },
+                { label: 'Grit UI', href: 'https://ui.gritframework.dev', external: true },
+                { label: 'Showcase', href: '/showcase' },
+                { label: 'Blog', href: '/blog' },
+              ]
+          ).map((item: { label: string; href: string; external?: boolean }) => {
             // An off-domain entry can never be the active route, and running it
             // through isActive() would prefix-match "https://…" against the
             // pathname for no reason.
-            const active = !item.external && isActive(item.href)
+            //
+            // Guides is every /docs page that is not one of the other four, so
+            // a prefix match would light it up on all of them.
+            const active = item.external
+              ? false
+              : item.label === 'Guides'
+                ? inDocs && !DOCS_SECTIONS.some((p) => pathname.startsWith(p))
+                : isActive(item.href)
             return (
               <Link
                 key={item.label}

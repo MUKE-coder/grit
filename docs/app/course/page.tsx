@@ -367,7 +367,7 @@ export default function CoursePage() {
                     {/* Lessons */}
                     <div className="divide-y divide-border/20">
                       {mod.lessons.map((lesson, i) => (
-                        <div key={i} className="px-5 py-3 hover:bg-accent/20 transition-colors">
+                        <div key={i} className="px-5 py-3 hover:bg-surface-2 transition-colors">
                           <div className="flex items-start gap-3">
                             <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-mono text-muted-foreground/50 bg-accent/30 mt-0.5">
                               {i + 1}

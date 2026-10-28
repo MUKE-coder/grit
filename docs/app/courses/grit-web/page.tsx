@@ -157,7 +157,7 @@ export default function GritWebCourses() {
               href={course.href}
               className="group flex items-start gap-4 p-5 rounded-lg border border-border/40 bg-card/30 hover:border-accent/30 hover:bg-card/50 transition-all"
             >
-              <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-accent/10 text-accent shrink-0 group-hover:bg-accent/20 transition-colors">
+              <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-accent/10 text-accent shrink-0 group-hover:bg-surface-2 transition-colors">
                 <course.icon className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">

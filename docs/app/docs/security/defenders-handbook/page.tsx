@@ -1081,7 +1081,7 @@ export default function DefendersHandbookPage() {
                 <div className="flex flex-wrap gap-2.5">
                   <Button
                     asChild
-                    className="rounded-full bg-primary hover:bg-accent/90 text-primary-foreground"
+                    className="rounded-full bg-primary hover:bg-fg/85 text-primary-foreground"
                   >
                     <Link href="/docs/security">
                       OWASP view

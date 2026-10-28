@@ -52,7 +52,7 @@ export function PageHelp({ faqs, title = 'Frequently asked questions' }: PageHel
           href="https://github.com/MUKE-coder/grit/issues/new"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-accent/25 bg-accent/10 px-4 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/15"
+          className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-accent/25 bg-accent/10 px-4 py-2 text-sm font-medium text-accent transition-colors hover:bg-surface-2"
         >
           <Github className="h-4 w-4" />
           Raise an issue on GitHub
